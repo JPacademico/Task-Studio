@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en" class="dark" data-skin="studio">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- viewport-fit=cover + safe-area padding is what makes the standalone
+         iOS window look native instead of letterboxed. -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover"
+    />
+    <link rel="mask-icon" href="/favicon.svg" color="#facc5a" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f6f6f8" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0f0f12" />
+
+    <!-- iOS standalone hints (Safari still ignores parts of the manifest). -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Task Studio" />
+
+    <meta name="description" content="Personal and collaborative project management studio." />
+    <title>Task Studio</title>
+
+    <script>
+      // Applied before first paint so the app never flashes the wrong theme.
+      // Palette (light/dark) and skin are independent.
+      (() => {
+        const root = document.documentElement;
+        try {
+          const stored = localStorage.getItem('task-studio:theme');
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          const dark = stored === 'DARK' || ((!stored || stored === 'SYSTEM') && prefersDark);
+          root.classList.toggle('dark', dark);
+
+          // Kept in step with SKIN_ATTRIBUTE in theme-provider.tsx.
+          // STEAMPUNK is the old name for VINTAGE and still sits in stored
+          // preferences, so it resolves to the same skin rather than silently
+          // dropping the user back to Studio on their next visit.
+          const SKINS = {
+            PAPER: 'paper',
+            TERMINAL: 'terminal',
+            VINTAGE: 'vintage',
+            STEAMPUNK: 'vintage',
+            PIXEL: 'pixel',
+            SPACE: 'space',
+            STUDIO: 'studio',
+          };
+          root.dataset.skin = SKINS[localStorage.getItem('task-studio:theme-skin')] || 'studio';
+        } catch {
+          /* private mode — fall back to the class already on <html> */
+          root.dataset.skin = 'studio';
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

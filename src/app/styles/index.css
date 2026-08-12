@@ -1,0 +1,1804 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Theme tokens.
+ *
+ * Two independent axes:
+ *   - palette   -> `dark` class on <html>          (light / dark)
+ *   - skin      -> `data-skin` attribute on <html> (studio / paper / terminal /
+ *                                                   vintage / pixel / space)
+ *
+ * Every skin declares both palettes, so the two compose instead of fighting.
+ * Switching either one costs a single attribute mutation — no React re-render
+ * and no repaint of component trees, because every colour, radius, family,
+ * texture, easing and shadow in the design system resolves through a variable.
+ *
+ * A skin is deliberately more than a palette: it owns the corner radii, the
+ * border weight and style, the paper texture behind panels, the weight of the
+ * icon strokes, the shadow language of buttons and Post-its, and the curve the
+ * whole interface animates on.
+ */
+@layer base {
+  :root {
+    --surface: 246 246 248;
+    --surface-raised: 255 255 255;
+    --surface-sunken: 235 235 240;
+    --edge: 219 219 228;
+    --content: 24 24 32;
+    --content-muted: 92 92 110;
+    --content-faint: 140 140 158;
+    --brand: 99 102 241;
+    --brand-soft: 224 225 255;
+    --brand-contrast: 255 255 255;
+    --positive: 16 185 129;
+    --warning: 245 158 11;
+    --danger: 239 68 68;
+
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 0.875rem;
+    --radius-2xl: 1.25rem;
+    --radius-3xl: 1.75rem;
+
+    --font-sans: 'Inter var', 'Inter', 'Segoe UI', system-ui, sans-serif;
+    --font-display: var(--font-sans);
+    --font-hand: 'Bradley Hand', 'Segoe Print', 'Comic Sans MS', cursive;
+    --font-mono: 'JetBrains Mono', 'Cascadia Mono', Consolas, 'Courier New', monospace;
+
+    --panel-border-width: 1px;
+    --panel-border-style: solid;
+    --shadow-panel: 0 24px 60px -30px rgb(0 0 0 / 0.45);
+    --press-travel: 0px;
+
+    /* --- Materials --------------------------------------------------------
+     * A texture is one background-image on the surfaces that already exist,
+     * never an extra element, so a skin with a heavy material costs the same
+     * number of nodes as the plain one. */
+    --panel-texture: none;
+    --panel-texture-size: auto;
+    --page-wash: none;
+
+    /* --- Controls --------------------------------------------------------- */
+    --btn-overlay: none;
+    --btn-shadow: none;
+    --btn-shadow-active: none;
+    --btn-transform: none;
+    --btn-tracking: normal;
+    --btn-weight: 500;
+    --control-border-width: 1px;
+    --field-shadow: none;
+    --field-shadow-focus: none;
+
+    /* --- Paper ------------------------------------------------------------ */
+    --postit-radius: 4px;
+    --postit-shadow: 0 12px 28px -14px rgb(0 0 0 / 0.55);
+    --postit-texture:
+      linear-gradient(0deg, rgb(0 0 0 / 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(0 0 0 / 0.02) 1px, transparent 1px);
+    --postit-texture-size: 22px 22px;
+
+    /* --- Motion & drawing ------------------------------------------------- */
+    --ease-ui: cubic-bezier(0.22, 1, 0.36, 1);
+    --speed-ui: 150ms;
+    --icon-stroke: 2;
+    --heading-transform: none;
+    --heading-tracking: -0.01em;
+
+    color-scheme: light;
+  }
+
+  .dark {
+    --surface: 15 15 18;
+    --surface-raised: 23 23 28;
+    --surface-sunken: 10 10 13;
+    --edge: 38 38 46;
+    --content: 245 245 247;
+    --content-muted: 163 163 178;
+    --content-faint: 110 110 126;
+    --brand: 129 132 255;
+    --brand-soft: 38 38 74;
+    --brand-contrast: 12 12 18;
+    --positive: 52 211 153;
+    --warning: 251 191 36;
+    --danger: 248 113 113;
+
+    color-scheme: dark;
+  }
+
+  /* -----------------------------------------------------------------------
+   * Skin: PAPER — illustrated and playful.
+   * Thick ink outlines, chunky radii, offset shadows that read as cut paper
+   * lying on the page rather than a blurred drop shadow.
+   * --------------------------------------------------------------------- */
+  [data-skin='paper'] {
+    --surface: 228 236 254;
+    --surface-raised: 252 253 255;
+    --surface-sunken: 214 226 252;
+    --edge: 26 26 48;
+    --content: 18 18 36;
+    --content-muted: 71 74 106;
+    --content-faint: 118 122 154;
+    --brand: 250 204 21;
+    --brand-soft: 254 243 199;
+    --brand-contrast: 24 24 44;
+    --positive: 22 148 110;
+    --warning: 232 140 24;
+    --danger: 226 74 74;
+
+    --radius-sm: 0.5rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.25rem;
+    --radius-2xl: 1.75rem;
+    --radius-3xl: 2.25rem;
+
+    --font-display: 'Baloo 2', 'Nunito', 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
+    --font-sans: 'Nunito', 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
+
+    --panel-border-width: 2px;
+    --shadow-panel: 5px 5px 0 0 rgb(var(--edge) / 0.92);
+    --press-travel: 2px;
+
+    --panel-texture: radial-gradient(rgb(var(--edge) / 0.07) 1px, transparent 1px);
+    --panel-texture-size: 13px 13px;
+
+    --btn-shadow: 3px 3px 0 0 rgb(var(--edge) / 0.9);
+    --btn-shadow-active: 1px 1px 0 0 rgb(var(--edge) / 0.9);
+    --control-border-width: 2px;
+    --btn-weight: 700;
+
+    --postit-radius: 7px;
+    --postit-shadow: 6px 6px 0 0 rgb(0 0 0 / 0.16);
+
+    --ease-ui: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --speed-ui: 190ms;
+    --icon-stroke: 2.4;
+    --heading-tracking: -0.015em;
+
+    color-scheme: light;
+  }
+
+  [data-skin='paper'].dark {
+    --surface: 21 23 54;
+    --surface-raised: 33 36 76;
+    --surface-sunken: 15 17 42;
+    --edge: 122 132 214;
+    --content: 238 241 255;
+    --content-muted: 176 184 232;
+    --content-faint: 132 141 194;
+    --brand: 250 214 66;
+    --brand-soft: 63 60 30;
+    --brand-contrast: 22 24 52;
+    --positive: 62 214 160;
+    --warning: 252 189 74;
+    --danger: 255 120 120;
+
+    --shadow-panel: 5px 5px 0 0 rgb(var(--edge) / 0.55);
+    --btn-shadow: 3px 3px 0 0 rgb(var(--edge) / 0.5);
+    --btn-shadow-active: 1px 1px 0 0 rgb(var(--edge) / 0.5);
+    --postit-shadow: 6px 6px 0 0 rgb(0 0 0 / 0.45);
+
+    color-scheme: dark;
+  }
+
+  /* -----------------------------------------------------------------------
+   * Skin: TERMINAL — retro CRT.
+   * Monospace everywhere, hard corners, neon rules and a faint scanline wash.
+   * --------------------------------------------------------------------- */
+  [data-skin='terminal'] {
+    --surface: 240 233 246;
+    --surface-raised: 252 249 255;
+    --surface-sunken: 228 218 240;
+    --edge: 150 60 178;
+    --content: 46 12 66;
+    --content-muted: 104 54 132;
+    --content-faint: 142 104 166;
+    --brand: 190 24 174;
+    --brand-soft: 250 224 250;
+    --brand-contrast: 255 245 255;
+    --positive: 12 148 132;
+    --warning: 198 118 10;
+    --danger: 214 36 78;
+
+    --radius-sm: 0px;
+    --radius-md: 0px;
+    --radius-lg: 0px;
+    --radius-xl: 2px;
+    --radius-2xl: 2px;
+    --radius-3xl: 3px;
+
+    --font-sans: var(--font-mono);
+    --font-display: var(--font-mono);
+    --font-hand: var(--font-mono);
+
+    --panel-border-width: 1px;
+    --shadow-panel: 0 0 0 1px rgb(var(--brand) / 0.35), 4px 4px 0 0 rgb(var(--brand) / 0.18);
+    --press-travel: 1px;
+
+    --panel-texture: repeating-linear-gradient(
+      to bottom,
+      rgb(var(--content) / 0.05) 0 1px,
+      transparent 1px 4px
+    );
+
+    --btn-shadow: 0 0 0 1px rgb(var(--brand) / 0.35);
+    --btn-shadow-active: inset 0 0 0 1px rgb(var(--brand) / 0.6);
+    --btn-tracking: 0.1em;
+    --btn-transform: uppercase;
+    --btn-weight: 600;
+    --field-shadow-focus: 0 0 14px -2px rgb(var(--brand) / 0.7);
+
+    --postit-radius: 0px;
+    --postit-shadow: 0 0 0 1px rgb(0 0 0 / 0.45), 4px 4px 0 0 rgb(0 0 0 / 0.25);
+    --postit-texture: repeating-linear-gradient(
+      to bottom,
+      rgb(0 0 0 / 0.05) 0 1px,
+      transparent 1px 4px
+    );
+    --postit-texture-size: auto;
+
+    --ease-ui: linear;
+    --speed-ui: 110ms;
+    --icon-stroke: 1.5;
+    --heading-transform: uppercase;
+    --heading-tracking: 0.08em;
+
+    color-scheme: light;
+  }
+
+  [data-skin='terminal'].dark {
+    --surface: 22 6 40;
+    --surface-raised: 39 10 68;
+    --surface-sunken: 14 3 26;
+    --edge: 196 38 208;
+    --content: 122 250 246;
+    --content-muted: 96 206 224;
+    --content-faint: 148 108 210;
+    --brand: 255 62 214;
+    --brand-soft: 66 10 74;
+    --brand-contrast: 16 4 28;
+    --positive: 74 246 190;
+    --warning: 252 210 78;
+    --danger: 255 86 132;
+
+    --shadow-panel: 0 0 0 1px rgb(var(--brand) / 0.55), 0 0 28px -6px rgb(var(--brand) / 0.55);
+
+    color-scheme: dark;
+  }
+
+  /* -----------------------------------------------------------------------
+   * Skin: VINTAGE — brass, leather and engraved rules.
+   * Machined radii, double-struck frames, a hatched plate texture and serif
+   * display type. Controls are physical: they catch a highlight along the top
+   * edge and sink into the plate when pressed.
+   * --------------------------------------------------------------------- */
+  [data-skin='vintage'] {
+    --surface: 234 219 194;
+    --surface-raised: 247 238 219;
+    --surface-sunken: 219 199 166;
+    --edge: 138 106 61;
+    --content: 51 34 18;
+    --content-muted: 106 80 50;
+    --content-faint: 145 119 86;
+    --brand: 176 106 32;
+    --brand-soft: 240 220 182;
+    --brand-contrast: 253 245 228;
+    --positive: 92 122 58;
+    --warning: 192 122 23;
+    --danger: 160 48 31;
+
+    --radius-sm: 0.125rem;
+    --radius-md: 0.1875rem;
+    --radius-lg: 0.25rem;
+    --radius-xl: 0.3125rem;
+    --radius-2xl: 0.4375rem;
+    --radius-3xl: 0.625rem;
+
+    --font-display: 'Playfair Display', 'Bookman Old Style', Baskerville, Georgia, serif;
+    --font-sans: 'Iowan Old Style', 'Palatino Linotype', Georgia, 'Times New Roman', serif;
+    --font-hand: 'Segoe Script', 'Brush Script MT', cursive;
+
+    --panel-border-width: 2px;
+    --shadow-panel:
+      inset 0 0 0 1px rgb(var(--surface-raised)),
+      inset 0 1px 0 rgb(255 255 255 / 0.4),
+      0 18px 40px -26px rgb(38 24 8 / 0.85);
+    --press-travel: 1px;
+
+    --panel-texture: repeating-linear-gradient(
+      135deg,
+      rgb(var(--edge) / 0.08) 0 1px,
+      transparent 1px 7px
+    );
+    --page-wash: radial-gradient(
+      120% 90% at 50% 0%,
+      rgb(var(--brand) / 0.1),
+      transparent 60%
+    );
+
+    --btn-overlay: linear-gradient(180deg, rgb(255 255 255 / 0.3), rgb(0 0 0 / 0.14));
+    --btn-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.35),
+      0 2px 0 rgb(var(--edge) / 0.55),
+      0 8px 16px -10px rgb(38 24 8 / 0.8);
+    --btn-shadow-active: inset 0 2px 4px rgb(0 0 0 / 0.4);
+    --btn-tracking: 0.04em;
+    --btn-weight: 600;
+    --control-border-width: 1px;
+    --field-shadow: inset 0 2px 4px rgb(var(--edge) / 0.22);
+    --field-shadow-focus: inset 0 2px 5px rgb(var(--edge) / 0.3);
+
+    --postit-radius: 2px;
+    --postit-shadow:
+      inset 0 0 22px rgb(120 84 34 / 0.28),
+      0 14px 26px -16px rgb(38 24 8 / 0.9);
+    --postit-texture: repeating-linear-gradient(
+      135deg,
+      rgb(90 60 20 / 0.05) 0 1px,
+      transparent 1px 6px
+    );
+    --postit-texture-size: auto;
+
+    --ease-ui: cubic-bezier(0.65, 0, 0.35, 1);
+    --speed-ui: 260ms;
+    --icon-stroke: 1.7;
+    --heading-transform: none;
+    --heading-tracking: 0.01em;
+
+    color-scheme: light;
+  }
+
+  [data-skin='vintage'].dark {
+    --surface: 33 25 17;
+    --surface-raised: 47 36 25;
+    --surface-sunken: 23 17 11;
+    --edge: 169 126 63;
+    --content: 240 226 200;
+    --content-muted: 197 173 135;
+    --content-faint: 152 128 94;
+    --brand: 224 169 74;
+    --brand-soft: 68 49 22;
+    --brand-contrast: 30 21 10;
+    --positive: 150 186 96;
+    --warning: 233 168 62;
+    --danger: 214 96 74;
+
+    --shadow-panel:
+      inset 0 0 0 1px rgb(var(--surface-raised)),
+      inset 0 1px 0 rgb(255 255 255 / 0.08),
+      0 22px 46px -26px rgb(0 0 0 / 0.95);
+    --btn-overlay: linear-gradient(180deg, rgb(255 255 255 / 0.16), rgb(0 0 0 / 0.28));
+    --page-wash: radial-gradient(120% 90% at 50% 0%, rgb(var(--brand) / 0.14), transparent 62%);
+
+    color-scheme: dark;
+  }
+
+  /* -----------------------------------------------------------------------
+   * Skin: PIXEL — 8-bit arcade cartridge.
+   *
+   * The arcade and the CRT used to collide: both land on hard corners and, on
+   * a machine with no pixel font installed, both fall back to the very same
+   * console monospace. So the difference here is deliberately *structural*
+   * rather than typographic, and none of it is anything the terminal does:
+   *
+   *   - Frames are drawn with a notched `border-image` sprite, so every box
+   *     loses its corner pixels the way a nine-slice UI tile would. The
+   *     terminal's frames stay flat, unbroken hairlines.
+   *   - The material is an ordered dither (a checkerboard plus a 50% offset
+   *     lattice), not the terminal's horizontal scanline.
+   *   - Text carries a one-pixel hard drop shadow, the way sprite lettering is
+   *     baked into a tile sheet; the terminal glows instead.
+   *   - Icons are re-rendered with square caps and `crispEdges`, which strips
+   *     the anti-aliased curves Lucide draws by default.
+   *   - The palette is a saturated NES-ish set — indigo, hot magenta, spring
+   *     green — instead of the CRT's phosphor purple.
+   * --------------------------------------------------------------------- */
+  [data-skin='pixel'] {
+    --surface: 214 222 236;
+    --surface-raised: 250 250 255;
+    --surface-sunken: 176 190 216;
+    --edge: 22 20 44;
+    --content: 22 20 44;
+    --content-muted: 78 72 124;
+    --content-faint: 122 116 166;
+    --brand: 92 58 214;
+    --brand-soft: 214 205 255;
+    --brand-contrast: 255 255 255;
+    --positive: 24 158 92;
+    --warning: 226 146 16;
+    --danger: 216 38 76;
+
+    --radius-sm: 0px;
+    --radius-md: 0px;
+    --radius-lg: 0px;
+    --radius-xl: 0px;
+    --radius-2xl: 0px;
+    --radius-3xl: 0px;
+
+    --font-display: 'Press Start 2P', 'Silkscreen', 'Pixelify Sans', 'VT323', 'Small Fonts',
+      'Cascadia Mono', Consolas, monospace;
+    --font-sans: 'Silkscreen', 'Pixelify Sans', 'VT323', 'Cascadia Mono', Consolas, monospace;
+    --font-hand: var(--font-sans);
+
+    --panel-border-width: 4px;
+    --panel-border-style: solid;
+    --shadow-panel: 6px 6px 0 0 rgb(var(--edge) / 0.9);
+    --press-travel: 2px;
+
+    /* Ordered dither: a checkerboard at 4px plus an offset lattice at 8px.
+       Two background-images on a surface that already exists — no extra node,
+       and nothing here animates, so it costs one paint. */
+    --panel-texture:
+      repeating-conic-gradient(
+        rgb(var(--content) / 0.07) 0% 25%,
+        transparent 0% 50%
+      ),
+      radial-gradient(rgb(var(--content) / 0.07) 1px, transparent 1px);
+    --panel-texture-size: 4px 4px, 8px 8px;
+
+    --btn-shadow: 4px 4px 0 0 rgb(var(--edge));
+    --btn-shadow-active: 2px 2px 0 0 rgb(var(--edge));
+    --btn-tracking: 0.1em;
+    --btn-transform: uppercase;
+    --btn-weight: 700;
+    --control-border-width: 3px;
+    --field-shadow: inset 3px 3px 0 0 rgb(var(--edge) / 0.2);
+    --field-shadow-focus: 4px 4px 0 0 rgb(var(--brand) / 0.9);
+
+    --postit-radius: 0px;
+    --postit-shadow: 5px 5px 0 0 rgb(0 0 0 / 0.45);
+    --postit-texture:
+      repeating-conic-gradient(rgb(0 0 0 / 0.06) 0% 25%, transparent 0% 50%);
+    --postit-texture-size: 4px 4px;
+
+    /* Quantised: the interface should look like it is redrawn frame by frame. */
+    --ease-ui: steps(4, end);
+    --speed-ui: 120ms;
+    --icon-stroke: 3;
+    --heading-transform: uppercase;
+    --heading-tracking: 0.08em;
+
+    /* The nine-slice frame, with the corner pixels knocked out. Baked per
+       palette because a data URI cannot read `currentColor`. */
+    --pixel-frame: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' shape-rendering='crispEdges'%3E%3Cg fill='%2316142c'%3E%3Crect x='4' y='0' width='4' height='2'/%3E%3Crect x='4' y='10' width='4' height='2'/%3E%3Crect x='0' y='4' width='2' height='4'/%3E%3Crect x='10' y='4' width='2' height='4'/%3E%3Crect x='2' y='0' width='2' height='2'/%3E%3Crect x='0' y='2' width='2' height='2'/%3E%3Crect x='8' y='0' width='2' height='2'/%3E%3Crect x='10' y='2' width='2' height='2'/%3E%3Crect x='0' y='8' width='2' height='2'/%3E%3Crect x='2' y='10' width='2' height='2'/%3E%3Crect x='10' y='8' width='2' height='2'/%3E%3Crect x='8' y='10' width='2' height='2'/%3E%3C/g%3E%3C/svg%3E");
+    /* Sprite lettering: one hard pixel of shadow, never a blur. */
+    --pixel-text-shadow: 1px 1px 0 rgb(var(--content) / 0.18);
+
+    color-scheme: light;
+  }
+
+  [data-skin='pixel'].dark {
+    --surface: 16 12 40;
+    --surface-raised: 30 22 66;
+    --surface-sunken: 10 7 28;
+    --edge: 166 140 255;
+    --content: 236 232 255;
+    --content-muted: 178 166 232;
+    --content-faint: 132 120 190;
+    --brand: 255 82 196;
+    --brand-soft: 74 26 92;
+    --brand-contrast: 16 6 30;
+    --positive: 76 232 148;
+    --warning: 255 206 74;
+    --danger: 255 92 122;
+
+    --shadow-panel: 6px 6px 0 0 rgb(var(--edge) / 0.5);
+    --btn-shadow: 4px 4px 0 0 rgb(var(--edge) / 0.7);
+    --btn-shadow-active: 2px 2px 0 0 rgb(var(--edge) / 0.7);
+    --postit-shadow: 5px 5px 0 0 rgb(0 0 0 / 0.7);
+
+    --pixel-frame: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' shape-rendering='crispEdges'%3E%3Cg fill='%23a68cff'%3E%3Crect x='4' y='0' width='4' height='2'/%3E%3Crect x='4' y='10' width='4' height='2'/%3E%3Crect x='0' y='4' width='2' height='4'/%3E%3Crect x='10' y='4' width='2' height='4'/%3E%3Crect x='2' y='0' width='2' height='2'/%3E%3Crect x='0' y='2' width='2' height='2'/%3E%3Crect x='8' y='0' width='2' height='2'/%3E%3Crect x='10' y='2' width='2' height='2'/%3E%3Crect x='0' y='8' width='2' height='2'/%3E%3Crect x='2' y='10' width='2' height='2'/%3E%3Crect x='10' y='8' width='2' height='2'/%3E%3Crect x='8' y='10' width='2' height='2'/%3E%3C/g%3E%3C/svg%3E");
+    --pixel-text-shadow: 1px 1px 0 rgb(0 0 0 / 0.55);
+
+    color-scheme: dark;
+  }
+
+  /* -----------------------------------------------------------------------
+   * Skin: SPACE — the deep field, and a singularity in it.
+   *
+   * The first pass at this skin was a dark blue theme with a few stars on it,
+   * which is not a world — it was the studio skin at night. This one commits:
+   *
+   *   - The page is a void, not a dark surface. Dark mode drops to near-black
+   *     so the lit chrome on top of it has something to be lit against.
+   *   - The accent is plasma: a quasar mint, with a cyan and a violet either
+   *     side of it. Three related hues is what lets a rim light, an accretion
+   *     arc and a warning read as the same physics.
+   *   - Type is instrument lettering — uppercase headings and buttons on wide
+   *     tracking, which survives even when none of the display faces are
+   *     installed. It is the one part of a skin a font fallback cannot undo.
+   *   - Every hidden rail is marked by a black hole sunk into the screen edge,
+   *     rather than by the soft brand glow the other skins use. It is the same
+   *     shape at the same size — only the material differs. See `VOID_GRADIENT`
+   *     in `edge-affordance.tsx`.
+   *
+   * Cost is unchanged: the washes and starfields are background-images on
+   * elements that already exist, and nothing here animates anything but
+   * transform and opacity.
+   * --------------------------------------------------------------------- */
+  [data-skin='space'] {
+    --surface: 230 236 249;
+    --surface-raised: 252 253 255;
+    --surface-sunken: 211 220 241;
+    --edge: 140 154 200;
+    --content: 12 18 44;
+    --content-muted: 68 80 126;
+    --content-faint: 116 128 172;
+    /* Dark enough that white label text on a filled control clears 4.5:1 — the
+       mint the dark palette runs at would not. */
+    --brand: 7 128 108;
+    --brand-soft: 200 244 233;
+    --brand-contrast: 255 255 255;
+    --positive: 12 150 142;
+    --warning: 204 124 16;
+    --danger: 206 44 92;
+
+    --radius-sm: 0.5rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1.125rem;
+    --radius-xl: 1.375rem;
+    --radius-2xl: 1.75rem;
+    --radius-3xl: 2.5rem;
+
+    --font-display: 'Orbitron', 'Eurostile', 'Bank Gothic', 'Michroma', 'Segoe UI', system-ui,
+      sans-serif;
+    --font-sans: 'Exo 2', 'Titillium Web', 'Segoe UI', system-ui, sans-serif;
+    --font-hand: 'Segoe Script', 'Brush Script MT', cursive;
+
+    --panel-border-width: 1px;
+    --shadow-panel:
+      inset 0 1px 0 rgb(255 255 255 / 0.7),
+      0 0 0 1px rgb(var(--space-plasma) / 0.16),
+      0 20px 46px -26px rgb(16 30 70 / 0.55);
+    --press-travel: 0px;
+
+    /* A rim glow across the top of every panel, then stars underneath it. Four
+       radial "stars" tiled at three sizes reads as a random field far more
+       cheaply than a real noise texture. */
+    --panel-texture:
+      radial-gradient(120% 70% at 50% -25%, rgb(var(--space-plasma) / 0.16), transparent 70%),
+      radial-gradient(circle at 20% 30%, rgb(var(--brand) / 0.1), transparent 55%),
+      radial-gradient(1px 1px at 18% 62%, rgb(var(--content) / 0.3), transparent 100%),
+      radial-gradient(1px 1px at 71% 24%, rgb(var(--content) / 0.22), transparent 100%);
+    --panel-texture-size: auto, auto, 90px 90px, 140px 140px;
+    /* Same structure and the same object as the dark palette — a black hole,
+       not a lit inverse of one. It works on a pale page for the reason it works
+       anywhere: what you see is the accretion light around it, and that reads
+       against either background. Softened only so the corner is a distant
+       object rather than a hole in the paper. */
+    --page-wash:
+      radial-gradient(120% 80% at 8% -8%, rgb(var(--brand) / 0.16), transparent 58%),
+      radial-gradient(100% 76% at 96% 10%, rgb(var(--space-flare) / 0.16), transparent 62%),
+      radial-gradient(
+        26% 19% at 86% 106%,
+        rgb(0 0 0 / 0.8) 0 28%,
+        rgb(var(--brand) / 0.45) 36%,
+        rgb(var(--space-flare) / 0.3) 48%,
+        transparent 74%
+      );
+
+    --btn-overlay: linear-gradient(180deg, rgb(255 255 255 / 0.42), rgb(7 128 108 / 0.14));
+    --btn-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.6),
+      0 8px 22px -12px rgb(8 90 80 / 0.7);
+    --btn-shadow-active: inset 0 2px 6px rgb(10 60 54 / 0.32);
+    --btn-tracking: 0.12em;
+    --btn-transform: uppercase;
+    --btn-weight: 700;
+    --control-border-width: 1px;
+    --field-shadow: inset 0 1px 3px rgb(40 66 90 / 0.14);
+    --field-shadow-focus: 0 0 18px -4px rgb(var(--brand) / 0.7);
+
+    --postit-radius: 10px;
+    --postit-shadow:
+      inset 0 0 26px rgb(60 130 130 / 0.18),
+      0 16px 30px -18px rgb(14 30 50 / 0.8);
+    --postit-texture: radial-gradient(1px 1px at 30% 40%, rgb(0 0 0 / 0.12), transparent 100%);
+    --postit-texture-size: 26px 26px;
+
+    --ease-ui: cubic-bezier(0.16, 0.84, 0.24, 1);
+    --speed-ui: 240ms;
+    --icon-stroke: 1.8;
+    /* Instrument lettering. Survives a missing display face, which is the
+       whole reason it carries the skin rather than the font stack does. */
+    --heading-transform: uppercase;
+    --heading-tracking: 0.11em;
+
+    /* The two hues either side of the accent. Reused by the orbital loader, the
+       panel rim light, the planet icons and every event horizon. */
+    --space-plasma: 22 150 196;
+    --space-flare: 122 62 212;
+
+    /*
+     * What a star is drawn in.
+     *
+     * Its own token rather than `--content`, which is what the field used to
+     * borrow. On the dark palette that reads correctly — content is near-white,
+     * so stars are white — but on the light one it is near-black ink, and a
+     * near-black speck on a pale page is dirt, not a star. A mid indigo instead:
+     * the field then reads as a star chart printed on paper, which is the right
+     * daylight answer to a sky.
+     */
+    --star-ink: 62 84 152;
+
+    color-scheme: light;
+  }
+
+  [data-skin='space'].dark {
+    /* Not "dark blue" — the void. Everything above it is lit *against* this. */
+    --surface: 2 3 9;
+    --surface-raised: 10 13 27;
+    --surface-sunken: 0 0 3;
+    --edge: 76 90 158;
+    --content: 233 240 255;
+    --content-muted: 152 166 210;
+    --content-faint: 104 118 164;
+    --brand: 45 230 184;
+    --brand-soft: 6 54 46;
+    --brand-contrast: 1 12 10;
+    --positive: 56 226 208;
+    --warning: 255 198 92;
+    --danger: 255 96 138;
+
+    --space-plasma: 96 232 255;
+    --space-flare: 186 128 255;
+    --star-ink: 236 243 255;
+
+    /* A photon line along the top edge of every panel, a hairline of plasma
+       around it, and a shadow deep enough to read as distance. */
+    --shadow-panel:
+      inset 0 1px 0 rgb(var(--space-plasma) / 0.4),
+      0 0 0 1px rgb(var(--space-plasma) / 0.14),
+      0 30px 70px -34px rgb(0 0 0);
+
+    --panel-texture:
+      radial-gradient(120% 70% at 50% -25%, rgb(var(--space-plasma) / 0.16), transparent 70%),
+      radial-gradient(circle at 18% 28%, rgb(var(--space-flare) / 0.2), transparent 58%),
+      radial-gradient(1px 1px at 18% 62%, rgb(255 255 255 / 0.55), transparent 100%),
+      radial-gradient(1px 1px at 71% 24%, rgb(var(--space-plasma) / 0.55), transparent 100%),
+      radial-gradient(1.5px 1.5px at 44% 84%, rgb(var(--space-flare) / 0.45), transparent 100%);
+    --panel-texture-size: auto, auto, 90px 90px, 140px 140px, 210px 210px;
+    /*
+     * Bottom-right: the accretion disc. A bright ring that falls to pure black
+     * at its own centre, which is the only honest way to draw a black hole in
+     * a gradient — the light bends around something that emits nothing. Mint
+     * on the inside edge, violet on the outside, because the disc is hotter
+     * the closer in you look.
+     */
+    --page-wash:
+      radial-gradient(130% 90% at 6% -12%, rgb(var(--brand) / 0.22), transparent 58%),
+      radial-gradient(100% 80% at 98% 6%, rgb(var(--space-flare) / 0.22), transparent 62%),
+      radial-gradient(
+        28% 20% at 86% 108%,
+        rgb(0 0 0) 0 29%,
+        rgb(var(--brand) / 0.9) 33%,
+        rgb(var(--space-plasma) / 0.55) 41%,
+        rgb(var(--space-flare) / 0.4) 52%,
+        transparent 76%
+      );
+
+    --btn-overlay: linear-gradient(180deg, rgb(255 255 255 / 0.16), rgb(0 0 0 / 0.34));
+    --btn-shadow:
+      inset 0 1px 0 rgb(var(--space-plasma) / 0.3),
+      0 0 22px -8px rgb(var(--brand) / 0.75);
+    --btn-shadow-active: inset 0 2px 8px rgb(0 0 0 / 0.6);
+    --field-shadow: inset 0 1px 3px rgb(0 0 0 / 0.6);
+    --postit-shadow:
+      inset 0 0 26px rgb(var(--space-plasma) / 0.14),
+      0 18px 40px -18px rgb(0 0 0);
+
+    color-scheme: dark;
+  }
+
+  * {
+    @apply border-edge;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-surface font-sans text-content antialiased;
+    /* Standalone iOS: keep content clear of the notch and home indicator. */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+      env(safe-area-inset-left);
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* The page-level wash a skin can paint behind everything. One fixed
+     pseudo-element, no per-component cost, and `none` on skins that skip it. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    /* Behind every in-flow element but above the canvas background, so the
+       wash tints the page rather than the content sitting on it. */
+    z-index: -1;
+    pointer-events: none;
+    background-image: var(--page-wash);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: var(--heading-tracking);
+  }
+
+  h1,
+  h2 {
+    text-transform: var(--heading-transform);
+  }
+
+  /*
+   * The CRT wash. One fixed pseudo-element, no per-component cost.
+   *
+   * Deliberately a flat translucent overlay rather than `mix-blend-mode:
+   * overlay`: a full-viewport blended layer forces the browser to read the
+   * composited backdrop on every frame anything underneath moves, which took
+   * the whole terminal skin off the compositor fast path during drags and
+   * route transitions. The tuned alpha below reads the same.
+   */
+  [data-skin='terminal'] body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgb(var(--content) / 0.05) 0px,
+      rgb(var(--content) / 0.05) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+  }
+
+  /* Pixel art must never be resampled smoothly, and the arcade skin treats
+     every bitmap on the board as if it came off a sprite sheet. */
+  [data-skin='pixel'] img {
+    image-rendering: pixelated;
+  }
+
+  /*
+   * Sprite lettering. A single hard pixel of offset, applied at the root and
+   * inherited, is what stops the arcade skin reading as "the terminal with
+   * square corners" on a machine that has no pixel font installed.
+   */
+  [data-skin='pixel'] h1,
+  [data-skin='pixel'] h2,
+  [data-skin='pixel'] h3 {
+    text-shadow: var(--pixel-text-shadow);
+  }
+
+  /*
+   * Lucide draws round caps and joins on smooth curves. Squaring them off and
+   * asking for `crispEdges` turns the same glyph into something that looks
+   * stamped out of a tile sheet — a whole custom icon set's worth of character
+   * for one inherited rule and no extra bytes.
+   */
+  [data-skin='pixel'] svg.lucide {
+    shape-rendering: crispEdges;
+    stroke-linecap: square;
+    stroke-linejoin: miter;
+  }
+
+  /*
+   * The deep field: one seamless star tile behind everything, drifting slowly.
+   *
+   * Every star shares a single 400px tile, and that is the whole trick. Giving
+   * each layer its own tile size — which is the obvious way to fake depth —
+   * turns each one into a grid of one repeated dot, and six such grids at six
+   * spacings read as plaid rather than as a sky. Eight stars scattered inside
+   * one tile read as random, because the only period on screen is a single
+   * 400px square and the eye has no second rhythm to lock onto.
+   *
+   * The drift is exactly one tile in each axis, so the loop restarts on a
+   * frame identical to the one it started from: no jump, ever.
+   *
+   * Density is deliberately low — roughly eighty stars on a 1080p screen. A
+   * background you notice is not a background.
+   *
+   * Both palettes get the same field. The colour comes from `--star-ink`, which
+   * flips from near-white to a mid indigo, so the light theme is a star chart on
+   * pale paper rather than a dark sky someone turned the lights on in — and the
+   * two accent stars stay the accent, which is legible either way.
+   *
+   * `inset` is asymmetric because the drift only ever goes up and left, so the
+   * only extra area worth painting is to the right and below: a quarter less
+   * layer than an even `-20%` inset, for the same coverage.
+   */
+  [data-skin='space'] body::after {
+    content: '';
+    position: fixed;
+    inset: 0 -420px -420px 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.75;
+    background-image:
+      radial-gradient(1.5px 1.5px at 13% 27%, rgb(var(--star-ink) / 0.55), transparent 100%),
+      radial-gradient(1px 1px at 41% 9%, rgb(var(--star-ink) / 0.4), transparent 100%),
+      radial-gradient(1.2px 1.2px at 72% 34%, rgb(var(--space-plasma) / 0.55), transparent 100%),
+      radial-gradient(1px 1px at 27% 61%, rgb(var(--star-ink) / 0.34), transparent 100%),
+      radial-gradient(1.4px 1.4px at 88% 71%, rgb(var(--star-ink) / 0.5), transparent 100%),
+      radial-gradient(1px 1px at 56% 83%, rgb(var(--brand) / 0.45), transparent 100%),
+      radial-gradient(1.1px 1.1px at 8% 88%, rgb(var(--star-ink) / 0.3), transparent 100%),
+      radial-gradient(0.9px 0.9px at 66% 52%, rgb(var(--star-ink) / 0.28), transparent 100%);
+    background-size: 400px 400px;
+    animation: star-drift 200s linear infinite;
+  }
+
+  [data-skin='space'].dark body::after {
+    opacity: 1;
+  }
+
+  /* Exactly one tile, so the last frame of the loop is the first frame of it. */
+  @keyframes star-drift {
+    to {
+      transform: translate3d(-400px, -400px, 0);
+    }
+  }
+
+  /* Respect the user's motion preference everywhere, including Framer Motion. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  ::selection {
+    @apply bg-brand/30;
+  }
+
+  input,
+  textarea,
+  button,
+  select {
+    font: inherit;
+    color: inherit;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply rounded-2xl border bg-surface-raised shadow-panel;
+    border-width: var(--panel-border-width);
+    border-style: var(--panel-border-style);
+    background-image: var(--panel-texture);
+    background-size: var(--panel-texture-size);
+  }
+
+  .field {
+    @apply w-full rounded-xl border bg-surface px-3.5 py-2.5 text-sm outline-none
+      transition placeholder:text-content-faint focus:border-brand focus:ring-2 focus:ring-brand/30;
+    border-width: var(--control-border-width);
+    box-shadow: var(--field-shadow);
+    transition-timing-function: var(--ease-ui);
+    transition-duration: var(--speed-ui);
+  }
+
+  .field:focus {
+    box-shadow: var(--field-shadow-focus);
+  }
+
+  .hairline {
+    @apply border-b border-edge;
+  }
+
+  /*
+   * Skinnable control surfaces.
+   *
+   * Each of these is a hook, not a look: the base rule only carries what every
+   * skin agrees on (the motion curve, the press travel), and the skins below
+   * add their own material. Utilities still win over these declarations by
+   * layer order, which is why every skin override is written at higher
+   * specificity through its `[data-skin]` ancestor.
+   */
+  .ui-btn,
+  .ui-chip,
+  .ui-filter,
+  .ui-segment,
+  .ui-accordion,
+  .ui-card {
+    transition-timing-function: var(--ease-ui);
+    transition-duration: var(--speed-ui);
+  }
+
+  .ui-btn {
+    font-weight: var(--btn-weight);
+    letter-spacing: var(--btn-tracking);
+    text-transform: var(--btn-transform);
+  }
+
+  .ui-btn:active {
+    /* Feeds Tailwind's transform composition rather than replacing it, so the
+       `active:scale` on the button survives the travel. */
+    --tw-translate-y: var(--press-travel);
+  }
+
+  .postit {
+    border-radius: var(--postit-radius);
+    box-shadow: var(--postit-shadow);
+  }
+
+  .postit-grain {
+    background-image: var(--postit-texture);
+    background-size: var(--postit-texture-size);
+  }
+
+  /* Opt-in material for chrome that owns its own background (rails, toolbars). */
+  .ui-textured {
+    background-image: var(--panel-texture);
+    background-size: var(--panel-texture-size);
+  }
+
+  /*
+   * Opts an element into GPU compositing for transform/opacity animation.
+   *
+   * Deliberately no `will-change`: it was previously declared here and applied
+   * to every card, section and panel, which asks the browser to hold a live
+   * compositor layer for each one forever. Framer Motion already sets
+   * `will-change` for the duration of an actual animation and clears it after,
+   * which is the behaviour this class wanted in the first place.
+   */
+  .gpu {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--edge)) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-edge;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* ---------------------------------------------------------------------
+   * Per-skin materials.
+   * --------------------------------------------------------------------- */
+
+  /* PAPER — everything is a cut-out with a hard drop shadow. */
+  [data-skin='paper'] .ui-btn,
+  [data-skin='paper'] .ui-filter {
+    box-shadow: var(--btn-shadow);
+    border-width: var(--control-border-width);
+  }
+
+  [data-skin='paper'] .ui-btn:active,
+  [data-skin='paper'] .ui-filter:active {
+    box-shadow: var(--btn-shadow-active);
+  }
+
+  [data-skin='paper'] .ui-card,
+  [data-skin='paper'] .ui-accordion {
+    border-width: 2px;
+    box-shadow: 4px 4px 0 0 rgb(var(--edge) / 0.75);
+  }
+
+  [data-skin='paper'] .ui-chip {
+    border-width: 2px;
+    font-weight: 700;
+  }
+
+  /* TERMINAL — everything is a lit rectangle on a dark tube. */
+  [data-skin='terminal'] .ui-btn,
+  [data-skin='terminal'] .ui-filter {
+    box-shadow: var(--btn-shadow);
+  }
+
+  [data-skin='terminal'] .ui-btn:hover,
+  [data-skin='terminal'] .ui-filter:hover {
+    box-shadow: 0 0 12px -2px rgb(var(--brand) / 0.75);
+  }
+
+  [data-skin='terminal'] .ui-chip,
+  [data-skin='terminal'] .ui-filter {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  [data-skin='terminal'] .ui-card {
+    box-shadow: inset 0 0 0 1px rgb(var(--brand) / 0.18);
+  }
+
+  [data-skin='terminal'] .ui-accordion::before {
+    content: '>';
+    margin-right: 0.25rem;
+    color: rgb(var(--brand));
+    font-weight: 700;
+  }
+
+  /* VINTAGE — cast plates with a lit top edge; controls sink when pressed. */
+  [data-skin='vintage'] .ui-btn,
+  [data-skin='vintage'] .ui-filter {
+    background-image: var(--btn-overlay);
+    box-shadow: var(--btn-shadow);
+  }
+
+  [data-skin='vintage'] .ui-btn:active,
+  [data-skin='vintage'] .ui-filter:active {
+    box-shadow: var(--btn-shadow-active);
+  }
+
+  [data-skin='vintage'] .ui-card,
+  [data-skin='vintage'] .ui-accordion,
+  [data-skin='vintage'] .ui-segment {
+    background-image: var(--panel-texture);
+    box-shadow:
+      inset 0 0 0 1px rgb(var(--surface-raised)),
+      inset 0 1px 0 rgb(255 255 255 / 0.28);
+    border-width: 2px;
+  }
+
+  [data-skin='vintage'] .ui-chip {
+    background-image: var(--btn-overlay);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.3);
+  }
+
+  /* A rivet at each end of an accordion head — the plate is bolted down. */
+  [data-skin='vintage'] .ui-accordion::after {
+    content: '';
+    position: absolute;
+    inset: 0.4rem 0.5rem auto auto;
+    width: 5px;
+    height: 5px;
+    border-radius: 9999px;
+    background: radial-gradient(circle at 30% 30%, rgb(255 255 255 / 0.75), rgb(var(--edge)));
+  }
+
+  /*
+   * PIXEL — nine-slice tiles with the corner pixels knocked out.
+   *
+   * `border-image` rather than `clip-path`: a clip would slice off anything a
+   * panel legitimately hangs outside itself (a popover, the folded corner of a
+   * Post-it, the note author card), and it would also force the browser to
+   * rasterise a mask for every box on the page. A border-image only paints the
+   * border ring, so a card keeps its overflow and the frame still loses its
+   * corners.
+   */
+  [data-skin='pixel'] .panel,
+  [data-skin='pixel'] .ui-btn,
+  [data-skin='pixel'] .ui-filter,
+  [data-skin='pixel'] .ui-chip,
+  [data-skin='pixel'] .ui-card,
+  [data-skin='pixel'] .ui-accordion,
+  [data-skin='pixel'] .ui-segment {
+    border-style: solid;
+    border-image-source: var(--pixel-frame);
+    border-image-slice: 4;
+    border-image-repeat: stretch;
+    border-image-width: 1;
+  }
+
+  [data-skin='pixel'] .ui-btn,
+  [data-skin='pixel'] .ui-filter,
+  [data-skin='pixel'] .ui-chip {
+    border-width: var(--control-border-width);
+    box-shadow: var(--btn-shadow);
+  }
+
+  [data-skin='pixel'] .ui-btn:active,
+  [data-skin='pixel'] .ui-filter:active {
+    box-shadow: var(--btn-shadow-active);
+  }
+
+  [data-skin='pixel'] .ui-card,
+  [data-skin='pixel'] .ui-accordion,
+  [data-skin='pixel'] .ui-segment {
+    border-width: 4px;
+    box-shadow: 6px 6px 0 0 rgb(var(--edge) / 0.75);
+    background-image: var(--panel-texture);
+    background-size: var(--panel-texture-size);
+  }
+
+  [data-skin='pixel'] .ui-chip {
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+  }
+
+  /* Sprite text on the controls too, so labels read as part of the tile. */
+  [data-skin='pixel'] .ui-btn,
+  [data-skin='pixel'] .ui-chip {
+    text-shadow: var(--pixel-text-shadow);
+  }
+
+  /* A chunky square thumb — a rounded scrollbar gave the arcade away. */
+  [data-skin='pixel'] .scrollbar-thin {
+    scrollbar-width: auto;
+  }
+
+  [data-skin='pixel'] .scrollbar-thin::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+
+  [data-skin='pixel'] .scrollbar-thin::-webkit-scrollbar-thumb {
+    border-radius: 0;
+    border: 2px solid rgb(var(--surface));
+    background: rgb(var(--brand));
+  }
+
+  /*
+   * SPACE — lit glass over the void.
+   *
+   * Panels get a plasma rim light along the top edge and a faint outer bloom,
+   * so a card reads as an illuminated instrument rather than a flat sheet. The
+   * accent is the hottest thing on screen, so anything wearing it glows.
+   */
+  [data-skin='space'] .ui-btn,
+  [data-skin='space'] .ui-filter,
+  [data-skin='space'] .ui-chip {
+    background-image: var(--btn-overlay);
+    box-shadow: var(--btn-shadow);
+  }
+
+  [data-skin='space'] .ui-btn:active,
+  [data-skin='space'] .ui-filter:active {
+    box-shadow: var(--btn-shadow-active);
+  }
+
+  [data-skin='space'] .ui-btn:hover,
+  [data-skin='space'] .ui-filter:hover {
+    box-shadow:
+      inset 0 1px 0 rgb(var(--space-plasma) / 0.45),
+      0 0 26px -6px rgb(var(--brand) / 0.95);
+  }
+
+  [data-skin='space'] .ui-card,
+  [data-skin='space'] .ui-accordion,
+  [data-skin='space'] .ui-segment {
+    background-image: var(--panel-texture);
+    background-size: var(--panel-texture-size);
+    box-shadow:
+      inset 0 1px 0 rgb(var(--space-plasma) / 0.28),
+      0 0 0 1px rgb(var(--space-plasma) / 0.1);
+  }
+
+  /* The horizon line: a plasma sweep across the top of every accordion head,
+     brightest in the middle, the way a lit rim catches a curved surface. */
+  [data-skin='space'] .ui-accordion::before {
+    content: '';
+    position: absolute;
+    inset: 0 12% auto 12%;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(var(--space-plasma) / 0.85),
+      rgb(var(--brand) / 0.9),
+      rgb(var(--space-plasma) / 0.85),
+      transparent
+    );
+  }
+
+  /* ---------------------------------------------------------------------
+   * The nav rails.
+   *
+   * `.nav-rail` is a hook the three hidden menus wear so a skin can own what
+   * the chrome around the page is made of. Only the deep field uses it so far:
+   * there, the edge a rail shares with the page is the rim of a gravity well,
+   * and the panel darkens towards it.
+   * --------------------------------------------------------------------- */
+  [data-skin='space'] .nav-rail {
+    border-color: rgb(var(--space-plasma) / 0.22);
+  }
+
+  /*
+   * The well itself: black at the seam, falling off into the panel, with the
+   * accretion colours caught along the edge. One gradient, no extra node.
+   *
+   * `z-index: -1` rather than a positive layer with the content lifted above
+   * it: every rail is already a stacking context (`.gpu`), so a negative layer
+   * paints over the panel's own background and under everything in it —
+   * without this pseudo-element having any opinion about its siblings, two of
+   * which are absolutely positioned and would break if they were re-stacked.
+   */
+  [data-skin='space'] .nav-rail::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  [data-skin='space'] .nav-rail--left::after {
+    inset: 0 0 0 auto;
+    width: 120px;
+    background:
+      radial-gradient(
+        58% 34% at 100% 50%,
+        rgb(0 0 0 / 0.92) 0 34%,
+        rgb(var(--brand) / 0.5) 40%,
+        rgb(var(--space-flare) / 0.28) 52%,
+        transparent 76%
+      );
+  }
+
+  [data-skin='space'] .nav-rail--right::after {
+    inset: 0 auto 0 0;
+    width: 120px;
+    background:
+      radial-gradient(
+        58% 34% at 0% 50%,
+        rgb(0 0 0 / 0.92) 0 34%,
+        rgb(var(--brand) / 0.5) 40%,
+        rgb(var(--space-flare) / 0.28) 52%,
+        transparent 76%
+      );
+  }
+
+  [data-skin='space'] .nav-rail--top::after {
+    inset: auto 0 0 0;
+    height: 56px;
+    background:
+      radial-gradient(
+        34% 120% at 50% 100%,
+        rgb(0 0 0 / 0.9) 0 30%,
+        rgb(var(--brand) / 0.45) 38%,
+        rgb(var(--space-flare) / 0.24) 52%,
+        transparent 78%
+      );
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Faint graph paper, used behind the boards. Its grid follows the skin, so
+     the arcade board rules at 4px and the studio one at 28px. */
+  .board-grid {
+    background-image:
+      linear-gradient(rgb(var(--content) / 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(var(--content) / 0.05) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  [data-skin='pixel'] .board-grid {
+    background-size: 16px 16px;
+  }
+
+  [data-skin='vintage'] .board-grid {
+    background-image:
+      repeating-linear-gradient(135deg, rgb(var(--edge) / 0.07) 0 1px, transparent 1px 9px),
+      linear-gradient(rgb(var(--content) / 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(var(--content) / 0.04) 1px, transparent 1px);
+    background-size: auto, 32px 32px, 32px 32px;
+  }
+
+  /* The board is a star chart: a faint coordinate lattice with stars on it. */
+  [data-skin='space'] .board-grid {
+    background-image:
+      radial-gradient(1.5px 1.5px at 22% 34%, rgb(var(--content) / 0.4), transparent 100%),
+      radial-gradient(1px 1px at 76% 68%, rgb(var(--space-plasma) / 0.55), transparent 100%),
+      linear-gradient(rgb(var(--content) / 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(var(--content) / 0.035) 1px, transparent 1px);
+    background-size: 160px 160px, 230px 230px, 44px 44px, 44px 44px;
+  }
+
+  /*
+   * The task type label ("MegaTask", "MicroTask"…).
+   *
+   * Every skin picks its own family, and a 700-weight Nunito or a serif at the
+   * same nominal size is materially wider than Inter — wide enough that the
+   * word used to outgrow the chip it sits in and get clipped. So the tag caps
+   * its own width, never wraps, and each skin that runs a wide face steps the
+   * size down rather than letting the layout absorb it.
+   */
+  .type-tag {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-variant-ligatures: none;
+    letter-spacing: -0.01em;
+  }
+
+  [data-skin='paper'] .type-tag {
+    font-size: 10px;
+    letter-spacing: -0.02em;
+  }
+
+  [data-skin='vintage'] .type-tag {
+    font-size: 10.5px;
+    letter-spacing: 0;
+  }
+
+  /* A pixel face has a huge advance width per glyph; the arcade also uppercases
+     everything, which costs another few percent. The sprite shadow used to come
+     from the chip material the tag no longer wears — it is lettering rather than
+     a box, so it is kept here. */
+  [data-skin='pixel'] .type-tag {
+    font-size: 9.5px;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    text-shadow: var(--pixel-text-shadow);
+  }
+
+  /* Same reason: the CRT writes its labels in caps, and that is type, not a
+     frame. */
+  [data-skin='terminal'] .type-tag {
+    font-size: 10px;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+
+  [data-skin='space'] .type-tag {
+    font-size: 10.5px;
+    letter-spacing: 0.01em;
+  }
+
+  /* Marching dashes: the connect-mode target highlight. */
+  .marching {
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgb(var(--brand) / 0.28) 0 8px,
+      transparent 8px 16px
+    );
+    background-size: 200% 200%;
+    animation: marching 1.4s linear infinite;
+  }
+
+  @keyframes marching {
+    to {
+      background-position: 32px 0;
+    }
+  }
+
+  /*
+   * The flutter on a Post-it marker.
+   *
+   * Was a Framer Motion keyframe loop, which means one JS-driven animation per
+   * card and a React subscription for each. A list of two hundred tasks was
+   * therefore running two hundred rAF callbacks forever. As a CSS animation it
+   * is handed to the compositor once and costs the main thread nothing.
+   */
+  .flutter {
+    animation: flutter 4.5s ease-in-out infinite;
+    transform-origin: 12px 12px;
+  }
+
+  @keyframes flutter {
+    0%,
+    100% {
+      transform: rotate(-6deg);
+    }
+    50% {
+      transform: rotate(-2deg);
+    }
+  }
+
+  /*
+   * The chat tack's idle bob, and the glow underneath it.
+   *
+   * Both are CSS rather than Framer keyframes for a correctness reason, not a
+   * performance one: the tack is dragged, and a repeating JavaScript animation
+   * on the same `y` the drag writes to fights the pointer for the value. On its
+   * own element, with its own property, the bob cannot reach the gesture.
+   */
+  .chat-pin-bob {
+    animation: chat-pin-bob 3.4s ease-in-out infinite;
+  }
+
+  @keyframes chat-pin-bob {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0) rotate(0deg);
+    }
+    50% {
+      transform: translate3d(0, -5px, 0) rotate(6deg);
+    }
+  }
+
+  .chat-pin-halo {
+    animation: chat-pin-halo 2.6s ease-in-out infinite;
+  }
+
+  @keyframes chat-pin-halo {
+    0%,
+    100% {
+      opacity: 0.25;
+    }
+    50% {
+      opacity: 0.6;
+    }
+  }
+}
+
+/* ==========================================================================
+ * Loading, per skin.
+ *
+ * Waiting is part of the interface, so a skin that owns its type, its corners
+ * and its motion curve should own what it looks like while it is thinking too.
+ * Every loader below is pure CSS on two or three nodes and animates transform
+ * or opacity only, so the whole set stays on the compositor.
+ *
+ * Outside `@layer` on purpose: these class names are composed at runtime from
+ * the active skin, so Tailwind's content scan cannot see them and would tree
+ * -shake them out of a layered block.
+ * ========================================================================== */
+/* `inline-grid`, not `grid`: a block-level box with `width: auto` — which is
+   what the terminal's caret loader needs, since it prints a word — would
+   stretch across the whole line instead of hugging its glyph. */
+.skin-loader {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  vertical-align: middle;
+  width: 2.75rem;
+  height: 2.75rem;
+  color: rgb(var(--brand));
+}
+
+.skin-loader--sm {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* Inside a filled control the accent colour is the background, so the loader
+   has to take the label's colour instead of the brand. */
+.skin-loader--inherit {
+  color: inherit;
+}
+
+/* The CRT writes a word, so its box is as wide as the line it prints. */
+[data-skin='terminal'] .skin-loader {
+  width: max-content;
+  height: 1.25rem;
+}
+
+/* Inline, there is no room for the word — just the caret. */
+[data-skin='terminal'] .skin-loader--sm .loader-caret > span {
+  display: none;
+}
+
+[data-skin='terminal'] .skin-loader--sm .loader-caret > b {
+  width: 0.4rem;
+  height: 0.85rem;
+}
+
+.skin-loader--sm .loader-dots > i {
+  width: 0.3rem;
+  height: 0.3rem;
+  border-width: 1px;
+}
+
+.skin-loader--sm .loader-blocks {
+  grid-template-columns: repeat(2, 0.375rem);
+  grid-template-rows: repeat(2, 0.375rem);
+  gap: 2px;
+}
+
+/* --- STUDIO: a quiet arc, the way the rest of the skin is quiet. --------- */
+.loader-arc {
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  border: 2px solid rgb(var(--brand) / 0.18);
+  border-top-color: rgb(var(--brand));
+  animation: loader-spin 720ms cubic-bezier(0.5, 0.1, 0.4, 0.9) infinite;
+}
+
+@keyframes loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --- PAPER: three drops of ink, squashing as they land. ------------------ */
+.loader-dots {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.3rem;
+  height: 100%;
+}
+
+.loader-dots > i {
+  display: block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: currentColor;
+  border: 2px solid rgb(var(--edge));
+  animation: loader-bounce 620ms cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+}
+
+.loader-dots > i:nth-child(2) {
+  animation-delay: 90ms;
+}
+.loader-dots > i:nth-child(3) {
+  animation-delay: 180ms;
+}
+
+@keyframes loader-bounce {
+  0%,
+  100% {
+    transform: translateY(0) scale(1, 0.86);
+  }
+  45% {
+    transform: translateY(-0.7rem) scale(0.9, 1.1);
+  }
+}
+
+/* --- TERMINAL: a block caret, blinking on a hard duty cycle. ------------- */
+.loader-caret {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  color: rgb(var(--brand));
+}
+
+.loader-caret > b {
+  display: block;
+  width: 0.5rem;
+  height: 1rem;
+  background: currentColor;
+  box-shadow: 0 0 10px -1px rgb(var(--brand) / 0.9);
+  animation: loader-blink 900ms steps(1, end) infinite;
+}
+
+@keyframes loader-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* --- VINTAGE: two brass cogs, geared against each other. ----------------- */
+.loader-gears {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  color: rgb(var(--brand));
+}
+
+.loader-gears > svg {
+  position: absolute;
+  transform-origin: 50% 50%;
+}
+
+.loader-gears > svg:first-child {
+  inset: 0 auto auto 0;
+  width: 68%;
+  height: 68%;
+  animation: loader-spin 2.6s linear infinite;
+}
+
+.loader-gears > svg:last-child {
+  inset: auto 0 0 auto;
+  width: 48%;
+  height: 48%;
+  opacity: 0.75;
+  animation: loader-spin-back 1.85s linear infinite;
+}
+
+@keyframes loader-spin-back {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+/* --- PIXEL: a four-block cycle, redrawn frame by frame. ------------------ */
+.loader-blocks {
+  display: grid;
+  grid-template-columns: repeat(2, 0.75rem);
+  grid-template-rows: repeat(2, 0.75rem);
+  gap: 3px;
+}
+
+.loader-blocks > i {
+  display: block;
+  background: currentColor;
+  box-shadow: 2px 2px 0 0 rgb(var(--edge) / 0.55);
+  animation: loader-step 720ms steps(1, end) infinite;
+}
+
+/* Clockwise: top-left, top-right, bottom-right, bottom-left. */
+.loader-blocks > i:nth-child(2) {
+  animation-delay: 180ms;
+}
+.loader-blocks > i:nth-child(4) {
+  animation-delay: 360ms;
+}
+.loader-blocks > i:nth-child(3) {
+  animation-delay: 540ms;
+}
+
+@keyframes loader-step {
+  0%,
+  24% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  25%,
+  100% {
+    opacity: 0.22;
+    transform: scale(0.78);
+  }
+}
+
+/* --- SPACE: a lit core with a satellite on a tilted orbit. --------------- */
+.loader-orbit {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.loader-orbit > .core {
+  position: absolute;
+  inset: 28%;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle at 32% 30%,
+    rgb(var(--space-plasma)),
+    rgb(var(--brand)) 60%,
+    rgb(var(--space-flare)) 100%
+  );
+  box-shadow: 0 0 18px -2px rgb(var(--space-plasma) / 0.85);
+  animation: loader-pulse 2.4s ease-in-out infinite;
+}
+
+.loader-orbit > .ring {
+  position: absolute;
+  inset: 4%;
+  border-radius: 9999px;
+  border: 1px dashed rgb(var(--space-plasma) / 0.45);
+  transform: rotate(-18deg) scaleY(0.42);
+}
+
+/* The satellite rides a full-size rotating frame and sits on its edge, which
+   is one transform instead of an animated path. */
+.loader-orbit > .sat {
+  position: absolute;
+  inset: 0;
+  animation: loader-spin 1.6s linear infinite;
+}
+
+.loader-orbit > .sat::before {
+  content: '';
+  position: absolute;
+  top: 2%;
+  left: 50%;
+  width: 0.35rem;
+  height: 0.35rem;
+  margin-left: -0.175rem;
+  border-radius: 9999px;
+  background: rgb(var(--space-flare));
+  box-shadow: 0 0 10px 1px rgb(var(--space-flare) / 0.9);
+}
+
+@keyframes loader-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.92;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
+
+/* ==========================================================================
+ * Placeholder blocks, per skin.
+ *
+ * The sheen that sweeps a skeleton is the same idea as the loader: it should
+ * be made of whatever the skin is made of. One transform-animated child, so a
+ * page full of placeholders is still one compositor job.
+ * ========================================================================== */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  background: rgb(var(--surface-sunken));
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.1), transparent);
+  animation: skeleton-sweep 1.6s infinite;
+}
+
+@keyframes skeleton-sweep {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+[data-skin='terminal'] .skeleton {
+  background:
+    repeating-linear-gradient(to bottom, rgb(var(--brand) / 0.1) 0 1px, transparent 1px 4px),
+    rgb(var(--surface-sunken));
+}
+
+[data-skin='terminal'] .skeleton::after {
+  background: linear-gradient(90deg, transparent, rgb(var(--brand) / 0.3), transparent);
+}
+
+/* Stepped, not swept: the arcade does not own a gradient. */
+[data-skin='pixel'] .skeleton {
+  border-radius: 0;
+  background:
+    repeating-conic-gradient(rgb(var(--content) / 0.07) 0% 25%, transparent 0% 50%) 0 0 / 8px 8px,
+    rgb(var(--surface-sunken));
+}
+
+[data-skin='pixel'] .skeleton::after {
+  background: linear-gradient(90deg, transparent 0 40%, rgb(var(--brand) / 0.28) 40% 60%, transparent 60%);
+  animation: skeleton-sweep 1.2s steps(6, end) infinite;
+}
+
+[data-skin='vintage'] .skeleton::after {
+  background: linear-gradient(90deg, transparent, rgb(255 240 205 / 0.34), transparent);
+  animation-duration: 2.2s;
+}
+
+[data-skin='space'] .skeleton::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(var(--space-plasma) / 0.24),
+    rgb(var(--space-flare) / 0.18),
+    transparent
+  );
+  animation-duration: 2s;
+}
+
+[data-skin='paper'] .skeleton {
+  border: 2px solid rgb(var(--edge) / 0.35);
+}
+
+/*
+ * Icon weight, per skin.
+ *
+ * A hairline glyph belongs to the CRT and a fat one to the arcade, and Lucide
+ * puts `stroke-width` on the <svg> root only — so one inherited rule reaches
+ * every icon in the app without touching a single component.
+ *
+ * Two deliberate details:
+ *   - `[stroke-width='2']` is Lucide's default, so this only re-weights icons
+ *     that never asked for a particular weight. A glyph drawn at 2.8 or 4 on
+ *     purpose (a tick, a plus) keeps the weight its component chose.
+ *   - It sits outside `@layer`. Tailwind tree-shakes rules inside its layers
+ *     against the content scan, and `lucide` is a class added at runtime from
+ *     inside node_modules — so in a layer this rule is compiled straight out of
+ *     the bundle.
+ */
+svg.lucide[stroke-width='2'] {
+  stroke-width: var(--icon-stroke);
+}

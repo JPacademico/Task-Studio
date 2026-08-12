@@ -1,0 +1,271 @@
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useParams } from 'react-router-dom';
+import {
+  BarChart3,
+  KanbanSquare,
+  MessageCircle,
+  PenTool,
+  Pin,
+  Plus,
+  Sparkles,
+  Users,
+} from 'lucide-react';
+
+import { useProjectRoom } from '@/app/providers/realtime-provider';
+import { useProject, useTogglePin } from '@/entities/project/model/queries';
+import {
+  useDeleteTask,
+  useTasks,
+  useToggleMyCompletion,
+  useToggleTaskPin,
+  useUpdateTaskStatus,
+} from '@/entities/task/model/queries';
+import type { ListTasksParams, Task } from '@/entities/task/model/types';
+import { AiPanel } from '@/features/ai-suggestions/ui/ai-panel';
+import { TaskBoard } from '@/features/dnd-board/ui/task-board';
+import { useChatDock } from '@/features/project-chat-dock/model/chat-dock.store';
+import { useProjectChatUnread } from '@/features/project-chat-dock/ui/chat-dock';
+import { RosterPanel } from '@/features/roster/ui/roster-panel';
+import { TaskComposer } from '@/features/task-management/ui/task-composer';
+import { TaskDetailModal } from '@/features/task-management/ui/task-detail-modal';
+import { TaskFilters } from '@/features/task-management/ui/task-filters';
+import {
+  LayoutSwitcher,
+  TaskCalendarView,
+  TaskListView,
+  TaskSprintView,
+  useTaskLayout,
+} from '@/features/task-views';
+import { cn } from '@/shared/lib/cn';
+import { Avatar, Button, PageLoader, Segmented } from '@/shared/ui';
+import { ProjectDashboard } from '@/widgets/project-dashboard/ui/project-dashboard';
+import { Whiteboard } from '@/widgets/whiteboard/ui/whiteboard';
+
+type Tab = 'board' | 'dashboard' | 'roster' | 'whiteboard' | 'ai';
+
+const TABS: { value: Tab; label: string; icon: ReactNode }[] = [
+  { value: 'board', label: 'Board', icon: <KanbanSquare className="h-3 w-3" /> },
+  { value: 'dashboard', label: 'Metrics', icon: <BarChart3 className="h-3 w-3" /> },
+  { value: 'roster', label: 'Roster', icon: <Users className="h-3 w-3" /> },
+  { value: 'whiteboard', label: 'Whiteboard', icon: <PenTool className="h-3 w-3" /> },
+  { value: 'ai', label: 'Assistant', icon: <Sparkles className="h-3 w-3" /> },
+];
+
+/**
+ * The project workspace. Joining the socket room here is what makes chat,
+ * whiteboard strokes and teammates' task edits arrive live.
+ */
+const ProjectPage = () => {
+  const { projectId } = useParams<{ projectId: string }>();
+  useProjectRoom(projectId);
+
+  const [tab, setTab] = useState<Tab>('board');
+  const [filters, setFilters] = useState<ListTasksParams>({ scope: 'all' });
+  const [composerTask, setComposerTask] = useState<Task | null>(null);
+  const [isComposerOpen, setIsComposerOpen] = useState(false);
+  const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
+
+  /*
+   * The chat window belongs to the app shell, not to this page — that is what
+   * lets a pinned conversation follow the user off the project. This page only
+   * drives it: it opens it, it keeps the title in step with a rename, and it
+   * takes it down again on the way out *unless* the user has pinned it.
+   */
+  const openChat = useChatDock((state) => state.open);
+  const closeChat = useChatDock((state) => state.close);
+  const syncChatName = useChatDock((state) => state.syncName);
+  const isChatOpen = useChatDock(
+    (state) => state.isOpen && state.projectId === projectId,
+  );
+  const chatUnread = useProjectChatUnread(projectId);
+
+  const { data: project, isLoading } = useProject(projectId);
+  const { data: tasks = [] } = useTasks({ ...filters, projectId });
+
+  const togglePin = useTogglePin();
+  const updateStatus = useUpdateTaskStatus();
+  const toggleCompletion = useToggleMyCompletion();
+  const toggleTaskPin = useToggleTaskPin();
+  const deleteTask = useDeleteTask();
+
+  const { layout, setLayout, options: layoutOptions } = useTaskLayout('project');
+
+  useEffect(() => {
+    if (projectId && project?.name) syncChatName(projectId, project.name);
+  }, [project?.name, projectId, syncChatName]);
+
+  // Leaving the project closes its chat — unless the pin is in, which is the
+  // entire point of the pin.
+  useEffect(
+    () => () => {
+      const dock = useChatDock.getState();
+      if (!dock.isPinned) dock.close();
+    },
+    [],
+  );
+
+  // One object shared by every layout, so switching shape never changes what a
+  // card can do — and so a new view is a rendering decision, not a rewiring.
+  // Keyed off the `mutate` functions rather than the mutation objects: React
+  // Query hands back a fresh object every render, so depending on those would
+  // rebuild this every time and defeat the memo on the cards below.
+  const taskHandlers = useMemo(
+    () => ({
+      onOpen: (task: Task) => setDetailTaskId(task.id),
+      onToggleComplete: (task: Task) =>
+        toggleCompletion.mutate({ taskId: task.id, completed: !task.isCompletedByMe }),
+      onTogglePin: (task: Task) =>
+        toggleTaskPin.mutate({ taskId: task.id, pinned: !task.isPinned }),
+      onDelete: (task: Task) => deleteTask.mutate(task.id),
+    }),
+    [deleteTask.mutate, toggleCompletion.mutate, toggleTaskPin.mutate],
+  );
+
+  if (isLoading || !project || !projectId) return <PageLoader label="Opening project" />;
+
+  const canManage = project.myRole === 'OWNER' || project.myRole === 'ADMIN';
+
+  return (
+    <div className="space-y-4 sm:space-y-6">
+      <header className="space-y-3 sm:space-y-4">
+        <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
+          <div className="flex min-w-0 items-start gap-2.5 sm:gap-3">
+            <span
+              aria-hidden
+              className="mt-1 h-9 w-1.5 rounded-full sm:h-10"
+              style={{ backgroundColor: project.color }}
+            />
+            <div className="min-w-0 space-y-0.5 sm:space-y-1">
+              <p className="text-[10px] uppercase tracking-[0.18em] text-content-faint sm:text-xs">
+                {project.myRole.toLowerCase()} · {project.roster.length} member(s)
+              </p>
+              <h1 className="truncate text-xl font-semibold tracking-tight sm:text-2xl">
+                {project.name}
+              </h1>
+              {project.description && (
+                <p className="line-clamp-2 max-w-2xl text-sm leading-relaxed text-content-muted sm:line-clamp-none">
+                  {project.description}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="mr-1 hidden -space-x-2 sm:flex">
+              {project.roster.slice(0, 5).map((member) => (
+                <Avatar
+                  key={member.id}
+                  name={member.displayName}
+                  src={member.avatarUrl}
+                  size="sm"
+                />
+              ))}
+            </div>
+
+            {/* The launcher lives here rather than in a floating bubble, which
+                used to sit on top of whichever tab was open. The window it
+                opens is mounted by the shell — pin it and it stays with you
+                after you leave this page. */}
+            <Button
+              variant={isChatOpen ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() =>
+                isChatOpen ? closeChat() : openChat(projectId, project.name)
+              }
+              className="relative"
+              aria-pressed={isChatOpen}
+            >
+              <MessageCircle className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Chat</span>
+              {chatUnread > 0 && !isChatOpen && (
+                <span className="absolute -right-1.5 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-danger px-1 text-[9px] font-bold text-white">
+                  {chatUnread > 9 ? '9+' : chatUnread}
+                </span>
+              )}
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={project.isPinned ? 'Unpin project' : 'Pin project'}
+              onClick={() => togglePin.mutate({ projectId, pinned: !project.isPinned })}
+              className={cn(project.isPinned && 'text-brand')}
+            >
+              <Pin className={cn('h-4 w-4', project.isPinned && 'fill-current')} />
+            </Button>
+
+            {canManage && (
+              <Button
+                onClick={() => {
+                  setComposerTask(null);
+                  setIsComposerOpen(true);
+                }}
+              >
+                <Plus className="h-4 w-4" strokeWidth={2.6} />
+                <span className="hidden sm:inline">New task</span>
+                <span className="sm:hidden">Task</span>
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <Segmented value={tab} options={TABS} onChange={setTab} className="flex-wrap" />
+      </header>
+
+      {tab === 'board' && (
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <TaskFilters value={filters} onChange={setFilters} />
+            <LayoutSwitcher
+              value={layout}
+              options={layoutOptions}
+              onChange={setLayout}
+              className="ml-auto"
+            />
+          </div>
+
+          {layout === 'board' && (
+            <TaskBoard
+              tasks={tasks}
+              onStatusChange={(taskId, status) => updateStatus.mutate({ taskId, status })}
+              {...taskHandlers}
+              // Mirrors the API rule exactly: assignees, or an owner/admin.
+              canChangeStatus={(task) => task.isMine || canManage}
+            />
+          )}
+          {layout === 'sprint' && <TaskSprintView tasks={tasks} {...taskHandlers} />}
+          {layout === 'list' && <TaskListView tasks={tasks} {...taskHandlers} />}
+          {layout === 'calendar' && <TaskCalendarView tasks={tasks} {...taskHandlers} />}
+        </div>
+      )}
+
+      {tab === 'dashboard' && <ProjectDashboard projectId={projectId} />}
+      {tab === 'roster' && <RosterPanel projectId={projectId} canManage={canManage} />}
+      {tab === 'whiteboard' && <Whiteboard projectId={projectId} canClear={canManage} />}
+      {tab === 'ai' && <AiPanel projectId={projectId} />}
+
+      <TaskComposer
+        isOpen={isComposerOpen}
+        onClose={() => {
+          setIsComposerOpen(false);
+          setComposerTask(null);
+        }}
+        projectId={projectId}
+        roster={project.roster}
+        task={composerTask}
+      />
+
+      <TaskDetailModal
+        taskId={detailTaskId}
+        onClose={() => setDetailTaskId(null)}
+        onEdit={(task) => {
+          setDetailTaskId(null);
+          setComposerTask(task);
+          setIsComposerOpen(true);
+        }}
+      />
+    </div>
+  );
+};
+
+export default ProjectPage;

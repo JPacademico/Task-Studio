@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6366f1"/>
+      <stop offset="1" stop-color="#4f46e5"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fde08a"/>
+      <stop offset="1" stop-color="#facc5a"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="64" height="64" rx="14" fill="url(#tile)"/>
+
+  <!-- The sheet, with its bottom-right corner peeled away. -->
+  <g transform="rotate(-4 32 32)">
+    <path d="M10 9h44v33L44 55H10V9Z" fill="url(#paper)"/>
+    <path d="M44 55V42h10L44 55Z" fill="#e1aa34"/>
+    <g stroke="#7c5c14" stroke-width="3.6" stroke-linecap="round" opacity="0.85">
+      <line x1="18" y1="21" x2="46" y2="21"/>
+      <line x1="18" y1="30" x2="46" y2="30"/>
+      <line x1="18" y1="39" x2="38" y2="39"/>
+    </g>
+  </g>
+</svg>

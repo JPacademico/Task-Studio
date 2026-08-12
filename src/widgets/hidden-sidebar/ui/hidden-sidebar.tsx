@@ -1,0 +1,342 @@
+import { useEffect, useState } from 'react';
+import { NavLink } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import {
+  CalendarDays,
+  LayoutDashboard,
+  Mail,
+  Settings,
+  StickyNote,
+  Trash2,
+  type LucideIcon,
+} from 'lucide-react';
+
+import { useMyInvitations } from '@/entities/project/model/queries';
+import { useCurrentUser } from '@/features/auth/model/session.store';
+import { useTearOff } from '@/features/floating-shortcuts/lib/use-tear-off';
+import {
+  useFloatingShortcuts,
+  type ShortcutIcon,
+} from '@/features/floating-shortcuts/model/shortcuts.store';
+import { TearOffGhost } from '@/features/floating-shortcuts/ui/tear-off-ghost';
+import { cn } from '@/shared/lib/cn';
+import { useEdgeReveal } from '@/shared/lib/use-edge-reveal';
+import { useIsTouchDevice } from '@/shared/lib/hooks';
+import { useNavPreferences } from '@/shared/lib/nav-preferences.store';
+import { Avatar, EdgeAffordance, NavGlyph, NavPinButton, StudioMark } from '@/shared/ui';
+
+interface NavItem {
+  to: string;
+  label: string;
+  icon: LucideIcon;
+  /** Key the pinned copy stores, since a component cannot be serialised. */
+  shortcutIcon: ShortcutIcon;
+  end?: boolean;
+  /** Short line under the label — only rendered in the primary group. */
+  hint?: string;
+}
+
+const GROUPS: { heading: string; items: NavItem[] }[] = [
+  {
+    heading: 'Workspace',
+    items: [
+      {
+        to: '/',
+        label: 'Dashboard',
+        icon: LayoutDashboard,
+        shortcutIcon: 'dashboard',
+        end: true,
+        hint: 'Projects & metrics',
+      },
+      {
+        to: '/tasks',
+        label: 'Task menu',
+        icon: CalendarDays,
+        shortcutIcon: 'tasks',
+        hint: 'Your day, by hour',
+      },
+      {
+        to: '/notes',
+        label: 'Notes board',
+        icon: StickyNote,
+        shortcutIcon: 'notes',
+        hint: 'Your Post-it desk',
+      },
+    ],
+  },
+  {
+    heading: 'Manage',
+    items: [
+      { to: '/invitations', label: 'Invitations', icon: Mail, shortcutIcon: 'invitations' },
+      { to: '/recycle-bin', label: 'Recycle bin', icon: Trash2, shortcutIcon: 'recycle' },
+      { to: '/settings', label: 'Settings', icon: Settings, shortcutIcon: 'settings' },
+    ],
+  },
+];
+
+interface SidebarLinkProps {
+  item: NavItem;
+  badge?: number;
+  isTouch: boolean;
+  onNavigate?: () => void;
+  /** Lets the rail stay open while a row is being pulled out of it. */
+  onTearingChange: (isTearing: boolean) => void;
+}
+
+/**
+ * One menu row — and, on a pointer device, something you can pull off the rail.
+ *
+ * Dragging it out drops a pinned copy wherever it is released; the row itself
+ * never moves, so it can never be clipped by the nav's own scroll box.
+ */
+const SidebarLink = ({ item, badge, isTouch, onNavigate, onTearingChange }: SidebarLinkProps) => {
+  const addShortcut = useFloatingShortcuts((state) => state.add);
+  const isPinnedOut = useFloatingShortcuts((state) =>
+    state.items.some((entry) => entry.id === `nav:${item.to}`),
+  );
+
+  const { bind, ghost } = useTearOff({
+    enabled: !isTouch,
+    onTearOff: (point) =>
+      addShortcut({
+        id: `nav:${item.to}`,
+        kind: 'nav',
+        to: item.to,
+        label: item.label,
+        icon: item.shortcutIcon,
+        x: point.x - 90,
+        y: point.y - 22,
+      }),
+  });
+
+  // Mirror the gesture up so the rail does not slide shut under the pointer.
+  useEffect(() => onTearingChange(Boolean(ghost)), [ghost, onTearingChange]);
+
+  return (
+    <>
+      <NavLink
+        to={item.to}
+        end={item.end}
+        onClick={isTouch ? onNavigate : undefined}
+        title={isTouch ? undefined : 'Drag me out to pin this anywhere on screen'}
+        {...bind}
+        className={({ isActive }) =>
+          cn(
+            'group relative flex items-center gap-3 rounded-2xl px-3 py-2.5',
+            'transition-colors duration-150',
+            // Press-and-drag has to beat the browser's own text selection, or
+            // the gesture turns into a highlight halfway through the label.
+            !isTouch && 'cursor-grab select-none active:cursor-grabbing',
+            isActive
+              ? 'text-content'
+              : 'text-content-muted hover:bg-surface-sunken/70 hover:text-content',
+          )
+        }
+      >
+        {({ isActive }) => (
+          <>
+            {isActive && (
+              // One shared element slides between items instead of
+              // each row cross-fading its own background.
+              <motion.span
+                layoutId="sidebar-active"
+                transition={{ type: 'spring', stiffness: 520, damping: 42 }}
+                className="absolute inset-0 rounded-2xl border border-brand/25 bg-brand/12"
+              />
+            )}
+
+            <span
+              className={cn(
+                'relative grid h-8 w-8 shrink-0 place-items-center rounded-xl transition-colors duration-150',
+                isActive
+                  ? 'bg-brand text-brand-contrast shadow-[0_6px_16px_-8px_rgb(var(--brand)/0.9)]'
+                  : 'bg-surface-sunken text-content-faint group-hover:text-content',
+              )}
+            >
+              {/* The skin decides what a destination looks like — the deep
+                  field draws these as planets rather than line icons. */}
+              <NavGlyph glyph={item.shortcutIcon} fallback={item.icon} className="h-4 w-4" />
+            </span>
+
+            <span className="relative min-w-0 flex-1">
+              <span
+                className={cn('block truncate text-sm', isActive ? 'font-semibold' : 'font-medium')}
+              >
+                {item.label}
+              </span>
+              {item.hint && (
+                <span className="block truncate text-[10px] text-content-faint">{item.hint}</span>
+              )}
+            </span>
+
+            {/* A copy of this row is already pinned to the screen somewhere. */}
+            {isPinnedOut && (
+              <span
+                aria-hidden
+                title="Pinned to the screen — use its return arrow to drop the copy"
+                className="relative h-1.5 w-1.5 shrink-0 rounded-full bg-brand"
+              />
+            )}
+
+            {badge !== undefined && badge > 0 && (
+              <span className="relative grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1.5 text-[10px] font-bold text-brand-contrast">
+                {badge}
+              </span>
+            )}
+          </>
+        )}
+      </NavLink>
+
+      <TearOffGhost point={ghost} label={item.label} icon={item.icon} />
+    </>
+  );
+};
+
+interface HiddenSidebarProps {
+  /** Mobile drawer state, driven by the top bar's menu button. */
+  isMobileOpen: boolean;
+  onMobileClose: () => void;
+}
+
+/**
+ * Desktop: a rail that stays hidden and slides out when the pointer approaches
+ * the left edge, unless the user pins it open. Mobile: a normal drawer, since
+ * hover does not exist there.
+ *
+ * The slide is a single `transform` animation on a fixed-position element, so it
+ * never triggers layout on the page content.
+ */
+export const HiddenSidebar = ({ isMobileOpen, onMobileClose }: HiddenSidebarProps) => {
+  const isTouch = useIsTouchDevice();
+  const user = useCurrentUser();
+
+  const isPinned = useNavPreferences((state) => state.pinned.left);
+  const togglePin = useNavPreferences((state) => state.togglePin);
+
+  // A row being dragged out takes the pointer off the panel, which would
+  // otherwise read as "the user left" and slide the rail shut mid-gesture.
+  const [isTearing, setIsTearing] = useState(false);
+
+  const { isRevealed, pin, unpin, close } = useEdgeReveal({
+    edge: 'left',
+    threshold: 22,
+    hideDistance: 300,
+    enabled: !isTouch,
+    locked: isPinned || isTearing,
+  });
+
+  const { data: invitations } = useMyInvitations();
+  const pendingCount = invitations?.length ?? 0;
+
+  const isOpen = isTouch ? isMobileOpen : isRevealed;
+
+  return (
+    <>
+      {!isTouch && (
+        <EdgeAffordance edge="left" isHidden={!isOpen} label="Move the pointer here for the menu" />
+      )}
+
+      {isTouch && isMobileOpen && (
+        <motion.div
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onMobileClose}
+        />
+      )}
+
+      <motion.aside
+        onMouseEnter={isTouch ? undefined : pin}
+        onMouseLeave={
+          isTouch
+            ? undefined
+            : () => {
+                if (isTearing) return;
+                unpin();
+                close();
+              }
+        }
+        initial={false}
+        animate={{ x: isOpen ? 0 : 'calc(-100% - 12px)' }}
+        transition={{ type: 'spring', stiffness: 460, damping: 40, mass: 0.7 }}
+        className={cn(
+          'nav-rail nav-rail--left ui-textured gpu fixed left-0 top-0 z-50 flex h-full w-[264px] flex-col',
+          // `backdrop-blur-md`, not `-xl`: a full-height blurred panel makes
+          // the browser resample everything behind it on every frame it moves,
+          // and the rail moves on every reveal. At 95% opacity the difference
+          // between a 12px and a 24px blur is invisible; the cost is not.
+          'border-r border-edge bg-surface-raised/95 backdrop-blur-md',
+          // A brand-tinted wash down the rail plus a lit inner edge: the panel
+          // should read as a lit surface, not a flat grey box.
+          'bg-[radial-gradient(120%_60%_at_0%_0%,rgb(var(--brand)/0.16),transparent_62%)]',
+          'shadow-[8px_0_40px_-24px_rgb(0_0_0/0.65)]',
+        )}
+      >
+        {/* Lit inner edge. */}
+        <span
+          aria-hidden
+          className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-brand/45 to-transparent"
+        />
+
+        <header className="flex items-center gap-2.5 px-4 pb-4 pt-5">
+          <span className="relative grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-brand/12 text-brand shadow-[0_8px_20px_-10px_rgb(var(--brand)/0.9)]">
+            <StudioMark className="h-7 w-7" />
+            <span
+              aria-hidden
+              className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-brand/25"
+            />
+          </span>
+
+          <div className="min-w-0 flex-1 leading-tight">
+            <p className="truncate text-sm font-bold tracking-tight">Task Studio</p>
+            <p className="text-[10px] uppercase tracking-[0.16em] text-content-faint">
+              Studio workspace
+            </p>
+          </div>
+
+          {!isTouch && <NavPinButton isPinned={isPinned} onToggle={() => togglePin('left')} />}
+        </header>
+
+        <nav className="scrollbar-thin flex flex-1 flex-col gap-5 overflow-y-auto px-3 pb-3">
+          {GROUPS.map((group) => (
+            <div key={group.heading} className="space-y-1">
+              <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-content-faint">
+                {group.heading}
+              </p>
+
+              {group.items.map((item) => (
+                <SidebarLink
+                  key={item.to}
+                  item={item}
+                  isTouch={isTouch}
+                  badge={item.to === '/invitations' ? pendingCount : undefined}
+                  onNavigate={onMobileClose}
+                  onTearingChange={setIsTearing}
+                />
+              ))}
+            </div>
+          ))}
+        </nav>
+
+        <footer className="border-t border-edge/70 px-4 py-3.5">
+          <div className="flex items-center gap-2.5">
+            <Avatar name={user?.displayName ?? '?'} src={user?.avatarUrl} size="sm" />
+            <div className="min-w-0 flex-1 leading-tight">
+              <p className="truncate text-xs font-semibold">{user?.displayName ?? 'Signed in'}</p>
+              <p className="truncate text-[10px] text-content-faint">{user?.email}</p>
+            </div>
+          </div>
+
+          {!isTouch && (
+            <p className="mt-2.5 text-[10px] leading-relaxed text-content-faint">
+              {isPinned
+                ? 'Pinned open. Tap the pin again to let it hide.'
+                : 'Nudge the screen edge to bring the menus back. Drag an entry out to keep it on screen.'}
+            </p>
+          )}
+        </footer>
+      </motion.aside>
+    </>
+  );
+};
