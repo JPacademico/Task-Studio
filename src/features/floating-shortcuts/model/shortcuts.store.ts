@@ -10,6 +10,7 @@ export type ShortcutIcon =
   | 'invitations'
   | 'recycle'
   | 'settings'
+  | 'themes'
   | 'project';
 
 export interface FloatingShortcut {

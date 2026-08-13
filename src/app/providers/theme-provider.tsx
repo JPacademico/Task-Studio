@@ -52,6 +52,8 @@ const SKIN_ATTRIBUTE: Record<ThemeSkin, string> = {
   VINTAGE: 'vintage',
   PIXEL: 'pixel',
   SPACE: 'space',
+  HAZARD: 'hazard',
+  NEWSPAPER: 'newspaper',
 };
 
 /**

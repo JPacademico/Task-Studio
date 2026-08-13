@@ -693,6 +693,326 @@
     color-scheme: dark;
   }
 
+  /* -----------------------------------------------------------------------
+   * Skin: HAZARD — a containment site with the interface bolted to it.
+   *
+   * The rule this skin follows is that everything on screen is either a
+   * warning or a vessel:
+   *
+   *   - Warnings are stencilled. Condensed uppercase type, hard corners, ink
+   *     black rules, and the yellow/black diagonal that means "do not" in
+   *     every country on earth. `--hazard-stripe` is one gradient reused by the
+   *     rails, the buttons and the avatar band, so the tape reads as the same
+   *     roll of tape wherever it is stuck.
+   *   - Vessels leak. Every card is a tank with sludge pooled in the bottom of
+   *     it, and the meniscus sloshes — one `transform` on one pseudo-element
+   *     per card, so a board full of them is still a single compositor job.
+   *
+   * Light is the day shift: poured concrete, stencil paint, hazard yellow.
+   * Dark is the night shift with the lights off, so the only thing you can see
+   * is what is radioactive — the accent flips from painted yellow to emitted
+   * lime and the sludge becomes the brightest thing on the page.
+   * --------------------------------------------------------------------- */
+  [data-skin='hazard'] {
+    --surface: 226 224 210;
+    --surface-raised: 242 241 230;
+    --surface-sunken: 206 204 188;
+    --edge: 30 30 24;
+    --content: 22 22 16;
+    --content-muted: 84 82 62;
+    --content-faint: 126 124 102;
+    /* Hazard yellow is a *background* colour — it carries black lettering, not
+       white. `--brand-contrast` is what encodes that, and it is what keeps a
+       filled control at 12:1 rather than the 2.4:1 white would give. */
+    --brand: 234 179 8;
+    --brand-soft: 254 240 190;
+    --brand-contrast: 26 24 10;
+    --positive: 101 140 20;
+    --warning: 200 106 8;
+    --danger: 178 20 44;
+
+    --radius-sm: 0.125rem;
+    --radius-md: 0.1875rem;
+    --radius-lg: 0.25rem;
+    --radius-xl: 0.375rem;
+    --radius-2xl: 0.5rem;
+    --radius-3xl: 0.75rem;
+
+    --font-display: 'Oswald', 'Barlow Condensed', 'Arial Narrow', 'Haettenschweiler', Impact,
+      system-ui, sans-serif;
+    --font-sans: 'Roboto Condensed', 'Barlow Semi Condensed', 'Arial Narrow', 'Segoe UI', system-ui,
+      sans-serif;
+    --font-hand: 'Permanent Marker', 'Segoe Marker', 'Bradley Hand', cursive;
+
+    --panel-border-width: 2px;
+    --shadow-panel:
+      0 0 0 1px rgb(var(--edge) / 0.9),
+      4px 4px 0 0 rgb(var(--edge) / 0.28),
+      0 18px 40px -28px rgb(20 20 8 / 0.9);
+    --press-travel: 2px;
+
+    /* Stencil hatching plus a contamination stain that never quite washed out. */
+    --panel-texture:
+      repeating-linear-gradient(
+        45deg,
+        rgb(var(--edge) / 0.045) 0 6px,
+        transparent 6px 14px
+      ),
+      radial-gradient(60% 50% at 88% 8%, rgb(var(--positive) / 0.12), transparent 70%);
+    --panel-texture-size: auto, auto;
+
+    --page-wash:
+      radial-gradient(90% 60% at 50% 108%, rgb(var(--brand) / 0.16), transparent 66%),
+      radial-gradient(50% 40% at 4% 2%, rgb(var(--positive) / 0.1), transparent 70%);
+
+    --btn-overlay: repeating-linear-gradient(
+      45deg,
+      rgb(0 0 0 / 0.16) 0 4px,
+      transparent 4px 10px
+    );
+    --btn-shadow: 3px 3px 0 0 rgb(var(--edge) / 0.9);
+    --btn-shadow-active: 1px 1px 0 0 rgb(var(--edge) / 0.9);
+    --btn-tracking: 0.14em;
+    --btn-transform: uppercase;
+    --btn-weight: 800;
+    --control-border-width: 2px;
+    --field-shadow: inset 0 2px 0 0 rgb(var(--edge) / 0.18);
+    --field-shadow-focus: 0 0 0 2px rgb(var(--brand) / 0.75), 0 0 18px -4px rgb(var(--brand));
+
+    /* A Post-it here is a specimen label: no curl, no bounce, just tape. */
+    --postit-radius: 0px;
+    --postit-shadow:
+      0 0 0 2px rgb(0 0 0 / 0.75),
+      4px 4px 0 0 rgb(0 0 0 / 0.3);
+    --postit-texture: repeating-linear-gradient(
+      45deg,
+      rgb(0 0 0 / 0.06) 0 5px,
+      transparent 5px 12px
+    );
+    --postit-texture-size: auto;
+
+    /* Machinery: it moves when it is told to and stops dead. */
+    --ease-ui: cubic-bezier(0.2, 0, 0, 1);
+    --speed-ui: 130ms;
+    --icon-stroke: 2.6;
+    --heading-transform: uppercase;
+    --heading-tracking: 0.06em;
+
+    /* --- The skin's own materials ---------------------------------------- */
+
+    /* One roll of tape, reused everywhere something must not be crossed. */
+    --hazard-stripe: repeating-linear-gradient(
+      -45deg,
+      rgb(var(--brand)) 0 10px,
+      rgb(var(--edge)) 10px 20px
+    );
+    /* What is in the tanks. Deliberately not the accent: the yellow is paint
+       somebody applied, the sludge is the thing the paint is warning about. */
+    --hazard-sludge: 132 204 22;
+    --hazard-glow: 0 0 18px -2px rgb(var(--hazard-sludge) / 0.55);
+    --hazard-trefoil: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='%23eab308'%3E%3Ccircle cx='60' cy='60' r='12'/%3E%3Cpath d='M37.5 21A45 45 0 0 1 82.5 21L67.5 47A15 15 0 0 0 52.5 47Z'/%3E%3Cpath d='M37.5 21A45 45 0 0 1 82.5 21L67.5 47A15 15 0 0 0 52.5 47Z' transform='rotate(120 60 60)'/%3E%3Cpath d='M37.5 21A45 45 0 0 1 82.5 21L67.5 47A15 15 0 0 0 52.5 47Z' transform='rotate(240 60 60)'/%3E%3C/g%3E%3C/svg%3E");
+
+    color-scheme: light;
+  }
+
+  [data-skin='hazard'].dark {
+    --surface: 10 12 9;
+    --surface-raised: 21 25 19;
+    --surface-sunken: 5 6 5;
+    --edge: 92 110 48;
+    --content: 223 237 209;
+    --content-muted: 150 174 128;
+    --content-faint: 104 126 88;
+    --brand: 163 230 53;
+    --brand-soft: 40 58 12;
+    --brand-contrast: 8 14 4;
+    --positive: 74 222 128;
+    --warning: 250 204 21;
+    --danger: 244 63 94;
+
+    /* Nothing is lit from outside at night — everything that shows is emitting. */
+    --shadow-panel:
+      0 0 0 1px rgb(var(--brand) / 0.35),
+      0 0 26px -10px rgb(var(--hazard-sludge) / 0.6),
+      0 24px 50px -30px rgb(0 0 0);
+    --panel-texture:
+      repeating-linear-gradient(
+        45deg,
+        rgb(var(--brand) / 0.05) 0 6px,
+        transparent 6px 14px
+      ),
+      radial-gradient(60% 50% at 88% 8%, rgb(var(--hazard-sludge) / 0.14), transparent 70%);
+    --page-wash:
+      radial-gradient(90% 62% at 50% 110%, rgb(var(--hazard-sludge) / 0.2), transparent 68%),
+      radial-gradient(50% 40% at 4% 2%, rgb(var(--brand) / 0.12), transparent 70%);
+
+    --btn-overlay: repeating-linear-gradient(
+      45deg,
+      rgb(0 0 0 / 0.3) 0 4px,
+      transparent 4px 10px
+    );
+    --btn-shadow: 3px 3px 0 0 rgb(0 0 0 / 0.85), 0 0 14px -4px rgb(var(--brand) / 0.8);
+    --btn-shadow-active: 1px 1px 0 0 rgb(0 0 0 / 0.85);
+    --field-shadow: inset 0 2px 0 0 rgb(0 0 0 / 0.5);
+    --postit-shadow:
+      0 0 0 2px rgb(0 0 0 / 0.9),
+      4px 4px 0 0 rgb(0 0 0 / 0.6);
+
+    --hazard-sludge: 163 255 42;
+    --hazard-trefoil: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='%23a3e635'%3E%3Ccircle cx='60' cy='60' r='12'/%3E%3Cpath d='M37.5 21A45 45 0 0 1 82.5 21L67.5 47A15 15 0 0 0 52.5 47Z'/%3E%3Cpath d='M37.5 21A45 45 0 0 1 82.5 21L67.5 47A15 15 0 0 0 52.5 47Z' transform='rotate(120 60 60)'/%3E%3Cpath d='M37.5 21A45 45 0 0 1 82.5 21L67.5 47A15 15 0 0 0 52.5 47Z' transform='rotate(240 60 60)'/%3E%3C/g%3E%3C/svg%3E");
+
+    color-scheme: dark;
+  }
+
+  /* -----------------------------------------------------------------------
+   * Skin: NEWSPAPER — the morning edition, printed this hour.
+   *
+   * A newspaper is not "a serif font on beige". It is a *system*: a masthead
+   * rule, a headline that shouts and a deck that does not, ruled columns,
+   * halftone photographs, and a hairline double frame around anything boxed
+   * out of the flow. All of that is here:
+   *
+   *   - Headlines are the loudest thing in the app. `h1`/`h2` set in a
+   *     high-contrast serif, uppercase, with the double rule underneath that
+   *     every front page in the world puts there.
+   *   - Every boxed surface wears the double rule too, drawn as stacked inset
+   *     shadows rather than two elements.
+   *   - The material is halftone: a dot screen over paper fibre, which is what
+   *     newsprint actually looks like at reading distance.
+   *   - One spot colour. Presses ran black plus one plate, and that plate was
+   *     red, so the accent is the only hue on the page.
+   *
+   * Dark is the late edition: the same paper photographed onto microfiche, so
+   * the ink and the stock swap and the spot colour warms to survive it.
+   * --------------------------------------------------------------------- */
+  [data-skin='newspaper'] {
+    --surface: 231 226 214;
+    --surface-raised: 244 240 230;
+    --surface-sunken: 217 211 196;
+    --edge: 26 24 22;
+    --content: 20 18 16;
+    --content-muted: 78 72 66;
+    --content-faint: 124 116 106;
+    --brand: 178 30 34;
+    --brand-soft: 242 216 212;
+    --brand-contrast: 252 250 245;
+    --positive: 42 106 66;
+    --warning: 170 112 18;
+    --danger: 158 24 28;
+
+    /* Print has no rounded corners. */
+    --radius-sm: 0px;
+    --radius-md: 0px;
+    --radius-lg: 0px;
+    --radius-xl: 0px;
+    --radius-2xl: 0px;
+    --radius-3xl: 0px;
+
+    --font-display: 'Playfair Display', 'Bodoni MT', 'Didot', 'Times New Roman', Times, serif;
+    --font-sans: 'Iowan Old Style', Georgia, 'Times New Roman', Times, serif;
+    --font-hand: 'Segoe Script', 'Brush Script MT', cursive;
+
+    --panel-border-width: 1px;
+    /* The double rule: ink, paper, ink. Three stacked insets, no extra node. */
+    --shadow-panel:
+      inset 0 0 0 2px rgb(var(--surface-raised)),
+      inset 0 0 0 3px rgb(var(--edge) / 0.85),
+      0 14px 30px -22px rgb(20 18 16 / 0.7);
+    --press-travel: 1px;
+
+    /* Halftone screen over paper fibre. */
+    --panel-texture:
+      radial-gradient(rgb(var(--edge) / 0.09) 0.5px, transparent 0.6px),
+      repeating-linear-gradient(
+        90deg,
+        rgb(var(--edge) / 0.025) 0 1px,
+        transparent 1px 3px
+      );
+    --panel-texture-size: 3px 3px, auto;
+    --page-wash:
+      radial-gradient(120% 90% at 50% 0%, rgb(var(--edge) / 0.06), transparent 62%),
+      radial-gradient(rgb(var(--edge) / 0.05) 0.5px, transparent 0.6px);
+
+    --btn-overlay: none;
+    --btn-shadow: 2px 2px 0 0 rgb(var(--edge) / 0.85);
+    --btn-shadow-active: 1px 1px 0 0 rgb(var(--edge) / 0.85);
+    --btn-tracking: 0.16em;
+    --btn-transform: uppercase;
+    --btn-weight: 700;
+    --control-border-width: 1px;
+    --field-shadow: inset 0 0 0 1px rgb(var(--edge) / 0.2);
+    --field-shadow-focus: inset 0 0 0 2px rgb(var(--brand) / 0.55);
+
+    /* A clipping, cut out and kept. */
+    --postit-radius: 0px;
+    --postit-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.55),
+      3px 3px 0 0 rgb(0 0 0 / 0.18);
+    --postit-texture: radial-gradient(rgb(0 0 0 / 0.1) 0.5px, transparent 0.6px);
+    --postit-texture-size: 3px 3px;
+
+    /* A page turns; it does not spring. */
+    --ease-ui: cubic-bezier(0.4, 0, 0.2, 1);
+    --speed-ui: 180ms;
+    --icon-stroke: 1.6;
+    --heading-transform: uppercase;
+    --heading-tracking: -0.01em;
+
+    /* --- The skin's own materials ---------------------------------------- */
+
+    /* The rule under a masthead: heavy, hairline, heavy. */
+    --news-rule: linear-gradient(
+      to bottom,
+      rgb(var(--edge)) 0 2px,
+      transparent 2px 4px,
+      rgb(var(--edge)) 4px 5px
+    );
+    --news-halftone: radial-gradient(rgb(var(--edge) / 0.14) 0.5px, transparent 0.6px);
+
+    color-scheme: light;
+  }
+
+  [data-skin='newspaper'].dark {
+    --surface: 18 17 16;
+    --surface-raised: 29 27 25;
+    --surface-sunken: 12 11 10;
+    --edge: 106 99 90;
+    --content: 240 236 226;
+    --content-muted: 176 168 156;
+    --content-faint: 128 120 110;
+    --brand: 232 96 88;
+    --brand-soft: 74 26 24;
+    --brand-contrast: 20 16 14;
+    --positive: 104 190 138;
+    --warning: 224 168 68;
+    --danger: 240 96 96;
+
+    --shadow-panel:
+      inset 0 0 0 2px rgb(var(--surface-raised)),
+      inset 0 0 0 3px rgb(var(--edge) / 0.8),
+      0 18px 36px -24px rgb(0 0 0);
+    --panel-texture:
+      radial-gradient(rgb(255 255 255 / 0.05) 0.5px, transparent 0.6px),
+      repeating-linear-gradient(
+        90deg,
+        rgb(255 255 255 / 0.02) 0 1px,
+        transparent 1px 3px
+      );
+    --page-wash:
+      radial-gradient(120% 90% at 50% 0%, rgb(255 255 255 / 0.04), transparent 62%),
+      radial-gradient(rgb(255 255 255 / 0.035) 0.5px, transparent 0.6px);
+
+    --btn-shadow: 2px 2px 0 0 rgb(0 0 0 / 0.8);
+    --btn-shadow-active: 1px 1px 0 0 rgb(0 0 0 / 0.8);
+    --postit-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.8),
+      3px 3px 0 0 rgb(0 0 0 / 0.5);
+
+    --news-halftone: radial-gradient(rgb(255 255 255 / 0.12) 0.5px, transparent 0.6px);
+
+    color-scheme: dark;
+  }
+
   * {
     @apply border-edge;
   }
@@ -838,6 +1158,63 @@
 
   [data-skin='space'].dark body::after {
     opacity: 1;
+  }
+
+  /*
+   * The trefoil stencilled into the corner of the site.
+   *
+   * One fixed pseudo-element painting one background-image, turning once every
+   * minute and a half. Slow enough that it reads as a warning sign rather than
+   * a spinner, and it is a `transform` so the turn costs nothing.
+   */
+  [data-skin='hazard'] body::after {
+    content: '';
+    position: fixed;
+    right: -60px;
+    bottom: -60px;
+    width: 360px;
+    height: 360px;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.12;
+    background-image: var(--hazard-trefoil);
+    background-size: contain;
+    background-repeat: no-repeat;
+    animation: trefoil-turn 90s linear infinite;
+  }
+
+  [data-skin='hazard'].dark body::after {
+    opacity: 0.16;
+  }
+
+  @keyframes trefoil-turn {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /*
+   * The banner headline.
+   *
+   * Every front page in the world puts a double rule under its masthead, and
+   * that one detail carries the whole skin — it survives a missing display
+   * face, which the serif stack does not. `3px double` is the rule: ink,
+   * paper, ink, in a single border declaration.
+   */
+  [data-skin='newspaper'] h1,
+  [data-skin='newspaper'] h2 {
+    font-weight: 900;
+    border-bottom: 3px double rgb(var(--edge) / 0.8);
+    padding-bottom: 0.3rem;
+  }
+
+  /*
+   * Newsprint could not print a photograph in colour, so neither does this
+   * skin. Slightly short of full grey and with the contrast pushed, which is
+   * what a halftone plate does to a photo.
+   */
+  [data-skin='newspaper'] img {
+    filter: grayscale(0.92) contrast(1.12);
   }
 
   /* Exactly one tile, so the last frame of the loop is the first frame of it. */
@@ -1250,6 +1627,220 @@
       );
   }
 
+  /* ---------------------------------------------------------------------
+   * HAZARD — stencilled warnings and leaking vessels.
+   * --------------------------------------------------------------------- */
+  [data-skin='hazard'] .ui-btn,
+  [data-skin='hazard'] .ui-filter,
+  [data-skin='hazard'] .ui-chip {
+    background-image: var(--btn-overlay);
+    box-shadow: var(--btn-shadow);
+    border-width: var(--control-border-width);
+  }
+
+  [data-skin='hazard'] .ui-btn:active,
+  [data-skin='hazard'] .ui-filter:active {
+    box-shadow: var(--btn-shadow-active);
+  }
+
+  /* Touching a control makes it radioactive. */
+  [data-skin='hazard'] .ui-btn:hover,
+  [data-skin='hazard'] .ui-filter:hover {
+    box-shadow:
+      var(--btn-shadow),
+      0 0 22px -4px rgb(var(--hazard-sludge) / 0.9);
+  }
+
+  [data-skin='hazard'] .ui-chip {
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    font-weight: 700;
+  }
+
+  [data-skin='hazard'] .ui-card,
+  [data-skin='hazard'] .ui-accordion,
+  [data-skin='hazard'] .ui-segment {
+    position: relative;
+    border-width: 2px;
+    background-image: var(--panel-texture);
+    background-size: var(--panel-texture-size);
+    box-shadow: 3px 3px 0 0 rgb(var(--edge) / 0.22);
+  }
+
+  /*
+   * A vessel has to hold what is in it.
+   *
+   * The sludge below is deliberately wider than the card so it has room to
+   * slide, which means the card itself has to do the clipping. Task cards and
+   * gallery cards already clip; the pinned shortcut pill and the sprint header
+   * wear `.ui-card` too and did not, so the wave used to run 24px out of both
+   * ends of them. Nothing wearing this class hangs anything outside its own
+   * box, so containing all of them is safe.
+   */
+  [data-skin='hazard'] .ui-card {
+    overflow: hidden;
+  }
+
+  /*
+   * The tank.
+   *
+   * Every card on this skin has sludge pooled in the bottom of it, with a
+   * meniscus that sloshes from one side to the other. It is a single
+   * pseudo-element carrying two background layers — a repeated blob for the
+   * surface tension and a flat band for the body — animated with one
+   * `transform` of exactly one tile, so the loop is seamless and a board full
+   * of cards is still one compositor job.
+   *
+   * The card clips its own overflow, so the wave slides inside the vessel
+   * rather than out of it. That is also why the element is wider than the card
+   * on both sides: it has somewhere to slide from and to.
+   */
+  [data-skin='hazard'] .ui-card::after {
+    content: '';
+    position: absolute;
+    inset: auto -24px 0 -24px;
+    height: 14px;
+    pointer-events: none;
+    background:
+      radial-gradient(
+          9px 9px at 12px 14px,
+          rgb(var(--hazard-sludge) / 0.9) 8px,
+          transparent 8.5px
+        )
+        repeat-x 0 0 / 24px 14px,
+      linear-gradient(to bottom, transparent 0 5px, rgb(var(--hazard-sludge) / 0.85) 5px);
+    animation: sludge-slosh 7s ease-in-out infinite alternate;
+  }
+
+  /* Exactly one tile each way, so the surface never jumps. */
+  @keyframes sludge-slosh {
+    to {
+      transform: translate3d(24px, 0, 0);
+    }
+  }
+
+  /* A strip of tape down the side of every accordion head. */
+  [data-skin='hazard'] .ui-accordion::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 6px;
+    background: var(--hazard-stripe);
+    background-size: 14px 14px;
+  }
+
+  [data-skin='hazard'] .nav-rail {
+    border-color: rgb(var(--edge));
+  }
+
+  /* The seam a rail shares with the page is taped off. */
+  [data-skin='hazard'] .nav-rail::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+    z-index: -1;
+    background: var(--hazard-stripe);
+    background-size: 18px 18px;
+    opacity: 0.9;
+  }
+
+  [data-skin='hazard'] .nav-rail--left::after {
+    inset: 0 0 0 auto;
+    width: 9px;
+  }
+
+  [data-skin='hazard'] .nav-rail--right::after {
+    inset: 0 auto 0 0;
+    width: 9px;
+  }
+
+  [data-skin='hazard'] .nav-rail--top::after {
+    inset: auto 0 0 0;
+    height: 7px;
+  }
+
+  /* ---------------------------------------------------------------------
+   * NEWSPAPER — double rules, halftone plates and one spot colour.
+   * --------------------------------------------------------------------- */
+  [data-skin='newspaper'] .ui-btn,
+  [data-skin='newspaper'] .ui-filter,
+  [data-skin='newspaper'] .ui-chip {
+    box-shadow: var(--btn-shadow);
+  }
+
+  [data-skin='newspaper'] .ui-btn:active,
+  [data-skin='newspaper'] .ui-filter:active {
+    box-shadow: var(--btn-shadow-active);
+  }
+
+  [data-skin='newspaper'] .ui-chip,
+  [data-skin='newspaper'] .ui-filter {
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  [data-skin='newspaper'] .ui-card,
+  [data-skin='newspaper'] .ui-accordion,
+  [data-skin='newspaper'] .ui-segment {
+    position: relative;
+    background-image: var(--panel-texture);
+    background-size: var(--panel-texture-size);
+    /* Ink, paper, ink — the frame around anything boxed out of the flow. */
+    box-shadow:
+      inset 0 0 0 2px rgb(var(--surface-raised)),
+      inset 0 0 0 3px rgb(var(--edge) / 0.7);
+  }
+
+  /* The spot plate: the one colour the press could run besides black. */
+  [data-skin='newspaper'] .ui-card::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: rgb(var(--brand) / 0.85);
+    pointer-events: none;
+  }
+
+  /* Section heads get the masthead rule the headlines get. */
+  [data-skin='newspaper'] .ui-accordion::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 5px;
+    background: var(--news-rule);
+    pointer-events: none;
+  }
+
+  /* A column rule where the rail meets the page. */
+  [data-skin='newspaper'] .nav-rail::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+    z-index: -1;
+    background: var(--news-halftone);
+    background-size: 3px 3px;
+  }
+
+  [data-skin='newspaper'] .nav-rail--left::after {
+    inset: 0 0 0 auto;
+    width: 5px;
+    border-left: 1px solid rgb(var(--edge) / 0.8);
+    border-right: 1px solid rgb(var(--edge) / 0.8);
+  }
+
+  [data-skin='newspaper'] .nav-rail--right::after {
+    inset: 0 auto 0 0;
+    width: 5px;
+    border-left: 1px solid rgb(var(--edge) / 0.8);
+    border-right: 1px solid rgb(var(--edge) / 0.8);
+  }
+
+  [data-skin='newspaper'] .nav-rail--top::after {
+    inset: auto 0 0 0;
+    height: 5px;
+    background: var(--news-rule);
+  }
+
   [data-skin='space'] .nav-rail--top::after {
     inset: auto 0 0 0;
     height: 56px;
@@ -1298,6 +1889,28 @@
       linear-gradient(rgb(var(--content) / 0.035) 1px, transparent 1px),
       linear-gradient(90deg, rgb(var(--content) / 0.035) 1px, transparent 1px);
     background-size: 160px 160px, 230px 230px, 44px 44px, 44px 44px;
+  }
+
+  /* Marked-out floor: a survey grid with the exclusion hatching over it. */
+  [data-skin='hazard'] .board-grid {
+    background-image:
+      repeating-linear-gradient(
+        -45deg,
+        rgb(var(--brand) / 0.05) 0 10px,
+        transparent 10px 24px
+      ),
+      linear-gradient(rgb(var(--content) / 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(var(--content) / 0.06) 1px, transparent 1px);
+    background-size: auto, 24px 24px, 24px 24px;
+  }
+
+  /* A galley: column rules on the baseline grid the type would have sat on. */
+  [data-skin='newspaper'] .board-grid {
+    background-image:
+      linear-gradient(90deg, rgb(var(--edge) / 0.22) 1px, transparent 1px),
+      linear-gradient(rgb(var(--edge) / 0.06) 1px, transparent 1px),
+      var(--news-halftone);
+    background-size: 148px 100%, 100% 22px, 3px 3px;
   }
 
   /*
@@ -1351,6 +1964,20 @@
   [data-skin='space'] .type-tag {
     font-size: 10.5px;
     letter-spacing: 0.01em;
+  }
+
+  /* A condensed face is narrow enough to take the caps and the tracking. */
+  [data-skin='hazard'] .type-tag {
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* A kicker: caps, tracked, on the same serif as the rest of the page. */
+  [data-skin='newspaper'] .type-tag {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
   }
 
   /* Marching dashes: the connect-mode target highlight. */
@@ -1711,6 +2338,60 @@
   }
 }
 
+/* --- HAZARD: the trefoil on a gauge, ticking round in twelve notches. ---- */
+.loader-trefoil {
+  width: 100%;
+  height: 100%;
+  background-image: var(--hazard-trefoil);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  /* Stepped rather than smooth: a dial reading a count, not a spinner. */
+  animation: loader-spin 1.6s steps(12, end) infinite;
+  filter: drop-shadow(0 0 6px rgb(var(--hazard-sludge) / 0.7));
+}
+
+/* --- NEWSPAPER: the front page spinning towards the reader. -------------- */
+.loader-press {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  animation: loader-press 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* The sheet. */
+.loader-press > i:first-child {
+  position: absolute;
+  inset: 6%;
+  background: rgb(var(--surface-raised));
+  box-shadow:
+    inset 0 0 0 1px rgb(var(--edge)),
+    2px 2px 0 0 rgb(var(--edge) / 0.4);
+}
+
+/* The headline, with two lines of story stacked under it. */
+.loader-press > i:last-child {
+  position: absolute;
+  inset: 24% 22% auto 22%;
+  height: 14%;
+  background: rgb(var(--edge));
+  box-shadow:
+    0 7px 0 -1px rgb(var(--edge) / 0.55),
+    0 12px 0 -1px rgb(var(--edge) / 0.55);
+}
+
+@keyframes loader-press {
+  0% {
+    transform: rotate(0deg) scale(0.3);
+  }
+  70% {
+    transform: rotate(540deg) scale(1);
+  }
+  100% {
+    transform: rotate(720deg) scale(0.3);
+  }
+}
+
 /* ==========================================================================
  * Placeholder blocks, per skin.
  *
@@ -1781,6 +2462,180 @@
 
 [data-skin='paper'] .skeleton {
   border: 2px solid rgb(var(--edge) / 0.35);
+}
+
+/* Taped off while the contents are unknown. */
+[data-skin='hazard'] .skeleton {
+  border-radius: 0;
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      rgb(var(--edge) / 0.14) 0 8px,
+      transparent 8px 18px
+    ),
+    rgb(var(--surface-sunken));
+  box-shadow: inset 0 0 0 1px rgb(var(--edge) / 0.35);
+}
+
+[data-skin='hazard'] .skeleton::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(var(--hazard-sludge) / 0.28),
+    transparent
+  );
+  animation-duration: 1.3s;
+}
+
+/* A column of type that has not come off the press yet. */
+[data-skin='newspaper'] .skeleton {
+  border-radius: 0;
+  background: var(--news-halftone) 0 0 / 3px 3px, rgb(var(--surface-sunken));
+  box-shadow: inset 0 0 0 1px rgb(var(--edge) / 0.4);
+}
+
+[data-skin='newspaper'] .skeleton::after {
+  background: linear-gradient(90deg, transparent, rgb(var(--edge) / 0.18), transparent);
+  animation-duration: 2s;
+}
+
+/* ==========================================================================
+ * The avatar frame, per skin.
+ *
+ * A face is the one thing on screen that belongs to a *person* rather than to
+ * the app, so it is the last place a skin usually reaches — which is exactly
+ * why a round photo with a 2px ring on every theme was the tell. Each skin now
+ * mounts the picture the way that world would: taped behind glass, punched out
+ * of a sprite sheet, bolted into a brass bezel, screened onto newsprint.
+ *
+ * All of it resolves through five variables on one element plus one
+ * pseudo-element, so the component stays a `<span>` with an `<img>` in it and
+ * switching skins is still a single attribute mutation.
+ *
+ * Outside `@layer` for the usual reason: `.avatar` is composed at runtime and
+ * the frame variables are set by `[data-skin]` ancestors Tailwind cannot see.
+ * ========================================================================== */
+.avatar {
+  position: relative;
+  border-radius: var(--avatar-radius, 9999px);
+  box-shadow: var(--avatar-frame, 0 0 0 2px rgb(var(--surface-raised)));
+  clip-path: var(--avatar-clip, none);
+}
+
+.avatar::after {
+  content: '';
+  position: absolute;
+  inset: var(--avatar-overlay-inset, 0);
+  border-radius: var(--avatar-overlay-radius, inherit);
+  background-image: var(--avatar-overlay, none);
+  background-size: var(--avatar-overlay-size, auto);
+  box-shadow: var(--avatar-inner, none);
+  opacity: var(--avatar-overlay-opacity, 1);
+  pointer-events: none;
+}
+
+/* PAPER — a cut-out with the ink outline the rest of the skin draws. */
+[data-skin='paper'] .avatar {
+  --avatar-radius: 0.85rem;
+  --avatar-frame:
+    0 0 0 2px rgb(var(--edge)),
+    3px 3px 0 0 rgb(var(--edge) / 0.8);
+}
+
+/* TERMINAL — a hard-cornered feed, scanlines and all. */
+[data-skin='terminal'] .avatar {
+  --avatar-radius: 0px;
+  --avatar-frame:
+    0 0 0 1px rgb(var(--brand)),
+    0 0 14px -3px rgb(var(--brand) / 0.9);
+  --avatar-overlay: repeating-linear-gradient(
+    to bottom,
+    rgb(var(--content) / 0.22) 0 1px,
+    transparent 1px 3px
+  );
+  --avatar-inner: inset 0 0 8px rgb(var(--brand) / 0.35);
+}
+
+/* VINTAGE — a portrait in a brass bezel, lit from above. */
+[data-skin='vintage'] .avatar {
+  --avatar-frame:
+    0 0 0 2px rgb(var(--brand)),
+    0 0 0 3px rgb(var(--edge) / 0.7),
+    0 3px 8px -3px rgb(38 24 8 / 0.9);
+  --avatar-inner:
+    inset 0 1px 0 rgb(255 255 255 / 0.45),
+    inset 0 -2px 6px rgb(90 60 20 / 0.45);
+}
+
+/* PIXEL — punched out of a sprite sheet, corners and all.
+   The clip cuts the box shadow with it, so the frame moves inside. */
+[data-skin='pixel'] .avatar {
+  --avatar-radius: 0px;
+  --avatar-frame: none;
+  --avatar-clip: polygon(
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
+  );
+  --avatar-inner: inset 0 0 0 3px rgb(var(--edge));
+}
+
+/* SPACE — a crew badge behind a lit porthole. */
+[data-skin='space'] .avatar {
+  --avatar-frame:
+    0 0 0 1px rgb(var(--space-plasma) / 0.85),
+    0 0 16px -3px rgb(var(--brand) / 0.9);
+  --avatar-inner:
+    inset 0 1px 0 rgb(var(--space-plasma) / 0.55),
+    inset 0 0 12px rgb(var(--space-flare) / 0.28);
+}
+
+/* HAZARD — an ID punched out of a plate, taped across the bottom. */
+[data-skin='hazard'] .avatar {
+  --avatar-radius: 0.125rem;
+  --avatar-frame: none;
+  /* The clipped corners of a machined tag. Kept to 3px so a 24px avatar in a
+     stack still reads as a face rather than as an octagon. */
+  --avatar-clip: polygon(
+    3px 0,
+    calc(100% - 3px) 0,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    0 calc(100% - 3px),
+    0 3px
+  );
+  --avatar-inner: inset 0 0 0 2px rgb(var(--edge));
+  --avatar-overlay: var(--hazard-stripe);
+  --avatar-overlay-size: 12px 12px;
+  --avatar-overlay-inset: 72% 0 0 0;
+  --avatar-overlay-opacity: 0.92;
+}
+
+/* NEWSPAPER — a headshot screened onto the page, in its double rule.
+   The filter is on the frame rather than only on the photo inside it: an
+   avatar with no picture is a coloured disc with initials on it, and a
+   coloured disc is the one thing a black-and-white page cannot print. */
+[data-skin='newspaper'] .avatar {
+  filter: grayscale(0.92) contrast(1.06);
+  --avatar-radius: 0px;
+  --avatar-frame: none;
+  --avatar-inner:
+    inset 0 0 0 1px rgb(var(--edge)),
+    inset 0 0 0 2px rgb(var(--surface-raised)),
+    inset 0 0 0 3px rgb(var(--edge) / 0.85);
+  --avatar-overlay: var(--news-halftone);
+  --avatar-overlay-size: 3px 3px;
 }
 
 /*

@@ -1,7 +1,11 @@
+import type { ComponentType } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 
 import { useSkin } from '@/app/providers/theme-provider';
+import type { ThemeSkin } from '@/entities/user/model/types';
 import { cn } from '@/shared/lib/cn';
+import { HazardMark } from './hazard-icons';
+import { NewspaperMark } from './newspaper-icons';
 import { SpaceMark } from './space-icons';
 
 /**
@@ -170,6 +174,91 @@ const SlatePaper = ({ count }: { count?: number }) => (
   </>
 );
 
+/**
+ * The containment site's square of paper: a specimen label.
+ *
+ * Nothing gets stuck to anything here without being logged first, so the sheet
+ * is a rectangular tag with a taped header bar and a hard border — no curl, no
+ * tilt, and the count reads as a sample number rather than as a note count.
+ */
+const LabelPaper = ({ count }: { count?: number }) => (
+  <>
+    <rect
+      x="3.6"
+      y="4"
+      width="16.8"
+      height="16"
+      fill="currentColor"
+      fillOpacity="0.9"
+      stroke="currentColor"
+      strokeWidth="1.4"
+    />
+    {/* The tape across the header. */}
+    <rect x="3.6" y="4" width="16.8" height="3.4" fill="rgb(var(--hazard-sludge))" opacity="0.85" />
+
+    {count === undefined || count > 9 ? (
+      <g stroke="rgb(var(--surface-raised))" strokeWidth="1.5" strokeLinecap="butt">
+        <line x1="6.4" y1="11.4" x2="17.6" y2="11.4" />
+        <line x1="6.4" y1="15" x2="14" y2="15" />
+      </g>
+    ) : (
+      <text
+        x="12"
+        y="16.4"
+        textAnchor="middle"
+        fontSize="9.5"
+        fontWeight="800"
+        fill="rgb(var(--surface-raised))"
+      >
+        {count}
+      </text>
+    )}
+  </>
+);
+
+/**
+ * The newsroom's square of paper: a clipping.
+ *
+ * Cut out of the edition and kept — so the outline is a scissor line, the top
+ * bar is a headline rather than a rule, and the body is set in two columns
+ * because that is how the story it came from was set.
+ */
+const ClippingPaper = ({ count }: { count?: number }) => (
+  <>
+    <path
+      d="M4 4h16v12.6L15.2 20H4V4Z"
+      fill="currentColor"
+      fillOpacity="0.9"
+      stroke="currentColor"
+      strokeWidth="1.2"
+      strokeDasharray="2.2 1.5"
+      strokeLinejoin="round"
+    />
+    {/* The headline. */}
+    <rect x="6.2" y="6.2" width="11.6" height="2.2" fill="rgb(var(--surface-raised))" />
+
+    {count === undefined || count > 9 ? (
+      <g stroke="rgb(var(--surface-raised))" strokeWidth="1.2" strokeLinecap="butt" opacity="0.85">
+        <line x1="6.2" y1="11.4" x2="11.2" y2="11.4" />
+        <line x1="6.2" y1="14.2" x2="11.2" y2="14.2" />
+        <line x1="12.8" y1="11.4" x2="17.8" y2="11.4" />
+        <line x1="12.8" y1="14.2" x2="17.8" y2="14.2" />
+      </g>
+    ) : (
+      <text
+        x="12"
+        y="15.6"
+        textAnchor="middle"
+        fontSize="9"
+        fontWeight="900"
+        fill="rgb(var(--surface-raised))"
+      >
+        {count}
+      </text>
+    )}
+  </>
+);
+
 /** The smooth square of paper: curves, a soft peel, hairline outlines. */
 const DrawnPaper = ({ count }: { count?: number }) => (
   <>
@@ -270,6 +359,31 @@ export const SendGlyph = ({ className }: { className?: string }) => {
   );
 };
 
+/**
+ * Which drawing of "a square of paper" each skin uses.
+ *
+ * Anything not listed keeps the drawn one — a skin earns its own object by
+ * having a world where the drawn one would be wrong, not by existing.
+ */
+const PAPERS: Partial<Record<ThemeSkin, ComponentType<{ count?: number }>>> = {
+  PIXEL: PixelPaper,
+  SPACE: SlatePaper,
+  HAZARD: LabelPaper,
+  NEWSPAPER: ClippingPaper,
+};
+
+const paperFor = (skin: ThemeSkin) => PAPERS[skin] ?? DrawnPaper;
+
+/**
+ * Paper that does not move.
+ *
+ * A sprite does not flutter, a hard-light panel does not curl, and a label
+ * taped to a drum is not going anywhere — so those three skins lose the breeze
+ * and the tilt. A newsprint clipping keeps both: it is still paper.
+ */
+const isRigidPaper = (skin: ThemeSkin): boolean =>
+  skin === 'PIXEL' || skin === 'SPACE' || skin === 'HAZARD';
+
 interface PostItMarkProps {
   /** How many notes are attached — shown on the paper itself when it fits. */
   count?: number;
@@ -291,6 +405,7 @@ interface PostItMarkProps {
 export const PostItMark = ({ count, className, size = 'sm' }: PostItMarkProps) => {
   const reduceMotion = useReducedMotion();
   const skin = useSkin();
+  const Paper = paperFor(skin);
 
   return (
     <svg
@@ -299,19 +414,12 @@ export const PostItMark = ({ count, className, size = 'sm' }: PostItMarkProps) =
       className={cn(
         size === 'sm' ? 'h-4 w-4' : 'h-6 w-6',
         'origin-center transition-transform duration-150 hover:scale-110',
-        // A sprite does not flutter and a hard-light panel does not curl; only
-        // the skins made of actual paper get the breeze.
-        !reduceMotion && skin !== 'PIXEL' && 'flutter',
+        // Only the skins made of actual paper get the breeze.
+        !reduceMotion && !isRigidPaper(skin) && 'flutter',
         className,
       )}
     >
-      {skin === 'PIXEL' ? (
-        <PixelPaper count={count} />
-      ) : skin === 'SPACE' ? (
-        <SlatePaper count={count} />
-      ) : (
-        <DrawnPaper count={count} />
-      )}
+      <Paper count={count} />
     </svg>
   );
 };
@@ -322,7 +430,7 @@ export const PostItMark = ({ count, className, size = 'sm' }: PostItMarkProps) =
  */
 export const PostItGlyph = ({ className }: { className?: string }) => {
   const skin = useSkin();
-  const isPixel = skin === 'PIXEL';
+  const Paper = paperFor(skin);
 
   return (
     <svg
@@ -330,43 +438,11 @@ export const PostItGlyph = ({ className }: { className?: string }) => {
       fill="none"
       aria-hidden
       className={cn('h-4 w-4', className)}
-      // A sprite is never off-grid, and neither is an instrument panel; only
-      // the drawn one is tilted.
-      style={isPixel || skin === 'SPACE' ? undefined : { transform: 'rotate(-4deg)' }}
+      // A sprite is never off-grid, an instrument panel is never crooked and a
+      // logged specimen is never at an angle; the rest are tilted.
+      style={isRigidPaper(skin) ? undefined : { transform: 'rotate(-4deg)' }}
     >
-      {isPixel ? (
-        <PixelPaper />
-      ) : skin === 'SPACE' ? (
-        <SlatePaper />
-      ) : (
-        <>
-          <path
-            d="M4 3.6h16v11.2L14.8 20H4V3.6Z"
-            fill="currentColor"
-            fillOpacity="0.92"
-            stroke="currentColor"
-            strokeWidth="1.2"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M14.8 20v-5.2H20L14.8 20Z"
-            fill="currentColor"
-            fillOpacity="0.4"
-            stroke="currentColor"
-            strokeWidth="1.2"
-            strokeLinejoin="round"
-          />
-          <g
-            stroke="rgb(var(--surface-raised))"
-            strokeWidth="1.4"
-            strokeLinecap="round"
-            opacity="0.9"
-          >
-            <line x1="7" y1="8" x2="17" y2="8" />
-            <line x1="7" y1="11.6" x2="14.5" y2="11.6" />
-          </g>
-        </>
-      )}
+      <Paper />
     </svg>
   );
 };
@@ -392,8 +468,19 @@ export const StudioMark = ({ className, interactive = false }: StudioMarkProps) 
   const skin = useSkin();
   const isPixel = skin === 'PIXEL';
 
-  // Nothing in orbit is made of paper, so out there the mark is a world.
-  if (skin === 'SPACE') {
+  // Three skins draw the object themselves: a note among stars, a placard on a
+  // containment door, a masthead on page one. All three are the same gesture —
+  // a lift under the pointer — so they share one wrapper rather than three.
+  const Drawn =
+    skin === 'SPACE'
+      ? SpaceMark
+      : skin === 'HAZARD'
+        ? HazardMark
+        : skin === 'NEWSPAPER'
+          ? NewspaperMark
+          : null;
+
+  if (Drawn) {
     return (
       <motion.span
         className={cn('block', className)}
@@ -401,7 +488,7 @@ export const StudioMark = ({ className, interactive = false }: StudioMarkProps) 
         whileHover={interactive && !reduceMotion ? { scale: 1.06, rotate: -4 } : undefined}
         transition={{ type: 'spring', stiffness: 260, damping: 20 }}
       >
-        <SpaceMark className="h-full w-full" />
+        <Drawn className="h-full w-full" />
       </motion.span>
     );
   }

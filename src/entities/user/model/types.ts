@@ -4,7 +4,15 @@ export type ThemePreference = 'LIGHT' | 'DARK' | 'SYSTEM';
  * The visual language the interface is drawn in — orthogonal to light/dark,
  * which stays a palette choice inside whichever skin is active.
  */
-export type ThemeSkin = 'STUDIO' | 'PAPER' | 'TERMINAL' | 'VINTAGE' | 'PIXEL' | 'SPACE';
+export type ThemeSkin =
+  | 'STUDIO'
+  | 'PAPER'
+  | 'TERMINAL'
+  | 'VINTAGE'
+  | 'PIXEL'
+  | 'SPACE'
+  | 'HAZARD'
+  | 'NEWSPAPER';
 
 /** The one place a skin's human name is written down. */
 export const SKIN_LABELS: Record<ThemeSkin, string> = {
@@ -14,6 +22,8 @@ export const SKIN_LABELS: Record<ThemeSkin, string> = {
   VINTAGE: 'Vintage',
   PIXEL: 'Pixel art',
   SPACE: 'Space',
+  HAZARD: 'Hazard',
+  NEWSPAPER: 'Newsprint',
 };
 
 /**

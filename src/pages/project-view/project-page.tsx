@@ -13,6 +13,7 @@ import {
 
 import { useProjectRoom } from '@/app/providers/realtime-provider';
 import { useProject, useTogglePin } from '@/entities/project/model/queries';
+import { completionBlockedReason } from '@/entities/task/lib/completion';
 import {
   useDeleteTask,
   useTasks,
@@ -22,6 +23,7 @@ import {
 } from '@/entities/task/model/queries';
 import type { ListTasksParams, Task } from '@/entities/task/model/types';
 import { AiPanel } from '@/features/ai-suggestions/ui/ai-panel';
+import { useCurrentUser } from '@/features/auth/model/session.store';
 import { TaskBoard } from '@/features/dnd-board/ui/task-board';
 import { useChatDock } from '@/features/project-chat-dock/model/chat-dock.store';
 import { useProjectChatUnread } from '@/features/project-chat-dock/ui/chat-dock';
@@ -58,6 +60,8 @@ const TABS: { value: Tab; label: string; icon: ReactNode }[] = [
 const ProjectPage = () => {
   const { projectId } = useParams<{ projectId: string }>();
   useProjectRoom(projectId);
+
+  const currentUser = useCurrentUser();
 
   const [tab, setTab] = useState<Tab>('board');
   const [filters, setFilters] = useState<ListTasksParams>({ scope: 'all' });
@@ -231,6 +235,14 @@ const ProjectPage = () => {
               {...taskHandlers}
               // Mirrors the API rule exactly: assignees, or an owner/admin.
               canChangeStatus={(task) => task.isMine || canManage}
+              // …and a shared task still needs everybody's tick before it can
+              // be called finished, unless an admin overrules it.
+              completionBlock={(task) =>
+                completionBlockedReason(task, {
+                  isAdmin: canManage,
+                  currentUserId: currentUser?.id,
+                })
+              }
             />
           )}
           {layout === 'sprint' && <TaskSprintView tasks={tasks} {...taskHandlers} />}

@@ -13,6 +13,8 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core';
 import { AnimatePresence } from 'framer-motion';
+import { Lock } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { TaskCard } from '@/entities/task/ui/task-card';
 import type { Task, TaskStatus } from '@/entities/task/model/types';
@@ -36,6 +38,18 @@ interface TaskBoardProps {
    * length of the optimistic update, exactly like it had worked.
    */
   canChangeStatus?: (task: Task) => boolean;
+  /**
+   * Whether this card may land in Completed *yet*.
+   *
+   * Separate from `canChangeStatus` because it is a different question with a
+   * different answer per column: a member may freely drag their shared task
+   * between To do and In progress, and still not be the one who gets to call
+   * it finished. See `entities/task/lib/completion.ts` for the rule.
+   *
+   * Returns the reason it cannot, or `null` when it can — the string is both
+   * the column's hint while dragging and the toast when a drop is refused.
+   */
+  completionBlock?: (task: Task) => string | null;
 }
 
 const COLUMNS: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'COMPLETED'];
@@ -81,29 +95,49 @@ const DraggableTask = ({
 const Column = ({
   status,
   tasks,
+  blockedReason,
   children,
 }: {
   status: TaskStatus;
   tasks: Task[];
+  /** Set while a card that may not land here is being dragged. */
+  blockedReason?: string | null;
   children: React.ReactNode;
 }) => {
   const { setNodeRef, isOver } = useDroppable({ id: status });
   const meta = TASK_STATUS_META[status];
+  const isBlocked = Boolean(blockedReason);
 
   return (
     <section
       ref={setNodeRef}
+      title={blockedReason ?? undefined}
       className={cn(
         'flex flex-col gap-2.5 rounded-2xl border p-2.5 transition-colors duration-150',
         // On a phone the columns sit in a snapping horizontal strip, so all
         // three are one swipe apart instead of three screens of scrolling.
         'w-[82vw] shrink-0 snap-start sm:w-auto sm:shrink lg:min-h-[220px] lg:p-3',
-        isOver ? 'border-brand bg-brand/[0.06]' : 'border-edge bg-surface-sunken/60',
+        // A column that will refuse the card says so *before* the drop, rather
+        // than accepting it and having the server take it back a moment later.
+        isBlocked
+          ? 'border-dashed border-danger/60 bg-danger/[0.05]'
+          : isOver
+            ? 'border-brand bg-brand/[0.06]'
+            : 'border-edge bg-surface-sunken/60',
       )}
     >
       <header className="flex items-center justify-between px-1">
-        <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-content-muted">
-          <span className={cn('h-1.5 w-1.5 rounded-full', meta.dot)} />
+        <span
+          className={cn(
+            'inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide',
+            isBlocked ? 'text-danger' : 'text-content-muted',
+          )}
+        >
+          {isBlocked ? (
+            <Lock className="h-3 w-3" />
+          ) : (
+            <span className={cn('h-1.5 w-1.5 rounded-full', meta.dot)} />
+          )}
           {meta.label}
         </span>
         <span className="rounded-full bg-surface-raised px-1.5 text-xs tabular-nums text-content-faint">
@@ -130,6 +164,7 @@ export const TaskBoard = ({
   onTogglePin,
   onDelete,
   canChangeStatus,
+  completionBlock,
 }: TaskBoardProps) => {
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -153,6 +188,11 @@ export const TaskBoard = ({
 
   const activeTask = tasks.find((task) => task.id === activeId) ?? null;
 
+  // Computed once per drag rather than per column render: the answer is the
+  // same for all three, and only one of them can ever be refused.
+  const activeBlock =
+    activeTask && activeTask.status !== 'COMPLETED' ? (completionBlock?.(activeTask) ?? null) : null;
+
   const handleDragStart = (event: DragStartEvent) => setActiveId(String(event.active.id));
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -167,6 +207,17 @@ export const TaskBoard = ({
     // Belt and braces: the handle is already disabled, but a keyboard sensor or
     // a stale render must not be able to slip a forbidden move through.
     if (canChangeStatus && !canChangeStatus(task)) return;
+
+    // A shared task is not one person's to close. The column already showed
+    // itself as locked during the drag; this is what makes the drop a no-op,
+    // and the toast is what stops it reading as a dropped gesture.
+    if (target === 'COMPLETED') {
+      const blocked = completionBlock?.(task);
+      if (blocked) {
+        toast.error(blocked);
+        return;
+      }
+    }
 
     onStatusChange(taskId, target);
   };
@@ -186,7 +237,12 @@ export const TaskBoard = ({
         )}
       >
         {COLUMNS.map((status) => (
-          <Column key={status} status={status} tasks={grouped[status]}>
+          <Column
+            key={status}
+            status={status}
+            tasks={grouped[status]}
+            blockedReason={status === 'COMPLETED' ? activeBlock : null}
+          >
             <AnimatePresence initial={false}>
               {grouped[status].map((task) => (
                 <DraggableTask

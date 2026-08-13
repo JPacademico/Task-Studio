@@ -41,10 +41,13 @@ interface BadgeProps {
   children: ReactNode;
   className?: string;
   dot?: string;
+  /** Hover text. A badge is often a summary of something worth spelling out. */
+  title?: string;
 }
 
-export const Badge = ({ children, className, dot }: BadgeProps) => (
+export const Badge = ({ children, className, dot, title }: BadgeProps) => (
   <span
+    title={title}
     className={cn(
       'ui-chip inline-flex items-center gap-1.5 rounded-full border border-edge bg-surface-sunken',
       'px-2 py-0.5 text-[11px] font-medium text-content-muted',

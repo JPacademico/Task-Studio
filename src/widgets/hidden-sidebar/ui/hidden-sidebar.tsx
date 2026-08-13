@@ -4,7 +4,9 @@ import { motion } from 'framer-motion';
 import {
   CalendarDays,
   LayoutDashboard,
+  LogOut,
   Mail,
+  Palette,
   Settings,
   StickyNote,
   Trash2,
@@ -13,6 +15,7 @@ import {
 
 import { useMyInvitations } from '@/entities/project/model/queries';
 import { useCurrentUser } from '@/features/auth/model/session.store';
+import { useSignOut } from '@/features/auth/model/use-sign-out';
 import { useTearOff } from '@/features/floating-shortcuts/lib/use-tear-off';
 import {
   useFloatingShortcuts,
@@ -69,6 +72,9 @@ const GROUPS: { heading: string; items: NavItem[] }[] = [
     items: [
       { to: '/invitations', label: 'Invitations', icon: Mail, shortcutIcon: 'invitations' },
       { to: '/recycle-bin', label: 'Recycle bin', icon: Trash2, shortcutIcon: 'recycle' },
+      // Its own entry rather than a section inside settings: choosing a look is
+      // browsing, not configuring, and it has a gallery of its own.
+      { to: '/themes', label: 'Themes', icon: Palette, shortcutIcon: 'themes' },
       { to: '/settings', label: 'Settings', icon: Settings, shortcutIcon: 'settings' },
     ],
   },
@@ -209,6 +215,7 @@ interface HiddenSidebarProps {
 export const HiddenSidebar = ({ isMobileOpen, onMobileClose }: HiddenSidebarProps) => {
   const isTouch = useIsTouchDevice();
   const user = useCurrentUser();
+  const signOut = useSignOut();
 
   const isPinned = useNavPreferences((state) => state.pinned.left);
   const togglePin = useNavPreferences((state) => state.togglePin);
@@ -327,6 +334,31 @@ export const HiddenSidebar = ({ isMobileOpen, onMobileClose }: HiddenSidebarProp
               <p className="truncate text-[10px] text-content-faint">{user?.email}</p>
             </div>
           </div>
+
+          {/*
+            The way out, next to the person it signs out.
+
+            The top bar's account menu has always had this, but that bar is
+            hidden behind a hover on the *opposite* edge — so the one panel
+            already showing who you are had no way to stop being you. It is not
+            a `SidebarLink`: this is an action rather than a destination, so it
+            never wears the active pill and never tears off into a shortcut.
+          */}
+          <button
+            type="button"
+            onClick={() => void signOut()}
+            className={cn(
+              'mt-3 flex w-full items-center gap-2.5 rounded-2xl border border-transparent px-3 py-2',
+              'text-xs font-semibold text-content-muted transition-colors duration-150',
+              'hover:border-danger/30 hover:bg-danger/10 hover:text-danger',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40',
+            )}
+          >
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-xl bg-surface-sunken">
+              <LogOut className="h-3.5 w-3.5" />
+            </span>
+            Sign out
+          </button>
 
           {!isTouch && (
             <p className="mt-2.5 text-[10px] leading-relaxed text-content-faint">

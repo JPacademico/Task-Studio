@@ -20,6 +20,7 @@ const NotesBoardPage = lazy(() => import('@/pages/notes-board/notes-board-page')
 const RecycleBinPage = lazy(() => import('@/pages/recycle-bin/recycle-bin-page'));
 const InvitationsPage = lazy(() => import('@/pages/invitations/invitations-page'));
 const SettingsPage = lazy(() => import('@/pages/settings/settings-page'));
+const ThemeGalleryPage = lazy(() => import('@/pages/themes/theme-gallery-page'));
 
 export const AppRouter = () => (
   <Routes>
@@ -41,6 +42,7 @@ export const AppRouter = () => (
         <Route path="/notes" element={<NotesBoardPage />} />
         <Route path="/recycle-bin" element={<RecycleBinPage />} />
         <Route path="/invitations" element={<InvitationsPage />} />
+        <Route path="/themes" element={<ThemeGalleryPage />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Route>
     </Route>

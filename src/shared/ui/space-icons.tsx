@@ -1,8 +1,5 @@
-import type { ComponentType, ReactNode } from 'react';
-import type { LucideIcon } from 'lucide-react';
-
-import { useSkin } from '@/app/providers/theme-provider';
 import { cn } from '@/shared/lib/cn';
+import { Glyph as Svg, type GlyphProps, type GlyphSet } from './glyph-kit';
 
 /**
  * The deep field's own navigation set: every destination in the app, drawn as
@@ -22,31 +19,6 @@ import { cn } from '@/shared/lib/cn';
  *   - No fixed colours except the two the skin already owns, so a glyph works
  *     on a tinted tile, on a brand-filled active tile and on the page itself.
  */
-
-/** Matches `ShortcutIcon` in the shortcuts store, which is where the keys come from. */
-export type NavGlyphKey =
-  | 'dashboard'
-  | 'tasks'
-  | 'notes'
-  | 'invitations'
-  | 'recycle'
-  | 'settings'
-  | 'project';
-
-type GlyphProps = { className?: string };
-
-const Svg = ({ className, children }: GlyphProps & { children: ReactNode }) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    aria-hidden
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={cn('h-4 w-4', className)}
-  >
-    {children}
-  </svg>
-);
 
 /** Workspace: a ringed planet, with a moon of its own. */
 const PlanetRinged = ({ className }: GlyphProps) => (
@@ -193,72 +165,107 @@ const System = ({ className }: GlyphProps) => (
   </Svg>
 );
 
-const SPACE_GLYPHS: Record<NavGlyphKey, ComponentType<GlyphProps>> = {
+/** The catalogue: a prism, splitting one beam into the skin's three hues. */
+const Prism = ({ className }: GlyphProps) => (
+  <Svg className={className}>
+    {/* The incoming beam. */}
+    <path d="M1.8 9.6h6.4" stroke="currentColor" strokeWidth="1.5" opacity="0.8" />
+    {/* The prism itself. */}
+    <path d="M11.4 3.6 20.6 19.4H2.2Z" stroke="currentColor" strokeWidth="1.5" />
+    {/* What comes out the other side. */}
+    <g strokeWidth="1.5" strokeLinecap="round">
+      <path d="M14.4 11.4h7.8" stroke="rgb(var(--space-plasma))" />
+      <path d="M15.4 14.2h6.8" stroke="currentColor" />
+      <path d="M16.4 17h5.8" stroke="rgb(var(--space-flare))" />
+    </g>
+  </Svg>
+);
+
+export const SPACE_GLYPHS: GlyphSet = {
   dashboard: PlanetRinged,
   tasks: Orbit,
   notes: Moon,
   invitations: Comet,
   recycle: BlackHole,
   settings: Gyroscope,
+  themes: Prism,
   project: System,
 };
 
-interface NavGlyphProps {
-  /** Which destination this is — the same key a pinned shortcut stores. */
-  glyph: NavGlyphKey;
-  /** Drawn by every other skin. */
-  fallback: LucideIcon;
-  className?: string;
-}
-
 /**
- * A menu entry's icon, in whatever the active skin draws menus with.
+ * The product mark, in orbit: the same square of paper the rest of the app
+ * introduces itself with, drawn as the deep field draws paper.
  *
- * The lookup happens here rather than at every call site so a rail, a pinned
- * pill and a header all agree on what "your notes board" looks like.
- */
-export const NavGlyph = ({ glyph, fallback: Fallback, className }: NavGlyphProps) => {
-  const skin = useSkin();
-  if (skin !== 'SPACE') return <Fallback className={className} />;
-
-  const Planet = SPACE_GLYPHS[glyph];
-  return <Planet className={className} />;
-};
-
-/**
- * The product mark, in orbit: a ringed planet with its moon and a scatter of
- * stars, for the one skin where a square of paper with a pin in it makes no
- * sense at all.
+ * This used to be a ringed planet, which was the one place the skin argued
+ * with the product rather than dressing it: every other theme's mark is a
+ * note, and a planet said "space app", not "Task Studio, in space". So the
+ * object is a note again — a hard-light slate with a plasma rim and the
+ * clipped corner the deep field puts on a sheet — and the *setting* is what
+ * carries the skin: a scatter of stars around it and one flaring close enough
+ * to catch the corner.
  */
 export const SpaceMark = ({ className }: GlyphProps) => (
   <svg viewBox="0 0 40 40" fill="none" aria-hidden className={cn('h-10 w-10', className)}>
-    {/* Planet first, ring over it in plasma. Drawing the ring on top in the
-        contrasting hue is what makes it read as passing in front of the body,
-        and it needs no arc split to do it. */}
-    <circle cx="18.5" cy="21" r="11.5" fill="currentColor" />
-
-    {/* Surface banding, so the planet is a body and not a dot. */}
-    <g stroke="rgb(var(--space-plasma))" strokeWidth="1.2" strokeLinecap="round" opacity="0.45">
-      <path d="M9.5 17.5h11" />
-      <path d="M12 25.5h12" />
-    </g>
-
-    <ellipse
-      cx="18.5"
-      cy="21"
-      rx="17.5"
-      ry="5.6"
-      stroke="rgb(var(--space-plasma))"
-      strokeWidth="2"
-      transform="rotate(-22 18.5 21)"
+    {/* The slate behind, so the mark reads as a stack and not a single panel. */}
+    <path
+      d="M12 9.5h20v14.5L26 30H12V9.5Z"
+      fill="currentColor"
+      fillOpacity="0.2"
+      stroke="currentColor"
+      strokeOpacity="0.28"
+      strokeWidth="1.2"
+      strokeLinejoin="round"
     />
 
-    {/* The moon, and the field it hangs in. */}
-    <circle cx="32" cy="8" r="3.4" fill="currentColor" opacity="0.8" />
-    <g fill="rgb(var(--space-flare))">
-      <circle cx="6" cy="6" r="1.1" />
-      <circle cx="24" cy="3.5" r="0.8" opacity="0.8" />
-      <circle cx="37" cy="30" r="0.9" opacity="0.7" />
+    {/* The note. Same silhouette as `SlatePaper` — a clipped bevel where the
+        drawn skins curl a corner, because nothing out here is made of paper
+        that curls. */}
+    <path
+      d="M6 6h21v15.5L20.5 28H6V6Z"
+      fill="currentColor"
+      fillOpacity="0.92"
+      stroke="currentColor"
+      strokeOpacity="0.5"
+      strokeWidth="1.4"
+      strokeLinejoin="round"
+    />
+
+    {/* The lit rim along the top, and the beam along the clipped corner. */}
+    <path d="M8.2 8.6h16.6" stroke="rgb(var(--space-plasma))" strokeWidth="2" />
+    <path
+      d="M20.5 28v-6.5H27"
+      fill="none"
+      stroke="rgb(var(--space-flare))"
+      strokeOpacity="0.85"
+      strokeWidth="1.6"
+      strokeLinejoin="round"
+    />
+
+    {/* Two written lines. */}
+    <g
+      stroke="rgb(var(--surface-raised))"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeOpacity="0.85"
+    >
+      <path d="M10 14h13" />
+      <path d="M10 19h9" />
     </g>
+
+    {/* The field it hangs in — and one star flaring hard enough to have points. */}
+    <g fill="rgb(var(--space-flare))">
+      <circle cx="34.5" cy="7" r="1.2" />
+      <circle cx="4.5" cy="31" r="1" opacity="0.85" />
+      <circle cx="36" cy="21" r="0.9" opacity="0.7" />
+    </g>
+    <g fill="rgb(var(--space-plasma))">
+      <circle cx="31" cy="33" r="1.1" opacity="0.9" />
+      <circle cx="3" cy="3" r="0.8" opacity="0.75" />
+    </g>
+    <path
+      d="M32.5 12.5 33.4 15.1 36 16 33.4 16.9 32.5 19.5 31.6 16.9 29 16 31.6 15.1Z"
+      fill="rgb(var(--space-plasma))"
+      opacity="0.95"
+    />
   </svg>
 );

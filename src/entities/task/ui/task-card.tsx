@@ -9,6 +9,7 @@ import {
   Paperclip,
   Pin,
   Trash2,
+  UserCheck,
 } from 'lucide-react';
 
 import { cn } from '@/shared/lib/cn';
@@ -16,6 +17,7 @@ import { withAlpha } from '@/shared/lib/colors';
 import { formatDeadline, formatDeadlineDate, formatWindow } from '@/shared/lib/dates';
 import { TASK_PRIORITY_META, TASK_STATUS_META } from '@/shared/config/constants';
 import { AvatarStack, Badge, PostItMark } from '@/shared/ui';
+import { completionProgress, isSharedTask, outstandingAssignees } from '../lib/completion';
 import type { Task } from '../model/types';
 import { TaskTypeTag } from './task-type-tag';
 
@@ -93,6 +95,12 @@ const TaskCardBase = ({
   const statusMeta = TASK_STATUS_META[task.status];
   const isDone = task.status === 'COMPLETED';
 
+  // A task several people carry needs all of their ticks, so the card has to
+  // say how many it has — otherwise "why is this still open?" has no answer on
+  // the surface where it is asked. See `lib/completion.ts`.
+  const isShared = isSharedTask(task);
+  const signOff = completionProgress(task);
+
   return (
     <motion.article
       layout="position"
@@ -146,9 +154,11 @@ const TaskCardBase = ({
             type="button"
             disabled={!task.isMine}
             title={
-              task.isMine
-                ? undefined
-                : 'Only the people this task is assigned to can complete it.'
+              !task.isMine
+                ? 'Only the people this task is assigned to can complete it.'
+                : isShared
+                  ? 'Ticks your own box. The task is only done once every assignee has ticked theirs.'
+                  : undefined
             }
             aria-label={
               task.isMine
@@ -247,6 +257,25 @@ const TaskCardBase = ({
         {task.priority !== 'NORMAL' && (
           <Badge className={TASK_PRIORITY_META[task.priority].className}>
             {TASK_PRIORITY_META[task.priority].label}
+          </Badge>
+        )}
+
+        {/* Shared work: how many of the people carrying it have signed off. */}
+        {isShared && !isDone && (
+          <Badge
+            title={
+              signOff.done === signOff.total
+                ? 'Everyone has ticked their box.'
+                : `Waiting on ${outstandingAssignees(task)
+                    .map((assignee) => assignee.displayName)
+                    .join(', ')}`
+            }
+            className={cn(
+              signOff.done === signOff.total && 'border-positive/40 text-positive',
+            )}
+          >
+            <UserCheck className="h-3 w-3" />
+            {signOff.done}/{signOff.total} signed off
           </Badge>
         )}
 

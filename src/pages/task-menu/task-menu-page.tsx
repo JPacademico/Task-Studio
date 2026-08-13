@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CalendarDays, CheckCircle2, Clock, Inbox } from 'lucide-react';
 
+import { completionBlockedReason } from '@/entities/task/lib/completion';
 import {
   useDeleteTask,
   useTaskAgenda,
@@ -12,6 +13,7 @@ import {
 } from '@/entities/task/model/queries';
 import type { ListTasksParams, Task } from '@/entities/task/model/types';
 import { TaskCard } from '@/entities/task/ui/task-card';
+import { useCurrentUser } from '@/features/auth/model/session.store';
 import { TaskBoard } from '@/features/dnd-board/ui/task-board';
 import { TaskDetailModal } from '@/features/task-management/ui/task-detail-modal';
 import { TaskFilters } from '@/features/task-management/ui/task-filters';
@@ -38,6 +40,7 @@ const isSameDay = (isoDate: string, reference: Date): boolean =>
  */
 const TaskMenuPage = () => {
   const navigate = useNavigate();
+  const currentUser = useCurrentUser();
   const [filters, setFilters] = useState<ListTasksParams>({
     scope: 'mine',
     hideCompleted: true,
@@ -138,11 +141,17 @@ const TaskMenuPage = () => {
           rendering decision, never another request. */}
       {layout === 'list' && <TaskListView tasks={allTasks} showProjectLink {...handlers} />}
       {layout === 'calendar' && <TaskCalendarView tasks={allTasks} showProjectLink {...handlers} />}
+      {/* No admin override on this board: the personal agenda has no project
+          role to read, so a shared task always needs everybody's tick here.
+          The project board is where an admin can overrule it. */}
       {layout === 'board' && (
         <TaskBoard
           tasks={allTasks}
           onStatusChange={(taskId, status) => updateStatus.mutate({ taskId, status })}
           canChangeStatus={(task) => task.isMine}
+          completionBlock={(task) =>
+            completionBlockedReason(task, { currentUserId: currentUser?.id })
+          }
           {...handlers}
         />
       )}

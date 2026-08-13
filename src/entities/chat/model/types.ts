@@ -19,6 +19,16 @@ export interface WhiteboardStrokeData {
   points: [number, number][];
   color: string;
   width: number;
+  /**
+   * This stroke takes ink away instead of laying it down.
+   *
+   * An eraser used to be stored as an opaque black stroke, which is only an
+   * eraser on a canvas that happens to be black — on every skin the app
+   * actually ships it drew a thick black line. The flag rides along in the
+   * element's JSON (the API stores stroke data verbatim), so peers and page
+   * reloads erase the same way the person drawing it did.
+   */
+  erase?: boolean;
 }
 
 export interface WhiteboardElement {

@@ -76,6 +76,18 @@ const BODY: Record<ThemeSkin, ReactElement> = {
       <span className="sat" />
     </span>
   ),
+
+  // A dial ticking round in twelve notches, not a spinner sweeping smoothly.
+  HAZARD: <span className="loader-trefoil" />,
+
+  // The oldest cliché in the business, and the only honest way to say
+  // "the edition is being printed": the front page spinning at the reader.
+  NEWSPAPER: (
+    <span className="loader-press">
+      <i />
+      <i />
+    </span>
+  ),
 };
 
 interface SkinLoaderProps {

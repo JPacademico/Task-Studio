@@ -1,15 +1,13 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { LogOut, Menu, Plus, Wifi, WifiOff } from 'lucide-react';
 
 import { useRealtime } from '@/app/providers/realtime-provider';
-import { authApi } from '@/features/auth/api/auth.api';
 import { useSessionStore } from '@/features/auth/model/session.store';
+import { useSignOut } from '@/features/auth/model/use-sign-out';
 import { NotificationBell } from '@/features/notifications/ui/notification-bell';
 import { ThemeToggle } from '@/features/theme-toggle/ui/theme-toggle';
-import { tokenStore } from '@/shared/api/token-store';
-import { disconnectSocket } from '@/shared/api/socket';
 import { cn } from '@/shared/lib/cn';
 import { useIsTouchDevice } from '@/shared/lib/hooks';
 import { useNavPreferences } from '@/shared/lib/nav-preferences.store';
@@ -27,11 +25,11 @@ interface TopNavigationProps {
  */
 export const TopNavigation = ({ onOpenMobileMenu, onCreateProject }: TopNavigationProps) => {
   const isTouch = useIsTouchDevice();
-  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const { isConnected } = useRealtime();
-  const { user, endSession } = useSessionStore();
+  const user = useSessionStore((state) => state.user);
+  const signOut = useSignOut();
 
   const isPinned = useNavPreferences((state) => state.pinned.top);
   const togglePin = useNavPreferences((state) => state.togglePin);
@@ -45,14 +43,6 @@ export const TopNavigation = ({ onOpenMobileMenu, onCreateProject }: TopNavigati
   });
 
   const isOpen = isTouch || isRevealed;
-
-  const handleSignOut = async () => {
-    const refreshToken = tokenStore.getRefreshToken();
-    if (refreshToken) await authApi.logout(refreshToken).catch(() => undefined);
-    disconnectSocket();
-    endSession();
-    navigate('/login', { replace: true });
-  };
 
   return (
     <>
@@ -162,7 +152,7 @@ export const TopNavigation = ({ onOpenMobileMenu, onCreateProject }: TopNavigati
 
                   <button
                     type="button"
-                    onClick={() => void handleSignOut()}
+                    onClick={() => void signOut()}
                     className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-danger transition-colors hover:bg-danger/10"
                   >
                     <LogOut className="h-3.5 w-3.5" />

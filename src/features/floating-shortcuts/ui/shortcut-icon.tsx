@@ -3,6 +3,7 @@ import {
   FolderKanban,
   LayoutDashboard,
   Mail,
+  Palette,
   Settings,
   StickyNote,
   Trash2,
@@ -23,6 +24,7 @@ export const SHORTCUT_ICONS: Record<ShortcutIcon, LucideIcon> = {
   invitations: Mail,
   recycle: Trash2,
   settings: Settings,
+  themes: Palette,
   project: FolderKanban,
 };
 

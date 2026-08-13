@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, Pencil, Plus, Sparkles, StickyNote, Trash2, X } from 'lucide-react';
+import { Check, Pencil, Plus, Sparkles, StickyNote, Trash2, UserCheck, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
@@ -11,6 +11,7 @@ import {
   useUpdateNote,
 } from '@/entities/note/model/queries';
 import { NoteAuthorStamp } from '@/entities/note/ui/note-author';
+import { completionProgress, isSharedTask } from '@/entities/task/lib/completion';
 import { useChecklistMutations, useTask } from '@/entities/task/model/queries';
 import type { Task } from '@/entities/task/model/types';
 import { TaskTypeTag } from '@/entities/task/ui/task-type-tag';
@@ -21,7 +22,7 @@ import { NOTE_COLORS, TASK_STATUS_META } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
 import { readableInk } from '@/shared/lib/colors';
 import { formatDateTime, formatDeadline } from '@/shared/lib/dates';
-import { AvatarStack, Badge, Button, Modal, Spinner } from '@/shared/ui';
+import { Avatar, AvatarStack, Badge, Button, Modal, Spinner } from '@/shared/ui';
 
 interface TaskDetailModalProps {
   taskId: string | null;
@@ -132,6 +133,53 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
             {task.dueAt && <span>Due {formatDateTime(task.dueAt)}</span>}
             {task.completedAt && <span>Completed {formatDateTime(task.completedAt)}</span>}
           </div>
+
+          {/* --- Sign-off --------------------------------------------------
+              Only for work several people carry. On a single-assignee task the
+              tick on the card already says everything this section would, and
+              a roster of one is not a roster. */}
+          {isSharedTask(task) && (
+            <section className="space-y-2">
+              <h3 className="flex items-center gap-2 text-sm font-semibold">
+                <UserCheck className="h-3.5 w-3.5" />
+                Sign-off
+                <span className="text-xs font-normal text-content-faint">
+                  {`${completionProgress(task).done}/${task.assignees.length}`}
+                </span>
+              </h3>
+
+              <ul className="grid gap-1.5 sm:grid-cols-2">
+                {task.assignees.map((assignee) => (
+                  <li
+                    key={assignee.id}
+                    className="flex items-center gap-2 rounded-lg bg-surface-sunken px-2.5 py-1.5"
+                  >
+                    <Avatar name={assignee.displayName} src={assignee.avatarUrl} size="xs" />
+                    <span className="min-w-0 flex-1 truncate text-xs">
+                      {assignee.displayName}
+                      {assignee.id === currentUser?.id && (
+                        <span className="text-content-faint"> (you)</span>
+                      )}
+                    </span>
+
+                    {assignee.completedAt ? (
+                      <span className="inline-flex shrink-0 items-center gap-1 text-[10px] font-semibold text-positive">
+                        <Check className="h-3 w-3" strokeWidth={3} />
+                        Done
+                      </span>
+                    ) : (
+                      <span className="shrink-0 text-[10px] text-content-faint">Waiting</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+
+              <p className="text-[11px] leading-relaxed text-content-faint">
+                Everybody assigned ticks their own box, and the task completes itself when the last
+                one does. A project admin can close it early.
+              </p>
+            </section>
+          )}
 
           {/* --- Sub-checklist -------------------------------------------- */}
           <section className="space-y-2.5">

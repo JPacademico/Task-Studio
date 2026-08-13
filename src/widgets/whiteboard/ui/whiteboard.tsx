@@ -62,6 +62,25 @@ const isStroke = (element: WhiteboardElement): element is WhiteboardElement & {
   data: WhiteboardStrokeData;
 } => Array.isArray((element.data as WhiteboardStrokeData).points);
 
+/** The width the eraser rubs at. Its own constant because two places need it. */
+const ERASER_WIDTH = 26;
+
+/**
+ * Reads a stroke saved before the eraser had a flag of its own.
+ *
+ * Those were written as an opaque black line at exactly the eraser's width,
+ * which is a combination the pen cannot produce — its slider stops at 12 — so
+ * the pair identifies an old eraser stroke without any chance of demoting
+ * somebody's actual black line. Without this, every board drawn before the fix
+ * would keep its black smears forever.
+ */
+const adoptStroke = (stroke: WhiteboardStrokeData): WhiteboardStrokeData =>
+  stroke.erase === undefined &&
+  stroke.width === ERASER_WIDTH &&
+  /^(#000000|#000|rgba?\(0, ?0, ?0(, ?1)?\))$/.test(stroke.color)
+    ? { ...stroke, erase: true }
+    : stroke;
+
 /** Keeps an image note inside a sane box whatever the source resolution is. */
 const readImageSize = (file: File): Promise<{ width: number; height: number }> =>
   new Promise((resolve) => {
@@ -108,6 +127,9 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
 
   const [color, setColor] = useState<string>(TASK_COLORS[0]);
   const [width, setWidth] = useState(3);
+  // The rubber has its own size, kept apart from the pen's: switching tools to
+  // wipe something out and back should not have resized the nib.
+  const [eraserWidth, setEraserWidth] = useState(ERASER_WIDTH);
   const [tool, setTool] = useState<Tool>('select');
   const [selection, setSelection] = useState<string[]>([]);
   const [isPickingMultiple, setIsPickingMultiple] = useState(false);
@@ -158,7 +180,19 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
     else handlesRef.current.delete(id);
   }, []);
 
-  /** Repaints the whole scene. Cheap: strokes are plain point arrays. */
+  /**
+   * Repaints the whole scene. Cheap: strokes are plain point arrays.
+   *
+   * Erasing is `destination-out` rather than a stroke in the background colour:
+   * the canvas is transparent and sits over the board's own grid, its notes and
+   * whatever the active skin paints behind them, so "the background colour" is
+   * not a colour this component knows — and painting one would have punched an
+   * opaque hole in the wall instead of rubbing ink off it.
+   *
+   * Because the whole scene is repainted in order every frame, an eraser stroke
+   * only ever removes the ink laid down before it, which is what makes it
+   * behave like a rubber rather than like a hole in the canvas.
+   */
   const redraw = useCallback(() => {
     const canvas = canvasRef.current;
     const context = canvas?.getContext('2d');
@@ -171,8 +205,10 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
     const paint = (stroke: WhiteboardStrokeData) => {
       if (stroke.points.length < 2) return;
 
+      context.globalCompositeOperation = stroke.erase ? 'destination-out' : 'source-over';
       context.beginPath();
-      context.strokeStyle = stroke.color;
+      // Any opaque colour erases; the alpha is what does the work.
+      context.strokeStyle = stroke.erase ? '#000' : stroke.color;
       context.lineWidth = stroke.width;
       context.moveTo(stroke.points[0][0] * canvas.width, stroke.points[0][1] * canvas.height);
 
@@ -184,6 +220,10 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
 
     strokesRef.current.forEach(paint);
     if (currentRef.current) paint(currentRef.current);
+
+    // Never leave the context in erase mode: the next caller to touch it is
+    // usually the next frame's first stroke.
+    context.globalCompositeOperation = 'source-over';
   }, []);
 
   // Hydrate from the API, then keep the canvas sized to its container.
@@ -197,7 +237,7 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
   // repaint is tied to the host actually swapping, not to the flag that asks
   // for the swap.
   useEffect(() => {
-    strokesRef.current = scene.filter(isStroke).map((element) => element.data);
+    strokesRef.current = scene.filter(isStroke).map((element) => adoptStroke(element.data));
     redraw();
   }, [redraw, scene, surfaceMount]);
 
@@ -225,7 +265,7 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
 
     const handleElement = (element: WhiteboardElement) => {
       if (element.projectId !== projectId || !isStroke(element)) return;
-      strokesRef.current.push(element.data);
+      strokesRef.current.push(adoptStroke(element.data));
       redraw();
     };
 
@@ -257,10 +297,12 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
     event.currentTarget.setPointerCapture(event.pointerId);
     isDrawingRef.current = true;
 
+    const isErasing = tool === 'eraser';
     currentRef.current = {
       points: [pointFromEvent(event)],
-      color: tool === 'eraser' ? 'rgba(0,0,0,1)' : color,
-      width: tool === 'eraser' ? 26 : width,
+      color: isErasing ? '#000' : color,
+      width: isErasing ? eraserWidth : width,
+      ...(isErasing ? { erase: true } : {}),
     };
   };
 
@@ -597,6 +639,27 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
           </>
         )}
 
+        {/* A rubber has a size too, and it is the only thing about it worth
+            setting — there is nothing to choose a colour for. */}
+        {tool === 'eraser' && (
+          <>
+            <span className="hidden h-6 w-px bg-edge sm:block" />
+            <label className="flex items-center gap-2 text-xs text-content-muted">
+              Nib
+              <input
+                type="range"
+                min={10}
+                max={70}
+                step={2}
+                value={eraserWidth}
+                onChange={(event) => setEraserWidth(Number(event.target.value))}
+                className="w-20 accent-brand"
+              />
+              <span className="tabular-nums text-content-faint">{eraserWidth}px</span>
+            </label>
+          </>
+        )}
+
         <span
           className={cn(
             'ml-auto text-[11px]',
@@ -641,7 +704,11 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
           // Post-its and the lasso underneath it would never see an event.
           className={cn(
             'absolute inset-0 h-full w-full',
-            isInking ? 'z-20 touch-none cursor-crosshair' : 'pointer-events-none',
+            isInking ? 'z-20 touch-none' : 'pointer-events-none',
+            // A rubber is not a nib: the pointer should say which one is in
+            // hand before the first stroke rather than after it.
+            tool === 'pen' && 'cursor-crosshair',
+            tool === 'eraser' && 'cursor-cell',
           )}
         />
 

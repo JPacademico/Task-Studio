@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 
 import { useProjectRoom, useRealtime } from '@/app/providers/realtime-provider';
@@ -17,6 +18,8 @@ import { useChatDock } from '../model/chat-dock.store';
  * project page is mounted.
  */
 export const ChatDock = () => {
+  const { pathname } = useLocation();
+
   const projectId = useChatDock((state) => state.projectId);
   const projectName = useChatDock((state) => state.projectName);
   const isOpen = useChatDock((state) => state.isOpen);
@@ -28,6 +31,27 @@ export const ChatDock = () => {
   // open without either one's cleanup evicting the other.
   useProjectRoom(isOpen ? (projectId ?? undefined) : undefined);
 
+  /** Is the page underneath the window the one the conversation belongs to? */
+  const isOnOwningProject = Boolean(projectId) && pathname.startsWith(`/projects/${projectId}`);
+
+  /*
+   * Pulling the pin hands the window back to the page that owns it.
+   *
+   * On the project page that is exactly what happens: the window stays, and
+   * the page's own cleanup closes it on the way out. Anywhere else there *is*
+   * no owning page mounted — so an unpinned window would have gone on floating
+   * over the dashboard with nothing left holding it open, and the only way to
+   * get rid of it was the close button. Unpinning off-project therefore closes
+   * it there and then, which is what the gesture already meant.
+   */
+  const handlePinnedChange = (nextPinned: boolean) => {
+    if (!nextPinned && !isOnOwningProject) {
+      close();
+      return;
+    }
+    setPinned(nextPinned);
+  };
+
   return (
     <AnimatePresence>
       {isOpen && projectId && (
@@ -37,7 +61,7 @@ export const ChatDock = () => {
           projectName={projectName}
           onClose={close}
           isPinned={isPinned}
-          onPinnedChange={setPinned}
+          onPinnedChange={handlePinnedChange}
         />
       )}
     </AnimatePresence>

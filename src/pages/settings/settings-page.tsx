@@ -157,7 +157,12 @@ const SettingsPage = () => {
         </form>
       </Section>
 
-      <Section title="Theme" description="Every theme ships both a light and a dark palette.">
+      {/* Three, then a door. The full catalogue is a gallery, not a setting —
+          see the note on SkinPicker. */}
+      <Section
+        title="Theme"
+        description="Your current look and a couple of others. Every theme ships both a light and a dark palette."
+      >
         <div className="rounded-2xl border border-edge bg-surface-raised p-4">
           <SkinPicker />
         </div>

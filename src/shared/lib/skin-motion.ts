@@ -22,6 +22,10 @@ const REVEAL: Record<ThemeSkin, Transition> = {
   PIXEL: { duration: 0.2, ease: (progress: number) => Math.ceil(progress * 5) / 5 },
   // Weightless: it coasts in and settles slowly, like something in free fall.
   SPACE: { duration: 0.42, ease: [0.16, 0.84, 0.24, 1] },
+  // Servo-driven: it goes when told and stops dead, with no overshoot at all.
+  HAZARD: { duration: 0.16, ease: [0.2, 0, 0, 1] },
+  // A page turning under its own weight — slow to start, then it falls.
+  NEWSPAPER: { duration: 0.3, ease: [0.4, 0, 0.2, 1] },
 };
 
 const MARKER: Record<ThemeSkin, Transition> = {
@@ -31,6 +35,8 @@ const MARKER: Record<ThemeSkin, Transition> = {
   VINTAGE: { duration: 0.4, ease: [0.5, 0, 0.2, 1] },
   PIXEL: { duration: 0.16, ease: (progress: number) => Math.ceil(progress * 4) / 4 },
   SPACE: { type: 'spring', stiffness: 180, damping: 20, mass: 1.1 },
+  HAZARD: { duration: 0.14, ease: [0.2, 0, 0, 1] },
+  NEWSPAPER: { duration: 0.26, ease: [0.4, 0, 0.2, 1] },
 };
 
 /*
