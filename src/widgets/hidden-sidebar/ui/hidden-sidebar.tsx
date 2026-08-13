@@ -26,7 +26,14 @@ import { cn } from '@/shared/lib/cn';
 import { useEdgeReveal } from '@/shared/lib/use-edge-reveal';
 import { useIsTouchDevice } from '@/shared/lib/hooks';
 import { useNavPreferences } from '@/shared/lib/nav-preferences.store';
-import { Avatar, EdgeAffordance, NavGlyph, NavPinButton, StudioMark } from '@/shared/ui';
+import {
+  Avatar,
+  EdgeAffordance,
+  EldritchTendrils,
+  NavGlyph,
+  NavPinButton,
+  StudioMark,
+} from '@/shared/ui';
 
 interface NavItem {
   to: string;
@@ -285,6 +292,11 @@ export const HiddenSidebar = ({ isMobileOpen, onMobileClose }: HiddenSidebarProp
           aria-hidden
           className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-brand/45 to-transparent"
         />
+
+        {/* Whatever is holding the rail onto the page. Renders on one skin and
+            returns null on the other seven, and stops moving while the rail is
+            shut. */}
+        <EldritchTendrils edge="left" isActive={isOpen} />
 
         <header className="flex items-center gap-2.5 px-4 pb-4 pt-5">
           <span className="relative grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-brand/12 text-brand shadow-[0_8px_20px_-10px_rgb(var(--brand)/0.9)]">

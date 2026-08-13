@@ -63,7 +63,7 @@ const DashboardPage = () => {
 
   const togglePin = useTogglePin();
   const toggleTaskPin = useToggleTaskPin();
-  const toggleCompletion = useToggleMyCompletion();
+  const toggleCompletion = useToggleMyCompletion(user?.id);
 
   const pinned = projects.filter((project) => project.isPinned);
   const others = projects.filter((project) => !project.isPinned);
@@ -107,10 +107,7 @@ const DashboardPage = () => {
       </div>
 
       {pinned.length > 0 && (
-        <Section
-          title="Pinned projects"
-          description="Kept at the top, in your own order."
-        >
+        <Section title="Pinned projects">
           <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
             <AnimatePresence initial={false}>
               {pinned.map((project) => (
@@ -172,7 +169,6 @@ const DashboardPage = () => {
 
       <Section
         title="Up next for you"
-        description="Open tasks assigned to you across every project."
         action={
           <Link to="/tasks" className="text-xs font-medium text-brand hover:underline">
             Open task menu

@@ -40,10 +40,22 @@ export const SkinMock = ({ preview, scale = 1, className }: SkinMockProps) => {
   const px = (value: number) => value * scale;
   const radius = preview.radius * Math.min(scale, 1.6);
 
+  /*
+   * Corners that grew rather than being cut.
+   *
+   * The eldritch skin's radius tokens are asymmetric shorthand — big, small,
+   * big, small — and that is the single most recognisable thing about it. A
+   * mock that rounded all four corners evenly would be selling a teal palette
+   * and nothing else, so the same asymmetry is reproduced here.
+   */
+  const corners = preview.organic
+    ? `${radius}px ${radius / 4}px ${radius}px ${radius / 4}px`
+    : `${radius}px`;
+
   const card: CSSProperties = {
     background: preview.raised,
     border: `${preview.border}px solid ${preview.edge}`,
-    borderRadius: radius,
+    borderRadius: corners,
     clipPath: preview.notched ? notch(px(3)) : undefined,
     padding: px(6),
     gap: px(4),
@@ -67,7 +79,7 @@ export const SkinMock = ({ preview, scale = 1, className }: SkinMockProps) => {
         gap: px(6),
         background: preview.starfield ? `${STARFIELD}, ${preview.surface}` : preview.surface,
         backgroundSize: preview.starfield ? '60px 60px, 44px 44px, 80px 80px, auto' : undefined,
-        borderRadius: radius,
+        borderRadius: corners,
         fontFamily: preview.font,
       }}
     >
@@ -161,6 +173,18 @@ export const SkinMock = ({ preview, scale = 1, className }: SkinMockProps) => {
                 borderRadius: radius / 3,
               }}
             />
+
+            {/* Eldritch: the iris that opens on every card, caught open. */}
+            {preview.watcher && index === 1 && (
+              <span
+                className="absolute right-0 top-0"
+                style={{
+                  height: px(30),
+                  width: px(30),
+                  background: `radial-gradient(38% 30% at 78% 22%, ${preview.watcher}66, transparent 70%), radial-gradient(12% 9% at 78% 22%, ${preview.brand}, transparent 76%)`,
+                }}
+              />
+            )}
 
             {/* Hazard: every vessel has something in the bottom of it. */}
             {preview.sludge && (

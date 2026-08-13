@@ -1013,6 +1013,174 @@
     color-scheme: dark;
   }
 
+  /* -----------------------------------------------------------------------
+   * Skin: ELDRITCH — the thing in the margins of the manuscript.
+   *
+   * The trap with a Lovecraft skin is drawing a monster. Nothing in these
+   * stories is ever seen; what you get is the *evidence* of it — a geometry
+   * that is subtly wrong, a light with no source, and the persistent sense of
+   * being looked at. So this skin has no tentacle wallpaper. It has:
+   *
+   *   - Wrong corners. Every radius token is asymmetric (`1.5rem 0.4rem` and
+   *     back again), which `border-radius` accepts as shorthand — so every box
+   *     in the app is a leaf, or an eye, or something that grew rather than
+   *     something that was cut. One token, no component changes.
+   *   - A light with no source. The accent is bioluminescent rather than lit:
+   *     panels glow at the rim, and the glow is the *only* thing keeping the
+   *     dark palette legible.
+   *   - Something watching. Cards carry a slow iris of light that opens under
+   *     the pointer, and the page holds a sigil that turns once a minute.
+   *
+   * Light is the manuscript: aged rag paper, iron-gall ink, and a marginal
+   * illumination in a green that no medieval workshop could have mixed. Dark
+   * is what the manuscript is about.
+   * --------------------------------------------------------------------- */
+  [data-skin='eldritch'] {
+    --surface: 224 216 196;
+    --surface-raised: 238 232 214;
+    --surface-sunken: 206 197 174;
+    --edge: 74 76 62;
+    --content: 32 30 24;
+    --content-muted: 90 84 68;
+    --content-faint: 136 128 108;
+    /* Deep enough that bone-white lettering on a filled control clears 5:1. */
+    --brand: 17 100 90;
+    --brand-soft: 198 224 214;
+    --brand-contrast: 244 250 246;
+    --positive: 56 118 82;
+    --warning: 168 112 22;
+    --danger: 142 34 52;
+
+    /* Nothing here was cut to size; it grew. */
+    --radius-sm: 0.35rem 0.1rem 0.35rem 0.1rem;
+    --radius-md: 0.5rem 0.15rem 0.5rem 0.15rem;
+    --radius-lg: 0.9rem 0.25rem 0.9rem 0.25rem;
+    --radius-xl: 1.1rem 0.3rem 1.1rem 0.3rem;
+    --radius-2xl: 1.5rem 0.4rem 1.5rem 0.4rem;
+    --radius-3xl: 2rem 0.6rem 2rem 0.6rem;
+
+    --font-display: 'Cinzel', 'IM FELL English', 'Trajan Pro', 'Palatino Linotype', Palatino,
+      Georgia, serif;
+    --font-sans: 'IM FELL English', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+    --font-hand: 'IM FELL English SC', 'Segoe Script', 'Brush Script MT', cursive;
+
+    --panel-border-width: 1px;
+    --shadow-panel:
+      inset 0 0 0 1px rgb(var(--surface-raised)),
+      inset 0 1px 0 rgb(255 255 255 / 0.35),
+      0 18px 44px -26px rgb(20 26 20 / 0.85);
+    --press-travel: 1px;
+
+    /* Scales, drawn as one repeating arc — the cheapest texture that is not a
+       grid, a dot or a line, and the only one that reads as *grown*. */
+    --panel-texture:
+      repeating-radial-gradient(
+        circle at 50% 118%,
+        transparent 0 8px,
+        rgb(var(--edge) / 0.05) 8px 9px
+      ),
+      radial-gradient(70% 50% at 50% 0%, rgb(var(--eldritch-ichor) / 0.1), transparent 72%);
+    --panel-texture-size: auto, auto;
+
+    --page-wash:
+      radial-gradient(120% 80% at 50% -10%, rgb(var(--eldritch-ichor) / 0.12), transparent 62%),
+      radial-gradient(90% 70% at 100% 100%, rgb(var(--eldritch-glow) / 0.12), transparent 66%);
+
+    --btn-overlay: linear-gradient(180deg, rgb(255 255 255 / 0.3), rgb(12 40 36 / 0.16));
+    --btn-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.4),
+      0 8px 18px -12px rgb(10 40 34 / 0.9);
+    --btn-shadow-active: inset 0 2px 6px rgb(8 30 26 / 0.4);
+    --btn-tracking: 0.16em;
+    --btn-transform: uppercase;
+    --btn-weight: 600;
+    --control-border-width: 1px;
+    --field-shadow: inset 0 1px 3px rgb(40 44 34 / 0.18);
+    --field-shadow-focus: 0 0 18px -3px rgb(var(--brand) / 0.8);
+
+    /* A page torn from the book, not a Post-it. */
+    --postit-radius: 0.75rem 0.2rem 0.75rem 0.2rem;
+    --postit-shadow:
+      inset 0 0 26px rgb(70 60 30 / 0.22),
+      0 14px 28px -16px rgb(20 24 18 / 0.9);
+    --postit-texture: repeating-radial-gradient(
+      circle at 50% 120%,
+      transparent 0 7px,
+      rgb(60 50 20 / 0.05) 7px 8px
+    );
+    --postit-texture-size: auto;
+
+    /* Nothing here is in a hurry, and nothing here overshoots. */
+    --ease-ui: cubic-bezier(0.5, 0, 0.2, 1);
+    --speed-ui: 320ms;
+    --icon-stroke: 1.5;
+    --heading-transform: uppercase;
+    --heading-tracking: 0.18em;
+
+    /* --- The skin's own materials ---------------------------------------- */
+
+    /* What runs in the veins of the thing. */
+    --eldritch-ichor: 17 110 98;
+    /* The colour that should not be there. Used for anything *wrong*. */
+    --eldritch-glow: 122 78 186;
+    /* The seal, turning slowly in the corner of the page. */
+    --eldritch-sigil: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200' fill='none' stroke='%23116e62' stroke-width='2'%3E%3Ccircle cx='100' cy='100' r='92'/%3E%3Ccircle cx='100' cy='100' r='74'/%3E%3Ccircle cx='100' cy='100' r='34'/%3E%3Cpath d='M100 26 173 145 27 145Z'/%3E%3Cpath d='M100 174 27 55 173 55Z'/%3E%3Cellipse cx='100' cy='100' rx='34' ry='18'/%3E%3Ccircle cx='100' cy='100' r='9' fill='%23116e62'/%3E%3Cg%3E%3Cpath d='M100 8v18M100 174v18M8 100h18M174 100h18'/%3E%3C/g%3E%3C/svg%3E");
+
+    color-scheme: light;
+  }
+
+  [data-skin='eldritch'].dark {
+    /* The abyss. Everything above it is bioluminescent, not lit. */
+    --surface: 6 10 12;
+    --surface-raised: 13 21 23;
+    --surface-sunken: 2 5 6;
+    --edge: 44 80 74;
+    --content: 214 232 226;
+    --content-muted: 138 168 160;
+    --content-faint: 92 120 114;
+    --brand: 86 210 174;
+    --brand-soft: 10 52 46;
+    --brand-contrast: 2 12 10;
+    --positive: 104 216 156;
+    --warning: 214 178 84;
+    --danger: 216 76 98;
+
+    --eldritch-ichor: 42 180 154;
+    --eldritch-glow: 158 108 246;
+
+    --shadow-panel:
+      inset 0 1px 0 rgb(var(--brand) / 0.22),
+      0 0 0 1px rgb(var(--brand) / 0.1),
+      0 30px 64px -34px rgb(0 0 0);
+
+    --panel-texture:
+      repeating-radial-gradient(
+        circle at 50% 118%,
+        transparent 0 8px,
+        rgb(var(--brand) / 0.055) 8px 9px
+      ),
+      radial-gradient(70% 50% at 50% 0%, rgb(var(--eldritch-ichor) / 0.14), transparent 72%);
+
+    --page-wash:
+      radial-gradient(120% 80% at 50% -10%, rgb(var(--eldritch-ichor) / 0.16), transparent 60%),
+      radial-gradient(90% 70% at 100% 104%, rgb(var(--eldritch-glow) / 0.2), transparent 64%),
+      radial-gradient(60% 50% at 0% 40%, rgb(var(--brand) / 0.08), transparent 70%);
+
+    --btn-overlay: linear-gradient(180deg, rgb(255 255 255 / 0.1), rgb(0 0 0 / 0.36));
+    --btn-shadow:
+      inset 0 1px 0 rgb(var(--brand) / 0.28),
+      0 0 22px -10px rgb(var(--brand) / 0.9);
+    --btn-shadow-active: inset 0 2px 8px rgb(0 0 0 / 0.7);
+    --field-shadow: inset 0 1px 4px rgb(0 0 0 / 0.7);
+    --postit-shadow:
+      inset 0 0 26px rgb(var(--eldritch-ichor) / 0.16),
+      0 18px 40px -18px rgb(0 0 0);
+
+    --eldritch-sigil: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200' fill='none' stroke='%2356d2ae' stroke-width='2'%3E%3Ccircle cx='100' cy='100' r='92'/%3E%3Ccircle cx='100' cy='100' r='74'/%3E%3Ccircle cx='100' cy='100' r='34'/%3E%3Cpath d='M100 26 173 145 27 145Z'/%3E%3Cpath d='M100 174 27 55 173 55Z'/%3E%3Cellipse cx='100' cy='100' rx='34' ry='18'/%3E%3Ccircle cx='100' cy='100' r='9' fill='%2356d2ae'/%3E%3Cg%3E%3Cpath d='M100 8v18M100 174v18M8 100h18M174 100h18'/%3E%3C/g%3E%3C/svg%3E");
+
+    color-scheme: dark;
+  }
+
   * {
     @apply border-edge;
   }
@@ -1217,6 +1385,39 @@
     filter: grayscale(0.92) contrast(1.12);
   }
 
+  /*
+   * The seal, turning in the corner of the page.
+   *
+   * A full minute and a half for one revolution — slow enough that you never
+   * catch it moving, only notice it has. One fixed pseudo-element painting one
+   * background-image on a `transform`, so the whole effect is free.
+   */
+  [data-skin='eldritch'] body::after {
+    content: '';
+    position: fixed;
+    left: -90px;
+    bottom: -90px;
+    width: 380px;
+    height: 380px;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.1;
+    background-image: var(--eldritch-sigil);
+    background-size: contain;
+    background-repeat: no-repeat;
+    animation: sigil-turn 96s linear infinite;
+  }
+
+  [data-skin='eldritch'].dark body::after {
+    opacity: 0.16;
+  }
+
+  @keyframes sigil-turn {
+    to {
+      transform: rotate(-360deg);
+    }
+  }
+
   /* Exactly one tile, so the last frame of the loop is the first frame of it. */
   @keyframes star-drift {
     to {
@@ -1313,6 +1514,106 @@
   .postit-grain {
     background-image: var(--postit-texture);
     background-size: var(--postit-texture-size);
+  }
+
+  /*
+   * The document surface.
+   *
+   * Tailwind's preflight strips every default: headings lose their size, lists
+   * lose their markers, blockquotes lose their indent. That is right for an
+   * app built out of components and wrong for the one place in it that renders
+   * *prose the user wrote* — so the defaults come back here, scoped to the
+   * editor, and expressed in the skin's own tokens so a document written under
+   * one theme is set in the next one's type.
+   */
+  .rich-text > * + * {
+    margin-top: 0.75em;
+  }
+
+  .rich-text h1,
+  .rich-text h2,
+  .rich-text h3,
+  .rich-text h4 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: var(--heading-tracking);
+  }
+
+  .rich-text h1 {
+    font-size: 1.6em;
+  }
+  .rich-text h2 {
+    font-size: 1.32em;
+  }
+  .rich-text h3 {
+    font-size: 1.14em;
+  }
+  .rich-text h4 {
+    font-size: 1em;
+  }
+
+  .rich-text ul,
+  .rich-text ol {
+    padding-left: 1.4em;
+  }
+
+  .rich-text ul {
+    list-style: disc;
+  }
+  .rich-text ol {
+    list-style: decimal;
+  }
+  .rich-text li + li {
+    margin-top: 0.25em;
+  }
+
+  .rich-text blockquote {
+    border-left: 3px solid rgb(var(--brand) / 0.55);
+    padding: 0.15em 0 0.15em 0.9em;
+    color: rgb(var(--content-muted));
+    font-style: italic;
+  }
+
+  .rich-text pre {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    background: rgb(var(--surface-sunken));
+    border: 1px solid rgb(var(--edge));
+    border-radius: var(--radius-lg);
+    padding: 0.75em 0.9em;
+    overflow-x: auto;
+    white-space: pre-wrap;
+  }
+
+  .rich-text code {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+  }
+
+  .rich-text a {
+    color: rgb(var(--brand));
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .rich-text img,
+  .rich-text video {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-lg);
+    border: 1px solid rgb(var(--edge));
+  }
+
+  .rich-text hr {
+    border: 0;
+    border-top: 1px solid rgb(var(--edge));
+  }
+
+  /* An empty document should say so rather than sitting there as a blank box. */
+  .rich-text:empty::before {
+    content: attr(data-placeholder);
+    color: rgb(var(--content-faint));
   }
 
   /* Opt-in material for chrome that owns its own background (rails, toolbars). */
@@ -1760,6 +2061,156 @@
   }
 
   /* ---------------------------------------------------------------------
+   * ELDRITCH — bioluminescence, and the feeling of being read back.
+   * --------------------------------------------------------------------- */
+  [data-skin='eldritch'] .ui-btn,
+  [data-skin='eldritch'] .ui-filter,
+  [data-skin='eldritch'] .ui-chip {
+    background-image: var(--btn-overlay);
+    box-shadow: var(--btn-shadow);
+  }
+
+  [data-skin='eldritch'] .ui-btn:active,
+  [data-skin='eldritch'] .ui-filter:active {
+    box-shadow: var(--btn-shadow-active);
+  }
+
+  /* Touch it and it answers. */
+  [data-skin='eldritch'] .ui-btn:hover,
+  [data-skin='eldritch'] .ui-filter:hover {
+    box-shadow:
+      inset 0 1px 0 rgb(var(--brand) / 0.4),
+      0 0 26px -6px rgb(var(--eldritch-glow) / 0.9);
+  }
+
+  [data-skin='eldritch'] .ui-chip {
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  [data-skin='eldritch'] .ui-card,
+  [data-skin='eldritch'] .ui-accordion,
+  [data-skin='eldritch'] .ui-segment {
+    position: relative;
+    background-image: var(--panel-texture);
+    background-size: var(--panel-texture-size);
+    box-shadow:
+      inset 0 1px 0 rgb(var(--brand) / 0.18),
+      0 0 0 1px rgb(var(--brand) / 0.08);
+  }
+
+  /*
+   * The iris.
+   *
+   * Every card holds a slow bloom of the wrong colour in its corner, and it
+   * opens when the pointer is over the card — the one interaction this skin
+   * needed, because "something is looking at you" is the whole brief and a
+   * static texture cannot say it. Opacity and scale on a pseudo-element, so it
+   * stays on the compositor; `transform-origin` sits where the bloom does, so
+   * it opens *from* the eye rather than growing towards it.
+   */
+  [data-skin='eldritch'] .ui-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    opacity: 0.55;
+    transform: scale(0.9);
+    transform-origin: 88% 12%;
+    background:
+      radial-gradient(38% 30% at 88% 12%, rgb(var(--eldritch-glow) / 0.3), transparent 70%),
+      radial-gradient(12% 9% at 88% 12%, rgb(var(--brand) / 0.55), transparent 76%);
+    transition:
+      opacity var(--speed-ui) var(--ease-ui),
+      transform var(--speed-ui) var(--ease-ui);
+  }
+
+  [data-skin='eldritch'] .ui-card:hover::after {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* An inscribed rule above every accordion head, in ichor. */
+  [data-skin='eldritch'] .ui-accordion::before {
+    content: '';
+    position: absolute;
+    inset: 0 18% auto 18%;
+    height: 1px;
+    pointer-events: none;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(var(--eldritch-ichor) / 0.9),
+      rgb(var(--eldritch-glow) / 0.8),
+      rgb(var(--eldritch-ichor) / 0.9),
+      transparent
+    );
+  }
+
+  [data-skin='eldritch'] .nav-rail {
+    border-color: rgb(var(--brand) / 0.3);
+  }
+
+  /*
+   * The seam a rail shares with the page: a membrane, not a well.
+   *
+   * The first pass at this was a radial gradient — black at the join, falling
+   * off into the panel — which is precisely the shape the deep field sinks
+   * into its edges, and the two skins immediately read as one idea in two
+   * palettes. That is the standard way a second dark theme dies.
+   *
+   * So nothing here is radial and nothing here is a hole. The seam is *tissue*:
+   * a flat band of ichor that thickens towards the join, with a wet highlight
+   * along the edge itself and no internal rules of any kind — an earlier pass
+   * segmented it with repeating hairlines, which at a glance read as a ruled
+   * list rather than as anything organic. The limbs that come out of this edge
+   * are real geometry and live in `eldritch-decor.tsx`; a gradient cannot curl.
+   */
+  [data-skin='eldritch'] .nav-rail::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  [data-skin='eldritch'] .nav-rail--left::after {
+    inset: 0 0 0 auto;
+    width: 30px;
+    background: linear-gradient(
+      to right,
+      transparent,
+      rgb(var(--eldritch-ichor) / 0.3) 58%,
+      rgb(var(--eldritch-glow) / 0.5) 92%,
+      rgb(var(--brand) / 0.65)
+    );
+  }
+
+  [data-skin='eldritch'] .nav-rail--right::after {
+    inset: 0 auto 0 0;
+    width: 30px;
+    background: linear-gradient(
+      to left,
+      transparent,
+      rgb(var(--eldritch-ichor) / 0.3) 58%,
+      rgb(var(--eldritch-glow) / 0.5) 92%,
+      rgb(var(--brand) / 0.65)
+    );
+  }
+
+  [data-skin='eldritch'] .nav-rail--top::after {
+    inset: auto 0 0 0;
+    height: 18px;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--eldritch-ichor) / 0.3) 58%,
+      rgb(var(--eldritch-glow) / 0.5) 92%,
+      rgb(var(--brand) / 0.65)
+    );
+  }
+
+  /* ---------------------------------------------------------------------
    * NEWSPAPER — double rules, halftone plates and one spot colour.
    * --------------------------------------------------------------------- */
   [data-skin='newspaper'] .ui-btn,
@@ -1904,6 +2355,19 @@
     background-size: auto, 24px 24px, 24px 24px;
   }
 
+  /* Something moved under the board and the water has not settled. */
+  [data-skin='eldritch'] .board-grid {
+    background-image:
+      repeating-radial-gradient(
+        circle at 30% 120%,
+        transparent 0 22px,
+        rgb(var(--brand) / 0.05) 22px 23px
+      ),
+      linear-gradient(rgb(var(--content) / 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(var(--content) / 0.035) 1px, transparent 1px);
+    background-size: auto, 34px 34px, 34px 34px;
+  }
+
   /* A galley: column rules on the baseline grid the type would have sat on. */
   [data-skin='newspaper'] .board-grid {
     background-image:
@@ -1977,6 +2441,14 @@
   [data-skin='newspaper'] .type-tag {
     font-size: 10px;
     letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* Inscribed rather than set: small caps on wide tracking, like a rubbing
+     taken off something carved. */
+  [data-skin='eldritch'] .type-tag {
+    font-size: 10px;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
   }
 
@@ -2392,6 +2864,275 @@
   }
 }
 
+/* --- ELDRITCH: it is not loading. It is looking. ------------------------- */
+.loader-eye {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* The lid. A circle squashed to a lens, which blinks by collapsing its own
+   height — one `scaleY`, so the blink never costs a layout. */
+.loader-eye > i:first-child {
+  position: absolute;
+  inset: 16% 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, rgb(var(--brand) / 0.28), transparent 72%);
+  box-shadow:
+    inset 0 0 0 1.5px rgb(var(--brand) / 0.85),
+    0 0 16px -4px rgb(var(--eldritch-glow) / 0.9);
+  animation: eye-blink 3.6s ease-in-out infinite;
+}
+
+/* The pupil, tracking something you cannot see. */
+.loader-eye > i:last-child {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 32%;
+  height: 32%;
+  margin: -16% 0 0 -16%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 38% 34%,
+    rgb(var(--eldritch-glow)),
+    rgb(var(--brand)) 55%,
+    rgb(0 0 0) 100%
+  );
+  box-shadow: 0 0 12px -1px rgb(var(--brand) / 0.9);
+  animation: eye-watch 3.6s ease-in-out infinite;
+}
+
+@keyframes eye-blink {
+  0%,
+  42%,
+  56%,
+  100% {
+    transform: scaleY(1);
+  }
+  49% {
+    transform: scaleY(0.06);
+  }
+}
+
+@keyframes eye-watch {
+  0%,
+  100% {
+    transform: translate3d(-24%, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(24%, 0, 0) scale(1.12);
+  }
+}
+
+/* ==========================================================================
+ * Eldritch decor: the parts of the skin that need geometry or a clock.
+ *
+ * Every rule below animates `transform` or `opacity` only, so the whole set is
+ * handed to the compositor once and costs the main thread nothing — which is
+ * what makes it affordable to have twenty-odd limbs moving at the edges of the
+ * screen at all times. See `eldritch-decor.tsx` for the markup.
+ * ========================================================================== */
+
+/* --- Tendrils ----------------------------------------------------------- */
+
+/*
+ * The limb itself never moves — only its joints do.
+ *
+ * An earlier pass rotated the whole drawing about a point inside its base,
+ * which swung the base edge off the rail's border: the tentacle visibly came
+ * unstuck from the panel it grows out of. So there is no animation on the svg
+ * at all, and the root wedge inside it carries no transform. Whatever happens
+ * further out, x=0 is nailed to the border.
+ */
+.eldritch-tendril {
+  filter: drop-shadow(0 0 4px rgb(var(--eldritch-glow) / 0.35));
+}
+
+/*
+ * A joint bends about the point where its segment meets the previous one.
+ *
+ * `fill-box` + `left center` is what puts the pivot exactly there: every
+ * segment is drawn symmetrically about y=0 starting at x=0 in its own local
+ * space, so the left-middle of its bounding box *is* the joint. No magic
+ * numbers, and it stays correct if a path is redrawn.
+ */
+.eldritch-tendril__joint {
+  transform-box: fill-box;
+  transform-origin: left center;
+  /* Sinusoidal rather than ease-in-out: a limb in water has no hard stops at
+     the ends of its travel, and `alternate` at both ends is where a cheap
+     sway gives itself away. */
+  animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+  animation-duration: var(--tendril-duration, 5.4s);
+  animation-delay: var(--tendril-delay, 0s);
+}
+
+.eldritch-tendril__joint--mid {
+  animation-name: tendril-flex-mid;
+}
+
+/*
+ * The tip lags the middle by a beat, and swings further.
+ *
+ * That phase offset is the whole trick: bend two joints in step and the limb
+ * reads as one rigid arm pivoting; bend the outer one late and the bend
+ * *travels* down the limb, which is what a living tentacle does. The extra
+ * amplitude is the same idea — the further from the anchor, the more free
+ * movement there is.
+ */
+.eldritch-tendril__joint--tip {
+  animation-name: tendril-flex-tip;
+  animation-delay: calc(var(--tendril-delay, 0s) + 0.45s);
+  animation-duration: calc(var(--tendril-duration, 5.4s) * 0.82);
+}
+
+@keyframes tendril-flex-mid {
+  from {
+    transform: rotate(-9deg);
+  }
+  to {
+    transform: rotate(10deg);
+  }
+}
+
+@keyframes tendril-flex-tip {
+  from {
+    transform: rotate(-19deg);
+  }
+  to {
+    transform: rotate(22deg);
+  }
+}
+
+/*
+ * A shut rail's limbs hold still.
+ *
+ * The rail is translated off-screen when hidden, and an off-screen element's
+ * animations keep running — fourteen joints per rail, forever, for something
+ * nobody can see. Pausing is one property and it also covers the
+ * reduced-motion case.
+ */
+.eldritch-tendrils--still .eldritch-tendril__joint {
+  animation-play-state: paused;
+}
+
+/* --- Icons that blink ---------------------------------------------------- */
+
+/*
+ * Applied to the eye inside *some* glyphs, never all of them.
+ *
+ * A navigation rail where every icon blinks is a rail nobody can read — the
+ * motion becomes the signal and the destinations stop being one. Four glyphs
+ * carry this (the ones that are literally eyes), each on its own delay, and
+ * the rest hold still. The blink itself is 3% of a seven-second cycle, so what
+ * you actually experience is catching one out of the corner of your eye.
+ */
+.eldritch-wink {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: eldritch-wink 7s ease-in-out infinite;
+}
+
+@keyframes eldritch-wink {
+  0%,
+  93%,
+  100% {
+    transform: scaleY(1);
+  }
+  96% {
+    transform: scaleY(0.06);
+  }
+}
+
+/* --- The watcher --------------------------------------------------------- */
+
+/*
+ * The whole life of one sighting: open, hold, gone.
+ *
+ * A single CSS animation rather than a Framer enter/exit pair, because the
+ * element's *removal* must not depend on an animation finishing — see the note
+ * in `WanderingEye`. `forwards` holds the final frame so the eye is already
+ * invisible by the time React unmounts it, and the duration matches
+ * `APPEARANCE_DURATION` exactly: the two are a pair, and changing one without
+ * the other either cuts the fade short or leaves a gap of nothing.
+ */
+.eldritch-watcher-life {
+  animation: watcher-life 2.6s ease-in-out forwards;
+}
+
+@keyframes watcher-life {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  18% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  74% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.45);
+  }
+}
+
+.eldritch-watcher {
+  filter: drop-shadow(0 0 12px rgb(var(--eldritch-glow) / 0.6));
+}
+
+/*
+ * Exactly one blink, in the middle of the life.
+ *
+ * `infinite` was wrong for the same reason the four-second lifetime was: a
+ * thing that keeps blinking at you is a thing you are watching, and the eye is
+ * supposed to be the one doing the watching. One close, around halfway, timed
+ * against the same 2.6s the element exists for — so the two are a pair, and
+ * changing one without the other puts the blink after the fade.
+ */
+.eldritch-watcher__lid {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: watcher-blink 2.6s ease-in-out 1 forwards;
+}
+
+@keyframes watcher-blink {
+  0%,
+  40% {
+    transform: scaleY(1);
+  }
+  48% {
+    transform: scaleY(0.04);
+  }
+  57%,
+  100% {
+    transform: scaleY(1);
+  }
+}
+
+/* Nested inside the lid on purpose: a blink should take the slit with it. */
+.eldritch-watcher__pupil {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: watcher-gaze 2.6s ease-in-out 1 forwards;
+}
+
+/* It finds you, rather than sweeping back and forth. */
+@keyframes watcher-gaze {
+  0% {
+    transform: translateX(-22%);
+  }
+  60%,
+  100% {
+    transform: translateX(6%);
+  }
+}
+
 /* ==========================================================================
  * Placeholder blocks, per skin.
  *
@@ -2497,6 +3238,29 @@
 [data-skin='newspaper'] .skeleton::after {
   background: linear-gradient(90deg, transparent, rgb(var(--edge) / 0.18), transparent);
   animation-duration: 2s;
+}
+
+/* Something is surfacing under it. */
+[data-skin='eldritch'] .skeleton {
+  background:
+    repeating-radial-gradient(
+      circle at 50% 130%,
+      transparent 0 10px,
+      rgb(var(--brand) / 0.06) 10px 11px
+    ),
+    rgb(var(--surface-sunken));
+  box-shadow: inset 0 0 0 1px rgb(var(--brand) / 0.14);
+}
+
+[data-skin='eldritch'] .skeleton::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(var(--eldritch-ichor) / 0.24),
+    rgb(var(--eldritch-glow) / 0.2),
+    transparent
+  );
+  animation-duration: 2.6s;
 }
 
 /* ==========================================================================
@@ -2620,6 +3384,22 @@
   --avatar-overlay-size: 12px 12px;
   --avatar-overlay-inset: 72% 0 0 0;
   --avatar-overlay-opacity: 0.92;
+}
+
+/* ELDRITCH — a portrait, and something behind the glass with it.
+   The frame is an iris: two rings of ichor with the wrong colour bleeding
+   through from underneath, and the overlay is the sheen on a wet lens. */
+[data-skin='eldritch'] .avatar {
+  --avatar-frame:
+    0 0 0 1px rgb(var(--brand) / 0.9),
+    0 0 0 3px rgb(var(--eldritch-glow) / 0.35),
+    0 0 16px -3px rgb(var(--eldritch-glow) / 0.85);
+  --avatar-overlay: radial-gradient(
+    60% 45% at 30% 22%,
+    rgb(255 255 255 / 0.22),
+    transparent 70%
+  );
+  --avatar-inner: inset 0 0 12px rgb(var(--eldritch-ichor) / 0.45);
 }
 
 /* NEWSPAPER — a headshot screened onto the page, in its double rule.

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   BarChart3,
+  FileText,
   KanbanSquare,
   MessageCircle,
   PenTool,
@@ -41,15 +42,19 @@ import {
 import { cn } from '@/shared/lib/cn';
 import { Avatar, Button, PageLoader, Segmented } from '@/shared/ui';
 import { ProjectDashboard } from '@/widgets/project-dashboard/ui/project-dashboard';
+import { TextBoard } from '@/widgets/text-board/ui/text-board';
 import { Whiteboard } from '@/widgets/whiteboard/ui/whiteboard';
 
-type Tab = 'board' | 'dashboard' | 'roster' | 'whiteboard' | 'ai';
+type Tab = 'board' | 'dashboard' | 'roster' | 'whiteboard' | 'text' | 'ai';
 
 const TABS: { value: Tab; label: string; icon: ReactNode }[] = [
   { value: 'board', label: 'Board', icon: <KanbanSquare className="h-3 w-3" /> },
   { value: 'dashboard', label: 'Metrics', icon: <BarChart3 className="h-3 w-3" /> },
   { value: 'roster', label: 'Roster', icon: <Users className="h-3 w-3" /> },
   { value: 'whiteboard', label: 'Whiteboard', icon: <PenTool className="h-3 w-3" /> },
+  // Next to the whiteboard on purpose: the two are the same idea in different
+  // materials — one is what the project draws, the other is what it writes.
+  { value: 'text', label: 'Text board', icon: <FileText className="h-3 w-3" /> },
   { value: 'ai', label: 'Assistant', icon: <Sparkles className="h-3 w-3" /> },
 ];
 
@@ -88,7 +93,7 @@ const ProjectPage = () => {
 
   const togglePin = useTogglePin();
   const updateStatus = useUpdateTaskStatus();
-  const toggleCompletion = useToggleMyCompletion();
+  const toggleCompletion = useToggleMyCompletion(currentUser?.id);
   const toggleTaskPin = useToggleTaskPin();
   const deleteTask = useDeleteTask();
 
@@ -254,6 +259,7 @@ const ProjectPage = () => {
       {tab === 'dashboard' && <ProjectDashboard projectId={projectId} />}
       {tab === 'roster' && <RosterPanel projectId={projectId} canManage={canManage} />}
       {tab === 'whiteboard' && <Whiteboard projectId={projectId} canClear={canManage} />}
+      {tab === 'text' && <TextBoard projectId={projectId} tasks={tasks} />}
       {tab === 'ai' && <AiPanel projectId={projectId} />}
 
       <TaskComposer

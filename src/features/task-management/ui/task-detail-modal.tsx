@@ -1,7 +1,18 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, Pencil, Plus, Sparkles, StickyNote, Trash2, UserCheck, X } from 'lucide-react';
+import {
+  Check,
+  Flag,
+  Pencil,
+  Play,
+  Plus,
+  Sparkles,
+  StickyNote,
+  Trash2,
+  UserCheck,
+  X,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
@@ -21,7 +32,7 @@ import { errorMessage } from '@/shared/api/client';
 import { NOTE_COLORS, TASK_STATUS_META } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
 import { readableInk } from '@/shared/lib/colors';
-import { formatDateTime, formatDeadline } from '@/shared/lib/dates';
+import { formatDateTime, formatDeadline, formatDeadlineDate } from '@/shared/lib/dates';
 import { Avatar, AvatarStack, Badge, Button, Modal, Spinner } from '@/shared/ui';
 
 interface TaskDetailModalProps {
@@ -127,11 +138,74 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
             />
           )}
 
-          <div className="grid gap-2 text-[11px] text-content-faint sm:grid-cols-2">
-            <span>Created by {task.createdBy.displayName}</span>
-            {task.startAt && <span>Starts {formatDateTime(task.startAt)}</span>}
-            {task.dueAt && <span>Due {formatDateTime(task.dueAt)}</span>}
-            {task.completedAt && <span>Completed {formatDateTime(task.completedAt)}</span>}
+          {/*
+            Who and when, on one line.
+
+            This was four sentences in a two-column grid — "Created by Ana",
+            "Starts 3 Mar 2026 · 14:00", "Due …", "Completed …" — which spent
+            four rows of the sheet restating labels the icons carry. The
+            creator becomes a face, and the dates become a rail read left to
+            right: start, then deadline, then the tick if it landed. Each stamp
+            still carries the full, spelled-out timestamp as its tooltip, so
+            nothing is actually lost.
+          */}
+          <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+            <span
+              title={`Created by ${task.createdBy.displayName} · ${formatDateTime(task.createdAt)}`}
+              className="inline-flex items-center gap-1.5 rounded-full border border-edge bg-surface-sunken py-0.5 pl-0.5 pr-2.5"
+            >
+              <Avatar
+                name={task.createdBy.displayName}
+                src={task.createdBy.avatarUrl}
+                size="xs"
+              />
+              <span className="max-w-[10rem] truncate font-medium text-content-muted">
+                {task.createdBy.displayName}
+              </span>
+            </span>
+
+            {(task.startAt ?? task.dueAt ?? task.completedAt) && (
+              <span className="inline-flex items-center gap-2 rounded-full border border-edge bg-surface-sunken px-2.5 py-1 text-content-muted">
+                {task.startAt && (
+                  <span
+                    title={`Starts ${formatDateTime(task.startAt)}`}
+                    className="inline-flex items-center gap-1"
+                  >
+                    <Play className="h-3 w-3 shrink-0 fill-current" />
+                    <span className="tabular-nums">{formatDeadlineDate(task.startAt)}</span>
+                  </span>
+                )}
+
+                {task.startAt && task.dueAt && (
+                  <span aria-hidden className="text-content-faint">
+                    →
+                  </span>
+                )}
+
+                {task.dueAt && (
+                  <span
+                    title={`Due ${formatDateTime(task.dueAt)}`}
+                    className={cn(
+                      'inline-flex items-center gap-1',
+                      task.isOverdue && 'font-semibold text-danger',
+                    )}
+                  >
+                    <Flag className="h-3 w-3 shrink-0" />
+                    <span className="tabular-nums">{formatDeadlineDate(task.dueAt)}</span>
+                  </span>
+                )}
+
+                {task.completedAt && (
+                  <span
+                    title={`Completed ${formatDateTime(task.completedAt)}`}
+                    className="inline-flex items-center gap-1 font-semibold text-positive"
+                  >
+                    <Check className="h-3 w-3 shrink-0" strokeWidth={3} />
+                    <span className="tabular-nums">{formatDeadlineDate(task.completedAt)}</span>
+                  </span>
+                )}
+              </span>
+            )}
           </div>
 
           {/* --- Sign-off --------------------------------------------------

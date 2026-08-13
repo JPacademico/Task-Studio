@@ -12,7 +12,8 @@ export type ThemeSkin =
   | 'PIXEL'
   | 'SPACE'
   | 'HAZARD'
-  | 'NEWSPAPER';
+  | 'NEWSPAPER'
+  | 'ELDRITCH';
 
 /** The one place a skin's human name is written down. */
 export const SKIN_LABELS: Record<ThemeSkin, string> = {
@@ -24,6 +25,7 @@ export const SKIN_LABELS: Record<ThemeSkin, string> = {
   SPACE: 'Space',
   HAZARD: 'Hazard',
   NEWSPAPER: 'Newsprint',
+  ELDRITCH: 'Eldritch',
 };
 
 /**

@@ -26,6 +26,9 @@ const REVEAL: Record<ThemeSkin, Transition> = {
   HAZARD: { duration: 0.16, ease: [0.2, 0, 0, 1] },
   // A page turning under its own weight — slow to start, then it falls.
   NEWSPAPER: { duration: 0.3, ease: [0.4, 0, 0.2, 1] },
+  // Nothing here hurries and nothing here overshoots. It arrives when it has
+  // decided to, which is the slowest curve in the app by some margin.
+  ELDRITCH: { duration: 0.52, ease: [0.5, 0, 0.2, 1] },
 };
 
 const MARKER: Record<ThemeSkin, Transition> = {
@@ -37,6 +40,7 @@ const MARKER: Record<ThemeSkin, Transition> = {
   SPACE: { type: 'spring', stiffness: 180, damping: 20, mass: 1.1 },
   HAZARD: { duration: 0.14, ease: [0.2, 0, 0, 1] },
   NEWSPAPER: { duration: 0.26, ease: [0.4, 0, 0.2, 1] },
+  ELDRITCH: { duration: 0.44, ease: [0.5, 0, 0.2, 1] },
 };
 
 /*

@@ -188,6 +188,15 @@ const TaskCardBase = ({
           onClick={() => onOpen?.(task)}
           className="flex-1 text-left focus-visible:outline-none"
         >
+          {/*
+            Title only.
+
+            The description used to sit under it on every card, which on a
+            board of twenty made the column a wall of prose to scan past — and
+            the two clamped lines were rarely the two that mattered. It belongs
+            to the task, not to the summary of it, so it lives in the detail
+            modal that opening the card already gives you.
+          */}
           <h3
             className={cn(
               'text-sm font-semibold leading-snug text-balance',
@@ -196,11 +205,6 @@ const TaskCardBase = ({
           >
             {task.title}
           </h3>
-          {!compact && task.description && (
-            <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-content-muted">
-              {task.description}
-            </p>
-          )}
         </button>
 
         <div

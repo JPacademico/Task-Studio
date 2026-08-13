@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { useSkin } from '@/app/providers/theme-provider';
 import type { ThemeSkin } from '@/entities/user/model/types';
 import { cn } from '@/shared/lib/cn';
+import { EldritchMark } from './eldritch-icons';
 import { HazardMark } from './hazard-icons';
 import { NewspaperMark } from './newspaper-icons';
 import { SpaceMark } from './space-icons';
@@ -259,6 +260,72 @@ const ClippingPaper = ({ count }: { count?: number }) => (
   </>
 );
 
+/**
+ * The marginal note: a leaf out of the book, with an eye in it.
+ *
+ * Same silhouette as the drawn sheet, except the corners grew rather than
+ * being cut — matching the asymmetric radii the whole skin runs on — and where
+ * the second ruled line should be, something is looking out.
+ */
+const LeafPaper = ({ count }: { count?: number }) => (
+  <>
+    <path
+      d="M4 6.4C4 5 5.1 4 6.4 4H20v11.6L15.6 20H6.4C5.1 20 4 18.9 4 17.6V6.4Z"
+      fill="currentColor"
+      fillOpacity="0.9"
+      stroke="currentColor"
+      strokeOpacity="0.6"
+      strokeWidth="1.1"
+      strokeLinejoin="round"
+    />
+    {/* The corner, lifting on its own. */}
+    <path
+      d="M15.6 20v-3.2a1.2 1.2 0 0 1 1.2-1.2H20"
+      fill="none"
+      stroke="rgb(var(--eldritch-ichor))"
+      strokeWidth="1.1"
+      strokeLinejoin="round"
+    />
+
+    {count === undefined || count > 9 ? (
+      <>
+        <line
+          x1="6.6"
+          y1="8"
+          x2="17"
+          y2="8"
+          stroke="rgb(var(--surface-raised))"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+        />
+        {/* Where the second line should be. */}
+        <ellipse
+          cx="12"
+          cy="12.6"
+          rx="4.2"
+          ry="2.5"
+          fill="rgb(var(--surface-raised))"
+          fillOpacity="0.9"
+          stroke="rgb(var(--eldritch-glow))"
+          strokeWidth="1"
+        />
+        <circle cx="12" cy="12.6" r="1.25" fill="currentColor" />
+      </>
+    ) : (
+      <text
+        x="12"
+        y="14"
+        textAnchor="middle"
+        fontSize="9"
+        fontWeight="700"
+        fill="rgb(var(--surface-raised))"
+      >
+        {count}
+      </text>
+    )}
+  </>
+);
+
 /** The smooth square of paper: curves, a soft peel, hairline outlines. */
 const DrawnPaper = ({ count }: { count?: number }) => (
   <>
@@ -370,6 +437,7 @@ const PAPERS: Partial<Record<ThemeSkin, ComponentType<{ count?: number }>>> = {
   SPACE: SlatePaper,
   HAZARD: LabelPaper,
   NEWSPAPER: ClippingPaper,
+  ELDRITCH: LeafPaper,
 };
 
 const paperFor = (skin: ThemeSkin) => PAPERS[skin] ?? DrawnPaper;
@@ -468,9 +536,10 @@ export const StudioMark = ({ className, interactive = false }: StudioMarkProps) 
   const skin = useSkin();
   const isPixel = skin === 'PIXEL';
 
-  // Three skins draw the object themselves: a note among stars, a placard on a
-  // containment door, a masthead on page one. All three are the same gesture —
-  // a lift under the pointer — so they share one wrapper rather than three.
+  // Four skins draw the object themselves: a note among stars, a note taped
+  // and stamped, a masthead on page one, a page with an eye in it. All four
+  // are the same gesture — a lift under the pointer — so they share one
+  // wrapper rather than four.
   const Drawn =
     skin === 'SPACE'
       ? SpaceMark
@@ -478,7 +547,9 @@ export const StudioMark = ({ className, interactive = false }: StudioMarkProps) 
         ? HazardMark
         : skin === 'NEWSPAPER'
           ? NewspaperMark
-          : null;
+          : skin === 'ELDRITCH'
+            ? EldritchMark
+            : null;
 
   if (Drawn) {
     return (

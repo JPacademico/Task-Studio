@@ -1,0 +1,446 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+  Download,
+  FileText,
+  Pencil,
+  Plus,
+  Save,
+  Trash2,
+  X,
+} from 'lucide-react';
+import { toast } from 'sonner';
+
+import {
+  useCreateDocument,
+  useDeleteDocument,
+  useProjectDocument,
+  useProjectDocuments,
+  useUpdateDocument,
+} from '@/entities/document/model/queries';
+import type { ProjectDocument } from '@/entities/document/model/types';
+import type { Task } from '@/entities/task/model/types';
+import { RichTextEditor } from '@/features/rich-text/ui/rich-text-editor';
+import { cn } from '@/shared/lib/cn';
+import { formatRelative } from '@/shared/lib/dates';
+import { sanitizeDocumentHtml } from '@/shared/lib/sanitize-html';
+import {
+  Button,
+  EmptyState,
+  ExpandToggle,
+  ExpandableStage,
+  Select,
+  Skeleton,
+  Spinner,
+} from '@/shared/ui';
+
+interface TextBoardProps {
+  projectId: string;
+  /** The project's tasks, so a page can be attached to one of them. */
+  tasks: Task[];
+}
+
+/** A filename that survives a download folder: no separators, no surprises. */
+const toFileName = (title: string): string =>
+  `${title.trim().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').slice(0, 60) || 'document'}.html`;
+
+/**
+ * Wraps a document body in enough of a page to open on its own.
+ *
+ * The download is a standalone `.html` file rather than the raw fragment: a
+ * fragment opens as unstyled text with no title and no character set, which is
+ * not what anybody means by "download this document".
+ */
+const toDownloadableHtml = (title: string, body: string): string =>
+  `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>${title.replace(/[<>&]/g, '')}</title>
+<style>
+  body { max-width: 46rem; margin: 3rem auto; padding: 0 1.25rem;
+         font: 16px/1.65 Georgia, 'Times New Roman', serif; color: #1a1a1a; }
+  h1, h2, h3 { line-height: 1.25; }
+  blockquote { border-left: 3px solid #ccc; margin: 0; padding-left: 1rem; color: #555; }
+  pre { background: #f4f4f5; padding: .75rem 1rem; border-radius: 6px; overflow-x: auto; }
+  img, video { max-width: 100%; height: auto; }
+</style>
+</head>
+<body>
+<h1>${title.replace(/[<>&]/g, '')}</h1>
+${body}
+</body>
+</html>`;
+
+/**
+ * The project's text board.
+ *
+ * A table of contents on the left, one page open on the right. Pages belong to
+ * the project or to a single task, and the split is the only structure here —
+ * a document tree would be a second navigation system inside a tab.
+ *
+ * Editing is explicitly modal (read → Edit → Save) rather than always-on. This
+ * is a shared surface with no operational transform behind it: two people
+ * typing into the same paragraph would silently overwrite each other, and a
+ * page you have to deliberately open for editing is a page you are much less
+ * likely to be in by accident while a colleague is writing.
+ */
+export const TextBoard = ({ projectId, tasks }: TextBoardProps) => {
+  const { data: documents = [], isLoading } = useProjectDocuments(projectId);
+
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [title, setTitle] = useState('');
+  const [isDirty, setIsDirty] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [attachTo, setAttachTo] = useState<string>('');
+
+  // The body lives in a ref, not in state: it changes on every keystroke and
+  // nothing outside the editor renders from it until a save.
+  const draftRef = useRef('');
+
+  const { data: open, isLoading: isOpening } = useProjectDocument(selectedId ?? undefined);
+
+  const createDocument = useCreateDocument();
+  const updateDocument = useUpdateDocument();
+  const deleteDocument = useDeleteDocument();
+
+  // Open the most recent page on arrival, so the tab is never an empty frame
+  // when there is something to read.
+  useEffect(() => {
+    if (!selectedId && documents.length > 0) setSelectedId(documents[0].id);
+  }, [documents, selectedId]);
+
+  useEffect(() => {
+    if (!open) return;
+    setTitle(open.title);
+    draftRef.current = open.content ?? '';
+    setIsDirty(false);
+    setIsEditing(false);
+    setConfirmingDelete(false);
+  }, [open]);
+
+  const grouped = useMemo(() => {
+    const general = documents.filter((document) => !document.taskId);
+    const perTask = documents.filter((document) => document.taskId);
+    return { general, perTask };
+  }, [documents]);
+
+  const handleCreate = () => {
+    createDocument.mutate(
+      {
+        projectId,
+        taskId: attachTo || undefined,
+        title: attachTo
+          ? `Notes — ${tasks.find((task) => task.id === attachTo)?.title ?? 'task'}`
+          : 'Untitled document',
+        content: '',
+      },
+      {
+        onSuccess: (created) => {
+          setSelectedId(created.id);
+          setIsEditing(true);
+          setAttachTo('');
+          toast.success('Document created.');
+        },
+      },
+    );
+  };
+
+  const handleSave = () => {
+    if (!open) return;
+
+    updateDocument.mutate(
+      {
+        documentId: open.id,
+        // Sanitised here as well as on the server: what gets stored should be
+        // what the next reader's browser will actually be given.
+        payload: { title: title.trim() || 'Untitled document', content: sanitizeDocumentHtml(draftRef.current) },
+      },
+      {
+        onSuccess: () => {
+          setIsDirty(false);
+          setIsEditing(false);
+          toast.success('Document saved.');
+        },
+      },
+    );
+  };
+
+  const handleDownload = () => {
+    if (!open) return;
+
+    const body = sanitizeDocumentHtml(isEditing ? draftRef.current : (open.content ?? ''));
+    const blob = new Blob([toDownloadableHtml(title, body)], {
+      type: 'text/html;charset=utf-8',
+    });
+
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = toFileName(title);
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDelete = () => {
+    if (!open) return;
+
+    deleteDocument.mutate(open.id, {
+      onSuccess: () => {
+        setSelectedId(documents.find((entry) => entry.id !== open.id)?.id ?? null);
+        setConfirmingDelete(false);
+      },
+    });
+  };
+
+  const DocumentRow = ({ document: entry }: { document: ProjectDocument }) => (
+    <button
+      type="button"
+      onClick={() => {
+        if (isDirty && !window.confirm('Discard unsaved changes?')) return;
+        setSelectedId(entry.id);
+      }}
+      className={cn(
+        'w-full rounded-xl border px-2.5 py-2 text-left transition-colors duration-150',
+        entry.id === selectedId
+          ? 'border-brand bg-brand/[0.08]'
+          : 'border-transparent hover:border-edge hover:bg-surface-sunken/60',
+      )}
+    >
+      <span className="flex items-center gap-1.5">
+        <FileText className="h-3 w-3 shrink-0 text-content-faint" />
+        <span className="truncate text-xs font-semibold">{entry.title}</span>
+      </span>
+      <span className="mt-0.5 block truncate text-[10px] text-content-faint">
+        {entry.excerpt || 'Empty page'}
+      </span>
+    </button>
+  );
+
+  return (
+    <ExpandableStage
+      isExpanded={isExpanded}
+      onCollapse={() => setIsExpanded(false)}
+      title="Project text board"
+    >
+      <div className="ui-textured flex flex-wrap items-center gap-2 rounded-2xl border border-edge bg-surface-raised p-2 sm:p-3">
+        {/*
+          Creating is two controls, not a dialog: where it goes, then go.
+
+          The app's own `Select` rather than a native one. A native `<select>`
+          is painted by the operating system — it ignores the radius tokens,
+          the type scale, the border weight and the skin entirely, so on the
+          arcade it was a rounded macOS pill in a grid of notched tiles, and on
+          newsprint it was the one thing on the page with a gradient. This is
+          the same listbox every filter row in the app already uses.
+        */}
+        <Select
+          className="w-48"
+          value={attachTo}
+          onChange={setAttachTo}
+          options={[
+            { value: '', label: 'Project document', hint: 'Belongs to the whole project' },
+            ...tasks.map((task) => ({
+              value: task.id,
+              label: task.title,
+              swatch: task.color,
+              hint: 'Pinned to this task',
+            })),
+          ]}
+        />
+
+        <Button size="sm" onClick={handleCreate} isLoading={createDocument.isPending}>
+          <Plus className="h-3.5 w-3.5" strokeWidth={2.8} />
+          New document
+        </Button>
+
+        <span className="ml-auto flex items-center gap-1.5">
+          {open && (
+            <>
+              {isEditing ? (
+                <>
+                  <Button size="sm" onClick={handleSave} isLoading={updateDocument.isPending}>
+                    <Save className="h-3.5 w-3.5" />
+                    Save
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      if (isDirty && !window.confirm('Discard unsaved changes?')) return;
+                      draftRef.current = open.content ?? '';
+                      setTitle(open.title);
+                      setIsDirty(false);
+                      setIsEditing(false);
+                    }}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                    Cancel
+                  </Button>
+                </>
+              ) : (
+                <Button size="sm" variant="secondary" onClick={() => setIsEditing(true)}>
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit
+                </Button>
+              )}
+
+              <Button size="sm" variant="ghost" onClick={handleDownload} title="Download as HTML">
+                <Download className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Download</span>
+              </Button>
+
+              {/* Two-step rather than a confirm dialog: deleting a page is
+                  reversible nowhere in this UI, and one stray click on a
+                  toolbar is exactly how it would happen. */}
+              <Button
+                size="sm"
+                variant={confirmingDelete ? 'danger' : 'ghost'}
+                onClick={() => (confirmingDelete ? handleDelete() : setConfirmingDelete(true))}
+                onBlur={() => setConfirmingDelete(false)}
+                isLoading={deleteDocument.isPending}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {confirmingDelete ? 'Confirm' : <span className="hidden sm:inline">Delete</span>}
+              </Button>
+            </>
+          )}
+
+          <ExpandToggle
+            isExpanded={isExpanded}
+            onToggle={() => setIsExpanded((expanded) => !expanded)}
+            label={isExpanded ? 'Shrink' : 'Expand'}
+          />
+        </span>
+      </div>
+
+      <div
+        className={cn(
+          'grid min-h-0 gap-3 lg:grid-cols-[240px_minmax(0,1fr)]',
+          isExpanded ? 'flex-1' : 'h-[62vh]',
+        )}
+      >
+        {/* --- Table of contents ------------------------------------------- */}
+        <aside className="scrollbar-thin hidden min-h-0 flex-col gap-3 overflow-y-auto rounded-2xl border border-edge bg-surface-raised p-2 lg:flex">
+          {isLoading && (
+            <div className="space-y-2">
+              {Array.from({ length: 4 }, (_, index) => (
+                <Skeleton key={index} className="h-12" />
+              ))}
+            </div>
+          )}
+
+          {!isLoading && documents.length === 0 && (
+            <p className="px-2 py-6 text-center text-xs leading-relaxed text-content-faint">
+              No pages yet. The first one is a click away.
+            </p>
+          )}
+
+          {grouped.general.length > 0 && (
+            <div className="space-y-1">
+              <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-content-faint">
+                Project
+              </p>
+              {grouped.general.map((entry) => (
+                <DocumentRow key={entry.id} document={entry} />
+              ))}
+            </div>
+          )}
+
+          {grouped.perTask.length > 0 && (
+            <div className="space-y-1">
+              <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-content-faint">
+                Tasks
+              </p>
+              {grouped.perTask.map((entry) => (
+                <DocumentRow key={entry.id} document={entry} />
+              ))}
+            </div>
+          )}
+        </aside>
+
+        {/* --- The page ---------------------------------------------------- */}
+        <section className="flex min-h-0 flex-col">
+          {!selectedId || (!open && !isOpening) ? (
+            <EmptyState
+              className="flex-1"
+              icon={<FileText className="h-6 w-6" />}
+              title="Nothing open"
+              description="Write the brief, the spec or the meeting notes — for the project, or pinned to one task."
+            />
+          ) : isOpening || !open ? (
+            <div className="grid flex-1 place-items-center">
+              <Spinner />
+            </div>
+          ) : (
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={open.id}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex min-h-0 flex-1 flex-col gap-2"
+              >
+                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                  {isEditing ? (
+                    <input
+                      value={title}
+                      onChange={(event) => {
+                        setTitle(event.target.value);
+                        setIsDirty(true);
+                      }}
+                      maxLength={160}
+                      aria-label="Document title"
+                      className="field h-9 flex-1 text-sm font-semibold"
+                    />
+                  ) : (
+                    <h3 className="flex-1 truncate text-base font-semibold tracking-tight">
+                      {open.title}
+                    </h3>
+                  )}
+
+                  {open.task && (
+                    <span
+                      className="ui-chip inline-flex items-center gap-1.5 rounded-full border border-edge px-2 py-0.5 text-[10px] text-content-muted"
+                      title={`Attached to ${open.task.title}`}
+                    >
+                      <span
+                        aria-hidden
+                        className="h-1.5 w-1.5 rounded-full"
+                        style={{ backgroundColor: open.task.color }}
+                      />
+                      <span className="max-w-[10rem] truncate">{open.task.title}</span>
+                    </span>
+                  )}
+
+                  <span className="text-[10px] text-content-faint">
+                    {(open.updatedBy ?? open.createdBy).displayName} ·{' '}
+                    {formatRelative(open.updatedAt)}
+                    {isDirty && <span className="ml-1 text-warning">· unsaved</span>}
+                  </span>
+                </div>
+
+                <RichTextEditor
+                  className="min-h-0 flex-1"
+                  documentId={open.id}
+                  initialHtml={open.content ?? ''}
+                  readOnly={!isEditing}
+                  onChange={(html) => {
+                    draftRef.current = html;
+                    // Any edit counts. Comparing against the loaded body on
+                    // every keystroke would mean parsing two documents per
+                    // character to win back the "typed it and undid it" case,
+                    // which nobody is waiting on.
+                    if (!isDirty) setIsDirty(true);
+                  }}
+                />
+              </motion.div>
+            </AnimatePresence>
+          )}
+        </section>
+      </div>
+    </ExpandableStage>
+  );
+};

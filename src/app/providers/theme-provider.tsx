@@ -54,6 +54,7 @@ const SKIN_ATTRIBUTE: Record<ThemeSkin, string> = {
   SPACE: 'space',
   HAZARD: 'hazard',
   NEWSPAPER: 'newspaper',
+  ELDRITCH: 'eldritch',
 };
 
 /**

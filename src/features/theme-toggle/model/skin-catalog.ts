@@ -40,6 +40,14 @@ export interface SkinPreview {
   rule?: boolean;
   /** Newsprint only: a halftone screen over the whole mock. */
   halftone?: boolean;
+  /**
+   * Eldritch only: the mock's boxes grow rather than being cut, so the corner
+   * rounding is asymmetric — the loudest thing the skin does, and invisible in
+   * a preview that only paints its palette.
+   */
+  organic?: boolean;
+  /** Eldritch only: something is looking out of the mock. */
+  watcher?: string;
 }
 
 export interface SkinDefinition {
@@ -318,6 +326,50 @@ export const SKIN_CATALOG: SkinDefinition[] = [
       border: 1,
       rule: true,
       halftone: true,
+    },
+  },
+  {
+    value: 'ELDRITCH',
+    name: 'Eldritch',
+    tagline: 'Something is reading this',
+    description:
+      'Corners that grew rather than being cut, light with no source, inscribed capitals — and an iris that opens on every card when the pointer finds it.',
+    tags: [
+      'lovecraft',
+      'eldritch',
+      'cosmic',
+      'horror',
+      'abyssal',
+      'occult',
+      'dark',
+      'teal',
+      'violet',
+      'mysterious',
+      'gothic',
+    ],
+    light: {
+      surface: '#e0d8c4',
+      raised: '#eee8d6',
+      edge: '#4a4c3e',
+      brand: '#11645a',
+      content: '#201e18',
+      radius: 14,
+      font: "'Cinzel', 'Palatino Linotype', Palatino, Georgia, serif",
+      border: 1,
+      organic: true,
+      watcher: '#7a4eba',
+    },
+    dark: {
+      surface: '#060a0c',
+      raised: '#0d1517',
+      edge: '#2c504a',
+      brand: '#56d2ae',
+      content: '#d6e8e2',
+      radius: 14,
+      font: "'Cinzel', 'Palatino Linotype', Palatino, Georgia, serif",
+      border: 1,
+      organic: true,
+      watcher: '#9e6cf6',
     },
   },
 ];

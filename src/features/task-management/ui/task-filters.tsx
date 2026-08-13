@@ -54,8 +54,17 @@ const STATUS_SWATCH: Record<TaskStatus, string> = {
   COMPLETED: '#10b981',
 };
 
+/*
+ * The default option of each dropdown is the filter's own name.
+ *
+ * It used to spell out what "no filter" meant — "Any status", "Any type",
+ * "Any time" — which is three words of qualifier on a control whose unset
+ * state is already the common case. The bare noun reads as a label when
+ * nothing is chosen and gets replaced by the choice when something is, which
+ * is what a dropdown does anyway.
+ */
 const LATENESS: SelectOption<TaskLateness | 'ALL'>[] = [
-  { value: 'ALL', label: 'Any time' },
+  { value: 'ALL', label: 'Time' },
   { value: 'LATE', label: 'Late', hint: 'Past the deadline, still open' },
   { value: 'COMPLETED_LATE', label: 'Late finish', hint: 'Finished after the deadline' },
   { value: 'ON_TIME', label: 'On time' },
@@ -115,12 +124,7 @@ export const TaskFilters = ({
         onChange={(status) => patch({ status: status === 'ALL' ? undefined : status })}
         options={STATUSES.map((status) => ({
           value: status,
-          label:
-            status === 'ALL'
-              ? isPersonal
-                ? 'Open tasks'
-                : 'Any status'
-              : TASK_STATUS_META[status].label,
+          label: status === 'ALL' ? 'Status' : TASK_STATUS_META[status].label,
           swatch: status === 'ALL' ? undefined : STATUS_SWATCH[status],
         }))}
       />
@@ -138,7 +142,7 @@ export const TaskFilters = ({
         onChange={(type) => patch({ type: type === 'ALL' ? undefined : type })}
         options={TYPES.map((type) => ({
           value: type,
-          label: type === 'ALL' ? 'Any type' : TASK_TYPE_META[type].label,
+          label: type === 'ALL' ? 'Type' : TASK_TYPE_META[type].label,
           hint: type === 'ALL' ? undefined : TASK_TYPE_META[type].hint,
         }))}
       />

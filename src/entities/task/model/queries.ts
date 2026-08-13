@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { errorMessage } from '@/shared/api/client';
@@ -8,9 +8,45 @@ import type {
   CreateTaskPayload,
   ListTasksParams,
   Task,
+  TaskAgenda,
   TaskStatus,
   UpdateTaskPayload,
 } from './types';
+
+/**
+ * Applies a change to one task everywhere it is currently cached.
+ *
+ * The same task lives in three differently shaped caches — a flat `Task[]` for
+ * every board and list, a `TaskAgenda` of day buckets for the task menu, and a
+ * lone `Task` for the detail modal — so an optimistic update that only knew
+ * about arrays left the agenda and the open modal showing the old value until
+ * the refetch landed. That was most of the lag on ticking a box: the write was
+ * optimistic on one surface and pessimistic on the two next to it.
+ */
+const patchCachedTask = (
+  queryClient: QueryClient,
+  taskId: string,
+  patch: (task: Task) => Task,
+): void => {
+  const applyTo = (task: Task): Task => (task.id === taskId ? patch(task) : task);
+
+  queryClient.setQueriesData({ queryKey: queryKeys.tasks.all }, (data: unknown) => {
+    if (!data) return data;
+
+    if (Array.isArray(data)) return (data as Task[]).map(applyTo);
+
+    const agenda = data as TaskAgenda;
+    if (Array.isArray(agenda.days)) {
+      return {
+        days: agenda.days.map((day) => ({ ...day, tasks: day.tasks.map(applyTo) })),
+        unscheduled: agenda.unscheduled.map(applyTo),
+      } satisfies TaskAgenda;
+    }
+
+    const single = data as Task;
+    return typeof single.id === 'string' ? applyTo(single) : data;
+  });
+};
 
 export const useTasks = (params: ListTasksParams = {}) =>
   useQuery({
@@ -90,22 +126,22 @@ export const useUpdateTaskStatus = () => {
 
     onMutate: async ({ taskId, status }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.tasks.all });
-      const snapshot = queryClient.getQueriesData<Task[]>({ queryKey: queryKeys.tasks.all });
+      const snapshot = queryClient.getQueriesData({ queryKey: queryKeys.tasks.all });
+      const now = new Date().toISOString();
+      const completed = status === 'COMPLETED';
 
-      queryClient.setQueriesData<Task[]>({ queryKey: queryKeys.tasks.all }, (tasks) =>
-        Array.isArray(tasks)
-          ? tasks.map((task) =>
-              task.id === taskId
-                ? {
-                    ...task,
-                    status,
-                    completedAt: status === 'COMPLETED' ? new Date().toISOString() : null,
-                    isCompletedByMe: status === 'COMPLETED',
-                  }
-                : task,
-            )
-          : tasks,
-      );
+      patchCachedTask(queryClient, taskId, (task) => ({
+        ...task,
+        status,
+        completedAt: completed ? now : null,
+        isCompletedByMe: completed,
+        // Completing the task completes every assignment with it, and clearing
+        // the status re-opens all of them — the same transaction the API runs.
+        assignees: task.assignees.map((assignee) => ({
+          ...assignee,
+          completedAt: completed ? now : null,
+        })),
+      }));
 
       return { snapshot };
     },
@@ -119,17 +155,71 @@ export const useUpdateTaskStatus = () => {
   });
 };
 
-export const useToggleMyCompletion = () => {
+/**
+ * Ticking your own box.
+ *
+ * Optimistic, because this is the single most-used control in the app and it
+ * used to be the slowest: the box waited for a round trip to the API *and* for
+ * the refetch that followed it before anything on screen moved, which on a
+ * remote database reads as the click not having registered. The whole rule the
+ * server applies is reproduced here — my assignment flips, and the task itself
+ * only completes once every assignment has — so the optimistic state is the
+ * state the server is about to return, not an approximation of it.
+ *
+ * `currentUserId` is a parameter rather than a read of the session store
+ * because that store lives in `features/`, and an entity that reaches upwards
+ * into a feature is the one import that unpicks the whole dependency rule. The
+ * pages calling this already hold the user.
+ */
+export const useToggleMyCompletion = (currentUserId?: string) => {
+  const queryClient = useQueryClient();
   const invalidate = useInvalidateTasks();
 
   return useMutation({
     mutationFn: ({ taskId, completed }: { taskId: string; completed: boolean }) =>
       taskApi.setMyCompletion(taskId, completed),
+
+    onMutate: async ({ taskId, completed }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.tasks.all });
+      const snapshot = queryClient.getQueriesData({ queryKey: queryKeys.tasks.all });
+
+      const now = new Date().toISOString();
+
+      patchCachedTask(queryClient, taskId, (task) => {
+        const assignees = task.assignees.map((assignee) =>
+          assignee.id === currentUserId
+            ? { ...assignee, completedAt: completed ? now : null }
+            : assignee,
+        );
+
+        const everyoneDone =
+          assignees.length > 0 && assignees.every((assignee) => assignee.completedAt !== null);
+
+        return {
+          ...task,
+          assignees,
+          isCompletedByMe: completed,
+          status: everyoneDone
+            ? 'COMPLETED'
+            : task.status === 'COMPLETED'
+              ? 'IN_PROGRESS'
+              : task.status,
+          completedAt: everyoneDone ? now : null,
+        };
+      });
+
+      return { snapshot };
+    },
+
+    onError: (error, _variables, context) => {
+      context?.snapshot.forEach(([key, value]) => queryClient.setQueryData(key, value));
+      toast.error(errorMessage(error));
+    },
+
     onSuccess: (task) => {
       invalidate(task.project.id);
       if (task.status === 'COMPLETED') toast.success(`"${task.title}" is done.`);
     },
-    onError: (error) => toast.error(errorMessage(error)),
   });
 };
 

@@ -88,6 +88,14 @@ const BODY: Record<ThemeSkin, ReactElement> = {
       <i />
     </span>
   ),
+
+  // Not a progress indicator. Something is deciding whether to let you in.
+  ELDRITCH: (
+    <span className="loader-eye">
+      <i />
+      <i />
+    </span>
+  ),
 };
 
 interface SkinLoaderProps {

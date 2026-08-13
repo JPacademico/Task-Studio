@@ -26,3 +26,5 @@ export { NavGlyph } from './nav-glyph';
 export { SpaceMark } from './space-icons';
 export { HazardMark } from './hazard-icons';
 export { NewspaperMark } from './newspaper-icons';
+export { EldritchMark } from './eldritch-icons';
+export { EldritchTendrils, GazeArrow, WanderingEye } from './eldritch-decor';

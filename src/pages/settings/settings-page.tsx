@@ -86,7 +86,7 @@ const SettingsPage = () => {
         <h1 className="text-2xl font-semibold tracking-tight">Profile & preferences</h1>
       </header>
 
-      <Section title="Avatar" description="Uploaded straight to Cloudflare R2, max 5 MB.">
+      <Section title="Avatar">
         <div className="flex items-center gap-4 rounded-2xl border border-edge bg-surface-raised p-4">
           <Avatar name={user?.displayName ?? '?'} src={user?.avatarUrl} size="lg" />
 
@@ -159,16 +159,13 @@ const SettingsPage = () => {
 
       {/* Three, then a door. The full catalogue is a gallery, not a setting —
           see the note on SkinPicker. */}
-      <Section
-        title="Theme"
-        description="Your current look and a couple of others. Every theme ships both a light and a dark palette."
-      >
+      <Section title="Theme">
         <div className="rounded-2xl border border-edge bg-surface-raised p-4">
           <SkinPicker />
         </div>
       </Section>
 
-      <Section title="Appearance" description="Synced to your account, applied instantly.">
+      <Section title="Appearance">
         <div className="flex flex-wrap gap-2 rounded-2xl border border-edge bg-surface-raised p-4">
           {THEMES.map((option) => (
             <button
@@ -189,10 +186,7 @@ const SettingsPage = () => {
         </div>
       </Section>
 
-      <Section
-        title="Password"
-        description="Changing it signs out every device, including this one."
-      >
+      <Section title="Password">
         <form
           className="space-y-4 rounded-2xl border border-edge bg-surface-raised p-4"
           onSubmit={(event) => {
@@ -218,9 +212,13 @@ const SettingsPage = () => {
             hint="8+ characters, with at least one letter and one number."
           />
           <div className="flex justify-end">
+            {/* The section lost its subtitle, but the consequence is real and
+                irreversible — so it moves onto the control that causes it
+                rather than disappearing with the prose. */}
             <Button
               type="submit"
               variant="secondary"
+              title="Signs out every device, including this one."
               isLoading={changePassword.isPending}
               disabled={!passwordIsValid || currentPassword.length === 0}
             >

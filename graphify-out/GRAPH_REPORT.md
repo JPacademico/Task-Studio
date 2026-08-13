@@ -1,116 +1,116 @@
-# Graph Report - C:/Users/jorda/OneDrive/Documentos/GitHub/Task-Studio/Task-Studio-UI  (2026-08-12)
+# Graph Report - .  (2026-08-13)
 
 ## Corpus Check
-- 19 files · ~72,669 words
+- 46 files · ~78,657 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 918 nodes · 1102 edges · 113 communities (68 shown, 45 thin omitted)
-- Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 31 edges (avg confidence: 0.67)
-- Token cost: 46,222 input · 0 output
+- 1024 nodes · 1288 edges · 113 communities (67 shown, 46 thin omitted)
+- Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 60 edges (avg confidence: 0.55)
+- Token cost: 47,000 input · 594 output
 
 ## Community Hubs (Navigation)
-- Notes Board Data Layer
-- Ghost Duplicate (Edge Reveal Menu Chrome)
-- App Bootstrap & Providers
-- Task API & Data Layer
-- Build Tooling Dependencies
-- Project API & Data Layer
-- TypeScript App Config
-- Task Layout Switching
-- Auth Scene Desk Illustration
-- Shared UI Primitives
-- Vite & Node Config
-- API Client & Socket Setup
+- Notes Board API & Queries
+- Edge-Reveal Nav Chrome
+- Task API & Completion Rules
+- App Shell & Theme Pre-paint Init
+- Nav Glyph Kit & Hazard Icons
+- Expandable Full-Screen Stage
+- Build Tooling (PostCSS/Autoprefixer)
+- Project API & Queries
+- TS/Vite Project Config
+- Task Layout Views & Store
+- Auth Desk Scene & Floating Objects
+- Vite/Node Build Config
+- Button Primitive
+- Skin-Specific Paper Icon Variants
+- API Client & Session Refresh
 - Icon Generation Script
 - Floating Shortcuts Store
-- Button & Modal Primitives
-- Third-Party UI Dependencies
-- User API & Profile Types
-- Project Architecture & Stack
-- Board Connector Layer
-- Board Gesture Handling
-- Skinned Stationery Icons
-- Ghost Duplicate (Task Filters)
-- Space Theme Reference Screenshot
-- Task Filters
-- Design System Constants
-- Date Formatting Utilities
-- Edge Reveal Menu Chrome
-- Project Chat Dock
-- App Branding & Icon Design
-- Notifications API & Data Layer
-- Nav Preferences Store
-- Chat & Whiteboard API
-- AI Suggestions Panel
-- Route Error Boundary
-- Ghost Duplicate (Hidden Sidebar Nav)
-- Shared Hooks
+- Frontend Dependencies
+- Project Document API & Queries
+- User API & Upload
+- Skin Catalogue & Search
+- Architecture Principles (FSD, Layering)
+- Whiteboard Position Bus
+- Board Marquee & Pointer Gestures
+- Task Filters Types
+- Task Filters UI
+- Shared App Constants
+- Date Formatting Helpers
+- HTML Sanitiser (Client)
+- Edge Affordance Component
+- Eldritch Theme Icon Set
+- Chat Dock Store
+- App Branding & Icon Assets
+- Notification API & Queries
+- Auth API & Session Store
+- Nav Pin Preferences Store
+- Chat & Whiteboard API Types
+- AI Suggestions API
+- Rich Text Editor Toolbar
 - Hidden Sidebar Nav
+- Shared UI Hooks
+- Hidden Sidebar Component (dup cluster)
+- Whiteboard Stroke Helpers
 - Vercel Deployment Config
-- Ghost Duplicate (Skin Picker UI)
-- Ghost Duplicate (Project Whiteboard)
-- Drag & Drop / Motion Deps
-- Theme Skin Init & Migration
-- Task Board (dnd-kit)
-- Skin Picker UI
-- Avatar Components
-- Form Field Primitives
-- Project Whiteboard
-- Ghost Duplicate (Chat Pin Gesture)
-- Ghost Duplicate (Project Rail Nav)
-- Session Store
-- Board Toolbar
-- Per-Skin Motion Curves
-- Expandable Full-Screen Stage
+- Whiteboard Image Sizing
+- Whiteboard Tool State
+- 60fps Animation Conventions
+- Task Board DnD Columns
+- Avatar Component
+- Input/Textarea Primitives
+- Chat Pin Drag Gesture
 - Project Rail Nav
-- Ghost Duplicate (Task Layout Switching)
-- Ghost Duplicate (Per-Skin Motion Curves)
-- PWA & Deployment Setup
-- Board Selection Helpers
-- Board Ink Drawing Layer
-- Chat Pin Gesture
-- Project Roster Panel
-- Task Composer Form
-- Notes Board Page
-- Project Page Shell
-- Env Config
-- Edge Reveal Hook
-- Select Primitive
-- Ghost Duplicate (Task Type Tag)
-- Ghost Duplicate (Settings Page)
-- Ghost Duplicate (Top Navigation Bar)
-- Tear-Off Drag Hook
-- Tear-Off Ghost Preview
-- Board Pager
-- Notification Bell
-- Create Project Dialog
-- Task Detail Modal
-- Recycle Bin Page
-- Settings Page
-- Task Menu Page
-- Project Chat Window
-- Top Navigation Bar
-- Root TS Config
-- Third-Party UI Dependencies
-- date-fns Dependency
-- dnd-kit Sortable Dependency
-- lucide-react Dependency
-- React Dependency
-- react-dom Dependency
-- react-hook-form Dependency
-- react-router-dom Dependency
-- socket.io-client Dependency
-- tailwind-merge Dependency
-- zod Dependency
-- PWA Icon (192px) & Manifest
-- PWA Icon (512px) & App Identity
-- Hidden Edge Menu Design Doc
-- Auth API
-- Query Key Registry
-- iOS Safe-Area Rationale
-- Maskable App Icon
-- CSS Variable Theme System
+- Whiteboard Toolbar
+- Project Rail (dup cluster)
+- Project Text Board Widget
+- Community 56
+- Community 57
+- Community 58
+- Community 59
+- Community 60
+- Community 61
+- Community 62
+- Community 63
+- Community 64
+- Community 65
+- Community 66
+- Community 67
+- Community 68
+- Community 69
+- Community 70
+- Community 72
+- Community 73
+- Community 74
+- Community 75
+- Community 76
+- Community 77
+- Community 78
+- Community 79
+- Community 81
+- Community 82
+- Community 83
+- Community 84
+- Community 85
+- Community 86
+- Community 87
+- Community 88
+- Community 89
+- Community 90
+- Community 91
+- Community 92
+- Community 93
+- Community 94
+- Community 95
+- Community 96
+- Community 97
+- Community 98
+- Community 99
+- Community 100
+- Community 105
+- Community 110
+- Community 111
 
 ## God Nodes (most connected - your core abstractions)
 1. `compilerOptions` - 20 edges
@@ -140,256 +140,251 @@
 - None detected.
 
 ## Hyperedges (group relationships)
-- **Hero Conversion Flow: Stat, Copy, CTA Driving Job Exploration** — spacethemeexample_job_stat_card, spacethemeexample_explore_job_cta_button, spacethemeexample_hero_section, spacethemeexample_job_board_purpose [INFERRED 0.75]
-- **Space-Themed Brand Identity Elements** — spacethemeexample_brand_logo_i_need_more_space_2097, spacethemeexample_space_explore_badge, spacethemeexample_dark_space_ui_theme, spacethemeexample_moon_illustration [INFERRED 0.75]
+- **Pre-paint Theme/Skin Initialization Flow** — index_theme_init_script, index_skins_map, index_theme_storage_keys, src_app_providers_theme_provider_skin_attribute [INFERRED 0.85]
 - **Performance-first Interaction Design Pattern** — readme_useedgereveal, readme_drag_and_drop_design, readme_60fps_rules [INFERRED 0.85]
 - **PWA/iOS Delivery Flow** — readme_pwa_workbox, readme_ios_safari_specifics, readme_npm_scripts, readme_vercel_deployment [INFERRED 0.75]
 
-## Communities (113 total, 45 thin omitted)
+## Communities (113 total, 46 thin omitted)
 
-### Community 0 - "Notes Board Data Layer"
+### Community 0 - "Notes Board API & Queries"
 Cohesion: 0.06
 Nodes (43): boardApi, noteApi, useAddBoardStroke(), useBoardCache(), useBoardPages(), useClearBoard(), useClearBoardStrokes(), useCreateBoardNote() (+35 more)
 
-### Community 1 - "Ghost Duplicate (Edge Reveal Menu Chrome)"
+### Community 1 - "Edge-Reveal Nav Chrome"
 Cohesion: 0.06
 Nodes (33): CENTRE, EdgeAffordance(), EdgeAffordanceProps, GRADIENT, NavPinButton(), NavPinButtonProps, RAIL, RAIL_TONE (+25 more)
 
-### Community 2 - "App Bootstrap & Providers"
-Cohesion: 0.07
-Nodes (29): App(), AppProviders(), QueryProvider(), NOTIFICATION_TOAST, RealtimeContext, RealtimeContextValue, RealtimeProvider(), roomHolders (+21 more)
-
-### Community 3 - "Task API & Data Layer"
+### Community 2 - "Task API & Completion Rules"
 Cohesion: 0.08
-Nodes (25): taskApi, useCreateTask(), useDeleteTask(), useInvalidateTasks(), usePurgeTask(), useRestoreTask(), useToggleMyCompletion(), useUpdateTask() (+17 more)
+Nodes (34): taskApi, blockingAssigneeCount(), canCompleteTask(), completionBlockedReason(), CompletionContext, completionProgress(), isSharedTask(), outstandingAssignees() (+26 more)
 
-### Community 4 - "Build Tooling Dependencies"
+### Community 3 - "App Shell & Theme Pre-paint Init"
+Cohesion: 0.06
+Nodes (35): index.html (App Shell), SKINS Fallback Map, Pre-paint Theme Init Script, localStorage Theme Persistence Keys (task-studio:theme, task-studio:theme-skin), App(), AppProviders(), QueryProvider(), NOTIFICATION_TOAST (+27 more)
+
+### Community 4 - "Nav Glyph Kit & Hazard Icons"
+Cohesion: 0.07
+Nodes (13): Glyph(), GlyphProps, GlyphSet, NavGlyphKey, HAZARD_GLYPHS, HazardMark(), GLYPH_SETS, NavGlyph() (+5 more)
+
+### Community 5 - "Expandable Full-Screen Stage"
+Cohesion: 0.09
+Nodes (30): ExpandableStage(), ExpandableStageProps, ExpandToggle(), ExpandToggleProps, Badge(), BadgeProps, Collapsible(), CollapsibleProps (+22 more)
+
+### Community 6 - "Build Tooling (PostCSS/Autoprefixer)"
 Cohesion: 0.06
 Nodes (33): autoprefixer, description, devDependencies, autoprefixer, postcss, @types/node, @types/react, @types/react-dom (+25 more)
 
-### Community 5 - "Project API & Data Layer"
+### Community 7 - "Project API & Queries"
 Cohesion: 0.10
 Nodes (12): ListProjectsParams, projectApi, MemberProductivity, PendingInvitation, Project, ProjectDashboard, ProjectInvitation, ProjectListItem (+4 more)
 
-### Community 6 - "TypeScript App Config"
+### Community 8 - "TS/Vite Project Config"
 Cohesion: 0.07
 Nodes (27): DOM, DOM.Iterable, src, vite/client, vite-plugin-pwa/client, compilerOptions, baseUrl, isolatedModules (+19 more)
 
-### Community 7 - "Task Layout Switching"
+### Community 9 - "Task Layout Views & Store"
 Cohesion: 0.12
 Nodes (22): DEFAULTS, LAYOUTS_FOR, LayoutSurface, read(), Stored, TaskLayout, useTaskLayout(), write() (+14 more)
 
-### Community 8 - "Auth Scene Desk Illustration"
+### Community 10 - "Auth Desk Scene & Floating Objects"
 Cohesion: 0.11
 Nodes (7): AuthScene(), DeskObject(), DeskObjectProps, floatTransition(), AuthShell(), AuthShellProps, Phase
 
-### Community 9 - "Shared UI Primitives"
-Cohesion: 0.14
-Nodes (20): Badge(), BadgeProps, Collapsible(), CollapsibleProps, ColorPicker(), ColorPickerProps, EmptyState(), EmptyStateProps (+12 more)
-
-### Community 10 - "Vite & Node Config"
+### Community 11 - "Vite/Node Build Config"
 Cohesion: 0.11
 Nodes (18): node, scripts/**/*.mjs, vite.config.ts, compilerOptions, allowSyntheticDefaultImports, isolatedModules, lib, module (+10 more)
 
-### Community 11 - "API Client & Socket Setup"
+### Community 12 - "Button Primitive"
+Cohesion: 0.12
+Nodes (11): Button, ButtonProps, Size, SIZES, Variant, VARIANTS, Modal(), ModalProps (+3 more)
+
+### Community 13 - "Skin-Specific Paper Icon Variants"
+Cohesion: 0.14
+Nodes (11): isRigidPaper(), PageStack(), paperFor(), PAPERS, PostItGlyph(), PostItMark(), PostItMarkProps, PushPinProps (+3 more)
+
+### Community 14 - "API Client & Session Refresh"
 Cohesion: 0.15
 Nodes (7): api, RetriableConfig, sessionExpiredHandlers, connectSocket(), emitWithAck(), getSocket(), tokenStore
 
-### Community 12 - "Icon Generation Script"
+### Community 15 - "Icon Generation Script"
 Cohesion: 0.16
 Nodes (15): BRAND, BRAND_DEEP, chunk(), crc32(), crcTable, drawIcon(), encodePng(), FOLD (+7 more)
 
-### Community 13 - "Floating Shortcuts Store"
+### Community 16 - "Floating Shortcuts Store"
 Cohesion: 0.22
 Nodes (10): clampToViewport(), FloatingShortcut, PILL, read(), ShortcutIcon, ShortcutsState, useFloatingShortcuts, write() (+2 more)
 
-### Community 14 - "Button & Modal Primitives"
+### Community 17 - "Frontend Dependencies"
 Cohesion: 0.15
-Nodes (11): Button, ButtonProps, Size, SIZES, Variant, VARIANTS, Modal(), ModalProps (+3 more)
+Nodes (13): axios, date-fns, @dnd-kit/modifiers, @dnd-kit/utilities, @hookform/resolvers, dependencies, axios, date-fns (+5 more)
 
-### Community 15 - "Third-Party UI Dependencies"
-Cohesion: 0.15
-Nodes (13): axios, @dnd-kit/modifiers, @dnd-kit/utilities, @hookform/resolvers, dependencies, axios, @dnd-kit/modifiers, @dnd-kit/utilities (+5 more)
+### Community 18 - "Project Document API & Queries"
+Cohesion: 0.29
+Nodes (8): documentApi, useCreateDocument(), useDeleteDocument(), useInvalidateDocuments(), useUpdateDocument(), CreateDocumentPayload, ProjectDocument, UpdateDocumentPayload
 
-### Community 16 - "User API & Profile Types"
+### Community 19 - "User API & Upload"
 Cohesion: 0.21
 Nodes (9): PresignedUpload, UploadScope, userApi, AuthSession, CurrentUser, SKIN_LABELS, ThemePreference, ThemeSkin (+1 more)
 
-### Community 17 - "Project Architecture & Stack"
+### Community 20 - "Skin Catalogue & Search"
+Cohesion: 0.24
+Nodes (8): SETTINGS_SKIN_LIMIT, SKIN_BY_VALUE, SKIN_CATALOG, SkinDefinition, SkinPreview, notch(), SkinMock(), SkinMockProps
+
+### Community 21 - "Architecture Principles (FSD, Layering)"
 Cohesion: 0.17
 Nodes (12): zustand, tailwindcss, Layered Dependency Rule (app→pages→widgets→features→entities→shared), Feature-Sliced Design, Optimistic Update Strategy, React 19, Sonner (toasts), Tailwind CSS (+4 more)
 
-### Community 18 - "Board Connector Layer"
+### Community 22 - "Whiteboard Position Bus"
 Cohesion: 0.23
 Nodes (9): Listener, Point, PositionBus, centreOf(), ConnectorLayer(), ConnectorLayerProps, curveBetween(), headTransform() (+1 more)
 
-### Community 19 - "Board Gesture Handling"
+### Community 23 - "Board Marquee & Pointer Gestures"
 Cohesion: 0.18
 Nodes (4): MarqueeOptions, Rect, ConnectBannerProps, SelectionBarProps
 
-### Community 20 - "Skinned Stationery Icons"
-Cohesion: 0.17
-Nodes (8): PageStack(), PostItGlyph(), PostItMark(), PostItMarkProps, PushPinProps, SendGlyph(), StudioMark(), StudioMarkProps
-
-### Community 21 - "Ghost Duplicate (Task Filters)"
+### Community 24 - "Task Filters Types"
 Cohesion: 0.18
 Nodes (9): FiltersVariant, LATENESS, PERSONAL_TABS, PersonalTab, PROJECT_SCOPES, STATUS_SWATCH, STATUSES, TaskFiltersProps (+1 more)
 
-### Community 22 - "Space Theme Reference Screenshot"
-Cohesion: 0.31
-Nodes (11): Space Theme Job Board Landing Page (Screenshot), Brand Logo/Wordmark "_I Need More Space 2097_", Dark Space UI Theme, "Explore Job" Call-to-Action Button, Hero Section with Astronaut Illustration, "Job Available" Section Teaser (below fold), Job Board / Recruitment Landing Page Purpose, Job Availability Stat Card (Saturn, 2,197 Jobs Available) (+3 more)
-
-### Community 23 - "Task Filters"
+### Community 25 - "Task Filters UI"
 Cohesion: 0.18
 Nodes (9): FiltersVariant, LATENESS, PERSONAL_TABS, PersonalTab, PROJECT_SCOPES, STATUS_SWATCH, STATUSES, TaskFiltersProps (+1 more)
 
-### Community 24 - "Design System Constants"
+### Community 26 - "Shared App Constants"
 Cohesion: 0.18
 Nodes (10): BOARD_INK_COLORS, CONNECTOR_COLORS, EDGE_REVEAL_PX, MAX_BOARD_PAGES, NOTE_COLORS, STORAGE_KEYS, TASK_COLORS, TASK_PRIORITY_META (+2 more)
 
-### Community 25 - "Date Formatting Utilities"
+### Community 27 - "Date Formatting Helpers"
 Cohesion: 0.33
 Nodes (9): formatDateTime(), formatDayLabel(), formatDeadline(), formatDeadlineDate(), formatRelative(), formatTime(), formatWindow(), toDate() (+1 more)
 
-### Community 26 - "Edge Reveal Menu Chrome"
+### Community 28 - "HTML Sanitiser (Client)"
+Cohesion: 0.24
+Nodes (9): ALLOWED_ATTRIBUTES, ALLOWED_STYLE_PROPERTIES, ALLOWED_TAGS, clean(), DISCARDED_TAGS, GLOBAL_ATTRIBUTES, isSafeUrl(), sanitizeDocumentHtml() (+1 more)
+
+### Community 29 - "Edge Affordance Component"
 Cohesion: 0.18
 Nodes (10): CENTRE, EdgeAffordance(), EdgeAffordanceProps, GRADIENT, NavPinButton(), NavPinButtonProps, RAIL, SWELL (+2 more)
 
-### Community 27 - "Project Chat Dock"
-Cohesion: 0.29
-Nodes (7): ChatDockState, PersistedDock, restored, useChatDock, write(), ChatDock(), useProjectChatUnread()
+### Community 31 - "Chat Dock Store"
+Cohesion: 0.24
+Nodes (5): ChatDockState, PersistedDock, restored, useChatDock, write()
 
-### Community 28 - "App Branding & Icon Design"
+### Community 32 - "App Branding & Icon Assets"
 Cohesion: 0.28
 Nodes (8): Task Studio Branding, App Icon Design (Sticky Note on Purple Gradient), favicon.svg (App Icon), Paper Sheet Gradient (Yellow/Gold), Peeled-Corner Sheet of Paper Icon (Task/Document Motif), Rounded Square Tile Shape, Text/Task Lines on Sheet, Tile Background Gradient (Indigo)
 
-### Community 29 - "Notifications API & Data Layer"
+### Community 33 - "Notification API & Queries"
 Cohesion: 0.28
 Nodes (3): notificationApi, AppNotification, NotificationType
 
-### Community 30 - "Nav Preferences Store"
+### Community 34 - "Auth API & Session Store"
+Cohesion: 0.31
+Nodes (5): authApi, SessionState, SessionStatus, useCurrentUser(), useSessionStore
+
+### Community 35 - "Nav Pin Preferences Store"
 Cohesion: 0.31
 Nodes (8): DEFAULTS, NavEdge, NavPreferencesState, PinnedEdges, read(), useIsNavPinned(), useNavPreferences, write()
 
-### Community 31 - "Chat & Whiteboard API"
+### Community 36 - "Chat & Whiteboard API Types"
 Cohesion: 0.32
 Nodes (6): chatApi, whiteboardApi, ChatMessage, WhiteboardElement, WhiteboardElementType, WhiteboardStrokeData
 
-### Community 32 - "AI Suggestions Panel"
+### Community 37 - "AI Suggestions API"
 Cohesion: 0.32
 Nodes (5): aiApi, AiSuggestion, SubtaskSuggestion, WorkflowInsight, SEVERITY_STYLE
 
-### Community 33 - "Route Error Boundary"
+### Community 38 - "Rich Text Editor Toolbar"
 Cohesion: 0.25
-Nodes (3): RouteBoundary, RouteBoundaryProps, RouteBoundaryState
+Nodes (4): COLORS, PromptKind, RichTextEditorProps, SIZES
 
-### Community 34 - "Ghost Duplicate (Hidden Sidebar Nav)"
+### Community 39 - "Hidden Sidebar Nav"
 Cohesion: 0.29
 Nodes (4): GROUPS, HiddenSidebarProps, NavItem, SidebarLinkProps
 
-### Community 35 - "Shared Hooks"
+### Community 40 - "Shared UI Hooks"
 Cohesion: 0.38
 Nodes (3): useIsDesktop(), useIsTouchDevice(), useMediaQuery()
 
-### Community 36 - "Hidden Sidebar Nav"
+### Community 41 - "Hidden Sidebar Component (dup cluster)"
 Cohesion: 0.29
 Nodes (4): GROUPS, HiddenSidebarProps, NavItem, SidebarLinkProps
 
-### Community 37 - "Vercel Deployment Config"
+### Community 42 - "Whiteboard Stroke Helpers"
+Cohesion: 0.43
+Nodes (6): adoptStroke(), isStroke(), readImageSize(), Tool, Whiteboard(), WhiteboardProps
+
+### Community 43 - "Vercel Deployment Config"
 Cohesion: 0.29
 Nodes (6): buildCommand, framework, headers, outputDirectory, rewrites, $schema
 
-### Community 38 - "Ghost Duplicate (Skin Picker UI)"
+### Community 44 - "Whiteboard Image Sizing"
 Cohesion: 0.33
 Nodes (3): SkinDefinition, SkinPreview, SKINS
 
-### Community 39 - "Ghost Duplicate (Project Whiteboard)"
+### Community 45 - "Whiteboard Tool State"
 Cohesion: 0.47
 Nodes (5): isStroke(), readImageSize(), Tool, Whiteboard(), WhiteboardProps
 
-### Community 40 - "Drag & Drop / Motion Deps"
+### Community 46 - "60fps Animation Conventions"
 Cohesion: 0.33
 Nodes (6): @dnd-kit/core, framer-motion, @dnd-kit/core, framer-motion, 60fps Animation Rules, Two-tool Drag & Drop strategy
 
-### Community 41 - "Theme Skin Init & Migration"
-Cohesion: 0.33
-Nodes (6): SKINS mapping object (stored skin name -> data-skin value), STEAMPUNK-to-VINTAGE legacy skin alias, localStorage key task-studio:theme, localStorage key task-studio:theme-skin, Theme Init IIFE (pre-paint theme/skin setter), SKIN_ATTRIBUTE (external, in theme-provider.tsx)
-
-### Community 43 - "Skin Picker UI"
-Cohesion: 0.33
-Nodes (3): SkinDefinition, SkinPreview, SKINS
-
-### Community 44 - "Avatar Components"
+### Community 48 - "Avatar Component"
 Cohesion: 0.33
 Nodes (5): Avatar(), AvatarProps, AvatarStack(), AvatarStackProps, SIZES
 
-### Community 45 - "Form Field Primitives"
+### Community 49 - "Input/Textarea Primitives"
 Cohesion: 0.33
 Nodes (5): FieldShellProps, Input, InputProps, Textarea, TextareaProps
 
-### Community 46 - "Project Whiteboard"
-Cohesion: 0.47
-Nodes (5): isStroke(), readImageSize(), Tool, Whiteboard(), WhiteboardProps
-
-### Community 48 - "Ghost Duplicate (Project Rail Nav)"
+### Community 51 - "Project Rail Nav"
 Cohesion: 0.50
 Nodes (3): ProjectRailProps, RailProject(), urgencyOf()
 
-### Community 49 - "Session Store"
-Cohesion: 0.50
-Nodes (4): SessionState, SessionStatus, useCurrentUser(), useSessionStore
-
-### Community 50 - "Board Toolbar"
+### Community 52 - "Whiteboard Toolbar"
 Cohesion: 0.40
 Nodes (3): BoardTool, BoardToolbarProps, TOOLS
 
-### Community 52 - "Per-Skin Motion Curves"
-Cohesion: 0.40
-Nodes (3): MARKER, REVEAL, STAGE
-
-### Community 53 - "Expandable Full-Screen Stage"
-Cohesion: 0.40
-Nodes (4): ExpandableStage(), ExpandableStageProps, ExpandToggle(), ExpandToggleProps
-
-### Community 54 - "Project Rail Nav"
+### Community 54 - "Project Rail (dup cluster)"
 Cohesion: 0.50
 Nodes (3): ProjectRailProps, RailProject(), urgencyOf()
 
-### Community 57 - "PWA & Deployment Setup"
+### Community 55 - "Project Text Board Widget"
+Cohesion: 0.60
+Nodes (4): TextBoard(), TextBoardProps, toDownloadableHtml(), toFileName()
+
+### Community 58 - "Community 58"
 Cohesion: 0.50
 Nodes (4): iOS/Safari PWA specifics, npm Scripts (dev/build/preview/typecheck/icons), vite-plugin-pwa / Workbox PWA setup, Vercel Deployment (vercel.json)
 
-### Community 59 - "Board Ink Drawing Layer"
+### Community 60 - "Community 60"
 Cohesion: 0.67
 Nodes (3): InkLayer(), InkLayerProps, toPath()
 
-### Community 63 - "Notes Board Page"
+### Community 64 - "Community 64"
 Cohesion: 0.83
 Nodes (3): fitImage(), NotesBoardPage(), readImageSize()
 
-### Community 67 - "Select Primitive"
-Cohesion: 0.50
-Nodes (3): Select(), SelectOption, SelectProps
-
 ## Knowledge Gaps
-- **330 isolated node(s):** `name`, `private`, `version`, `type`, `description` (+325 more)
+- **339 isolated node(s):** `name`, `private`, `version`, `type`, `description` (+334 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **45 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **46 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `dependencies` connect `Third-Party UI Dependencies` to `Build Tooling Dependencies`, `Drag & Drop / Motion Deps`, `Project Architecture & Stack`, `Third-Party UI Dependencies`, `date-fns Dependency`, `dnd-kit Sortable Dependency`, `lucide-react Dependency`, `React Dependency`, `react-dom Dependency`, `react-hook-form Dependency`, `react-router-dom Dependency`, `socket.io-client Dependency`, `tailwind-merge Dependency`, `zod Dependency`?**
+- **Why does `dependencies` connect `Frontend Dependencies` to `Community 96`, `Community 97`, `Build Tooling (PostCSS/Autoprefixer)`, `60fps Animation Conventions`, `Architecture Principles (FSD, Layering)`, `Community 87`, `Community 88`, `Community 89`, `Community 90`, `Community 91`, `Community 92`, `Community 93`, `Community 94`, `Community 95`?**
   _High betweenness centrality (0.006) - this node is a cross-community bridge._
-- **Why does `devDependencies` connect `Build Tooling Dependencies` to `Project Architecture & Stack`?**
-  _High betweenness centrality (0.004) - this node is a cross-community bridge._
-- **Why does `Task Studio README` connect `Project Architecture & Stack` to `Drag & Drop / Motion Deps`?**
+- **Why does `devDependencies` connect `Build Tooling (PostCSS/Autoprefixer)` to `Architecture Principles (FSD, Layering)`?**
   _High betweenness centrality (0.002) - this node is a cross-community bridge._
 - **What connects `name`, `private`, `version` to the rest of the system?**
-  _330 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `Notes Board Data Layer` be split into smaller, more focused modules?**
+  _339 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `Notes Board API & Queries` be split into smaller, more focused modules?**
   _Cohesion score 0.06292966684294024 - nodes in this community are weakly interconnected._
-- **Should `Ghost Duplicate (Edge Reveal Menu Chrome)` be split into smaller, more focused modules?**
+- **Should `Edge-Reveal Nav Chrome` be split into smaller, more focused modules?**
   _Cohesion score 0.05551020408163265 - nodes in this community are weakly interconnected._
-- **Should `App Bootstrap & Providers` be split into smaller, more focused modules?**
-  _Cohesion score 0.06666666666666667 - nodes in this community are weakly interconnected._
+- **Should `Task API & Completion Rules` be split into smaller, more focused modules?**
+  _Cohesion score 0.0782312925170068 - nodes in this community are weakly interconnected._
+- **Should `App Shell & Theme Pre-paint Init` be split into smaller, more focused modules?**
+  _Cohesion score 0.05603864734299517 - nodes in this community are weakly interconnected._

@@ -76,11 +76,30 @@ const VOID_GRADIENT: Record<NavEdge, string> = {
   top: 'bg-[radial-gradient(65%_120%_at_50%_0%,rgb(0_0_0/0.92)_0_24%,rgb(var(--brand)/0.7)_38%,rgb(var(--space-flare)/0.38)_56%,transparent_80%)]',
 };
 
+/**
+ * The same bulge as an iris opening at the edge of the screen.
+ *
+ * Deliberately built the opposite way round from the deep field's: that one is
+ * black at the edge and bright further out, because a singularity is defined
+ * by the light around it. This one is bright at the edge and dark in the
+ * middle — a pupil — so that even at the same size and blur the two skins
+ * cannot be confused for one another, which is what happened when the eldritch
+ * seam borrowed the void's radial well.
+ */
+const IRIS_GRADIENT: Record<NavEdge, string> = {
+  left: 'bg-[radial-gradient(120%_65%_at_0%_50%,rgb(var(--brand)/0.75)_0_18%,rgb(var(--eldritch-ichor)/0.6)_32%,rgb(0_0_0/0.8)_46%,rgb(var(--eldritch-glow)/0.35)_62%,transparent_82%)]',
+  right:
+    'bg-[radial-gradient(120%_65%_at_100%_50%,rgb(var(--brand)/0.75)_0_18%,rgb(var(--eldritch-ichor)/0.6)_32%,rgb(0_0_0/0.8)_46%,rgb(var(--eldritch-glow)/0.35)_62%,transparent_82%)]',
+  top: 'bg-[radial-gradient(65%_120%_at_50%_0%,rgb(var(--brand)/0.75)_0_18%,rgb(var(--eldritch-ichor)/0.6)_32%,rgb(0_0_0/0.8)_46%,rgb(var(--eldritch-glow)/0.35)_62%,transparent_82%)]',
+};
+
 /** The lit strip at the edge. In orbit it is the photon ring, so it runs cyan. */
 const RAIL_TONE = {
   default: 'bg-gradient-to-b from-brand/0 via-brand to-brand/0 shadow-[0_0_18px_rgb(var(--brand)/0.75)]',
   space:
     'bg-gradient-to-b from-brand/0 via-[rgb(var(--space-plasma))] to-brand/0 shadow-[0_0_18px_rgb(var(--brand)/0.85)]',
+  eldritch:
+    'bg-gradient-to-b from-brand/0 via-[rgb(var(--eldritch-glow))] to-brand/0 shadow-[0_0_20px_rgb(var(--eldritch-glow)/0.9)]',
 };
 
 /** Which axis the bulge grows along. */
@@ -106,7 +125,9 @@ const SWELL_KEYFRAMES: Record<NavEdge, Record<string, number[]>> = {
  */
 export const EdgeAffordance = ({ edge, isHidden, label }: EdgeAffordanceProps) => {
   const reduceMotion = useReducedMotion();
-  const isSpace = useSkin() === 'SPACE';
+  const skin = useSkin();
+  const isSpace = skin === 'SPACE';
+  const isEldritch = skin === 'ELDRITCH';
 
   // Nothing to invite the user towards while the menu is already on screen, so
   // the loops stop rather than running forever behind `opacity: 0` — three
@@ -128,7 +149,7 @@ export const EdgeAffordance = ({ edge, isHidden, label }: EdgeAffordanceProps) =
         className={cn(
           'fixed blur-[6px]',
           SWELL[edge],
-          isSpace ? VOID_GRADIENT[edge] : GRADIENT[edge],
+          isSpace ? VOID_GRADIENT[edge] : isEldritch ? IRIS_GRADIENT[edge] : GRADIENT[edge],
         )}
         initial={false}
         style={CENTRE[edge]}
@@ -142,7 +163,7 @@ export const EdgeAffordance = ({ edge, isHidden, label }: EdgeAffordanceProps) =
       <motion.span
         className={cn(
           'fixed',
-          isSpace ? RAIL_TONE.space : RAIL_TONE.default,
+          isSpace ? RAIL_TONE.space : isEldritch ? RAIL_TONE.eldritch : RAIL_TONE.default,
           edge === 'top' && 'bg-gradient-to-r',
           RAIL[edge],
         )}

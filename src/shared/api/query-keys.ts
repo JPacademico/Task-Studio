@@ -43,6 +43,13 @@ export const queryKeys = {
     scene: (projectId: string) => ['whiteboard', projectId] as const,
   },
 
+  documents: {
+    all: ['documents'] as const,
+    list: (projectId: string, taskId?: string) =>
+      ['documents', 'list', projectId, taskId ?? 'all'] as const,
+    detail: (documentId: string) => ['documents', documentId] as const,
+  },
+
   notifications: {
     all: ['notifications'] as const,
     list: (unread?: boolean) => ['notifications', 'list', Boolean(unread)] as const,

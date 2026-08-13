@@ -23,7 +23,7 @@ import {
 import { SkinMock } from '@/features/theme-toggle/ui/skin-mock';
 import { cn } from '@/shared/lib/cn';
 import { useSkinMotion } from '@/shared/lib/skin-motion';
-import { Button, EmptyState } from '@/shared/ui';
+import { Button, EmptyState, GazeArrow } from '@/shared/ui';
 
 /**
  * Six to a page.
@@ -41,25 +41,19 @@ interface GalleryCardProps {
   isSelected: boolean;
   isDark: boolean;
   onSelect: () => void;
-  onApply: () => void;
 }
 
 /**
  * One theme on the shelf.
  *
- * Clicking the card *previews* rather than applies. Applying a theme repaints
- * the entire app underneath the pointer, which makes browsing eight of them
- * feel like eight accidents — so the destructive half of the interaction is a
- * separate, deliberate button, and the cheap half is the whole card.
+ * The whole card previews; nothing on it applies. Applying repaints the entire
+ * app underneath the pointer, so browsing with an Apply button on every tile
+ * made the shelf feel like eight ways to have an accident — and a card that
+ * offers both actions makes you read it before you can click it. There is now
+ * exactly one Apply in the room, in the preview box, next to the full-size
+ * picture of what it will do.
  */
-const GalleryCard = ({
-  skin,
-  isActive,
-  isSelected,
-  isDark,
-  onSelect,
-  onApply,
-}: GalleryCardProps) => {
+const GalleryCard = ({ skin, isActive, isSelected, isDark, onSelect }: GalleryCardProps) => {
   const preview = isDark ? skin.dark : skin.light;
 
   return (
@@ -80,7 +74,7 @@ const GalleryCard = ({
         onClick={onSelect}
         aria-pressed={isSelected}
         aria-label={`Preview the ${skin.name} theme`}
-        className="relative block w-full p-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand/50"
+        className="relative block w-full p-2.5 pb-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand/50"
       >
         {/* The mock lifts out of the card under the pointer, so the picture is
             the thing that reacts rather than a border colour. */}
@@ -113,27 +107,6 @@ const GalleryCard = ({
           )}
         </span>
       </button>
-
-      <div className="mt-auto flex items-center gap-1.5 px-2.5 pb-2.5">
-        {skin.tags.slice(0, 2).map((tag) => (
-          <span
-            key={tag}
-            className="ui-chip rounded-full border border-edge bg-surface-sunken px-2 py-0.5 text-[10px] font-medium text-content-muted"
-          >
-            {tag}
-          </span>
-        ))}
-
-        <Button
-          size="sm"
-          variant={isActive ? 'ghost' : 'secondary'}
-          disabled={isActive}
-          onClick={onApply}
-          className="ml-auto"
-        >
-          {isActive ? 'Applied' : 'Apply'}
-        </Button>
-      </div>
     </motion.article>
   );
 };
@@ -186,10 +159,6 @@ const ThemeGalleryPage = () => {
           <Palette className="h-5 w-5 text-brand" />
           Theme gallery
         </h1>
-        <p className="text-sm text-content-muted">
-          {SKIN_CATALOG.length} complete visual languages — type, corners, materials, motion and
-          icons. Pick one to preview it; nothing changes until you apply.
-        </p>
       </header>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
@@ -265,7 +234,6 @@ const ThemeGalleryPage = () => {
                     isSelected={selected === entry.value}
                     isDark={previewDark}
                     onSelect={() => setSelected(entry.value)}
-                    onApply={() => apply(entry.value, entry.name)}
                   />
                 ))}
               </motion.div>
@@ -282,7 +250,7 @@ const ThemeGalleryPage = () => {
                     disabled={page === 0}
                     onClick={() => setPage((current) => Math.max(0, current - 1))}
                   >
-                    <ArrowLeft className="h-4 w-4" />
+                    <GazeArrow direction="left" fallback={ArrowLeft} className="h-4 w-4" />
                   </Button>
 
                   {Array.from({ length: pageCount }, (_, index) => (
@@ -308,7 +276,7 @@ const ThemeGalleryPage = () => {
                     disabled={page >= pageCount - 1}
                     onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))}
                   >
-                    <ArrowRight className="h-4 w-4" />
+                    <GazeArrow direction="right" fallback={ArrowRight} className="h-4 w-4" />
                   </Button>
                 </nav>
               )}
@@ -370,18 +338,11 @@ const ThemeGalleryPage = () => {
                   <span className="truncate text-[11px] text-content-faint">{detail.tagline}</span>
                 </div>
 
+                {/* The description, and nothing else. The tag chips were a
+                    second, worse description of the same theme sitting under
+                    the first one — they still earn their keep as search terms,
+                    which is where they now live and nowhere else. */}
                 <p className="text-xs leading-relaxed text-content-muted">{detail.description}</p>
-
-                <div className="flex flex-wrap gap-1.5">
-                  {detail.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="ui-chip rounded-full border border-edge bg-surface-sunken px-2 py-0.5 text-[10px] text-content-muted"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
 
                 <Button
                   className="w-full"

@@ -52,7 +52,7 @@ const TaskMenuPage = () => {
   const showingCompleted = filters.status === 'COMPLETED';
 
   const { data: agenda, isLoading } = useTaskAgenda(filters);
-  const toggleCompletion = useToggleMyCompletion();
+  const toggleCompletion = useToggleMyCompletion(currentUser?.id);
   const togglePin = useToggleTaskPin();
   const deleteTask = useDeleteTask();
   const updateStatus = useUpdateTaskStatus();
@@ -95,9 +95,6 @@ const TaskMenuPage = () => {
             Task menu
           </p>
           <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Your agenda</h1>
-          <p className="hidden text-sm text-content-muted sm:block">
-            Grouped by day and hour. Completed work steps aside until you ask for it.
-          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
