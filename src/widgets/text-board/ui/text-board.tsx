@@ -19,10 +19,12 @@ import {
   useUpdateDocument,
 } from '@/entities/document/model/queries';
 import type { ProjectDocument } from '@/entities/document/model/types';
+import { DocumentByline, DocumentCreatorStamp } from '@/entities/document/ui/document-byline';
 import type { Task } from '@/entities/task/model/types';
+import { useCurrentUser } from '@/features/auth/model/session.store';
 import { RichTextEditor } from '@/features/rich-text/ui/rich-text-editor';
 import { cn } from '@/shared/lib/cn';
-import { formatRelative } from '@/shared/lib/dates';
+import { formatDateTime } from '@/shared/lib/dates';
 import { sanitizeDocumentHtml } from '@/shared/lib/sanitize-html';
 import {
   Button,
@@ -44,31 +46,42 @@ interface TextBoardProps {
 const toFileName = (title: string): string =>
   `${title.trim().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').slice(0, 60) || 'document'}.html`;
 
+/** Same treatment the title already got: strip the three characters that
+    would otherwise close a tag we opened. */
+const plain = (value: string): string => value.replace(/[<>&]/g, '');
+
 /**
  * Wraps a document body in enough of a page to open on its own.
  *
  * The download is a standalone `.html` file rather than the raw fragment: a
  * fragment opens as unstyled text with no title and no character set, which is
  * not what anybody means by "download this document".
+ *
+ * The byline travels with it. A page that leaves the app loses every bit of
+ * context the board around it was carrying, and the first question anybody asks
+ * about a document in their downloads folder is who wrote it.
  */
-const toDownloadableHtml = (title: string, body: string): string =>
+const toDownloadableHtml = (title: string, body: string, byline: string): string =>
   `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>${title.replace(/[<>&]/g, '')}</title>
+<title>${plain(title)}</title>
 <style>
   body { max-width: 46rem; margin: 3rem auto; padding: 0 1.25rem;
          font: 16px/1.65 Georgia, 'Times New Roman', serif; color: #1a1a1a; }
   h1, h2, h3 { line-height: 1.25; }
+  .byline { margin: -0.5rem 0 2rem; padding-bottom: 1rem; border-bottom: 1px solid #ddd;
+            font-size: 0.8rem; color: #666; }
   blockquote { border-left: 3px solid #ccc; margin: 0; padding-left: 1rem; color: #555; }
   pre { background: #f4f4f5; padding: .75rem 1rem; border-radius: 6px; overflow-x: auto; }
   img, video { max-width: 100%; height: auto; }
 </style>
 </head>
 <body>
-<h1>${title.replace(/[<>&]/g, '')}</h1>
+<h1>${plain(title)}</h1>
+${byline ? `<p class="byline">${plain(byline)}</p>` : ''}
 ${body}
 </body>
 </html>`;
@@ -88,6 +101,10 @@ ${body}
  */
 export const TextBoard = ({ projectId, tasks }: TextBoardProps) => {
   const { data: documents = [], isLoading } = useProjectDocuments(projectId);
+
+  // Read once here rather than inside every byline: the credit is an entity
+  // component and does not get to know about the session.
+  const currentUserId = useCurrentUser()?.id;
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -173,7 +190,15 @@ export const TextBoard = ({ projectId, tasks }: TextBoardProps) => {
     if (!open) return;
 
     const body = sanitizeDocumentHtml(isEditing ? draftRef.current : (open.content ?? ''));
-    const blob = new Blob([toDownloadableHtml(title, body)], {
+
+    const byline = open.createdBy
+      ? `Created by ${open.createdBy.displayName} · ${formatDateTime(open.createdAt)}` +
+        (open.updatedBy && open.updatedAt !== open.createdAt
+          ? ` — last edited by ${open.updatedBy.displayName} · ${formatDateTime(open.updatedAt)}`
+          : '')
+      : '';
+
+    const blob = new Blob([toDownloadableHtml(title, body, byline)], {
       type: 'text/html;charset=utf-8',
     });
 
@@ -213,6 +238,13 @@ export const TextBoard = ({ projectId, tasks }: TextBoardProps) => {
       <span className="flex items-center gap-1.5">
         <FileText className="h-3 w-3 shrink-0 text-content-faint" />
         <span className="truncate text-xs font-semibold">{entry.title}</span>
+        {/* Whose page this is, at the size a scanned list can carry: a face,
+            with the name and the date in its tooltip. */}
+        <DocumentCreatorStamp
+          createdBy={entry.createdBy}
+          createdAt={entry.createdAt}
+          className="ml-auto"
+        />
       </span>
       <span className="mt-0.5 block truncate text-[10px] text-content-faint">
         {entry.excerpt || 'Empty page'}
@@ -415,11 +447,17 @@ export const TextBoard = ({ projectId, tasks }: TextBoardProps) => {
                     </span>
                   )}
 
-                  <span className="text-[10px] text-content-faint">
-                    {(open.updatedBy ?? open.createdBy).displayName} ·{' '}
-                    {formatRelative(open.updatedAt)}
-                    {isDirty && <span className="ml-1 text-warning">· unsaved</span>}
-                  </span>
+                  <DocumentByline
+                    createdBy={open.createdBy}
+                    createdAt={open.createdAt}
+                    updatedBy={open.updatedBy}
+                    updatedAt={open.updatedAt}
+                    currentUserId={currentUserId}
+                  />
+
+                  {isDirty && (
+                    <span className="text-[10px] font-medium text-warning">unsaved</span>
+                  )}
                 </div>
 
                 <RichTextEditor

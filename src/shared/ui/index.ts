@@ -28,3 +28,5 @@ export { HazardMark } from './hazard-icons';
 export { NewspaperMark } from './newspaper-icons';
 export { EldritchMark } from './eldritch-icons';
 export { EldritchTendrils, GazeArrow, WanderingEye } from './eldritch-decor';
+export { AutumnMark } from './autumn-icons';
+export { AutumnFall, AutumnHedge } from './autumn-decor';

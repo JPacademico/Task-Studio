@@ -20,13 +20,20 @@ const RAIL: Record<NavEdge, string> = {
 };
 
 /**
- * The bulge that swells out of the rail. Sized generously and blurred: this is
- * the part that has to be noticed from the far side of the screen.
+ * The bulge that swells out of the rail.
+ *
+ * Long along the edge, shallow across it. The two measurements do different
+ * jobs: the length is what makes the cue legible from the far side of the
+ * screen, and the depth is the only part that reaches over the page — so the
+ * depth is the part that was costing us. At 64px the wave crossed far enough
+ * into the content to read as a permanent glow bolted to the window rather
+ * than as a hint about something just off it. 38px still registers in
+ * peripheral vision and stops well short of anything the user is reading.
  */
 const SWELL: Record<NavEdge, string> = {
-  left: 'left-0 top-1/2 h-52 w-16 rounded-r-[100%] origin-left',
-  right: 'right-0 top-1/2 h-52 w-16 rounded-l-[100%] origin-right',
-  top: 'top-0 left-1/2 h-16 w-52 rounded-b-[100%] origin-top',
+  left: 'left-0 top-1/2 h-52 w-[38px] rounded-r-[100%] origin-left',
+  right: 'right-0 top-1/2 h-52 w-[38px] rounded-l-[100%] origin-right',
+  top: 'top-0 left-1/2 h-[38px] w-52 rounded-b-[100%] origin-top',
 };
 
 /**
@@ -102,11 +109,19 @@ const RAIL_TONE = {
     'bg-gradient-to-b from-brand/0 via-[rgb(var(--eldritch-glow))] to-brand/0 shadow-[0_0_20px_rgb(var(--eldritch-glow)/0.9)]',
 };
 
-/** Which axis the bulge grows along. */
+/**
+ * Which axis the bulge grows along.
+ *
+ * The breath across the edge is narrower than it was (0.55 → 0.72 at the
+ * trough) for the same reason the box is: a wave that doubles its reach every
+ * three seconds is movement in the corner of your eye that never resolves into
+ * anything. It still swells — it just no longer travels far enough to pull
+ * attention off the page. The along-the-edge axis is untouched.
+ */
 const SWELL_KEYFRAMES: Record<NavEdge, Record<string, number[]>> = {
-  left: { scaleX: [0.55, 1, 0.55], scaleY: [0.9, 1, 0.9] },
-  right: { scaleX: [0.55, 1, 0.55], scaleY: [0.9, 1, 0.9] },
-  top: { scaleY: [0.55, 1, 0.55], scaleX: [0.9, 1, 0.9] },
+  left: { scaleX: [0.72, 1, 0.72], scaleY: [0.9, 1, 0.9] },
+  right: { scaleX: [0.72, 1, 0.72], scaleY: [0.9, 1, 0.9] },
+  top: { scaleY: [0.72, 1, 0.72], scaleX: [0.9, 1, 0.9] },
 };
 
 /**
@@ -154,7 +169,7 @@ export const EdgeAffordance = ({ edge, isHidden, label }: EdgeAffordanceProps) =
         initial={false}
         style={CENTRE[edge]}
         animate={
-          isAnimating ? { ...SWELL_KEYFRAMES[edge], opacity: [0.5, 1, 0.5] } : { opacity: 0.7 }
+          isAnimating ? { ...SWELL_KEYFRAMES[edge], opacity: [0.42, 0.85, 0.42] } : { opacity: 0.6 }
         }
         transition={{ duration: 3, repeat: isAnimating ? Infinity : 0, ease: [0.4, 0, 0.2, 1] }}
       />

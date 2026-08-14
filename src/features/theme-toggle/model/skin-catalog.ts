@@ -48,6 +48,14 @@ export interface SkinPreview {
   organic?: boolean;
   /** Eldritch only: something is looking out of the mock. */
   watcher?: string;
+  /**
+   * Autumn only: the two colours the leaves in the mock are drawn in — one
+   * caught mid-fall over the page, one resting on a card.
+   *
+   * A pair rather than a single colour because a scatter of one hue reads as a
+   * pattern, and the whole point of the skin is that no two leaves match.
+   */
+  leaves?: [string, string];
 }
 
 export interface SkinDefinition {
@@ -370,6 +378,50 @@ export const SKIN_CATALOG: SkinDefinition[] = [
       border: 1,
       organic: true,
       watcher: '#9e6cf6',
+    },
+  },
+  {
+    value: 'AUTUMN',
+    name: 'Autumn',
+    tagline: 'Warm paper and falling leaves',
+    description:
+      'Pressed rag paper under a low sun, corners rounded the whole way through, a serif you could read a novel in — and leaves coming down over all of it.',
+    tags: [
+      'autumn',
+      'fall',
+      'october',
+      'leaves',
+      'harvest',
+      'warm',
+      'cosy',
+      'cozy',
+      'orange',
+      'amber',
+      'wood',
+      'nature',
+      'seasonal',
+    ],
+    light: {
+      surface: '#f7ebd6',
+      raised: '#fdf5e7',
+      edge: '#926234',
+      brand: '#ba4a14',
+      content: '#2e1e12',
+      radius: 17,
+      font: "'Gloock', 'Bookman Old Style', 'Palatino Linotype', Georgia, serif",
+      border: 2,
+      leaves: ['#ba4a14', '#d69422'],
+    },
+    dark: {
+      surface: '#1a120d',
+      raised: '#261b13',
+      edge: '#603e24',
+      brand: '#eb8d2e',
+      content: '#f4e5ce',
+      radius: 17,
+      font: "'Gloock', 'Bookman Old Style', 'Palatino Linotype', Georgia, serif",
+      border: 2,
+      leaves: ['#eb8d2e', '#d64a2c'],
     },
   },
 ];

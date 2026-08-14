@@ -23,6 +23,22 @@ const notch = (size: number): string =>
   `calc(100% - ${size}px) calc(100% - ${size}px), calc(100% - ${size}px) 100%, ${size}px 100%, ` +
   `${size}px calc(100% - ${size}px), 0 calc(100% - ${size}px))`;
 
+/**
+ * A leaf, at mock scale.
+ *
+ * The same shape the autumn loader is built from — a square with two opposite
+ * corners rounded off entirely — because at eight pixels across that outline is
+ * the whole of what makes a leaf a leaf, and anything more detailed is mush.
+ */
+const leaf = (color: string, size: number, rotate: number): CSSProperties => ({
+  position: 'absolute',
+  width: size,
+  height: size,
+  background: color,
+  borderRadius: '0 100% 0 100%',
+  transform: `rotate(${rotate}deg)`,
+});
+
 /** Three star layers, matching the real skin's page wash. */
 const STARFIELD =
   'radial-gradient(1.2px 1.2px at 18% 24%, rgb(255 255 255 / 0.85), transparent 100%),' +
@@ -186,6 +202,18 @@ export const SkinMock = ({ preview, scale = 1, className }: SkinMockProps) => {
               />
             )}
 
+            {/* Autumn: one has already landed on this card. */}
+            {preview.leaves && index === 0 && (
+              <span
+                style={{
+                  ...leaf(preview.leaves[0], px(9), -18),
+                  top: px(4),
+                  right: px(4),
+                  opacity: 0.5,
+                }}
+              />
+            )}
+
             {/* Hazard: every vessel has something in the bottom of it. */}
             {preview.sludge && (
               <span
@@ -199,6 +227,18 @@ export const SkinMock = ({ preview, scale = 1, className }: SkinMockProps) => {
           </div>
         ))}
       </div>
+
+      {/* Autumn: the ones still in the air.
+          Last in the mock so they paint over the cards, which is where they
+          are in the real thing — the fall sits between the page content and
+          the chrome. */}
+      {preview.leaves && (
+        <>
+          <span style={{ ...leaf(preview.leaves[1], px(8), 34), left: '16%', top: '30%', opacity: 0.75 }} />
+          <span style={{ ...leaf(preview.leaves[0], px(6), -42), left: '52%', top: '62%', opacity: 0.6 }} />
+          <span style={{ ...leaf(preview.leaves[1], px(5), 12), left: '78%', top: '18%', opacity: 0.5 }} />
+        </>
+      )}
     </div>
   );
 };

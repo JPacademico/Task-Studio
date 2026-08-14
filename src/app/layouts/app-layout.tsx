@@ -8,7 +8,7 @@ import { CreateProjectDialog } from '@/features/project-management/ui/create-pro
 import { cn } from '@/shared/lib/cn';
 import { useIsTouchDevice } from '@/shared/lib/hooks';
 import { useNavPreferences } from '@/shared/lib/nav-preferences.store';
-import { PageLoader, RouteBoundary, WanderingEye } from '@/shared/ui';
+import { AutumnFall, PageLoader, RouteBoundary, WanderingEye } from '@/shared/ui';
 import { HiddenSidebar } from '@/widgets/hidden-sidebar/ui/hidden-sidebar';
 import { ProjectRail } from '@/widgets/project-rail/ui/project-rail';
 import { TopNavigation } from '@/widgets/top-navigation/ui/top-navigation';
@@ -59,6 +59,12 @@ export const AppLayout = () => {
           `prefers-reduced-motion` — it is fixed, aria-hidden and
           pointer-events-none, so it can never take a click off a control. */}
       <WanderingEye />
+
+      {/* Leaves coming down over the page. Inert on every skin but the autumn
+          one and under `prefers-reduced-motion`, and — like the eye — fixed,
+          aria-hidden and pointer-events-none, so it sits between the content
+          and the chrome without ever being able to take a click. */}
+      <AutumnFall />
 
       <div
         className={cn(

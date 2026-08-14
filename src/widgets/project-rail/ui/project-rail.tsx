@@ -14,6 +14,7 @@ import { useIsTouchDevice } from '@/shared/lib/hooks';
 import { useNavPreferences } from '@/shared/lib/nav-preferences.store';
 import { useEdgeReveal } from '@/shared/lib/use-edge-reveal';
 import {
+  AutumnHedge,
   Button,
   EdgeAffordance,
   EldritchTendrils,
@@ -193,6 +194,7 @@ export const ProjectRail = ({ onCreateProject }: ProjectRailProps) => {
         />
 
         <EldritchTendrils edge="right" isActive={isRevealed} />
+        <AutumnHedge edge="right" isActive={isRevealed} />
 
         <header className="flex items-center gap-2 px-4 pb-3 pt-5">
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-brand/12 text-brand">

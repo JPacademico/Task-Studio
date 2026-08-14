@@ -1181,6 +1181,189 @@
     color-scheme: dark;
   }
 
+  /* -----------------------------------------------------------------------
+   * Skin: AUTUMN — the second week of October, from indoors.
+   *
+   * Four things carry it, and none of them is "make everything orange":
+   *
+   *   - Warm paper with the fibres showing. Every surface is pressed rag with
+   *     a low sun raking across it, so the light in this skin always comes from
+   *     one place and always at a slant.
+   *   - Corners that are soft the whole way round. The other loud skins are
+   *     sharp (arcade, press), machined (containment) or asymmetric (eldritch);
+   *     this one is the only theme in the catalogue whose entire geometry is
+   *     round, which is what makes it read as *comfortable* rather than merely
+   *     warm.
+   *   - Bookish type. A serif for the body as well as the headings — nothing
+   *     else here sets its running text in one, and the difference between a
+   *     season and a colour scheme is largely whether it changes the reading.
+   *   - Leaves. Really there: on every card, along every rail, drifting across
+   *     the page. See `autumn-decor.tsx` for the ones that need geometry.
+   *
+   * Light is the afternoon — parchment, low gold, a fire's worth of orange.
+   * Dark is the same room after sunset, lit by the fire and nothing else.
+   * --------------------------------------------------------------------- */
+  [data-skin='autumn'] {
+    --surface: 247 235 214;
+    --surface-raised: 253 245 231;
+    --surface-sunken: 236 219 192;
+    --edge: 146 98 52;
+    --content: 46 30 18;
+    --content-muted: 116 82 52;
+    --content-faint: 158 126 94;
+    /* Deep enough that cream lettering on a filled control clears 4.5:1. */
+    --brand: 186 74 20;
+    --brand-soft: 250 222 190;
+    --brand-contrast: 255 247 236;
+    --positive: 94 124 46;
+    --warning: 196 132 12;
+    --danger: 158 42 30;
+
+    /* Round the whole way round — the one skin with no hard corner anywhere. */
+    --radius-sm: 0.5rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1.05rem;
+    --radius-xl: 1.3rem;
+    --radius-2xl: 1.85rem;
+    --radius-3xl: 2.4rem;
+
+    --font-display: 'Gloock', 'Marcellus', 'Bookman Old Style', 'Palatino Linotype', Georgia,
+      serif;
+    --font-sans: 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+    --font-hand: 'Segoe Script', 'Bradley Hand', 'Brush Script MT', cursive;
+
+    /* 2px, not the 1.5 this started as: a border width is snapped to whole
+       device pixels, so on an ordinary 1× display a 1.5px edge quietly renders
+       as 1px and the skin loses the drawn outline it was designed around on
+       exactly the machines least able to spare the contrast. */
+    --panel-border-width: 2px;
+    --shadow-panel:
+      inset 0 1px 0 rgb(255 248 236 / 0.75),
+      0 22px 48px -28px rgb(74 34 8 / 0.75);
+    --press-travel: 1px;
+
+    /* Pressed fibres, and the light coming in over the top-right corner. The
+       grain runs off-axis on purpose: a texture at 90° is a rule, and a rule
+       reads as a UI decision rather than as a material. */
+    --panel-texture:
+      repeating-linear-gradient(
+        102deg,
+        rgb(var(--autumn-bark) / 0.055) 0 1px,
+        transparent 1px 7px
+      ),
+      radial-gradient(85% 60% at 100% 0%, rgb(var(--autumn-gold) / 0.16), transparent 66%);
+    --panel-texture-size: auto, auto;
+
+    --page-wash:
+      radial-gradient(110% 70% at 10% -10%, rgb(var(--autumn-gold) / 0.22), transparent 58%),
+      radial-gradient(95% 70% at 100% 106%, rgb(var(--autumn-ember) / 0.16), transparent 62%);
+
+    --btn-overlay: linear-gradient(180deg, rgb(255 244 226 / 0.4), rgb(120 54 12 / 0.14));
+    --btn-shadow:
+      inset 0 1px 0 rgb(255 246 232 / 0.55),
+      0 8px 16px -10px rgb(96 44 10 / 0.85);
+    --btn-shadow-active: inset 0 2px 6px rgb(84 40 10 / 0.35);
+    --btn-tracking: 0.02em;
+    --btn-weight: 600;
+    --control-border-width: 2px;
+    --field-shadow: inset 0 1px 3px rgb(96 56 24 / 0.16);
+    --field-shadow-focus: 0 0 0 3px rgb(var(--brand) / 0.22);
+
+    /* Not a Post-it: a leaf somebody wrote on and left on the table. */
+    --postit-radius: 0.9rem;
+    --postit-shadow:
+      inset 0 0 24px rgb(150 88 24 / 0.14),
+      0 14px 26px -14px rgb(72 34 8 / 0.65);
+    --postit-texture: repeating-linear-gradient(
+      98deg,
+      rgb(120 70 20 / 0.05) 0 1px,
+      transparent 1px 6px
+    );
+    --postit-texture-size: auto;
+
+    /* How a leaf comes down: quick at first, then it takes its time landing. */
+    --ease-ui: cubic-bezier(0.33, 0.92, 0.28, 1);
+    --speed-ui: 240ms;
+    --icon-stroke: 1.8;
+    --heading-transform: none;
+    --heading-tracking: 0.005em;
+
+    /* --- The skin's own materials ---------------------------------------- */
+
+    /* The red at the tip of the leaf, before it goes brown. */
+    --autumn-ember: 168 46 26;
+    /* What the whole month is lit by. */
+    --autumn-gold: 214 148 34;
+    /* The half that has not turned yet. */
+    --autumn-moss: 96 118 52;
+    /* Wet bark. Everything structural is drawn out of this. */
+    --autumn-bark: 92 58 32;
+
+    /* One maple leaf, used wherever a leaf has to be a picture rather than
+       geometry: resting in the corner of a card, scattered over the board. */
+    --autumn-leaf: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cpath fill='%23ba4a14' d='M32 6l3.6 8.2 6-3-1.8 7.4 7.6-2-4 6.4 8.6.6-6.4 4.8 8 4.2-8.4 2.6 5.4 6.2-8.6-.6 2 7.6-7-4-1 8-5.4-6-5.4 6-1-8-7 4 2-7.6-8.6.6 5.4-6.2L6 33.2l8-4.2-6.4-4.8 8.6-.6-4-6.4 7.6 2-1.8-7.4 6 3z'/%3E%3Cpath stroke='%235c3a20' stroke-opacity='.5' stroke-width='1.4' fill='none' d='M32 58V26m0 6-7-7m7 13 8-8'/%3E%3C/svg%3E");
+
+    /* The bough that hangs across the corner of the page. */
+    --autumn-bough: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='220' viewBox='0 0 320 220'%3E%3Cg stroke='%235c3a20' stroke-width='7' stroke-linecap='round' fill='none'%3E%3Cpath d='M320 12C270 26 216 44 168 78 128 106 96 142 74 186'/%3E%3Cpath d='M242 48c-14 26-20 52-18 82M186 74c-26 14-48 30-64 56M132 122c4 30 2 54-8 76'/%3E%3C/g%3E%3Cg fill='%23ba4a14'%3E%3Cellipse cx='224' cy='134' rx='19' ry='11' transform='rotate(38 224 134)'/%3E%3Cellipse cx='276' cy='58' rx='18' ry='10' transform='rotate(-22 276 58)'/%3E%3Cellipse cx='120' cy='202' rx='17' ry='10' transform='rotate(54 120 202)'/%3E%3C/g%3E%3Cg fill='%23d69422'%3E%3Cellipse cx='170' cy='58' rx='18' ry='10' transform='rotate(-34 170 58)'/%3E%3Cellipse cx='104' cy='140' rx='17' ry='10' transform='rotate(28 104 140)'/%3E%3Cellipse cx='250' cy='104' rx='16' ry='9' transform='rotate(12 250 104)'/%3E%3C/g%3E%3Cg fill='%23a82e1a'%3E%3Cellipse cx='142' cy='96' rx='16' ry='9' transform='rotate(-52 142 96)'/%3E%3Cellipse cx='196' cy='120' rx='15' ry='9' transform='rotate(64 196 120)'/%3E%3Cellipse cx='66' cy='188' rx='15' ry='9' transform='rotate(-18 66 188)'/%3E%3C/g%3E%3C/svg%3E");
+
+    color-scheme: light;
+  }
+
+  [data-skin='autumn'].dark {
+    /* The same room after sunset. Nothing in here is lit by daylight. */
+    --surface: 26 18 13;
+    --surface-raised: 38 27 19;
+    --surface-sunken: 17 11 8;
+    --edge: 96 62 36;
+    --content: 244 229 206;
+    --content-muted: 194 165 132;
+    --content-faint: 142 115 86;
+    --brand: 235 141 46;
+    --brand-soft: 78 44 16;
+    --brand-contrast: 28 16 8;
+    --positive: 150 184 92;
+    --warning: 243 184 62;
+    --danger: 228 100 74;
+
+    --autumn-ember: 214 74 44;
+    --autumn-gold: 236 172 62;
+    --autumn-moss: 128 152 74;
+    --autumn-bark: 58 36 20;
+
+    --shadow-panel:
+      inset 0 1px 0 rgb(var(--autumn-gold) / 0.16),
+      0 26px 56px -30px rgb(0 0 0 / 0.95);
+
+    --panel-texture:
+      repeating-linear-gradient(
+        102deg,
+        rgb(var(--autumn-gold) / 0.045) 0 1px,
+        transparent 1px 7px
+      ),
+      radial-gradient(85% 60% at 100% 0%, rgb(var(--autumn-gold) / 0.1), transparent 66%);
+
+    --page-wash:
+      radial-gradient(110% 70% at 10% -10%, rgb(var(--autumn-gold) / 0.14), transparent 58%),
+      radial-gradient(95% 70% at 100% 106%, rgb(var(--autumn-ember) / 0.18), transparent 60%),
+      radial-gradient(70% 50% at 50% 50%, rgb(var(--brand) / 0.05), transparent 72%);
+
+    --btn-overlay: linear-gradient(180deg, rgb(255 226 178 / 0.12), rgb(0 0 0 / 0.32));
+    --btn-shadow:
+      inset 0 1px 0 rgb(var(--autumn-gold) / 0.24),
+      0 10px 22px -12px rgb(0 0 0);
+    --btn-shadow-active: inset 0 2px 8px rgb(0 0 0 / 0.6);
+    --field-shadow: inset 0 1px 4px rgb(0 0 0 / 0.55);
+    --postit-shadow:
+      inset 0 0 24px rgb(var(--autumn-ember) / 0.14),
+      0 18px 34px -18px rgb(0 0 0);
+
+    --autumn-leaf: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cpath fill='%23eb8d2e' d='M32 6l3.6 8.2 6-3-1.8 7.4 7.6-2-4 6.4 8.6.6-6.4 4.8 8 4.2-8.4 2.6 5.4 6.2-8.6-.6 2 7.6-7-4-1 8-5.4-6-5.4 6-1-8-7 4 2-7.6-8.6.6 5.4-6.2L6 33.2l8-4.2-6.4-4.8 8.6-.6-4-6.4 7.6 2-1.8-7.4 6 3z'/%3E%3Cpath stroke='%23301c0e' stroke-opacity='.55' stroke-width='1.4' fill='none' d='M32 58V26m0 6-7-7m7 13 8-8'/%3E%3C/svg%3E");
+
+    --autumn-bough: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='220' viewBox='0 0 320 220'%3E%3Cg stroke='%23a9773f' stroke-width='7' stroke-linecap='round' fill='none'%3E%3Cpath d='M320 12C270 26 216 44 168 78 128 106 96 142 74 186'/%3E%3Cpath d='M242 48c-14 26-20 52-18 82M186 74c-26 14-48 30-64 56M132 122c4 30 2 54-8 76'/%3E%3C/g%3E%3Cg fill='%23eb8d2e'%3E%3Cellipse cx='224' cy='134' rx='19' ry='11' transform='rotate(38 224 134)'/%3E%3Cellipse cx='276' cy='58' rx='18' ry='10' transform='rotate(-22 276 58)'/%3E%3Cellipse cx='120' cy='202' rx='17' ry='10' transform='rotate(54 120 202)'/%3E%3C/g%3E%3Cg fill='%23ecac3e'%3E%3Cellipse cx='170' cy='58' rx='18' ry='10' transform='rotate(-34 170 58)'/%3E%3Cellipse cx='104' cy='140' rx='17' ry='10' transform='rotate(28 104 140)'/%3E%3Cellipse cx='250' cy='104' rx='16' ry='9' transform='rotate(12 250 104)'/%3E%3C/g%3E%3Cg fill='%23d64a2c'%3E%3Cellipse cx='142' cy='96' rx='16' ry='9' transform='rotate(-52 142 96)'/%3E%3Cellipse cx='196' cy='120' rx='15' ry='9' transform='rotate(64 196 120)'/%3E%3Cellipse cx='66' cy='188' rx='15' ry='9' transform='rotate(-18 66 188)'/%3E%3C/g%3E%3C/svg%3E");
+
+    color-scheme: dark;
+  }
+
   * {
     @apply border-edge;
   }
@@ -1415,6 +1598,49 @@
   @keyframes sigil-turn {
     to {
       transform: rotate(-360deg);
+    }
+  }
+
+  /*
+   * The bough the leaves are coming off.
+   *
+   * Hung from the top-right corner, where nothing in this app ever puts
+   * content, and pivoting about the point it enters the frame — a branch that
+   * rotated about its own middle would be a branch floating in the air. Eight
+   * seconds each way, a degree and a half of travel: enough that the page is
+   * never quite still, far too little to catch the eye while you are reading.
+   *
+   * One fixed pseudo-element painting one background-image on a transform, so
+   * the whole thing lives on the compositor and costs nothing per frame.
+   */
+  [data-skin='autumn'] body::after {
+    content: '';
+    position: fixed;
+    right: -34px;
+    top: -26px;
+    width: 340px;
+    height: 234px;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.16;
+    background-image: var(--autumn-bough);
+    background-size: contain;
+    background-repeat: no-repeat;
+    transform-origin: 100% 0;
+    animation: bough-sway 16s ease-in-out infinite;
+  }
+
+  [data-skin='autumn'].dark body::after {
+    opacity: 0.22;
+  }
+
+  @keyframes bough-sway {
+    0%,
+    100% {
+      transform: rotate(-1.4deg);
+    }
+    50% {
+      transform: rotate(1.4deg);
     }
   }
 
@@ -2292,6 +2518,153 @@
     background: var(--news-rule);
   }
 
+  /* ---------------------------------------------------------------------
+   * AUTUMN — warm paper, low sun, and a leaf on everything.
+   * --------------------------------------------------------------------- */
+  [data-skin='autumn'] .ui-btn,
+  [data-skin='autumn'] .ui-filter,
+  [data-skin='autumn'] .ui-chip {
+    background-image: var(--btn-overlay);
+    box-shadow: var(--btn-shadow);
+    border-width: var(--control-border-width);
+  }
+
+  [data-skin='autumn'] .ui-btn:active,
+  [data-skin='autumn'] .ui-filter:active {
+    box-shadow: var(--btn-shadow-active);
+  }
+
+  /* Warmth under the pointer rather than a glow around it: this skin is lit by
+     a fire, and a fire does not put a rim light on things. */
+  [data-skin='autumn'] .ui-btn:hover,
+  [data-skin='autumn'] .ui-filter:hover {
+    box-shadow:
+      inset 0 1px 0 rgb(255 246 232 / 0.6),
+      0 12px 22px -12px rgb(var(--autumn-ember) / 0.9);
+  }
+
+  [data-skin='autumn'] .ui-card,
+  [data-skin='autumn'] .ui-accordion,
+  [data-skin='autumn'] .ui-segment {
+    position: relative;
+    background-image: var(--panel-texture);
+    background-size: var(--panel-texture-size);
+    box-shadow: inset 0 1px 0 rgb(255 248 236 / 0.5);
+  }
+
+  [data-skin='autumn'].dark .ui-card,
+  [data-skin='autumn'].dark .ui-accordion,
+  [data-skin='autumn'].dark .ui-segment {
+    box-shadow: inset 0 1px 0 rgb(var(--autumn-gold) / 0.14);
+  }
+
+  /*
+   * The leaf that landed on this card.
+   *
+   * A fixed-size box in the corner rather than an inset-0 overlay, because the
+   * hover gesture is the leaf *turning over* — and rotating a full-bleed layer
+   * would swing the leaf around the middle of the card instead of about its
+   * own stem. Faint at rest: there is one of these on every card on the page,
+   * and at any opacity you would call "visible" a list of forty tasks becomes
+   * forty stickers.
+   */
+  [data-skin='autumn'] .ui-card::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 42px;
+    height: 42px;
+    pointer-events: none;
+    opacity: 0.1;
+    transform: rotate(-14deg);
+    background-image: var(--autumn-leaf);
+    background-size: contain;
+    background-repeat: no-repeat;
+    transition:
+      opacity var(--speed-ui) var(--ease-ui),
+      transform var(--speed-ui) var(--ease-ui);
+  }
+
+  [data-skin='autumn'] .ui-card:hover::after {
+    opacity: 0.28;
+    transform: rotate(6deg) scale(1.06);
+  }
+
+  /* A twig laid across the top of every section head. */
+  [data-skin='autumn'] .ui-accordion::before {
+    content: '';
+    position: absolute;
+    inset: 0 12% auto 12%;
+    height: 2px;
+    border-radius: 2px;
+    pointer-events: none;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(var(--autumn-gold) / 0.85),
+      rgb(var(--autumn-ember) / 0.9),
+      rgb(var(--autumn-gold) / 0.85),
+      transparent
+    );
+  }
+
+  [data-skin='autumn'] .nav-rail {
+    border-color: rgb(var(--edge) / 0.8);
+  }
+
+  /*
+   * The seam where a rail meets the page: light coming through a hedge.
+   *
+   * Not a glow and not a hole — both of those are taken, by the studio look and
+   * by the deep field. This is dappled: three bands of different warmth at
+   * different distances from the join, so the edge reads as something the sun
+   * is getting through rather than something emitting. The leaves themselves
+   * are real geometry and live in `autumn-decor.tsx`; a gradient cannot have a
+   * silhouette.
+   */
+  [data-skin='autumn'] .nav-rail::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  [data-skin='autumn'] .nav-rail--left::after {
+    inset: 0 0 0 auto;
+    width: 26px;
+    background: linear-gradient(
+      to right,
+      transparent,
+      rgb(var(--autumn-moss) / 0.24) 46%,
+      rgb(var(--autumn-gold) / 0.42) 78%,
+      rgb(var(--autumn-ember) / 0.55)
+    );
+  }
+
+  [data-skin='autumn'] .nav-rail--right::after {
+    inset: 0 auto 0 0;
+    width: 26px;
+    background: linear-gradient(
+      to left,
+      transparent,
+      rgb(var(--autumn-moss) / 0.24) 46%,
+      rgb(var(--autumn-gold) / 0.42) 78%,
+      rgb(var(--autumn-ember) / 0.55)
+    );
+  }
+
+  [data-skin='autumn'] .nav-rail--top::after {
+    inset: auto 0 0 0;
+    height: 14px;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--autumn-gold) / 0.4) 68%,
+      rgb(var(--autumn-ember) / 0.5)
+    );
+  }
+
   [data-skin='space'] .nav-rail--top::after {
     inset: auto 0 0 0;
     height: 56px;
@@ -2366,6 +2739,25 @@
       linear-gradient(rgb(var(--content) / 0.035) 1px, transparent 1px),
       linear-gradient(90deg, rgb(var(--content) / 0.035) 1px, transparent 1px);
     background-size: auto, 34px 34px, 34px 34px;
+  }
+
+  /*
+   * The ground under a tree: a faint survey grid with what has already fallen
+   * lying on it.
+   *
+   * The leaves are flattened radial gradients rather than the leaf artwork —
+   * three ellipses at three tile sizes, which at 12% alpha reads as scattered
+   * litter and, unlike a repeated silhouette, never resolves into a pattern the
+   * eye can lock onto.
+   */
+  [data-skin='autumn'] .board-grid {
+    background-image:
+      radial-gradient(9px 5px at 18% 26%, rgb(var(--autumn-ember) / 0.13), transparent 100%),
+      radial-gradient(8px 4px at 68% 58%, rgb(var(--autumn-gold) / 0.15), transparent 100%),
+      radial-gradient(7px 4px at 42% 84%, rgb(var(--autumn-moss) / 0.13), transparent 100%),
+      linear-gradient(rgb(var(--content) / 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(var(--content) / 0.035) 1px, transparent 1px);
+    background-size: 180px 180px, 244px 244px, 208px 208px, 30px 30px, 30px 30px;
   }
 
   /* A galley: column rules on the baseline grid the type would have sat on. */
@@ -2450,6 +2842,14 @@
     font-size: 10px;
     letter-spacing: 0.12em;
     text-transform: uppercase;
+  }
+
+  /* A serif runs wide, so the label steps down a notch — the same allowance
+     newsprint and the deep field already make. No caps: this skin sets its
+     labels the way a book sets a margin note. */
+  [data-skin='autumn'] .type-tag {
+    font-size: 10.5px;
+    letter-spacing: 0.02em;
   }
 
   /* Marching dashes: the connect-mode target highlight. */
@@ -2925,6 +3325,43 @@
   }
 }
 
+/* --- AUTUMN: one leaf, coming down and not in a hurry. ------------------- */
+
+/*
+ * The classic CSS leaf — a square with two opposite corners fully rounded —
+ * because the shape is exactly right and costs one node. It tumbles rather
+ * than spins: `rotate` before `translate` means the offset is applied along
+ * the leaf's *own* axis, so the path it takes is a slow circle instead of a
+ * wheel turning on the spot.
+ */
+.loader-leaf {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.loader-leaf > i {
+  width: 58%;
+  height: 58%;
+  border-radius: 0 100% 0 100%;
+  background: linear-gradient(140deg, currentColor, rgb(var(--autumn-ember)));
+  box-shadow: inset 0 0 0 1px rgb(var(--autumn-bark) / 0.3);
+  animation: leaf-tumble 1.8s cubic-bezier(0.45, 0.05, 0.4, 1) infinite;
+}
+
+@keyframes leaf-tumble {
+  0% {
+    transform: rotate(0deg) translate3d(0, -16%, 0);
+  }
+  50% {
+    transform: rotate(180deg) translate3d(0, 16%, 0);
+  }
+  100% {
+    transform: rotate(360deg) translate3d(0, -16%, 0);
+  }
+}
+
 /* ==========================================================================
  * Eldritch decor: the parts of the skin that need geometry or a clock.
  *
@@ -3134,6 +3571,125 @@
 }
 
 /* ==========================================================================
+ * Autumn decor: the leaves that need to be in a place rather than in a texture.
+ *
+ * Same contract as the eldritch decor above — every rule animates `transform`
+ * or `opacity` only, so the whole set is handed to the compositor once and the
+ * main thread never sees it. See `autumn-decor.tsx` for the markup.
+ * ========================================================================== */
+
+/* --- The fall ----------------------------------------------------------- */
+
+/*
+ * A leaf coming down.
+ *
+ * The fall runs from -12vh to 112vh so a leaf is already off the top of the
+ * screen when it starts and fully clear of the bottom when it stops — a leaf
+ * that appears at y=0 and vanishes at y=100vh reads as two glitches rather than
+ * as one fall.
+ *
+ * `linear`, deliberately: air resistance means a real leaf reaches terminal
+ * velocity almost immediately and comes down at a constant rate. An ease curve
+ * here makes it look thrown.
+ */
+.autumn-fall__leaf {
+  position: absolute;
+  top: 0;
+  width: var(--leaf-size);
+  height: var(--leaf-size);
+  animation: leaf-fall var(--leaf-duration) linear var(--leaf-delay) infinite;
+}
+
+/* The tumble, on its own element: one box cannot animate two transforms, and
+   the fall already owns the outer one. */
+.autumn-fall__spin {
+  display: block;
+  width: 100%;
+  height: 100%;
+  animation: leaf-spin var(--leaf-spin) ease-in-out infinite;
+  animation-direction: var(--leaf-spin-dir);
+}
+
+/*
+ * Down, and swinging.
+ *
+ * The sway is not a sine wave over the whole fall — that is a pendulum, and a
+ * pendulum is a thing on a string. A leaf slips sideways, catches, slips back:
+ * so the drift changes sign at uneven intervals, and its extremes do not line
+ * up with the midpoint of the fall.
+ */
+@keyframes leaf-fall {
+  0% {
+    transform: translate3d(0, -12vh, 0);
+  }
+  22% {
+    transform: translate3d(var(--leaf-drift), 16vh, 0);
+  }
+  47% {
+    transform: translate3d(calc(var(--leaf-drift) * -0.7), 46vh, 0);
+  }
+  73% {
+    transform: translate3d(calc(var(--leaf-drift) * 0.85), 78vh, 0);
+  }
+  100% {
+    transform: translate3d(calc(var(--leaf-drift) * -0.3), 112vh, 0);
+  }
+}
+
+/* Not a spin — a tumble. It turns over, hesitates edge-on where it is briefly
+   almost invisible, and carries on. */
+@keyframes leaf-spin {
+  0% {
+    transform: rotate(0deg) rotateY(0deg);
+  }
+  50% {
+    transform: rotate(190deg) rotateY(180deg);
+  }
+  100% {
+    transform: rotate(360deg) rotateY(360deg);
+  }
+}
+
+/* --- The hedge ---------------------------------------------------------- */
+
+.autumn-sprig {
+  position: absolute;
+  left: 0;
+  display: block;
+}
+
+/*
+ * The leaves breathe; the twig does not.
+ *
+ * The animation is on the group holding the leaves rather than on the sprig,
+ * for the same reason the eldritch limbs are jointed: rotating the whole
+ * drawing swings its base off the rail's border, and a branch that visibly
+ * detaches from the thing it grows out of is worse than no branch at all.
+ * `transform-box: fill-box` makes the origin percentage resolve against the
+ * group's own bounds instead of the SVG viewport.
+ */
+.autumn-sprig__leaves {
+  transform-box: fill-box;
+  transform-origin: 0% 50%;
+  animation: sprig-sway var(--sprig-duration) ease-in-out var(--sprig-delay) infinite;
+}
+
+@keyframes sprig-sway {
+  0%,
+  100% {
+    transform: rotate(-3.5deg) translate3d(0, 0, 0);
+  }
+  50% {
+    transform: rotate(3.5deg) translate3d(0, -1.5px, 0);
+  }
+}
+
+/* Shut rail: the hedge is still there, it is just not moving. */
+.autumn-hedge--still .autumn-sprig__leaves {
+  animation: none;
+}
+
+/* ==========================================================================
  * Placeholder blocks, per skin.
  *
  * The sheen that sweeps a skeleton is the same idea as the loader: it should
@@ -3203,6 +3759,25 @@
 
 [data-skin='paper'] .skeleton {
   border: 2px solid rgb(var(--edge) / 0.35);
+}
+
+/* Blank rag paper with the fibres in it, and the afternoon crossing it slowly.
+   Deliberately the laziest sweep in the app — nothing in this skin hurries. */
+[data-skin='autumn'] .skeleton {
+  background:
+    repeating-linear-gradient(102deg, rgb(var(--autumn-bark) / 0.05) 0 1px, transparent 1px 7px),
+    rgb(var(--surface-sunken));
+}
+
+[data-skin='autumn'] .skeleton::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(var(--autumn-gold) / 0.3),
+    rgb(var(--autumn-ember) / 0.14),
+    transparent
+  );
+  animation-duration: 2.4s;
 }
 
 /* Taped off while the contents are unknown. */
@@ -3416,6 +3991,23 @@
     inset 0 0 0 3px rgb(var(--edge) / 0.85);
   --avatar-overlay: var(--news-halftone);
   --avatar-overlay-size: 3px 3px;
+}
+
+/* AUTUMN — a photograph in a wooden frame, with the low sun across the glass.
+   Two rings rather than one: bark outside, a warm bevel inside, which is what
+   a frame actually is. The overlay is the glare on the glass, and it comes
+   from the top-left because every light in this skin does. */
+[data-skin='autumn'] .avatar {
+  --avatar-frame:
+    0 0 0 2px rgb(var(--surface-raised)),
+    0 0 0 3.5px rgb(var(--edge) / 0.85),
+    0 4px 10px -4px rgb(74 34 8 / 0.7);
+  --avatar-overlay: linear-gradient(
+    142deg,
+    rgb(255 246 226 / 0.28) 0 22%,
+    transparent 46%
+  );
+  --avatar-inner: inset 0 0 10px rgb(var(--autumn-bark) / 0.35);
 }
 
 /*

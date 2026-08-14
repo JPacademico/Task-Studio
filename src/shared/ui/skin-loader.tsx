@@ -96,6 +96,14 @@ const BODY: Record<ThemeSkin, ReactElement> = {
       <i />
     </span>
   ),
+
+  // One leaf, tumbling down and starting again. The only loader in the set
+  // that is not a machine working — it is just something taking its time.
+  AUTUMN: (
+    <span className="loader-leaf">
+      <i />
+    </span>
+  ),
 };
 
 interface SkinLoaderProps {

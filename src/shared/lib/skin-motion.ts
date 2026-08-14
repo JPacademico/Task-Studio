@@ -29,6 +29,9 @@ const REVEAL: Record<ThemeSkin, Transition> = {
   // Nothing here hurries and nothing here overshoots. It arrives when it has
   // decided to, which is the slowest curve in the app by some margin.
   ELDRITCH: { duration: 0.52, ease: [0.5, 0, 0.2, 1] },
+  // A leaf coming down: it lets go quickly, then takes a long time to settle,
+  // and it settles rather than lands — the tiniest overshoot at the end.
+  AUTUMN: { type: 'spring', stiffness: 210, damping: 26, mass: 0.9 },
 };
 
 const MARKER: Record<ThemeSkin, Transition> = {
@@ -41,6 +44,7 @@ const MARKER: Record<ThemeSkin, Transition> = {
   HAZARD: { duration: 0.14, ease: [0.2, 0, 0, 1] },
   NEWSPAPER: { duration: 0.26, ease: [0.4, 0, 0.2, 1] },
   ELDRITCH: { duration: 0.44, ease: [0.5, 0, 0.2, 1] },
+  AUTUMN: { type: 'spring', stiffness: 260, damping: 24, mass: 0.8 },
 };
 
 /*

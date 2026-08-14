@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { useSkin } from '@/app/providers/theme-provider';
 import type { ThemeSkin } from '@/entities/user/model/types';
 import { cn } from '@/shared/lib/cn';
+import { AutumnMark } from './autumn-icons';
 import { EldritchMark } from './eldritch-icons';
 import { HazardMark } from './hazard-icons';
 import { NewspaperMark } from './newspaper-icons';
@@ -371,6 +372,55 @@ const DrawnPaper = ({ count }: { count?: number }) => (
 );
 
 /**
+ * The autumn skin does not have squares of paper. It has leaves, and somebody
+ * has written on this one.
+ *
+ * Kept to one mass with a midrib, because this is drawn at 16px next to a task
+ * title: the maple silhouette the skin uses everywhere else has five lobes and
+ * a serrated edge, neither of which survives at that size. The flutter the
+ * marker already carries does more for the illusion than the outline would.
+ */
+const AutumnLeafPaper = ({ count }: { count?: number }) => (
+  <>
+    <path
+      d="M19.8 3.2c1.6 6.8-.4 12-4 14.8-3.4 2.6-7.8 2.4-10.6.4C3.6 12.6 7.6 5.4 19.8 3.2Z"
+      fill="currentColor"
+      fillOpacity="0.92"
+      stroke="currentColor"
+      strokeOpacity="0.55"
+      strokeWidth="1.1"
+      strokeLinejoin="round"
+    />
+    {/* Midrib and stem, in one stroke. */}
+    <path
+      d="M18.6 4.4 3.6 20.4"
+      stroke="rgb(var(--autumn-bark))"
+      strokeOpacity="0.6"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+    />
+
+    {count === undefined || count > 9 ? (
+      <g stroke="rgb(var(--surface-raised))" strokeWidth="1.2" strokeLinecap="round" opacity="0.9">
+        <path d="M10.4 12.6c2.2-2.4 4.2-4 6.6-5" />
+        <path d="M11.8 15.2c1.6-1.2 3-2.2 4.6-3" />
+      </g>
+    ) : (
+      <text
+        x="13"
+        y="13.4"
+        textAnchor="middle"
+        fontSize="8.5"
+        fontWeight="700"
+        fill="rgb(var(--surface-raised))"
+      >
+        {count}
+      </text>
+    )}
+  </>
+);
+
+/**
  * "Send", drawn as whatever sending is in the active skin.
  *
  * In the deep field that is a launch, so the paper plane becomes a rocket with
@@ -438,6 +488,7 @@ const PAPERS: Partial<Record<ThemeSkin, ComponentType<{ count?: number }>>> = {
   HAZARD: LabelPaper,
   NEWSPAPER: ClippingPaper,
   ELDRITCH: LeafPaper,
+  AUTUMN: AutumnLeafPaper,
 };
 
 const paperFor = (skin: ThemeSkin) => PAPERS[skin] ?? DrawnPaper;
@@ -536,10 +587,10 @@ export const StudioMark = ({ className, interactive = false }: StudioMarkProps) 
   const skin = useSkin();
   const isPixel = skin === 'PIXEL';
 
-  // Four skins draw the object themselves: a note among stars, a note taped
-  // and stamped, a masthead on page one, a page with an eye in it. All four
-  // are the same gesture — a lift under the pointer — so they share one
-  // wrapper rather than four.
+  // Five skins draw the object themselves: a note among stars, a note taped
+  // and stamped, a masthead on page one, a page with an eye in it, a leaf with
+  // the pin through it. All five are the same gesture — a lift under the
+  // pointer — so they share one wrapper rather than five.
   const Drawn =
     skin === 'SPACE'
       ? SpaceMark
@@ -549,7 +600,9 @@ export const StudioMark = ({ className, interactive = false }: StudioMarkProps) 
           ? NewspaperMark
           : skin === 'ELDRITCH'
             ? EldritchMark
-            : null;
+            : skin === 'AUTUMN'
+              ? AutumnMark
+              : null;
 
   if (Drawn) {
     return (
