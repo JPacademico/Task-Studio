@@ -32,6 +32,9 @@ const REVEAL: Record<ThemeSkin, Transition> = {
   // A leaf coming down: it lets go quickly, then takes a long time to settle,
   // and it settles rather than lands — the tiniest overshoot at the end.
   AUTUMN: { type: 'spring', stiffness: 210, damping: 26, mass: 0.9 },
+  // Stone on stone: heavy to start, and it arrives with weight behind it. The
+  // one curve in the set that accelerates the whole way and then stops dead.
+  RUNIC: { duration: 0.34, ease: [0.7, 0, 0.3, 1] },
 };
 
 const MARKER: Record<ThemeSkin, Transition> = {
@@ -45,6 +48,7 @@ const MARKER: Record<ThemeSkin, Transition> = {
   NEWSPAPER: { duration: 0.26, ease: [0.4, 0, 0.2, 1] },
   ELDRITCH: { duration: 0.44, ease: [0.5, 0, 0.2, 1] },
   AUTUMN: { type: 'spring', stiffness: 260, damping: 24, mass: 0.8 },
+  RUNIC: { duration: 0.28, ease: [0.7, 0, 0.3, 1] },
 };
 
 /*

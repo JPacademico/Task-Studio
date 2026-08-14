@@ -8,6 +8,7 @@ import { AutumnMark } from './autumn-icons';
 import { EldritchMark } from './eldritch-icons';
 import { HazardMark } from './hazard-icons';
 import { NewspaperMark } from './newspaper-icons';
+import { RunicMark } from './runic-icons';
 import { SpaceMark } from './space-icons';
 
 /**
@@ -496,12 +497,13 @@ const paperFor = (skin: ThemeSkin) => PAPERS[skin] ?? DrawnPaper;
 /**
  * Paper that does not move.
  *
- * A sprite does not flutter, a hard-light panel does not curl, and a label
- * taped to a drum is not going anywhere — so those three skins lose the breeze
- * and the tilt. A newsprint clipping keeps both: it is still paper.
+ * A sprite does not flutter, a hard-light panel does not curl, a label taped to
+ * a drum is not going anywhere, and a slab of granite is the least fluttering
+ * object in the catalogue — so those four skins lose the breeze and the tilt. A
+ * newsprint clipping keeps both: it is still paper.
  */
 const isRigidPaper = (skin: ThemeSkin): boolean =>
-  skin === 'PIXEL' || skin === 'SPACE' || skin === 'HAZARD';
+  skin === 'PIXEL' || skin === 'SPACE' || skin === 'HAZARD' || skin === 'RUNIC';
 
 interface PostItMarkProps {
   /** How many notes are attached — shown on the paper itself when it fits. */
@@ -587,10 +589,10 @@ export const StudioMark = ({ className, interactive = false }: StudioMarkProps) 
   const skin = useSkin();
   const isPixel = skin === 'PIXEL';
 
-  // Five skins draw the object themselves: a note among stars, a note taped
-  // and stamped, a masthead on page one, a page with an eye in it, a leaf with
-  // the pin through it. All five are the same gesture — a lift under the
-  // pointer — so they share one wrapper rather than five.
+  // Six skins draw the object themselves: a note among stars, a note taped and
+  // stamped, a masthead on page one, a page with an eye in it, a note with two
+  // leaves on it, a note cut into a slab. All six are the same gesture — a lift
+  // under the pointer — so they share one wrapper rather than six.
   const Drawn =
     skin === 'SPACE'
       ? SpaceMark
@@ -602,7 +604,9 @@ export const StudioMark = ({ className, interactive = false }: StudioMarkProps) 
             ? EldritchMark
             : skin === 'AUTUMN'
               ? AutumnMark
-              : null;
+              : skin === 'RUNIC'
+                ? RunicMark
+                : null;
 
   if (Drawn) {
     return (

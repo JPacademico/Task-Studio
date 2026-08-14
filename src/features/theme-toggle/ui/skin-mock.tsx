@@ -202,6 +202,23 @@ export const SkinMock = ({ preview, scale = 1, className }: SkinMockProps) => {
               />
             )}
 
+            {/* Runic: a rune cut into the face of one of the blocks. Two
+                strokes at 45°, which is all the alphabet is. */}
+            {preview.rune && index === 1 && (
+              <span
+                className="absolute inset-0"
+                style={{
+                  backgroundImage:
+                    `linear-gradient(to right, transparent calc(50% - ${px(0.75)}px), ${preview.rune} calc(50% - ${px(0.75)}px), ${preview.rune} calc(50% + ${px(0.75)}px), transparent calc(50% + ${px(0.75)}px)),` +
+                    `linear-gradient(48deg, transparent 47%, ${preview.rune} 47%, ${preview.rune} 53%, transparent 53%)`,
+                  backgroundSize: `100% 100%, ${px(18)}px ${px(14)}px`,
+                  backgroundPosition: 'center, center',
+                  backgroundRepeat: 'no-repeat',
+                  opacity: 0.55,
+                }}
+              />
+            )}
+
             {/* Autumn: one has already landed on this card. */}
             {preview.leaves && index === 0 && (
               <span
@@ -227,6 +244,18 @@ export const SkinMock = ({ preview, scale = 1, className }: SkinMockProps) => {
           </div>
         ))}
       </div>
+
+      {/* Runic: the lit groove where a menu meets the page — the same three
+          bands as the real rail seam, at mock scale. */}
+      {preview.rune && (
+        <span
+          className="absolute inset-y-0 left-0"
+          style={{
+            width: px(5),
+            background: `linear-gradient(to right, ${preview.edge} 0 ${px(1.5)}px, ${preview.rune} ${px(1.5)}px ${px(3)}px, transparent)`,
+          }}
+        />
+      )}
 
       {/* Autumn: the ones still in the air.
           Last in the mock so they paint over the cards, which is where they

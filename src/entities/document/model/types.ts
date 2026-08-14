@@ -2,7 +2,7 @@ import type { UserSummary } from '@/entities/user/model/types';
 
 /**
  * A written page belonging to a project — or, when `taskId` is set, to one
- * task inside it.
+ * task inside it, or — when `projectId` is null — to one person's own desk.
  */
 export interface ProjectDocument {
   id: string;
@@ -17,7 +17,8 @@ export interface ProjectDocument {
   content?: string;
   /** Plain-text opening of the body, derived server-side. */
   excerpt: string;
-  projectId: string;
+  /** Null on a personal page — one nobody but its author can open. */
+  projectId: string | null;
   taskId: string | null;
   task: { id: string; title: string; color: string } | null;
   createdBy: UserSummary;
@@ -27,8 +28,9 @@ export interface ProjectDocument {
 }
 
 export interface CreateDocumentPayload {
-  projectId: string;
-  /** Omit for a project-wide page. */
+  /** Omit for a page on your own desk. */
+  projectId?: string;
+  /** Omit for a project-wide page. Only valid alongside a project. */
   taskId?: string;
   title?: string;
   content?: string;

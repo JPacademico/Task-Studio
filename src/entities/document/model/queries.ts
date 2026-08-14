@@ -6,11 +6,18 @@ import { queryKeys } from '@/shared/api/query-keys';
 import { documentApi } from '../api/document.api';
 import type { CreateDocumentPayload, ProjectDocument, UpdateDocumentPayload } from './types';
 
-export const useProjectDocuments = (projectId: string | undefined, taskId?: string) =>
+/**
+ * A text board's table of contents.
+ *
+ * `undefined` is a scope, not a missing argument: it asks for the caller's own
+ * personal pages. That is why there is no `enabled` gate here any more — the
+ * only surfaces that mount a text board are a project tab, which cannot render
+ * before its id resolves, and the personal desk, which never has one.
+ */
+export const useProjectDocuments = (projectId?: string, taskId?: string) =>
   useQuery({
-    queryKey: queryKeys.documents.list(projectId ?? '', taskId),
-    queryFn: () => documentApi.list(projectId as string, taskId),
-    enabled: Boolean(projectId),
+    queryKey: queryKeys.documents.list(projectId, taskId),
+    queryFn: () => documentApi.list(projectId, taskId),
     staleTime: 15_000,
   });
 

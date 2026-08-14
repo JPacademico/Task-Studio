@@ -25,7 +25,7 @@ import {
 } from '@/features/task-views';
 import { cn } from '@/shared/lib/cn';
 import { formatDayLabel, formatTime } from '@/shared/lib/dates';
-import { EmptyState, PageLoader, Section } from '@/shared/ui';
+import { EmptyState, PageLoader, RunicText, Section } from '@/shared/ui';
 
 const isSameDay = (isoDate: string, reference: Date): boolean =>
   isoDate === reference.toISOString().slice(0, 10);
@@ -92,7 +92,7 @@ const TaskMenuPage = () => {
       <header className="space-y-3">
         <div className="space-y-0.5 sm:space-y-1">
           <p className="text-[10px] uppercase tracking-[0.18em] text-content-faint sm:text-xs">
-            Task menu
+            <RunicText mode="always">Task menu</RunicText>
           </p>
           <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Your agenda</h1>
         </div>

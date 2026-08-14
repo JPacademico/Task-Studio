@@ -104,6 +104,36 @@ const BODY: Record<ThemeSkin, ReactElement> = {
       <i />
     </span>
   ),
+
+  /*
+   * Not a spinner. A rune being cut, holding its light, and worn away again.
+   *
+   * `pathLength="100"` is what makes the draw-on work: it renormalises the
+   * stave to a hundred units so `stroke-dasharray: 100` in the stylesheet is
+   * exactly one full stroke, whatever the path measures. Redrawing the rune
+   * then cannot silently break the animation.
+   *
+   * The ring around it ratchets through eight notches rather than sweeping —
+   * this skin has no smooth motion anywhere else either.
+   */
+  RUNIC: (
+    <span className="loader-rune">
+      <svg viewBox="0 0 40 40" fill="none">
+        <g className="loader-rune__ring" stroke="currentColor" strokeWidth="2" opacity="0.45">
+          <path d="M20 3v4M20 33v4M3 20h4M33 20h4" />
+          <path d="M8 8l2.8 2.8M29.2 29.2 32 32M32 8l-2.8 2.8M10.8 29.2 8 32" opacity="0.6" />
+        </g>
+        <path
+          className="loader-rune__stave"
+          pathLength="100"
+          d="M20 7v26M20 14l-7 7M20 21l7-7"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeLinecap="square"
+        />
+      </svg>
+    </span>
+  ),
 };
 
 interface SkinLoaderProps {

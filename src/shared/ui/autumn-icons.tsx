@@ -200,40 +200,92 @@ export const AUTUMN_GLYPHS: GlyphSet = {
 };
 
 /**
- * The product mark: a leaf pinned to the page.
+ * The product mark: the same Post-it every other skin uses, in October.
  *
- * The rest of the app introduces itself with a Post-it and a pin through it,
- * and that is exactly the right gesture to keep — this world simply writes on
- * leaves instead of on squares of paper. Same object, same pin, different
- * material, which is what a skin is supposed to be.
+ * An earlier pass made this a maple leaf with a pin through it, which was a
+ * better drawing and a worse mark. The pad, the peeled corner, the two written
+ * lines and the pin head are the product's signature — they are what the
+ * sidebar, the top bar and the auth screen all introduce the app with — and a
+ * skin that replaces the object rather than dressing it stops being the same
+ * product wearing a season.
+ *
+ * So the geometry below is the studio mark's, to the point. What is autumn
+ * about it is the material: warm paper in the accent, a wooden pin head rather
+ * than a chrome one, and two leaves that have come down onto the sheet.
  */
 export const AutumnMark = ({ className }: GlyphProps) => (
   <svg viewBox="0 0 40 40" fill="none" aria-hidden className={cn('h-10 w-10', className)}>
-    {/* The page it is pinned to. */}
+    {/* The sheet behind, so the mark reads as a pad and not a single square. */}
     <rect
-      x="6"
-      y="6"
-      width="28"
-      height="28"
-      rx="6"
-      fill="rgb(var(--surface-raised))"
-      stroke="currentColor"
-      strokeOpacity="0.4"
-      strokeWidth="1.6"
-    />
-
-    {/* The leaf. Filled in the accent, because on this skin the accent *is*
-        the leaf — every other warm thing in the palette is derived from it. */}
-    <path
-      d="M20 8.4l2.3 5 3.9-1.8-1.2 4.8 5.5-1.1-2.6 4 5.9.7-4.2 3.2 5.4 2.7-5.8 2 3 4.2-5.9-.5
-         1.4 5.2-5.7-2.9-.8 8.7h-2.9l-.8-8.7-5.7 2.9 1.4-5.2-5.9.5 3-4.2-5.8-2 5.4-2.7L4.7 20l5.9-.7-2.6-4
-         5.5 1.1-1.2-4.8 3.9 1.8z"
+      x="7"
+      y="8"
+      width="26"
+      height="26"
+      rx="3"
       fill="currentColor"
-      transform="scale(0.72) translate(7.6 5.2)"
+      fillOpacity="0.22"
+      transform="rotate(6 20 20)"
     />
 
-    {/* The pin, through the stem. */}
-    <circle cx="20" cy="11.6" r="3" fill="rgb(var(--autumn-bark))" fillOpacity="0.9" />
-    <circle cx="19" cy="10.6" r="1" fill="rgb(var(--surface-raised))" fillOpacity="0.8" />
+    {/* The paper. */}
+    <path
+      d="M6 6.5h27v20.2L25.4 34H6V6.5Z"
+      fill="currentColor"
+      stroke="rgb(var(--autumn-bark))"
+      strokeOpacity="0.45"
+      strokeWidth="1.2"
+      strokeLinejoin="round"
+    />
+
+    {/* Peeled corner. */}
+    <path
+      d="M25.4 34v-7.3H33L25.4 34Z"
+      fill="rgb(var(--surface-raised))"
+      fillOpacity="0.55"
+      stroke="rgb(var(--autumn-bark))"
+      strokeOpacity="0.4"
+      strokeWidth="1.2"
+      strokeLinejoin="round"
+    />
+
+    {/* Two written lines. */}
+    <g
+      stroke="rgb(var(--surface-raised))"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeOpacity="0.85"
+    >
+      <path d="M11.5 14.5h15.5" />
+      <path d="M11.5 20.5h10.5" />
+    </g>
+
+    {/*
+      Two leaves that landed on it.
+
+      Small, and both inside the sheet: the mark is drawn at 28px in the rail
+      and anything hanging off the edge at that size is a smudge. Ellipses with
+      a midrib rather than the five-lobed maple for the same reason.
+    */}
+    <g stroke="rgb(var(--autumn-bark))" strokeOpacity="0.55" strokeWidth="0.9">
+      <g transform="rotate(-32 27.5 25.5)">
+        <ellipse cx="27.5" cy="25.5" rx="5.2" ry="2.8" fill="rgb(var(--autumn-ember))" />
+        <path d="M22.3 25.5h10.4" />
+      </g>
+      <g transform="rotate(46 15 27.5)">
+        <ellipse cx="15" cy="27.5" rx="4.2" ry="2.3" fill="rgb(var(--autumn-gold))" />
+        <path d="M10.8 27.5h8.4" />
+      </g>
+    </g>
+
+    {/* The pin head, pushed through the top-left corner. Turned wood. */}
+    <circle
+      cx="9.5"
+      cy="9"
+      r="3.4"
+      fill="rgb(var(--autumn-bark))"
+      stroke="rgb(var(--surface-raised))"
+      strokeOpacity="0.75"
+      strokeWidth="1.4"
+    />
   </svg>
 );

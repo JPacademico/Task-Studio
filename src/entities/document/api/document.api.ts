@@ -6,10 +6,19 @@ import type {
 } from '../model/types';
 
 export const documentApi = {
-  /** Table of contents. Rows carry an excerpt rather than a body. */
-  async list(projectId: string, taskId?: string): Promise<ProjectDocument[]> {
+  /**
+   * Table of contents. Rows carry an excerpt rather than a body.
+   *
+   * With no `projectId` the server returns the caller's personal pages — the
+   * scope is the absence of the parameter rather than a flag, because that is
+   * exactly what "this page belongs to no project" means in the row itself.
+   */
+  async list(projectId?: string, taskId?: string): Promise<ProjectDocument[]> {
     const { data } = await api.get<ProjectDocument[]>('/documents', {
-      params: { projectId, ...(taskId ? { taskId } : {}) },
+      params: {
+        ...(projectId ? { projectId } : {}),
+        ...(taskId ? { taskId } : {}),
+      },
     });
     return data;
   },

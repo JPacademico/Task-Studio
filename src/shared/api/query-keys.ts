@@ -45,8 +45,9 @@ export const queryKeys = {
 
   documents: {
     all: ['documents'] as const,
-    list: (projectId: string, taskId?: string) =>
-      ['documents', 'list', projectId, taskId ?? 'all'] as const,
+    /** No project id is the caller's own desk, which is a scope of its own. */
+    list: (projectId: string | undefined, taskId?: string) =>
+      ['documents', 'list', projectId ?? 'personal', taskId ?? 'all'] as const,
     detail: (documentId: string) => ['documents', documentId] as const,
   },
 

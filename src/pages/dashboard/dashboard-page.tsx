@@ -14,7 +14,7 @@ import { TaskCard } from '@/entities/task/ui/task-card';
 import { CreateProjectDialog } from '@/features/project-management/ui/create-project-dialog';
 import { useCurrentUser } from '@/features/auth/model/session.store';
 import { cn } from '@/shared/lib/cn';
-import { Button, EmptyState, Section, Skeleton } from '@/shared/ui';
+import { Button, EmptyState, RunicText, Section, Skeleton } from '@/shared/ui';
 
 const StatTile = ({
   label,
@@ -72,8 +72,10 @@ const DashboardPage = () => {
   return (
     <div className="space-y-5 sm:space-y-8">
       <header className="space-y-0.5 sm:space-y-1">
+        {/* The eyebrow over the title. Carved on the runic skin — the heading
+            underneath says the same thing in Latin, so nothing is lost. */}
         <p className="text-[10px] uppercase tracking-[0.18em] text-content-faint sm:text-xs">
-          Dashboard
+          <RunicText mode="always">Dashboard</RunicText>
         </p>
         <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
           Good to see you, {firstName}.

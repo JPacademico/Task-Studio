@@ -46,7 +46,14 @@ export interface SkinPreview {
    * a preview that only paints its palette.
    */
   organic?: boolean;
-  /** Eldritch only: something is looking out of the mock. */
+  /**
+   * Eldritch only: something is looking out of the mock.
+   *
+   * The real skin opens its eye on the page rather than on a card, but a mock
+   * has no page to open one on — and a preview that only paints the palette
+   * would be selling a teal-and-violet colour scheme, which is the least of
+   * what this theme is.
+   */
   watcher?: string;
   /**
    * Autumn only: the two colours the leaves in the mock are drawn in — one
@@ -56,6 +63,14 @@ export interface SkinPreview {
    * pattern, and the whole point of the skin is that no two leaves match.
    */
   leaves?: [string, string];
+  /**
+   * Runic only: the colour of the ink.
+   *
+   * Drawn as a ruled line down the mock's own edge and a rune inked onto one of
+   * its cards — the two places the real skin puts it. A preview that only
+   * painted the paper would be selling a beige theme.
+   */
+  rune?: string;
 }
 
 export interface SkinDefinition {
@@ -341,7 +356,7 @@ export const SKIN_CATALOG: SkinDefinition[] = [
     name: 'Eldritch',
     tagline: 'Something is reading this',
     description:
-      'Corners that grew rather than being cut, light with no source, inscribed capitals — and an iris that opens on every card when the pointer finds it.',
+      'Corners that grew rather than being cut, light with no source, inscribed capitals — and an eye that opens somewhere on the page while you are looking elsewhere.',
     tags: [
       'lovecraft',
       'eldritch',
@@ -422,6 +437,53 @@ export const SKIN_CATALOG: SkinDefinition[] = [
       font: "'Gloock', 'Bookman Old Style', 'Palatino Linotype', Georgia, serif",
       border: 2,
       leaves: ['#eb8d2e', '#d64a2c'],
+    },
+  },
+  {
+    value: 'RUNIC',
+    name: 'Runic',
+    tagline: 'Inked on old paper',
+    description:
+      'Foxed rag paper with the mould lines still in it, ruled margins that have worn through in places, and oxblood lettering that soaked into the fibre — on the rails, in the icons, under your pointer.',
+    tags: [
+      'runic',
+      'runes',
+      'norse',
+      'viking',
+      'paper',
+      'parchment',
+      'vellum',
+      'manuscript',
+      'scroll',
+      'ink',
+      'oxblood',
+      'sepia',
+      'aged',
+      'arcane',
+      'fantasy',
+      'bold',
+    ],
+    light: {
+      surface: '#dec79a',
+      raised: '#ead4a5',
+      edge: '#926e44',
+      brand: '#8c2e1a',
+      content: '#3e180c',
+      radius: 0,
+      font: "'Bahnschrift', 'DIN Condensed', 'Segoe UI', system-ui, sans-serif",
+      border: 2,
+      rune: '#7e1e0e',
+    },
+    dark: {
+      surface: '#1a130d',
+      raised: '#281e15',
+      edge: '#604a32',
+      brand: '#e28e60',
+      content: '#f0e2c7',
+      radius: 0,
+      font: "'Bahnschrift', 'DIN Condensed', 'Segoe UI', system-ui, sans-serif",
+      border: 2,
+      rune: '#f6a05c',
     },
   },
 ];

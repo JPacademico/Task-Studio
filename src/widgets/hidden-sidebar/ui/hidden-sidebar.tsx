@@ -33,6 +33,7 @@ import {
   EldritchTendrils,
   NavGlyph,
   NavPinButton,
+  RunicText,
   StudioMark,
 } from '@/shared/ui';
 
@@ -172,14 +173,24 @@ const SidebarLink = ({ item, badge, isTouch, onNavigate, onTearingChange }: Side
               <NavGlyph glyph={item.shortcutIcon} fallback={item.icon} className="h-4 w-4" />
             </span>
 
+            {/*
+              On the runic skin a destination is carved rather than printed:
+              the label is cut in Elder Futhark and turns back into Latin the
+              moment the row is hovered or focused, and the hint under it stays
+              carved because it is a gloss rather than the name of anywhere.
+              `RunicText` is a pass-through on the other nine themes, which is
+              why there is no skin check here.
+            */}
             <span className="relative min-w-0 flex-1">
               <span
                 className={cn('block truncate text-sm', isActive ? 'font-semibold' : 'font-medium')}
               >
-                {item.label}
+                <RunicText>{item.label}</RunicText>
               </span>
               {item.hint && (
-                <span className="block truncate text-[10px] text-content-faint">{item.hint}</span>
+                <span className="block truncate text-[10px] text-content-faint">
+                  <RunicText mode="always">{item.hint}</RunicText>
+                </span>
               )}
             </span>
 
@@ -323,7 +334,10 @@ export const HiddenSidebar = ({ isMobileOpen, onMobileClose }: HiddenSidebarProp
           {GROUPS.map((group) => (
             <div key={group.heading} className="space-y-1">
               <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-content-faint">
-                {group.heading}
+                {/* A section heading names a shelf, not a destination — there
+                    is nothing to click and therefore nothing to reveal, so it
+                    stays carved. */}
+                <RunicText mode="always">{group.heading}</RunicText>
               </p>
 
               {group.items.map((item) => (

@@ -198,7 +198,15 @@ export const AutumnFall = () => {
  */
 const SPRIG_COUNT = 6;
 
-/** Three leaves and a twig, fanned out from the seam. */
+/**
+ * Three leaves and a twig, fanned out from the seam.
+ *
+ * Drawn into a 32×44 box. It started at 48×64, which put a hand-sized clump of
+ * foliage against a 264px rail — decoration competing with the menu it is
+ * decorating. The viewBox is unchanged, so this is purely how big the same
+ * drawing is rendered: the leaves keep their proportions and simply stop
+ * reaching a third of the way across the page.
+ */
 const Sprig = ({ index }: { index: number }) => (
   <span
     className="autumn-sprig"
@@ -211,7 +219,7 @@ const Sprig = ({ index }: { index: number }) => (
       } as CSSProperties
     }
   >
-    <svg viewBox="0 0 48 56" fill="none" aria-hidden className="h-16 w-12">
+    <svg viewBox="0 0 48 56" fill="none" aria-hidden className="h-11 w-8">
       {/* The twig. Bolted to the rail's border: nothing at x=0 ever moves,
           which is what keeps the growth attached to the thing it grows out
           of rather than floating alongside it. */}
@@ -279,7 +287,9 @@ export const AutumnHedge = ({ edge, isActive }: AutumnHedgeProps) => {
     <span
       aria-hidden
       className={cn(
-        'pointer-events-none absolute inset-y-0 w-12',
+        // As wide as one sprig: the strip only exists to anchor them past the
+        // rail's border, and a wider one would move them further onto the page.
+        'pointer-events-none absolute inset-y-0 w-8',
         'transition-opacity duration-300 ease-studio',
         edge === 'left' ? 'left-full' : 'right-full -scale-x-100',
         // Hidden with the rail, not just stopped: the strip sits outside the

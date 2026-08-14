@@ -23,7 +23,7 @@ import {
 import { SkinMock } from '@/features/theme-toggle/ui/skin-mock';
 import { cn } from '@/shared/lib/cn';
 import { useSkinMotion } from '@/shared/lib/skin-motion';
-import { Button, EmptyState, GazeArrow } from '@/shared/ui';
+import { Button, DirectionArrow, EmptyState, RunicText } from '@/shared/ui';
 
 /**
  * Six to a page.
@@ -153,7 +153,7 @@ const ThemeGalleryPage = () => {
     <div className="space-y-5 sm:space-y-7">
       <header className="space-y-1">
         <p className="text-[10px] uppercase tracking-[0.18em] text-content-faint sm:text-xs">
-          Appearance
+          <RunicText mode="always">Appearance</RunicText>
         </p>
         <h1 className="flex items-center gap-2.5 text-xl font-semibold tracking-tight sm:text-2xl">
           <Palette className="h-5 w-5 text-brand" />
@@ -250,7 +250,7 @@ const ThemeGalleryPage = () => {
                     disabled={page === 0}
                     onClick={() => setPage((current) => Math.max(0, current - 1))}
                   >
-                    <GazeArrow direction="left" fallback={ArrowLeft} className="h-4 w-4" />
+                    <DirectionArrow direction="left" fallback={ArrowLeft} className="h-4 w-4" />
                   </Button>
 
                   {Array.from({ length: pageCount }, (_, index) => (
@@ -276,7 +276,7 @@ const ThemeGalleryPage = () => {
                     disabled={page >= pageCount - 1}
                     onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))}
                   >
-                    <GazeArrow direction="right" fallback={ArrowRight} className="h-4 w-4" />
+                    <DirectionArrow direction="right" fallback={ArrowRight} className="h-4 w-4" />
                   </Button>
                 </nav>
               )}

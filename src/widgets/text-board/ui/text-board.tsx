@@ -24,7 +24,7 @@ import type { Task } from '@/entities/task/model/types';
 import { useCurrentUser } from '@/features/auth/model/session.store';
 import { RichTextEditor } from '@/features/rich-text/ui/rich-text-editor';
 import { cn } from '@/shared/lib/cn';
-import { formatDateTime } from '@/shared/lib/dates';
+import { formatDateTime, formatRelative } from '@/shared/lib/dates';
 import { sanitizeDocumentHtml } from '@/shared/lib/sanitize-html';
 import {
   Button,
@@ -37,9 +37,17 @@ import {
 } from '@/shared/ui';
 
 interface TextBoardProps {
-  projectId: string;
+  /**
+   * Omitted on the personal desk.
+   *
+   * The whole difference between the two boards is this one prop. A separate
+   * component would have been two copies of an editor, a table of contents, a
+   * save cycle, a download and a two-step delete — kept in step by hand — to
+   * express "this one has no roster", which is a condition, not a design.
+   */
+  projectId?: string;
   /** The project's tasks, so a page can be attached to one of them. */
-  tasks: Task[];
+  tasks?: Task[];
 }
 
 /** A filename that survives a download folder: no separators, no surprises. */
@@ -87,20 +95,31 @@ ${body}
 </html>`;
 
 /**
- * The project's text board.
+ * A text board — a project's, or your own.
  *
  * A table of contents on the left, one page open on the right. Pages belong to
- * the project or to a single task, and the split is the only structure here —
- * a document tree would be a second navigation system inside a tab.
+ * the project, to a single task inside it, or to nobody but their author, and
+ * that split is the only structure here — a document tree would be a second
+ * navigation system inside a tab.
  *
  * Editing is explicitly modal (read → Edit → Save) rather than always-on. This
  * is a shared surface with no operational transform behind it: two people
  * typing into the same paragraph would silently overwrite each other, and a
  * page you have to deliberately open for editing is a page you are much less
- * likely to be in by accident while a colleague is writing.
+ * likely to be in by accident while a colleague is writing. The personal board
+ * keeps the same cycle — not because anybody else could be typing, but because
+ * "am I editing this?" should not be a question whose answer depends on which
+ * board you are looking at.
+ *
+ * What the personal board drops is everything that only makes sense with a
+ * roster: no task to pin a page to, and no attribution anywhere. A byline on a
+ * desk with one person at it is a label reading "you" on everything you own.
  */
-export const TextBoard = ({ projectId, tasks }: TextBoardProps) => {
+export const TextBoard = ({ projectId, tasks = [] }: TextBoardProps) => {
   const { data: documents = [], isLoading } = useProjectDocuments(projectId);
+
+  /** No project, no roster — and therefore nothing to attribute or attach. */
+  const isPersonal = projectId === undefined;
 
   // Read once here rather than inside every byline: the credit is an entity
   // component and does not get to know about the session.
@@ -191,12 +210,14 @@ export const TextBoard = ({ projectId, tasks }: TextBoardProps) => {
 
     const body = sanitizeDocumentHtml(isEditing ? draftRef.current : (open.content ?? ''));
 
-    const byline = open.createdBy
-      ? `Created by ${open.createdBy.displayName} · ${formatDateTime(open.createdAt)}` +
-        (open.updatedBy && open.updatedAt !== open.createdAt
-          ? ` — last edited by ${open.updatedBy.displayName} · ${formatDateTime(open.updatedAt)}`
-          : '')
-      : '';
+    // Nobody needs telling who wrote the page on their own desk.
+    const byline =
+      !isPersonal && open.createdBy
+        ? `Created by ${open.createdBy.displayName} · ${formatDateTime(open.createdAt)}` +
+          (open.updatedBy && open.updatedAt !== open.createdAt
+            ? ` — last edited by ${open.updatedBy.displayName} · ${formatDateTime(open.updatedAt)}`
+            : '')
+        : '';
 
     const blob = new Blob([toDownloadableHtml(title, body, byline)], {
       type: 'text/html;charset=utf-8',
@@ -239,12 +260,15 @@ export const TextBoard = ({ projectId, tasks }: TextBoardProps) => {
         <FileText className="h-3 w-3 shrink-0 text-content-faint" />
         <span className="truncate text-xs font-semibold">{entry.title}</span>
         {/* Whose page this is, at the size a scanned list can carry: a face,
-            with the name and the date in its tooltip. */}
-        <DocumentCreatorStamp
-          createdBy={entry.createdBy}
-          createdAt={entry.createdAt}
-          className="ml-auto"
-        />
+            with the name and the date in its tooltip. Every row on a personal
+            desk would carry the same face, which is not information. */}
+        {!isPersonal && (
+          <DocumentCreatorStamp
+            createdBy={entry.createdBy}
+            createdAt={entry.createdAt}
+            className="ml-auto"
+          />
+        )}
       </span>
       <span className="mt-0.5 block truncate text-[10px] text-content-faint">
         {entry.excerpt || 'Empty page'}
@@ -256,7 +280,7 @@ export const TextBoard = ({ projectId, tasks }: TextBoardProps) => {
     <ExpandableStage
       isExpanded={isExpanded}
       onCollapse={() => setIsExpanded(false)}
-      title="Project text board"
+      title={isPersonal ? 'Your text board' : 'Project text board'}
     >
       <div className="ui-textured flex flex-wrap items-center gap-2 rounded-2xl border border-edge bg-surface-raised p-2 sm:p-3">
         {/*
@@ -268,21 +292,26 @@ export const TextBoard = ({ projectId, tasks }: TextBoardProps) => {
           arcade it was a rounded macOS pill in a grid of notched tiles, and on
           newsprint it was the one thing on the page with a gradient. This is
           the same listbox every filter row in the app already uses.
+
+          There is nowhere else for a personal page to go, so on that board
+          the "where" disappears and only the "go" is left.
         */}
-        <Select
-          className="w-48"
-          value={attachTo}
-          onChange={setAttachTo}
-          options={[
-            { value: '', label: 'Project document', hint: 'Belongs to the whole project' },
-            ...tasks.map((task) => ({
-              value: task.id,
-              label: task.title,
-              swatch: task.color,
-              hint: 'Pinned to this task',
-            })),
-          ]}
-        />
+        {!isPersonal && (
+          <Select
+            className="w-48"
+            value={attachTo}
+            onChange={setAttachTo}
+            options={[
+              { value: '', label: 'Project document', hint: 'Belongs to the whole project' },
+              ...tasks.map((task) => ({
+                value: task.id,
+                label: task.title,
+                swatch: task.color,
+                hint: 'Pinned to this task',
+              })),
+            ]}
+          />
+        )}
 
         <Button size="sm" onClick={handleCreate} isLoading={createDocument.isPending}>
           <Plus className="h-3.5 w-3.5" strokeWidth={2.8} />
@@ -374,7 +403,7 @@ export const TextBoard = ({ projectId, tasks }: TextBoardProps) => {
           {grouped.general.length > 0 && (
             <div className="space-y-1">
               <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-content-faint">
-                Project
+                {isPersonal ? 'Pages' : 'Project'}
               </p>
               {grouped.general.map((entry) => (
                 <DocumentRow key={entry.id} document={entry} />
@@ -401,7 +430,11 @@ export const TextBoard = ({ projectId, tasks }: TextBoardProps) => {
               className="flex-1"
               icon={<FileText className="h-6 w-6" />}
               title="Nothing open"
-              description="Write the brief, the spec or the meeting notes — for the project, or pinned to one task."
+              description={
+                isPersonal
+                  ? 'Somewhere to write more than fits on a Post-it — a plan, a draft, a list that got long.'
+                  : 'Write the brief, the spec or the meeting notes — for the project, or pinned to one task.'
+              }
             />
           ) : isOpening || !open ? (
             <div className="grid flex-1 place-items-center">
@@ -447,13 +480,22 @@ export const TextBoard = ({ projectId, tasks }: TextBoardProps) => {
                     </span>
                   )}
 
-                  <DocumentByline
-                    createdBy={open.createdBy}
-                    createdAt={open.createdAt}
-                    updatedBy={open.updatedBy}
-                    updatedAt={open.updatedAt}
-                    currentUserId={currentUserId}
-                  />
+                  {/* Traceability is a shared-surface problem. On your own
+                      desk the answer to "who wrote this" is never in doubt,
+                      so the line becomes just the last time you touched it. */}
+                  {isPersonal ? (
+                    <span className="text-[10px] text-content-faint">
+                      Edited {formatRelative(open.updatedAt)}
+                    </span>
+                  ) : (
+                    <DocumentByline
+                      createdBy={open.createdBy}
+                      createdAt={open.createdAt}
+                      updatedBy={open.updatedBy}
+                      updatedAt={open.updatedAt}
+                      currentUserId={currentUserId}
+                    />
+                  )}
 
                   {isDirty && (
                     <span className="text-[10px] font-medium text-warning">unsaved</span>

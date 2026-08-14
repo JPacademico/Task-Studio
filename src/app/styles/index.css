@@ -1364,6 +1364,423 @@
     color-scheme: dark;
   }
 
+  /* -----------------------------------------------------------------------
+   * Skin: RUNIC — written on old paper, in ink that soaked into the fibre.
+   *
+   * This started life as dressed granite and has been re-cut as parchment. The
+   * geometry did not change and did not need to: a sheet of hand-laid paper is
+   * still square, still bevelled at the edge where it lifts off the page, and
+   * still carries its marks *in* the surface rather than on it. What changed is
+   * the material, and with it the direction the accent moves.
+   *
+   *   - **Nothing is round and nothing is soft.** Radii stay at zero. A sheet
+   *     is cut and torn, not moulded, so the corners that give are the ones
+   *     that get dog-eared — which is what the knocked-off corners on every
+   *     control now read as.
+   *   - **Every edge is bevelled.** The lit top arris and shadowed bottom one
+   *     used to be stone catching the sun; now they are the lift of a sheet
+   *     lying on the sheet beneath it. Same two inset shadows, warmed.
+   *   - **The accent goes *darker*, not brighter.** This is the one real
+   *     inversion. On stone the light lived in the groove and the accent got
+   *     lighter than its surroundings; on paper the ink soaks in, so the accent
+   *     is the deepest thing on the page. `--rune-glow` still means "the mark
+   *     at its most alive" — it is now wet oxblood rather than lit blue, and
+   *     every glow radius in this skin became ink bleed for free.
+   *   - **It reacts.** Touch a control and the ink darkens under it. Same
+   *     brief, same box-shadow, opposite direction.
+   *
+   * Light is a leaf of aged rag paper in daylight, ruled and foxed, lettered in
+   * oxblood. Dark is the same leaf by lamplight — tanned to leather, with the
+   * ink turned to ember, because on a dark ground the only way to say "alive"
+   * is still to get brighter.
+   * --------------------------------------------------------------------- */
+  [data-skin='runic'] {
+    /*
+     * Rag paper, aged — not cream card stock.
+     *
+     * The tones come off `runicTextureExample.png`: the sheet in it is
+     * #EAD4A5 and the lettering is #401003, and that pairing is the whole
+     * palette. `--surface-raised` *is* that sheet, unmodified, because the
+     * raised tone is what most of the app is actually looking at.
+     *
+     * The page under it goes a shade deeper rather than a shade lighter, which
+     * is the opposite of what most skins do and the right way round here: a
+     * stack of paper is darkest where you can see the most edges of it, and the
+     * sunken tone is deeper still — the crease at the bottom of a fold has had
+     * the most handling and the least light.
+     */
+    --surface: 222 199 154;
+    --surface-raised: 234 212 165;
+    --surface-sunken: 204 179 134;
+    --edge: 146 110 68;
+    --content: 62 24 12;
+    --content-muted: 106 74 48;
+    --content-faint: 142 110 76;
+    /* Rubrication: the red a scribe reached for when a line mattered more than
+       the line above it. Deep enough that pale lettering on a filled control
+       clears 7:1. */
+    --brand: 140 46 26;
+    --brand-soft: 232 202 176;
+    --brand-contrast: 252 244 226;
+    --positive: 52 84 48;
+    --warning: 154 104 20;
+    /* Both brand and danger are red on this skin, which they have to be —
+       there is no third pigment on a page like this. They are separated by
+       temperature instead of hue: the brand is a warm brick that sits with the
+       paper, and this is a cold crimson that does not. */
+    --danger: 152 32 42;
+
+    /* Cut, not moulded. */
+    --radius-sm: 0px;
+    --radius-md: 0px;
+    --radius-lg: 0px;
+    --radius-xl: 0px;
+    --radius-2xl: 2px;
+    --radius-3xl: 2px;
+
+    --font-display: 'Norse', 'Beowulf', 'Cinzel Decorative', 'Bahnschrift SemiBold Condensed',
+      'Bahnschrift', 'Trajan Pro', 'Perpetua Titling MT', Georgia, serif;
+    --font-sans: 'Bahnschrift', 'DIN Condensed', 'Segoe UI Semibold', 'Segoe UI', system-ui,
+      sans-serif;
+    --font-hand: 'Norse', 'Beowulf', 'Segoe Script', cursive;
+
+    --panel-border-width: 2px;
+    /* The bevel: light along the top edge where the sheet lifts, shadow under
+       the bottom one, and the soft warm shadow paper throws — nothing here is
+       allowed to go cold, so even the cast shadow is a brown. */
+    --shadow-panel:
+      inset 0 2px 0 rgb(255 250 236 / 0.5),
+      inset 0 -2px 0 rgb(var(--rune-stone) / 0.2),
+      0 16px 32px -24px rgb(62 38 18 / 0.6);
+    --press-travel: 1px;
+
+    /*
+     * Paper, at three scales.
+     *
+     * The rule the granite version was built on survives the change of
+     * material, because it was never about stone: a surface reads as *made of
+     * something* only if it has structure at every distance you look at it
+     * from. Same five layers, same jobs, different substance:
+     *
+     *   1–2. Two blooms, at 190px and 90px, offset from one another. Foxing —
+     *        the brown that spreads where damp got into the sheet — and against
+     *        it the patch the sun bleached thin. These carry the material from
+     *        across the room.
+     *      3. The mould — see `--paper-mould` below, which is a layer of this
+     *        set kept in its own variable so a surface can decline it.
+     *      4. The fibre, for close up.
+     *      5. The light raking across the leaf, which never changes.
+     *
+     * No two periods share a factor — 23 is prime and the fibre is on 4px — so
+     * nothing ever lines up into plaid.
+     */
+    --panel-texture:
+      radial-gradient(
+        58% 48% at 24% 26%,
+        rgb(var(--rune-stone) / 0.15),
+        transparent 70%
+      ),
+      radial-gradient(
+        52% 46% at 78% 72%,
+        rgb(255 250 234 / 0.42),
+        transparent 64%
+      ),
+      radial-gradient(rgb(var(--rune-stone) / 0.12) 0.5px, transparent 0.6px),
+      linear-gradient(163deg, rgb(255 250 236 / 0.28), transparent 54%);
+    --panel-texture-size: 190px 170px, 90px 130px, 4px 4px, auto;
+
+    /*
+     * The mould: one bold chain line every 23px where the sheet lay on a wire,
+     * and five fine laid lines between them. Run at 91° rather than 90° because
+     * a sheet was never squared up perfectly.
+     *
+     * This is the one texture layer that lives outside `--panel-texture`, and
+     * the reason is the rails. Laid lines are near-vertical and the mould is
+     * the only layer here with a *direction*; on a 260px-wide column running
+     * the full height of the screen there is nothing to break their run, so
+     * they stop reading as the grain of a sheet and start reading as ruling
+     * applied to the chrome. Every other surface in the app is wide enough, or
+     * short enough, that the run is interrupted before the eye counts it.
+     *
+     * Kept as its own layer in the consuming rules rather than as a slot inside
+     * `--panel-texture` because a custom property that references another one
+     * is substituted where it is *declared*, not where it is used — so an
+     * override further down the tree would never have reached it. As a real
+     * layer in `background-image` it resolves per element, and `none` is a
+     * legal layer value that holds its place in the size/position/repeat lists.
+     */
+    --paper-mould: repeating-linear-gradient(
+      91deg,
+      rgb(var(--rune-stone) / 0.075) 0 1.5px,
+      transparent 1.5px 4px,
+      rgb(var(--rune-stone) / 0.04) 4px 4.8px,
+      transparent 4.8px 8px,
+      rgb(var(--rune-stone) / 0.04) 8px 8.8px,
+      transparent 8.8px 12px,
+      rgb(var(--rune-stone) / 0.04) 12px 12.8px,
+      transparent 12.8px 16px,
+      rgb(var(--rune-stone) / 0.04) 16px 16.8px,
+      transparent 16.8px 20px,
+      rgb(var(--rune-stone) / 0.04) 20px 20.8px,
+      transparent 20.8px 23px
+    );
+
+    /*
+     * The frame: four ruled lines with the ink missing in places.
+     *
+     * A continuous rule around a box is a border. What makes a ruled frame read
+     * as *ruled by hand, a long time ago* is that it stops — the nib ran dry,
+     * or the line has simply worn off the sheet — so each edge is a dashed
+     * gradient with long strokes and real gaps, and the gaps are what the eye
+     * reads as age. The stroke and gap lengths differ per edge so no two sides
+     * are ever in phase.
+     *
+     * Two decisions worth recording, both learned the hard way:
+     *
+     * **Background layers, not a border.** A border has to be continuous, and
+     * this way there is no extra element, no `::before`, and nothing over the
+     * content.
+     *
+     * **Inset 4px, so the element's real border is left completely alone.**
+     * The first version quietened `border-color` to let the broken rule read,
+     * which is a stylesheet at `[data-skin] .class` specificity overruling
+     * every Tailwind border utility in the app — including `border-brand` on
+     * the selected card in the theme gallery, i.e. the one control whose whole
+     * job is showing you which theme you just picked. Inscribing the frame
+     * *inside* the edge instead is both safer and more truthful: a ruled leaf
+     * has a cut edge and then a margin line in from it, not one line doing both.
+     */
+    --rune-frame:
+      repeating-linear-gradient(90deg, rgb(var(--edge) / 0.8) 0 34px, transparent 34px 52px),
+      repeating-linear-gradient(90deg, rgb(var(--edge) / 0.8) 0 26px, transparent 26px 46px),
+      repeating-linear-gradient(180deg, rgb(var(--edge) / 0.8) 0 22px, transparent 22px 38px),
+      repeating-linear-gradient(180deg, rgb(var(--edge) / 0.8) 0 30px, transparent 30px 44px);
+    /* One band per edge, spanning the inset width — a `repeating-linear-
+       gradient` tiles inside its own layer, so the layer itself never repeats. */
+    --rune-frame-size:
+      calc(100% - 8px) 2px,
+      calc(100% - 8px) 2px,
+      2px calc(100% - 8px),
+      2px calc(100% - 8px);
+    --rune-frame-position: 4px 4px, 4px calc(100% - 4px), 4px 4px, calc(100% - 4px) 4px;
+    --rune-frame-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
+
+    /*
+     * The page darkens at its edges, the way every old sheet does — sepia along
+     * the top where it sat exposed, and a tannin stain creeping out of the
+     * bottom corner. Note this wash now *subtracts* light: on the stone version
+     * both layers were glows added at the edges, and adding light to the rim of
+     * a piece of paper is exactly the wrong way round.
+     */
+    --page-wash:
+      radial-gradient(120% 80% at 50% -25%, rgb(var(--rune-stone) / 0.12), transparent 62%),
+      radial-gradient(90% 70% at 0% 100%, rgb(var(--rune-gold) / 0.14), transparent 64%);
+
+    --btn-overlay: linear-gradient(180deg, rgb(255 250 236 / 0.4), rgb(var(--rune-stone) / 0.16));
+
+    /*
+     * A control is a slip of paper with its corners gone soft.
+     *
+     * Four triangles, one per corner, over the light falling down the face.
+     * Corners are where paper actually fails — nothing that has been handled
+     * for a thousand years still has four square ones — so dog-earing them is
+     * the cheapest possible way to say "this is a sheet, and it is old", and the
+     * only one that survives being 32px tall.
+     *
+     * Drawn as background layers rather than a `clip-path` for a specific
+     * reason: a clip cuts the box shadow with it, and the bevel *is* the
+     * button. Painted corners keep the bevel intact and cost nothing.
+     */
+    --rune-btn-face:
+      linear-gradient(45deg, rgb(var(--rune-stone) / 0.45) 0 50%, transparent 50%),
+      linear-gradient(135deg, rgb(var(--rune-stone) / 0.45) 0 50%, transparent 50%),
+      linear-gradient(225deg, rgb(var(--rune-stone) / 0.45) 0 50%, transparent 50%),
+      linear-gradient(315deg, rgb(var(--rune-stone) / 0.45) 0 50%, transparent 50%),
+      var(--btn-overlay);
+    --rune-btn-face-size: 5px 5px, 5px 5px, 5px 5px, 5px 5px, auto;
+    --rune-btn-face-position: 0 100%, 0 0, 100% 0, 100% 100%, 0 0;
+    --rune-btn-face-repeat: no-repeat, no-repeat, no-repeat, no-repeat, repeat;
+    --btn-shadow:
+      inset 0 2px 0 rgb(255 250 236 / 0.55),
+      inset 0 -2px 0 rgb(var(--rune-stone) / 0.26);
+    --btn-shadow-active:
+      inset 0 2px 5px rgb(var(--rune-stone) / 0.42),
+      inset 0 -1px 0 rgb(255 250 236 / 0.35);
+    --btn-tracking: 0.18em;
+    --btn-transform: uppercase;
+    --btn-weight: 700;
+    --control-border-width: 2px;
+    --field-shadow: inset 0 2px 5px rgb(var(--rune-stone) / 0.28);
+    --field-shadow-focus:
+      inset 0 2px 5px rgb(var(--rune-stone) / 0.2),
+      0 0 0 2px rgb(var(--brand) / 0.5),
+      0 0 16px -2px rgb(var(--rune-glow) / 0.8);
+
+    /* A note is a scrap torn off the same leaf and laid on top of it. */
+    --postit-radius: 0px;
+    --postit-shadow:
+      inset 0 2px 0 rgb(255 250 236 / 0.42),
+      inset 0 -2px 0 rgb(var(--rune-stone) / 0.18),
+      0 14px 26px -16px rgb(62 38 18 / 0.65);
+    --postit-texture: radial-gradient(rgb(var(--rune-stone) / 0.09) 0.5px, transparent 0.6px);
+    --postit-texture-size: 4px 4px;
+
+    /* Heavy, and it does not bounce. */
+    --ease-ui: cubic-bezier(0.7, 0, 0.3, 1);
+    --speed-ui: 190ms;
+    --icon-stroke: 2.2;
+    --heading-transform: uppercase;
+    --heading-tracking: 0.22em;
+
+    /* --- The skin's own materials ---------------------------------------- */
+
+    /*
+     * The ink, at its wettest.
+     *
+     * Named `--rune-glow` because of what it *does* — it is the mark at its
+     * most alive, and every rule in this skin that wanted a mark to come
+     * forward reaches for it. On the stone version that meant light in a
+     * groove and the value was a bright blue; on paper it means oxblood that
+     * has just soaked in, and the value went dark. Nothing that consumes it
+     * had to change: `0 0 8px` of a bright colour on a dark ground is a glow,
+     * and `0 0 8px` of a dark colour on a pale one is ink bleeding into the
+     * fibre, which is the same gesture read off the same declaration.
+     */
+    --rune-glow: 126 30 14;
+    /* Gold leaf, for the letters worth gilding. */
+    --rune-gold: 176 128 46;
+    /* The sheet's own brown, used for every shadow so nothing here goes to
+       black — a page has no black in it anywhere, only more paper. */
+    --rune-stone: 88 62 34;
+    /* The face the runes are set in. Windows ships Runic coverage in Segoe UI
+       Historic and Symbol; the rest are there for everybody else. A machine
+       with none of them falls back to whatever has the block, and the Latin is
+       one hover away regardless — see `RunicText`. */
+    --font-rune: 'Segoe UI Historic', 'Segoe UI Symbol', 'Noto Sans Runic', 'Junicode',
+      'BabelStone Runic', var(--font-sans);
+
+    /* The stave inked down the margin of the page. */
+    --rune-stave: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='320' viewBox='0 0 240 320' fill='none' stroke='%235e2a16' stroke-width='9' stroke-linecap='square'%3E%3Cpath d='M120 12v296'/%3E%3Cpath d='M120 60 60 110M120 60l60 50M120 150 66 196M120 150l54 46M120 232l-46 40M120 232l46 40'/%3E%3Cpath d='M40 40h44M156 40h44M40 288h44M156 288h44'/%3E%3C/svg%3E");
+
+    color-scheme: light;
+  }
+
+  [data-skin='runic'].dark {
+    /*
+     * The same leaf by lamplight, bound into something that has been carried.
+     *
+     * Tanned leather rather than black: everything keeps a brown cast, because
+     * the one light source here is a flame and the whole book takes the colour
+     * of what lights it. A neutral-black dark theme under a warm accent is two
+     * decisions that never met.
+     *
+     * This is the one place the material argument inverts. On the page above,
+     * ink is the darkest thing there is; on a ground this dark, ink would
+     * vanish — so the accent turns and goes *up*, and the ink reads as ember
+     * rather than oxblood. It is the same pigment, seen by a different light.
+     */
+    --surface: 26 19 13;
+    --surface-raised: 40 30 21;
+    --surface-sunken: 16 11 7;
+    --edge: 96 74 50;
+    --content: 240 226 199;
+    --content-muted: 180 158 126;
+    --content-faint: 132 112 86;
+    --brand: 226 142 96;
+    --brand-soft: 68 36 22;
+    --brand-contrast: 26 14 6;
+    --positive: 132 186 112;
+    --warning: 232 178 82;
+    /* Kept cold against the brand's warm terracotta, the same way round as in
+       daylight — the separation is temperature, not hue. */
+    --danger: 240 118 118;
+
+    --rune-glow: 246 160 92;
+    --rune-gold: 208 164 78;
+    --rune-stone: 10 6 3;
+
+    --shadow-panel:
+      inset 0 2px 0 rgb(255 236 200 / 0.1),
+      inset 0 -2px 0 rgb(0 0 0 / 0.6),
+      0 22px 44px -28px rgb(0 0 0);
+
+    /* The same five layers, lit from the other side: by lamp it is the raised
+       fibre that catches light rather than the sun bleaching the sheet, so the
+       pale patch becomes the flame's reflection and the foxing goes to shadow. */
+    --panel-texture:
+      radial-gradient(58% 48% at 24% 26%, rgb(0 0 0 / 0.42), transparent 70%),
+      radial-gradient(52% 46% at 78% 72%, rgb(var(--rune-glow) / 0.08), transparent 64%),
+      radial-gradient(rgb(255 236 200 / 0.05) 0.5px, transparent 0.6px),
+      linear-gradient(163deg, rgb(255 236 200 / 0.07), transparent 54%);
+
+    --paper-mould: repeating-linear-gradient(
+      91deg,
+      rgb(255 236 200 / 0.055) 0 1.5px,
+      transparent 1.5px 4px,
+      rgb(255 236 200 / 0.03) 4px 4.8px,
+      transparent 4.8px 8px,
+      rgb(255 236 200 / 0.03) 8px 8.8px,
+      transparent 8.8px 12px,
+      rgb(255 236 200 / 0.03) 12px 12.8px,
+      transparent 12.8px 16px,
+      rgb(255 236 200 / 0.03) 16px 16.8px,
+      transparent 16.8px 20px,
+      rgb(255 236 200 / 0.03) 20px 20.8px,
+      transparent 20.8px 23px
+    );
+
+    /* By lamplight the ruling is not ink on paper, it is where the light
+       catches the ridge the nib left. */
+    --rune-frame:
+      repeating-linear-gradient(
+        90deg,
+        rgb(var(--rune-glow) / 0.5) 0 34px,
+        transparent 34px 52px
+      ),
+      repeating-linear-gradient(
+        90deg,
+        rgb(var(--rune-glow) / 0.34) 0 26px,
+        transparent 26px 46px
+      ),
+      repeating-linear-gradient(
+        180deg,
+        rgb(var(--rune-glow) / 0.4) 0 22px,
+        transparent 22px 38px
+      ),
+      repeating-linear-gradient(
+        180deg,
+        rgb(var(--rune-glow) / 0.4) 0 30px,
+        transparent 30px 44px
+      );
+
+    /* The lamp is off to one side of the book, not overhead. */
+    --page-wash:
+      radial-gradient(120% 80% at 50% -20%, rgb(var(--rune-glow) / 0.11), transparent 58%),
+      radial-gradient(80% 60% at 0% 100%, rgb(var(--rune-gold) / 0.1), transparent 60%),
+      radial-gradient(70% 60% at 100% 40%, rgb(var(--brand) / 0.07), transparent 66%);
+
+    --btn-overlay: linear-gradient(180deg, rgb(255 236 200 / 0.1), rgb(0 0 0 / 0.4));
+    --btn-shadow:
+      inset 0 2px 0 rgb(255 236 200 / 0.12),
+      inset 0 -2px 0 rgb(0 0 0 / 0.7);
+    --btn-shadow-active:
+      inset 0 3px 7px rgb(0 0 0 / 0.85),
+      inset 0 -1px 0 rgb(255 236 200 / 0.08);
+    --field-shadow: inset 0 2px 6px rgb(0 0 0 / 0.75);
+    --field-shadow-focus:
+      inset 0 2px 6px rgb(0 0 0 / 0.7),
+      0 0 0 2px rgb(var(--brand) / 0.55),
+      0 0 20px -2px rgb(var(--rune-glow) / 0.9);
+    --postit-shadow:
+      inset 0 2px 0 rgb(255 236 200 / 0.08),
+      inset 0 -2px 0 rgb(0 0 0 / 0.7),
+      0 16px 30px -18px rgb(0 0 0);
+
+    --rune-stave: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='320' viewBox='0 0 240 320' fill='none' stroke='%23f0a45e' stroke-width='9' stroke-linecap='square'%3E%3Cpath d='M120 12v296'/%3E%3Cpath d='M120 60 60 110M120 60l60 50M120 150 66 196M120 150l54 46M120 232l-46 40M120 232l46 40'/%3E%3Cpath d='M40 40h44M156 40h44M40 288h44M156 288h44'/%3E%3C/svg%3E");
+
+    color-scheme: dark;
+  }
+
   * {
     @apply border-edge;
   }
@@ -1641,6 +2058,84 @@
     }
     50% {
       transform: rotate(1.4deg);
+    }
+  }
+
+  /*
+   * Impressed lettering.
+   *
+   * Two one-pixel shadows and nothing else: sepia above the stroke where the
+   * nib pressed the fibre down, paper below it where the sheet springs back.
+   * That is the entire optical trick — the letter is not sitting on the
+   * surface, it is *in* it, and the only evidence of that is which of its
+   * edges caught the light.
+   *
+   * By lamplight the same impression is lit from inside instead, so the second
+   * shadow becomes a glow. Kept to a 3px radius on purpose: a heading with a
+   * halo big enough to touch its neighbours is a heading you have to squint
+   * at, and this skin is supposed to be bold, not blurry.
+   */
+  [data-skin='runic'] h1,
+  [data-skin='runic'] h2,
+  [data-skin='runic'] h3 {
+    text-shadow:
+      0 1px 0 rgb(255 250 236 / 0.55),
+      0 -1px 0 rgb(var(--rune-stone) / 0.4);
+  }
+
+  [data-skin='runic'].dark h1,
+  [data-skin='runic'].dark h2,
+  [data-skin='runic'].dark h3 {
+    text-shadow:
+      0 1px 0 rgb(0 0 0 / 0.9),
+      0 0 3px rgb(var(--rune-glow) / 0.35);
+  }
+
+  /*
+   * The stave standing in the corner of the page.
+   *
+   * It does not turn. The containment site's trefoil and the eldritch seal both
+   * rotate, and a third rotating mark would have read as the same idea in a
+   * third palette — which is the failure mode this codebase keeps catching. A
+   * mark inked on a page is the opposite of a wheel: it is *fixed*, and the
+   * only thing that changes is how strongly it reads. So it breathes.
+   */
+  [data-skin='runic'] body::after {
+    content: '';
+    position: fixed;
+    left: -40px;
+    bottom: -50px;
+    width: 260px;
+    height: 346px;
+    z-index: -1;
+    pointer-events: none;
+    background-image: var(--rune-stave);
+    background-size: contain;
+    background-repeat: no-repeat;
+    /* The two ends of the breath, as variables rather than literals: the
+       keyframes are shared and each palette needs its own range, and a
+       hard-coded `opacity` on the element would simply be overridden by the
+       animation the moment it started. */
+    --stave-low: 0.05;
+    --stave-high: 0.16;
+    opacity: var(--stave-low);
+    animation: stave-breathe 11s ease-in-out infinite;
+  }
+
+  [data-skin='runic'].dark body::after {
+    --stave-low: 0.08;
+    --stave-high: 0.26;
+  }
+
+  @keyframes stave-breathe {
+    0%,
+    100% {
+      opacity: var(--stave-low);
+      filter: none;
+    }
+    50% {
+      opacity: var(--stave-high);
+      filter: drop-shadow(0 0 12px rgb(var(--rune-glow) / 0.5));
     }
   }
 
@@ -2314,10 +2809,18 @@
     letter-spacing: 0.12em;
   }
 
+  /* Only the accordion draws a pseudo-element now that the card's iris is
+     gone, so only the accordion gets a position — a `position` declared at
+     `[data-skin] .class` specificity outranks Tailwind's own positioning
+     utilities, and is not something to hand out to a selector that does not
+     need it. */
+  [data-skin='eldritch'] .ui-accordion {
+    position: relative;
+  }
+
   [data-skin='eldritch'] .ui-card,
   [data-skin='eldritch'] .ui-accordion,
   [data-skin='eldritch'] .ui-segment {
-    position: relative;
     background-image: var(--panel-texture);
     background-size: var(--panel-texture-size);
     box-shadow:
@@ -2326,36 +2829,19 @@
   }
 
   /*
-   * The iris.
+   * There is deliberately no iris on a card any more.
    *
-   * Every card holds a slow bloom of the wrong colour in its corner, and it
-   * opens when the pointer is over the card — the one interaction this skin
-   * needed, because "something is looking at you" is the whole brief and a
-   * static texture cannot say it. Opacity and scale on a pseudo-element, so it
-   * stays on the compositor; `transform-origin` sits where the bloom does, so
-   * it opens *from* the eye rather than growing towards it.
+   * Every card used to hold a bloom of the wrong colour in its corner that
+   * opened under the pointer, and in isolation it was the best thing the skin
+   * did. On a task card it was the worst: a task card is dense — title,
+   * assignees, a deadline, a type tag, a checklist read-out — and the bloom
+   * landed on top of the corner where the deadline and the pin sit, at exactly
+   * the moment the user hovered the card to read it. A mood that obscures the
+   * content it decorates is not a mood, it is a bug with a rationale.
+   *
+   * The skin has not lost the idea. `WanderingEye` still opens an eye somewhere
+   * on the page every twenty seconds, where there is nothing to cover.
    */
-  [data-skin='eldritch'] .ui-card::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    border-radius: inherit;
-    opacity: 0.55;
-    transform: scale(0.9);
-    transform-origin: 88% 12%;
-    background:
-      radial-gradient(38% 30% at 88% 12%, rgb(var(--eldritch-glow) / 0.3), transparent 70%),
-      radial-gradient(12% 9% at 88% 12%, rgb(var(--brand) / 0.55), transparent 76%);
-    transition:
-      opacity var(--speed-ui) var(--ease-ui),
-      transform var(--speed-ui) var(--ease-ui);
-  }
-
-  [data-skin='eldritch'] .ui-card:hover::after {
-    opacity: 1;
-    transform: scale(1);
-  }
 
   /* An inscribed rule above every accordion head, in ichor. */
   [data-skin='eldritch'] .ui-accordion::before {
@@ -2543,10 +3029,16 @@
       0 12px 22px -12px rgb(var(--autumn-ember) / 0.9);
   }
 
+  /* As on the eldritch skin: the leaf that used to sit on a card is gone, so
+     the twig above a section head is the only thing left here that needs a
+     positioned ancestor. */
+  [data-skin='autumn'] .ui-accordion {
+    position: relative;
+  }
+
   [data-skin='autumn'] .ui-card,
   [data-skin='autumn'] .ui-accordion,
   [data-skin='autumn'] .ui-segment {
-    position: relative;
     background-image: var(--panel-texture);
     background-size: var(--panel-texture-size);
     box-shadow: inset 0 1px 0 rgb(255 248 236 / 0.5);
@@ -2559,37 +3051,15 @@
   }
 
   /*
-   * The leaf that landed on this card.
+   * No leaf on the card, for the same reason the eldritch iris is gone.
    *
-   * A fixed-size box in the corner rather than an inset-0 overlay, because the
-   * hover gesture is the leaf *turning over* — and rotating a full-bleed layer
-   * would swing the leaf around the middle of the card instead of about its
-   * own stem. Faint at rest: there is one of these on every card on the page,
-   * and at any opacity you would call "visible" a list of forty tasks becomes
-   * forty stickers.
+   * It sat in the top-right corner and brightened under the pointer, which is
+   * precisely where a task card keeps its deadline and its pin, and precisely
+   * when the user is trying to read them. The leaves this skin is built on are
+   * all still there — falling across the page, growing out of the rails, hung
+   * in the corner of the window — in places where nothing is competing with
+   * them for the same pixels.
    */
-  [data-skin='autumn'] .ui-card::after {
-    content: '';
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    width: 42px;
-    height: 42px;
-    pointer-events: none;
-    opacity: 0.1;
-    transform: rotate(-14deg);
-    background-image: var(--autumn-leaf);
-    background-size: contain;
-    background-repeat: no-repeat;
-    transition:
-      opacity var(--speed-ui) var(--ease-ui),
-      transform var(--speed-ui) var(--ease-ui);
-  }
-
-  [data-skin='autumn'] .ui-card:hover::after {
-    opacity: 0.28;
-    transform: rotate(6deg) scale(1.06);
-  }
 
   /* A twig laid across the top of every section head. */
   [data-skin='autumn'] .ui-accordion::before {
@@ -2663,6 +3133,183 @@
       rgb(var(--autumn-gold) / 0.4) 68%,
       rgb(var(--autumn-ember) / 0.5)
     );
+  }
+
+  /* ---------------------------------------------------------------------
+   * RUNIC — dressed stone, and light living in the cut.
+   * --------------------------------------------------------------------- */
+  /*
+   * A control wears the same overlay, shadow and hover glow as the Eldritch
+   * skin — the stone texture is delivered by the panel vars, not the button.
+   */
+  [data-skin='runic'] .ui-btn,
+  [data-skin='runic'] .ui-filter,
+  [data-skin='runic'] .ui-chip {
+    background-image: var(--btn-overlay);
+    box-shadow: var(--btn-shadow);
+  }
+
+  [data-skin='runic'] .ui-btn:active,
+  [data-skin='runic'] .ui-filter:active {
+    box-shadow: var(--btn-shadow-active);
+  }
+
+  /* Touch it and the ink answers — which in daylight means it darkens and
+     spreads into the fibre around the control rather than lighting up. Held
+     lower here than in the dark, where the same declaration is a glow and can
+     afford to be: a dark halo at 0.9 on parchment reads as a smudge. */
+  [data-skin='runic'] .ui-btn:hover,
+  [data-skin='runic'] .ui-filter:hover {
+    box-shadow:
+      inset 0 1px 0 rgb(var(--brand) / 0.4),
+      0 0 26px -6px rgb(var(--rune-glow) / 0.5);
+  }
+
+  [data-skin='runic'].dark .ui-btn:hover,
+  [data-skin='runic'].dark .ui-filter:hover {
+    box-shadow:
+      inset 0 1px 0 rgb(var(--brand) / 0.4),
+      0 0 26px -6px rgb(var(--rune-glow) / 0.9);
+  }
+
+  [data-skin='runic'] .ui-chip {
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+  }
+
+  /*
+   * Every sheet in the app: the paper, and the rule drawn round it.
+   *
+   * One rule for panels, cards, section heads, segmented controls and the
+   * chrome that owns its own background, because they are all the same object
+   * — a leaf of paper with a broken margin line on it. The four background
+   * properties have to travel together: the frame layers are sized and pinned
+   * per edge, and a rule that set the image without the position would tile a
+   * 2px band down the whole box.
+   *
+   * The element's own `border` goes quiet underneath (it is still there for
+   * layout and for the focus ring), because the visible line is now the ruled
+   * one — which is the point: a border you can see all the way round is a box,
+   * and this is supposed to be a page.
+   */
+  [data-skin='runic'] .panel,
+  [data-skin='runic'] .ui-textured,
+  [data-skin='runic'] .ui-card,
+  [data-skin='runic'] .ui-accordion {
+    background-image: var(--rune-frame), var(--paper-mould), var(--panel-texture);
+    background-size: var(--rune-frame-size), auto, var(--panel-texture-size);
+    background-position: var(--rune-frame-position), 0 0, 0 0, 100% 100%, 0 0, 0 0;
+    background-repeat: var(--rune-frame-repeat), no-repeat, no-repeat, no-repeat, repeat, no-repeat;
+    /* The lift of the sheet's own edge. Deliberately the whole of a card's
+       decoration: no pseudo-element, nothing over the content — see the note
+       where the eldritch iris used to be. */
+    box-shadow:
+      inset 0 2px 0 rgb(255 250 236 / 0.5),
+      inset 0 -2px 0 rgb(var(--rune-stone) / 0.24);
+  }
+
+  /*
+   * The segmented control gets the bevel and the paper, but no frame.
+   *
+   * It is a 36px-tall strip holding two or three options, and a margin line
+   * 4px in from each of its edges leaves about four pixels of clear surface
+   * between the ruling and the labels. A frame needs a sheet to sit on; this
+   * control does not have one.
+   */
+  [data-skin='runic'] .ui-segment {
+    background-image: var(--paper-mould), var(--panel-texture);
+    background-size: auto, var(--panel-texture-size);
+    background-position: 0 0, 0 0, 100% 100%, 0 0, 0 0;
+    background-repeat: no-repeat, no-repeat, no-repeat, repeat, no-repeat;
+    box-shadow:
+      inset 0 2px 0 rgb(255 250 236 / 0.5),
+      inset 0 -2px 0 rgb(var(--rune-stone) / 0.24);
+  }
+
+  [data-skin='runic'].dark .panel,
+  [data-skin='runic'].dark .ui-textured,
+  [data-skin='runic'].dark .ui-card,
+  [data-skin='runic'].dark .ui-accordion,
+  [data-skin='runic'].dark .ui-segment {
+    box-shadow:
+      inset 0 2px 0 rgb(255 236 200 / 0.09),
+      inset 0 -2px 0 rgb(0 0 0 / 0.7);
+  }
+
+  /*
+   * The one element here that needs a position, and it gets it on its own.
+   *
+   * This rule used to sit on the whole list above, which was a layout bug with
+   * a wide blast radius: `[data-skin='runic'] .ui-textured` outranks Tailwind's
+   * `.fixed` on specificity, and the two side rails and the top bar are all
+   * `.ui-textured .fixed`. On the runic skin every one of them stopped being
+   * fixed and dropped into the document flow, taking the whole shell with it.
+   *
+   * Nothing else in this skin needs a positioned ancestor — the frame is
+   * background layers, and background layers do not care where the box is — so
+   * the declaration now lives with the pseudo-element that actually requires
+   * it, and cannot reach anything else.
+   */
+  [data-skin='runic'] .ui-accordion {
+    position: relative;
+  }
+
+  /* A ruled line drawn across the top of every section head, gilded at the
+     ends and inked through the middle. */
+  [data-skin='runic'] .ui-accordion::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 2px;
+    pointer-events: none;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(var(--rune-gold) / 0.7) 18%,
+      rgb(var(--rune-glow) / 0.9) 50%,
+      rgb(var(--rune-gold) / 0.7) 82%,
+      transparent
+    );
+    box-shadow: 0 0 10px -1px rgb(var(--rune-glow) / 0.6);
+  }
+
+  /*
+   * The rail's edge is a rail's edge, and nothing more.
+   *
+   * There was a three-band seam here — shadow, then rune light, then gold —
+   * meant to read as a lit groove where the panel meets the page. It read as
+   * three coloured stripes, because that is what it was: at 14px wide the eye
+   * has no depth cue to interpret and simply sees a ribbon. Every other skin
+   * that decorates this seam is decorating a *hidden* menu's edge, where the
+   * stripe is the only clue the panel exists; the runic rail is already a
+   * ruled sheet with its own margin line on it, and it did not need a second
+   * announcement stapled to its side.
+   *
+   * So the rail keeps its border and its own paper, and that is all.
+   */
+  [data-skin='runic'] .nav-rail {
+    border-color: rgb(var(--edge));
+  }
+
+  /*
+   * The side rails decline the mould.
+   *
+   * They are the two surfaces in the app shaped wrongly for it: 260-odd pixels
+   * wide and the full height of the screen, so the near-vertical laid lines run
+   * uninterrupted from the top of the window to the bottom and read as applied
+   * ruling rather than as the grain of a sheet. The top bar keeps them — it is
+   * 56px tall, and a line that short is grain again.
+   *
+   * The rest of the paper stays: foxing, fibre, the raking light and the ruled
+   * frame are all untouched, so the rails are made of the same sheet as
+   * everything else and merely happen to have been cut from a part of it with
+   * no wire marks. Custom properties inherit, so anything nested inside a rail
+   * comes out clean too, which is what you want — the alternative is a card
+   * with laid lines floating in a column without them.
+   */
+  [data-skin='runic'] .nav-rail--left,
+  [data-skin='runic'] .nav-rail--right {
+    --paper-mould: none;
   }
 
   [data-skin='space'] .nav-rail--top::after {
@@ -2760,6 +3407,27 @@
     background-size: 180px 180px, 244px 244px, 208px 208px, 30px 30px, 30px 30px;
   }
 
+  /*
+   * A ruled leaf with a crease running across it.
+   *
+   * Ruling, not graph paper: the horizontals are the lines you were meant to
+   * write on and the verticals are the margin repeated, so they are drawn at
+   * different weights rather than as a symmetric mesh — a page ruled equally in
+   * both directions is a page nobody ever wrote on. The long diagonals are
+   * where the sheet was folded, faint enough to be a suggestion.
+   */
+  [data-skin='runic'] .board-grid {
+    background-image:
+      repeating-linear-gradient(
+        58deg,
+        transparent 0 118px,
+        rgb(var(--rune-stone) / 0.07) 118px 120px
+      ),
+      linear-gradient(rgb(var(--rune-stone) / 0.13) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(var(--rune-stone) / 0.06) 1px, transparent 1px);
+    background-size: auto, 100% 28px, 56px 100%;
+  }
+
   /* A galley: column rules on the baseline grid the type would have sat on. */
   [data-skin='newspaper'] .board-grid {
     background-image:
@@ -2850,6 +3518,14 @@
   [data-skin='autumn'] .type-tag {
     font-size: 10.5px;
     letter-spacing: 0.02em;
+  }
+
+  /* Inscribed: caps on wide tracking, with the same one-pixel arris the
+     headings carry. A condensed face takes the tracking without growing. */
+  [data-skin='runic'] .type-tag {
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
   }
 
   /* Marching dashes: the connect-mode target highlight. */
@@ -3383,7 +4059,22 @@
  * further out, x=0 is nailed to the border.
  */
 .eldritch-tendril {
-  filter: drop-shadow(0 0 4px rgb(var(--eldritch-glow) / 0.35));
+  filter: drop-shadow(0 0 3px rgb(var(--eldritch-glow) / 0.35));
+  /*
+   * Flattened across its own thickness, not scaled down as a whole.
+   *
+   * The limbs are drawn fat because a stroke of even width is a piece of wire,
+   * and that is still the right drawing — but at full thickness against a
+   * 264px rail they read as arms rather than as feelers. Squashing the y axis
+   * keeps every limb its full length while taking a quarter out of its girth,
+   * which is what "thinner" actually means here; scaling the box instead would
+   * have shortened the reach along with it.
+   *
+   * Safe to put on the root: nothing animates the svg itself. Every moving
+   * part is a `<g>` inside it, and a transform there composes with this one
+   * rather than replacing it.
+   */
+  transform: scaleY(0.74);
 }
 
 /*
@@ -3422,8 +4113,11 @@
  */
 .eldritch-tendril__joint--tip {
   animation-name: tendril-flex-tip;
-  animation-delay: calc(var(--tendril-delay, 0s) + 0.45s);
-  animation-duration: calc(var(--tendril-duration, 5.4s) * 0.82);
+  /* A fraction of the limb's own period rather than a flat 0.45s: the lag has
+     to stay the same *phase* offset whatever speed the set is running at, or
+     speeding the limbs up turns the travelling bend into a stutter. */
+  animation-delay: calc(var(--tendril-delay, 0s) + var(--tendril-duration, 3s) * 0.18);
+  animation-duration: calc(var(--tendril-duration, 3s) * 0.82);
 }
 
 @keyframes tendril-flex-mid {
@@ -3567,6 +4261,311 @@
   60%,
   100% {
     transform: translateX(6%);
+  }
+}
+
+/* --- RUNIC: it is not loading. It is being carved. ----------------------- */
+
+/*
+ * A rune cutting itself into the stone, inside a ring that ratchets round.
+ *
+ * The stave uses `pathLength="100"` in the markup, which renormalises the whole
+ * path to a hundred units — so `stroke-dasharray: 100` draws exactly one full
+ * stroke however the geometry is later redrawn. Without it the dash length is
+ * whatever the path happens to measure, and every edit to the rune silently
+ * breaks the animation.
+ *
+ * The ring steps rather than sweeps. Eight notches, hard: this skin's motion
+ * curve has no ease in it anywhere else either, and a smoothly spinning ring
+ * would be the studio spinner wearing a rune.
+ */
+.loader-rune {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.loader-rune > svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.loader-rune__ring {
+  transform-origin: center;
+  animation: rune-ratchet 2.4s steps(8, end) infinite;
+}
+
+.loader-rune__stave {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: rune-carve 2.4s cubic-bezier(0.7, 0, 0.3, 1) infinite;
+}
+
+@keyframes rune-ratchet {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Cut, hold lit, then gone — and the glow only exists while the cut is full,
+   which is what makes it read as the carving catching light rather than as a
+   line fading in. */
+@keyframes rune-carve {
+  0% {
+    stroke-dashoffset: 100;
+    filter: none;
+  }
+  45% {
+    stroke-dashoffset: 0;
+    filter: drop-shadow(0 0 4px rgb(var(--rune-glow) / 0.9));
+  }
+  75% {
+    stroke-dashoffset: 0;
+    filter: drop-shadow(0 0 6px rgb(var(--rune-glow) / 0.95));
+  }
+  100% {
+    stroke-dashoffset: -100;
+    filter: none;
+  }
+}
+
+/* ==========================================================================
+ * Runic decor: the light that lives in a cut.
+ *
+ * Two classes, both applied inside the skin's own icon set. Transform and
+ * opacity only, like everything else in this file, so a rail full of glowing
+ * glyphs is still one compositor job.
+ * ========================================================================== */
+
+/*
+ * The light in the groove, breathing.
+ *
+ * Every glyph in the runic set is drawn twice: the cut itself in the current
+ * colour, and the light in it on top. This animates only the second copy, so
+ * the icon is fully legible at every frame — the pulse changes how *lit* the
+ * mark is, never whether it is there. That is the whole reason the set can be
+ * animated at all without costing readability.
+ */
+.rune-pulse {
+  animation: rune-pulse 3.6s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes rune-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* The same breath, offset, for a second mark inside one glyph — two lights
+   pulsing in step read as one flashing icon rather than as a live carving. */
+.rune-pulse--late {
+  animation-delay: 1.2s;
+}
+
+/* Under the pointer a rune finishes lighting up and stays there: the nav rail
+   is the one place in the app where an icon is also a target. */
+.group:hover .rune-pulse,
+a:hover .rune-pulse,
+button:hover .rune-pulse {
+  animation: none;
+  opacity: 1;
+}
+
+/* --- Carved lettering ---------------------------------------------------- */
+
+/*
+ * Runic text.
+ *
+ * Set in whatever family on the machine actually has the Runic block — the
+ * skin's display face almost certainly does not — and tracked wide, because
+ * runes were cut one at a time down a stave and they read wrong packed like
+ * Latin. Slightly larger than the Latin it replaces for the same reason: the
+ * glyphs are mostly vertical strokes and lose their differences at small
+ * sizes faster than letters do.
+ */
+.rune-text,
+.rune-swap {
+  font-family: var(--font-rune);
+  letter-spacing: 0.12em;
+  font-size: 1.06em;
+}
+
+/*
+ * The swap: runes at rest, Latin under the pointer.
+ *
+ * Both copies live in the same grid cell, so the box is as wide as the wider
+ * of the two and the row cannot reflow when they trade places — a rail full of
+ * labels that resize as the pointer travels down them is unusable. Only
+ * `opacity` changes, which also means the transition is free.
+ *
+ * The Latin copy is the one in the accessibility tree; the runes are
+ * `aria-hidden` in the markup. A screen reader should never be handed a
+ * typographic joke.
+ */
+.rune-swap {
+  display: inline-grid;
+  align-items: center;
+  min-width: 0;
+}
+
+.rune-swap > * {
+  grid-area: 1 / 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: opacity var(--speed-ui) var(--ease-ui);
+}
+
+.rune-swap__latin {
+  font-family: var(--font-sans);
+  letter-spacing: normal;
+  font-size: 0.94em;
+  opacity: 0;
+}
+
+/* Hovering or focusing anything that contains the label reveals it — the row,
+   not the glyphs, because the target is the row. */
+.group:hover .rune-swap__carved,
+.group:focus-within .rune-swap__carved,
+a:hover .rune-swap__carved,
+a:focus-visible .rune-swap__carved,
+button:hover .rune-swap__carved,
+button:focus-visible .rune-swap__carved,
+.rune-swap:hover .rune-swap__carved {
+  opacity: 0;
+}
+
+.group:hover .rune-swap__latin,
+.group:focus-within .rune-swap__latin,
+a:hover .rune-swap__latin,
+a:focus-visible .rune-swap__latin,
+button:hover .rune-swap__latin,
+button:focus-visible .rune-swap__latin,
+.rune-swap:hover .rune-swap__latin {
+  opacity: 1;
+}
+
+/*
+ * One rune catching light.
+ *
+ * Individual glyphs, never the whole string: a word that pulses as a unit is a
+ * status indicator, and a scatter of glyphs lighting at different moments is a
+ * carved surface with something alive behind it. Which runes light and when is
+ * decided in `runes.ts` and is stable per string — see the note there on why
+ * it must not be random.
+ *
+ * The dark end of the cycle is `currentColor`, i.e. exactly the text colour
+ * around it, so a rune at its dimmest is still perfectly legible. Nothing here
+ * ever costs contrast; it only ever adds.
+ *
+ * The one honest caveat in this file: `color` and `text-shadow` are paint
+ * properties, so unlike every other animation here this one does not live on
+ * the compositor. It is affordable because of how little of it there is —
+ * roughly one rune in four, on labels that are a dozen glyphs long, repainting
+ * a box a few pixels across every six and a half seconds. Lighting whole words
+ * would not be, which is a second reason not to.
+ */
+.rune-ember {
+  animation: rune-ember 6.5s ease-in-out infinite;
+}
+
+@keyframes rune-ember {
+  0%,
+  62%,
+  100% {
+    color: inherit;
+    text-shadow: none;
+  }
+  78% {
+    color: rgb(var(--rune-glow));
+    text-shadow: 0 0 8px rgb(var(--rune-glow) / 0.85);
+  }
+  88% {
+    color: rgb(var(--rune-glow));
+    text-shadow: 0 0 5px rgb(var(--rune-glow) / 0.5);
+  }
+}
+
+/* --- Runes written on the walls ------------------------------------------ */
+
+/*
+ * A rune cutting itself into the page, then weathering off it.
+ *
+ * Two passes over the same path: the groove is cut first in stone, and the
+ * light finds it a beat later — which is what makes it read as carving rather
+ * than as a line being drawn. Both use `pathLength="100"` in the markup so the
+ * dash arithmetic is in percent and stays correct if a stave is redrawn.
+ *
+ * The whole thing ends at zero opacity and holds there (`forwards`), so an
+ * element still in the DOM waiting to be swept up is invisible — see the note
+ * in `runic-decor.tsx` about why removal is a timestamp rather than an exit
+ * animation.
+ */
+.rune-scribe {
+  opacity: 0;
+  animation: rune-scribe-life 4.6s ease-out forwards;
+}
+
+.rune-scribe__cut {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: rune-scribe-cut 4.6s cubic-bezier(0.7, 0, 0.3, 1) forwards;
+}
+
+.rune-scribe__lit {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: rune-scribe-lit 4.6s cubic-bezier(0.7, 0, 0.3, 1) forwards;
+}
+
+/* Peaks well short of solid: this layer sits above the page content, so a mark
+   crossing a paragraph has to read as something happening behind the glass
+   rather than as something written on top of the words. */
+@keyframes rune-scribe-life {
+  0% {
+    opacity: 0;
+  }
+  12%,
+  62% {
+    opacity: 0.42;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes rune-scribe-cut {
+  0% {
+    stroke-dashoffset: 100;
+  }
+  34%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes rune-scribe-lit {
+  0%,
+  16% {
+    stroke-dashoffset: 100;
+    filter: none;
+  }
+  50% {
+    stroke-dashoffset: 0;
+    filter: drop-shadow(0 0 6px rgb(var(--rune-glow) / 0.9));
+  }
+  100% {
+    stroke-dashoffset: 0;
+    filter: drop-shadow(0 0 2px rgb(var(--rune-glow) / 0.3));
   }
 }
 
@@ -3759,6 +4758,26 @@
 
 [data-skin='paper'] .skeleton {
   border: 2px solid rgb(var(--edge) / 0.35);
+}
+
+/* Blank fibre, with a stain drawing itself across it. Squared off, like
+   everything else here, and the sweep is the ink rather than white — on a pale
+   ground the thing that has to move is the dark. */
+[data-skin='runic'] .skeleton {
+  border-radius: 0;
+  background:
+    radial-gradient(rgb(var(--rune-stone) / 0.12) 0.5px, transparent 0.6px) 0 0 / 4px 4px,
+    rgb(var(--surface-sunken));
+}
+
+[data-skin='runic'] .skeleton::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(var(--rune-glow) / 0.28),
+    rgb(var(--rune-gold) / 0.16),
+    transparent
+  );
 }
 
 /* Blank rag paper with the fibres in it, and the afternoon crossing it slowly.
@@ -4008,6 +5027,22 @@
     transparent 46%
   );
   --avatar-inner: inset 0 0 10px rgb(var(--autumn-bark) / 0.35);
+}
+
+/* RUNIC — a portrait tipped into the page and ruled around.
+   Square, because nothing here is round; a drawn surround rather than a ring,
+   and a thin inked line just inside the opening, which is where every other
+   mark in this skin sits too. */
+[data-skin='runic'] .avatar {
+  --avatar-radius: 0px;
+  --avatar-frame:
+    0 0 0 2px rgb(var(--surface-raised)),
+    0 0 0 4px rgb(var(--edge)),
+    0 3px 8px -3px rgb(var(--rune-stone) / 0.8);
+  --avatar-inner:
+    inset 0 0 0 1px rgb(var(--rune-glow) / 0.45),
+    inset 0 2px 0 rgb(255 250 236 / 0.25),
+    inset 0 -2px 6px rgb(var(--rune-stone) / 0.45);
 }
 
 /*

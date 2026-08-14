@@ -1,10 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { errorMessage } from '@/shared/api/client';
 import { queryKeys } from '@/shared/api/query-keys';
 import { projectApi, type ListProjectsParams } from '../api/project.api';
-import type { ProjectRole } from './types';
+import type { OverviewDelta, ProjectRole, UserOverview } from './types';
 
 export const useProjects = (params: ListProjectsParams = {}) =>
   useQuery({
@@ -34,6 +34,40 @@ export const useUserOverview = () =>
     queryFn: projectApi.overview,
     staleTime: 60_000,
   });
+
+/**
+ * Moves the dashboard's own counters without waiting for the server.
+ *
+ * The tiles are computed by the API — three `taskAssignment.count()` queries —
+ * so nothing on the client can *derive* them from what it holds. That is why
+ * they used to lag: ticking a box patched every cached copy of the task
+ * instantly and then left the counters to a second, sequential round trip
+ * (`POST /completion`, and only then `GET /overview`), which on a remote
+ * database is most of a second of the number sitting there visibly wrong
+ * underneath a card that has already moved.
+ *
+ * A count, though, does not need deriving — it needs *nudging*. The caller
+ * knows exactly what it just changed, so it says so, and the refetch that
+ * follows still lands as the authority a moment later. If the two disagree the
+ * server wins, silently, because it is the one holding the rows.
+ *
+ * Clamped at zero: a negative "overdue" from a delta that raced a refetch is
+ * the one failure mode a user would actually notice.
+ */
+export const patchUserOverview = (queryClient: QueryClient, delta: OverviewDelta): void => {
+  if (!delta.openTasks && !delta.completedTasks && !delta.overdueTasks) return;
+
+  queryClient.setQueryData<UserOverview>(queryKeys.projects.overview, (overview) => {
+    if (!overview) return overview;
+
+    return {
+      ...overview,
+      openTasks: Math.max(0, overview.openTasks + (delta.openTasks ?? 0)),
+      completedTasks: Math.max(0, overview.completedTasks + (delta.completedTasks ?? 0)),
+      overdueTasks: Math.max(0, overview.overdueTasks + (delta.overdueTasks ?? 0)),
+    };
+  });
+};
 
 export const useMyInvitations = () =>
   useQuery({

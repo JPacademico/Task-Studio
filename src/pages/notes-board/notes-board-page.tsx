@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { StickyNote } from 'lucide-react';
+import { FileText, StickyNote } from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
@@ -46,7 +46,33 @@ import {
 } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
 import { useDebouncedCallback, useLocalStorage } from '@/shared/lib/hooks';
-import { Button, EmptyState, ExpandableStage, PageLoader } from '@/shared/ui';
+import {
+  Button,
+  EmptyState,
+  ExpandableStage,
+  PageLoader,
+  RunicText,
+  Segmented,
+} from '@/shared/ui';
+import { TextBoard } from '@/widgets/text-board/ui/text-board';
+
+/**
+ * The two things a personal desk is made of.
+ *
+ * The project workspace has had both for a while — a whiteboard you arrange and
+ * a text board you write on — and the personal side only ever had the first
+ * one, which meant anything longer than a Post-it had to go and live inside
+ * somebody's project.
+ *
+ * A switch rather than a second route: this is one desk seen two ways, and a
+ * `/notes/text` URL would imply a second place to be.
+ */
+type BoardView = 'notes' | 'text';
+
+const VIEWS: { value: BoardView; label: string; icon: React.ReactNode }[] = [
+  { value: 'notes', label: 'Post-its', icon: <StickyNote className="h-3 w-3" /> },
+  { value: 'text', label: 'Text board', icon: <FileText className="h-3 w-3" /> },
+];
 
 /** Keeps an image note inside a sane box whatever the source resolution is. */
 const fitImage = (naturalWidth: number, naturalHeight: number) => {
@@ -89,6 +115,7 @@ const NotesBoardPage = () => {
 
   const [storedPage, setStoredPage] = useLocalStorage(STORAGE_KEYS.boardPage, 0);
   const [pageIndex, setPageIndex] = useState(storedPage);
+  const [view, setView] = useState<BoardView>('notes');
   const [tool, setTool] = useState<BoardTool>('select');
   const [inkColor, setInkColor] = useState<string>(BOARD_INK_COLORS[0]);
   const [inkWidth, setInkWidth] = useState(3);
@@ -372,18 +399,31 @@ const NotesBoardPage = () => {
         <header className="flex flex-wrap items-end justify-between gap-3">
           <div className="space-y-0.5">
             <p className="text-[10px] uppercase tracking-[0.18em] text-content-faint sm:text-xs">
-              Notes
+              <RunicText mode="always">Notes</RunicText>
             </p>
-            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Your Post-it board</h1>
+            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+              {view === 'notes' ? 'Your Post-it board' : 'Your text board'}
+            </h1>
             <p className="hidden text-sm text-content-muted sm:block">
-              Private to you. Drag things anywhere — the layout is saved as you go.
+              {view === 'notes'
+                ? 'Private to you. Drag things anywhere — the layout is saved as you go.'
+                : 'Private to you. For the things that outgrew a Post-it.'}
             </p>
           </div>
 
-          {pager}
+          <div className="flex flex-wrap items-center gap-2">
+            <Segmented value={view} options={VIEWS} onChange={setView} />
+            {/* The pager belongs to the wall, not to the desk. */}
+            {view === 'notes' && pager}
+          </div>
         </header>
       )}
 
+      {/* One board with no project behind it: no task to pin a page to, and
+          nobody to attribute one to. See `TextBoard`. */}
+      {view === 'text' && <TextBoard />}
+
+      {view === 'notes' && (
       <ExpandableStage
         isExpanded={isExpanded}
         onCollapse={() => setIsExpanded(false)}
@@ -525,6 +565,7 @@ const NotesBoardPage = () => {
         />
         </div>
       </ExpandableStage>
+      )}
     </div>
   );
 };

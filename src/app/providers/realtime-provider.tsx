@@ -45,6 +45,10 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
 
     const socket = connectSocket();
 
+    // Leading-edge id for the coalesced task refresh below. Scoped to this
+    // effect run, so a reconnect or a sign-out cannot leave one pending.
+    let taskRefreshTimer: number | undefined;
+
     const handleConnect = () => setIsConnected(true);
     const handleDisconnect = () => setIsConnected(false);
 
@@ -63,9 +67,32 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
       }
     };
 
-    // A teammate changed something — refresh the task caches, no toast.
+    /*
+     * A teammate changed something — refresh the task caches, no toast.
+     *
+     * Coalesced, because task traffic arrives in bursts and each of these is
+     * expensive: `tasks.all` covers every mounted list, every agenda and every
+     * open detail, so one invalidation is a fan of parallel requests. Three
+     * events in the same tick — which is what completing a shared task or
+     * reordering a column produces — used to be three of those fans.
+     *
+     * The window is short on purpose. This is a *live* surface: 200ms is below
+     * the threshold where a person watching a colleague work would notice a
+     * delay, and comfortably wide enough to swallow a burst.
+     *
+     * The overview goes with it. The home dashboard's counters are derived from
+     * assignment rows, so a colleague finishing their half of a shared task
+     * changes *my* numbers — and before this they simply sat there wrong until
+     * something else happened to invalidate them.
+     */
     const handleTaskEvent = () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all });
+      if (taskRefreshTimer !== undefined) return;
+
+      taskRefreshTimer = window.setTimeout(() => {
+        taskRefreshTimer = undefined;
+        void queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.projects.overview });
+      }, 200);
     };
 
     const handleRosterEvent = () => {
@@ -89,6 +116,8 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
     socket.on('error', handleError);
 
     return () => {
+      if (taskRefreshTimer !== undefined) window.clearTimeout(taskRefreshTimer);
+
       socket.off('connect', handleConnect);
       socket.off('disconnect', handleDisconnect);
       socket.off('notification:new', handleNotification);

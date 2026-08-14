@@ -19,7 +19,7 @@ import { CalendarClock, ChevronLeft, ChevronRight, Inbox } from 'lucide-react';
 import type { Task } from '@/entities/task/model/types';
 import { cn } from '@/shared/lib/cn';
 import { formatTime } from '@/shared/lib/dates';
-import { Button, EmptyState, GazeArrow } from '@/shared/ui';
+import { Button, DirectionArrow, EmptyState } from '@/shared/ui';
 import type { TaskViewProps } from './task-list-view';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -89,7 +89,7 @@ export const TaskCalendarView = ({ tasks, onOpen, onToggleComplete }: TaskViewPr
             onClick={() => setCursor((date) => subMonths(date, 1))}
             className="grid h-7 w-7 place-items-center rounded-lg text-content-muted transition-colors hover:bg-surface-raised hover:text-content"
           >
-            <GazeArrow direction="left" fallback={ChevronLeft} className="h-3.5 w-3.5" />
+            <DirectionArrow direction="left" fallback={ChevronLeft} className="h-3.5 w-3.5" />
           </button>
           <button
             type="button"
@@ -104,7 +104,7 @@ export const TaskCalendarView = ({ tasks, onOpen, onToggleComplete }: TaskViewPr
             onClick={() => setCursor((date) => addMonths(date, 1))}
             className="grid h-7 w-7 place-items-center rounded-lg text-content-muted transition-colors hover:bg-surface-raised hover:text-content"
           >
-            <GazeArrow direction="right" fallback={ChevronRight} className="h-3.5 w-3.5" />
+            <DirectionArrow direction="right" fallback={ChevronRight} className="h-3.5 w-3.5" />
           </button>
         </div>
       </header>

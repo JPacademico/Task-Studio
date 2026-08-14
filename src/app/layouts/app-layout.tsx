@@ -8,7 +8,7 @@ import { CreateProjectDialog } from '@/features/project-management/ui/create-pro
 import { cn } from '@/shared/lib/cn';
 import { useIsTouchDevice } from '@/shared/lib/hooks';
 import { useNavPreferences } from '@/shared/lib/nav-preferences.store';
-import { AutumnFall, PageLoader, RouteBoundary, WanderingEye } from '@/shared/ui';
+import { AutumnFall, PageLoader, RouteBoundary, RuneScribe, WanderingEye } from '@/shared/ui';
 import { HiddenSidebar } from '@/widgets/hidden-sidebar/ui/hidden-sidebar';
 import { ProjectRail } from '@/widgets/project-rail/ui/project-rail';
 import { TopNavigation } from '@/widgets/top-navigation/ui/top-navigation';
@@ -65,6 +65,11 @@ export const AppLayout = () => {
           aria-hidden and pointer-events-none, so it sits between the content
           and the chrome without ever being able to take a click. */}
       <AutumnFall />
+
+      {/* Something keeps carving runes on the walls. Same contract as the two
+          above: one skin only, nothing under `prefers-reduced-motion`, fixed,
+          aria-hidden and pointer-events-none. */}
+      <RuneScribe />
 
       <div
         className={cn(

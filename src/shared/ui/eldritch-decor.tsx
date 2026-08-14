@@ -65,7 +65,7 @@ const Tendril = ({ index }: { index: number }) => {
       viewBox="0 0 44 48"
       fill="none"
       aria-hidden
-      className="eldritch-tendril absolute h-14 w-11"
+      className="eldritch-tendril absolute h-10 w-8"
       style={
         {
           // Spread down the seam with an offset that is not a clean fraction,
@@ -73,8 +73,13 @@ const Tendril = ({ index }: { index: number }) => {
           top: `${4 + index * 13.4}%`,
           // Read by the joints below. Per-limb, so seven of them never move
           // in step.
-          '--tendril-duration': `${(4.6 + (index % 3) * 1.5).toFixed(1)}s`,
-          '--tendril-delay': `${(index * 0.63).toFixed(2)}s`,
+          //
+          // Roughly half what they were. At four to seven seconds a limb the
+          // set read as underwater weed rather than as something gripping the
+          // page — slow enough that you had to watch it to see it move at all.
+          // Two to four is the speed of something alive and impatient.
+          '--tendril-duration': `${(2.3 + (index % 3) * 0.8).toFixed(1)}s`,
+          '--tendril-delay': `${(index * 0.31).toFixed(2)}s`,
         } as CSSProperties
       }
     >

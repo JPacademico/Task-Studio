@@ -7,6 +7,7 @@ import { ELDRITCH_GLYPHS } from './eldritch-icons';
 import type { GlyphSet, NavGlyphKey } from './glyph-kit';
 import { HAZARD_GLYPHS } from './hazard-icons';
 import { NEWSPAPER_GLYPHS } from './newspaper-icons';
+import { RUNIC_GLYPHS } from './runic-icons';
 import { SPACE_GLYPHS } from './space-icons';
 
 /**
@@ -25,6 +26,7 @@ const GLYPH_SETS: Partial<Record<ThemeSkin, GlyphSet>> = {
   NEWSPAPER: NEWSPAPER_GLYPHS,
   ELDRITCH: ELDRITCH_GLYPHS,
   AUTUMN: AUTUMN_GLYPHS,
+  RUNIC: RUNIC_GLYPHS,
 };
 
 interface NavGlyphProps {

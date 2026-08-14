@@ -27,6 +27,13 @@ export { SpaceMark } from './space-icons';
 export { HazardMark } from './hazard-icons';
 export { NewspaperMark } from './newspaper-icons';
 export { EldritchMark } from './eldritch-icons';
-export { EldritchTendrils, GazeArrow, WanderingEye } from './eldritch-decor';
+export { EldritchTendrils, WanderingEye } from './eldritch-decor';
 export { AutumnMark } from './autumn-icons';
 export { AutumnFall, AutumnHedge } from './autumn-decor';
+export { RunicMark } from './runic-icons';
+export { RunicText } from './runic-text';
+export { RuneScribe } from './runic-decor';
+// The one arrow every surface asks for. `GazeArrow` and `RuneArrow` are the
+// drawings behind it and are not exported: a page should ask for "next", not
+// for a particular skin's idea of it.
+export { DirectionArrow } from './direction-arrow';

@@ -90,3 +90,14 @@ export interface UserOverview {
   pinnedProjects: number;
   generatedAt: string;
 }
+
+/**
+ * The three counters a single task write can move, as signed deltas.
+ *
+ * Only these three: `projects` and `pinnedProjects` change on writes that
+ * already refetch the whole overview, and inventing a delta for them would be
+ * two more chances to be wrong for no perceptible gain.
+ */
+export type OverviewDelta = Partial<
+  Pick<UserOverview, 'openTasks' | 'completedTasks' | 'overdueTasks'>
+>;
