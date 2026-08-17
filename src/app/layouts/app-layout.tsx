@@ -8,7 +8,15 @@ import { CreateProjectDialog } from '@/features/project-management/ui/create-pro
 import { cn } from '@/shared/lib/cn';
 import { useIsTouchDevice } from '@/shared/lib/hooks';
 import { useNavPreferences } from '@/shared/lib/nav-preferences.store';
-import { AutumnFall, PageLoader, RouteBoundary, RuneScribe, WanderingEye } from '@/shared/ui';
+import {
+  AutumnFall,
+  BubbleRise,
+  EmberRise,
+  PageLoader,
+  RouteBoundary,
+  RuneScribe,
+  WanderingEye,
+} from '@/shared/ui';
 import { HiddenSidebar } from '@/widgets/hidden-sidebar/ui/hidden-sidebar';
 import { ProjectRail } from '@/widgets/project-rail/ui/project-rail';
 import { TopNavigation } from '@/widgets/top-navigation/ui/top-navigation';
@@ -70,6 +78,13 @@ export const AppLayout = () => {
           above: one skin only, nothing under `prefers-reduced-motion`, fixed,
           aria-hidden and pointer-events-none. */}
       <RuneScribe />
+
+      {/* Bubbles going up, and embers going up — the same mechanic read in two
+          worlds, and the same contract as everything above. Both are pure CSS
+          fields with no scheduler, so on the eleven skins that are neither of
+          these they cost one `null` return each. */}
+      <BubbleRise />
+      <EmberRise />
 
       <div
         className={cn(

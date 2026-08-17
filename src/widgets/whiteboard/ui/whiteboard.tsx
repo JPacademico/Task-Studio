@@ -82,26 +82,15 @@ const adoptStroke = (stroke: WhiteboardStrokeData): WhiteboardStrokeData =>
     : stroke;
 
 /** Keeps an image note inside a sane box whatever the source resolution is. */
-const readImageSize = (file: File): Promise<{ width: number; height: number }> =>
-  new Promise((resolve) => {
-    const url = URL.createObjectURL(file);
-    const image = new Image();
+const fitImage = (naturalWidth: number, naturalHeight: number) => {
+  const width = Math.min(320, Math.max(140, naturalWidth));
+  const scale = width / (naturalWidth || width);
+  return {
+    width: Math.round(width),
+    height: Math.round((naturalHeight || width) * scale) + 28,
+  };
+};
 
-    image.onload = () => {
-      URL.revokeObjectURL(url);
-      const width = Math.min(320, Math.max(140, image.naturalWidth));
-      const scale = width / (image.naturalWidth || width);
-      resolve({
-        width: Math.round(width),
-        height: Math.round((image.naturalHeight || width) * scale) + 28,
-      });
-    };
-    image.onerror = () => {
-      URL.revokeObjectURL(url);
-      resolve({ width: 240, height: 200 });
-    };
-    image.src = url;
-  });
 
 /**
  * The project's shared canvas.
@@ -362,10 +351,11 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
   const handleAddImage = async (file: File) => {
     setIsUploading(true);
     try {
-      const [size, uploaded] = await Promise.all([
-        readImageSize(file),
-        uploadImage(file, 'notes'),
-      ]);
+      // One decode: `uploadImage` downscales before sending and hands back the
+      // dimensions of what it produced, so measuring the file separately would
+      // be decoding the same photograph twice. See the note on the personal
+      // board, which had the same pair of calls.
+      const uploaded = await uploadImage(file, 'notes');
 
       createNote.mutate({
         content: '',
@@ -373,7 +363,7 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
         imageKey: uploaded.key,
         title: file.name.replace(/\.[^.]+$/, '').slice(0, 60),
         rotation: Math.round((Math.random() * 5 - 2.5) * 10) / 10,
-        ...size,
+        ...fitImage(uploaded.width, uploaded.height),
         ...dropPoint(),
       });
     } catch {

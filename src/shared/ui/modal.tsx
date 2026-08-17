@@ -80,7 +80,13 @@ export const Modal = ({
             aria-modal="true"
             aria-label={title}
             className={cn(
-              'panel relative z-10 flex max-h-[92vh] w-full flex-col overflow-hidden',
+              // `ui-modal` carries no styles of its own — it is a hook so a skin
+              // can treat a dialog differently from the cards behind it. A
+              // dialog is dense, temporary and read at close range, which is
+              // where a heavy material stops being atmosphere and starts being
+              // interference; see the underwater and volcano rules in
+              // `index.css`.
+              'ui-modal panel relative z-10 flex max-h-[92vh] w-full flex-col overflow-hidden',
               'rounded-b-none sm:max-w-lg sm:rounded-3xl',
               className,
             )}

@@ -99,6 +99,21 @@ export const SkinMock = ({ preview, scale = 1, className }: SkinMockProps) => {
         fontFamily: preview.font,
       }}
     >
+      {/* Underwater: the caustic net over the whole page, at mock scale.
+          Same two crossed gradients as the real texture — the angles matter
+          more than the periods here, because at 96px tall the net has to read
+          as broken light in about four cells. */}
+      {preview.caustic && (
+        <span
+          className="absolute inset-0"
+          style={{
+            backgroundImage:
+              `repeating-linear-gradient(19deg, transparent 0 ${px(7)}px, ${preview.caustic}59 ${px(7)}px ${px(9)}px, transparent ${px(9)}px ${px(13)}px),` +
+              `repeating-linear-gradient(-19deg, transparent 0 ${px(11)}px, ${preview.caustic}40 ${px(11)}px ${px(13)}px, transparent ${px(13)}px ${px(18)}px)`,
+          }}
+        />
+      )}
+
       {/* Newsprint: a halftone screen over the whole page, as on the real one. */}
       {preview.halftone && (
         <span
@@ -231,6 +246,20 @@ export const SkinMock = ({ preview, scale = 1, className }: SkinMockProps) => {
               />
             )}
 
+            {/* Volcano: the melt showing at the bottom seam of every plate.
+                Drawn on both cards rather than one, because on the real skin
+                it is on every raised object without exception — that is what
+                makes it read as a material property and not a highlight. */}
+            {preview.molten && (
+              <span
+                className="absolute inset-x-0 bottom-0"
+                style={{
+                  height: px(2.5),
+                  background: `linear-gradient(to right, ${preview.molten[0]}99, ${preview.molten[1]} 50%, ${preview.molten[0]}99)`,
+                }}
+              />
+            )}
+
             {/* Hazard: every vessel has something in the bottom of it. */}
             {preview.sludge && (
               <span
@@ -253,6 +282,45 @@ export const SkinMock = ({ preview, scale = 1, className }: SkinMockProps) => {
           style={{
             width: px(5),
             background: `linear-gradient(to right, ${preview.edge} 0 ${px(1.5)}px, ${preview.rune} ${px(1.5)}px ${px(3)}px, transparent)`,
+          }}
+        />
+      )}
+
+      {/* Underwater: three on their way up. Last but one in the mock, so they
+          pass in front of the cards — which is where the real ones are. */}
+      {preview.caustic && (
+        <>
+          {[
+            { left: '22%', top: '52%', size: px(7) },
+            { left: '58%', top: '26%', size: px(5) },
+            { left: '80%', top: '64%', size: px(4) },
+          ].map((bubble, index) => (
+            <span
+              key={index}
+              className="absolute rounded-full"
+              style={{
+                left: bubble.left,
+                top: bubble.top,
+                height: bubble.size,
+                width: bubble.size,
+                border: `1px solid ${preview.caustic}`,
+                background: `radial-gradient(circle at 30% 26%, ${preview.caustic}d9 0 14%, transparent 46%)`,
+                opacity: 0.8,
+              }}
+            />
+          ))}
+        </>
+      )}
+
+      {/* Volcano: the caldera glowing under the bottom edge of the page. The
+          real skin anchors this below the viewport, so the mock anchors it
+          below its own frame — the point is that the source is off-screen. */}
+      {preview.molten && (
+        <span
+          className="absolute inset-x-0 bottom-0"
+          style={{
+            height: px(30),
+            background: `radial-gradient(110% 100% at 50% 118%, ${preview.molten[0]}80, transparent 66%)`,
           }}
         />
       )}

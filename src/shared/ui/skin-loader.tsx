@@ -134,6 +134,26 @@ const BODY: Record<ThemeSkin, ReactElement> = {
       </svg>
     </span>
   ),
+
+  // Not a machine working. Something is breathing, and these are what is left
+  // over — three bubbles wobbling their way out on their own schedule.
+  UNDERWATER: (
+    <span className="loader-bubbles">
+      <i />
+      <i />
+      <i />
+    </span>
+  ),
+
+  // Not a progress indicator: pressure. It swells for nine tenths of the cycle
+  // and lets go in the last tenth, which is this skin's motion curve drawn as
+  // a loop.
+  VOLCANO: (
+    <span className="loader-magma">
+      <i />
+      <b />
+    </span>
+  ),
 };
 
 interface SkinLoaderProps {

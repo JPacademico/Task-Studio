@@ -81,22 +81,6 @@ const fitImage = (naturalWidth: number, naturalHeight: number) => {
   return { width: Math.round(width), height: Math.round((naturalHeight || width) * scale) + 28 };
 };
 
-const readImageSize = (file: File): Promise<{ width: number; height: number }> =>
-  new Promise((resolve) => {
-    const url = URL.createObjectURL(file);
-    const image = new Image();
-
-    image.onload = () => {
-      URL.revokeObjectURL(url);
-      resolve(fitImage(image.naturalWidth, image.naturalHeight));
-    };
-    image.onerror = () => {
-      URL.revokeObjectURL(url);
-      resolve({ width: 240, height: 200 });
-    };
-    image.src = url;
-  });
-
 /**
  * The personal Post-it board: a free canvas of draggable objects, separate from
  * project and task notes.
@@ -194,11 +178,20 @@ const NotesBoardPage = () => {
   const handleAddImage = async (file: File) => {
     setIsUploading(true);
     try {
-      // Measure before uploading so the note is created at the right aspect.
-      const [size, uploaded] = await Promise.all([
-        readImageSize(file),
-        uploadImage(file, 'notes'),
-      ]);
+      /*
+       * One decode, not two.
+       *
+       * This used to race `readImageSize` against the upload, which meant the
+       * file was decoded twice — once to measure it and once to send it. Now
+       * that `uploadImage` downscales before sending, it already knows the
+       * dimensions of what it produced, so the measurement comes back with the
+       * upload for free. On a 12-megapixel phone photo that is a whole redundant
+       * decode removed from the slowest device most likely to be doing this.
+       *
+       * The aspect ratio is unchanged by the downscale, so `fitImage` sizes the
+       * note identically either way.
+       */
+      const uploaded = await uploadImage(file, 'notes');
 
       createNote.mutate({
         content: '',
@@ -206,7 +199,7 @@ const NotesBoardPage = () => {
         imageKey: uploaded.key,
         title: file.name.replace(/\.[^.]+$/, '').slice(0, 60),
         rotation: Math.round((Math.random() * 5 - 2.5) * 10) / 10,
-        ...size,
+        ...fitImage(uploaded.width, uploaded.height),
         ...dropPoint(),
       });
     } catch {

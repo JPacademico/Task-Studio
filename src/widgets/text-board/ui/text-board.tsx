@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Download,
@@ -12,10 +12,12 @@ import {
 import { toast } from 'sonner';
 
 import {
+  useAdoptDocument,
   useCreateDocument,
   useDeleteDocument,
   useProjectDocument,
   useProjectDocuments,
+  useProjectDocumentsRealtime,
   useUpdateDocument,
 } from '@/entities/document/model/queries';
 import type { ProjectDocument } from '@/entities/document/model/types';
@@ -143,6 +145,39 @@ export const TextBoard = ({ projectId, tasks = [] }: TextBoardProps) => {
   const updateDocument = useUpdateDocument();
   const deleteDocument = useDeleteDocument();
 
+  /** Set when a teammate saves the page you have open. Cleared on reload. */
+  const [remoteEdit, setRemoteEdit] = useState<ProjectDocument | null>(null);
+
+  /*
+   * A teammate's save arrives while you are reading.
+   *
+   * If the page is only open for reading, take it — that is what "live" means,
+   * and there is nothing to lose. If it is open for *editing*, refuse to touch
+   * the buffer and raise a notice instead: this board is last-write-wins by
+   * design (see the note on the component), and silently replacing somebody's
+   * half-written paragraph with a colleague's version is the one failure this
+   * feature must not have.
+   */
+  const handleRemoteEdit = useCallback(
+    (document: ProjectDocument) => {
+      if (isEditing || isDirty) {
+        setRemoteEdit(document);
+        return;
+      }
+
+      setTitle(document.title);
+      draftRef.current = document.content ?? '';
+    },
+    [isDirty, isEditing],
+  );
+
+  const adoptDocument = useAdoptDocument();
+
+  useProjectDocumentsRealtime(projectId, {
+    openDocumentId: selectedId ?? undefined,
+    onRemoteEdit: handleRemoteEdit,
+  });
+
   // Open the most recent page on arrival, so the tab is never an empty frame
   // when there is something to read.
   useEffect(() => {
@@ -156,6 +191,8 @@ export const TextBoard = ({ projectId, tasks = [] }: TextBoardProps) => {
     setIsDirty(false);
     setIsEditing(false);
     setConfirmingDelete(false);
+    // Whatever a colleague did to the previous page is no longer relevant.
+    setRemoteEdit(null);
   }, [open]);
 
   const grouped = useMemo(() => {
@@ -502,7 +539,55 @@ export const TextBoard = ({ projectId, tasks = [] }: TextBoardProps) => {
                   )}
                 </div>
 
+                {/*
+                  Somebody else saved this page while you were writing in it.
+
+                  Offered rather than applied. Taking it would throw away
+                  whatever is in the editor, and this board has no operational
+                  transform to merge the two — so the choice belongs to the
+                  person whose words are at stake. Reloading is one click; the
+                  notice sits there until it is taken or the page is closed.
+                */}
+                {remoteEdit && (
+                  <div className="mb-2 flex flex-wrap items-center gap-2 rounded-xl border border-warning/40 bg-warning/10 px-3 py-2">
+                    <span className="text-[11px] text-content-muted">
+                      {remoteEdit.updatedBy?.displayName ?? 'Someone'} saved this page while you
+                      were editing. Your changes are still here.
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="ml-auto"
+                      onClick={() => {
+                        // Writing it into the cache is what actually swaps the
+                        // page: `open` changes, the effect above resets the
+                        // local state from it, and the editor remounts because
+                        // its key carries `updatedAt`.
+                        adoptDocument(remoteEdit);
+                      }}
+                    >
+                      Load their version
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setRemoteEdit(null)}>
+                      Keep mine
+                    </Button>
+                  </div>
+                )}
+
                 <RichTextEditor
+                  /*
+                    Keyed on the saved revision, not just the id.
+
+                    The editor deliberately syncs its surface only when
+                    `documentId` changes (see the note there) — `initialHtml`
+                    changing is ignored, because it changes identity on every
+                    render. That is right while you are typing and wrong the
+                    moment the underlying page is genuinely replaced: after a
+                    save, or after adopting a teammate's version. Putting
+                    `updatedAt` in the key makes "a new stored revision" mean "a
+                    new editing surface", which is exactly the intent.
+                  */
+                  key={`${open.id}-${open.updatedAt}`}
                   className="min-h-0 flex-1"
                   documentId={open.id}
                   initialHtml={open.content ?? ''}

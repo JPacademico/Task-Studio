@@ -43,8 +43,12 @@ const DISCARDED_TAGS = new Set([
 
 const ALLOWED_ATTRIBUTES: Record<string, Set<string>> = {
   A: new Set(['href', 'title']),
-  IMG: new Set(['src', 'alt', 'width', 'height']),
-  VIDEO: new Set(['src', 'controls', 'width', 'height', 'poster']),
+  // `loading` and `decoding` are enumerated attributes with a fixed, inert set
+  // of values — they cannot carry a URL or a handler. They are on the list
+  // because the editor writes `loading="lazy"` on every inserted image, and an
+  // allow-list that dropped it would silently undo that on the first save.
+  IMG: new Set(['src', 'alt', 'width', 'height', 'loading', 'decoding']),
+  VIDEO: new Set(['src', 'controls', 'width', 'height', 'poster', 'preload']),
   FONT: new Set(['color', 'face', 'size']),
 };
 

@@ -1781,6 +1781,548 @@
     color-scheme: dark;
   }
 
+  /* -----------------------------------------------------------------------
+   * Skin: UNDERWATER — everything on this screen is submerged.
+   *
+   * Four physical claims, and they are the skin:
+   *
+   *   - **The light is above you and it is broken.** The surface of the water
+   *     is the only lamp, so a caustic net lies across every panel and nothing
+   *     is evenly lit. This is the loudest thing the skin does and the reason
+   *     it cannot be mistaken for a blue theme. The net is deliberately *not*
+   *     animated: `background-position` is not a compositable property, so
+   *     drifting it would repaint every panel on the page every frame. The
+   *     movement in this skin lives on two elements instead — the kelp and the
+   *     bubbles — and both of those animate transforms only.
+   *   - **Depth eats colour from the warm end.** Red goes first, then green,
+   *     then everything but blue. So the *deeper* a surface sits the more cyan
+   *     it is, and a raised surface has come up toward the light and warms.
+   *     That inverts the usual sunken/raised relationship, which everywhere
+   *     else in this app is purely a lightness step.
+   *   - **Everything is buoyant.** Radii are the largest in the catalogue,
+   *     borders are soft, and nothing has a sharp corner — water rounds what
+   *     it touches. The motion curve is the softest here too: things drift in,
+   *     overshoot, and rock back rather than landing (see `skin-motion.ts`).
+   *   - **Things rise.** Bubbles go up the page on their own schedule, which
+   *     is the one part of the skin that happens *to* the page rather than
+   *     being a property of a surface. See `BubbleRise`.
+   *
+   * Light is the shallows over pale sand at midday. Dark is four hundred
+   * metres down, where the only light left is the light things make.
+   * --------------------------------------------------------------------- */
+  [data-skin='underwater'] {
+    /*
+     * Shallow water over sand.
+     *
+     * Read the three surface tones as three depths rather than three greys:
+     * `sunken` is the furthest from the surface and has lost the most red,
+     * `raised` is nearest and keeps a little warmth in it. The gap between them
+     * is therefore a *hue* shift as much as a lightness one, which is what
+     * stops the skin reading as one flat blue with a highlight.
+     */
+    --surface: 186 224 226;
+    --surface-raised: 214 241 240;
+    --surface-sunken: 146 200 210;
+    --edge: 58 130 146;
+    --content: 8 46 58;
+    --content-muted: 34 88 104;
+    --content-faint: 82 134 148;
+    /* Deep enough that pale lettering on a filled control clears 7:1. */
+    --brand: 10 94 110;
+    --brand-soft: 186 232 236;
+    --brand-contrast: 240 253 253;
+    --positive: 22 104 86;
+    --warning: 150 106 16;
+    /* Coral. The one warm thing down here, and the only colour that survives
+       the depth because it is lit from close up rather than from above. */
+    --danger: 172 51 44;
+
+    /* Water rounds everything it touches, and it has had a long time. */
+    --radius-sm: 0.75rem;
+    --radius-md: 1rem;
+    --radius-lg: 1.375rem;
+    --radius-xl: 1.75rem;
+    --radius-2xl: 2.25rem;
+    --radius-3xl: 3rem;
+
+    --font-display: 'Comfortaa', 'Quicksand', 'Varela Round', 'Trebuchet MS', system-ui,
+      sans-serif;
+    --font-sans: 'Quicksand', 'Varela Round', 'Nunito', 'Trebuchet MS', system-ui, sans-serif;
+    --font-hand: 'Caveat', 'Segoe Script', cursive;
+
+    --panel-border-width: 1px;
+    /*
+     * Nothing down here casts a hard shadow.
+     *
+     * Light arriving through water is scattered before it gets anywhere, so a
+     * submerged object has no crisp edge under it — it has a large, soft, and
+     * distinctly *blue* pool, because the shadow is made of the same water
+     * everything else is seen through. The top rim catches the surface above.
+     */
+    --shadow-panel:
+      inset 0 1px 0 rgb(255 255 255 / 0.6),
+      0 26px 58px -28px rgb(var(--tide-deep) / 0.55);
+    --press-travel: 0px;
+
+    /*
+     * Water, at three scales.
+     *
+     * The same "structure at every distance" rule the other heavy skins are
+     * built on, expressed in the one material that has no structure of its own:
+     *
+     *   1. The caustic net — two repeating gradients crossed at ±19°, which is
+     *      what the broken surface actually projects onto anything below it.
+     *      The crossing is the whole trick: one set of bands is a stripe, two
+     *      sets at an odd angle to each other is a net.
+     *   2. The godray, raking down from the top-left the way it does on every
+     *      surface here, so the light in the skin has one consistent source.
+     *   3. Marine snow — the particulate that is always falling through open
+     *      water, for close up.
+     *   4. The depth gradient: lighter at the top of the box, bluer at the
+     *      bottom, because down is always further from the lamp.
+     *
+     * The two caustic periods are 37px and 53px — both prime, so the net never
+     * resolves into a repeating diamond you can count.
+     */
+    --panel-texture:
+      repeating-linear-gradient(
+        19deg,
+        transparent 0 22px,
+        rgb(255 255 255 / 0.3) 22px 26px,
+        rgb(255 255 255 / 0.1) 26px 30px,
+        transparent 30px 37px
+      ),
+      repeating-linear-gradient(
+        -19deg,
+        transparent 0 34px,
+        rgb(255 255 255 / 0.26) 34px 38px,
+        rgb(255 255 255 / 0.08) 38px 43px,
+        transparent 43px 53px
+      ),
+      linear-gradient(158deg, rgb(255 255 255 / 0.34) 0 18%, transparent 46%),
+      radial-gradient(rgb(255 255 255 / 0.5) 0.6px, transparent 0.7px),
+      linear-gradient(180deg, transparent 40%, rgb(var(--tide-deep) / 0.14));
+    --panel-texture-size: auto, auto, auto, 7px 7px, auto;
+
+    /*
+     * The water column itself.
+     *
+     * Two shafts of light coming down from off the top of the screen at
+     * different angles and widths, and the dark below them. Both shafts are
+     * anchored above the viewport rather than inside it, so the page reads as
+     * something you are *under* rather than a gradient someone applied.
+     */
+    --page-wash:
+      linear-gradient(166deg, rgb(255 255 255 / 0.22) 0 12%, transparent 42%),
+      linear-gradient(196deg, rgb(255 255 255 / 0.15) 0 9%, transparent 38%),
+      radial-gradient(120% 90% at 50% 120%, rgb(var(--tide-deep) / 0.28), transparent 62%);
+
+    --btn-overlay: linear-gradient(180deg, rgb(255 255 255 / 0.55), rgb(var(--tide-deep) / 0.14));
+    --btn-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.75),
+      inset 0 -2px 6px rgb(var(--tide-deep) / 0.18),
+      0 6px 16px -8px rgb(var(--tide-deep) / 0.5);
+    /* Pressed, it does not travel — it compresses, the way a bubble does. */
+    --btn-shadow-active:
+      inset 0 3px 8px rgb(var(--tide-deep) / 0.34),
+      inset 0 -1px 0 rgb(255 255 255 / 0.4);
+    --btn-tracking: 0.04em;
+    --btn-weight: 600;
+    --control-border-width: 1px;
+    --field-shadow: inset 0 2px 7px rgb(var(--tide-deep) / 0.2);
+    --field-shadow-focus:
+      inset 0 2px 7px rgb(var(--tide-deep) / 0.14),
+      0 0 0 3px rgb(var(--tide-glow) / 0.35),
+      0 0 22px -4px rgb(var(--tide-glow) / 0.7);
+
+    /* A note is something that has been down here long enough to go soft. */
+    --postit-radius: 14px;
+    --postit-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.5),
+      0 18px 34px -18px rgb(var(--tide-deep) / 0.6);
+    --postit-texture: radial-gradient(rgb(255 255 255 / 0.4) 0.6px, transparent 0.7px);
+    --postit-texture-size: 7px 7px;
+
+    /* Water resists. Nothing here is quick and nothing here stops dead. */
+    --ease-ui: cubic-bezier(0.28, 0.9, 0.3, 1);
+    --speed-ui: 320ms;
+    --icon-stroke: 1.8;
+    --heading-transform: none;
+    --heading-tracking: 0.01em;
+
+    /* --- The skin's own materials ---------------------------------------- */
+
+    /* Bioluminescence: what is left when the sun cannot reach. Used for every
+       focus ring, every lit stroke and every hover in the skin. */
+    --tide-glow: 22 176 190;
+    /* The water below you, used for every shadow — nothing here goes to black,
+       because at depth there is no black, only more blue. */
+    --tide-deep: 6 54 78;
+    /* Coral and anemone: the accents that are lit from close range. */
+    --tide-coral: 226 106 84;
+
+    /* The kelp standing in the corner of the page. */
+    --tide-kelp: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='340' viewBox='0 0 240 340'%3E%3Cg fill='none' stroke='%232f7f74' stroke-width='7' stroke-linecap='round'%3E%3Cpath d='M96 340c-14-58-6-108 14-152 18-40 26-78 18-120'/%3E%3Cpath d='M150 340c10-52 4-96-14-136-16-36-20-70-12-108'/%3E%3C/g%3E%3Cg fill='%232f7f74' fill-opacity='.75'%3E%3Cellipse cx='104' cy='232' rx='21' ry='9' transform='rotate(-28 104 232)'/%3E%3Cellipse cx='128' cy='170' rx='20' ry='8' transform='rotate(24 128 170)'/%3E%3Cellipse cx='108' cy='108' rx='18' ry='8' transform='rotate(-32 108 108)'/%3E%3Cellipse cx='158' cy='250' rx='19' ry='8' transform='rotate(30 158 250)'/%3E%3Cellipse cx='142' cy='188' rx='17' ry='7' transform='rotate(-26 142 188)'/%3E%3C/g%3E%3C/svg%3E");
+
+    color-scheme: light;
+  }
+
+  [data-skin='underwater'].dark {
+    /*
+     * Four hundred metres down.
+     *
+     * No sunlight reaches here at all, which changes what the skin *is* rather
+     * than just how bright it is: the caustic net has nothing to project it, so
+     * the light in the dark palette comes from living things instead. Every
+     * white in the light palette becomes `--tide-glow` here — same declarations,
+     * different source — and that is why the dark mode reads as a different
+     * place rather than as the same place with the brightness down.
+     */
+    --surface: 5 18 32;
+    --surface-raised: 11 32 50;
+    --surface-sunken: 2 11 21;
+    --edge: 30 82 104;
+    --content: 214 240 246;
+    --content-muted: 138 180 198;
+    --content-faint: 92 130 150;
+    --brand: 94 226 226;
+    --brand-soft: 10 58 72;
+    --brand-contrast: 2 16 24;
+    --positive: 92 216 178;
+    --warning: 240 194 96;
+    --danger: 255 126 108;
+
+    --tide-glow: 96 236 234;
+    --tide-deep: 0 4 10;
+    --tide-coral: 255 128 106;
+
+    --shadow-panel:
+      inset 0 1px 0 rgb(var(--tide-glow) / 0.12),
+      0 30px 64px -30px rgb(0 0 0);
+
+    /* The same four layers with the lamp taken away. The caustic net survives
+       only as the faintest suggestion — something is still moving up there,
+       far too far away to light anything — and the marine snow becomes the
+       brightest thing on the panel, because down here it is lit by the things
+       swimming past it. */
+    --panel-texture:
+      repeating-linear-gradient(
+        19deg,
+        transparent 0 22px,
+        rgb(var(--tide-glow) / 0.05) 22px 26px,
+        transparent 26px 37px
+      ),
+      repeating-linear-gradient(
+        -19deg,
+        transparent 0 34px,
+        rgb(var(--tide-glow) / 0.04) 34px 38px,
+        transparent 38px 53px
+      ),
+      linear-gradient(158deg, rgb(var(--tide-glow) / 0.07) 0 18%, transparent 46%),
+      radial-gradient(rgb(var(--tide-glow) / 0.24) 0.6px, transparent 0.7px),
+      linear-gradient(180deg, transparent 40%, rgb(0 0 0 / 0.4));
+
+    --page-wash:
+      radial-gradient(70% 50% at 18% 8%, rgb(var(--tide-glow) / 0.1), transparent 62%),
+      radial-gradient(60% 44% at 86% 32%, rgb(var(--brand) / 0.07), transparent 66%),
+      radial-gradient(120% 90% at 50% 120%, rgb(0 0 0 / 0.6), transparent 60%);
+
+    --btn-overlay: linear-gradient(180deg, rgb(var(--tide-glow) / 0.12), rgb(0 0 0 / 0.35));
+    --btn-shadow:
+      inset 0 1px 0 rgb(var(--tide-glow) / 0.2),
+      inset 0 -2px 6px rgb(0 0 0 / 0.6),
+      0 6px 16px -8px rgb(0 0 0);
+    --btn-shadow-active:
+      inset 0 3px 8px rgb(0 0 0 / 0.8),
+      inset 0 -1px 0 rgb(var(--tide-glow) / 0.14);
+    --field-shadow: inset 0 2px 7px rgb(0 0 0 / 0.7);
+    --field-shadow-focus:
+      inset 0 2px 7px rgb(0 0 0 / 0.6),
+      0 0 0 3px rgb(var(--tide-glow) / 0.4),
+      0 0 26px -4px rgb(var(--tide-glow) / 0.85);
+    --postit-shadow:
+      inset 0 1px 0 rgb(var(--tide-glow) / 0.14),
+      0 20px 38px -20px rgb(0 0 0);
+    --postit-texture: radial-gradient(rgb(var(--tide-glow) / 0.2) 0.6px, transparent 0.7px);
+
+    --tide-kelp: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='340' viewBox='0 0 240 340'%3E%3Cg fill='none' stroke='%2360ecea' stroke-width='7' stroke-linecap='round'%3E%3Cpath d='M96 340c-14-58-6-108 14-152 18-40 26-78 18-120'/%3E%3Cpath d='M150 340c10-52 4-96-14-136-16-36-20-70-12-108'/%3E%3C/g%3E%3Cg fill='%2360ecea' fill-opacity='.75'%3E%3Cellipse cx='104' cy='232' rx='21' ry='9' transform='rotate(-28 104 232)'/%3E%3Cellipse cx='128' cy='170' rx='20' ry='8' transform='rotate(24 128 170)'/%3E%3Cellipse cx='108' cy='108' rx='18' ry='8' transform='rotate(-32 108 108)'/%3E%3Cellipse cx='158' cy='250' rx='19' ry='8' transform='rotate(30 158 250)'/%3E%3Cellipse cx='142' cy='188' rx='17' ry='7' transform='rotate(-26 142 188)'/%3E%3C/g%3E%3C/svg%3E");
+
+    color-scheme: dark;
+  }
+
+  /* -----------------------------------------------------------------------
+   * Skin: VOLCANO — cooled crust, with the melt still under it.
+   *
+   * Four physical claims:
+   *
+   *   - **Every surface is a crust over something hotter.** A panel is not
+   *     coloured rock; it is a lid. That is why every raised object in this
+   *     skin carries a hot line along its *bottom* edge — the melt showing at
+   *     the seam — where every other skin puts its shadow.
+   *   - **The accent emits rather than reflects.** Colour here is a
+   *     temperature, on one ramp: crust → oxblood → orange → yellow-white. A
+   *     control does not become "the brand colour" when it activates, it gets
+   *     *hotter*, and the glow it throws is light it is making.
+   *   - **Crust fractures; it does not round.** Radii go to almost nothing,
+   *     borders are heavy, and the surfaces are crazed with a fracture network
+   *     that has no periodicity you can find.
+   *   - **Heat rises.** Embers go up the page — the exact inverse of the autumn
+   *     skin's leaves, and deliberately so. See `EmberRise`.
+   *
+   * Light is an ash field at midday: pumice, tuff and sulphur, with a fresh
+   * flow in it. Dark is the same mountain at night, when the flow is the only
+   * light for miles.
+   * --------------------------------------------------------------------- */
+  [data-skin='volcano'] {
+    /*
+     * Ash and pumice, not white.
+     *
+     * The light palette is deliberately the darkest "light" mode in the
+     * catalogue. A volcanic field in daylight is a mid-grey world — everything
+     * is covered in the same ash — and a bright white version of this skin
+     * would have nothing for the incandescence to read against. Every surface
+     * is pulled warm, because the ash is iron-rich and rusts.
+     */
+    --surface: 206 195 187;
+    --surface-raised: 228 219 211;
+    --surface-sunken: 172 159 150;
+    --edge: 92 74 64;
+    --content: 32 22 18;
+    --content-muted: 96 76 66;
+    --content-faint: 136 116 104;
+    /* Fresh flow. Deep enough that pale lettering on a filled control clears
+       7:1 — the brighter oranges in this skin are all light *sources* and are
+       never asked to sit behind text. */
+    --brand: 142 44 10;
+    --brand-soft: 250 218 194;
+    --brand-contrast: 255 246 236;
+    --positive: 55 90 47;
+    /* Sulphur, which is the one thing on a volcano that is genuinely yellow. */
+    --warning: 158 112 8;
+    /* Separated from the brand by hue rather than by lightness: the brand is
+       an orange flow, this is arterial. Next to each other they never read as
+       the same signal. */
+    --danger: 158 24 32;
+
+    /* Crust cracks square. */
+    --radius-sm: 1px;
+    --radius-md: 2px;
+    --radius-lg: 2px;
+    --radius-xl: 3px;
+    --radius-2xl: 4px;
+    --radius-3xl: 4px;
+
+    --font-display: 'Archivo Black', 'Anton', 'Impact', 'Haettenschweiler', 'Franklin Gothic Heavy',
+      sans-serif;
+    --font-sans: 'Archivo', 'Roboto Condensed', 'Franklin Gothic Medium', 'Segoe UI', system-ui,
+      sans-serif;
+    --font-hand: 'Rock Salt', 'Segoe Print', cursive;
+
+    --panel-border-width: 2px;
+    /*
+     * The signature of the whole skin, in three shadows.
+     *
+     * A cold rim along the top where the crust has set, then the hot line
+     * underneath — that is the melt showing at the bottom seam, and it is why a
+     * panel here reads as a lid rather than as a rectangle. The cast shadow is
+     * hard and short, because everything is sitting *on* the ground rather than
+     * floating over it.
+     */
+    --shadow-panel:
+      inset 0 2px 0 rgb(255 250 242 / 0.5),
+      inset 0 -3px 0 rgb(var(--lava-flow) / 0.5),
+      0 10px 20px -12px rgb(var(--lava-crust) / 0.9);
+    --press-travel: 2px;
+
+    /*
+     * Basalt, at three scales.
+     *
+     *   1. The crazing — three repeating gradients at 23°, 97° and 151°, each
+     *      with one thin line and a long gap. No two of those angles are
+     *      related and none of the periods share a factor, so the overlap never
+     *      closes into a lattice; it reads as a fracture network, which is
+     *      exactly what it is standing in for.
+     *   2. Vesicles — the gas bubbles frozen into the rock as it set, at two
+     *      sizes so the surface has pores rather than a dot screen.
+     *   3. The heat bloom coming up from the bottom edge of every panel, which
+     *      is the same claim the bottom-edge shadow makes, at a larger scale.
+     *
+     * Periods are 31px, 43px and 59px. All prime.
+     */
+    --panel-texture:
+      repeating-linear-gradient(
+        23deg,
+        transparent 0 30px,
+        rgb(var(--lava-crust) / 0.16) 30px 31px
+      ),
+      repeating-linear-gradient(
+        97deg,
+        transparent 0 42px,
+        rgb(var(--lava-crust) / 0.13) 42px 43px
+      ),
+      repeating-linear-gradient(
+        151deg,
+        transparent 0 58px,
+        rgb(var(--lava-crust) / 0.1) 58px 59px
+      ),
+      radial-gradient(rgb(var(--lava-crust) / 0.14) 1.1px, transparent 1.2px),
+      radial-gradient(rgb(var(--lava-crust) / 0.1) 0.5px, transparent 0.6px),
+      linear-gradient(0deg, rgb(var(--lava-flow) / 0.12), transparent 34%);
+    --panel-texture-size: auto, auto, auto, 17px 17px, 6px 6px, auto;
+
+    /*
+     * The caldera is below you and it is lit.
+     *
+     * The glow is anchored *under* the bottom edge of the viewport rather than
+     * inside it, so the page reads as standing on something rather than as
+     * having an orange gradient at the bottom. The ash cloud closes the top.
+     */
+    --page-wash:
+      radial-gradient(110% 60% at 50% 118%, rgb(var(--lava-flow) / 0.3), transparent 64%),
+      radial-gradient(80% 40% at 14% 108%, rgb(var(--lava-core) / 0.16), transparent 58%),
+      linear-gradient(180deg, rgb(var(--lava-crust) / 0.14), transparent 30%);
+
+    --btn-overlay:
+      linear-gradient(180deg, rgb(255 250 242 / 0.45), rgb(var(--lava-crust) / 0.2));
+    --btn-shadow:
+      inset 0 2px 0 rgb(255 250 242 / 0.55),
+      inset 0 -2px 0 rgb(var(--lava-flow) / 0.45);
+    /* Pressed, the crust gives and you see straight down into it. */
+    --btn-shadow-active:
+      inset 0 3px 8px rgb(var(--lava-crust) / 0.7),
+      inset 0 -1px 0 rgb(var(--lava-core) / 0.5);
+    --btn-tracking: 0.1em;
+    --btn-transform: uppercase;
+    --btn-weight: 700;
+    --control-border-width: 2px;
+    --field-shadow: inset 0 2px 7px rgb(var(--lava-crust) / 0.4);
+    --field-shadow-focus:
+      inset 0 2px 7px rgb(var(--lava-crust) / 0.3),
+      0 0 0 2px rgb(var(--lava-flow) / 0.6),
+      0 0 24px -4px rgb(var(--lava-core) / 0.8);
+
+    /* A note is a flake of crust that broke off and cooled where it landed. */
+    --postit-radius: 1px;
+    --postit-shadow:
+      inset 0 2px 0 rgb(255 250 242 / 0.4),
+      inset 0 -2px 0 rgb(var(--lava-flow) / 0.4),
+      0 12px 22px -12px rgb(var(--lava-crust) / 0.95);
+    --postit-texture: radial-gradient(rgb(var(--lava-crust) / 0.12) 1.1px, transparent 1.2px);
+    --postit-texture-size: 17px 17px;
+
+    /* Pressure, then failure — see the note on the curve in `skin-motion.ts`. */
+    --ease-ui: cubic-bezier(0.85, 0, 0.12, 1);
+    --speed-ui: 220ms;
+    --icon-stroke: 2.4;
+    --heading-transform: uppercase;
+    --heading-tracking: 0.04em;
+
+    /* --- The skin's own materials ---------------------------------------- */
+
+    /*
+     * One ramp, three stops, and everything in the skin is somewhere on it.
+     *
+     * `crust` is the cold end and is used for every shadow, so nothing here
+     * goes to neutral black — cooled basalt is brown-black, not grey-black.
+     * `flow` is the working accent. `core` is the hottest thing available and
+     * is rationed deliberately: it appears at the centre of a fissure, under a
+     * pressed control and nowhere else, because a colour that means "hottest"
+     * stops meaning anything the moment it is everywhere.
+     */
+    --lava-core: 255 218 122;
+    --lava-flow: 226 88 20;
+    --lava-crust: 54 34 28;
+
+    /* The vent standing in the corner of the page. */
+    --lava-vent: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='260' viewBox='0 0 300 260'%3E%3Cpath d='M0 260 118 44l38 66 34-40 110 190Z' fill='none' stroke='%236b4034' stroke-width='9' stroke-linejoin='round'/%3E%3Cpath d='M118 44l-26 60 34 22-20 48' fill='none' stroke='%23e25814' stroke-width='7' stroke-linecap='round'/%3E%3Cpath d='M190 70l14 46-30 20 22 40' fill='none' stroke='%23e25814' stroke-width='6' stroke-linecap='round' stroke-opacity='.7'/%3E%3C/svg%3E");
+
+    color-scheme: light;
+  }
+
+  [data-skin='volcano'].dark {
+    /*
+     * Night on the mountain, and the flow is the only light for miles.
+     *
+     * Basalt rather than black: every surface keeps a red-brown cast, because
+     * the one light source in the scene is orange and rock takes the colour of
+     * what lights it. This is the same argument the runic dark palette makes
+     * about blue, and it is the reason neither skin uses a neutral dark.
+     */
+    --surface: 14 10 10;
+    --surface-raised: 29 21 20;
+    --surface-sunken: 7 5 5;
+    --edge: 92 58 42;
+    --content: 246 232 222;
+    --content-muted: 180 156 144;
+    --content-faint: 128 106 96;
+    --brand: 255 124 44;
+    --brand-soft: 74 26 8;
+    --brand-contrast: 24 10 2;
+    --positive: 130 200 108;
+    --warning: 250 202 66;
+    --danger: 255 96 82;
+
+    --lava-core: 255 236 168;
+    --lava-flow: 255 112 26;
+    --lava-crust: 0 0 0;
+
+    /* At night the top rim is not lit by the sun — it is lit by the flow, from
+       below and behind. So the cold highlight goes away entirely and the hot
+       line under the panel gets stronger, which is the whole scene in two
+       declarations. */
+    --shadow-panel:
+      inset 0 1px 0 rgb(var(--lava-flow) / 0.16),
+      inset 0 -3px 0 rgb(var(--lava-flow) / 0.7),
+      0 14px 26px -14px rgb(0 0 0);
+
+    --panel-texture:
+      repeating-linear-gradient(
+        23deg,
+        transparent 0 30px,
+        rgb(var(--lava-flow) / 0.14) 30px 31px
+      ),
+      repeating-linear-gradient(
+        97deg,
+        transparent 0 42px,
+        rgb(var(--lava-flow) / 0.1) 42px 43px
+      ),
+      repeating-linear-gradient(
+        151deg,
+        transparent 0 58px,
+        rgb(var(--lava-flow) / 0.07) 58px 59px
+      ),
+      radial-gradient(rgb(0 0 0 / 0.5) 1.1px, transparent 1.2px),
+      radial-gradient(rgb(255 255 255 / 0.04) 0.5px, transparent 0.6px),
+      linear-gradient(0deg, rgb(var(--lava-flow) / 0.16), transparent 34%);
+
+    --page-wash:
+      radial-gradient(110% 60% at 50% 118%, rgb(var(--lava-flow) / 0.34), transparent 62%),
+      radial-gradient(80% 40% at 14% 108%, rgb(var(--lava-core) / 0.14), transparent 56%),
+      radial-gradient(90% 60% at 50% -10%, rgb(0 0 0 / 0.7), transparent 60%);
+
+    --btn-overlay: linear-gradient(180deg, rgb(var(--lava-flow) / 0.14), rgb(0 0 0 / 0.45));
+    --btn-shadow:
+      inset 0 1px 0 rgb(var(--lava-flow) / 0.24),
+      inset 0 -2px 0 rgb(var(--lava-flow) / 0.6);
+    --btn-shadow-active:
+      inset 0 3px 9px rgb(0 0 0 / 0.9),
+      inset 0 -1px 0 rgb(var(--lava-core) / 0.7);
+    --field-shadow: inset 0 2px 7px rgb(0 0 0 / 0.8);
+    --field-shadow-focus:
+      inset 0 2px 7px rgb(0 0 0 / 0.7),
+      0 0 0 2px rgb(var(--lava-flow) / 0.7),
+      0 0 28px -4px rgb(var(--lava-core) / 0.85);
+    --postit-shadow:
+      inset 0 1px 0 rgb(var(--lava-flow) / 0.2),
+      inset 0 -2px 0 rgb(var(--lava-flow) / 0.55),
+      0 14px 24px -14px rgb(0 0 0);
+    --postit-texture: radial-gradient(rgb(0 0 0 / 0.45) 1.1px, transparent 1.2px);
+
+    --lava-vent: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='260' viewBox='0 0 300 260'%3E%3Cpath d='M0 260 118 44l38 66 34-40 110 190Z' fill='none' stroke='%23472a22' stroke-width='9' stroke-linejoin='round'/%3E%3Cpath d='M118 44l-26 60 34 22-20 48' fill='none' stroke='%23ff701a' stroke-width='7' stroke-linecap='round'/%3E%3Cpath d='M190 70l14 46-30 20 22 40' fill='none' stroke='%23ff701a' stroke-width='6' stroke-linecap='round' stroke-opacity='.7'/%3E%3C/svg%3E");
+
+    color-scheme: dark;
+  }
+
   * {
     @apply border-edge;
   }
@@ -2125,6 +2667,127 @@
   [data-skin='runic'].dark body::after {
     --stave-low: 0.08;
     --stave-high: 0.26;
+  }
+
+  /*
+   * Kelp in the corner of the page, moving in the current.
+   *
+   * It sways rather than breathing, which is the difference between this and
+   * the standing stone: a stave is fixed and only its light changes, and
+   * nothing submerged is ever still. Pivoting about the seabed, because kelp is
+   * anchored at the bottom and free at the top — a frond rotating about its
+   * middle would be a frond floating in open water.
+   */
+  [data-skin='underwater'] body::after {
+    content: '';
+    position: fixed;
+    left: -30px;
+    bottom: -40px;
+    width: 240px;
+    height: 340px;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.2;
+    background-image: var(--tide-kelp);
+    background-size: contain;
+    background-repeat: no-repeat;
+    transform-origin: 50% 100%;
+    animation: kelp-sway 13s ease-in-out infinite;
+  }
+
+  [data-skin='underwater'].dark body::after {
+    opacity: 0.28;
+  }
+
+  @keyframes kelp-sway {
+    0%,
+    100% {
+      transform: rotate(-2.6deg) skewX(1.4deg);
+    }
+    50% {
+      transform: rotate(2.6deg) skewX(-1.4deg);
+    }
+  }
+
+  /*
+   * The vent on the horizon.
+   *
+   * It does not move — a mountain does not — but what is coming out of it does,
+   * so the whole mark pulses between two brightnesses on a long, uneven cycle.
+   * Anchored bottom-right rather than bottom-left, so it does not land in the
+   * same corner as every other skin's page mark.
+   */
+  [data-skin='volcano'] body::after {
+    content: '';
+    position: fixed;
+    right: -40px;
+    bottom: -30px;
+    width: 300px;
+    height: 260px;
+    z-index: -1;
+    pointer-events: none;
+    background-image: var(--lava-vent);
+    background-size: contain;
+    background-repeat: no-repeat;
+    --vent-low: 0.1;
+    --vent-high: 0.22;
+    opacity: var(--vent-low);
+    animation: vent-throb 9s ease-in-out infinite;
+  }
+
+  [data-skin='volcano'].dark body::after {
+    --vent-low: 0.16;
+    --vent-high: 0.4;
+  }
+
+  @keyframes vent-throb {
+    0%,
+    100% {
+      opacity: var(--vent-low);
+      filter: none;
+    }
+    50% {
+      opacity: var(--vent-high);
+      filter: drop-shadow(0 0 16px rgb(var(--lava-flow) / 0.6));
+    }
+  }
+
+  /*
+   * Headings, in two materials.
+   *
+   * Underwater a heading is seen *through* something, so it gets a soft light
+   * bloom rather than an edge — the one skin in the app whose headings are
+   * deliberately a touch less crisp than its body text, because everything at
+   * this depth is.
+   */
+  [data-skin='underwater'] h1,
+  [data-skin='underwater'] h2,
+  [data-skin='underwater'] h3 {
+    text-shadow: 0 1px 6px rgb(var(--tide-glow) / 0.28);
+  }
+
+  [data-skin='underwater'].dark h1,
+  [data-skin='underwater'].dark h2,
+  [data-skin='underwater'].dark h3 {
+    text-shadow: 0 0 10px rgb(var(--tide-glow) / 0.35);
+  }
+
+  /* Volcanic headings are struck into crust: a cold highlight above the stroke
+     and the melt showing under it. */
+  [data-skin='volcano'] h1,
+  [data-skin='volcano'] h2,
+  [data-skin='volcano'] h3 {
+    text-shadow:
+      0 -1px 0 rgb(255 250 242 / 0.45),
+      0 2px 0 rgb(var(--lava-crust) / 0.35);
+  }
+
+  [data-skin='volcano'].dark h1,
+  [data-skin='volcano'].dark h2,
+  [data-skin='volcano'].dark h3 {
+    text-shadow:
+      0 1px 0 rgb(0 0 0 / 0.9),
+      0 0 12px rgb(var(--lava-flow) / 0.4);
   }
 
   @keyframes stave-breathe {
@@ -3312,6 +3975,287 @@
     --paper-mould: none;
   }
 
+  /* ---------------------------------------------------------------------
+   * UNDERWATER — submerged, and lit from a surface that will not hold still.
+   * ------------------------------------------------------------------- */
+
+  [data-skin='underwater'] .ui-btn,
+  [data-skin='underwater'] .ui-filter,
+  [data-skin='underwater'] .ui-chip {
+    background-image: var(--btn-overlay);
+    box-shadow: var(--btn-shadow);
+  }
+
+  [data-skin='underwater'] .ui-btn:active,
+  [data-skin='underwater'] .ui-filter:active {
+    box-shadow: var(--btn-shadow-active);
+  }
+
+  /* Touch it and something lights up — the one thing that reliably happens
+     when you disturb water in the dark. */
+  [data-skin='underwater'] .ui-btn:hover,
+  [data-skin='underwater'] .ui-filter:hover {
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.8),
+      0 0 24px -4px rgb(var(--tide-glow) / 0.75);
+  }
+
+  /*
+   * Every submerged face in the app.
+   *
+   * One rule for panels, cards, section heads and the chrome that owns its own
+   * background, because they are all the same object: something with water in
+   * front of it. The caustic net and the godray are in `--panel-texture`, so
+   * all this rule adds is the surface highlight along the top rim — the light
+   * that got there first.
+   */
+  [data-skin='underwater'] .panel,
+  [data-skin='underwater'] .ui-textured,
+  [data-skin='underwater'] .ui-card,
+  [data-skin='underwater'] .ui-accordion,
+  [data-skin='underwater'] .ui-segment {
+    background-image: var(--panel-texture);
+    background-size: var(--panel-texture-size);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.6),
+      inset 0 -10px 20px -14px rgb(var(--tide-deep) / 0.35);
+  }
+
+  [data-skin='underwater'].dark .panel,
+  [data-skin='underwater'].dark .ui-textured,
+  [data-skin='underwater'].dark .ui-card,
+  [data-skin='underwater'].dark .ui-accordion,
+  [data-skin='underwater'].dark .ui-segment {
+    box-shadow:
+      inset 0 1px 0 rgb(var(--tide-glow) / 0.16),
+      inset 0 -10px 20px -14px rgb(0 0 0 / 0.6);
+  }
+
+  [data-skin='underwater'] .ui-accordion {
+    position: relative;
+  }
+
+  /* The waterline across the top of every section head: bright where the
+     surface is directly overhead, fading off to both sides. */
+  [data-skin='underwater'] .ui-accordion::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 2px;
+    pointer-events: none;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(var(--tide-glow) / 0.5) 24%,
+      rgb(255 255 255 / 0.85) 50%,
+      rgb(var(--tide-glow) / 0.5) 76%,
+      transparent
+    );
+  }
+
+  [data-skin='underwater'].dark .ui-accordion::before {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(var(--tide-glow) / 0.4) 24%,
+      rgb(var(--tide-glow) / 0.9) 50%,
+      rgb(var(--tide-glow) / 0.4) 76%,
+      transparent
+    );
+  }
+
+  [data-skin='underwater'] .nav-rail {
+    border-color: rgb(var(--edge) / 0.7);
+  }
+
+  /*
+   * The seam where a rail meets the page: the edge of a shaft of light.
+   *
+   * Not a glow and not a hole — this is *refraction*. A band that goes bright
+   * then immediately dark reads as light bending round an edge, which is what
+   * you actually see looking along any submerged boundary.
+   */
+  [data-skin='underwater'] .nav-rail::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  [data-skin='underwater'] .nav-rail--left::after {
+    inset: 0 0 0 auto;
+    width: 22px;
+    background: linear-gradient(
+      to right,
+      transparent,
+      rgb(var(--tide-glow) / 0.3) 62%,
+      rgb(255 255 255 / 0.5) 84%,
+      rgb(var(--tide-deep) / 0.35)
+    );
+  }
+
+  [data-skin='underwater'] .nav-rail--right::after {
+    inset: 0 auto 0 0;
+    width: 22px;
+    background: linear-gradient(
+      to left,
+      transparent,
+      rgb(var(--tide-glow) / 0.3) 62%,
+      rgb(255 255 255 / 0.5) 84%,
+      rgb(var(--tide-deep) / 0.35)
+    );
+  }
+
+  [data-skin='underwater'] .nav-rail--top::after {
+    inset: auto 0 0 0;
+    height: 12px;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(255 255 255 / 0.45) 70%,
+      rgb(var(--tide-deep) / 0.3)
+    );
+  }
+
+  /* ---------------------------------------------------------------------
+   * VOLCANO — cooled crust, and the melt at every seam.
+   * ------------------------------------------------------------------- */
+
+  [data-skin='volcano'] .ui-btn,
+  [data-skin='volcano'] .ui-filter,
+  [data-skin='volcano'] .ui-chip {
+    background-image: var(--btn-overlay);
+    box-shadow: var(--btn-shadow);
+  }
+
+  [data-skin='volcano'] .ui-btn:active,
+  [data-skin='volcano'] .ui-filter:active {
+    box-shadow: var(--btn-shadow-active);
+  }
+
+  /* Touch it and it gets hotter. Not brighter — hotter: the glow it throws is
+     light the control is making, which is why it spills past its own edge. */
+  [data-skin='volcano'] .ui-btn:hover,
+  [data-skin='volcano'] .ui-filter:hover {
+    box-shadow:
+      inset 0 -2px 0 rgb(var(--lava-core) / 0.8),
+      0 0 22px -4px rgb(var(--lava-flow) / 0.85);
+  }
+
+  [data-skin='volcano'] .ui-chip {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /*
+   * Every crust in the app.
+   *
+   * The hot line along the bottom is the entire skin in one declaration: it
+   * says the panel is a lid over something, rather than a shape with a colour.
+   * It goes on the *inside* bottom edge rather than under the box, because the
+   * melt is beneath the crust, not beneath the object.
+   */
+  [data-skin='volcano'] .panel,
+  [data-skin='volcano'] .ui-textured,
+  [data-skin='volcano'] .ui-card,
+  [data-skin='volcano'] .ui-accordion,
+  [data-skin='volcano'] .ui-segment {
+    background-image: var(--panel-texture);
+    background-size: var(--panel-texture-size);
+    box-shadow:
+      inset 0 2px 0 rgb(255 250 242 / 0.45),
+      inset 0 -3px 0 rgb(var(--lava-flow) / 0.45);
+  }
+
+  [data-skin='volcano'].dark .panel,
+  [data-skin='volcano'].dark .ui-textured,
+  [data-skin='volcano'].dark .ui-card,
+  [data-skin='volcano'].dark .ui-accordion,
+  [data-skin='volcano'].dark .ui-segment {
+    box-shadow:
+      inset 0 1px 0 rgb(var(--lava-flow) / 0.18),
+      inset 0 -3px 0 rgb(var(--lava-flow) / 0.65);
+  }
+
+  [data-skin='volcano'] .ui-accordion {
+    position: relative;
+  }
+
+  /* A fissure across the top of every section head — coolest at the ends where
+     it has had air, hottest in the middle where it is still open. */
+  [data-skin='volcano'] .ui-accordion::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    pointer-events: none;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(var(--lava-crust) / 0.6) 12%,
+      rgb(var(--lava-flow) / 0.9) 38%,
+      rgb(var(--lava-core)) 50%,
+      rgb(var(--lava-flow) / 0.9) 62%,
+      rgb(var(--lava-crust) / 0.6) 88%,
+      transparent
+    );
+    box-shadow: 0 0 14px -2px rgb(var(--lava-flow) / 0.7);
+  }
+
+  [data-skin='volcano'] .nav-rail {
+    border-color: rgb(var(--edge));
+  }
+
+  /*
+   * The seam where a rail meets the page: an open fissure.
+   *
+   * Three bands rather than a fade, because a cooling crack is genuinely
+   * banded — crust, then flow, then the core — and the bands are narrow and
+   * hard-edged so it reads as a crack rather than as a gradient someone put
+   * along the edge of a menu.
+   */
+  [data-skin='volcano'] .nav-rail::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  [data-skin='volcano'] .nav-rail--left::after {
+    inset: 0 -14px 0 auto;
+    width: 14px;
+    background: linear-gradient(
+      to right,
+      rgb(var(--lava-crust) / 0.5),
+      rgb(var(--lava-flow) / 0.85) 40%,
+      rgb(var(--lava-core) / 0.9) 58%,
+      transparent
+    );
+  }
+
+  [data-skin='volcano'] .nav-rail--right::after {
+    inset: 0 auto 0 -14px;
+    width: 14px;
+    background: linear-gradient(
+      to left,
+      rgb(var(--lava-crust) / 0.5),
+      rgb(var(--lava-flow) / 0.85) 40%,
+      rgb(var(--lava-core) / 0.9) 58%,
+      transparent
+    );
+  }
+
+  [data-skin='volcano'] .nav-rail--top::after {
+    inset: auto 0 -10px 0;
+    height: 10px;
+    background: linear-gradient(
+      to bottom,
+      rgb(var(--lava-core) / 0.85),
+      rgb(var(--lava-flow) / 0.7) 40%,
+      transparent
+    );
+  }
+
   [data-skin='space'] .nav-rail--top::after {
     inset: auto 0 0 0;
     height: 56px;
@@ -3428,6 +4372,59 @@
     background-size: auto, 100% 28px, 56px 100%;
   }
 
+  /*
+   * The seabed: ripples, not a grid.
+   *
+   * Sand under moving water forms parallel ripple marks perpendicular to the
+   * current, so this is one direction only — two out-of-phase wave sets rather
+   * than a mesh. A square grid on the floor of the ocean would be the one thing
+   * in this skin that a human being had ruled.
+   */
+  [data-skin='underwater'] .board-grid {
+    background-image:
+      repeating-linear-gradient(
+        84deg,
+        transparent 0 26px,
+        rgb(var(--tide-deep) / 0.07) 26px 34px,
+        transparent 34px 52px
+      ),
+      repeating-linear-gradient(
+        84deg,
+        transparent 0 11px,
+        rgb(255 255 255 / 0.16) 11px 14px,
+        transparent 14px 23px
+      ),
+      radial-gradient(60% 40% at 30% 0%, rgb(255 255 255 / 0.12), transparent 70%);
+    background-size: auto, auto, auto;
+  }
+
+  /*
+   * A cooled flow field: the crust broken into plates.
+   *
+   * Coarse and irregular — the plates are large, the cracks between them are
+   * hot, and the three angles are the same primes the panel texture uses so the
+   * board reads as the same rock the cards are cut from.
+   */
+  [data-skin='volcano'] .board-grid {
+    background-image:
+      repeating-linear-gradient(
+        23deg,
+        transparent 0 86px,
+        rgb(var(--lava-flow) / 0.16) 86px 88px
+      ),
+      repeating-linear-gradient(
+        97deg,
+        transparent 0 118px,
+        rgb(var(--lava-flow) / 0.12) 118px 120px
+      ),
+      repeating-linear-gradient(
+        151deg,
+        transparent 0 142px,
+        rgb(var(--lava-crust) / 0.16) 142px 143px
+      );
+    background-size: auto, auto, auto;
+  }
+
   /* A galley: column rules on the baseline grid the type would have sat on. */
   [data-skin='newspaper'] .board-grid {
     background-image:
@@ -3525,6 +4522,22 @@
   [data-skin='runic'] .type-tag {
     font-size: 10px;
     letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  /* A rounded face sets wide, so the label loses the tracking rather than
+     gaining it. No caps: nothing in this skin has hard edges, including its
+     typography. */
+  [data-skin='underwater'] .type-tag {
+    font-size: 10.5px;
+    letter-spacing: 0.01em;
+  }
+
+  /* Stencilled onto rock. A heavy face at small sizes needs the tracking back
+     or the counters close up. */
+  [data-skin='volcano'] .type-tag {
+    font-size: 10px;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
   }
 
@@ -4331,6 +5344,371 @@
   }
 }
 
+/* --- UNDERWATER: it is not loading. Something is breathing. -------------- */
+
+/*
+ * Three bubbles leaving, on their own schedule.
+ *
+ * A bubble does not rise in a straight line — it wobbles, because it is
+ * deforming as it goes — so each one carries a horizontal drift on a different
+ * period from its climb. The two periods being coprime is the entire trick:
+ * the path never repeats within the life of the bubble, so three elements
+ * running the same two keyframes never look like three copies of one thing.
+ *
+ * They also *grow*. Pressure drops as a bubble rises, so it expands on the way
+ * up and goes fastest at the end, which is what the ease on the climb is doing.
+ */
+.loader-bubbles {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.loader-bubbles > i {
+  position: absolute;
+  bottom: 6%;
+  display: block;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  /* Lit from the top-left, like everything else in this skin. */
+  background:
+    radial-gradient(circle at 32% 28%, rgb(255 255 255 / 0.9) 0 12%, transparent 42%),
+    rgb(255 255 255 / 0.12);
+  animation: bubble-climb 2.8s cubic-bezier(0.5, 0, 0.7, 1) infinite;
+}
+
+.loader-bubbles > i:nth-child(1) {
+  left: 18%;
+  width: 26%;
+  height: 26%;
+}
+
+.loader-bubbles > i:nth-child(2) {
+  left: 44%;
+  width: 34%;
+  height: 34%;
+  animation-delay: 0.55s;
+}
+
+.loader-bubbles > i:nth-child(3) {
+  left: 70%;
+  width: 20%;
+  height: 20%;
+  animation-delay: 1.15s;
+}
+
+@keyframes bubble-climb {
+  0% {
+    transform: translate(0, 0) scale(0.5);
+    opacity: 0;
+  }
+  14% {
+    opacity: 0.95;
+  }
+  /* The wobble: three direction changes on the way up, none of them evenly
+     spaced, because a bubble is not a pendulum. */
+  32% {
+    transform: translate(-22%, -140%) scale(0.72);
+  }
+  58% {
+    transform: translate(18%, -300%) scale(0.86);
+  }
+  80% {
+    transform: translate(-10%, -400%) scale(1);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(4%, -470%) scale(1.15);
+    opacity: 0;
+  }
+}
+
+/* --- VOLCANO: it is not loading. Pressure is building. ------------------- */
+
+/*
+ * A bubble of melt swelling until the crust gives, then again.
+ *
+ * The whole gesture is in the timing rather than the shape: nine tenths of the
+ * cycle is the swell, and the burst is the last tenth. That ratio is the skin's
+ * motion curve expressed as a loop — nothing happens for a long time, and then
+ * everything does — and it is why this reads as pressure rather than as a
+ * pulsing dot.
+ *
+ * The ring is the shock leaving. It only exists during the burst, so there is
+ * nothing on screen during the swell except the blob getting hotter.
+ */
+.loader-magma {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.loader-magma > i,
+.loader-magma > b {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+}
+
+.loader-magma > i {
+  width: 46%;
+  height: 46%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgb(var(--lava-core)) 0 30%,
+    rgb(var(--lava-flow)) 62%,
+    rgb(var(--lava-crust)) 100%
+  );
+  animation: magma-swell 2.2s cubic-bezier(0.85, 0, 0.12, 1) infinite;
+}
+
+.loader-magma > b {
+  width: 46%;
+  height: 46%;
+  border: 2px solid rgb(var(--lava-flow));
+  opacity: 0;
+  animation: magma-burst 2.2s cubic-bezier(0.2, 0.8, 0.3, 1) infinite;
+}
+
+@keyframes magma-swell {
+  0% {
+    transform: scale(0.42);
+    filter: none;
+  }
+  /* The long build. It is still small at four fifths of the way through. */
+  80% {
+    transform: scale(0.86);
+    filter: drop-shadow(0 0 6px rgb(var(--lava-flow) / 0.7));
+  }
+  88% {
+    transform: scale(1.18);
+    filter: drop-shadow(0 0 16px rgb(var(--lava-core) / 0.95));
+  }
+  100% {
+    transform: scale(0.42);
+    filter: none;
+  }
+}
+
+@keyframes magma-burst {
+  0%,
+  84% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  90% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(2.3);
+    opacity: 0;
+  }
+}
+
+/* ==========================================================================
+ * Underwater decor: things leaving for the surface.
+ *
+ * Bubbles crossing the page on their own schedule, mounted once in the app
+ * shell. Same contract as the eldritch eye and the autumn fall — one skin only,
+ * nothing under `prefers-reduced-motion`, fixed, aria-hidden and
+ * pointer-events-none — and the same reason for doing the removal on a
+ * timestamp rather than an exit animation: see the note in `underwater-decor`.
+ * ========================================================================== */
+
+.tide-bubble {
+  position: absolute;
+  bottom: -12vh;
+  width: var(--bubble-size);
+  height: var(--bubble-size);
+  border-radius: 50%;
+  border: 1px solid rgb(var(--tide-glow) / 0.55);
+  background:
+    radial-gradient(circle at 30% 26%, rgb(255 255 255 / 0.85) 0 14%, transparent 46%),
+    rgb(255 255 255 / 0.1);
+  animation: tide-bubble-rise var(--bubble-life) linear infinite;
+  animation-delay: var(--bubble-delay);
+  will-change: transform;
+}
+
+/*
+ * The climb, in viewport units so a bubble crosses the whole screen whatever
+ * size it is.
+ *
+ * One element and one transform: the horizontal wander is written into the same
+ * `translate3d` as the climb, because a second transform on the same element
+ * would replace the first rather than compose with it. The x offsets are at
+ * uneven percentages of the run so the wander never syncs with the rise — a
+ * bubble that swings on the same period it climbs reads as a pendulum.
+ *
+ * It also grows. Pressure drops on the way up, so the bubble expands and goes
+ * fastest at the end.
+ */
+@keyframes tide-bubble-rise {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.6);
+    opacity: 0;
+  }
+  7% {
+    opacity: var(--bubble-opacity);
+  }
+  27% {
+    transform: translate3d(var(--bubble-drift), -32vh, 0) scale(0.75);
+  }
+  54% {
+    transform: translate3d(calc(var(--bubble-drift) * -0.8), -62vh, 0) scale(0.9);
+  }
+  79% {
+    transform: translate3d(var(--bubble-drift), -92vh, 0) scale(1.05);
+    opacity: var(--bubble-opacity);
+  }
+  100% {
+    transform: translate3d(0, -124vh, 0) scale(1.2);
+    opacity: 0;
+  }
+}
+
+/* ==========================================================================
+ * Volcano decor: what the mountain is throwing off.
+ *
+ * Embers rising, which is the exact inverse of the autumn skin's leaves and
+ * deliberately so — the two skins share a mechanic and read as opposites
+ * because the only thing that changed is the sign of the vertical travel.
+ *
+ * An ember also *cools* on the way up: it leaves at core temperature and
+ * arrives, if it arrives, at crust. That colour travel is the whole reason
+ * this is not just autumn in orange.
+ * ========================================================================== */
+
+.lava-ember {
+  position: absolute;
+  bottom: -8vh;
+  width: var(--ember-size);
+  height: var(--ember-size);
+  border-radius: 50%;
+  animation: lava-ember-rise var(--ember-life) cubic-bezier(0.35, 0, 0.7, 1) infinite;
+  animation-delay: var(--ember-delay);
+  will-change: transform;
+}
+
+/*
+ * The climb, and the cooling.
+ *
+ * Two things travel at once and they are the whole effect: the ember rises and
+ * shrinks, and its colour walks *down* the temperature ramp — core, flow,
+ * danger, crust. That is the only reason this is not the autumn fall in orange.
+ *
+ * `background` and `box-shadow` both animate here, which is a rule this file
+ * otherwise avoids. It is affordable for exactly one reason: these are ten
+ * 4px elements on a fixed, isolated layer, so the repaint is a few hundred
+ * pixels rather than a surface. Do not copy the pattern onto anything larger.
+ */
+@keyframes lava-ember-rise {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    background: rgb(var(--lava-core));
+    box-shadow: 0 0 10px 1px rgb(var(--lava-core) / 0.9);
+    opacity: 0;
+  }
+  9% {
+    opacity: var(--ember-opacity);
+  }
+  38% {
+    transform: translate3d(var(--ember-drift), -34vh, 0) scale(0.82);
+    background: rgb(var(--lava-flow));
+    box-shadow: 0 0 8px 1px rgb(var(--lava-flow) / 0.7);
+  }
+  71% {
+    transform: translate3d(calc(var(--ember-drift) * -0.7), -68vh, 0) scale(0.58);
+    background: rgb(var(--danger));
+    box-shadow: 0 0 5px 0 rgb(var(--danger) / 0.45);
+    opacity: calc(var(--ember-opacity) * 0.7);
+  }
+  100% {
+    transform: translate3d(var(--ember-drift), -104vh, 0) scale(0.3);
+    background: rgb(var(--lava-crust));
+    box-shadow: none;
+    opacity: 0;
+  }
+}
+
+/* ==========================================================================
+ * Underwater and volcano icon light.
+ *
+ * Both skins draw every glyph twice — the mark in the current colour, and one
+ * significant stroke again on top in the skin's light. These animate only the
+ * second copy, so the icon is fully legible at every frame: the animation
+ * changes how *lit* the mark is, never whether it is there. Same argument as
+ * `.rune-pulse` below, and the same reason both sets can move at all without
+ * costing readability.
+ *
+ * The `--late` variants exist so a set drawing two lit strokes on one glyph
+ * does not have them breathing in unison, which reads as a blinking icon
+ * rather than as light moving over an object.
+ * ========================================================================== */
+
+/* Broken light crossing the mark. Longer and more uneven than the runic pulse:
+   the surface it is coming off is not keeping time. */
+.tide-caustic {
+  animation: tide-caustic 5.4s ease-in-out infinite;
+  opacity: 0.35;
+}
+
+@keyframes tide-caustic {
+  0%,
+  100% {
+    opacity: 0.28;
+  }
+  38% {
+    opacity: 0.9;
+  }
+  62% {
+    opacity: 0.5;
+  }
+}
+
+.tide-caustic--late {
+  animation-delay: -2.3s;
+}
+
+/* Heat coming and going in a crack. Sharper than the tide: the core is either
+   showing or it is not, so the curve spends little time in between. */
+.ember-pulse {
+  animation: ember-pulse 3.2s cubic-bezier(0.6, 0, 0.4, 1) infinite;
+  opacity: 0.45;
+}
+
+@keyframes ember-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  45% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 0.6;
+  }
+}
+
+.ember-pulse--late {
+  animation-delay: -1.5s;
+}
+
+/* Under the pointer both settle at full and hold, so a hovered row stops
+   moving — the same contract the runic set has. */
+.group:hover .tide-caustic,
+a:hover .tide-caustic,
+button:hover .tide-caustic,
+.group:hover .ember-pulse,
+a:hover .ember-pulse,
+button:hover .ember-pulse {
+  animation-play-state: paused;
+  opacity: 1;
+}
+
 /* ==========================================================================
  * Runic decor: the light that lives in a cut.
  *
@@ -4760,6 +6138,53 @@ button:focus-visible .rune-swap__latin,
   border: 2px solid rgb(var(--edge) / 0.35);
 }
 
+/* Open water with the particulate still in it, and a caustic band sweeping
+   across — the slowest sweep in the app, because nothing down here hurries. */
+[data-skin='underwater'] .skeleton {
+  background:
+    radial-gradient(rgb(255 255 255 / 0.4) 0.6px, transparent 0.7px) 0 0 / 7px 7px,
+    rgb(var(--surface-sunken));
+}
+
+[data-skin='underwater'] .skeleton::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 0.5),
+    rgb(var(--tide-glow) / 0.3),
+    transparent
+  );
+  animation-duration: 2.6s;
+}
+
+[data-skin='underwater'].dark .skeleton::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(var(--tide-glow) / 0.34),
+    transparent
+  );
+}
+
+/* Crust that has not cooled evenly, with the heat travelling under it. The
+   sweep goes through the temperature ramp rather than through white. */
+[data-skin='volcano'] .skeleton {
+  border-radius: 2px;
+  background:
+    radial-gradient(rgb(var(--lava-crust) / 0.14) 1.1px, transparent 1.2px) 0 0 / 17px 17px,
+    rgb(var(--surface-sunken));
+}
+
+[data-skin='volcano'] .skeleton::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(var(--lava-flow) / 0.35),
+    rgb(var(--lava-core) / 0.3),
+    transparent
+  );
+}
+
 /* Blank fibre, with a stain drawing itself across it. Squared off, like
    everything else here, and the sweep is the ink rather than white — on a pale
    ground the thing that has to move is the dark. */
@@ -5029,6 +6454,43 @@ button:focus-visible .rune-swap__latin,
   --avatar-inner: inset 0 0 10px rgb(var(--autumn-bark) / 0.35);
 }
 
+/* UNDERWATER — a face seen through a porthole.
+   Fully round, because a pressure boundary is always a circle; a thick soft
+   surround, and a caustic highlight caught on the top-left of the glass where
+   the light is coming from on every other surface in this skin. */
+[data-skin='underwater'] .avatar {
+  --avatar-radius: 999px;
+  --avatar-frame:
+    0 0 0 3px rgb(var(--surface-raised)),
+    0 0 0 5px rgb(var(--edge) / 0.7),
+    0 8px 20px -8px rgb(var(--tide-deep) / 0.7);
+  --avatar-inner:
+    inset 0 0 0 1px rgb(255 255 255 / 0.4),
+    inset 3px 4px 10px -4px rgb(255 255 255 / 0.75),
+    inset 0 -6px 12px -6px rgb(var(--tide-deep) / 0.5);
+}
+
+[data-skin='underwater'].dark .avatar {
+  --avatar-inner:
+    inset 0 0 0 1px rgb(var(--tide-glow) / 0.35),
+    inset 3px 4px 10px -4px rgb(var(--tide-glow) / 0.3),
+    inset 0 -6px 12px -6px rgb(0 0 0 / 0.7);
+}
+
+/* VOLCANO — a face set into a plate of crust.
+   Square, because nothing here is round, and the same hot underside every
+   other object in the skin carries — the plate is sitting on the melt too. */
+[data-skin='volcano'] .avatar {
+  --avatar-radius: 2px;
+  --avatar-frame:
+    0 0 0 2px rgb(var(--surface-raised)),
+    0 0 0 4px rgb(var(--edge)),
+    0 6px 14px -6px rgb(var(--lava-crust) / 0.9);
+  --avatar-inner:
+    inset 0 2px 0 rgb(255 250 242 / 0.3),
+    inset 0 -3px 0 rgb(var(--lava-flow) / 0.65);
+}
+
 /* RUNIC — a portrait tipped into the page and ruled around.
    Square, because nothing here is round; a drawn surround rather than a ring,
    and a thin inked line just inside the opening, which is where every other
@@ -5063,4 +6525,108 @@ button:focus-visible .rune-swap__latin,
  */
 svg.lucide[stroke-width='2'] {
   stroke-width: var(--icon-stroke);
+}
+
+/* ==========================================================================
+ * Two overrides that have to beat Tailwind utilities.
+ *
+ * Both of these fight a utility class sitting on the element itself, and a
+ * utility wins over anything in `@layer base` or `@layer components` *whatever
+ * its specificity* — layer order decides before specificity is even consulted.
+ * Unlayered rules outrank every layer, which is the only reliable place to put
+ * them. They are here rather than next to their skins for that reason alone.
+ * ========================================================================== */
+
+/*
+ * The rails go flat on the two newest skins.
+ *
+ * `.ui-textured` puts the full panel material on all three menus. On the other
+ * skins that is right — the rail is a slab of the same stuff as everything else
+ * — but the caustic net and the basalt crazing are both *high-frequency*
+ * patterns, and a 260px column of high-frequency pattern behind a list of
+ * fourteen menu labels is noise directly underneath the text you are trying to
+ * read. The wide surfaces can carry it; a narrow one packed with type cannot.
+ *
+ * So the menus keep their colour, their border, their lit seam and their drop
+ * shadow — everything that says which skin you are in — and lose only the
+ * pattern. The top bar goes with them: it is the same argument at 56px tall.
+ *
+ * `background-image: none` also drops the brand wash the rails carry as a
+ * Tailwind arbitrary value. That is intended: the point is a flat panel.
+ */
+[data-skin='underwater'] .nav-rail--left,
+[data-skin='underwater'] .nav-rail--right,
+[data-skin='underwater'] .nav-rail--top,
+[data-skin='volcano'] .nav-rail--left,
+[data-skin='volcano'] .nav-rail--right,
+[data-skin='volcano'] .nav-rail--top {
+  background-image: none;
+}
+
+/*
+ * Dialogs go flat on the same two skins, for the same reason the rails did.
+ *
+ * A modal is the densest surface in the app — a task composer is a title, a
+ * description, a date, a colour row, a priority row, an assignee list and a
+ * pair of buttons, all inside 512 pixels — and it is read at close range with
+ * the page dimmed behind it. The caustic net and the basalt crazing are both
+ * high-frequency patterns, and behind that much small type they stop reading as
+ * material and start reading as interference.
+ *
+ * The skin is not lost: the modal keeps its palette, its radius, its border,
+ * its bevel and its shadow, and the page it sits on still carries the full
+ * texture two hundred milliseconds of fade behind it. The contrast between the
+ * two is arguably a better argument for the material than putting it on both.
+ */
+[data-skin='underwater'] .ui-modal,
+[data-skin='volcano'] .ui-modal {
+  background-image: none;
+}
+
+/*
+ * Volcano's small headings, made readable.
+ *
+ * The display face is a black — `Archivo Black`, falling back through `Anton`
+ * to `Impact` on a machine without either, and Impact is properly condensed.
+ * The app then sets every heading with Tailwind's `tracking-tight`, which is
+ * -0.025em. That pairing is fine on Inter, which is what it was chosen for, and
+ * actively wrong on a poster face: at 14px it computes to **-0.35px**, so the
+ * letters of a section title are pulled *into* each other. On the uppercase h2
+ * variant there are no ascenders or descenders to help either.
+ *
+ * The split is by tag, and it lands exactly where the problem is:
+ *
+ *   - **h1 is 20–24px** — every page title in the app. These already read well,
+ *     so they get the smallest possible correction: enough to stop the tracking
+ *     being negative, and no more.
+ *   - **h2/h3/h4 are 14px** — section headers, card headers, rich-text
+ *     subheadings. These are the ones that are hard to read, and small type in
+ *     a heavy face needs *proportionally more* tracking than large type, not
+ *     the same amount. Hence the much larger value rather than one shared one.
+ *
+ * `word-spacing` goes up with it. Opening the letters without opening the word
+ * gaps just moves the crowding from between letters to between words.
+ *
+ * `font-synthesis: none` is the other half of the fix and matters as much as
+ * the tracking. These headings ask for `font-semibold`, and a black face ships
+ * one weight — so the browser is free to *synthesise* a bolder one by smearing
+ * the outline, which at 14px closes up the counters of a, e, o and s until they
+ * are solid ink. The face is already at 900; there is nothing to add.
+ */
+[data-skin='volcano'] h1,
+[data-skin='volcano'] h2,
+[data-skin='volcano'] h3,
+[data-skin='volcano'] h4 {
+  font-synthesis: none;
+}
+
+[data-skin='volcano'] h1 {
+  letter-spacing: 0.02em;
+}
+
+[data-skin='volcano'] h2,
+[data-skin='volcano'] h3,
+[data-skin='volcano'] h4 {
+  letter-spacing: 0.085em;
+  word-spacing: 0.06em;
 }

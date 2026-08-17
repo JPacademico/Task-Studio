@@ -71,6 +71,22 @@ export interface SkinPreview {
    * painted the paper would be selling a beige theme.
    */
   rune?: string;
+  /**
+   * Underwater only: the colour bubbles and the caustic net are drawn in.
+   *
+   * The net is the thing being sold here. A preview that painted the palette
+   * and stopped would be a cyan card, and cyan cards are not what anybody
+   * remembers about this skin — the broken light on every surface is.
+   */
+  caustic?: string;
+  /**
+   * Volcano only: the two ends of the temperature ramp — flow, then core.
+   *
+   * A pair rather than one colour because the entire skin is the *ramp*: a hot
+   * line under every object that runs from orange to yellow-white. One value
+   * would sell an orange theme, which is the least of what this is.
+   */
+  molten?: [string, string];
 }
 
 export interface SkinDefinition {
@@ -484,6 +500,99 @@ export const SKIN_CATALOG: SkinDefinition[] = [
       font: "'Bahnschrift', 'DIN Condensed', 'Segoe UI', system-ui, sans-serif",
       border: 2,
       rune: '#f6a05c',
+    },
+  },
+  {
+    value: 'UNDERWATER',
+    name: 'Underwater',
+    tagline: 'Held under',
+    description:
+      'Broken light from a surface somewhere above you, corners water has had a long time to round off, colour that drains toward blue with depth — and bubbles going up past all of it.',
+    tags: [
+      'underwater',
+      'ocean',
+      'sea',
+      'water',
+      'aquatic',
+      'deep',
+      'diving',
+      'reef',
+      'caustics',
+      'bubbles',
+      'teal',
+      'cyan',
+      'aqua',
+      'calm',
+      'soft',
+    ],
+    light: {
+      surface: '#bae0e2',
+      raised: '#d6f1f0',
+      edge: '#3a8292',
+      brand: '#0a5e6e',
+      content: '#082e3a',
+      radius: 22,
+      font: "'Quicksand', 'Varela Round', 'Trebuchet MS', system-ui, sans-serif",
+      border: 1,
+      caustic: '#ffffff',
+    },
+    dark: {
+      surface: '#051220',
+      raised: '#0b2032',
+      edge: '#1e5268',
+      brand: '#5ee2e2',
+      content: '#d6f0f6',
+      radius: 22,
+      font: "'Quicksand', 'Varela Round', 'Trebuchet MS', system-ui, sans-serif",
+      border: 1,
+      caustic: '#60ecea',
+    },
+  },
+  {
+    value: 'VOLCANO',
+    name: 'Volcano',
+    tagline: 'The crust is a lid',
+    description:
+      'Ash-grey plates crazed with fractures, a hot seam under every edge where the melt shows through, type struck rather than set — and embers going up off all of it.',
+    tags: [
+      'volcano',
+      'volcanic',
+      'lava',
+      'magma',
+      'molten',
+      'basalt',
+      'ash',
+      'obsidian',
+      'fire',
+      'heat',
+      'ember',
+      'orange',
+      'red',
+      'loud',
+      'bold',
+      'dark',
+    ],
+    light: {
+      surface: '#cec3bb',
+      raised: '#e4dbd3',
+      edge: '#5c4a40',
+      brand: '#8e2c0a',
+      content: '#201612',
+      radius: 2,
+      font: "'Archivo Black', 'Anton', Impact, 'Franklin Gothic Heavy', sans-serif",
+      border: 2,
+      molten: ['#e25814', '#ffda7a'],
+    },
+    dark: {
+      surface: '#0e0a0a',
+      raised: '#1d1514',
+      edge: '#5c3a2a',
+      brand: '#ff7c2c',
+      content: '#f6e8de',
+      radius: 2,
+      font: "'Archivo Black', 'Anton', Impact, 'Franklin Gothic Heavy', sans-serif",
+      border: 2,
+      molten: ['#ff701a', '#ffeca8'],
     },
   },
 ];

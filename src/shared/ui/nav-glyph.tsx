@@ -9,16 +9,18 @@ import { HAZARD_GLYPHS } from './hazard-icons';
 import { NEWSPAPER_GLYPHS } from './newspaper-icons';
 import { RUNIC_GLYPHS } from './runic-icons';
 import { SPACE_GLYPHS } from './space-icons';
+import { UNDERWATER_GLYPHS } from './underwater-icons';
+import { VOLCANO_GLYPHS } from './volcano-icons';
 
 /**
  * Which skins redraw the navigation rather than restyle it.
  *
  * A skin that only recolours its icons is a skin you stop noticing, so the
- * five worlds with a strong enough visual language to have their own signage
- * bring a full set. Everything else keeps the line icons, which is a choice
- * rather than an omission: the studio look *is* line icons, and a bespoke set
- * for the illustrated skin would only be the same shapes with fatter strokes —
- * which `--icon-stroke` already does for free.
+ * worlds with a strong enough visual language to have their own signage bring a
+ * full set. Everything else keeps the line icons, which is a choice rather than
+ * an omission: the studio look *is* line icons, and a bespoke set for the
+ * illustrated skin would only be the same shapes with fatter strokes — which
+ * `--icon-stroke` already does for free.
  */
 const GLYPH_SETS: Partial<Record<ThemeSkin, GlyphSet>> = {
   SPACE: SPACE_GLYPHS,
@@ -27,6 +29,8 @@ const GLYPH_SETS: Partial<Record<ThemeSkin, GlyphSet>> = {
   ELDRITCH: ELDRITCH_GLYPHS,
   AUTUMN: AUTUMN_GLYPHS,
   RUNIC: RUNIC_GLYPHS,
+  UNDERWATER: UNDERWATER_GLYPHS,
+  VOLCANO: VOLCANO_GLYPHS,
 };
 
 interface NavGlyphProps {

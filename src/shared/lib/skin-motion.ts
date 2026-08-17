@@ -35,6 +35,15 @@ const REVEAL: Record<ThemeSkin, Transition> = {
   // Stone on stone: heavy to start, and it arrives with weight behind it. The
   // one curve in the set that accelerates the whole way and then stops dead.
   RUNIC: { duration: 0.34, ease: [0.7, 0, 0.3, 1] },
+  // Buoyant. The softest spring in the set by a distance: it drifts in, goes
+  // slightly past, and rocks back. Water resists a fast move and refuses to let
+  // anything stop dead, so this is the one curve that is still settling after
+  // it has arrived.
+  UNDERWATER: { type: 'spring', stiffness: 110, damping: 13, mass: 1.5 },
+  // Pressure, then failure. It barely moves for the first third, then goes all
+  // at once and stops — the curve rock actually follows, which is nothing for a
+  // long time and then everything.
+  VOLCANO: { duration: 0.44, ease: [0.85, 0, 0.12, 1] },
 };
 
 const MARKER: Record<ThemeSkin, Transition> = {
@@ -49,6 +58,8 @@ const MARKER: Record<ThemeSkin, Transition> = {
   ELDRITCH: { duration: 0.44, ease: [0.5, 0, 0.2, 1] },
   AUTUMN: { type: 'spring', stiffness: 260, damping: 24, mass: 0.8 },
   RUNIC: { duration: 0.28, ease: [0.7, 0, 0.3, 1] },
+  UNDERWATER: { type: 'spring', stiffness: 150, damping: 15, mass: 1.2 },
+  VOLCANO: { duration: 0.32, ease: [0.85, 0, 0.12, 1] },
 };
 
 /*

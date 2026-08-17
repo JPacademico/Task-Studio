@@ -33,6 +33,10 @@ export { AutumnFall, AutumnHedge } from './autumn-decor';
 export { RunicMark } from './runic-icons';
 export { RunicText } from './runic-text';
 export { RuneScribe } from './runic-decor';
+export { UnderwaterMark } from './underwater-icons';
+export { BubbleRise } from './underwater-decor';
+export { VolcanoMark } from './volcano-icons';
+export { EmberRise } from './volcano-decor';
 // The one arrow every surface asks for. `GazeArrow` and `RuneArrow` are the
 // drawings behind it and are not exported: a page should ask for "next", not
 // for a particular skin's idea of it.

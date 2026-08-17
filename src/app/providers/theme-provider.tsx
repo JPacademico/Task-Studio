@@ -57,6 +57,8 @@ const SKIN_ATTRIBUTE: Record<ThemeSkin, string> = {
   ELDRITCH: 'eldritch',
   AUTUMN: 'autumn',
   RUNIC: 'runic',
+  UNDERWATER: 'underwater',
+  VOLCANO: 'volcano',
 };
 
 /**

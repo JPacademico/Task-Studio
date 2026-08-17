@@ -10,6 +10,8 @@ import { HazardMark } from './hazard-icons';
 import { NewspaperMark } from './newspaper-icons';
 import { RunicMark } from './runic-icons';
 import { SpaceMark } from './space-icons';
+import { UnderwaterMark } from './underwater-icons';
+import { VolcanoMark } from './volcano-icons';
 
 /**
  * Hand-drawn stationery icons.
@@ -498,12 +500,20 @@ const paperFor = (skin: ThemeSkin) => PAPERS[skin] ?? DrawnPaper;
  * Paper that does not move.
  *
  * A sprite does not flutter, a hard-light panel does not curl, a label taped to
- * a drum is not going anywhere, and a slab of granite is the least fluttering
- * object in the catalogue — so those four skins lose the breeze and the tilt. A
- * newsprint clipping keeps both: it is still paper.
+ * a drum is not going anywhere, a sheet of parchment has been pressed flat for
+ * a thousand years, and a flake of cooled crust is the least fluttering object
+ * in the catalogue — so those five skins lose the breeze and the tilt.
+ *
+ * A newsprint clipping keeps both: it is still paper. So does the underwater
+ * one, deliberately — a sheet held under water moves *more* than one in air,
+ * not less, and it is the one skin where the flutter is arguably understated.
  */
 const isRigidPaper = (skin: ThemeSkin): boolean =>
-  skin === 'PIXEL' || skin === 'SPACE' || skin === 'HAZARD' || skin === 'RUNIC';
+  skin === 'PIXEL' ||
+  skin === 'SPACE' ||
+  skin === 'HAZARD' ||
+  skin === 'RUNIC' ||
+  skin === 'VOLCANO';
 
 interface PostItMarkProps {
   /** How many notes are attached — shown on the paper itself when it fits. */
@@ -575,38 +585,45 @@ interface StudioMarkProps {
 }
 
 /**
+ * Which skins introduce the product as something other than a square of paper.
+ *
+ * A note among stars, a note taped and stamped, a masthead on page one, a page
+ * with an eye in it, a note with two leaves on it, a note cut into a slab, a
+ * note gone soft in the water, a flake of cooling crust. Every one of them is
+ * the *same object* rebuilt in that world's material rather than a different
+ * object — which is the rule for earning one of these at all.
+ *
+ * They also all share one wrapper below, because they share one gesture: a lift
+ * under the pointer. Anything not listed keeps the drawn Post-it.
+ */
+const MARKS: Partial<Record<ThemeSkin, ComponentType<{ className?: string }>>> = {
+  SPACE: SpaceMark,
+  HAZARD: HazardMark,
+  NEWSPAPER: NewspaperMark,
+  ELDRITCH: EldritchMark,
+  AUTUMN: AutumnMark,
+  RUNIC: RunicMark,
+  UNDERWATER: UnderwaterMark,
+  VOLCANO: VolcanoMark,
+};
+
+/**
  * The product mark: a Post-it with a pin through it.
  *
  * This replaces the generic "T" tile that used to sit in the sidebar, the top
  * bar and the auth screen. A workspace built out of paper objects should not
  * introduce itself with a letter in a rounded square.
  *
- * Two skins introduce themselves as something else entirely, for the same
+ * Several skins introduce themselves as something else entirely, for the same
  * reason: a square of paper is not a thing the arcade or the deep field has.
+ * See `MARKS`.
  */
 export const StudioMark = ({ className, interactive = false }: StudioMarkProps) => {
   const reduceMotion = useReducedMotion();
   const skin = useSkin();
   const isPixel = skin === 'PIXEL';
 
-  // Six skins draw the object themselves: a note among stars, a note taped and
-  // stamped, a masthead on page one, a page with an eye in it, a note with two
-  // leaves on it, a note cut into a slab. All six are the same gesture — a lift
-  // under the pointer — so they share one wrapper rather than six.
-  const Drawn =
-    skin === 'SPACE'
-      ? SpaceMark
-      : skin === 'HAZARD'
-        ? HazardMark
-        : skin === 'NEWSPAPER'
-          ? NewspaperMark
-          : skin === 'ELDRITCH'
-            ? EldritchMark
-            : skin === 'AUTUMN'
-              ? AutumnMark
-              : skin === 'RUNIC'
-                ? RunicMark
-                : null;
+  const Drawn = MARKS[skin];
 
   if (Drawn) {
     return (

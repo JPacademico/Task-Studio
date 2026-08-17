@@ -208,9 +208,23 @@ export const RichTextEditor = ({
   const handleImage = async (file: File) => {
     setIsUploading(true);
     try {
-      const { publicUrl } = await uploadImage(file, 'notes');
+      const { publicUrl, width, height } = await uploadImage(file, 'notes');
       restoreSelection();
-      document.execCommand('insertHTML', false, `<img src="${publicUrl}" alt="" /><p><br></p>`);
+      /*
+       * Dimensions and lazy-loading travel with the tag.
+       *
+       * `width`/`height` let the browser reserve the right box before the bytes
+       * arrive, so inserting an image no longer shoves the rest of the document
+       * down when it loads — and `loading="lazy"` means a long page never
+       * fetches the pictures nobody has scrolled to. Both are attributes the
+       * sanitiser has to allow through, or a saved document loses them on the
+       * next load.
+       */
+      document.execCommand(
+        'insertHTML',
+        false,
+        `<img src="${publicUrl}" alt="" width="${width}" height="${height}" loading="lazy" /><p><br></p>`,
+      );
       emitChange();
     } catch {
       toast.error('Could not upload that image.');
