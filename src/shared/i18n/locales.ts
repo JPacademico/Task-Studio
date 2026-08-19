@@ -292,6 +292,18 @@ const en = {
   'ai.notConfigured': 'AI assistant not configured',
   'ai.notConfiguredBody':
     'Set GEMINI_API_KEY on the API to unlock workflow analysis and sub-task suggestions.',
+  'ai.taskIdeas': 'Task ideas',
+  'ai.taskIdeasBody':
+    "Gemini reads the project's description and board, then proposes what could come next.",
+  'ai.suggestTasks': 'Suggest tasks',
+  'ai.suggestAgain': 'Suggest again',
+  'ai.noIdeas': 'No suggestions yet',
+  'ai.noIdeasBody': 'Ask for a few ideas and accept the ones that fit.',
+  'ai.accept': 'Accept',
+  'ai.decline': 'Decline',
+  'ai.taskAdded': '"{title}" added to the board.',
+  'ai.addFailed': 'Could not add that task.',
+  'ai.stepAdded': 'Step added to the checklist.',
   'ai.workflowReview': 'Workflow review',
   'ai.workflowReviewBody':
     "Gemini reads the project's completed and open work, then names the bottlenecks.",
@@ -876,6 +888,18 @@ const ptBR: Record<TranslationKey, string> = {
   'ai.notConfigured': 'Assistente de IA não configurado',
   'ai.notConfiguredBody':
     'Defina GEMINI_API_KEY na API para liberar a análise de fluxo e as sugestões de subtarefas.',
+  'ai.taskIdeas': 'Ideias de tarefas',
+  'ai.taskIdeasBody':
+    'O Gemini lê a descrição e o quadro do projeto e propõe o que pode vir a seguir.',
+  'ai.suggestTasks': 'Sugerir tarefas',
+  'ai.suggestAgain': 'Sugerir de novo',
+  'ai.noIdeas': 'Nenhuma sugestão ainda',
+  'ai.noIdeasBody': 'Peça algumas ideias e aceite as que fizerem sentido.',
+  'ai.accept': 'Aceitar',
+  'ai.decline': 'Recusar',
+  'ai.taskAdded': '"{title}" adicionada ao quadro.',
+  'ai.addFailed': 'Não foi possível adicionar essa tarefa.',
+  'ai.stepAdded': 'Etapa adicionada à lista.',
   'ai.workflowReview': 'Análise do fluxo',
   'ai.workflowReviewBody':
     'O Gemini lê o trabalho concluído e em aberto do projeto e aponta os gargalos.',

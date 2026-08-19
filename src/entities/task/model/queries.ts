@@ -324,6 +324,24 @@ export const useCreateTask = () => {
   });
 };
 
+/**
+ * Puts tasks the server has just created into every cache showing them.
+ *
+ * The AI panel accepts suggestions in bulk and gets the created rows back, so
+ * it is in exactly the position `useCreateTask` is in: holding authoritative
+ * objects while the board behind it still shows the old list. Same treatment —
+ * write them in, then let the invalidation reconcile.
+ */
+export const useAddCreatedTasks = () => {
+  const queryClient = useQueryClient();
+  const invalidate = useInvalidateTasks();
+
+  return (tasks: Task[]) => {
+    for (const task of tasks) insertCachedTask(queryClient, task);
+    invalidate(tasks[0]?.project.id);
+  };
+};
+
 export const useUpdateTask = () => {
   const invalidate = useInvalidateTasks();
 

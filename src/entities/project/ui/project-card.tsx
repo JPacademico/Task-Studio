@@ -24,8 +24,28 @@ export const ProjectCard = ({ project, onTogglePin }: ProjectCardProps) => {
       exit={{ opacity: 0, scale: 0.98 }}
       whileHover={{ y: -3 }}
       transition={{ type: 'spring', stiffness: 340, damping: 30 }}
-      className="gpu group relative overflow-hidden rounded-2xl border border-edge bg-surface-raised"
+      className={cn(
+        'gpu group relative overflow-hidden rounded-2xl border border-edge bg-surface-raised',
+        // The whole card is a link, so it takes the focus ring the inner
+        // heading used to.
+        'focus-within:ring-2 focus-within:ring-brand/50',
+      )}
     >
+      {/*
+        The card-wide hit target.
+        
+        An overlay rather than wrapping the card in an anchor: the pin button
+        and the avatar stack live inside, and an <a> containing a <button> is
+        invalid markup that screen readers and keyboards both handle badly.
+        This stays a single stretched link, sits under the pin (z-10 vs z-20),
+        and carries the accessible name so the row still announces as one
+        destination.
+      */}
+      <Link
+        to={`/projects/${project.id}`}
+        aria-label={project.name}
+        className="absolute inset-0 z-10 rounded-2xl focus:outline-none"
+      />
       <div
         aria-hidden
         className="h-20 w-full"
@@ -42,7 +62,8 @@ export const ProjectCard = ({ project, onTogglePin }: ProjectCardProps) => {
           aria-label={project.isPinned ? 'Unpin project' : 'Pin project'}
           onClick={() => onTogglePin(project)}
           className={cn(
-            'absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full backdrop-blur',
+            // z-20: above the card-wide link, or pinning would navigate.
+            'absolute right-3 top-3 z-20 grid h-8 w-8 place-items-center rounded-full backdrop-blur',
             'transition-colors duration-150',
             project.isPinned
               ? 'bg-white/90 text-brand'
@@ -55,12 +76,12 @@ export const ProjectCard = ({ project, onTogglePin }: ProjectCardProps) => {
 
       <div className="space-y-3 p-4">
         <div className="space-y-1">
-          <Link
-            to={`/projects/${project.id}`}
-            className="block text-sm font-semibold leading-snug hover:text-brand"
-          >
+          {/* Plain text now — the card-wide link above owns the navigation, and
+              a second anchor to the same place is one extra tab stop for
+              nothing. `group-hover` keeps the colour cue it had. */}
+          <p className="text-sm font-semibold leading-snug transition-colors group-hover:text-brand">
             {project.name}
-          </Link>
+          </p>
           <p className="line-clamp-2 min-h-[2rem] text-xs leading-relaxed text-content-muted">
             {project.description ?? 'No description yet.'}
           </p>

@@ -72,15 +72,27 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
     onError: (error) => toast.error(errorMessage(error, t('ai.unavailable'))),
   });
 
-  const acceptSuggestions = useMutation({
-    mutationFn: (titles: string[]) => aiApi.accept(suggestionId as string, titles),
-    onSuccess: (result) => {
-      setSuggestions([]);
-      toast.success(`${result.added} step(s) added to the checklist.`);
+  /*
+   * Accepted one at a time, like the project panel's task ideas.
+   *
+   * This was an all-or-nothing "Add all", which forced a choice between three
+   * steps you mostly wanted and none at all — so the usual outcome was adding
+   * all three and deleting one. Per-step is the same number of clicks for the
+   * case where every step is good, and far fewer for the case where one is not.
+   */
+  const acceptStep = useMutation({
+    mutationFn: (suggestion: SubtaskSuggestion) =>
+      aiApi.accept(suggestionId as string, [suggestion.title]),
+    onSuccess: (_result, suggestion) => {
+      setSuggestions((current) => current.filter((entry) => entry.title !== suggestion.title));
+      toast.success(t('ai.stepAdded'));
       void checklist.add.reset();
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
+
+  const declineStep = (suggestion: SubtaskSuggestion) =>
+    setSuggestions((current) => current.filter((entry) => entry.title !== suggestion.title));
 
   return (
     <Modal
@@ -286,28 +298,40 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
                   className="space-y-2 overflow-hidden rounded-xl border border-brand/40 bg-brand/[0.06] p-3"
                 >
                   <p className="text-xs font-semibold text-brand">{t('task.suggestedSubtasks')}</p>
-                  <ul className="space-y-1.5">
+                  <ul className="space-y-2">
                     {suggestions.map((suggestion) => (
-                      <li key={suggestion.title} className="text-xs">
-                        <p className="font-medium">{suggestion.title}</p>
-                        <p className="text-content-muted">{suggestion.rationale}</p>
+                      <li
+                        key={suggestion.title}
+                        className="space-y-1.5 rounded-lg bg-surface-raised/60 p-2.5 text-xs"
+                      >
+                        <p className="font-medium leading-snug">{suggestion.title}</p>
+                        <p className="leading-relaxed text-content-muted">
+                          {suggestion.rationale}
+                        </p>
+                        <div className="flex gap-1.5 pt-0.5">
+                          <Button
+                            size="sm"
+                            isLoading={
+                              acceptStep.isPending &&
+                              acceptStep.variables?.title === suggestion.title
+                            }
+                            onClick={() => acceptStep.mutate(suggestion)}
+                          >
+                            <Check className="h-3 w-3" />
+                            {t('ai.accept')}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => declineStep(suggestion)}
+                          >
+                            <X className="h-3 w-3" />
+                            {t('ai.decline')}
+                          </Button>
+                        </div>
                       </li>
                     ))}
                   </ul>
-                  <div className="flex gap-2 pt-1">
-                    <Button
-                      size="sm"
-                      isLoading={acceptSuggestions.isPending}
-                      onClick={() =>
-                        acceptSuggestions.mutate(suggestions.map((item) => item.title))
-                      }
-                    >
-                      {t('task.addAll')}
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setSuggestions([])}>
-                      {t('task.dismiss')}
-                    </Button>
-                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
