@@ -130,7 +130,13 @@ export const ExpandableStage = ({
   if (!isExpanded) return <div className={cn('space-y-3', className)}>{children}</div>;
 
   return createPortal(
-    <section className="fixed inset-0 z-[80] flex flex-col gap-2.5 bg-surface p-3 sm:gap-3 sm:p-4">
+    <section
+      className={cn(
+        'fixed inset-0 z-[80] flex flex-col gap-2.5 bg-surface p-3 sm:gap-3 sm:p-4',
+        // Edge to edge means under the notch and the home indicator too.
+        'safe-t safe-b safe-l safe-r',
+      )}
+    >
       {/* No collapse control of its own: the surface's own toolbar carries the
           shrink toggle, and two buttons for one gesture is one too many. */}
       <header className="flex flex-wrap items-center gap-2 sm:gap-3">

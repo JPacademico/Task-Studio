@@ -5,7 +5,7 @@ export const NotFoundPage = () => {
   const t = useT();
 
   return (
-  <div className="grid min-h-screen place-items-center px-6 text-center">
+  <div className="grid min-h-dvh place-items-center px-6 text-center">
     <div className="space-y-4">
       <p className="text-6xl font-black tracking-tighter text-brand">404</p>
       <h1 className="text-lg font-semibold">{t('error.notFound.title')}</h1>

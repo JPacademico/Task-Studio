@@ -67,7 +67,10 @@ export const TopNavigation = ({ onOpenMobileMenu, onCreateProject }: TopNavigati
         animate={{ y: isOpen ? 0 : 'calc(-100% - 6px)' }}
         transition={{ type: 'spring', stiffness: 460, damping: 40, mass: 0.7 }}
         className={cn(
-          'nav-rail nav-rail--top ui-textured gpu fixed inset-x-0 top-0 z-40 flex h-14 items-center gap-2 px-3 sm:gap-3 sm:px-4',
+                    // `safe-top-bar` grows the bar by the notch inset and pads its
+          // contents down, so the row still reads as 3.5rem of chrome.
+          'nav-rail nav-rail--top ui-textured gpu fixed inset-x-0 top-0 z-40 flex items-center gap-2 px-3 sm:gap-3 sm:px-4',
+          'safe-top-bar safe-l safe-r',
           'border-b border-edge bg-surface-raised/90 backdrop-blur-xl',
           'shadow-[0_10px_30px_-24px_rgb(0_0_0/0.8)]',
         )}

@@ -184,6 +184,7 @@ export const ProjectRail = ({ onCreateProject }: ProjectRailProps) => {
         transition={{ type: 'spring', stiffness: 460, damping: 40, mass: 0.7 }}
         className={cn(
           'nav-rail nav-rail--right ui-textured gpu fixed right-0 top-0 z-50 flex h-full w-[260px] flex-col',
+          'safe-t safe-b safe-r',
           // See the note on the left rail: a full-height blur that animates is
           // the most expensive thing on the page, and at 95% opacity nobody
           // can tell it apart from a cheaper one.

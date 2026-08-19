@@ -99,7 +99,13 @@ export const AppLayout = () => {
             'mx-auto w-full max-w-[1400px] px-3 pb-16 sm:px-6 sm:pb-24 lg:px-10',
             // The bar is always on for touch, so the gutter is only needed there
             // — or when the user has pinned it open on desktop.
-            isTouch || pinned.top ? 'pt-[4.5rem]' : 'pt-6 sm:pt-10',
+            // The bar is `3.5rem` plus whatever the notch takes, so the
+            // gutter has to be measured the same way rather than hard-coded.
+            isTouch || pinned.top
+              ? 'pt-[calc(4.5rem+env(safe-area-inset-top,0px))]'
+              : 'pt-6 sm:pt-10',
+            // Landscape on a notched phone puts the cutout on one side.
+            'safe-l safe-r',
           )}
         >
           {/*

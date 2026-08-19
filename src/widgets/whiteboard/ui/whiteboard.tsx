@@ -48,7 +48,7 @@ import { ConnectorLayer } from '@/features/notes-board/ui/connector-layer';
 import { queryKeys } from '@/shared/api/query-keys';
 import { CONNECTOR_COLORS, NOTE_COLORS, TASK_COLORS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
-import { useDebouncedCallback } from '@/shared/lib/hooks';
+import { useDebouncedCallback, useIsTouchDevice } from '@/shared/lib/hooks';
 import { Button, ColorPicker, ExpandToggle, ExpandableStage, PostItGlyph, Spinner } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
@@ -108,6 +108,7 @@ const fitImage = (naturalWidth: number, naturalHeight: number) => {
  */
 export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
   const t = useT();
+  const isTouch = useIsTouchDevice();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const surfaceRef = useRef<HTMLDivElement>(null);
   const handlesRef = useRef(new Map<string, NoteHandle>());
@@ -410,8 +411,22 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
     [notes],
   );
 
+  /*
+   * An ink tool cannot survive the switch to touch.
+   *
+   * `TOOLS` drops pen and rubber on a coarse pointer, so a desktop session left
+   * on the pen and then continued on a phone — or simply rotated into a layout
+   * that reports differently — would hold a `tool` with no button to match it:
+   * the strip renders nothing selected and the canvas still swallows the drag,
+   * which reads as a board that has stopped scrolling for no reason.
+   */
+  useEffect(() => {
+    if (isTouch && (tool === 'pen' || tool === 'eraser')) setTool('select');
+  }, [isTouch, tool]);
+
   const marquee = useMarqueeSelection({
-    enabled: tool === 'select',
+    // See the note on the notes board: a lasso and a scroll are the same drag.
+    enabled: tool === 'select' && !isTouch,
     surfaceRef,
     onCommit: commitMarquee,
   });
@@ -518,8 +533,25 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
       hint: t('board.arrangeHint'),
     },
     { value: 'connect', label: t('board.connect'), icon: Link2, hint: t('board.connectHint') },
-    { value: 'pen', label: t('board.pen'), icon: Pencil, hint: t('board.penHint') },
-    { value: 'eraser', label: t('board.eraser'), icon: Eraser, hint: t('board.eraserHint') },
+    /*
+     * Pen and rubber only where a drag can mean "draw".
+     *
+     * On touch the surface needs that drag to scroll to the notes that do not
+     * fit on a phone, and `touch-action: none` on the canvas would take it.
+     * Arranging and connecting both survive because neither is a drag across
+     * the *surface* — one drags a note, the other is two taps.
+     */
+    ...(isTouch
+      ? []
+      : [
+          { value: 'pen' as Tool, label: t('board.pen'), icon: Pencil, hint: t('board.penHint') },
+          {
+            value: 'eraser' as Tool,
+            label: t('board.eraser'),
+            icon: Eraser,
+            hint: t('board.eraserHint'),
+          },
+        ]),
   ];
 
   return (
@@ -684,10 +716,13 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
         ref={surfaceRef}
         onPointerDown={marquee.onPointerDown}
         className={cn(
-          'relative overflow-hidden rounded-2xl border border-edge bg-surface-raised',
+          'relative rounded-2xl border border-edge bg-surface-raised',
           'board-grid',
-          isExpanded ? 'min-h-0 flex-1' : 'h-[62vh]',
-          tool === 'select' && 'cursor-crosshair',
+          // Scrollable on touch so notes dropped off a phone's edge stay
+          // reachable — see the longer note on the notes board.
+          isTouch ? 'overflow-auto touch-pan-x touch-pan-y' : 'overflow-hidden',
+          isExpanded ? 'min-h-0 flex-1' : 'h-[62dvh]',
+          tool === 'select' && !isTouch && 'cursor-crosshair',
         )}
       >
         <canvas

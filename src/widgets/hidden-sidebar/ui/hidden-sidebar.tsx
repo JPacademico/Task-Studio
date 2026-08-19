@@ -303,6 +303,7 @@ export const HiddenSidebar = ({ isMobileOpen, onMobileClose }: HiddenSidebarProp
         transition={{ type: 'spring', stiffness: 460, damping: 40, mass: 0.7 }}
         className={cn(
           'nav-rail nav-rail--left ui-textured gpu fixed left-0 top-0 z-50 flex h-full w-[264px] flex-col',
+          'safe-t safe-b safe-l',
           // `backdrop-blur-md`, not `-xl`: a full-height blurred panel makes
           // the browser resample everything behind it on every frame it moves,
           // and the rail moves on every reveal. At 95% opacity the difference

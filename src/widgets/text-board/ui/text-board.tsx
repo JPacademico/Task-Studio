@@ -428,7 +428,7 @@ export const TextBoard = ({ projectId, tasks = [] }: TextBoardProps) => {
       <div
         className={cn(
           'grid min-h-0 gap-3 lg:grid-cols-[240px_minmax(0,1fr)]',
-          isExpanded ? 'flex-1' : 'h-[62vh]',
+          isExpanded ? 'flex-1' : 'h-[62dvh]',
         )}
       >
         {/* --- Table of contents ------------------------------------------- */}

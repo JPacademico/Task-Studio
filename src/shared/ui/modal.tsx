@@ -86,8 +86,13 @@ export const Modal = ({
               // where a heavy material stops being atmosphere and starts being
               // interference; see the underwater and volcano rules in
               // `index.css`.
-              'ui-modal panel relative z-10 flex max-h-[92vh] w-full flex-col overflow-hidden',
+              // `dvh`, not `vh`: as a bottom sheet on a phone, 92vh is measured
+              // against the viewport *without* the address bar, so the sheet
+              // ran under it and the footer buttons were the part that went.
+              'ui-modal panel relative z-10 flex max-h-[92dvh] w-full flex-col overflow-hidden',
               'rounded-b-none sm:max-w-lg sm:rounded-3xl',
+              // Clears the home indicator when the sheet is flush to the bottom.
+              'safe-b sm:pb-0',
               className,
             )}
             initial={{ opacity: 0, y: 16, scale: 0.985 }}

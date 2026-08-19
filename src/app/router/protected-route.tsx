@@ -12,7 +12,7 @@ export const ProtectedRoute = () => {
 
   if (status === 'loading') {
     return (
-      <div className="grid min-h-screen place-items-center">
+      <div className="grid min-h-dvh place-items-center">
         <PageLoader label={t('app.openingStudio')} />
       </div>
     );
@@ -36,7 +36,7 @@ export const GuestRoute = () => {
 
   if (status === 'loading') {
     return (
-      <div className="grid min-h-screen place-items-center">
+      <div className="grid min-h-dvh place-items-center">
         <PageLoader label={t('app.checkingSession')} />
       </div>
     );

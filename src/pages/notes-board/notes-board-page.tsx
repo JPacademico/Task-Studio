@@ -45,7 +45,7 @@ import {
   STORAGE_KEYS,
 } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
-import { useDebouncedCallback, useLocalStorage } from '@/shared/lib/hooks';
+import { useDebouncedCallback, useIsTouchDevice, useLocalStorage } from '@/shared/lib/hooks';
 import {
   Button,
   EmptyState,
@@ -93,6 +93,7 @@ const fitImage = (naturalWidth: number, naturalHeight: number) => {
  */
 const NotesBoardPage = () => {
   const t = useT();
+  const isTouch = useIsTouchDevice();
   const currentUser = useCurrentUser();
   const boardRef = useRef<HTMLDivElement>(null);
   const handlesRef = useRef(new Map<string, NoteHandle>());
@@ -253,8 +254,21 @@ const NotesBoardPage = () => {
     [notes],
   );
 
+  // The board hides its ink tools on touch; a `draw` left over from a pointer
+  // session would otherwise sit selected with no button to unselect it.
+  useEffect(() => {
+    if (isTouch && tool === 'draw') setTool('select');
+  }, [isTouch, tool]);
+
   const marquee = useMarqueeSelection({
-    enabled: tool === 'select',
+    /*
+     * Off on touch. A lasso is a drag across the surface, which is the exact
+     * gesture the board now uses to scroll — with both live, every attempt to
+     * reach a note off-screen selected everything it passed over instead. The
+     * multi-select this backs is still reachable there through "Pick several",
+     * which is tap-based and does not compete with anything.
+     */
+    enabled: tool === 'select' && !isTouch,
     surfaceRef: boardRef,
     onCommit: commitMarquee,
   });
@@ -445,6 +459,14 @@ const NotesBoardPage = () => {
           isAddingNote={createNote.isPending}
           isExpanded={isExpanded}
           onToggleExpand={() => setIsExpanded((expanded) => !expanded)}
+          /*
+           * No ink on touch. Freehand needs the surface to swallow the drag
+           * (`touch-action: none`), and the surface needs that same drag to
+           * scroll to the notes that do not fit on a phone. One of the two has
+           * to go, and a board you cannot navigate is worse than a board you
+           * cannot doodle on.
+           */
+          showInkTools={!isTouch}
           onClearInk={() => clearInk.mutate()}
           onClearAll={() => {
             if (window.confirm('Clear this page? Notes move to the recycle bin.')) {
@@ -458,11 +480,27 @@ const NotesBoardPage = () => {
         ref={boardRef}
         onPointerDown={marquee.onPointerDown}
         className={cn(
-          'relative overflow-hidden rounded-3xl border border-dashed border-edge',
+          'relative rounded-3xl border border-dashed border-edge',
           'board-grid bg-surface-sunken/40',
-          // Expanded, the paper takes whatever height the stage has left.
-          isExpanded ? 'min-h-0 flex-1' : 'min-h-[58vh] sm:min-h-[66vh]',
-          tool === 'select' && 'cursor-crosshair',
+          /*
+           * Scrollable on touch, clipped on a pointer device.
+           *
+           * Notes are absolutely positioned wherever they were dropped, and a
+           * desk laid out on a 1400px screen puts most of them past the right
+           * edge of a phone. Clipped, those notes were not merely awkward to
+           * reach — there was no gesture that could reach them at all. As a
+           * scroll container the same absolute positions become scrollable
+           * extent, so everything is reachable with no pan/zoom layer to build
+           * and nothing to change about how a note stores its position.
+           *
+           * `ConnectorLayer` is `overflow-visible`, so the arrows keep drawing
+           * past the fold rather than being cut at the viewport edge.
+           */
+          isTouch ? 'overflow-auto touch-pan-x touch-pan-y' : 'overflow-hidden',
+          // `dvh`: the address bar is part of the viewport `vh` counts and the
+          // phone does not give back, so `58vh` ran under it.
+          isExpanded ? 'min-h-0 flex-1' : 'min-h-[58dvh] sm:min-h-[66dvh]',
+          tool === 'select' && !isTouch && 'cursor-crosshair',
         )}
       >
         <InkLayer
@@ -486,7 +524,7 @@ const NotesBoardPage = () => {
         />
 
         {isBlank ? (
-          <div className="grid h-full min-h-[52vh] place-items-center p-6">
+          <div className="grid h-full min-h-[52dvh] place-items-center p-6">
             <EmptyState
               className="border-none"
               icon={<StickyNote className="h-6 w-6" />}

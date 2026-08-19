@@ -2335,13 +2335,24 @@
 
   body {
     @apply bg-surface font-sans text-content antialiased;
-    /* Standalone iOS: keep content clear of the notch and home indicator. */
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
-      env(safe-area-inset-left);
+    /*
+     * No safe-area padding here, deliberately.
+     *
+     * It used to sit on `body`, which cannot work in this shell: the top bar
+     * and both rails are `position: fixed`, and a fixed element is laid out
+     * against the viewport, not against its padded ancestor. So the padding
+     * moved the *content* down and left the chrome exactly where it was —
+     * under the notch on a standalone iPhone — while opening a matching gap
+     * below it. One inset produced two faults.
+     *
+     * The insets now live on the elements that actually touch the edges of the
+     * screen (`.safe-*` below), which are the only things that can honour them.
+     */
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
     overscroll-behavior-y: none;
     -webkit-tap-highlight-color: transparent;
   }
+
 
   /* The page-level wash a skin can paint behind everything. One fixed
      pseudo-element, no per-component cost, and `none` on skins that skip it. */
@@ -4271,6 +4282,85 @@
 }
 
 @layer utilities {
+  /*
+   * iOS zooms the whole page when a focused input's text is under 16px, and
+   * never zooms back out. Every field in this app is `text-sm` (14px), so
+   * tapping the email box on an iPhone left the user staring at a page 1.14x
+   * too wide with the layout shifted sideways.
+   *
+   * In `utilities`, not `base`. `.field` is declared in `@layer components`,
+   * and a later cascade layer wins regardless of specificity — so the same rule
+   * in `base` lost to `text-sm` silently and changed nothing at all.
+   *
+   * Scoped to coarse pointers so the desktop keeps the 14px it was designed
+   * around; this is a fix for one browser's behaviour, not a type change.
+   * `max-width` as well as the pointer query because iPadOS reports a fine
+   * pointer with a trackpad attached and still zooms.
+   */
+  @media (pointer: coarse), (max-width: 767px) {
+    input,
+    select,
+    textarea,
+    .field {
+      font-size: 16px;
+    }
+  }
+
+  /* ==========================================================================
+   * Safe areas.
+   *
+   * Applied to the elements that sit against the edges of the screen, because
+   * those are the only ones that can honour an inset — see the note on `body`.
+   * Each is additive to whatever padding the element already carries, so a rail
+   * keeps its own gutter and gains the notch clearance on top.
+   *
+   * All four are no-ops in a browser tab: `env()` resolves to 0 unless the
+   * document is actually running inside a display cutout or a home indicator,
+   * which means these can be applied unconditionally and only do something in
+   * the installed PWA.
+   * ======================================================================== */
+  .safe-t {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .safe-b {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .safe-l {
+    padding-left: env(safe-area-inset-left, 0px);
+  }
+
+  .safe-r {
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+
+  /* For a fixed bar that must clear the notch and still be `h-14` underneath. */
+  .safe-top-bar {
+    padding-top: env(safe-area-inset-top, 0px);
+    height: calc(3.5rem + env(safe-area-inset-top, 0px));
+  }
+
+  /*
+   * Real viewport height on a phone.
+   *
+   * `100vh` is the *largest* the viewport can be — it counts the space behind
+   * the browser's collapsing address bar, so a `min-h-screen` sheet is taller
+   * than the screen for as long as that bar is showing, and its bottom row sits
+   * under it. `dvh` tracks the viewport as it actually is. Kept as a utility
+   * rather than swapping Tailwind's `screen` token so the desktop keeps the
+   * simpler unit and only the surfaces that need it opt in.
+   */
+  .min-h-dvh {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  .h-dvh {
+    height: 100vh;
+    height: 100dvh;
+  }
+
   .text-balance {
     text-wrap: balance;
   }

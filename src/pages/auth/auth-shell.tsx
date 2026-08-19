@@ -59,7 +59,7 @@ export const AuthShell = ({ title, subtitle, children, footer }: AuthShellProps)
     <div
       ref={deskRef}
       className={cn(
-        'relative min-h-screen bg-surface',
+        'relative min-h-dvh bg-surface',
         // Only clamp the desk where things are actually thrown around. On touch
         // the card is planted and a tall form has to be able to scroll.
         isDraggable ? 'overflow-hidden' : 'overflow-x-hidden',
@@ -100,7 +100,7 @@ export const AuthShell = ({ title, subtitle, children, footer }: AuthShellProps)
       {/* --- The card ---------------------------------------------------------
           A grid that centres its only child, so the drag offset starts from the
           middle of the screen at any viewport size without measuring anything. */}
-      <div className="pointer-events-none relative z-50 grid min-h-screen place-items-center px-5 py-12 sm:px-8">
+      <div className="pointer-events-none relative z-50 grid min-h-dvh place-items-center px-5 py-12 sm:px-8">
         <motion.div
           drag={isDraggable}
           dragListener={false}

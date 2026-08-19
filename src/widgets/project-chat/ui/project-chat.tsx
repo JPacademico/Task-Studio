@@ -14,7 +14,7 @@ import { queryKeys } from '@/shared/api/query-keys';
 import { cn } from '@/shared/lib/cn';
 import { formatTime } from '@/shared/lib/dates';
 import { STORAGE_KEYS } from '@/shared/config/constants';
-import { useLocalStorage } from '@/shared/lib/hooks';
+import { useIsTouchDevice, useLocalStorage } from '@/shared/lib/hooks';
 import { Avatar, Button, SendGlyph } from '@/shared/ui';
 
 interface ProjectChatProps {
@@ -54,6 +54,7 @@ export const ProjectChat = ({
   onPinnedChange,
 }: ProjectChatProps) => {
   const t = useT();
+  const isTouch = useIsTouchDevice();
   const user = useCurrentUser();
   const { socket, isConnected } = useRealtime();
 
@@ -253,8 +254,23 @@ export const ProjectChat = ({
   const typingCount = Object.keys(typingUsers).length;
 
   return (
+    /*
+     * A floating window on a pointer device, a sheet on a phone.
+     *
+     * The draggable window is the whole point of this component on a desktop —
+     * you park the conversation somewhere and keep working around it. None of
+     * that survives a 375px screen: at `min(360px, 100vw-2rem)` the window is
+     * already the full width, so there is nowhere to park it, and the drag
+     * handle only competes with the scroll gesture for the message list right
+     * underneath it. The pin is meaningless for the same reason — a window that
+     * fills the screen is either open or closed.
+     *
+     * So touch gets a bottom sheet: full width, anchored, no drag, no tack, and
+     * `dvh` height so the composer sits above the address bar instead of behind
+     * it. Desktop keeps every bit of the original behaviour.
+     */
     <motion.div
-      drag
+      drag={!isTouch}
       // Only the header is a handle — see the note above.
       dragListener={false}
       dragControls={dragControls}
@@ -267,27 +283,39 @@ export const ProjectChat = ({
         top: -window.innerHeight + 220,
         bottom: 24,
       }}
-      style={{ x, y }}
+      // A sheet is positioned by the layout, so a stored desktop offset must
+      // not carry over and push it off-screen.
+      style={isTouch ? undefined : { x, y }}
       onDragEnd={() => setStoredPosition({ x: x.get(), y: y.get() })}
       initial={{ opacity: 0, scale: 0.96, y: 20 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.96 }}
       transition={{ type: 'spring', stiffness: 420, damping: 34 }}
-      className="gpu fixed bottom-4 right-4 z-40 w-[min(360px,calc(100vw-2rem))] sm:bottom-6 sm:right-6"
+      className={cn(
+        'gpu fixed z-40',
+        isTouch
+          ? 'inset-x-0 bottom-0'
+          : 'bottom-4 right-4 w-[min(360px,calc(100vw-2rem))] sm:bottom-6 sm:right-6',
+      )}
     >
       {/* The tack lives outside the window's own box, which is why it cannot
           be a child of the panel — that one clips its overflow. */}
-      <ChatPin
-        isPinned={isPinned}
-        onPinnedChange={onPinnedChange}
-        targetRef={windowRef}
-        onHoverTargetChange={setIsPinTargeted}
-      />
+      {!isTouch && (
+        <ChatPin
+          isPinned={isPinned}
+          onPinnedChange={onPinnedChange}
+          targetRef={windowRef}
+          onHoverTargetChange={setIsPinTargeted}
+        />
+      )}
 
       <aside
         ref={windowRef}
         className={cn(
-          'panel flex h-[440px] flex-col overflow-hidden sm:h-[460px]',
+          'panel flex flex-col overflow-hidden',
+          isTouch
+            ? 'h-[min(80dvh,32rem)] rounded-b-none safe-b'
+            : 'h-[440px] sm:h-[460px]',
           // While the tack is over the window, say so — a drop target you
           // cannot see is a gesture you have to guess at.
           isPinTargeted && 'ring-2 ring-brand ring-offset-2 ring-offset-surface',
@@ -295,10 +323,15 @@ export const ProjectChat = ({
         )}
       >
         <header
-          onPointerDown={(event) => dragControls.start(event)}
-          className="flex cursor-grab touch-none select-none items-center gap-2 border-b border-edge px-3 py-2.5 active:cursor-grabbing"
+          onPointerDown={isTouch ? undefined : (event) => dragControls.start(event)}
+          className={cn(
+            'flex select-none items-center gap-2 border-b border-edge px-3 py-2.5',
+            !isTouch && 'cursor-grab touch-none active:cursor-grabbing',
+          )}
         >
-          <GripHorizontal className="h-3.5 w-3.5 shrink-0 text-content-faint" />
+          {!isTouch && (
+            <GripHorizontal className="h-3.5 w-3.5 shrink-0 text-content-faint" />
+          )}
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs font-semibold">{projectName}</p>
             <p className="flex items-center gap-1 text-[10px] text-content-faint">
