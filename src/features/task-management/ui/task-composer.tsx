@@ -12,6 +12,7 @@ import { TASK_COLORS, TASK_TYPE_META } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
 import { fromDateTimeInput, toDateTimeInput } from '@/shared/lib/dates';
 import { Avatar, Badge, Button, ColorPicker, Input, Modal, Spinner, Textarea } from '@/shared/ui';
+import { useT } from '@/shared/i18n';
 
 interface TaskComposerProps {
   isOpen: boolean;
@@ -38,6 +39,7 @@ export const TaskComposer = ({
   roster,
   task,
 }: TaskComposerProps) => {
+  const t = useT();
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
 
@@ -88,9 +90,9 @@ export const TaskComposer = ({
     setIsUploading(true);
     try {
       setAttachment(await uploadImage(file, 'attachments'));
-      toast.success('Image attached.');
+      toast.success(t('task.imageAttached'));
     } catch {
-      toast.error('Could not upload the image.');
+      toast.error(t('settings.uploadFailed'));
     } finally {
       setIsUploading(false);
     }
@@ -138,20 +140,20 @@ export const TaskComposer = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={task ? 'Edit task' : 'New task'}
-      description="The type is derived from the schedule and the assignees."
+      title={t(task ? 'task.editTitle' : 'task.newTitle')}
+      description={t('task.composerSubtitle')}
       className="sm:max-w-2xl"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             onClick={() => void handleSubmit()}
             isLoading={isPending}
             disabled={title.trim().length < 2 || windowIsInvalid}
           >
-            {task ? 'Save changes' : 'Create task'}
+            {t(task ? 'task.saveChanges' : 'task.create')}
           </Button>
         </>
       }
@@ -172,45 +174,45 @@ export const TaskComposer = ({
         </div>
 
         <Input
-          label="Title"
+          label={t('task.titleLabel')}
           name="title"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
-          placeholder="Ship the onboarding flow"
+          placeholder={t('task.titlePlaceholder')}
           maxLength={140}
           autoFocus
         />
 
         <Textarea
-          label="Description"
+          label={t('project.description')}
           name="description"
           value={description}
           onChange={(event) => setDescription(event.target.value)}
-          placeholder="Context, links, acceptance criteria…"
+          placeholder={t('task.descriptionPlaceholder')}
           maxLength={4000}
         />
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Input
-            label="Starts"
+            label={t('task.starts')}
             name="startAt"
             type="datetime-local"
             value={startAt}
             onChange={(event) => setStartAt(event.target.value)}
           />
           <Input
-            label="Deadline"
+            label={t('task.deadline')}
             name="dueAt"
             type="datetime-local"
             value={dueAt}
             onChange={(event) => setDueAt(event.target.value)}
-            error={windowIsInvalid ? 'The deadline must come after the start.' : undefined}
+            error={windowIsInvalid ? t('task.windowInvalid') : undefined}
           />
         </div>
 
         <div className="space-y-1.5">
           <p className="text-xs font-medium text-content-muted">
-            Assignees{' '}
+            {t('task.assignees')}{' '}
             <span className="text-content-faint">
               ({assigneeIds.length}/{roster.length})
             </span>
@@ -260,16 +262,16 @@ export const TaskComposer = ({
           </div>
           {assigneeIds.length > 1 && (
             <p className="text-[11px] text-emerald-500">
-              More than one assignee — this becomes a MultiTask.
+              {t('task.multiTaskNote')}
             </p>
           )}
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <ColorPicker label="Colour" value={color} onChange={setColor} options={TASK_COLORS} />
+          <ColorPicker label={t('task.colour')} value={color} onChange={setColor} options={TASK_COLORS} />
 
           <div className="space-y-1.5">
-            <p className="text-xs font-medium text-content-muted">Priority</p>
+            <p className="text-xs font-medium text-content-muted">{t('task.priority')}</p>
             <div className="flex flex-wrap gap-1.5">
               {PRIORITIES.map((option) => (
                 <button
@@ -310,14 +312,14 @@ export const TaskComposer = ({
                   setChecklist((items) => [...items, checklistDraft.trim()]);
                   setChecklistDraft('');
                 }}
-                placeholder="Add a step and press Enter"
+                placeholder={t('task.addStep')}
                 className="field"
               />
               <Button
                 type="button"
                 variant="secondary"
                 size="icon"
-                aria-label="Add checklist item"
+                aria-label={t('task.addChecklistItem')}
                 onClick={() => {
                   if (!checklistDraft.trim()) return;
                   setChecklist((items) => [...items, checklistDraft.trim()]);
@@ -354,7 +356,7 @@ export const TaskComposer = ({
         )}
 
         <div className="space-y-2">
-          <p className="text-xs font-medium text-content-muted">Image attachment</p>
+          <p className="text-xs font-medium text-content-muted">{t('task.imageAttachment')}</p>
 
           {attachment ? (
             <div className="relative overflow-hidden rounded-xl border border-edge">
@@ -365,7 +367,7 @@ export const TaskComposer = ({
               />
               <button
                 type="button"
-                aria-label="Remove attachment"
+                aria-label={t('task.removeAttachment')}
                 onClick={() => setAttachment(null)}
                 className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-black/60 text-white"
               >
@@ -384,7 +386,7 @@ export const TaskComposer = ({
               ) : (
                 <ImagePlus className="h-4 w-4" />
               )}
-              {isUploading ? 'Uploading…' : 'Attach an image (max 5 MB)'}
+              {isUploading ? t('settings.uploading') : t('task.attachImage')}
               <input
                 type="file"
                 accept="image/png,image/jpeg,image/webp,image/gif,image/avif"

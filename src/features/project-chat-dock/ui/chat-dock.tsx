@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { AnimatePresence } from 'framer-motion';
 
 import { useProjectRoom, useRealtime } from '@/app/providers/realtime-provider';
+import { chatApi } from '@/entities/chat/api/chat.api';
 import type { ChatMessage } from '@/entities/chat/model/types';
 import { useCurrentUser } from '@/features/auth/model/session.store';
+import { queryKeys } from '@/shared/api/query-keys';
 import { ProjectChat } from '@/widgets/project-chat/ui/project-chat';
 import { useChatDock } from '../model/chat-dock.store';
 
@@ -66,6 +69,38 @@ export const ChatDock = () => {
       )}
     </AnimatePresence>
   );
+};
+
+/**
+ * Fetch the conversation before anybody asks for it.
+ *
+ * Opening the chat used to be the first moment the app went looking for the
+ * messages, so the window appeared empty and filled in a round trip later —
+ * on a free-tier API, visibly. But by then the user has been on the project
+ * page for some time, doing nothing that needs the network, with the chat
+ * button in front of them.
+ *
+ * So the fetch is moved to the arrival on the page and the click gets to be
+ * instant. `prefetchQuery` is a no-op when the data is already fresh, and it
+ * shares the window's own key and `staleTime`, so this costs one request per
+ * project per five minutes and nothing at all on a revisit.
+ *
+ * Deliberately not awaited and deliberately unguarded by whether the chat has
+ * ever been opened: the request is small, it is the same one the window would
+ * make anyway, and guessing wrong costs a single cached GET.
+ */
+export const usePrefetchProjectChat = (projectId: string | undefined): void => {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!projectId) return;
+
+    void queryClient.prefetchQuery({
+      queryKey: queryKeys.chat.history(projectId),
+      queryFn: () => chatApi.history(projectId, { limit: 50 }),
+      staleTime: 5 * 60_000,
+    });
+  }, [projectId, queryClient]);
 };
 
 /**

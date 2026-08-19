@@ -8,6 +8,7 @@ import { TASK_PRIORITY_META, TASK_STATUS_META } from '@/shared/config/constants'
 import { cn } from '@/shared/lib/cn';
 import { formatDeadline, formatDeadlineDate } from '@/shared/lib/dates';
 import { AvatarStack, Badge, EmptyState, PostItMark } from '@/shared/ui';
+import { useT } from '@/shared/i18n';
 
 export interface TaskViewProps {
   tasks: Task[];
@@ -36,6 +37,7 @@ export const TaskListView = ({
   onDelete,
   showProjectLink,
 }: TaskViewProps) => {
+  const t = useT();
   const groups = useMemo(
     () =>
       ORDER.map((status) => ({
@@ -46,7 +48,7 @@ export const TaskListView = ({
   );
 
   if (tasks.length === 0) {
-    return <EmptyState title="Nothing to list" description="No task matches these filters." />;
+    return <EmptyState title={t('views.nothingToList')} description={t('views.noMatch')} />;
   }
 
   return (
@@ -95,9 +97,9 @@ export const TaskListView = ({
                         title={
                           task.isMine
                             ? undefined
-                            : 'Only the people this task is assigned to can complete it.'
+                            : t('views.assigneesOnly')
                         }
-                        aria-label={task.isCompletedByMe ? 'Mark as not done' : 'Mark as done'}
+                        aria-label={t(task.isCompletedByMe ? 'views.markNotDone' : 'task.markDone')}
                         onClick={() => onToggleComplete(task)}
                         className={cn(
                           'grid h-[18px] w-[18px] shrink-0 place-items-center rounded border transition-colors duration-150',
@@ -189,7 +191,7 @@ export const TaskListView = ({
                       <span className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover/row:opacity-100">
                         <button
                           type="button"
-                          aria-label={task.isPinned ? 'Unpin task' : 'Pin task'}
+                          aria-label={t(task.isPinned ? 'views.unpinTask' : 'views.pinTask')}
                           onClick={() => onTogglePin(task)}
                           className={cn(
                             'rounded-lg p-1.5 transition-colors',
@@ -200,7 +202,7 @@ export const TaskListView = ({
                         </button>
                         <button
                           type="button"
-                          aria-label="Move to recycle bin"
+                          aria-label={t('views.moveToBin')}
                           onClick={() => onDelete(task)}
                           className="rounded-lg p-1.5 text-content-faint transition-colors hover:text-danger"
                         >

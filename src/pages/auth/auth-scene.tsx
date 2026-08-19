@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from 'framer-motion';
 import { CalendarClock, Check, Clock3, Link2, ListChecks, Paperclip } from 'lucide-react';
 
+import { useT } from '@/shared/i18n';
 import { cn } from '@/shared/lib/cn';
 import { PushPin } from '@/shared/ui';
 
@@ -87,6 +88,7 @@ const DeskObject = ({
 
 /** The hero object: a Post-it you can actually tick off. */
 const HeroNote = ({ bounds }: { bounds: React.RefObject<HTMLElement | null> }) => {
+  const t = useT();
   const [isDone, setIsDone] = useState(false);
 
   return (
@@ -95,7 +97,7 @@ const HeroNote = ({ bounds }: { bounds: React.RefObject<HTMLElement | null> }) =
       className="left-[5%] top-[14%] xl:left-[8%]"
       delay={0}
       tilt={-6}
-      title="Go on, tick it"
+      title={t('auth.desk.tickIt')}
     >
       <div className="relative w-[190px] rounded-[4px] bg-[#fde68a] p-4 text-[#1a1a22] shadow-[0_20px_40px_-18px_rgb(0_0_0/0.65)]">
         {/* Peeled corner. */}
@@ -109,7 +111,7 @@ const HeroNote = ({ bounds }: { bounds: React.RefObject<HTMLElement | null> }) =
           <PushPin isPinned className="h-6 w-6" />
         </span>
 
-        <p className="font-hand text-[13px] font-bold uppercase tracking-wide opacity-55">Today</p>
+        <p className="font-hand text-[13px] font-bold uppercase tracking-wide opacity-55">{t('auth.desk.today')}</p>
 
         <button
           type="button"
@@ -133,7 +135,7 @@ const HeroNote = ({ bounds }: { bounds: React.RefObject<HTMLElement | null> }) =
           </span>
 
           <span className="relative font-hand text-[17px] leading-snug">
-            Design the whole thing
+            {t('auth.desk.designIt')}
             <motion.span
               aria-hidden
               initial={false}
@@ -149,36 +151,49 @@ const HeroNote = ({ bounds }: { bounds: React.RefObject<HTMLElement | null> }) =
 };
 
 /** A second sheet, deeper in the stack. */
-const SmallNote = ({ bounds }: { bounds: React.RefObject<HTMLElement | null> }) => (
-  <DeskObject bounds={bounds} className="right-[7%] top-[10%]" delay={1.4} tilt={7} title="Drag me">
+const SmallNote = ({ bounds }: { bounds: React.RefObject<HTMLElement | null> }) => {
+  const t = useT();
+
+  return (
+  <DeskObject
+    bounds={bounds}
+    className="right-[7%] top-[10%]"
+    delay={1.4}
+    tilt={7}
+    title={t('auth.desk.dragMe')}
+  >
     <div className="w-[132px] rounded-[4px] bg-[#bfdbfe] p-3 text-[#1a1a22] shadow-[0_16px_32px_-16px_rgb(0_0_0/0.6)]">
       <span
         aria-hidden
         className="float-right h-5 w-5 bg-black/10"
         style={{ clipPath: 'polygon(100% 0, 0 0, 100% 100%)' }}
       />
-      <p className="font-hand text-[15px] leading-tight">Ship Friday ✓</p>
+      <p className="font-hand text-[15px] leading-tight">{t('auth.desk.shipFriday')}</p>
       <div className="mt-2 space-y-1">
         <span className="block h-[3px] w-full rounded-full bg-black/15" />
         <span className="block h-[3px] w-2/3 rounded-full bg-black/15" />
       </div>
     </div>
   </DeskObject>
-);
+  );
+};
 
 /** A third sheet in the far corner, so the wide screen never goes empty. */
-const ChecklistNote = ({ bounds }: { bounds: React.RefObject<HTMLElement | null> }) => (
+const ChecklistNote = ({ bounds }: { bounds: React.RefObject<HTMLElement | null> }) => {
+  const t = useT();
+
+  return (
   <DeskObject
     bounds={bounds}
     className="bottom-[12%] right-[9%]"
     delay={2.8}
     tilt={-5}
-    title="A list, half done"
+    title={t('auth.desk.halfDone')}
   >
     <div className="w-[150px] rounded-[4px] bg-[#bbf7d0] p-3 text-[#1a1a22] shadow-[0_16px_32px_-16px_rgb(0_0_0/0.6)]">
       <p className="flex items-center gap-1.5 font-hand text-[14px] font-bold leading-tight">
         <ListChecks className="h-3.5 w-3.5" />
-        This week
+        {t('auth.desk.thisWeek')}
       </p>
       <ul className="mt-2 space-y-1.5">
         {[true, true, false].map((done, index) => (
@@ -202,27 +217,31 @@ const ChecklistNote = ({ bounds }: { bounds: React.RefObject<HTMLElement | null>
       </ul>
     </div>
   </DeskObject>
-);
+  );
+};
 
 /** A mini task card, so the scene shows both halves of the product. */
-const TaskChip = ({ bounds }: { bounds: React.RefObject<HTMLElement | null> }) => (
+const TaskChip = ({ bounds }: { bounds: React.RefObject<HTMLElement | null> }) => {
+  const t = useT();
+
+  return (
   <DeskObject
     bounds={bounds}
     className="bottom-[15%] left-[8%]"
     delay={2.2}
     tilt={-3}
-    title="A task, in miniature"
+    title={t('auth.desk.miniTask')}
   >
     <div className="relative w-[172px] overflow-hidden rounded-xl border border-white/15 bg-white/10 p-3 backdrop-blur-md">
       <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-brand" />
-      <p className="text-[11px] font-semibold text-white/90">Roll out the new board</p>
+      <p className="text-[11px] font-semibold text-white/90">{t('auth.desk.rollOut')}</p>
       <div className="mt-2 flex items-center gap-1.5">
         <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-1.5 py-0.5 text-[9px] font-medium text-white/80">
           <Clock3 className="h-2.5 w-2.5" />
           2d
         </span>
         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-400/20 px-1.5 py-0.5 text-[9px] font-medium text-emerald-200">
-          On time
+          {t('auth.desk.onTime')}
         </span>
         <span className="ml-auto flex -space-x-1.5">
           {['#f472b6', '#818cf8', '#34d399'].map((tone) => (
@@ -236,7 +255,8 @@ const TaskChip = ({ bounds }: { bounds: React.RefObject<HTMLElement | null> }) =
       </div>
     </div>
   </DeskObject>
-);
+  );
+};
 
 /** Stationery. Small, quiet, reacts to the pointer. */
 const Trinket = ({
@@ -274,7 +294,10 @@ const Trinket = ({
  * user can drag a Post-it from one corner of the screen to the other without
  * ever losing it off an edge.
  */
-export const AuthScene = ({ bounds }: { bounds: React.RefObject<HTMLElement | null> }) => (
+export const AuthScene = ({ bounds }: { bounds: React.RefObject<HTMLElement | null> }) => {
+  const t = useT();
+
+  return (
   <div className="pointer-events-none absolute inset-0 overflow-hidden">
     {/* Depth: brand blooms and a soft grid, all pure CSS. */}
     <div
@@ -303,7 +326,7 @@ export const AuthScene = ({ bounds }: { bounds: React.RefObject<HTMLElement | nu
         className="left-[19%] top-[46%]"
         delay={0.8}
         tone="bg-white/10 text-white/80"
-        title="Clip something on"
+        title={t('auth.desk.clipOn')}
       >
         <Paperclip className="h-5 w-5" />
       </Trinket>
@@ -313,7 +336,7 @@ export const AuthScene = ({ bounds }: { bounds: React.RefObject<HTMLElement | nu
         className="right-[20%] top-[42%]"
         delay={3}
         tone="bg-brand/25 text-white"
-        title="Connect two ideas"
+        title={t('auth.desk.connect')}
       >
         <Link2 className="h-5 w-5" />
       </Trinket>
@@ -323,10 +346,11 @@ export const AuthScene = ({ bounds }: { bounds: React.RefObject<HTMLElement | nu
         className="bottom-[26%] left-[24%]"
         delay={4.2}
         tone="bg-white/10 text-white/80"
-        title="Deadlines that speak up"
+        title={t('auth.desk.deadlines')}
       >
         <CalendarClock className="h-5 w-5" />
       </Trinket>
     </div>
   </div>
-);
+  );
+};

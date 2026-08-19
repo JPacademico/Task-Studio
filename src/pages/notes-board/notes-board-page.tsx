@@ -55,6 +55,7 @@ import {
   Segmented,
 } from '@/shared/ui';
 import { TextBoard } from '@/widgets/text-board/ui/text-board';
+import { useT } from '@/shared/i18n';
 
 /**
  * The two things a personal desk is made of.
@@ -91,6 +92,7 @@ const fitImage = (naturalWidth: number, naturalHeight: number) => {
  * so pointer movement never round-trips through the API.
  */
 const NotesBoardPage = () => {
+  const t = useT();
   const currentUser = useCurrentUser();
   const boardRef = useRef<HTMLDivElement>(null);
   const handlesRef = useRef(new Map<string, NoteHandle>());
@@ -203,7 +205,7 @@ const NotesBoardPage = () => {
         ...dropPoint(),
       });
     } catch {
-      toast.error('Could not upload that image.');
+      toast.error(t('editor.uploadFailed'));
     } finally {
       setIsUploading(false);
     }
@@ -361,7 +363,7 @@ const NotesBoardPage = () => {
     [notes, updateNote.mutate],
   );
 
-  if (isLoading || !board) return <PageLoader label="Opening your board" />;
+  if (isLoading || !board) return <PageLoader label={t('notes.opening')} />;
 
   const isBlank = notes.length === 0 && strokes.length === 0;
   const connectSource = connectFrom ? notes.find((note) => note.id === connectFrom) : undefined;
@@ -392,15 +394,13 @@ const NotesBoardPage = () => {
         <header className="flex flex-wrap items-end justify-between gap-3">
           <div className="space-y-0.5">
             <p className="text-[10px] uppercase tracking-[0.18em] text-content-faint sm:text-xs">
-              <RunicText mode="always">Notes</RunicText>
+              <RunicText mode="always">{t('notes.title')}</RunicText>
             </p>
             <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-              {view === 'notes' ? 'Your Post-it board' : 'Your text board'}
+              {t(view === 'notes' ? 'notes.yourBoard' : 'doc.yourBoard')}
             </h1>
             <p className="hidden text-sm text-content-muted sm:block">
-              {view === 'notes'
-                ? 'Private to you. Drag things anywhere — the layout is saved as you go.'
-                : 'Private to you. For the things that outgrew a Post-it.'}
+              {t(view === 'notes' ? 'notes.privateDrag' : 'notes.privateOutgrew')}
             </p>
           </div>
 
@@ -490,11 +490,11 @@ const NotesBoardPage = () => {
             <EmptyState
               className="border-none"
               icon={<StickyNote className="h-6 w-6" />}
-              title="An empty desk"
-              description="Add a note or pin an image, then connect and arrange them however you think."
+              title={t('notes.emptyDesk')}
+              description={t('notes.emptyDeskBody')}
               action={
                 <Button size="sm" onClick={handleCreateNote}>
-                  Add the first note
+                  {t('notes.addFirstNote')}
                 </Button>
               }
             />

@@ -24,6 +24,7 @@ import { SkinMock } from '@/features/theme-toggle/ui/skin-mock';
 import { cn } from '@/shared/lib/cn';
 import { useSkinMotion } from '@/shared/lib/skin-motion';
 import { Button, DirectionArrow, EmptyState, RunicText } from '@/shared/ui';
+import { useT } from '@/shared/i18n';
 
 /**
  * Six to a page.
@@ -54,6 +55,7 @@ interface GalleryCardProps {
  * picture of what it will do.
  */
 const GalleryCard = ({ skin, isActive, isSelected, isDark, onSelect }: GalleryCardProps) => {
+  const t = useT();
   const preview = isDark ? skin.dark : skin.light;
 
   return (
@@ -73,7 +75,7 @@ const GalleryCard = ({ skin, isActive, isSelected, isDark, onSelect }: GalleryCa
         type="button"
         onClick={onSelect}
         aria-pressed={isSelected}
-        aria-label={`Preview the ${skin.name} theme`}
+        aria-label={`{t('themes.preview')} the ${skin.name} theme`}
         className="relative block w-full p-2.5 pb-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand/50"
       >
         {/* The mock lifts out of the card under the pointer, so the picture is
@@ -88,7 +90,7 @@ const GalleryCard = ({ skin, isActive, isSelected, isDark, onSelect }: GalleryCa
               <span className="truncate text-sm font-bold tracking-tight">{skin.name}</span>
               {isActive && (
                 <span className="shrink-0 rounded-full bg-positive/15 px-1.5 py-px text-[9px] font-bold uppercase tracking-wide text-positive">
-                  In use
+                  {t('themes.inUse')}
                 </span>
               )}
             </span>
@@ -121,6 +123,7 @@ const GalleryCard = ({ skin, isActive, isSelected, isDark, onSelect }: GalleryCa
  * adding the ninth one is a data change and not a UI change.
  */
 const ThemeGalleryPage = () => {
+  const t = useT();
   const { skin, setSkin, isDark } = useTheme();
   const motionSpec = useSkinMotion();
 
@@ -153,11 +156,11 @@ const ThemeGalleryPage = () => {
     <div className="space-y-5 sm:space-y-7">
       <header className="space-y-1">
         <p className="text-[10px] uppercase tracking-[0.18em] text-content-faint sm:text-xs">
-          <RunicText mode="always">Appearance</RunicText>
+          <RunicText mode="always">{t('settings.appearance')}</RunicText>
         </p>
         <h1 className="flex items-center gap-2.5 text-xl font-semibold tracking-tight sm:text-2xl">
           <Palette className="h-5 w-5 text-brand" />
-          Theme gallery
+          {t('themes.heading')}
         </h1>
       </header>
 
@@ -173,15 +176,15 @@ const ThemeGalleryPage = () => {
                   setQuery(event.target.value);
                   setPage(0);
                 }}
-                placeholder="Search themes — try “dark”, “retro”, “toxic”…"
-                aria-label="Search themes"
+                placeholder={t('themes.searchPlaceholder')}
+                aria-label={t('themes.searchLabel')}
                 className="field h-10 pl-9 pr-9"
               />
               {query && (
                 <button
                   type="button"
                   onClick={() => setQuery('')}
-                  aria-label="Clear the search"
+                  aria-label={t('themes.clearSearch')}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-content-faint transition-colors hover:text-content"
                 >
                   <X className="h-3.5 w-3.5" />
@@ -197,11 +200,11 @@ const ThemeGalleryPage = () => {
           {results.length === 0 ? (
             <EmptyState
               icon={<Search className="h-6 w-6" />}
-              title="No theme by that name"
-              description="Try a mood instead — “dark”, “loud”, “paper”, “retro”."
+              title={t('themes.noMatch')}
+              description={t('themes.noMatchBody')}
               action={
                 <Button size="sm" variant="secondary" onClick={() => setQuery('')}>
-                  Clear the search
+                  {t('themes.clearSearch')}
                 </Button>
               }
             />
@@ -240,13 +243,13 @@ const ThemeGalleryPage = () => {
 
               {pageCount > 1 && (
                 <nav
-                  aria-label="Theme gallery pages"
+                  aria-label={t('themes.pages')}
                   className="flex items-center justify-center gap-2 pt-1"
                 >
                   <Button
                     size="icon"
                     variant="ghost"
-                    aria-label="Previous page"
+                    aria-label={t('themes.previousPage')}
                     disabled={page === 0}
                     onClick={() => setPage((current) => Math.max(0, current - 1))}
                   >
@@ -272,7 +275,7 @@ const ThemeGalleryPage = () => {
                   <Button
                     size="icon"
                     variant="ghost"
-                    aria-label="Next page"
+                    aria-label={t('themes.nextPage')}
                     disabled={page >= pageCount - 1}
                     onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))}
                   >
@@ -289,7 +292,7 @@ const ThemeGalleryPage = () => {
           <div className="panel overflow-hidden">
             <div className="flex items-center gap-2 border-b border-edge px-3.5 py-2.5">
               <p className="flex-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-content-faint">
-                Preview
+                {t('themes.preview')}
               </p>
 
               {/* Both palettes ship with every theme, so the box can show either
@@ -352,7 +355,7 @@ const ThemeGalleryPage = () => {
                   {skin === detail.value ? (
                     <>
                       <Check className="h-3.5 w-3.5" strokeWidth={3} />
-                      Currently applied
+                      {t('themes.currentlyApplied')}
                     </>
                   ) : (
                     <>
@@ -363,7 +366,7 @@ const ThemeGalleryPage = () => {
                 </Button>
 
                 <p className="text-center text-[10px] leading-relaxed text-content-faint">
-                  Light and dark stay your own setting — every theme ships both.
+                  {t('themes.bothModes')}
                 </p>
               </div>
             </div>

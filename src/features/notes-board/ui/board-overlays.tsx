@@ -4,6 +4,7 @@ import { Group, Link2, MousePointerClick, Ungroup, X } from 'lucide-react';
 import { cn } from '@/shared/lib/cn';
 import { Button } from '@/shared/ui';
 import type { Rect } from '../lib/use-board-gestures';
+import { useT } from '@/shared/i18n';
 
 interface SelectionBarProps {
   count: number;
@@ -28,7 +29,10 @@ export const SelectionBar = ({
   onGroup,
   onUngroup,
   onClear,
-}: SelectionBarProps) => (
+}: SelectionBarProps) => {
+  const t = useT();
+
+  return (
   <AnimatePresence>
     {count > 0 && (
       <motion.div
@@ -56,28 +60,29 @@ export const SelectionBar = ({
           disabled={!canGroup}
           title={
             canGroup
-              ? 'Bind these into one unit — dragging any member moves them all'
-              : 'Select at least two notes to group them'
+              ? t('notes.groupHint')
+              : t('notes.groupNeedsTwo')
           }
         >
           <Group className="h-3.5 w-3.5" />
-          Group
+          {t('notes.group')}
         </Button>
 
         {canUngroup && (
           <Button size="sm" variant="secondary" onClick={onUngroup}>
             <Ungroup className="h-3.5 w-3.5" />
-            Ungroup
+            {t('notes.ungroup')}
           </Button>
         )}
 
-        <Button size="sm" variant="ghost" onClick={onClear} aria-label="Clear selection">
+        <Button size="sm" variant="ghost" onClick={onClear} aria-label={t('notes.clearSelection')}>
           <X className="h-3.5 w-3.5" />
         </Button>
       </motion.div>
     )}
   </AnimatePresence>
-);
+  );
+};
 
 interface ConnectBannerProps {
   /** Null while the user still has to pick where the arrow starts. */
@@ -87,7 +92,10 @@ interface ConnectBannerProps {
 }
 
 /** Two dots and a live caption: which half of the gesture the user is in. */
-export const ConnectBanner = ({ sourceLabel, isActive, onCancel }: ConnectBannerProps) => (
+export const ConnectBanner = ({ sourceLabel, isActive, onCancel }: ConnectBannerProps) => {
+  const t = useT();
+
+  return (
   <AnimatePresence>
     {isActive && (
       <motion.div
@@ -120,14 +128,14 @@ export const ConnectBanner = ({ sourceLabel, isActive, onCancel }: ConnectBanner
         <span className="text-xs">
           {sourceLabel ? (
             <>
-              <span className="font-semibold">Now click where the arrow lands.</span>{' '}
+              <span className="font-semibold">{t('notes.arrowLands')}</span>{' '}
               <span className="text-content-muted">From “{sourceLabel}”.</span>
             </>
           ) : (
             <>
-              <span className="font-semibold">Click the note the arrow starts from.</span>{' '}
+              <span className="font-semibold">{t('notes.arrowStarts')}</span>{' '}
               <span className="hidden text-content-muted sm:inline">
-                Click an existing arrow to remove it.
+                {t('notes.arrowRemove')}
               </span>
             </>
           )}
@@ -136,7 +144,7 @@ export const ConnectBanner = ({ sourceLabel, isActive, onCancel }: ConnectBanner
         <button
           type="button"
           onClick={onCancel}
-          aria-label="Leave connect mode"
+          aria-label={t('notes.leaveConnect')}
           className="rounded-lg p-1 text-content-faint transition-colors hover:text-danger"
         >
           <X className="h-3.5 w-3.5" />
@@ -144,7 +152,8 @@ export const ConnectBanner = ({ sourceLabel, isActive, onCancel }: ConnectBanner
       </motion.div>
     )}
   </AnimatePresence>
-);
+  );
+};
 
 /** The rubber band itself. */
 export const MarqueeBox = ({ rect }: { rect: Rect | null }) =>
@@ -157,10 +166,13 @@ export const MarqueeBox = ({ rect }: { rect: Rect | null }) =>
   ) : null;
 
 /** Shown once, over an empty board, to name the gesture nobody guesses. */
-export const LassoHint = ({ show }: { show: boolean }) =>
-  show ? (
+export const LassoHint = ({ show }: { show: boolean }) => {
+  const t = useT();
+
+  return show ? (
     <p className="pointer-events-none absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-surface-raised/80 px-3 py-1 text-[11px] text-content-faint backdrop-blur">
       <MousePointerClick className="h-3 w-3" />
-      Drag across the board to select several notes at once
+      {t('notes.lassoHint')}
     </p>
   ) : null;
+};

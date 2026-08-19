@@ -13,6 +13,7 @@ import type {
   Note,
   UpdateNotePayload,
 } from './types';
+import { translate } from '@/shared/i18n';
 
 /**
  * Board mutations write straight into the page snapshot.
@@ -49,7 +50,7 @@ export const useCreateBoardNote = (pageIndex: number) => {
     mutationFn: (payload: CreateNotePayload) =>
       noteApi.create({ ...payload, scope: 'PERSONAL', pageIndex }),
     onSuccess: (note) => patch((snapshot) => ({ ...snapshot, notes: [...snapshot.notes, note] })),
-    onError: (error) => toast.error(errorMessage(error, 'Could not add that to the board.')),
+    onError: (error) => toast.error(errorMessage(error, translate('toast.boardAddFailed'))),
   });
 };
 
@@ -76,7 +77,7 @@ export const useUpdateBoardNote = (pageIndex: number) => {
 
     onError: (error, _variables, context) => {
       if (context?.previous) queryClient.setQueryData(key, context.previous);
-      toast.error(errorMessage(error, 'Could not save the note.'));
+      toast.error(errorMessage(error, translate('toast.noteSaveFailed')));
     },
   });
 };
@@ -156,7 +157,7 @@ export const useSaveBoardPositions = (pageIndex: number) => {
     mutationFn: noteApi.savePositions,
     onError: (error) => {
       void queryClient.invalidateQueries({ queryKey: key });
-      toast.error(errorMessage(error, 'Could not save the layout.'));
+      toast.error(errorMessage(error, translate('toast.layoutSaveFailed')));
     },
   });
 };
@@ -172,7 +173,7 @@ export const useCreateNoteLink = (pageIndex: number) => {
         // An upsert on the server, so replace rather than append on a re-link.
         links: [...snapshot.links.filter((entry) => entry.id !== link.id), link],
       })),
-    onError: (error) => toast.error(errorMessage(error, 'Could not connect those notes.')),
+    onError: (error) => toast.error(errorMessage(error, translate('toast.connectFailed'))),
   });
 };
 
@@ -198,7 +199,7 @@ export const useAddBoardStroke = (pageIndex: number) => {
       boardApi.addStroke({ ...payload, pageIndex }),
     onSuccess: (stroke) =>
       patch((snapshot) => ({ ...snapshot, strokes: [...snapshot.strokes, stroke] })),
-    onError: (error) => toast.error(errorMessage(error, 'Could not save that stroke.')),
+    onError: (error) => toast.error(errorMessage(error, translate('toast.strokeSaveFailed'))),
   });
 };
 
@@ -226,7 +227,7 @@ export const useClearBoard = (pageIndex: number) => {
           : 'Page cleared.',
       );
     },
-    onError: (error) => toast.error(errorMessage(error, 'Could not clear the page.')),
+    onError: (error) => toast.error(errorMessage(error, translate('toast.clearPageFailed'))),
   });
 };
 
@@ -244,9 +245,9 @@ export const useBoardPages = (pageIndex: number) => {
       mutationFn: boardApi.addPage,
       onSuccess: (pages) => {
         refreshPages(pages);
-        toast.success('Page added.');
+        toast.success(translate('toast.pageAdded'));
       },
-      onError: (error) => toast.error(errorMessage(error, 'Could not add a page.')),
+      onError: (error) => toast.error(errorMessage(error, translate('toast.pageAddFailed'))),
     }),
     rename: useMutation({
       mutationFn: ({ index, name }: { index: number; name: string }) =>
@@ -259,7 +260,7 @@ export const useBoardPages = (pageIndex: number) => {
       onSuccess: (pages) => {
         refreshPages(pages);
         void queryClient.invalidateQueries({ queryKey: key });
-        toast.success('Page removed. Its notes are in the recycle bin.');
+        toast.success(translate('toast.pageRemoved'));
       },
       onError: (error) => toast.error(errorMessage(error)),
     }),
@@ -281,6 +282,6 @@ export const useGroupNotes = (pageIndex: number) => {
         ),
       }));
     },
-    onError: (error) => toast.error(errorMessage(error, 'Could not group those notes.')),
+    onError: (error) => toast.error(errorMessage(error, translate('toast.groupFailed'))),
   });
 };

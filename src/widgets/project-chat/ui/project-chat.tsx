@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion, useDragControls, useMotionValue } from 'framer-motion';
-import { GripHorizontal, Pin, X } from 'lucide-react';
+import { AlertCircle, Check, Clock3, GripHorizontal, Pin, X } from 'lucide-react';
 
 import { useRealtime } from '@/app/providers/realtime-provider';
 import { chatApi } from '@/entities/chat/api/chat.api';
 import type { ChatMessage } from '@/entities/chat/model/types';
 import { useCurrentUser } from '@/features/auth/model/session.store';
 import { ChatPin } from '@/features/project-chat-dock/ui/chat-pin';
+import { useT } from '@/shared/i18n';
+import { emitWithAck } from '@/shared/api/socket';
 import { queryKeys } from '@/shared/api/query-keys';
 import { cn } from '@/shared/lib/cn';
 import { formatTime } from '@/shared/lib/dates';
@@ -51,6 +53,7 @@ export const ProjectChat = ({
   isPinned,
   onPinnedChange,
 }: ProjectChatProps) => {
+  const t = useT();
   const user = useCurrentUser();
   const { socket, isConnected } = useRealtime();
 
@@ -70,10 +73,31 @@ export const ProjectChat = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const windowRef = useRef<HTMLElement>(null);
 
+  /*
+   * History is fetched rarely and kept for a long time, because the socket is
+   * what keeps this view current.
+   *
+   * On the global 30s `staleTime` every reopen of the window — and every
+   * navigation with it pinned — re-ran this query, which meant a network round
+   * trip standing between the click and the conversation on a surface that had
+   * the conversation a moment ago. The refetch was also close to pointless:
+   * anything that changed since the last fetch arrived over `chat:message` and
+   * is already in `liveMessages`.
+   *
+   * The long `gcTime` is the half that makes reopening instant. Without it the
+   * cache is dropped five minutes after the window closes, and the next open
+   * starts from nothing again.
+   *
+   * `refetchOnReconnect` stays on globally, which is the case this trades
+   * against: a dropped connection is the one situation where events were
+   * genuinely missed and the history really is behind.
+   */
   const { data: history = [] } = useQuery({
     queryKey: queryKeys.chat.history(projectId),
     queryFn: () => chatApi.history(projectId, { limit: 50 }),
     enabled: Boolean(projectId),
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
   });
 
   const messages = useMemo(() => {
@@ -92,9 +116,32 @@ export const ProjectChat = ({
     const handleMessage = (message: ChatMessage) => {
       if (message.projectId !== projectId) return;
 
-      setLiveMessages((current) =>
-        current.some((entry) => entry.id === message.id) ? current : [...current, message],
-      );
+      setLiveMessages((current) => {
+        if (current.some((entry) => entry.id === message.id)) return current;
+
+        /*
+         * Our own message coming back.
+         *
+         * The optimistic copy drawn by `send` is already on screen under a
+         * local id, so appending this would show the same sentence twice for a
+         * moment and then leave two entries that never merge. `clientId` is the
+         * only thing tying the two together — the server id did not exist when
+         * we drew ours — so it is matched on, and the server's version replaces
+         * ours in place. Replacing rather than removing-and-appending keeps it
+         * where the reader is already looking, and carries over the real id,
+         * timestamp and any server-side edit to the content.
+         */
+        if (message.clientId) {
+          const mine = current.findIndex((entry) => entry.clientId === message.clientId);
+          if (mine !== -1) {
+            const next = [...current];
+            next[mine] = message;
+            return next;
+          }
+        }
+
+        return [...current, message];
+      });
     };
 
     const handleTyping = (payload: { projectId: string; userId: string }) => {
@@ -130,12 +177,77 @@ export const ProjectChat = ({
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages.length]);
 
+  /**
+   * Marks one of our own in-flight messages, found by `clientId`.
+   *
+   * A no-op if it is already gone — the broadcast can beat the acknowledgement,
+   * in which case the message has been replaced by the server's copy and there
+   * is nothing left to annotate.
+   */
+  const markDelivery = (clientId: string, delivery: ChatMessage['delivery']) => {
+    setLiveMessages((current) => {
+      const index = current.findIndex((entry) => entry.clientId === clientId);
+      if (index === -1) return current;
+
+      const next = [...current];
+      next[index] = { ...next[index], delivery };
+      return next;
+    });
+  };
+
+  /**
+   * Draw the message first, send it second.
+   *
+   * Previously this emitted and cleared the input, and the sentence did not
+   * appear until the server had written it to Postgres and fanned it back out —
+   * so the person who typed it watched an empty conversation for a round trip
+   * and had no way to tell a slow network from a lost message.
+   *
+   * Now the local copy goes up immediately with a `pending` mark, and the
+   * gateway's acknowledgement settles it: the broadcast usually arrives first
+   * and replaces it outright, and the ack is the backstop that catches the
+   * cases the broadcast cannot describe — a rate-limited send, a timeout, a
+   * socket that dropped between the click and the write.
+   *
+   * `delivery: 'failed'` is deliberately left on screen rather than rolled
+   * back. A message that vanishes reads as a message that was never typed; one
+   * with a warning on it reads as something to send again, which is what
+   * actually happened.
+   */
   const send = () => {
     const content = draft.trim();
-    if (!content || !socket || !isConnected) return;
+    if (!content || !socket || !isConnected || !user) return;
 
-    socket.emit('chat:send', { projectId, content, clientId: crypto.randomUUID() });
+    const clientId = crypto.randomUUID();
+
+    setLiveMessages((current) => [
+      ...current,
+      {
+        // Namespaced so it can never collide with a server uuid, and so a
+        // stray local id is obvious if one ever escapes into a cache.
+        id: `local:${clientId}`,
+        clientId,
+        content,
+        createdAt: new Date().toISOString(),
+        editedAt: null,
+        deletedAt: null,
+        projectId,
+        userId: user.id,
+        user,
+        delivery: 'pending',
+      },
+    ]);
     setDraft('');
+
+    void emitWithAck<{ delivered?: boolean; rateLimited?: boolean }>('chat:send', {
+      projectId,
+      content,
+      clientId,
+    })
+      .then((ack) => {
+        markDelivery(clientId, ack?.delivered ? undefined : 'failed');
+      })
+      .catch(() => markDelivery(clientId, 'failed'));
   };
 
   const typingCount = Object.keys(typingUsers).length;
@@ -193,15 +305,15 @@ export const ProjectChat = ({
               {isPinned && (
                 <>
                   <Pin className="h-2.5 w-2.5 fill-current text-brand" />
-                  <span className="text-brand">Pinned</span>
+                  <span className="text-brand">{t('chat.pinned')}</span>
                   <span aria-hidden>·</span>
                 </>
               )}
               {typingCount > 0
-                ? `${typingCount} typing…`
+                ? t('chat.typing', { count: typingCount })
                 : isConnected
-                  ? 'Connected'
-                  : 'Reconnecting…'}
+                  ? t('chat.connected')
+                  : t('chat.reconnecting')}
             </p>
           </div>
           <Button
@@ -210,8 +322,8 @@ export const ProjectChat = ({
             onClick={onClose}
             // The one way out, pinned or not — stated here so nobody has to
             // work out that they need to unpin first.
-            title="Close the chat"
-            aria-label="Close chat"
+            title={t('chat.closeTitle')}
+            aria-label={t('chat.close')}
           >
             <X className="h-3.5 w-3.5" />
           </Button>
@@ -220,7 +332,7 @@ export const ProjectChat = ({
         <div ref={scrollRef} className="scrollbar-thin flex-1 space-y-3 overflow-y-auto px-3 py-3">
           {messages.length === 0 && (
             <p className="py-8 text-center text-xs text-content-faint">
-              No messages yet. Say hello to the roster.
+              {t('chat.empty')}
             </p>
           )}
 
@@ -239,6 +351,10 @@ export const ProjectChat = ({
                     isMine
                       ? 'rounded-br-sm bg-brand text-brand-contrast'
                       : 'rounded-bl-sm bg-surface-sunken text-content',
+                    // A failed send is the one state that must survive being
+                    // glanced at, so it changes the bubble rather than adding a
+                    // detail inside it.
+                    message.delivery === 'failed' && 'opacity-80 ring-1 ring-danger',
                   )}
                 >
                   {!isMine && (
@@ -247,8 +363,30 @@ export const ProjectChat = ({
                     </p>
                   )}
                   <p className="whitespace-pre-wrap break-words">{message.content}</p>
-                  <p className="mt-1 text-[9px] opacity-60">{formatTime(message.createdAt)}</p>
+                  <p className="mt-1 flex items-center gap-1 text-[9px] opacity-60">
+                    {formatTime(message.createdAt)}
+                    {/*
+                      Only our own messages carry a delivery mark, and only
+                      while there is something to say about it: pending, failed,
+                      or — once the server's copy has replaced ours — nothing at
+                      all beyond the tick that says it landed.
+                    */}
+                    {isMine && message.delivery === 'pending' && (
+                      <Clock3 className="h-2.5 w-2.5" aria-label={t('chat.sending')} />
+                    )}
+                    {isMine && message.delivery === undefined && !message.id.startsWith('local:') && (
+                      <Check className="h-2.5 w-2.5" aria-label={t('chat.sent')} />
+                    )}
+                  </p>
                 </div>
+                {message.delivery === 'failed' && (
+                  <span
+                    title={t('chat.notSentHelp')}
+                    className="flex items-center text-danger"
+                  >
+                    <AlertCircle className="h-3.5 w-3.5" aria-label={t('chat.notSent')} />
+                  </span>
+                )}
               </div>
             );
           })}
@@ -267,7 +405,7 @@ export const ProjectChat = ({
               setDraft(event.target.value);
               socket?.emit('chat:typing', { projectId });
             }}
-            placeholder={isConnected ? 'Write a message…' : 'Offline'}
+            placeholder={isConnected ? t('chat.placeholder') : t('chat.offline')}
             disabled={!isConnected}
             className="field h-9 text-xs"
           />
@@ -275,7 +413,7 @@ export const ProjectChat = ({
             type="submit"
             size="icon"
             disabled={!draft.trim() || !isConnected}
-            aria-label="Send"
+            aria-label={t('chat.send')}
           >
             <SendGlyph />
           </Button>

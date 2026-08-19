@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCreateProject } from '@/entities/project/model/queries';
 import { TASK_COLORS } from '@/shared/config/constants';
 import { Button, ColorPicker, Input, Modal, Textarea } from '@/shared/ui';
+import { useT } from '@/shared/i18n';
 
 interface CreateProjectDialogProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ interface CreateProjectDialogProps {
 }
 
 export const CreateProjectDialog = ({ isOpen, onClose }: CreateProjectDialogProps) => {
+  const t = useT();
   const navigate = useNavigate();
   const createProject = useCreateProject();
 
@@ -42,19 +44,19 @@ export const CreateProjectDialog = ({ isOpen, onClose }: CreateProjectDialogProp
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="New project"
-      description="You become the owner and can invite your roster right after."
+      title={t('project.newTitle')}
+      description={t('project.newSubtitle')}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             onClick={() => void handleSubmit()}
             isLoading={createProject.isPending}
             disabled={name.trim().length < 2}
           >
-            Create project
+            {t('project.create')}
           </Button>
         </>
       }
@@ -67,25 +69,25 @@ export const CreateProjectDialog = ({ isOpen, onClose }: CreateProjectDialogProp
         }}
       >
         <Input
-          label="Name"
+          label={t('project.name')}
           name="name"
           value={name}
           onChange={(event) => setName(event.target.value)}
-          placeholder="Product launch"
+          placeholder={t('project.namePlaceholder')}
           autoFocus
           maxLength={80}
         />
 
         <Textarea
-          label="Description"
+          label={t('project.description')}
           name="description"
           value={description}
           onChange={(event) => setDescription(event.target.value)}
-          placeholder="What is this project about?"
+          placeholder={t('project.descriptionPlaceholder')}
           maxLength={500}
         />
 
-        <ColorPicker label="Accent colour" value={color} onChange={setColor} options={TASK_COLORS} />
+        <ColorPicker label={t('project.accentColour')} value={color} onChange={setColor} options={TASK_COLORS} />
       </form>
     </Modal>
   );

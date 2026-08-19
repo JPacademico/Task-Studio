@@ -9,6 +9,7 @@ import { cn } from '@/shared/lib/cn';
 import { formatRelative } from '@/shared/lib/dates';
 import { readableInk } from '@/shared/lib/colors';
 import { Badge, Button, EmptyState, PageLoader, PostItGlyph, Segmented } from '@/shared/ui';
+import { useT } from '@/shared/i18n';
 
 type Bin = 'tasks' | 'notes';
 
@@ -25,6 +26,7 @@ const ROW =
  * they were soft-deleted correctly, but nothing ever listed them again.
  */
 const RecycleBinPage = () => {
+  const t = useT();
   const [bin, setBin] = useState<Bin>('tasks');
 
   const { data: tasks = [], isLoading: tasksLoading } = useRecycleBin();
@@ -35,7 +37,7 @@ const RecycleBinPage = () => {
   const restoreNote = useRestoreNote();
   const purgeNote = usePurgeNote();
 
-  if (tasksLoading && notesLoading) return <PageLoader label="Opening the bin" />;
+  if (tasksLoading && notesLoading) return <PageLoader label={t('bin.opening')} />;
 
   const isEmpty = bin === 'tasks' ? tasks.length === 0 : notes.length === 0;
 
@@ -43,11 +45,10 @@ const RecycleBinPage = () => {
     <div className="space-y-6">
       <header className="space-y-3">
         <div className="space-y-1">
-          <p className="text-xs uppercase tracking-[0.18em] text-content-faint">Recycle bin</p>
-          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Deleted items</h1>
+          <p className="text-xs uppercase tracking-[0.18em] text-content-faint">{t('bin.title')}</p>
+          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{t('bin.deletedItems')}</h1>
           <p className="text-sm text-content-muted">
-            Restore anything, or delete it permanently. Purging cannot be undone. Tasks completed
-            more than a week ago tidy themselves in here automatically.
+            {t('bin.subtitle')}
           </p>
         </div>
 
@@ -57,12 +58,12 @@ const RecycleBinPage = () => {
           options={[
             {
               value: 'tasks',
-              label: `Tasks${tasks.length > 0 ? ` (${tasks.length})` : ''}`,
+              label: `${t('bin.tasks')}${tasks.length > 0 ? ` (${tasks.length})` : ''}`,
               icon: <Trash2 className="h-3 w-3" />,
             },
             {
               value: 'notes',
-              label: `Notes${notes.length > 0 ? ` (${notes.length})` : ''}`,
+              label: `${t('bin.notes')}${notes.length > 0 ? ` (${notes.length})` : ''}`,
               icon: <PostItGlyph className="h-3.5 w-3.5" />,
             },
           ]}
@@ -74,11 +75,11 @@ const RecycleBinPage = () => {
           icon={
             bin === 'tasks' ? <Trash2 className="h-6 w-6" /> : <PostItGlyph className="h-6 w-6" />
           }
-          title={bin === 'tasks' ? 'No deleted tasks' : 'No deleted notes'}
+          title={t(bin === 'tasks' ? 'bin.noDeletedTasks' : 'bin.noDeletedNotes')}
           description={
             bin === 'tasks'
-              ? 'Deleted tasks land here first, so nothing is lost by accident.'
-              : 'Post-its you remove from a board wait here before they are gone for good.'
+              ? t('bin.deletedTasksBody')
+              : t('bin.deletedNotesBody')
           }
         />
       ) : bin === 'tasks' ? (
@@ -116,7 +117,7 @@ const RecycleBinPage = () => {
                     // brings the task back open rather than completed.
                   >
                     <Sparkles className="h-3 w-3" />
-                    Auto-archived
+                    {t('bin.autoArchived')}
                   </Badge>
                 )}
 
@@ -137,7 +138,7 @@ const RecycleBinPage = () => {
                     isLoading={restoreTask.isPending && restoreTask.variables === task.id}
                   >
                     <RotateCcw className="h-3.5 w-3.5" />
-                    Restore
+                    {t('bin.restore')}
                   </Button>
                   <Button
                     size="sm"
@@ -150,7 +151,7 @@ const RecycleBinPage = () => {
                     isLoading={purgeTask.isPending && purgeTask.variables === task.id}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
-                    Delete
+                    {t('common.delete')}
                   </Button>
                 </div>
               </motion.li>
@@ -188,13 +189,13 @@ const RecycleBinPage = () => {
 
                   <div className="min-w-[200px] flex-1 space-y-0.5">
                     <p className="line-clamp-1 text-sm font-medium leading-snug">
-                      {preview || <span className="italic text-content-faint">Empty note</span>}
+                      {preview || <span className="italic text-content-faint">{t('bin.emptyNote')}</span>}
                     </p>
                     <p className="text-[11px] text-content-faint">
                       {note.scope === 'PROJECT'
-                        ? 'Project whiteboard'
+                        ? t('bin.projectWhiteboard')
                         : note.scope === 'TASK'
-                          ? 'Pinned to a task'
+                          ? t('bin.pinnedToTask')
                           : `Notes board · page ${note.pageIndex + 1}`}{' '}
                       · deleted {note.deletedAt ? formatRelative(note.deletedAt) : 'recently'}
                     </p>
@@ -208,20 +209,20 @@ const RecycleBinPage = () => {
                       isLoading={restoreNote.isPending && restoreNote.variables === note.id}
                     >
                       <RotateCcw className="h-3.5 w-3.5" />
-                      Restore
+                      {t('bin.restore')}
                     </Button>
                     <Button
                       size="sm"
                       variant="danger"
                       onClick={() => {
-                        if (window.confirm('Delete this note for good?')) {
+                        if (window.confirm(t('bin.confirmPurgeNote'))) {
                           purgeNote.mutate(note.id);
                         }
                       }}
                       isLoading={purgeNote.isPending && purgeNote.variables === note.id}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
-                      Delete
+                      {t('common.delete')}
                     </Button>
                   </div>
                 </motion.li>

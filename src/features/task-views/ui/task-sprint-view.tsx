@@ -8,6 +8,7 @@ import { TASK_PRIORITY_META, TASK_STATUS_META } from '@/shared/config/constants'
 import { cn } from '@/shared/lib/cn';
 import { EmptyState } from '@/shared/ui';
 import type { TaskViewProps } from './task-list-view';
+import { useT } from '@/shared/i18n';
 
 const COLUMNS: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'COMPLETED'];
 const LANES: TaskPriority[] = ['URGENT', 'HIGH', 'NORMAL', 'LOW'];
@@ -36,6 +37,7 @@ export const TaskSprintView = ({
   onDelete,
   showProjectLink,
 }: TaskViewProps) => {
+  const t = useT();
   const { lanes, stats } = useMemo(() => {
     const done = tasks.filter((task) => task.status === 'COMPLETED').length;
     const late = tasks.filter((task) => task.isLate).length;
@@ -57,7 +59,9 @@ export const TaskSprintView = ({
   }, [tasks]);
 
   if (tasks.length === 0) {
-    return <EmptyState title="Nothing in this sprint" description="No task matches these filters." />;
+    return (
+      <EmptyState title={t('views.nothingInSprint')} description={t('views.noMatch')} />
+    );
   }
 
   const progress = stats.total === 0 ? 0 : Math.round((stats.done / stats.total) * 100);
@@ -68,7 +72,7 @@ export const TaskSprintView = ({
       <header className="ui-card flex flex-wrap items-center gap-x-5 gap-y-2 rounded-2xl border border-edge bg-surface-raised p-3">
         <span className="inline-flex items-center gap-2 text-sm font-semibold">
           <Target className="h-4 w-4 text-brand" />
-          Sprint
+          {t('views.sprint')}
         </span>
 
         <span className="flex min-w-[10rem] flex-1 items-center gap-2.5">

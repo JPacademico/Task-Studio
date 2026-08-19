@@ -13,6 +13,7 @@ import {
 import { BOARD_INK_COLORS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
 import { Button, ColorPicker, ExpandToggle, PostItGlyph, Spinner, Stepper } from '@/shared/ui';
+import { useT } from '@/shared/i18n';
 
 export type BoardTool = 'select' | 'connect' | 'draw';
 
@@ -71,6 +72,7 @@ export const BoardToolbar = ({
   isExpanded = false,
   onToggleExpand,
 }: BoardToolbarProps) => {
+  const t = useT();
   const fileRef = useRef<HTMLInputElement>(null);
   const tools = showInkTools ? TOOLS : TOOLS.filter((entry) => entry.value !== 'draw');
 
@@ -105,8 +107,8 @@ export const BoardToolbar = ({
         size="sm"
         onClick={onAddNote}
         isLoading={isAddingNote}
-        title="Add a Post-it"
-        aria-label="Add a Post-it"
+        title={t('board.addPostIt')}
+        aria-label={t('board.addPostIt')}
         className="px-2.5"
       >
         <Plus className="h-3.5 w-3.5" strokeWidth={2.8} />
@@ -118,14 +120,14 @@ export const BoardToolbar = ({
         variant="secondary"
         onClick={() => fileRef.current?.click()}
         disabled={isUploading}
-        title="Pin an image"
+        title={t('board.pinImage')}
       >
         {isUploading ? (
           <Spinner />
         ) : (
           <ImagePlus className="h-3.5 w-3.5" />
         )}
-        <span className="hidden sm:inline">Image</span>
+        <span className="hidden sm:inline">{t('board.image')}</span>
       </Button>
       <input
         ref={fileRef}
@@ -147,7 +149,7 @@ export const BoardToolbar = ({
           type="button"
           onClick={() => onPickingMultipleChange(!isPickingMultiple)}
           aria-pressed={isPickingMultiple}
-          title="Click several notes in a row to select them together"
+          title={t('board.pickSeveralTitle')}
           className={cn(
             'ui-filter inline-flex h-8 items-center gap-1.5 rounded-xl border px-2.5 text-xs font-medium transition-colors',
             isPickingMultiple
@@ -156,7 +158,7 @@ export const BoardToolbar = ({
           )}
         >
           <BoxSelect className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">Pick several</span>
+          <span className="hidden sm:inline">{t('board.pickSeveral')}</span>
         </button>
       )}
 
@@ -176,7 +178,7 @@ export const BoardToolbar = ({
           {onClearInk && (
             <Button size="sm" variant="ghost" onClick={onClearInk}>
               <Eraser className="h-3.5 w-3.5" />
-              Erase ink
+              {t('notes.eraseInk')}
             </Button>
           )}
         </>
@@ -193,7 +195,7 @@ export const BoardToolbar = ({
 
         <Button size="sm" variant="ghost" onClick={onClearAll} className="text-danger">
           <Trash2 className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">Clear all</span>
+          <span className="hidden sm:inline">{t('notes.clearAll')}</span>
         </Button>
       </span>
     </div>

@@ -4,29 +4,31 @@ import { Check, Mail, X } from 'lucide-react';
 import { useMyInvitations, useRespondToInvitation } from '@/entities/project/model/queries';
 import { formatRelative } from '@/shared/lib/dates';
 import { Avatar, Badge, Button, EmptyState, PageLoader } from '@/shared/ui';
+import { useT } from '@/shared/i18n';
 
 /** Roster invitations addressed to the current user. */
 const InvitationsPage = () => {
+  const t = useT();
   const { data: invitations = [], isLoading } = useMyInvitations();
   const respond = useRespondToInvitation();
 
-  if (isLoading) return <PageLoader label="Checking invitations" />;
+  if (isLoading) return <PageLoader label={t('invites.checking')} />;
 
   return (
     <div className="space-y-6">
       <header className="space-y-1">
-        <p className="text-xs uppercase tracking-[0.18em] text-content-faint">Invitations</p>
-        <h1 className="text-2xl font-semibold tracking-tight">Project invitations</h1>
+        <p className="text-xs uppercase tracking-[0.18em] text-content-faint">{t('invites.title')}</p>
+        <h1 className="text-2xl font-semibold tracking-tight">{t('invites.heading')}</h1>
         <p className="text-sm text-content-muted">
-          Accepting adds you to the roster and unlocks the project's board and chat.
+          {t('invites.subtitle')}
         </p>
       </header>
 
       {invitations.length === 0 ? (
         <EmptyState
           icon={<Mail className="h-6 w-6" />}
-          title="No pending invitations"
-          description="When someone invites you to a project, it shows up here and as a notification."
+          title={t('invites.none')}
+          description={t('invites.noneBody')}
         />
       ) : (
         <ul className="space-y-3">
@@ -58,7 +60,7 @@ const InvitationsPage = () => {
                       {invitation.project.name}
                     </p>
                     <p className="text-xs text-content-muted">
-                      {invitation.invitedBy.displayName} invited you{' '}
+                      {invitation.invitedBy.displayName} {t('invites.invitedYou')}{' '}
                       {formatRelative(invitation.createdAt)}
                     </p>
                     {invitation.message && (
@@ -79,7 +81,7 @@ const InvitationsPage = () => {
                       isLoading={respond.isPending && respond.variables?.invitationId === invitation.id}
                     >
                       <Check className="h-3.5 w-3.5" />
-                      Accept
+                      {t('invites.accept')}
                     </Button>
                     <Button
                       size="sm"
@@ -89,7 +91,7 @@ const InvitationsPage = () => {
                       }
                     >
                       <X className="h-3.5 w-3.5" />
-                      Decline
+                      {t('invites.decline')}
                     </Button>
                   </div>
                 </div>

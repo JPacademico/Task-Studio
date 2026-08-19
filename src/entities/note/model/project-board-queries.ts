@@ -14,6 +14,7 @@ import type {
   ProjectBoardSnapshot,
   UpdateNotePayload,
 } from './types';
+import { translate } from '@/shared/i18n';
 
 /**
  * The project whiteboard's Post-it layer.
@@ -143,7 +144,7 @@ export const useCreateProjectNote = (projectId: string) => {
     mutationFn: (payload: CreateNotePayload) =>
       noteApi.create({ ...payload, scope: 'PROJECT', projectId }),
     onSuccess: (note) => patch((snapshot) => ({ ...snapshot, notes: [...snapshot.notes, note] })),
-    onError: (error) => toast.error(errorMessage(error, 'Could not add that to the board.')),
+    onError: (error) => toast.error(errorMessage(error, translate('toast.boardAddFailed'))),
   });
 };
 
@@ -170,7 +171,7 @@ export const useUpdateProjectNote = (projectId: string) => {
 
     onError: (error, _variables, context) => {
       if (context?.previous) queryClient.setQueryData(key, context.previous);
-      toast.error(errorMessage(error, 'Could not save the note.'));
+      toast.error(errorMessage(error, translate('toast.noteSaveFailed')));
     },
   });
 };
@@ -198,7 +199,7 @@ export const useDeleteProjectNote = (projectId: string) => {
 
     onError: (error, _noteId, context) => {
       if (context?.previous) queryClient.setQueryData(key, context.previous);
-      toast.error(errorMessage(error, 'Only the author can remove that note.'));
+      toast.error(errorMessage(error, translate('toast.authorOnlyRemove')));
     },
 
     onSuccess: () => {
@@ -234,7 +235,7 @@ export const useSaveProjectPositions = (projectId: string) => {
     mutationFn: noteApi.savePositions,
     onError: (error) => {
       void queryClient.invalidateQueries({ queryKey: key });
-      toast.error(errorMessage(error, 'Could not save the layout.'));
+      toast.error(errorMessage(error, translate('toast.layoutSaveFailed')));
     },
   });
 };
@@ -249,7 +250,7 @@ export const useCreateProjectNoteLink = (projectId: string) => {
         ...snapshot,
         links: [...snapshot.links.filter((entry) => entry.id !== link.id), link],
       })),
-    onError: (error) => toast.error(errorMessage(error, 'Could not connect those notes.')),
+    onError: (error) => toast.error(errorMessage(error, translate('toast.connectFailed'))),
   });
 };
 
@@ -282,6 +283,6 @@ export const useGroupProjectNotes = (projectId: string) => {
         ),
       }));
     },
-    onError: (error) => toast.error(errorMessage(error, 'Could not group those notes.')),
+    onError: (error) => toast.error(errorMessage(error, translate('toast.groupFailed'))),
   });
 };

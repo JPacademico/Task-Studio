@@ -26,6 +26,7 @@ import { uploadImage } from '@/entities/user/api/user.api';
 import { cn } from '@/shared/lib/cn';
 import { sanitizeDocumentHtml } from '@/shared/lib/sanitize-html';
 import { Select, Spinner, type SelectOption } from '@/shared/ui';
+import { useT } from '@/shared/i18n';
 
 /**
  * The document surface.
@@ -116,6 +117,7 @@ export const RichTextEditor = ({
   onChange,
   className,
 }: RichTextEditorProps) => {
+  const t = useT();
   const surfaceRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const savedRange = useRef<Range | null>(null);
@@ -180,7 +182,7 @@ export const RichTextEditor = ({
     // refusing here is the difference between "nothing happened" and "it
     // vanished the next time you opened it".
     if (!/^https?:\/\//i.test(url)) {
-      toast.error('Links and media need a full http:// or https:// address.');
+      toast.error(t('editor.needsAbsoluteUrl'));
       return;
     }
 
@@ -227,7 +229,7 @@ export const RichTextEditor = ({
       );
       emitChange();
     } catch {
-      toast.error('Could not upload that image.');
+      toast.error(t('editor.uploadFailed'));
     } finally {
       setIsUploading(false);
     }
@@ -238,16 +240,16 @@ export const RichTextEditor = ({
       {!readOnly && (
         <div className="ui-textured flex flex-col gap-1.5 rounded-t-2xl border border-b-0 border-edge bg-surface-raised p-2">
           <div className="flex flex-wrap items-center gap-0.5">
-            <ToolButton onAction={() => exec('bold')} title="Bold">
+            <ToolButton onAction={() => exec('bold')} title={t('editor.bold')}>
               <Bold className="h-3.5 w-3.5" />
             </ToolButton>
-            <ToolButton onAction={() => exec('italic')} title="Italic">
+            <ToolButton onAction={() => exec('italic')} title={t('editor.italic')}>
               <Italic className="h-3.5 w-3.5" />
             </ToolButton>
-            <ToolButton onAction={() => exec('underline')} title="Underline">
+            <ToolButton onAction={() => exec('underline')} title={t('editor.underline')}>
               <Underline className="h-3.5 w-3.5" />
             </ToolButton>
-            <ToolButton onAction={() => exec('strikeThrough')} title="Strikethrough">
+            <ToolButton onAction={() => exec('strikeThrough')} title={t('editor.strikethrough')}>
               <Strikethrough className="h-3.5 w-3.5" />
             </ToolButton>
 
@@ -257,43 +259,43 @@ export const RichTextEditor = ({
                 spelled with angle brackets in some engines and without in
                 others; the bracket form is the one every current browser
                 accepts. */}
-            <ToolButton onAction={() => exec('formatBlock', '<h1>')} title="Heading 1">
+            <ToolButton onAction={() => exec('formatBlock', '<h1>')} title={t('editor.heading1')}>
               <span className="text-[11px] font-bold">H1</span>
             </ToolButton>
-            <ToolButton onAction={() => exec('formatBlock', '<h2>')} title="Heading 2">
+            <ToolButton onAction={() => exec('formatBlock', '<h2>')} title={t('editor.heading2')}>
               <span className="text-[11px] font-bold">H2</span>
             </ToolButton>
-            <ToolButton onAction={() => exec('formatBlock', '<h3>')} title="Heading 3">
+            <ToolButton onAction={() => exec('formatBlock', '<h3>')} title={t('editor.heading3')}>
               <span className="text-[11px] font-bold">H3</span>
             </ToolButton>
-            <ToolButton onAction={() => exec('formatBlock', '<p>')} title="Body text">
+            <ToolButton onAction={() => exec('formatBlock', '<p>')} title={t('editor.bodyText')}>
               <Type className="h-3.5 w-3.5" />
             </ToolButton>
-            <ToolButton onAction={() => exec('formatBlock', '<blockquote>')} title="Quote">
+            <ToolButton onAction={() => exec('formatBlock', '<blockquote>')} title={t('editor.quote')}>
               <Quote className="h-3.5 w-3.5" />
             </ToolButton>
-            <ToolButton onAction={() => exec('formatBlock', '<pre>')} title="Code block">
+            <ToolButton onAction={() => exec('formatBlock', '<pre>')} title={t('editor.codeBlock')}>
               <Code className="h-3.5 w-3.5" />
             </ToolButton>
 
             <Divider />
 
-            <ToolButton onAction={() => exec('insertUnorderedList')} title="Bulleted list">
+            <ToolButton onAction={() => exec('insertUnorderedList')} title={t('editor.bulletedList')}>
               <List className="h-3.5 w-3.5" />
             </ToolButton>
-            <ToolButton onAction={() => exec('insertOrderedList')} title="Numbered list">
+            <ToolButton onAction={() => exec('insertOrderedList')} title={t('editor.numberedList')}>
               <ListOrdered className="h-3.5 w-3.5" />
             </ToolButton>
 
             <Divider />
 
-            <ToolButton onAction={() => exec('justifyLeft')} title="Align left">
+            <ToolButton onAction={() => exec('justifyLeft')} title={t('editor.alignLeft')}>
               <AlignLeft className="h-3.5 w-3.5" />
             </ToolButton>
-            <ToolButton onAction={() => exec('justifyCenter')} title="Align centre">
+            <ToolButton onAction={() => exec('justifyCenter')} title={t('editor.alignCentre')}>
               <AlignCenter className="h-3.5 w-3.5" />
             </ToolButton>
-            <ToolButton onAction={() => exec('justifyRight')} title="Align right">
+            <ToolButton onAction={() => exec('justifyRight')} title={t('editor.alignRight')}>
               <AlignRight className="h-3.5 w-3.5" />
             </ToolButton>
           </div>
@@ -339,10 +341,10 @@ export const RichTextEditor = ({
 
             <Divider />
 
-            <ToolButton onAction={() => openPrompt('link')} title="Insert a link">
+            <ToolButton onAction={() => openPrompt('link')} title={t('editor.insertLink')}>
               <Link2 className="h-3.5 w-3.5" />
             </ToolButton>
-            <ToolButton onAction={() => exec('unlink')} title="Remove the link">
+            <ToolButton onAction={() => exec('unlink')} title={t('editor.removeLink')}>
               <Unlink className="h-3.5 w-3.5" />
             </ToolButton>
 
@@ -351,19 +353,19 @@ export const RichTextEditor = ({
                 rememberSelection();
                 fileRef.current?.click();
               }}
-              title="Insert an image"
+              title={t('editor.insertImage')}
               disabled={isUploading}
             >
               {isUploading ? <Spinner /> : <ImagePlus className="h-3.5 w-3.5" />}
             </ToolButton>
 
-            <ToolButton onAction={() => openPrompt('video')} title="Insert a video by URL">
+            <ToolButton onAction={() => openPrompt('video')} title={t('editor.insertVideo')}>
               <Film className="h-3.5 w-3.5" />
             </ToolButton>
 
             <Divider />
 
-            <ToolButton onAction={() => exec('removeFormat')} title="Clear formatting">
+            <ToolButton onAction={() => exec('removeFormat')} title={t('editor.clearFormatting')}>
               <Eraser className="h-3.5 w-3.5" />
             </ToolButton>
           </div>
@@ -389,10 +391,10 @@ export const RichTextEditor = ({
                 }
                 className="field h-7 flex-1 text-xs"
               />
-              <ToolButton onAction={commitPrompt} title="Insert">
+              <ToolButton onAction={commitPrompt} title={t('editor.insert')}>
                 <Check className="h-3.5 w-3.5" />
               </ToolButton>
-              <ToolButton onAction={() => setPrompt(null)} title="Cancel">
+              <ToolButton onAction={() => setPrompt(null)} title={t('common.cancel')}>
                 <X className="h-3.5 w-3.5" />
               </ToolButton>
             </div>
@@ -418,7 +420,7 @@ export const RichTextEditor = ({
         suppressContentEditableWarning
         role="textbox"
         aria-multiline="true"
-        aria-label="Document body"
+        aria-label={t('editor.documentBody')}
         onInput={emitChange}
         onBlur={emitChange}
         // Paste is the main way hostile markup gets in, so it never arrives as

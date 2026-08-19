@@ -11,6 +11,7 @@ export const STORAGE_KEYS = {
   boardPage: 'task-studio:board-page',
   shortcuts: 'task-studio:floating-shortcuts',
   taskLayout: 'task-studio:task-layout',
+  locale: 'task-studio:locale',
 } as const;
 
 /** Curated task palette — arbitrary hex is allowed, these are the one-click set. */

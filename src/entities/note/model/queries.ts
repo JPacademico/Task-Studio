@@ -5,6 +5,7 @@ import { errorMessage } from '@/shared/api/client';
 import { queryKeys } from '@/shared/api/query-keys';
 import { noteApi } from '../api/note.api';
 import type { CreateNotePayload, ListNotesParams, Note, UpdateNotePayload } from './types';
+import { translate } from '@/shared/i18n';
 
 export const useNotes = (params: ListNotesParams = {}) =>
   useQuery({
@@ -36,7 +37,7 @@ export const useCreateNote = (params: ListNotesParams = {}) => {
         notes ? [...notes, note] : [note],
       );
     },
-    onError: (error) => toast.error(errorMessage(error, 'Could not create the note.')),
+    onError: (error) => toast.error(errorMessage(error, translate('toast.noteCreateFailed'))),
   });
 };
 
@@ -65,7 +66,7 @@ export const useUpdateNote = (params: ListNotesParams = {}) => {
 
     onError: (error, _variables, context) => {
       if (context?.previous) queryClient.setQueryData(key, context.previous);
-      toast.error(errorMessage(error, 'Could not save the note.'));
+      toast.error(errorMessage(error, translate('toast.noteSaveFailed')));
     },
   });
 };
@@ -74,7 +75,7 @@ export const useUpdateNote = (params: ListNotesParams = {}) => {
 export const useSaveNotePositions = () =>
   useMutation({
     mutationFn: noteApi.savePositions,
-    onError: (error) => toast.error(errorMessage(error, 'Could not save the layout.')),
+    onError: (error) => toast.error(errorMessage(error, translate('toast.layoutSaveFailed'))),
   });
 
 export const useDeleteNote = (params: ListNotesParams = {}) => {
@@ -97,7 +98,7 @@ export const useDeleteNote = (params: ListNotesParams = {}) => {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.notes.all });
-      toast.success('Note moved to the recycle bin.');
+      toast.success(translate('toast.noteBinned'));
     },
   });
 };
@@ -109,7 +110,7 @@ export const useRestoreNote = () => {
     mutationFn: (noteId: string) => noteApi.restore(noteId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.notes.all });
-      toast.success('Note restored.');
+      toast.success(translate('toast.noteRestored'));
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -122,7 +123,7 @@ export const usePurgeNote = () => {
     mutationFn: (noteId: string) => noteApi.purge(noteId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.notes.all });
-      toast.success('Note deleted for good.');
+      toast.success(translate('toast.notePurged'));
     },
     onError: (error) => toast.error(errorMessage(error)),
   });

@@ -12,14 +12,20 @@ import { SkinPicker } from '@/features/theme-toggle/ui/skin-picker';
 import { errorMessage } from '@/shared/api/client';
 import { cn } from '@/shared/lib/cn';
 import { Avatar, Button, Input, Section, Spinner, Textarea } from '@/shared/ui';
+import { useT, type TranslationKey } from '@/shared/i18n';
 
-const THEMES: { value: ThemePreference; label: string; icon: ReactNode }[] = [
-  { value: 'LIGHT', label: 'Light', icon: <Sun className="h-3.5 w-3.5" /> },
-  { value: 'DARK', label: 'Dark', icon: <Moon className="h-3.5 w-3.5" /> },
-  { value: 'SYSTEM', label: 'System', icon: <Monitor className="h-3.5 w-3.5" /> },
+/*
+ * Keys, not words: this is a module constant evaluated at import, long
+ * before a language is known. See the same note on the sidebar's `GROUPS`.
+ */
+const THEMES: { value: ThemePreference; label: TranslationKey; icon: ReactNode }[] = [
+  { value: 'LIGHT', label: 'settings.light', icon: <Sun className="h-3.5 w-3.5" /> },
+  { value: 'DARK', label: 'settings.dark', icon: <Moon className="h-3.5 w-3.5" /> },
+  { value: 'SYSTEM', label: 'settings.system', icon: <Monitor className="h-3.5 w-3.5" /> },
 ];
 
 const SettingsPage = () => {
+  const t = useT();
   const { user, setUser } = useSessionStore();
   const { preference, setPreference } = useTheme();
 
@@ -39,7 +45,7 @@ const SettingsPage = () => {
     mutationFn: () => userApi.updateProfile({ displayName, bio }),
     onSuccess: (updated) => {
       setUser(updated);
-      toast.success('Profile saved.');
+      toast.success(t('settings.profileSaved'));
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -59,7 +65,7 @@ const SettingsPage = () => {
     mutationFn: userApi.removeAvatar,
     onSuccess: (updated) => {
       setUser(updated);
-      toast.success('Avatar removed.');
+      toast.success(t('settings.avatarRemoved'));
     },
   });
 
@@ -68,9 +74,9 @@ const SettingsPage = () => {
     try {
       const { key } = await uploadImage(file, 'avatars');
       setUser(await userApi.setAvatar(key));
-      toast.success('Avatar updated.');
+      toast.success(t('settings.avatarUpdated'));
     } catch (error) {
-      toast.error(errorMessage(error, 'Could not upload the image.'));
+      toast.error(errorMessage(error, t('settings.uploadFailed')));
     } finally {
       setIsUploading(false);
     }
@@ -82,11 +88,11 @@ const SettingsPage = () => {
   return (
     <div className="mx-auto max-w-3xl space-y-9">
       <header className="space-y-1">
-        <p className="text-xs uppercase tracking-[0.18em] text-content-faint">Settings</p>
-        <h1 className="text-2xl font-semibold tracking-tight">Profile & preferences</h1>
+        <p className="text-xs uppercase tracking-[0.18em] text-content-faint">{t('settings.title')}</p>
+        <h1 className="text-2xl font-semibold tracking-tight">{t('settings.heading')}</h1>
       </header>
 
-      <Section title="Avatar">
+      <Section title={t('settings.avatar')}>
         <div className="flex items-center gap-4 rounded-2xl border border-edge bg-surface-raised p-4">
           <Avatar name={user?.displayName ?? '?'} src={user?.avatarUrl} size="lg" />
 
@@ -97,7 +103,7 @@ const SettingsPage = () => {
               ) : (
                 <ImagePlus className="h-3.5 w-3.5" />
               )}
-              {isUploading ? 'Uploading…' : 'Upload image'}
+              {isUploading ? t('settings.uploading') : t('settings.uploadImage')}
               <input
                 type="file"
                 accept="image/png,image/jpeg,image/webp,image/avif"
@@ -117,14 +123,14 @@ const SettingsPage = () => {
                 isLoading={removeAvatar.isPending}
               >
                 <Trash2 className="h-3.5 w-3.5" />
-                Remove
+                {t('settings.remove')}
               </Button>
             )}
           </div>
         </div>
       </Section>
 
-      <Section title="Identity">
+      <Section title={t('settings.identity')}>
         <form
           className="space-y-4 rounded-2xl border border-edge bg-surface-raised p-4"
           onSubmit={(event) => {
@@ -133,25 +139,25 @@ const SettingsPage = () => {
           }}
         >
           <Input
-            label="Display name"
+            label={t('auth.signUp.displayName')}
             name="displayName"
             value={displayName}
             onChange={(event) => setDisplayName(event.target.value)}
             minLength={2}
             maxLength={60}
           />
-          <Input label="Email" name="email" value={user?.email ?? ''} disabled />
+          <Input label={t('auth.email')} name="email" value={user?.email ?? ''} disabled />
           <Textarea
-            label="Bio"
+            label={t('settings.bio')}
             name="bio"
             value={bio}
             onChange={(event) => setBio(event.target.value)}
             maxLength={280}
-            placeholder="What are you working on?"
+            placeholder={t('settings.bioPlaceholder')}
           />
           <div className="flex justify-end">
             <Button type="submit" isLoading={saveProfile.isPending}>
-              Save profile
+              {t('settings.saveProfile')}
             </Button>
           </div>
         </form>
@@ -159,13 +165,13 @@ const SettingsPage = () => {
 
       {/* Three, then a door. The full catalogue is a gallery, not a setting —
           see the note on SkinPicker. */}
-      <Section title="Theme">
+      <Section title={t('settings.theme')}>
         <div className="rounded-2xl border border-edge bg-surface-raised p-4">
           <SkinPicker />
         </div>
       </Section>
 
-      <Section title="Appearance">
+      <Section title={t('settings.appearance')}>
         <div className="flex flex-wrap gap-2 rounded-2xl border border-edge bg-surface-raised p-4">
           {THEMES.map((option) => (
             <button
@@ -180,13 +186,13 @@ const SettingsPage = () => {
               )}
             >
               {option.icon}
-              {option.label}
+              {t(option.label)}
             </button>
           ))}
         </div>
       </Section>
 
-      <Section title="Password">
+      <Section title={t('settings.password')}>
         <form
           className="space-y-4 rounded-2xl border border-edge bg-surface-raised p-4"
           onSubmit={(event) => {
@@ -195,7 +201,7 @@ const SettingsPage = () => {
           }}
         >
           <Input
-            label="Current password"
+            label={t('settings.currentPassword')}
             name="currentPassword"
             type="password"
             autoComplete="current-password"
@@ -203,13 +209,13 @@ const SettingsPage = () => {
             onChange={(event) => setCurrentPassword(event.target.value)}
           />
           <Input
-            label="New password"
+            label={t('auth.reset.newPassword')}
             name="newPassword"
             type="password"
             autoComplete="new-password"
             value={newPassword}
             onChange={(event) => setNewPassword(event.target.value)}
-            hint="8+ characters, with at least one letter and one number."
+            hint={t('auth.reset.hint')}
           />
           <div className="flex justify-end">
             {/* The section lost its subtitle, but the consequence is real and
@@ -218,11 +224,11 @@ const SettingsPage = () => {
             <Button
               type="submit"
               variant="secondary"
-              title="Signs out every device, including this one."
+              title={t('settings.signsOutEverywhere')}
               isLoading={changePassword.isPending}
               disabled={!passwordIsValid || currentPassword.length === 0}
             >
-              Change password
+              {t('settings.changePassword')}
             </Button>
           </div>
         </form>

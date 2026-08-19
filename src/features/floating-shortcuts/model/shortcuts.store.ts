@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 import { STORAGE_KEYS } from '@/shared/config/constants';
+import type { TranslationKey } from '@/shared/i18n';
 
 /** Which glyph the pill draws. Stored as a key so the value stays serialisable. */
 export type ShortcutIcon =
@@ -18,7 +19,20 @@ export interface FloatingShortcut {
   id: string;
   kind: 'nav' | 'project';
   to: string;
+  /**
+   * What the pill reads.
+   *
+   * Two fields because the two kinds of pill mean different things by "label".
+   * A nav pill's text is interface copy and must follow the language setting,
+   * so it stores `labelKey` and is translated at render. A *project* pill's
+   * text is the project's own name — user data, and translating it would be a
+   * bug — so it stores `label` and is drawn verbatim.
+   *
+   * `label` is also what pills pinned before this existed still carry, so it
+   * doubles as the fallback and nothing needs migrating.
+   */
   label: string;
+  labelKey?: TranslationKey;
   icon: ShortcutIcon;
   /** The project's own colour, for a project pill. */
   color?: string;

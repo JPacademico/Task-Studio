@@ -21,6 +21,7 @@ import { cn } from '@/shared/lib/cn';
 import { formatTime } from '@/shared/lib/dates';
 import { Button, DirectionArrow, EmptyState } from '@/shared/ui';
 import type { TaskViewProps } from './task-list-view';
+import { useT } from '@/shared/i18n';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const WEEK_OPTIONS = { weekStartsOn: 1 } as const;
@@ -41,6 +42,7 @@ const anchorOf = (task: Task): Date | null => {
  * it is the backlog the month is competing with.
  */
 export const TaskCalendarView = ({ tasks, onOpen, onToggleComplete }: TaskViewProps) => {
+  const t = useT();
   const [cursor, setCursor] = useState(() => new Date());
   const [selected, setSelected] = useState<Date | null>(null);
 
@@ -85,7 +87,7 @@ export const TaskCalendarView = ({ tasks, onOpen, onToggleComplete }: TaskViewPr
         <div className="ui-segment ml-auto inline-flex items-center gap-1 rounded-xl border border-edge bg-surface-sunken p-1">
           <button
             type="button"
-            aria-label="Previous month"
+            aria-label={t('views.previousMonth')}
             onClick={() => setCursor((date) => subMonths(date, 1))}
             className="grid h-7 w-7 place-items-center rounded-lg text-content-muted transition-colors hover:bg-surface-raised hover:text-content"
           >
@@ -96,11 +98,11 @@ export const TaskCalendarView = ({ tasks, onOpen, onToggleComplete }: TaskViewPr
             onClick={() => setCursor(new Date())}
             className="rounded-lg px-2 py-1 text-xs font-medium text-content-muted transition-colors hover:text-content"
           >
-            Today
+            {t('views.today')}
           </button>
           <button
             type="button"
-            aria-label="Next month"
+            aria-label={t('views.nextMonth')}
             onClick={() => setCursor((date) => addMonths(date, 1))}
             className="grid h-7 w-7 place-items-center rounded-lg text-content-muted transition-colors hover:bg-surface-raised hover:text-content"
           >
@@ -208,7 +210,7 @@ export const TaskCalendarView = ({ tasks, onOpen, onToggleComplete }: TaskViewPr
           </header>
 
           {selectedTasks.length === 0 ? (
-            <p className="py-3 text-center text-xs text-content-faint">Nothing due this day.</p>
+            <p className="py-3 text-center text-xs text-content-faint">{t('views.nothingDue')}</p>
           ) : (
             <ul className="space-y-1.5">
               {selectedTasks.map((task) => (
@@ -250,7 +252,7 @@ export const TaskCalendarView = ({ tasks, onOpen, onToggleComplete }: TaskViewPr
           <header className="flex items-center gap-2">
             <Inbox className="h-3.5 w-3.5 text-content-faint" />
             <h4 className="text-xs font-semibold uppercase tracking-wide text-content-muted">
-              No date yet
+              {t('views.noDateYet')}
             </h4>
             <span className="ml-auto text-[11px] text-content-faint">{unscheduled.length}</span>
           </header>
@@ -276,7 +278,7 @@ export const TaskCalendarView = ({ tasks, onOpen, onToggleComplete }: TaskViewPr
       )}
 
       {tasks.length === 0 && (
-        <EmptyState title="An empty month" description="No task matches these filters." />
+        <EmptyState title={t('views.emptyMonth')} description={t('views.noMatch')} />
       )}
     </div>
   );

@@ -15,6 +15,7 @@ import type {
   TaskStatus,
   UpdateTaskPayload,
 } from './types';
+import { translate } from '@/shared/i18n';
 
 /**
  * Applies a change to one task everywhere it is currently cached.
@@ -128,6 +129,111 @@ const rollbackTaskWrite = (queryClient: QueryClient, context: TaskRollback | und
   queryClient.setQueryData(queryKeys.projects.overview, context.overview);
 };
 
+/**
+ * Whether a freshly created task belongs in a list that was fetched with
+ * `params` — or whether we cannot tell.
+ *
+ * Three answers, not two. `false` means the server would not have returned this
+ * task for that query and inserting it would put a card somewhere it does not
+ * belong; `'unknown'` means the filter is one this function will not try to
+ * reproduce, and the caller should leave that cache alone and let the
+ * background refetch settle it.
+ *
+ * The list is deliberately short. Re-implementing the server's filtering on the
+ * client is how the two quietly drift apart, and a card that appears in the
+ * wrong column and then vanishes is worse than a card that takes another moment
+ * to appear. So only the filters that are a plain equality check on a field the
+ * task already carries are answered here; `search`, `lateness`, `from`/`to` and
+ * the `team` scope are all conceded to the refetch.
+ */
+const matchesListParams = (task: Task, params: ListTasksParams): boolean | 'unknown' => {
+  if (params.search || params.lateness || params.from || params.to) return 'unknown';
+  if (params.scope === 'team') return 'unknown';
+
+  if (params.projectId && params.projectId !== task.project.id) return false;
+  if (params.status && params.status !== task.status) return false;
+  if (params.type && params.type !== task.type) return false;
+  if (params.priority && params.priority !== task.priority) return false;
+  if (params.scope === 'mine' && !task.isMine) return false;
+  if (params.pinnedOnly && !task.isPinned) return false;
+  if (params.hasNotes && task.noteCount === 0) return false;
+  if (params.hideCompleted && task.status === 'COMPLETED') return false;
+
+  return true;
+};
+
+/**
+ * Puts a newly created task into every cache that should already be showing it.
+ *
+ * Creating a task used to cost two sequential round trips: the POST, and then
+ * the refetch its invalidation triggered. The card could not appear until both
+ * had landed, which on a free-tier API is most of a second on a good day and
+ * conspicuous on a bad one — and the second trip was spent re-downloading a
+ * list to learn something the first trip had already returned in full.
+ *
+ * So the server's own response is written straight into the caches and the
+ * invalidation is kept behind it. The card is on screen immediately; the
+ * refetch that follows confirms it and repairs anything `matchesListParams`
+ * declined to judge. Nothing here has to be exactly right for the UI to end up
+ * correct — it only has to be right often enough that the common case feels
+ * instant.
+ */
+const insertCachedTask = (queryClient: QueryClient, task: Task): void => {
+  for (const [key, data] of queryClient.getQueriesData({ queryKey: queryKeys.tasks.all })) {
+    if (!data) continue;
+
+    const [, kind, rawParams] = key as readonly [string, string?, ListTasksParams?];
+    const params = rawParams ?? {};
+
+    if (kind === 'list' && Array.isArray(data)) {
+      const list = data as Task[];
+      if (list.some((entry) => entry.id === task.id)) continue;
+
+      const verdict = matchesListParams(task, params);
+      if (verdict !== true) continue;
+
+      // Appended, not prepended: every board and list here reads oldest-first
+      // within a column, so the newest card belongs at the bottom — which is
+      // also where the person who just created it is looking.
+      queryClient.setQueryData(key, [...list, task]);
+      continue;
+    }
+
+    if (kind === 'agenda') {
+      const agenda = data as TaskAgenda;
+      if (!Array.isArray(agenda.days)) continue;
+
+      const verdict = matchesListParams(task, params);
+      if (verdict !== true) continue;
+
+      const alreadyThere =
+        agenda.days.some((day) => day.tasks.some((entry) => entry.id === task.id)) ||
+        agenda.unscheduled.some((entry) => entry.id === task.id);
+      if (alreadyThere) continue;
+
+      if (!task.dueAt) {
+        queryClient.setQueryData(key, {
+          ...agenda,
+          unscheduled: [...agenda.unscheduled, task],
+        } satisfies TaskAgenda);
+        continue;
+      }
+
+      // Only into a bucket that already exists. Inventing a new day would mean
+      // guessing the agenda's range and its ordering; the refetch knows both.
+      const dueDate = task.dueAt.slice(0, 10);
+      if (!agenda.days.some((day) => day.date.slice(0, 10) === dueDate)) continue;
+
+      queryClient.setQueryData(key, {
+        ...agenda,
+        days: agenda.days.map((day) =>
+          day.date.slice(0, 10) === dueDate ? { ...day, tasks: [...day.tasks, task] } : day,
+        ),
+      } satisfies TaskAgenda);
+    }
+  }
+};
+
 export const useTasks = (params: ListTasksParams = {}) =>
   useQuery({
     queryKey: queryKeys.tasks.list(params),
@@ -142,12 +248,37 @@ export const useTaskAgenda = (params: ListTasksParams = {}) =>
     staleTime: 15_000,
   });
 
-export const useTask = (taskId: string | undefined) =>
-  useQuery({
+/**
+ * One task, opened from a card that was already holding it.
+ *
+ * The detail modal used to mount, find an empty cache and render a spinner
+ * while it fetched — despite the fact that the card the user just clicked was
+ * drawn from `tasks.list`, which holds the *same object*. The API builds list
+ * rows and detail responses from one `taskInclude` and passes both through the
+ * same `shape()`, so there is no field the modal needs that the list does not
+ * already have. The wait was for data the app was sitting on.
+ *
+ * `placeholderData` rather than `initialData`, and the distinction is the whole
+ * behaviour. `initialData` is written into the cache and treated as a real
+ * fetch, so it would inherit `staleTime` and could leave the modal showing a
+ * stale copy without ever going to the network. `placeholderData` is displayed
+ * but never cached and never counts as fresh: the request still goes out, and
+ * the modal simply has something correct to draw while it does.
+ *
+ * So the common case — open a card you can see — is instant, and the case that
+ * needs the network — a deep link, a task scrolled out of a truncated list —
+ * behaves exactly as it did before, because there is nothing cached to stand in.
+ */
+export const useTask = (taskId: string | undefined) => {
+  const queryClient = useQueryClient();
+
+  return useQuery({
     queryKey: queryKeys.tasks.detail(taskId ?? ''),
     queryFn: () => taskApi.detail(taskId as string),
     enabled: Boolean(taskId),
+    placeholderData: () => (taskId ? findCachedTask(queryClient, taskId) : undefined),
   });
+};
 
 export const useRecycleBin = (projectId?: string) =>
   useQuery({
@@ -177,15 +308,19 @@ const useInvalidateTasks = () => {
 };
 
 export const useCreateTask = () => {
+  const queryClient = useQueryClient();
   const invalidate = useInvalidateTasks();
 
   return useMutation({
     mutationFn: (payload: CreateTaskPayload) => taskApi.create(payload),
     onSuccess: (task) => {
+      // Show it from the response we already have, then reconcile in the
+      // background. See `insertCachedTask` for why both halves are here.
+      insertCachedTask(queryClient, task);
       invalidate(task.project.id);
-      toast.success(`"${task.title}" created.`);
+      toast.success(translate('toast.taskCreated', { title: task.title }));
     },
-    onError: (error) => toast.error(errorMessage(error, 'Could not create the task.')),
+    onError: (error) => toast.error(errorMessage(error, translate('toast.taskCreateFailed'))),
   });
 };
 
@@ -196,7 +331,7 @@ export const useUpdateTask = () => {
     mutationFn: ({ taskId, payload }: { taskId: string; payload: UpdateTaskPayload }) =>
       taskApi.update(taskId, payload),
     onSuccess: (task) => invalidate(task.project.id),
-    onError: (error) => toast.error(errorMessage(error, 'Could not update the task.')),
+    onError: (error) => toast.error(errorMessage(error, translate('toast.taskUpdateFailed'))),
   });
 };
 
@@ -232,7 +367,7 @@ export const useUpdateTaskStatus = () => {
 
     onError: (error, _variables, context) => {
       rollbackTaskWrite(queryClient, context);
-      toast.error(errorMessage(error, 'Could not change the status.'));
+      toast.error(errorMessage(error, translate('toast.statusFailed')));
     },
 
     // The server's own copy, written straight in: the refetch below is then
@@ -330,7 +465,7 @@ export const useDeleteTask = () => {
     mutationFn: (taskId: string) => taskApi.remove(taskId),
     onSuccess: () => {
       invalidate();
-      toast.success('Task moved to the recycle bin.');
+      toast.success(translate('toast.taskBinned'));
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -356,7 +491,7 @@ export const usePurgeTask = () => {
     mutationFn: (taskId: string) => taskApi.purge(taskId),
     onSuccess: () => {
       invalidate();
-      toast.success('Task deleted for good.');
+      toast.success(translate('toast.taskPurged'));
     },
     onError: (error) => toast.error(errorMessage(error)),
   });

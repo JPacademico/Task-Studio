@@ -2,17 +2,19 @@ import { motion } from 'framer-motion';
 import { Moon, Sun } from 'lucide-react';
 
 import { useTheme } from '@/app/providers/theme-provider';
+import { useT } from '@/shared/i18n';
 import { cn } from '@/shared/lib/cn';
 
 /** Icon crossfade + rotate; the actual theme swap is a class toggle on <html>. */
 export const ThemeToggle = ({ className }: { className?: string }) => {
+  const t = useT();
   const { isDark, toggle } = useTheme();
 
   return (
     <button
       type="button"
       onClick={toggle}
-      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      aria-label={isDark ? t('theme.toLight') : t('theme.toDark')}
       className={cn(
         'relative grid h-9 w-9 place-items-center overflow-hidden rounded-xl',
         'text-content-muted transition-colors hover:bg-surface-sunken hover:text-content',

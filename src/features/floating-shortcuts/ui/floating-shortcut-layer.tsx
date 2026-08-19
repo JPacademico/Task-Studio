@@ -4,11 +4,22 @@ import { NavLink } from 'react-router-dom';
 import { AnimatePresence, motion, useMotionValue } from 'framer-motion';
 import { GripVertical, Undo2 } from 'lucide-react';
 
+import { useT } from '@/shared/i18n';
 import { cn } from '@/shared/lib/cn';
 import { useIsTouchDevice } from '@/shared/lib/hooks';
 import { NavGlyph } from '@/shared/ui';
 import { clampToViewport, useFloatingShortcuts, type FloatingShortcut } from '../model/shortcuts.store';
 import { iconFor } from './shortcut-icon';
+
+/**
+ * Where a pill sits in the app's stacking order.
+ *
+ * Named because these two numbers only make sense against the rails they are
+ * chosen relative to: the top bar is 40 and both side rails are 50, so resting
+ * below and dragging above is the whole behaviour.
+ */
+const RESTING_Z = 30;
+const DRAGGING_Z = 70;
 
 /**
  * One pinned menu entry, sitting wherever the user dropped it.
@@ -18,6 +29,7 @@ import { iconFor } from './shortcut-icon';
  * transform is zeroed on release, when the stored coordinates take over.
  */
 const ShortcutPill = ({ shortcut }: { shortcut: FloatingShortcut }) => {
+  const t = useT();
   const move = useFloatingShortcuts((state) => state.move);
   const remove = useFloatingShortcuts((state) => state.remove);
 
@@ -26,6 +38,9 @@ const ShortcutPill = ({ shortcut }: { shortcut: FloatingShortcut }) => {
   const suppressClickRef = useRef(false);
 
   const Icon = iconFor(shortcut.icon);
+  // A nav pill translates; a project pill is somebody's project name and is
+  // drawn exactly as they typed it. See `FloatingShortcut.label`.
+  const label = shortcut.labelKey ? t(shortcut.labelKey) : shortcut.label;
 
   return (
     <motion.div
@@ -37,8 +52,29 @@ const ShortcutPill = ({ shortcut }: { shortcut: FloatingShortcut }) => {
       drag
       dragMomentum={false}
       dragElastic={0.05}
-      style={{ x, y, left: shortcut.x, top: shortcut.y }}
-      whileDrag={{ scale: 1.04, zIndex: 60 }}
+      /*
+       * `zIndex` rides on the pill, not on the layer.
+       *
+       * The layer used to be `fixed inset-0 z-30` and the pill lifted itself to
+       * 60 while dragged — which never worked, because the layer established a
+       * stacking context and a child cannot climb out of one. 60 was therefore
+       * only ever 60 *within* z-30, so a pill dragged over the top bar (z-40)
+       * or either rail (z-50) vanished underneath them, exactly when the user
+       * was looking at it.
+       *
+       * Note it was `position: fixed` doing that, not the `z-index`: fixed and
+       * sticky elements always form a stacking context, so merely dropping the
+       * z-index would have moved the trap rather than removed it. The layer is
+       * `display: contents` now and generates no box at all, which is what lets
+       * these two values compete with the rails directly.
+       *
+       * At rest the pill stays at 30, preserving the original intent — a menu
+       * sliding out passes over its own shortcuts. While dragged it goes to 70:
+       * above both rails, below the tear-off ghost (90) and the expanded stage
+       * (80).
+       */
+      style={{ x, y, left: shortcut.x, top: shortcut.y, zIndex: RESTING_Z }}
+      whileDrag={{ scale: 1.04, zIndex: DRAGGING_Z }}
       onDragStart={() => {
         suppressClickRef.current = true;
       }}
@@ -66,7 +102,7 @@ const ShortcutPill = ({ shortcut }: { shortcut: FloatingShortcut }) => {
       >
         <span
           aria-hidden
-          title="Drag me anywhere"
+          title={t('nav.dragAnywhere')}
           className="cursor-grab px-0.5 text-content-faint active:cursor-grabbing"
         >
           <GripVertical className="h-3.5 w-3.5" />
@@ -93,14 +129,14 @@ const ShortcutPill = ({ shortcut }: { shortcut: FloatingShortcut }) => {
           >
             <NavGlyph glyph={shortcut.icon} fallback={Icon} className="h-3.5 w-3.5" />
           </span>
-          <span className="max-w-[8.5rem] truncate">{shortcut.label}</span>
+          <span className="max-w-[8.5rem] truncate">{label}</span>
         </NavLink>
 
         <button
           type="button"
           onClick={() => remove(shortcut.id)}
-          title="Send it back to the menu"
-          aria-label={`Return ${shortcut.label} to the menu`}
+          title={t('nav.sendBackToMenu')}
+          aria-label={t('nav.returnToMenu', { label })}
           className={cn(
             'grid h-7 w-7 shrink-0 place-items-center rounded-xl text-content-faint',
             'opacity-0 transition-[opacity,color,background-color] duration-150',
@@ -117,11 +153,14 @@ const ShortcutPill = ({ shortcut }: { shortcut: FloatingShortcut }) => {
 /**
  * The layer every torn-off menu entry lives on.
  *
- * Sits above the page but below the rails and the top bar, so a menu sliding
- * out passes over its own shortcuts rather than being covered by them. The
- * layer itself is inert; only the pills take the pointer.
+ * At rest the pills sit above the page but below the rails and the top bar, so
+ * a menu sliding out passes over its own shortcuts rather than being covered by
+ * them. A pill being *dragged* inverts that and rides above everything, because
+ * the thing under the user's cursor is the one thing that must stay visible.
+ * The layer itself is inert; only the pills take the pointer.
  */
 export const FloatingShortcutLayer = () => {
+  const t = useT();
   const items = useFloatingShortcuts((state) => state.items);
   const move = useFloatingShortcuts((state) => state.move);
   const isTouch = useIsTouchDevice();
@@ -155,7 +194,20 @@ export const FloatingShortcutLayer = () => {
   if (isTouch || items.length === 0) return null;
 
   return createPortal(
-    <div aria-label="Pinned shortcuts" className="pointer-events-none fixed inset-0 z-30">
+    /*
+     * `display: contents` — see the note on the pill's `style`.
+     *
+     * This element must generate no box, so that it forms no stacking context
+     * and the pills' own z-indices compete with the rails. It is a grouping
+     * node and nothing else: every pill is `position: fixed` and positions
+     * itself against the viewport, so there is nothing for a box here to do
+     * except trap them.
+     *
+     * `pointer-events-none` is gone with it. It existed to make a
+     * full-viewport overlay inert; there is no longer an overlay to make inert,
+     * and the pills carry `pointer-events-auto` themselves.
+     */
+    <div aria-label={t('nav.pinnedShortcuts')} className="contents">
       <AnimatePresence>
         {items.map((shortcut) => (
           <ShortcutPill key={shortcut.id} shortcut={shortcut} />

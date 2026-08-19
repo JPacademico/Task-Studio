@@ -36,55 +36,65 @@ import {
   RunicText,
   StudioMark,
 } from '@/shared/ui';
+import { useT, type TranslationKey } from '@/shared/i18n';
 
 interface NavItem {
   to: string;
-  label: string;
+  /**
+   * Translation keys, not the words themselves.
+   *
+   * `GROUPS` is a module constant, evaluated once at import — before any React
+   * tree exists and long before the user's language is known. Holding resolved
+   * strings here would freeze the menu into whatever language happened to load
+   * first and never update it again when the language changed. Keys defer that
+   * to render, where `t` is in scope and re-runs on every switch.
+   */
+  label: TranslationKey;
   icon: LucideIcon;
   /** Key the pinned copy stores, since a component cannot be serialised. */
   shortcutIcon: ShortcutIcon;
   end?: boolean;
   /** Short line under the label — only rendered in the primary group. */
-  hint?: string;
+  hint?: TranslationKey;
 }
 
-const GROUPS: { heading: string; items: NavItem[] }[] = [
+const GROUPS: { heading: TranslationKey; items: NavItem[] }[] = [
   {
-    heading: 'Workspace',
+    heading: 'nav.groupWorkspace',
     items: [
       {
         to: '/',
-        label: 'Dashboard',
+        label: 'nav.dashboard',
         icon: LayoutDashboard,
         shortcutIcon: 'dashboard',
         end: true,
-        hint: 'Projects & metrics',
+        hint: 'nav.dashboardHint',
       },
       {
         to: '/tasks',
-        label: 'Task menu',
+        label: 'nav.taskMenu',
         icon: CalendarDays,
         shortcutIcon: 'tasks',
-        hint: 'Your day, by hour',
+        hint: 'nav.taskMenuHint',
       },
       {
         to: '/notes',
-        label: 'Notes board',
+        label: 'nav.notesBoard',
         icon: StickyNote,
         shortcutIcon: 'notes',
-        hint: 'Your Post-it desk',
+        hint: 'nav.notesBoardHint',
       },
     ],
   },
   {
-    heading: 'Manage',
+    heading: 'nav.groupManage',
     items: [
-      { to: '/invitations', label: 'Invitations', icon: Mail, shortcutIcon: 'invitations' },
-      { to: '/recycle-bin', label: 'Recycle bin', icon: Trash2, shortcutIcon: 'recycle' },
+      { to: '/invitations', label: 'nav.invitations', icon: Mail, shortcutIcon: 'invitations' },
+      { to: '/recycle-bin', label: 'nav.recycleBin', icon: Trash2, shortcutIcon: 'recycle' },
       // Its own entry rather than a section inside settings: choosing a look is
       // browsing, not configuring, and it has a gallery of its own.
-      { to: '/themes', label: 'Themes', icon: Palette, shortcutIcon: 'themes' },
-      { to: '/settings', label: 'Settings', icon: Settings, shortcutIcon: 'settings' },
+      { to: '/themes', label: 'nav.themes', icon: Palette, shortcutIcon: 'themes' },
+      { to: '/settings', label: 'nav.settings', icon: Settings, shortcutIcon: 'settings' },
     ],
   },
 ];
@@ -105,6 +115,7 @@ interface SidebarLinkProps {
  * never moves, so it can never be clipped by the nav's own scroll box.
  */
 const SidebarLink = ({ item, badge, isTouch, onNavigate, onTearingChange }: SidebarLinkProps) => {
+  const t = useT();
   const addShortcut = useFloatingShortcuts((state) => state.add);
   const isPinnedOut = useFloatingShortcuts((state) =>
     state.items.some((entry) => entry.id === `nav:${item.to}`),
@@ -117,7 +128,10 @@ const SidebarLink = ({ item, badge, isTouch, onNavigate, onTearingChange }: Side
         id: `nav:${item.to}`,
         kind: 'nav',
         to: item.to,
-        label: item.label,
+        // Both: the key so the pill follows the language, and the resolved
+        // text so anything reading `label` blindly still has something sane.
+        labelKey: item.label,
+        label: t(item.label),
         icon: item.shortcutIcon,
         x: point.x - 90,
         y: point.y - 22,
@@ -185,11 +199,11 @@ const SidebarLink = ({ item, badge, isTouch, onNavigate, onTearingChange }: Side
               <span
                 className={cn('block truncate text-sm', isActive ? 'font-semibold' : 'font-medium')}
               >
-                <RunicText>{item.label}</RunicText>
+                <RunicText>{t(item.label)}</RunicText>
               </span>
               {item.hint && (
                 <span className="block truncate text-[10px] text-content-faint">
-                  <RunicText mode="always">{item.hint}</RunicText>
+                  <RunicText mode="always">{t(item.hint)}</RunicText>
                 </span>
               )}
             </span>
@@ -198,7 +212,7 @@ const SidebarLink = ({ item, badge, isTouch, onNavigate, onTearingChange }: Side
             {isPinnedOut && (
               <span
                 aria-hidden
-                title="Pinned to the screen — use its return arrow to drop the copy"
+                title={t('nav.pinnedHint')}
                 className="relative h-1.5 w-1.5 shrink-0 rounded-full bg-brand"
               />
             )}
@@ -212,7 +226,7 @@ const SidebarLink = ({ item, badge, isTouch, onNavigate, onTearingChange }: Side
         )}
       </NavLink>
 
-      <TearOffGhost point={ghost} label={item.label} icon={item.icon} />
+      <TearOffGhost point={ghost} label={t(item.label)} icon={item.icon} />
     </>
   );
 };
@@ -232,6 +246,7 @@ interface HiddenSidebarProps {
  * never triggers layout on the page content.
  */
 export const HiddenSidebar = ({ isMobileOpen, onMobileClose }: HiddenSidebarProps) => {
+  const t = useT();
   const isTouch = useIsTouchDevice();
   const user = useCurrentUser();
   const signOut = useSignOut();
@@ -259,7 +274,7 @@ export const HiddenSidebar = ({ isMobileOpen, onMobileClose }: HiddenSidebarProp
   return (
     <>
       {!isTouch && (
-        <EdgeAffordance edge="left" isHidden={!isOpen} label="Move the pointer here for the menu" />
+        <EdgeAffordance edge="left" isHidden={!isOpen} label={t('nav.hoverHintMenu')} />
       )}
 
       {isTouch && isMobileOpen && (
@@ -323,7 +338,7 @@ export const HiddenSidebar = ({ isMobileOpen, onMobileClose }: HiddenSidebarProp
           <div className="min-w-0 flex-1 leading-tight">
             <p className="truncate text-sm font-bold tracking-tight">Task Studio</p>
             <p className="text-[10px] uppercase tracking-[0.16em] text-content-faint">
-              Studio workspace
+              {t('nav.studioWorkspace')}
             </p>
           </div>
 
@@ -337,7 +352,7 @@ export const HiddenSidebar = ({ isMobileOpen, onMobileClose }: HiddenSidebarProp
                 {/* A section heading names a shelf, not a destination — there
                     is nothing to click and therefore nothing to reveal, so it
                     stays carved. */}
-                <RunicText mode="always">{group.heading}</RunicText>
+                <RunicText mode="always">{t(group.heading)}</RunicText>
               </p>
 
               {group.items.map((item) => (
@@ -385,7 +400,7 @@ export const HiddenSidebar = ({ isMobileOpen, onMobileClose }: HiddenSidebarProp
             <span className="grid h-7 w-7 shrink-0 place-items-center rounded-xl bg-surface-sunken">
               <LogOut className="h-3.5 w-3.5" />
             </span>
-            Sign out
+            {t('nav.signOut')}
           </button>
 
           {!isTouch && (

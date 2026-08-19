@@ -7,6 +7,7 @@ import { errorMessage } from '@/shared/api/client';
 import { queryKeys } from '@/shared/api/query-keys';
 import { documentApi } from '../api/document.api';
 import type { CreateDocumentPayload, ProjectDocument, UpdateDocumentPayload } from './types';
+import { translate } from '@/shared/i18n';
 
 /**
  * A text board's table of contents.
@@ -103,7 +104,7 @@ export const useCreateDocument = () => {
     // The API returns the finished row, so the table of contents can be edited
     // rather than thrown away and fetched again.
     onSuccess: (document) => upsertRow(document),
-    onError: (error) => toast.error(errorMessage(error, 'Could not create the document.')),
+    onError: (error) => toast.error(errorMessage(error, translate('doc.createFailed'))),
   });
 };
 
@@ -129,7 +130,7 @@ export const useUpdateDocument = () => {
       upsertRow(document);
     },
 
-    onError: (error) => toast.error(errorMessage(error, 'Could not save the document.')),
+    onError: (error) => toast.error(errorMessage(error, translate('doc.saveFailed'))),
   });
 };
 
@@ -140,7 +141,7 @@ export const useDeleteDocument = () => {
     mutationFn: (documentId: string) => documentApi.remove(documentId),
     onSuccess: (_result, documentId) => {
       removeRow(documentId);
-      toast.success('Document deleted.');
+      toast.success(translate('doc.deleted'));
     },
     onError: (error) => toast.error(errorMessage(error)),
   });

@@ -26,6 +26,7 @@ import {
 import { cn } from '@/shared/lib/cn';
 import { formatDayLabel, formatTime } from '@/shared/lib/dates';
 import { EmptyState, PageLoader, RunicText, Section } from '@/shared/ui';
+import { useT } from '@/shared/i18n';
 
 const isSameDay = (isoDate: string, reference: Date): boolean =>
   isoDate === reference.toISOString().slice(0, 10);
@@ -39,6 +40,7 @@ const isSameDay = (isoDate: string, reference: Date): boolean =>
  * status filter explicitly asks for completed tasks.
  */
 const TaskMenuPage = () => {
+  const t = useT();
   const navigate = useNavigate();
   const currentUser = useCurrentUser();
   const [filters, setFilters] = useState<ListTasksParams>({
@@ -83,7 +85,7 @@ const TaskMenuPage = () => {
     [days, unscheduled],
   );
 
-  if (isLoading) return <PageLoader label="Building your agenda" />;
+  if (isLoading) return <PageLoader label={t('agenda.building')} />;
 
   const isEmpty = days.length === 0 && unscheduled.length === 0;
 
@@ -92,9 +94,9 @@ const TaskMenuPage = () => {
       <header className="space-y-3">
         <div className="space-y-0.5 sm:space-y-1">
           <p className="text-[10px] uppercase tracking-[0.18em] text-content-faint sm:text-xs">
-            <RunicText mode="always">Task menu</RunicText>
+            <RunicText mode="always">{t('agenda.title')}</RunicText>
           </p>
-          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Your agenda</h1>
+          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{t('agenda.heading')}</h1>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -117,7 +119,7 @@ const TaskMenuPage = () => {
         {showingCompleted && (
           <p className="inline-flex items-center gap-1.5 rounded-lg bg-positive/10 px-2.5 py-1 text-[11px] text-positive">
             <CheckCircle2 className="h-3 w-3" />
-            Showing completed work. It moves to the recycle bin a week after it is done.
+            {t('agenda.showingCompleted')}
           </p>
         )}
       </header>
@@ -125,11 +127,11 @@ const TaskMenuPage = () => {
       {isEmpty && (
         <EmptyState
           icon={<CalendarDays className="h-6 w-6" />}
-          title={showingCompleted ? 'Nothing completed yet' : 'Nothing scheduled'}
+          title={t(showingCompleted ? 'agenda.nothingCompleted' : 'agenda.nothingScheduled')}
           description={
             filters.hasNotes
-              ? 'No one has attached a note to your tasks yet.'
-              : 'Tasks with a start time or a deadline appear here, ordered by hour.'
+              ? t('agenda.noNotesBody')
+              : t('agenda.scheduledBody')
           }
         />
       )}
@@ -200,7 +202,7 @@ const TaskMenuPage = () => {
         </AnimatePresence>
 
         {unscheduled.length > 0 && (
-          <Section title="Unscheduled" description="No start time and no deadline yet.">
+          <Section title={t('agenda.unscheduled')} description={t('agenda.unscheduledBody')}>
             <div className="grid gap-2.5 lg:grid-cols-2">
               {unscheduled.map((task) => (
                 <TaskCard key={task.id} task={task} compact showProjectLink {...handlers} />
@@ -212,7 +214,7 @@ const TaskMenuPage = () => {
         {unscheduled.length === 0 && days.length > 0 && (
           <p className="flex items-center gap-2 text-xs text-content-faint">
             <Inbox className="h-3.5 w-3.5" />
-            Everything has a slot on the calendar.
+            {t('agenda.everythingSlotted')}
           </p>
         )}
       </div>

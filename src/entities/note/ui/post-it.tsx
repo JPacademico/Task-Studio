@@ -7,6 +7,7 @@ import { cn } from '@/shared/lib/cn';
 import { readableInk, withAlpha } from '@/shared/lib/colors';
 import type { Note, UpdateNotePayload } from '../model/types';
 import { NoteAuthorStamp } from './note-author';
+import { useT } from '@/shared/i18n';
 
 export interface NoteHandle {
   x: MotionValue<number>;
@@ -94,6 +95,7 @@ const PostItBase = ({
   currentUserId,
   showAuthor = true,
 }: PostItProps) => {
+  const t = useT();
   const x = useMotionValue(note.positionX);
   const y = useMotionValue(note.positionY);
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
@@ -192,7 +194,7 @@ const PostItBase = ({
       {groupTint && !isSelected && (
         <span
           aria-hidden
-          title="Part of a group — dragging one moves them all"
+          title={t('notes.partOfGroup')}
           className="pointer-events-none absolute -inset-1 rounded-[7px] border-2 border-dashed"
           style={{ borderColor: groupTint }}
         />
@@ -208,7 +210,7 @@ const PostItBase = ({
         >
           <span className="flex flex-col items-center gap-1 rounded-lg bg-brand px-2 py-1.5 text-brand-contrast shadow-lg">
             <Link2 className="h-4 w-4" />
-            <span className="text-[10px] font-bold uppercase tracking-wide">Link here</span>
+            <span className="text-[10px] font-bold uppercase tracking-wide">{t('notes.linkHere')}</span>
           </span>
         </span>
       )}
@@ -219,7 +221,7 @@ const PostItBase = ({
           className="pointer-events-none absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-positive px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-lg"
         >
           <Zap className="mr-0.5 inline h-2.5 w-2.5" />
-          From here
+          {t('notes.fromHere')}
         </span>
       )}
 
@@ -261,7 +263,7 @@ const PostItBase = ({
         <div className="flex shrink-0 items-center gap-0.5">
           <button
             type="button"
-            aria-label={note.isPinned ? 'Unpin note' : 'Pin note'}
+            aria-label={t(note.isPinned ? 'notes.unpinNote' : 'notes.pinNote')}
             onClick={() => onChange(note.id, { isPinned: !note.isPinned })}
             className="rounded p-1 opacity-50 transition-opacity hover:opacity-100"
           >
@@ -270,7 +272,7 @@ const PostItBase = ({
           {!isImage && (
             <button
               type="button"
-              aria-label="Change colour"
+              aria-label={t('notes.changeColour')}
               onClick={() => setIsPaletteOpen((open) => !open)}
               className="rounded p-1 opacity-50 transition-opacity hover:opacity-100"
             >
@@ -280,7 +282,7 @@ const PostItBase = ({
           {canDelete && (
             <button
               type="button"
-              aria-label="Delete note"
+              aria-label={t('notes.deleteNote')}
               onClick={() => onDelete(note.id)}
               className="rounded p-1 opacity-50 transition-opacity hover:opacity-100"
             >
@@ -328,7 +330,7 @@ const PostItBase = ({
           onChange={(event) => setDraft(event.target.value)}
           // Commit on blur: one write per edit session instead of one per keypress.
           onBlur={() => draft !== note.content && onChange(note.id, { content: draft })}
-          placeholder="Write something…"
+          placeholder={t('notes.writeSomething')}
           className="h-full min-h-[110px] w-full resize-none bg-transparent font-hand text-[15px] leading-relaxed outline-none placeholder:opacity-40"
           style={{ color: ink }}
         />

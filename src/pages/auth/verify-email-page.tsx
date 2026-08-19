@@ -9,6 +9,7 @@ import { useSessionStore } from '@/features/auth/model/session.store';
 import { errorMessage } from '@/shared/api/client';
 import { Button, Input, Spinner } from '@/shared/ui';
 import { AuthShell } from './auth-shell';
+import { useT } from '@/shared/i18n';
 
 type Phase = 'idle' | 'verifying' | 'verified' | 'failed';
 
@@ -17,6 +18,7 @@ type Phase = 'idle' | 'verifying' | 'verified' | 'failed';
  * user to go check their inbox (with a resend escape hatch).
  */
 export const VerifyEmailPage = () => {
+  const t = useT();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get('token');
@@ -31,13 +33,13 @@ export const VerifyEmailPage = () => {
     onSuccess: (session) => {
       startSession(session);
       setPhase('verified');
-      toast.success('Email confirmed. Welcome to Task Studio.');
+      toast.success(t('auth.verify.welcome'));
       // Brief pause so the success state is actually readable.
       setTimeout(() => navigate('/', { replace: true }), 1200);
     },
     onError: (error) => {
       setPhase('failed');
-      toast.error(errorMessage(error, 'This confirmation link is no longer valid.'));
+      toast.error(errorMessage(error, t('auth.verify.linkInvalid')));
     },
   });
 
@@ -56,10 +58,10 @@ export const VerifyEmailPage = () => {
 
   if (phase === 'verifying') {
     return (
-      <AuthShell title="Confirming your email" subtitle="One moment…">
+      <AuthShell title={t('auth.verify.confirmingTitle')} subtitle={t('auth.verify.oneMoment')}>
         <div className="flex items-center gap-3 py-4">
           <Spinner />
-          <span className="text-sm text-content-muted">Validating your link</span>
+          <span className="text-sm text-content-muted">{t('auth.verify.validating')}</span>
         </div>
       </AuthShell>
     );
@@ -67,10 +69,10 @@ export const VerifyEmailPage = () => {
 
   if (phase === 'verified') {
     return (
-      <AuthShell title="You are in" subtitle="Redirecting to your dashboard.">
+      <AuthShell title={t('auth.verify.youAreIn')} subtitle={t('auth.verify.redirecting')}>
         <div className="flex items-center gap-3 py-4 text-positive">
           <CheckCircle2 className="h-6 w-6" />
-          <span className="text-sm font-medium">Email confirmed</span>
+          <span className="text-sm font-medium">{t('auth.verify.confirmedTitle')}</span>
         </div>
       </AuthShell>
     );
@@ -78,17 +80,19 @@ export const VerifyEmailPage = () => {
 
   return (
     <AuthShell
-      title={phase === 'failed' ? 'Link expired' : 'Confirm your email'}
+      title={t(phase === 'failed' ? 'auth.verify.expiredTitle' : 'auth.verify.pendingTitle')}
       subtitle={
-        phase === 'failed'
-          ? 'Confirmation links last 24 hours. Send yourself a fresh one.'
-          : 'We sent a confirmation link. Open it and your workspace unlocks.'
+        t(
+          phase === 'failed'
+            ? 'auth.verify.expiredSubtitle'
+            : 'auth.verify.pendingSubtitle',
+        )
       }
       footer={
         <div className="flex items-center justify-between">
-          <span className="text-content-muted">Wrong address?</span>
+          <span className="text-content-muted">{t('auth.verify.wrongAddress')}</span>
           <Link to="/signup" className="font-medium text-brand hover:underline">
-            Start over
+            {t('auth.verify.startOver')}
           </Link>
         </div>
       }
@@ -103,22 +107,23 @@ export const VerifyEmailPage = () => {
           <p className="text-xs leading-relaxed text-content-muted">
             {email ? (
               <>
-                Sent to <span className="font-medium text-content">{email}</span>. Check the
-                spam folder if it has not arrived.
+                {t('auth.verify.sentTo')}{' '}
+                <span className="font-medium text-content">{email}</span>
+                {t('auth.verify.spamNote')}
               </>
             ) : (
-              'Enter your address below and we will send the link again.'
+              t('auth.verify.enterAddress')
             )}
           </p>
         </div>
 
         <Input
-          label="Email"
+          label={t('auth.email')}
           name="email"
           type="email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          placeholder="you@company.com"
+          placeholder={t('auth.emailPlaceholder')}
         />
 
         <Button
@@ -129,14 +134,14 @@ export const VerifyEmailPage = () => {
           disabled={!email.includes('@')}
           onClick={() => resend.mutate(email)}
         >
-          Resend confirmation link
+          {t('auth.verify.resend')}
         </Button>
 
         <Link
           to="/login"
           className="block text-center text-xs text-content-muted hover:text-brand hover:underline"
         >
-          Back to sign in
+          {t('auth.backToSignIn')}
         </Link>
       </div>
     </AuthShell>

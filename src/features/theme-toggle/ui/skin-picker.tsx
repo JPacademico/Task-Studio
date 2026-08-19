@@ -6,6 +6,7 @@ import { useTheme } from '@/app/providers/theme-provider';
 import { cn } from '@/shared/lib/cn';
 import { SETTINGS_SKIN_LIMIT, SKIN_CATALOG } from '../model/skin-catalog';
 import { SkinMock } from './skin-mock';
+import { useT } from '@/shared/i18n';
 
 /**
  * The theme control on the settings page.
@@ -21,6 +22,7 @@ import { SkinMock } from './skin-mock';
  * are using, which is the first question anybody opens it with.
  */
 export const SkinPicker = () => {
+  const t = useT();
   const { skin, setSkin, isDark } = useTheme();
 
   const active = SKIN_CATALOG.find((option) => option.value === skin);
@@ -56,7 +58,7 @@ export const SkinPicker = () => {
                   <span className="truncate">{option.name}</span>
                   {option.value === 'STUDIO' && (
                     <span className="shrink-0 rounded-full bg-surface-sunken px-1.5 py-px text-[9px] font-medium uppercase tracking-wide text-content-faint">
-                      Default
+                      {t('themes.defaultSkin')}
                     </span>
                   )}
                 </p>
@@ -102,7 +104,7 @@ export const SkinPicker = () => {
         </span>
 
         <span className="relative min-w-0 flex-1 leading-tight">
-          <span className="block text-sm font-bold tracking-tight">Browse themes</span>
+          <span className="block text-sm font-bold tracking-tight">{t('themes.browse')}</span>
           <span className="block truncate text-[11px] text-content-muted">
             {remaining > 0
               ? `${remaining} more in the gallery — preview any of them before you commit`

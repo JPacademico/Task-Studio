@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { motion, useDragControls, useReducedMotion } from 'framer-motion';
 import { GripHorizontal } from 'lucide-react';
 
+import { useT } from '@/shared/i18n';
+import { LanguageToggle } from '@/features/language-toggle/ui/language-toggle';
 import { ThemeToggle } from '@/features/theme-toggle/ui/theme-toggle';
 import { wakeApi } from '@/shared/api/client';
 import { cn } from '@/shared/lib/cn';
@@ -39,6 +41,7 @@ interface AuthShellProps {
  * container needs to start.
  */
 export const AuthShell = ({ title, subtitle, children, footer }: AuthShellProps) => {
+  const t = useT();
   const deskRef = useRef<HTMLDivElement>(null);
   const dragControls = useDragControls();
   const isTouch = useIsTouchDevice();
@@ -75,20 +78,22 @@ export const AuthShell = ({ title, subtitle, children, footer }: AuthShellProps)
 
         <div className="hidden max-w-sm space-y-2 lg:block">
           <h2 className="text-balance text-3xl font-bold leading-[1.15] tracking-tight xl:text-4xl">
-            Work that behaves like paper.
+            {t('auth.hero.title')}
           </h2>
           <p className="text-sm leading-relaxed text-content-muted">
-            Boards you can pin, notes you can move, deadlines that speak up. Everything on this
-            desk is real — go on, drag it. The card too.
+            {t('auth.hero.body')}
           </p>
         </div>
 
         <p className="hidden text-[11px] uppercase tracking-[0.18em] text-content-faint sm:block">
-          Personal &amp; collaborative project studio
+          {t('auth.hero.tagline')}
         </p>
       </div>
 
-      <div className="absolute right-4 top-4 z-40">
+      {/* Language before theme: it is the choice that has to be made *first*,
+          because a reader who cannot read the page cannot find anything else. */}
+      <div className="absolute right-4 top-4 z-40 flex items-center gap-1">
+        <LanguageToggle withLabel />
         <ThemeToggle />
       </div>
 

@@ -10,6 +10,7 @@ import { cn } from '@/shared/lib/cn';
 import { formatRelative } from '@/shared/lib/dates';
 import { Badge, Button, EmptyState, Section } from '@/shared/ui';
 import { aiApi, type AiSuggestion } from '../api/ai.api';
+import { useT } from '@/shared/i18n';
 
 const SEVERITY_STYLE = {
   info: 'border-edge',
@@ -23,6 +24,7 @@ const SEVERITY_STYLE = {
  * it costs nothing.
  */
 export const AiPanel = ({ projectId }: { projectId: string }) => {
+  const t = useT();
   const queryClient = useQueryClient();
   const [latest, setLatest] = useState<AiSuggestion | null>(null);
 
@@ -42,9 +44,9 @@ export const AiPanel = ({ projectId }: { projectId: string }) => {
     onSuccess: (suggestion) => {
       setLatest(suggestion);
       void queryClient.invalidateQueries({ queryKey: queryKeys.ai.history(projectId) });
-      toast.success('Workflow review ready.');
+      toast.success(t('ai.reviewReady'));
     },
-    onError: (error) => toast.error(errorMessage(error, 'The assistant is unavailable.')),
+    onError: (error) => toast.error(errorMessage(error, t('ai.unavailable'))),
   });
 
   const shown = latest ?? history.find((entry) => entry.kind === 'WORKFLOW') ?? null;
@@ -53,8 +55,8 @@ export const AiPanel = ({ projectId }: { projectId: string }) => {
     return (
       <EmptyState
         icon={<Sparkles className="h-6 w-6" />}
-        title="AI assistant not configured"
-        description="Set GEMINI_API_KEY on the API to unlock workflow analysis and sub-task suggestions."
+        title={t('ai.notConfigured')}
+        description={t('ai.notConfiguredBody')}
       />
     );
   }
@@ -62,28 +64,28 @@ export const AiPanel = ({ projectId }: { projectId: string }) => {
   return (
     <div className="space-y-6">
       <Section
-        title="Workflow review"
-        description="Gemini reads the project's completed and open work, then names the bottlenecks."
+        title={t('ai.workflowReview')}
+        description={t('ai.workflowReviewBody')}
         action={
           <Button size="sm" onClick={() => analyze.mutate()} isLoading={analyze.isPending}>
             <Wand2 className="h-3.5 w-3.5" />
-            {shown ? 'Re-analyse' : 'Analyse project'}
+            {t(shown ? 'ai.reanalyse' : 'ai.analyse')}
           </Button>
         }
       >
         {!shown && !analyze.isPending && (
           <EmptyState
             icon={<Sparkles className="h-6 w-6" />}
-            title="No analysis yet"
-            description="Run a review once there are a few completed tasks to learn from."
+            title={t('ai.noAnalysis')}
+            description={t('ai.noAnalysisBody')}
           />
         )}
 
         {analyze.isPending && (
           <div className="space-y-2 rounded-2xl border border-edge bg-surface-raised p-4">
-            <p className="text-sm font-medium">Reading the board…</p>
+            <p className="text-sm font-medium">{t('ai.reading')}</p>
             <p className="text-xs text-content-muted">
-              Summarising completions, deadlines and assignment balance.
+              {t('ai.readingBody')}
             </p>
           </div>
         )}
@@ -100,7 +102,7 @@ export const AiPanel = ({ projectId }: { projectId: string }) => {
               <div className="flex items-center gap-2">
                 <Badge>{shown.model}</Badge>
                 <span className="text-[11px] text-content-faint">
-                  generated {formatRelative(shown.createdAt)}
+                  {t('ai.generated')} {formatRelative(shown.createdAt)}
                 </span>
               </div>
 
@@ -132,7 +134,7 @@ export const AiPanel = ({ projectId }: { projectId: string }) => {
               {(shown.result.nextSteps ?? []).length > 0 && (
                 <div className="rounded-2xl border border-edge bg-surface-sunken p-4">
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-content-faint">
-                    Next steps
+                    {t('ai.nextSteps')}
                   </p>
                   <ol className="space-y-1.5">
                     {(shown.result.nextSteps ?? []).map((step, index) => (

@@ -1,5 +1,13 @@
 import type { UserSummary } from '@/entities/user/model/types';
 
+/**
+ * How far a message *we* sent has got. Client-only — never sent by the API.
+ *
+ * Absent means settled: either it came from the server, or the server has
+ * acknowledged ours. The two named states are the ones worth drawing.
+ */
+export type ChatDelivery = 'pending' | 'failed';
+
 export interface ChatMessage {
   id: string;
   content: string;
@@ -9,8 +17,16 @@ export interface ChatMessage {
   projectId: string;
   userId: string;
   user: UserSummary;
-  /** Present only on the optimistic echo of a message we just sent. */
+  /**
+   * Correlates our optimistic copy with the server's broadcast of it.
+   *
+   * We generate it, the gateway echoes it back on both the ack and the
+   * `chat:message` fan-out, and the sender uses it to recognise its own message
+   * arriving and replace the local copy instead of drawing a second one.
+   */
   clientId?: string;
+  /** @see ChatDelivery — set on our own optimistic copies only. */
+  delivery?: ChatDelivery;
 }
 
 export type WhiteboardElementType = 'STROKE' | 'TEXT' | 'STICKY' | 'SHAPE' | 'IMAGE';

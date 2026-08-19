@@ -14,6 +14,7 @@ import { useCurrentUser } from '@/features/auth/model/session.store';
 import { cn } from '@/shared/lib/cn';
 import { formatRelative } from '@/shared/lib/dates';
 import { Avatar, Badge, Button, EmptyState, Input, Modal, Section } from '@/shared/ui';
+import { useT } from '@/shared/i18n';
 
 interface RosterPanelProps {
   projectId: string;
@@ -31,6 +32,7 @@ const ROLE_ICON: Record<ProjectRole, ReactNode> = {
  * registered, verified accounts only — that is a domain rule, not a UI choice.
  */
 export const RosterPanel = ({ projectId, canManage }: RosterPanelProps) => {
+  const t = useT();
   const currentUser = useCurrentUser();
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -60,13 +62,13 @@ export const RosterPanel = ({ projectId, canManage }: RosterPanelProps) => {
   return (
     <div className="space-y-6">
       <Section
-        title="Roster"
-        description={`${members.length} member(s) on this project.`}
+        title={t('roster.title')}
+        description={t('roster.memberCount', { count: members.length })}
         action={
           canManage && (
             <Button size="sm" variant="secondary" onClick={() => setIsInviteOpen(true)}>
               <UserPlus className="h-3.5 w-3.5" />
-              Invite
+              {t('roster.invite')}
             </Button>
           )
         }
@@ -81,7 +83,7 @@ export const RosterPanel = ({ projectId, canManage }: RosterPanelProps) => {
                   {member.displayName}
                   {ROLE_ICON[member.role]}
                   {member.id === currentUser?.id && (
-                    <span className="text-[10px] text-content-faint">(you)</span>
+                    <span className="text-[10px] text-content-faint">{t('roster.you')}</span>
                   )}
                 </p>
                 <p className="truncate text-[11px] text-content-faint">{member.email}</p>
@@ -93,7 +95,7 @@ export const RosterPanel = ({ projectId, canManage }: RosterPanelProps) => {
                 <Button
                   size="icon"
                   variant="ghost"
-                  aria-label={`Remove ${member.displayName}`}
+                  aria-label={t('roster.remove', { name: member.displayName })}
                   onClick={() => removeMember.mutate(member.id)}
                   className="text-content-faint hover:text-danger"
                 >
@@ -106,7 +108,7 @@ export const RosterPanel = ({ projectId, canManage }: RosterPanelProps) => {
       </Section>
 
       {canManage && pending.length > 0 && (
-        <Section title="Pending invitations">
+        <Section title={t('roster.pending')}>
           <ul className="divide-y divide-edge overflow-hidden rounded-2xl border border-dashed border-edge">
             {pending.map((invitation) => (
               <li key={invitation.id} className="flex items-center gap-3 px-4 py-3">
@@ -114,7 +116,7 @@ export const RosterPanel = ({ projectId, canManage }: RosterPanelProps) => {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm">{invitation.recipient.displayName}</p>
                   <p className="text-[11px] text-content-faint">
-                    invited {formatRelative(invitation.createdAt)}
+                    {t('roster.invitedRelative')} {formatRelative(invitation.createdAt)}
                   </p>
                 </div>
                 <Badge>{invitation.role.toLowerCase()}</Badge>
@@ -127,21 +129,21 @@ export const RosterPanel = ({ projectId, canManage }: RosterPanelProps) => {
       <Modal
         isOpen={isInviteOpen}
         onClose={() => setIsInviteOpen(false)}
-        title="Invite to the roster"
-        description="Search registered users by name, or paste an exact email address."
+        title={t('roster.inviteTitle')}
+        description={t('roster.inviteSubtitle')}
       >
         <div className="space-y-4">
           <Input
-            label="Search"
+            label={t('roster.search')}
             name="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Name or email"
+            placeholder={t('roster.searchPlaceholder')}
             autoFocus
           />
 
           <div className="space-y-1.5">
-            <p className="text-xs font-medium text-content-muted">Role</p>
+            <p className="text-xs font-medium text-content-muted">{t('roster.role')}</p>
             <div className="flex gap-1.5">
               {(['MEMBER', 'ADMIN'] as ProjectRole[]).map((option) => (
                 <button
@@ -163,13 +165,13 @@ export const RosterPanel = ({ projectId, canManage }: RosterPanelProps) => {
 
           {debounced.length >= 2 && (
             <div className="space-y-2">
-              {isFetching && <p className="text-xs text-content-faint">Searching…</p>}
+              {isFetching && <p className="text-xs text-content-faint">{t('roster.searching')}</p>}
 
               {!isFetching && invitable.length === 0 && (
                 <EmptyState
                   className="px-4 py-6"
-                  title="No match"
-                  description="Only verified Task Studio accounts can be invited."
+                  title={t('roster.noMatch')}
+                  description={t('roster.noMatchBody')}
                 />
               )}
 
@@ -193,7 +195,7 @@ export const RosterPanel = ({ projectId, canManage }: RosterPanelProps) => {
                       )
                     }
                   >
-                    Invite
+                    {t('roster.invite')}
                   </Button>
                 </div>
               ))}

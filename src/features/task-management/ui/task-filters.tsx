@@ -11,6 +11,7 @@ import type {
 import { TASK_STATUS_META, TASK_TYPE_META } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
 import { PostItMark, Segmented, Select, type SelectOption } from '@/shared/ui';
+import { useT } from '@/shared/i18n';
 
 /**
  * `project` shows the whole roster's work, so it keeps the mine/team/all split.
@@ -76,6 +77,7 @@ export const TaskFilters = ({
   variant = 'project',
   className,
 }: TaskFiltersProps) => {
+  const t = useT();
   const patch = (next: Partial<ListTasksParams>) => onChange({ ...value, ...next });
   const isPersonal = variant === 'personal';
 
@@ -113,7 +115,7 @@ export const TaskFilters = ({
         <input
           value={value.search ?? ''}
           onChange={(event) => patch({ search: event.target.value || undefined })}
-          placeholder="Search tasks"
+          placeholder={t('views.searchTasks')}
           className="field h-9 w-36 pl-8 text-xs sm:w-40"
         />
       </div>
@@ -161,7 +163,7 @@ export const TaskFilters = ({
           className="ui-filter inline-flex h-9 items-center gap-1 rounded-xl px-2 text-xs text-content-faint transition-colors hover:text-danger"
         >
           <X className="h-3 w-3" strokeWidth={2.6} />
-          Clear
+          {t('views.clear')}
         </button>
       )}
 
@@ -176,7 +178,7 @@ export const TaskFilters = ({
         )}
       >
         <Pin className={cn('h-3 w-3', value.pinnedOnly && 'fill-current')} />
-        Pinned
+        {t('views.pinned')}
       </button>
     </div>
   );

@@ -13,7 +13,11 @@ import {
 } from 'lucide-react';
 
 import { useProjectRoom } from '@/app/providers/realtime-provider';
-import { useProject, useTogglePin } from '@/entities/project/model/queries';
+import {
+  useProject,
+  usePrefetchProjectCollaboration,
+  useTogglePin,
+} from '@/entities/project/model/queries';
 import { completionBlockedReason } from '@/entities/task/lib/completion';
 import {
   useDeleteTask,
@@ -27,7 +31,10 @@ import { AiPanel } from '@/features/ai-suggestions/ui/ai-panel';
 import { useCurrentUser } from '@/features/auth/model/session.store';
 import { TaskBoard } from '@/features/dnd-board/ui/task-board';
 import { useChatDock } from '@/features/project-chat-dock/model/chat-dock.store';
-import { useProjectChatUnread } from '@/features/project-chat-dock/ui/chat-dock';
+import {
+  useProjectChatUnread,
+  usePrefetchProjectChat,
+} from '@/features/project-chat-dock/ui/chat-dock';
 import { RosterPanel } from '@/features/roster/ui/roster-panel';
 import { TaskComposer } from '@/features/task-management/ui/task-composer';
 import { TaskDetailModal } from '@/features/task-management/ui/task-detail-modal';
@@ -44,6 +51,7 @@ import { Avatar, Button, PageLoader, Segmented } from '@/shared/ui';
 import { ProjectDashboard } from '@/widgets/project-dashboard/ui/project-dashboard';
 import { TextBoard } from '@/widgets/text-board/ui/text-board';
 import { Whiteboard } from '@/widgets/whiteboard/ui/whiteboard';
+import { useT } from '@/shared/i18n';
 
 type Tab = 'board' | 'dashboard' | 'roster' | 'whiteboard' | 'text' | 'ai';
 
@@ -63,6 +71,7 @@ const TABS: { value: Tab; label: string; icon: ReactNode }[] = [
  * whiteboard strokes and teammates' task edits arrive live.
  */
 const ProjectPage = () => {
+  const t = useT();
   const { projectId } = useParams<{ projectId: string }>();
   useProjectRoom(projectId);
 
@@ -87,9 +96,22 @@ const ProjectPage = () => {
     (state) => state.isOpen && state.projectId === projectId,
   );
   const chatUnread = useProjectChatUnread(projectId);
+  // Warm the conversation while the user is reading the board.
+  usePrefetchProjectChat(projectId);
 
   const { data: project, isLoading } = useProject(projectId);
   const { data: tasks = [] } = useTasks({ ...filters, projectId });
+
+  /*
+   * Derived up here rather than after the loading guard below, because the
+   * prefetch is a hook and hooks cannot sit behind an early return. Optional
+   * chaining covers the render where `project` has not arrived: the prefetch
+   * simply skips the invitations half until it has, and re-runs when it does.
+   */
+  const canManage = project?.myRole === 'OWNER' || project?.myRole === 'ADMIN';
+
+  // Warm the roster tab while the user is reading the board.
+  usePrefetchProjectCollaboration(projectId, canManage);
 
   const togglePin = useTogglePin();
   const updateStatus = useUpdateTaskStatus();
@@ -130,9 +152,7 @@ const ProjectPage = () => {
     [deleteTask.mutate, toggleCompletion.mutate, toggleTaskPin.mutate],
   );
 
-  if (isLoading || !project || !projectId) return <PageLoader label="Opening project" />;
-
-  const canManage = project.myRole === 'OWNER' || project.myRole === 'ADMIN';
+  if (isLoading || !project || !projectId) return <PageLoader label={t('project.opening')} />;
 
   return (
     <div className="space-y-4 sm:space-y-6">

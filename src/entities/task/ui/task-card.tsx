@@ -20,6 +20,7 @@ import { AvatarStack, Badge, PostItMark } from '@/shared/ui';
 import { completionProgress, isSharedTask, outstandingAssignees } from '../lib/completion';
 import type { Task } from '../model/types';
 import { TaskTypeTag } from './task-type-tag';
+import { useT } from '@/shared/i18n';
 
 /**
  * The lateness stamp.
@@ -92,6 +93,7 @@ const TaskCardBase = ({
   compact,
   showProjectLink,
 }: TaskCardProps) => {
+  const t = useT();
   const statusMeta = TASK_STATUS_META[task.status];
   const isDone = task.status === 'COMPLETED';
 
@@ -231,7 +233,7 @@ const TaskCardBase = ({
           {onDelete && (
             <button
               type="button"
-              aria-label="Move to recycle bin"
+              aria-label={t('views.moveToBin')}
               onClick={() => onDelete(task)}
               className="rounded-lg p-1.5 text-content-faint transition-colors hover:text-danger"
             >
@@ -293,7 +295,7 @@ const TaskCardBase = ({
         {task.attachmentUrl && (
           <Badge>
             <Paperclip className="h-3 w-3" />
-            Image
+            {t('task.image')}
           </Badge>
         )}
 

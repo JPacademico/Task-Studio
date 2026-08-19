@@ -3,6 +3,7 @@ import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-qu
 import { toast } from 'sonner';
 
 import { errorMessage } from '@/shared/api/client';
+import { translate } from '@/shared/i18n';
 
 export const QueryProvider = ({ children }: { children: ReactNode }) => {
   const [client] = useState(
@@ -12,7 +13,7 @@ export const QueryProvider = ({ children }: { children: ReactNode }) => {
         queryCache: new QueryCache({
           onError: (error, query) => {
             if (query.state.data !== undefined) {
-              toast.error(errorMessage(error, 'Could not refresh data.'));
+              toast.error(errorMessage(error, translate('session.refreshFailed')));
             }
           },
         }),

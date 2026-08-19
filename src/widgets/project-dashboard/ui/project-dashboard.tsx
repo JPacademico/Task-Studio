@@ -6,27 +6,29 @@ import { TASK_TYPE_META } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
 import { formatDayLabel, formatDeadline } from '@/shared/lib/dates';
 import { Avatar, AvatarStack, Badge, EmptyState, PageLoader, Section } from '@/shared/ui';
+import { useT } from '@/shared/i18n';
 
 /** Metrics module for a single project: throughput, people, deadlines. */
 export const ProjectDashboard = ({ projectId }: { projectId: string }) => {
+  const t = useT();
   const { data, isLoading } = useProjectDashboard(projectId);
 
-  if (isLoading || !data) return <PageLoader label="Crunching metrics" />;
+  if (isLoading || !data) return <PageLoader label={t('projectDash.crunching')} />;
 
   const { totals, byType, members, mostProductiveMember, completionTrend, upcomingDeadlines } = data;
   const peak = Math.max(1, ...completionTrend.map((point) => point.completed));
 
   const tiles = [
-    { label: 'Total tasks', value: totals.tasks, icon: <ListTodo className="h-4 w-4" /> },
-    { label: 'Completed', value: totals.completed, icon: <CheckCircle2 className="h-4 w-4" /> },
+    { label: t('projectDash.totalTasks'), value: totals.tasks, icon: <ListTodo className="h-4 w-4" /> },
+    { label: t('dash.completed'), value: totals.completed, icon: <CheckCircle2 className="h-4 w-4" /> },
     {
-      label: 'Overdue',
+      label: t('dash.overdue'),
       value: totals.overdue,
       icon: <TriangleAlert className="h-4 w-4" />,
       warn: totals.overdue > 0,
     },
     {
-      label: 'Due this week',
+      label: t('projectDash.dueThisWeek'),
       value: totals.dueThisWeek,
       icon: <CalendarClock className="h-4 w-4" />,
     },
@@ -59,7 +61,7 @@ export const ProjectDashboard = ({ projectId }: { projectId: string }) => {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-3">
-        <Section title="Completion" className="lg:col-span-2">
+        <Section title={t('projectDash.completion')} className="lg:col-span-2">
           <div className="space-y-4 rounded-2xl border border-edge bg-surface-raised p-4">
             <div className="flex items-end justify-between">
               <p className="text-3xl font-semibold tabular-nums">{totals.completionRate}%</p>
@@ -112,7 +114,7 @@ export const ProjectDashboard = ({ projectId }: { projectId: string }) => {
           </div>
         </Section>
 
-        <Section title="Most productive">
+        <Section title={t('projectDash.mostProductive')}>
           {mostProductiveMember ? (
             <div className="space-y-4 rounded-2xl border border-edge bg-surface-raised p-4">
               <div className="flex items-center gap-3">
@@ -153,16 +155,19 @@ export const ProjectDashboard = ({ projectId }: { projectId: string }) => {
             </div>
           ) : (
             <EmptyState
-              title="No completions yet"
-              description="Once the roster starts closing tasks, the leaderboard fills in."
+              title={t('projectDash.noCompletions')}
+              description={t('projectDash.noCompletionsBody')}
             />
           )}
         </Section>
       </div>
 
-      <Section title="Next deadlines">
+      <Section title={t('projectDash.nextDeadlines')}>
         {upcomingDeadlines.length === 0 ? (
-          <EmptyState title="Nothing scheduled" description="No upcoming deadlines." />
+          <EmptyState
+            title={t('projectDash.nothingScheduled')}
+            description={t('projectDash.noDeadlines')}
+          />
         ) : (
           <ul className="divide-y divide-edge overflow-hidden rounded-2xl border border-edge bg-surface-raised">
             {upcomingDeadlines.map((task) => (
@@ -175,7 +180,7 @@ export const ProjectDashboard = ({ projectId }: { projectId: string }) => {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{task.title}</p>
                   <p className="text-[11px] text-content-faint">
-                    {task.dueAt ? formatDayLabel(task.dueAt) : 'No date'} ·{' '}
+                    {task.dueAt ? formatDayLabel(task.dueAt) : t('projectDash.noDate')} ·{' '}
                     {formatDeadline(task.dueAt)}
                   </p>
                 </div>

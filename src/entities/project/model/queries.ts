@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -5,6 +6,7 @@ import { errorMessage } from '@/shared/api/client';
 import { queryKeys } from '@/shared/api/query-keys';
 import { projectApi, type ListProjectsParams } from '../api/project.api';
 import type { OverviewDelta, ProjectRole, UserOverview } from './types';
+import { translate } from '@/shared/i18n';
 
 export const useProjects = (params: ListProjectsParams = {}) =>
   useQuery({
@@ -85,7 +87,7 @@ export const useCreateProject = () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
       toast.success(`"${project.name}" is ready.`);
     },
-    onError: (error) => toast.error(errorMessage(error, 'Could not create the project.')),
+    onError: (error) => toast.error(errorMessage(error, translate('toast.projectCreateFailed'))),
   });
 };
 
@@ -97,7 +99,7 @@ export const useUpdateProject = (projectId: string) => {
       projectApi.update(projectId, payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
-      toast.success('Project updated.');
+      toast.success(translate('toast.projectUpdated'));
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -110,7 +112,7 @@ export const useDeleteProject = () => {
     mutationFn: projectApi.remove,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
-      toast.success('Project moved to the recycle bin.');
+      toast.success(translate('toast.projectBinned'));
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -127,15 +129,32 @@ export const useTogglePin = () => {
     mutationFn: ({ projectId, pinned }: { projectId: string; pinned: boolean }) =>
       projectApi.setPinned(projectId, pinned),
     onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.projects.all }),
-    onError: (error) => toast.error(errorMessage(error, 'Could not update the pin.')),
+    onError: (error) => toast.error(errorMessage(error, translate('toast.pinFailed'))),
   });
 };
+
+/*
+ * The roster and its pending invitations change on human timescales.
+ *
+ * Both of these back a tab that is mounted only while it is open, so every
+ * visit used to be a fresh request on the global 30s `staleTime` — and the
+ * panel renders empty until it lands. But somebody joining a project is not a
+ * thing that happens between two clicks of the same tab, and when it does the
+ * socket says so: `roster:joined` / `roster:left` already invalidate
+ * `projects.all` in the realtime provider.
+ *
+ * A minute of tolerance therefore costs nothing anybody can observe and makes
+ * switching back and forth free. `usePrefetchProjectCollaboration` below does
+ * the other half.
+ */
+const ROSTER_STALE_TIME = 60_000;
 
 export const useRoster = (projectId: string | undefined) =>
   useQuery({
     queryKey: queryKeys.projects.members(projectId ?? ''),
     queryFn: () => projectApi.members(projectId as string),
     enabled: Boolean(projectId),
+    staleTime: ROSTER_STALE_TIME,
   });
 
 export const usePendingInvitations = (projectId: string | undefined) =>
@@ -143,7 +162,45 @@ export const usePendingInvitations = (projectId: string | undefined) =>
     queryKey: queryKeys.projects.invitations(projectId ?? ''),
     queryFn: () => projectApi.pendingInvitations(projectId as string),
     enabled: Boolean(projectId),
+    staleTime: ROSTER_STALE_TIME,
   });
+
+/**
+ * Warm the roster tab while the user is looking at the board.
+ *
+ * Same reasoning as the chat prefetch: the tab is mounted on click, so the
+ * click is the first moment the app asks for the data and the panel spends a
+ * round trip empty. Moving the request to the page load spends it against time
+ * the user was going to be here anyway.
+ *
+ * Invitations are only fetched when the caller can actually manage them —
+ * `RosterPanel` guards the query the same way, and a request the server will
+ * refuse is not a prefetch, it is a 403 on every project page.
+ */
+export const usePrefetchProjectCollaboration = (
+  projectId: string | undefined,
+  canManage: boolean,
+): void => {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!projectId) return;
+
+    void queryClient.prefetchQuery({
+      queryKey: queryKeys.projects.members(projectId),
+      queryFn: () => projectApi.members(projectId),
+      staleTime: ROSTER_STALE_TIME,
+    });
+
+    if (!canManage) return;
+
+    void queryClient.prefetchQuery({
+      queryKey: queryKeys.projects.invitations(projectId),
+      queryFn: () => projectApi.pendingInvitations(projectId),
+      staleTime: ROSTER_STALE_TIME,
+    });
+  }, [canManage, projectId, queryClient]);
+};
 
 export const useInviteMember = (projectId: string) => {
   const queryClient = useQueryClient();
@@ -153,9 +210,9 @@ export const useInviteMember = (projectId: string) => {
       projectApi.invite(projectId, payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.invitations(projectId) });
-      toast.success('Invitation sent.');
+      toast.success(translate('toast.inviteSent'));
     },
-    onError: (error) => toast.error(errorMessage(error, 'Could not send the invitation.')),
+    onError: (error) => toast.error(errorMessage(error, translate('toast.inviteFailed'))),
   });
 };
 
@@ -168,7 +225,7 @@ export const useRespondToInvitation = () => {
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.invitations.mine });
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
-      toast.success(variables.accept ? 'You joined the project.' : 'Invitation declined.');
+      toast.success(variables.accept ? translate('toast.joinedProject') : translate('toast.inviteDeclined'));
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -182,7 +239,7 @@ export const useRemoveMember = (projectId: string) => {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.members(projectId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(projectId) });
-      toast.success('Roster updated.');
+      toast.success(translate('toast.rosterUpdated'));
     },
     onError: (error) => toast.error(errorMessage(error)),
   });

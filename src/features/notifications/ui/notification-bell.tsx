@@ -12,6 +12,7 @@ import type { AppNotification } from '@/entities/notification/model/types';
 import { cn } from '@/shared/lib/cn';
 import { formatRelative } from '@/shared/lib/dates';
 import { Button, EmptyState } from '@/shared/ui';
+import { useT } from '@/shared/i18n';
 
 const deepLink = (notification: AppNotification): string | null => {
   const { payload } = notification;
@@ -23,6 +24,7 @@ const deepLink = (notification: AppNotification): string | null => {
 };
 
 export const NotificationBell = () => {
+  const t = useT();
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -66,7 +68,7 @@ export const NotificationBell = () => {
               className="gpu panel absolute right-0 top-11 z-50 w-[340px] overflow-hidden"
             >
               <header className="flex items-center justify-between border-b border-edge px-4 py-3">
-                <p className="text-sm font-semibold">Notifications</p>
+                <p className="text-sm font-semibold">{t('nav.notifications')}</p>
                 {unread > 0 && (
                   <Button
                     variant="ghost"
@@ -75,21 +77,21 @@ export const NotificationBell = () => {
                     isLoading={markAllRead.isPending}
                   >
                     <CheckCheck className="h-3.5 w-3.5" />
-                    Mark all read
+                    {t('notif.markAllRead')}
                   </Button>
                 )}
               </header>
 
               <div className="scrollbar-thin max-h-[380px] overflow-y-auto">
                 {isLoading && (
-                  <p className="px-4 py-6 text-center text-xs text-content-faint">Loading…</p>
+                  <p className="px-4 py-6 text-center text-xs text-content-faint">{t('common.loading')}</p>
                 )}
 
                 {!isLoading && notifications.length === 0 && (
                   <EmptyState
                     className="m-3 border-none px-4 py-8"
-                    title="Nothing yet"
-                    description="Task assignments and deadlines land here."
+                    title={t('notif.nothingYet')}
+                    description={t('notif.nothingYetBody')}
                   />
                 )}
 

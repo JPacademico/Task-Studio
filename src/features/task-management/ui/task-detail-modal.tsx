@@ -34,6 +34,7 @@ import { cn } from '@/shared/lib/cn';
 import { readableInk } from '@/shared/lib/colors';
 import { formatDateTime, formatDeadline, formatDeadlineDate } from '@/shared/lib/dates';
 import { Avatar, AvatarStack, Badge, Button, Modal, Spinner } from '@/shared/ui';
+import { useT } from '@/shared/i18n';
 
 interface TaskDetailModalProps {
   taskId: string | null;
@@ -46,6 +47,7 @@ interface TaskDetailModalProps {
  * AI sub-task suggestions that can be promoted into checklist items.
  */
 export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProps) => {
+  const t = useT();
   const currentUser = useCurrentUser();
   const { data: task, isLoading } = useTask(taskId ?? undefined);
   const checklist = useChecklistMutations(taskId ?? '');
@@ -67,7 +69,7 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
       setSuggestions(suggestion.result.suggestions ?? []);
       setSuggestionId(suggestion.id);
     },
-    onError: (error) => toast.error(errorMessage(error, 'The assistant is unavailable.')),
+    onError: (error) => toast.error(errorMessage(error, t('ai.unavailable'))),
   });
 
   const acceptSuggestions = useMutation({
@@ -91,11 +93,11 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
         task && (
           <>
             <Button variant="ghost" onClick={onClose}>
-              Close
+              {t('common.close')}
             </Button>
             <Button variant="secondary" onClick={() => onEdit(task)}>
               <Pencil className="h-3.5 w-3.5" />
-              Edit task
+              {t('task.editTask')}
             </Button>
           </>
         )
@@ -216,7 +218,7 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
             <section className="space-y-2">
               <h3 className="flex items-center gap-2 text-sm font-semibold">
                 <UserCheck className="h-3.5 w-3.5" />
-                Sign-off
+                {t('task.signOff')}
                 <span className="text-xs font-normal text-content-faint">
                   {`${completionProgress(task).done}/${task.assignees.length}`}
                 </span>
@@ -242,7 +244,7 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
                         Done
                       </span>
                     ) : (
-                      <span className="shrink-0 text-[10px] text-content-faint">Waiting</span>
+                      <span className="shrink-0 text-[10px] text-content-faint">{t('task.waiting')}</span>
                     )}
                   </li>
                 ))}
@@ -259,7 +261,7 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
           <section className="space-y-2.5">
             <header className="flex items-center justify-between">
               <h3 className="text-sm font-semibold">
-                Checklist{' '}
+                {t('task.checklist')}{' '}
                 <span className="text-xs font-normal text-content-faint">
                   {task.checklistProgress.done}/{task.checklistProgress.total}
                 </span>
@@ -271,7 +273,7 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
                 isLoading={suggest.isPending}
               >
                 <Sparkles className="h-3.5 w-3.5" />
-                Suggest steps
+                {t('task.suggestSteps')}
               </Button>
             </header>
 
@@ -283,7 +285,7 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
                   exit={{ opacity: 0, height: 0 }}
                   className="space-y-2 overflow-hidden rounded-xl border border-brand/40 bg-brand/[0.06] p-3"
                 >
-                  <p className="text-xs font-semibold text-brand">Suggested sub-tasks</p>
+                  <p className="text-xs font-semibold text-brand">{t('task.suggestedSubtasks')}</p>
                   <ul className="space-y-1.5">
                     {suggestions.map((suggestion) => (
                       <li key={suggestion.title} className="text-xs">
@@ -300,10 +302,10 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
                         acceptSuggestions.mutate(suggestions.map((item) => item.title))
                       }
                     >
-                      Add all
+                      {t('task.addAll')}
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => setSuggestions([])}>
-                      Dismiss
+                      {t('task.dismiss')}
                     </Button>
                   </div>
                 </motion.div>
@@ -318,7 +320,7 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
                 >
                   <button
                     type="button"
-                    aria-label={item.isCompleted ? 'Mark as pending' : 'Mark as done'}
+                    aria-label={t(item.isCompleted ? 'task.markPending' : 'task.markDone')}
                     onClick={() =>
                       checklist.toggle.mutate({ itemId: item.id, isCompleted: !item.isCompleted })
                     }
@@ -343,7 +345,7 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
 
                   <button
                     type="button"
-                    aria-label="Remove step"
+                    aria-label={t('task.removeStep')}
                     onClick={() => checklist.remove.mutate(item.id)}
                     className="text-content-faint opacity-0 transition-opacity hover:text-danger group-hover:opacity-100"
                   >
@@ -365,10 +367,10 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
               <input
                 value={itemDraft}
                 onChange={(event) => setItemDraft(event.target.value)}
-                placeholder="Add a step"
+                placeholder={t('task.addStepShort')}
                 className="field h-9 text-xs"
               />
-              <Button type="submit" size="icon" variant="secondary" aria-label="Add step">
+              <Button type="submit" size="icon" variant="secondary" aria-label={t('task.addStepAction')}>
                 <Plus className="h-3.5 w-3.5" />
               </Button>
             </form>
@@ -378,7 +380,7 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
           <section className="space-y-2.5">
             <h3 className="flex items-center gap-2 text-sm font-semibold">
               <StickyNote className="h-3.5 w-3.5" />
-              Notes
+              {t('task.notes')}
             </h3>
 
             <div className="flex flex-wrap gap-2.5">
@@ -404,7 +406,7 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
                   {note.userId === currentUser?.id && (
                     <button
                       type="button"
-                      aria-label="Delete note"
+                      aria-label={t('task.deleteNote')}
                       onClick={() => deleteNote.mutate(note.id)}
                       className="absolute right-1.5 top-1.5 opacity-0 transition-opacity group-hover/card:opacity-70"
                     >
@@ -440,10 +442,10 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
               <input
                 value={noteDraft}
                 onChange={(event) => setNoteDraft(event.target.value)}
-                placeholder="Pin a note to this task"
+                placeholder={t('task.pinNote')}
                 className="field h-9 text-xs"
               />
-              <Button type="submit" size="icon" variant="secondary" aria-label="Add note">
+              <Button type="submit" size="icon" variant="secondary" aria-label={t('task.addNote')}>
                 <Plus className="h-3.5 w-3.5" />
               </Button>
             </form>

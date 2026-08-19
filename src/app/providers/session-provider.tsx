@@ -8,6 +8,7 @@ import { onSessionExpired } from '@/shared/api/client';
 import { purgeApiCache } from '@/shared/api/offline-cache';
 import { tokenStore } from '@/shared/api/token-store';
 import { disconnectSocket } from '@/shared/api/socket';
+import { translate } from '@/shared/i18n';
 
 /**
  * Bootstraps the session on cold start and reacts to a definitive 401 from the
@@ -49,7 +50,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
         disconnectSocket();
         queryClient.clear();
         void purgeApiCache();
-        toast.error('Your session expired. Please sign in again.');
+        toast.error(translate('session.expired'));
       }),
     [endSession, queryClient],
   );

@@ -15,6 +15,7 @@ import { CreateProjectDialog } from '@/features/project-management/ui/create-pro
 import { useCurrentUser } from '@/features/auth/model/session.store';
 import { cn } from '@/shared/lib/cn';
 import { Button, EmptyState, RunicText, Section, Skeleton } from '@/shared/ui';
+import { useT } from '@/shared/i18n';
 
 const StatTile = ({
   label,
@@ -54,6 +55,7 @@ const StatTile = ({
  * next across every project the user belongs to.
  */
 const DashboardPage = () => {
+  const t = useT();
   const user = useCurrentUser();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
@@ -75,13 +77,13 @@ const DashboardPage = () => {
         {/* The eyebrow over the title. Carved on the runic skin — the heading
             underneath says the same thing in Latin, so nothing is lost. */}
         <p className="text-[10px] uppercase tracking-[0.18em] text-content-faint sm:text-xs">
-          <RunicText mode="always">Dashboard</RunicText>
+          <RunicText mode="always">{t('dash.title')}</RunicText>
         </p>
         <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
           Good to see you, {firstName}.
         </h1>
         <p className="hidden text-sm text-content-muted sm:block">
-          Everything you own and everything assigned to you, in one place.
+          {t('dash.subtitle')}
         </p>
       </header>
 
@@ -91,25 +93,25 @@ const DashboardPage = () => {
           Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-[58px]" />)
         ) : (
           <>
-            <StatTile label="Open tasks" value={overview.openTasks} icon={<ListTodo className="h-4 w-4" />} />
+            <StatTile label={t('dash.openTasks')} value={overview.openTasks} icon={<ListTodo className="h-4 w-4" />} />
             <StatTile
-              label="Completed"
+              label={t('dash.completed')}
               value={overview.completedTasks}
               icon={<CalendarClock className="h-4 w-4" />}
             />
             <StatTile
-              label="Overdue"
+              label={t('dash.overdue')}
               value={overview.overdueTasks}
               icon={<TriangleAlert className="h-4 w-4" />}
               tone={overview.overdueTasks > 0 ? 'warning' : 'default'}
             />
-            <StatTile label="Projects" value={overview.projects} icon={<Layers className="h-4 w-4" />} />
+            <StatTile label={t('dash.projects')} value={overview.projects} icon={<Layers className="h-4 w-4" />} />
           </>
         )}
       </div>
 
       {pinned.length > 0 && (
-        <Section title="Pinned projects">
+        <Section title={t('dash.pinnedProjects')}>
           <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
             <AnimatePresence initial={false}>
               {pinned.map((project) => (
@@ -127,11 +129,11 @@ const DashboardPage = () => {
       )}
 
       <Section
-        title={pinned.length > 0 ? 'All projects' : 'Your projects'}
+        title={t(pinned.length > 0 ? 'dash.allProjects' : 'dash.yourProjects')}
         action={
           <Button size="sm" variant="secondary" onClick={() => setIsCreateOpen(true)}>
             <FolderPlus className="h-3.5 w-3.5" />
-            New project
+            {t('dash.newProject')}
           </Button>
         }
       >
@@ -144,11 +146,11 @@ const DashboardPage = () => {
         ) : others.length === 0 && pinned.length === 0 ? (
           <EmptyState
             icon={<Layers className="h-6 w-6" />}
-            title="No projects yet"
-            description="Create your first project, then invite people into its roster."
+            title={t('dash.noProjects')}
+            description={t('dash.noProjectsBody')}
             action={
               <Button size="sm" onClick={() => setIsCreateOpen(true)}>
-                Create a project
+                {t('dash.createProject')}
               </Button>
             }
           />
@@ -170,18 +172,18 @@ const DashboardPage = () => {
       </Section>
 
       <Section
-        title="Up next for you"
+        title={t('dash.upNext')}
         action={
           <Link to="/tasks" className="text-xs font-medium text-brand hover:underline">
-            Open task menu
+            {t('dash.openTaskMenu')}
           </Link>
         }
       >
         {myTasks.length === 0 ? (
           <EmptyState
             icon={<Pin className="h-5 w-5" />}
-            title="Nothing assigned to you"
-            description="When a project owner assigns you work, it shows up here."
+            title={t('dash.nothingAssigned')}
+            description={t('dash.nothingAssignedBody')}
           />
         ) : (
           <div className="grid gap-2.5 lg:grid-cols-2">

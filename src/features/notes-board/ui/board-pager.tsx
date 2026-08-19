@@ -5,6 +5,7 @@ import type { BoardPage } from '@/entities/note/model/types';
 import { MAX_BOARD_PAGES } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
 import { PageStack } from '@/shared/ui';
+import { useT } from '@/shared/i18n';
 
 interface BoardPagerProps {
   pages: BoardPage[];
@@ -28,6 +29,7 @@ export const BoardPager = ({
   onRename,
   isAdding,
 }: BoardPagerProps) => {
+  const t = useT();
   const isFull = pages.length >= MAX_BOARD_PAGES;
 
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -89,7 +91,7 @@ export const BoardPager = ({
               />
               <button
                 type="button"
-                aria-label="Save page name"
+                aria-label={t('notes.savePageName')}
                 // Fires before blur, so the click is not lost to the commit.
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={commit}
@@ -115,7 +117,7 @@ export const BoardPager = ({
               type="button"
               onClick={() => onSelect(page.index)}
               onDoubleClick={() => startRename(page)}
-              title="Double-click to rename"
+              title={t('notes.doubleClickRename')}
               className="max-w-[10rem] truncate px-3 py-1.5 text-xs font-medium"
             >
               {page.name}
@@ -126,7 +128,7 @@ export const BoardPager = ({
             <button
               type="button"
               aria-label={`Rename ${page.name}`}
-              title="Rename this page"
+              title={t('notes.renamePage')}
               onClick={() => startRename(page)}
               className={cn(
                 'rounded-lg p-1 opacity-0 transition-opacity hover:text-brand',
@@ -170,7 +172,7 @@ export const BoardPager = ({
         )}
       >
         <Plus className="h-3.5 w-3.5" strokeWidth={2.6} />
-        Add page
+        {t('notes.addPageAction')}
       </button>
     </div>
   );

@@ -6,10 +6,12 @@ import { toast } from 'sonner';
 import { authApi } from '@/features/auth/api/auth.api';
 import { useSessionStore } from '@/features/auth/model/session.store';
 import { errorMessage } from '@/shared/api/client';
+import { useT } from '@/shared/i18n';
 import { Button, Input } from '@/shared/ui';
 import { AuthShell } from './auth-shell';
 
 export const LoginPage = () => {
+  const t = useT();
   const navigate = useNavigate();
   const location = useLocation();
   const { startSession, setPendingEmail } = useSessionStore();
@@ -23,10 +25,10 @@ export const LoginPage = () => {
       startSession(session);
       const from = (location.state as { from?: string } | null)?.from ?? '/';
       navigate(from, { replace: true });
-      toast.success(`Welcome back, ${session.user.displayName.split(' ')[0]}.`);
+      toast.success(t('auth.signIn.welcomeBack', { name: session.user.displayName.split(' ')[0] }));
     },
     onError: (error) => {
-      const message = errorMessage(error, 'Could not sign you in.');
+      const message = errorMessage(error, t('auth.signIn.failed'));
       // Unconfirmed accounts get routed to the resend screen instead of a dead end.
       if (message.toLowerCase().includes('confirm your email')) {
         setPendingEmail(email);
@@ -38,13 +40,13 @@ export const LoginPage = () => {
 
   return (
     <AuthShell
-      title="Sign in"
-      subtitle="Your projects, tasks and boards are waiting."
+      title={t('auth.signIn.title')}
+      subtitle={t('auth.signIn.subtitle')}
       footer={
         <div className="flex items-center justify-between">
-          <span className="text-content-muted">No account yet?</span>
+          <span className="text-content-muted">{t('auth.signIn.noAccount')}</span>
           <Link to="/signup" className="font-medium text-brand hover:underline">
-            Create one
+            {t('auth.signIn.createOne')}
           </Link>
         </div>
       }
@@ -57,18 +59,18 @@ export const LoginPage = () => {
         }}
       >
         <Input
-          label="Email"
+          label={t('auth.email')}
           name="email"
           type="email"
           autoComplete="email"
           required
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          placeholder="you@company.com"
+          placeholder={t('auth.emailPlaceholder')}
         />
 
         <Input
-          label="Password"
+          label={t('auth.password')}
           name="password"
           type="password"
           autoComplete="current-password"
@@ -83,12 +85,12 @@ export const LoginPage = () => {
             to="/forgot-password"
             className="text-xs text-content-muted hover:text-brand hover:underline"
           >
-            Forgot your password?
+            {t('auth.signIn.forgot')}
           </Link>
         </div>
 
         <Button type="submit" className="w-full" size="lg" isLoading={login.isPending}>
-          Sign in
+          {t('auth.signIn.submit')}
         </Button>
       </form>
     </AuthShell>

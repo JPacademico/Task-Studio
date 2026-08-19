@@ -21,6 +21,7 @@ import type { Task, TaskStatus } from '@/entities/task/model/types';
 import { TASK_STATUS_META } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
 import { EmptyState } from '@/shared/ui';
+import { useT } from '@/shared/i18n';
 
 interface TaskBoardProps {
   tasks: Task[];
@@ -166,6 +167,7 @@ export const TaskBoard = ({
   canChangeStatus,
   completionBlock,
 }: TaskBoardProps) => {
+  const t = useT();
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
@@ -264,8 +266,8 @@ export const TaskBoard = ({
             {grouped[status].length === 0 && (
               <EmptyState
                 className="flex-1 border-none px-3 py-5 lg:py-8"
-                title="Nothing here"
-                description="Drop a task in this column."
+                title={t('board.nothingHere')}
+                description={t('board.dropHere')}
               />
             )}
           </Column>

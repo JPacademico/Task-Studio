@@ -7,8 +7,10 @@ import { authApi } from '@/features/auth/api/auth.api';
 import { errorMessage } from '@/shared/api/client';
 import { Button, Input } from '@/shared/ui';
 import { AuthShell } from './auth-shell';
+import { useT } from '@/shared/i18n';
 
 export const ResetPasswordPage = () => {
+  const t = useT();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get('token') ?? '';
@@ -33,11 +35,11 @@ export const ResetPasswordPage = () => {
 
   return (
     <AuthShell
-      title="Choose a new password"
-      subtitle="Every existing session is signed out once you save."
+      title={t('auth.reset.title')}
+      subtitle={t('auth.reset.subtitle')}
       footer={
         <Link to="/login" className="font-medium text-brand hover:underline">
-          Back to sign in
+          {t('auth.backToSignIn')}
         </Link>
       }
     >
@@ -50,17 +52,17 @@ export const ResetPasswordPage = () => {
           }}
         >
           <Input
-            label="New password"
+            label={t('auth.reset.newPassword')}
             name="password"
             type="password"
             autoComplete="new-password"
             required
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            hint="8+ characters, with at least one letter and one number."
+            hint={t('auth.reset.hint')}
           />
           <Input
-            label="Confirm password"
+            label={t('auth.reset.confirmPassword')}
             name="confirmation"
             type="password"
             autoComplete="new-password"
@@ -69,7 +71,7 @@ export const ResetPasswordPage = () => {
             onChange={(event) => setConfirmation(event.target.value)}
             error={
               confirmation.length > 0 && confirmation !== password
-                ? 'Passwords do not match.'
+                ? t('auth.reset.mismatch')
                 : undefined
             }
           />
@@ -80,12 +82,12 @@ export const ResetPasswordPage = () => {
             isLoading={reset.isPending}
             disabled={!isValid}
           >
-            Save new password
+            {t('auth.reset.submit')}
           </Button>
         </form>
       ) : (
         <p className="rounded-xl border border-danger/40 bg-danger/10 p-4 text-sm text-danger">
-          This page needs a reset link. Request a new one from the sign-in screen.
+          {t('auth.reset.needLink')}
         </p>
       )}
     </AuthShell>

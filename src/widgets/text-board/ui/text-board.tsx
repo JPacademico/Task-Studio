@@ -37,6 +37,7 @@ import {
   Skeleton,
   Spinner,
 } from '@/shared/ui';
+import { useT } from '@/shared/i18n';
 
 interface TextBoardProps {
   /**
@@ -118,6 +119,7 @@ ${body}
  * desk with one person at it is a label reading "you" on everything you own.
  */
 export const TextBoard = ({ projectId, tasks = [] }: TextBoardProps) => {
+  const t = useT();
   const { data: documents = [], isLoading } = useProjectDocuments(projectId);
 
   /** No project, no roster — and therefore nothing to attribute or attach. */
@@ -208,7 +210,7 @@ export const TextBoard = ({ projectId, tasks = [] }: TextBoardProps) => {
         taskId: attachTo || undefined,
         title: attachTo
           ? `Notes — ${tasks.find((task) => task.id === attachTo)?.title ?? 'task'}`
-          : 'Untitled document',
+          : t('doc.untitled'),
         content: '',
       },
       {
@@ -216,7 +218,7 @@ export const TextBoard = ({ projectId, tasks = [] }: TextBoardProps) => {
           setSelectedId(created.id);
           setIsEditing(true);
           setAttachTo('');
-          toast.success('Document created.');
+          toast.success(t('doc.created'));
         },
       },
     );
@@ -230,13 +232,13 @@ export const TextBoard = ({ projectId, tasks = [] }: TextBoardProps) => {
         documentId: open.id,
         // Sanitised here as well as on the server: what gets stored should be
         // what the next reader's browser will actually be given.
-        payload: { title: title.trim() || 'Untitled document', content: sanitizeDocumentHtml(draftRef.current) },
+        payload: { title: title.trim() || t('doc.untitled'), content: sanitizeDocumentHtml(draftRef.current) },
       },
       {
         onSuccess: () => {
           setIsDirty(false);
           setIsEditing(false);
-          toast.success('Document saved.');
+          toast.success(t('doc.saved'));
         },
       },
     );
@@ -283,7 +285,7 @@ export const TextBoard = ({ projectId, tasks = [] }: TextBoardProps) => {
     <button
       type="button"
       onClick={() => {
-        if (isDirty && !window.confirm('Discard unsaved changes?')) return;
+        if (isDirty && !window.confirm(t('doc.discardChanges'))) return;
         setSelectedId(entry.id);
       }}
       className={cn(
@@ -308,7 +310,7 @@ export const TextBoard = ({ projectId, tasks = [] }: TextBoardProps) => {
         )}
       </span>
       <span className="mt-0.5 block truncate text-[10px] text-content-faint">
-        {entry.excerpt || 'Empty page'}
+        {entry.excerpt || t('doc.emptyPage')}
       </span>
     </button>
   );
@@ -317,7 +319,7 @@ export const TextBoard = ({ projectId, tasks = [] }: TextBoardProps) => {
     <ExpandableStage
       isExpanded={isExpanded}
       onCollapse={() => setIsExpanded(false)}
-      title={isPersonal ? 'Your text board' : 'Project text board'}
+      title={t(isPersonal ? 'doc.yourBoard' : 'doc.projectBoard')}
     >
       <div className="ui-textured flex flex-wrap items-center gap-2 rounded-2xl border border-edge bg-surface-raised p-2 sm:p-3">
         {/*
@@ -339,12 +341,16 @@ export const TextBoard = ({ projectId, tasks = [] }: TextBoardProps) => {
             value={attachTo}
             onChange={setAttachTo}
             options={[
-              { value: '', label: 'Project document', hint: 'Belongs to the whole project' },
+              {
+                value: '',
+                label: t('doc.projectDocument'),
+                hint: t('doc.belongsToProject'),
+              },
               ...tasks.map((task) => ({
                 value: task.id,
                 label: task.title,
                 swatch: task.color,
-                hint: 'Pinned to this task',
+                hint: t('doc.pinnedToTask'),
               })),
             ]}
           />
@@ -352,7 +358,7 @@ export const TextBoard = ({ projectId, tasks = [] }: TextBoardProps) => {
 
         <Button size="sm" onClick={handleCreate} isLoading={createDocument.isPending}>
           <Plus className="h-3.5 w-3.5" strokeWidth={2.8} />
-          New document
+          {t('doc.new')}
         </Button>
 
         <span className="ml-auto flex items-center gap-1.5">
@@ -368,7 +374,7 @@ export const TextBoard = ({ projectId, tasks = [] }: TextBoardProps) => {
                     size="sm"
                     variant="ghost"
                     onClick={() => {
-                      if (isDirty && !window.confirm('Discard unsaved changes?')) return;
+                      if (isDirty && !window.confirm(t('doc.discardChanges'))) return;
                       draftRef.current = open.content ?? '';
                       setTitle(open.title);
                       setIsDirty(false);
@@ -376,7 +382,7 @@ export const TextBoard = ({ projectId, tasks = [] }: TextBoardProps) => {
                     }}
                   >
                     <X className="h-3.5 w-3.5" />
-                    Cancel
+                    {t('common.cancel')}
                   </Button>
                 </>
               ) : (
@@ -386,9 +392,9 @@ export const TextBoard = ({ projectId, tasks = [] }: TextBoardProps) => {
                 </Button>
               )}
 
-              <Button size="sm" variant="ghost" onClick={handleDownload} title="Download as HTML">
+              <Button size="sm" variant="ghost" onClick={handleDownload} title={t('doc.downloadAsHtml')}>
                 <Download className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Download</span>
+                <span className="hidden sm:inline">{t('doc.download')}</span>
               </Button>
 
               {/* Two-step rather than a confirm dialog: deleting a page is
@@ -402,7 +408,11 @@ export const TextBoard = ({ projectId, tasks = [] }: TextBoardProps) => {
                 isLoading={deleteDocument.isPending}
               >
                 <Trash2 className="h-3.5 w-3.5" />
-                {confirmingDelete ? 'Confirm' : <span className="hidden sm:inline">Delete</span>}
+                {confirmingDelete ? (
+                  t('doc.confirm')
+                ) : (
+                  <span className="hidden sm:inline">{t('common.delete')}</span>
+                )}
               </Button>
             </>
           )}
@@ -433,14 +443,14 @@ export const TextBoard = ({ projectId, tasks = [] }: TextBoardProps) => {
 
           {!isLoading && documents.length === 0 && (
             <p className="px-2 py-6 text-center text-xs leading-relaxed text-content-faint">
-              No pages yet. The first one is a click away.
+              {t('doc.noPages')}
             </p>
           )}
 
           {grouped.general.length > 0 && (
             <div className="space-y-1">
               <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-content-faint">
-                {isPersonal ? 'Pages' : 'Project'}
+                {t(isPersonal ? 'doc.pages' : 'doc.project')}
               </p>
               {grouped.general.map((entry) => (
                 <DocumentRow key={entry.id} document={entry} />
@@ -451,7 +461,7 @@ export const TextBoard = ({ projectId, tasks = [] }: TextBoardProps) => {
           {grouped.perTask.length > 0 && (
             <div className="space-y-1">
               <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-content-faint">
-                Tasks
+                {t('doc.tasks')}
               </p>
               {grouped.perTask.map((entry) => (
                 <DocumentRow key={entry.id} document={entry} />
@@ -466,11 +476,11 @@ export const TextBoard = ({ projectId, tasks = [] }: TextBoardProps) => {
             <EmptyState
               className="flex-1"
               icon={<FileText className="h-6 w-6" />}
-              title="Nothing open"
+              title={t('doc.nothingOpen')}
               description={
                 isPersonal
-                  ? 'Somewhere to write more than fits on a Post-it — a plan, a draft, a list that got long.'
-                  : 'Write the brief, the spec or the meeting notes — for the project, or pinned to one task.'
+                  ? t('doc.nothingOpenPersonal')
+                  : t('doc.nothingOpenProject')
               }
             />
           ) : isOpening || !open ? (
@@ -494,7 +504,7 @@ export const TextBoard = ({ projectId, tasks = [] }: TextBoardProps) => {
                         setIsDirty(true);
                       }}
                       maxLength={160}
-                      aria-label="Document title"
+                      aria-label={t('doc.documentTitle')}
                       className="field h-9 flex-1 text-sm font-semibold"
                     />
                   ) : (
@@ -551,7 +561,7 @@ export const TextBoard = ({ projectId, tasks = [] }: TextBoardProps) => {
                 {remoteEdit && (
                   <div className="mb-2 flex flex-wrap items-center gap-2 rounded-xl border border-warning/40 bg-warning/10 px-3 py-2">
                     <span className="text-[11px] text-content-muted">
-                      {remoteEdit.updatedBy?.displayName ?? 'Someone'} saved this page while you
+                      {remoteEdit.updatedBy?.displayName ?? t('doc.someone')} saved this page while you
                       were editing. Your changes are still here.
                     </span>
                     <Button
@@ -566,10 +576,10 @@ export const TextBoard = ({ projectId, tasks = [] }: TextBoardProps) => {
                         adoptDocument(remoteEdit);
                       }}
                     >
-                      Load their version
+                      {t('doc.loadTheirVersion')}
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => setRemoteEdit(null)}>
-                      Keep mine
+                      {t('doc.keepMine')}
                     </Button>
                   </div>
                 )}

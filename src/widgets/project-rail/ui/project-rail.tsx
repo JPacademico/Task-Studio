@@ -22,6 +22,7 @@ import {
   NavPinButton,
   Skeleton,
 } from '@/shared/ui';
+import { useT } from '@/shared/i18n';
 
 interface ProjectRailProps {
   onCreateProject: () => void;
@@ -43,6 +44,7 @@ const RailProject = ({
   project: ProjectListItem;
   onTearingChange: (isTearing: boolean) => void;
 }) => {
+  const t = useT();
   const to = `/projects/${project.id}`;
   const addShortcut = useFloatingShortcuts((state) => state.add);
   const isPinnedOut = useFloatingShortcuts((state) =>
@@ -72,7 +74,7 @@ const RailProject = ({
     <>
       <NavLink
         to={to}
-        title="Drag me out to pin this project anywhere on screen"
+        title={t('rail.dragToPin')}
         {...bind}
         className={({ isActive }) =>
           cn(
@@ -106,14 +108,15 @@ const RailProject = ({
               isOverdue ? 'text-danger' : 'text-content-faint',
             )}
           >
-            {due ? formatDeadline(due) : 'No deadline'} · {project.openTaskCount} open
+            {due ? formatDeadline(due) : t('rail.noDeadline')} · {project.openTaskCount}{' '}
+            {t('rail.openCount')}
           </span>
         </span>
 
         {isPinnedOut && (
           <span
             aria-hidden
-            title="Pinned to the screen — use its return arrow to drop the copy"
+            title={t('rail.pinnedHint')}
             className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand"
           />
         )}
@@ -121,7 +124,7 @@ const RailProject = ({
         {project.isPinned && (
           <span
             aria-hidden
-            title="Pinned project"
+            title={t('rail.pinnedProject')}
             className="h-1.5 w-1.5 shrink-0 rounded-full bg-content-faint"
           />
         )}
@@ -138,6 +141,7 @@ const RailProject = ({
 };
 
 export const ProjectRail = ({ onCreateProject }: ProjectRailProps) => {
+  const t = useT();
   const isTouch = useIsTouchDevice();
 
   const isPinned = useNavPreferences((state) => state.pinned.right);
@@ -164,7 +168,7 @@ export const ProjectRail = ({ onCreateProject }: ProjectRailProps) => {
       <EdgeAffordance
         edge="right"
         isHidden={!isRevealed}
-        label="Move the pointer here for your projects"
+        label={t('rail.hoverHint')}
       />
 
       <motion.aside
@@ -201,9 +205,9 @@ export const ProjectRail = ({ onCreateProject }: ProjectRailProps) => {
             <NavGlyph glyph="project" fallback={FolderKanban} className="h-4 w-4" />
           </span>
           <div className="min-w-0 flex-1 leading-tight">
-            <p className="truncate text-sm font-bold tracking-tight">Projects</p>
+            <p className="truncate text-sm font-bold tracking-tight">{t('dash.projects')}</p>
             <p className="text-[10px] uppercase tracking-[0.16em] text-content-faint">
-              Soonest first
+              {t('rail.soonestFirst')}
             </p>
           </div>
           <NavPinButton isPinned={isPinned} onToggle={() => togglePin('right')} />
@@ -217,7 +221,7 @@ export const ProjectRail = ({ onCreateProject }: ProjectRailProps) => {
 
           {!isLoading && projects.length === 0 && (
             <p className="px-3 py-6 text-center text-xs leading-relaxed text-content-faint">
-              You are not on any project yet.
+              {t('rail.noProjects')}
             </p>
           )}
 
@@ -229,7 +233,7 @@ export const ProjectRail = ({ onCreateProject }: ProjectRailProps) => {
         <footer className="border-t border-edge/70 p-3">
           <Button variant="secondary" size="sm" onClick={onCreateProject} className="w-full">
             <Plus className="h-3.5 w-3.5" strokeWidth={2.6} />
-            New project
+            {t('dash.newProject')}
           </Button>
         </footer>
       </motion.aside>

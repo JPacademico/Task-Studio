@@ -50,6 +50,7 @@ import { CONNECTOR_COLORS, NOTE_COLORS, TASK_COLORS } from '@/shared/config/cons
 import { cn } from '@/shared/lib/cn';
 import { useDebouncedCallback } from '@/shared/lib/hooks';
 import { Button, ColorPicker, ExpandToggle, ExpandableStage, PostItGlyph, Spinner } from '@/shared/ui';
+import { useT } from '@/shared/i18n';
 
 interface WhiteboardProps {
   projectId: string;
@@ -106,6 +107,7 @@ const fitImage = (naturalWidth: number, naturalHeight: number) => {
  * it as a delta; notes go through the REST API and fan out as `note:*` events.
  */
 export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
+  const t = useT();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const surfaceRef = useRef<HTMLDivElement>(null);
   const handlesRef = useRef(new Map<string, NoteHandle>());
@@ -323,9 +325,9 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
       strokesRef.current = [];
       redraw();
       socket?.emit('whiteboard:erase', { projectId });
-      toast.success('Ink cleared. Post-its are untouched.');
+      toast.success(t('board.inkCleared'));
     } catch {
-      toast.error('Only project admins can clear the canvas.');
+      toast.error(t('board.adminsOnlyClear'));
     }
   };
 
@@ -367,7 +369,7 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
         ...dropPoint(),
       });
     } catch {
-      toast.error('Could not upload that image.');
+      toast.error(t('editor.uploadFailed'));
     } finally {
       setIsUploading(false);
     }
@@ -509,10 +511,15 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
   const connectSource = connectFrom ? notes.find((note) => note.id === connectFrom) : undefined;
 
   const TOOLS: { value: Tool; label: string; icon: typeof MousePointer2; hint: string }[] = [
-    { value: 'select', label: 'Arrange', icon: MousePointer2, hint: 'Drag notes, lasso to select' },
-    { value: 'connect', label: 'Connect', icon: Link2, hint: 'Draw arrows between notes' },
-    { value: 'pen', label: 'Pen', icon: Pencil, hint: 'Draw on the canvas' },
-    { value: 'eraser', label: 'Eraser', icon: Eraser, hint: 'Rub ink out' },
+    {
+      value: 'select',
+      label: t('board.arrange'),
+      icon: MousePointer2,
+      hint: t('board.arrangeHint'),
+    },
+    { value: 'connect', label: t('board.connect'), icon: Link2, hint: t('board.connectHint') },
+    { value: 'pen', label: t('board.pen'), icon: Pencil, hint: t('board.penHint') },
+    { value: 'eraser', label: t('board.eraser'), icon: Eraser, hint: t('board.eraserHint') },
   ];
 
   return (
@@ -520,7 +527,7 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
       onSurfaceRemount={() => setSurfaceMount((count) => count + 1)}
       isExpanded={isExpanded}
       onCollapse={() => setIsExpanded(false)}
-      title="Project whiteboard"
+      title={t('board.projectWhiteboard')}
     >
       <div className="ui-textured flex flex-wrap items-center gap-2 rounded-2xl border border-edge bg-surface-raised p-2 sm:gap-3 sm:p-3">
         <div className="ui-segment inline-flex items-center gap-1 rounded-xl border border-edge bg-surface-sunken p-1">
@@ -558,8 +565,8 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
           size="sm"
           onClick={handleAddNote}
           isLoading={createNote.isPending}
-          title="Add a Post-it for the team"
-          aria-label="Add a Post-it"
+          title={t('board.addPostItTitle')}
+          aria-label={t('board.addPostIt')}
           className="px-2.5"
         >
           <Plus className="h-3.5 w-3.5" strokeWidth={2.8} />
@@ -571,14 +578,14 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
           variant="secondary"
           onClick={() => fileRef.current?.click()}
           disabled={isUploading}
-          title="Pin an image"
+          title={t('board.pinImage')}
         >
           {isUploading ? (
             <Spinner />
           ) : (
             <ImagePlus className="h-3.5 w-3.5" />
           )}
-          <span className="hidden sm:inline">Image</span>
+          <span className="hidden sm:inline">{t('board.image')}</span>
         </Button>
         <input
           ref={fileRef}
@@ -597,7 +604,7 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
             type="button"
             onClick={() => setIsPickingMultiple((value) => !value)}
             aria-pressed={isPickingMultiple}
-            title="Click several notes in a row to select them together"
+            title={t('board.pickSeveralTitle')}
             className={cn(
               'ui-filter inline-flex h-8 items-center gap-1.5 rounded-xl border px-2.5 text-xs font-medium transition-colors',
               isPickingMultiple
@@ -606,7 +613,7 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
             )}
           >
             <Users className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Pick several</span>
+            <span className="hidden sm:inline">{t('board.pickSeveral')}</span>
           </button>
         )}
 
@@ -656,7 +663,7 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
             isConnected ? 'text-positive' : 'text-content-faint',
           )}
         >
-          {isConnected ? 'Live with your team' : 'Offline — changes stay local'}
+          {t(isConnected ? 'board.liveWithTeam' : 'board.offlineLocal')}
         </span>
 
         <ExpandToggle
@@ -668,7 +675,7 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
         {canClear && (
           <Button size="sm" variant="ghost" onClick={() => void handleClear()}>
             <Trash2 className="h-3.5 w-3.5" />
-            Clear ink
+            {t('board.clearInk')}
           </Button>
         )}
       </div>
@@ -744,7 +751,7 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
           <div className="pointer-events-none absolute inset-0 grid place-items-center">
             <div className="flex flex-col items-center gap-2 text-center">
               <PostItGlyph className="h-8 w-8 text-content-faint" />
-              <p className="text-sm font-semibold">A shared wall</p>
+              <p className="text-sm font-semibold">{t('board.sharedWall')}</p>
               <p className="max-w-xs text-xs leading-relaxed text-content-muted">
                 Stick up a Post-it, pin an image or draw straight on the canvas. Everyone on the
                 project sees it as you go.

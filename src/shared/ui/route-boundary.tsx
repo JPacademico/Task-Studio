@@ -1,6 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { RotateCcw, Unplug } from 'lucide-react';
 
+import { translate } from '@/shared/i18n';
 import { Button } from './button';
 
 interface RouteBoundaryProps {
@@ -54,20 +55,20 @@ export class RouteBoundary extends Component<RouteBoundaryProps, RouteBoundarySt
           <Unplug className="h-5 w-5" />
         </span>
         <div className="space-y-1">
-          <p className="text-sm font-semibold">This page could not be opened</p>
+          <p className="text-sm font-semibold">{translate('error.boundary.title')}</p>
           <p className="mx-auto max-w-sm text-xs leading-relaxed text-content-muted">
             {isChunkFailure
-              ? 'Part of the app failed to download. Reloading picks up the current version.'
+              ? translate('error.boundary.chunk')
               : error.message}
           </p>
         </div>
         <div className="flex gap-2">
           <Button size="sm" onClick={() => this.setState({ error: null })}>
             <RotateCcw className="h-3.5 w-3.5" />
-            Try again
+            {translate('error.boundary.retry')}
           </Button>
           <Button size="sm" variant="secondary" onClick={() => window.location.reload()}>
-            Reload the app
+            {translate('error.boundary.reload')}
           </Button>
         </div>
       </div>
