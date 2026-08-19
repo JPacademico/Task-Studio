@@ -166,7 +166,7 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
           <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
             <span
               title={`Created by ${task.createdBy.displayName} · ${formatDateTime(task.createdAt)}`}
-              className="inline-flex items-center gap-1.5 rounded-full border border-edge bg-surface-sunken py-0.5 pl-0.5 pr-2.5"
+              className="avatar-chip inline-flex items-center gap-1.5 border border-edge bg-surface-sunken py-0.5 pr-2.5"
             >
               <Avatar
                 name={task.createdBy.displayName}

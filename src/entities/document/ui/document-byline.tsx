@@ -66,7 +66,7 @@ export const DocumentByline = ({
     <span className={cn('inline-flex items-center gap-1.5 text-[10px]', className)}>
       <span
         title={`Created by ${createdBy.displayName} (${createdBy.email}) · ${formatDateTime(createdAt)}`}
-        className="inline-flex items-center gap-1.5 rounded-full border border-edge bg-surface-sunken py-0.5 pl-0.5 pr-2"
+        className="avatar-chip inline-flex items-center gap-1.5 border border-edge bg-surface-sunken py-0.5 pr-2"
       >
         <Avatar
           name={createdBy.displayName}

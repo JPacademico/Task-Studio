@@ -6305,6 +6305,37 @@ button:focus-visible .rune-swap__latin,
   clip-path: var(--avatar-clip, none);
 }
 
+/*
+ * A chip with a face at one end — the byline pills on a task and a document.
+ *
+ * `rounded-full` is the one radius Tailwind does not route through this
+ * project's skin variables: `rounded-sm` through `rounded-3xl` all resolve to
+ * `--radius-*`, which skins flatten to 0-3px, while `rounded-full` stays a hard
+ * 9999px capsule whatever the skin says. So on every squared-off skin these
+ * pills kept their capsule ends while the avatar inside them went hard-cornered
+ * — and a square sitting 2px inside a capsule pokes straight through the curve.
+ * Terminal made it loudest because it also rings the avatar in a bright glow,
+ * but five of the eight skins that restyle the avatar set its radius to zero,
+ * so most of them were showing some version of it.
+ *
+ * The radius comes from `--radius-3xl`, the top of the skin's own scale. Not
+ * from `--avatar-radius`, which would have been the obvious pick and does not
+ * work: that variable is declared *on* `.avatar`, so a parent cannot read it —
+ * custom properties inherit down, never up. `--radius-3xl` is set on the skin
+ * root, and it already says what each skin means by "as round as things get":
+ * 1.75rem-3rem on the round skins, which on a chip this tall still renders as a
+ * full capsule, and 2-4px on the flat ones. So the chip keeps its pill shape
+ * where a pill belongs and squares off exactly where the avatar does, with no
+ * per-skin declarations to keep in step.
+ *
+ * The inset is `--avatar-frame`'s problem: that shadow paints outside the
+ * avatar's box, so the chip has to hold it off its own border.
+ */
+.avatar-chip {
+  border-radius: var(--radius-3xl, 9999px);
+  padding-left: 0.25rem;
+}
+
 .avatar::after {
   content: '';
   position: absolute;
