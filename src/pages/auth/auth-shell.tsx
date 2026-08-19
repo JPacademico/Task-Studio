@@ -1,8 +1,9 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { motion, useDragControls, useReducedMotion } from 'framer-motion';
 import { GripHorizontal } from 'lucide-react';
 
 import { ThemeToggle } from '@/features/theme-toggle/ui/theme-toggle';
+import { wakeApi } from '@/shared/api/client';
 import { cn } from '@/shared/lib/cn';
 import { useIsTouchDevice } from '@/shared/lib/hooks';
 import { StudioMark } from '@/shared/ui';
@@ -30,12 +31,23 @@ interface AuthShellProps {
  *
  * Touch devices keep the card planted. There is no hover there, the desk is
  * decoration, and a draggable form on a phone is a form you can lose.
+ *
+ * It is also where the API gets woken (`wakeApi`). Every unauthenticated
+ * screen renders through here, so this is the earliest moment the app knows
+ * somebody is about to need the server — and the seconds between this frame
+ * appearing and a password being typed are exactly the seconds a free-tier
+ * container needs to start.
  */
 export const AuthShell = ({ title, subtitle, children, footer }: AuthShellProps) => {
   const deskRef = useRef<HTMLDivElement>(null);
   const dragControls = useDragControls();
   const isTouch = useIsTouchDevice();
   const reduceMotion = useReducedMotion();
+
+  // Fire-and-forget: the boot overlaps the form being filled in. `wakeApi`
+  // no-ops when the container has answered recently, so navigating between
+  // login, sign-up and reset does not ping it again.
+  useEffect(wakeApi, []);
 
   const [hasMoved, setHasMoved] = useState(false);
   const isDraggable = !isTouch && !reduceMotion;

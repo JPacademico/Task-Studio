@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { authApi } from '@/features/auth/api/auth.api';
 import { useSessionStore } from '@/features/auth/model/session.store';
 import { onSessionExpired } from '@/shared/api/client';
+import { purgeApiCache } from '@/shared/api/offline-cache';
 import { tokenStore } from '@/shared/api/token-store';
 import { disconnectSocket } from '@/shared/api/socket';
 
@@ -47,6 +48,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
         endSession();
         disconnectSocket();
         queryClient.clear();
+        void purgeApiCache();
         toast.error('Your session expired. Please sign in again.');
       }),
     [endSession, queryClient],
