@@ -61,7 +61,7 @@ export const TaskListView = ({
             <header className="flex items-center gap-2.5 px-1">
               <span className={cn('h-1.5 w-1.5 rounded-full', meta.dot)} />
               <h3 className="text-xs font-semibold uppercase tracking-wide text-content-muted">
-                {meta.label}
+                {t(meta.label)}
               </h3>
               <span className="h-px flex-1 bg-edge/70" />
               <span className="text-[11px] tabular-nums text-content-faint">{items.length}</span>
@@ -141,7 +141,7 @@ export const TaskListView = ({
                               TASK_PRIORITY_META[task.priority].className,
                             )}
                           >
-                            {TASK_PRIORITY_META[task.priority].label}
+                            {t(TASK_PRIORITY_META[task.priority].label)}
                           </span>
                         )}
 

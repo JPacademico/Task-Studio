@@ -13,6 +13,7 @@ import { cn } from '@/shared/lib/cn';
 import { formatRelative } from '@/shared/lib/dates';
 import { Button, EmptyState } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
+import { NotificationOptIn } from './notification-opt-in';
 
 const deepLink = (notification: AppNotification): string | null => {
   const { payload } = notification;
@@ -81,6 +82,12 @@ export const NotificationBell = () => {
                   </Button>
                 )}
               </header>
+
+              {/* The opt-in sits above the list, not over it: opening the bell
+                  is the moment somebody has shown they care about
+                  notifications, and it is the only moment this is offered.
+                  Renders nothing at all once answered. See `NotificationOptIn`. */}
+              <NotificationOptIn />
 
               <div className="scrollbar-thin max-h-[380px] overflow-y-auto">
                 {isLoading && (

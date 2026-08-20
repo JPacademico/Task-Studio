@@ -127,7 +127,7 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
             {/* Room to spell it out here, unlike a card's badge row. */}
             <TaskTypeTag type={task.type} variant="full" />
             <Badge dot={TASK_STATUS_META[task.status].dot}>
-              {TASK_STATUS_META[task.status].label}
+              {t(TASK_STATUS_META[task.status].label)}
             </Badge>
             {task.dueAt && (
               <Badge className={cn(task.isOverdue && 'border-danger/40 text-danger')}>

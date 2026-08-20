@@ -165,14 +165,80 @@ export const useDeleteProject = () => {
  * Pin toggling is optimistic: the star must feel instant, and a rollback on
  * failure is cheap because nothing else depends on the flag.
  */
+/**
+ * Flips `isPinned` everywhere a project is currently cached.
+ *
+ * Keyed on the *shape of the query key* rather than on the shape of the data,
+ * and that distinction matters: `queryKeys.projects.all` is the prefix for the
+ * lists, the detail, the dashboard, the roster and the overview alike. A patch
+ * that recognised its targets by "an array of objects with an id" would happily
+ * rewrite the roster, whose members also have ids and no business carrying a
+ * pin.
+ */
+const patchProjectPinned = (
+  queryClient: QueryClient,
+  projectId: string,
+  isPinned: boolean,
+): void => {
+  for (const [key, data] of queryClient.getQueriesData({ queryKey: queryKeys.projects.all })) {
+    if (!data) continue;
+
+    // ['projects', 'list', params] — every filtered list currently mounted.
+    if (key[1] === 'list' && Array.isArray(data)) {
+      queryClient.setQueryData(
+        key,
+        (data as ProjectListItem[]).map((project) =>
+          project.id === projectId ? { ...project, isPinned } : project,
+        ),
+      );
+      continue;
+    }
+
+    // ['projects', id] — the detail the project page reads its header from.
+    if (key.length === 2 && key[1] === projectId) {
+      queryClient.setQueryData(key, { ...(data as Project), isPinned });
+    }
+  }
+};
+
+/**
+ * Pinning, felt immediately.
+ *
+ * This used to be a bare mutation whose only cache work was an invalidation on
+ * `onSettled`, which meant the icon could not change until *two* round trips
+ * had finished: the write, and then the refetch it triggered. On a warm local
+ * API that is a beat too slow; on a free-tier container that has gone to sleep
+ * it is several seconds of a button that appears not to have registered the
+ * click at all — so people press it again, which toggles it back.
+ *
+ * The pin is also a strictly local, strictly boolean piece of state: there is
+ * no server-side computation to wait for and nothing another user can
+ * concurrently disagree about, which makes it about the safest thing in the app
+ * to write optimistically.
+ *
+ * The invalidation stays, moved behind the optimistic write. It is now
+ * reconciliation nobody is waiting on rather than the thing that finally makes
+ * the button correct.
+ */
 export const useTogglePin = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ projectId, pinned }: { projectId: string; pinned: boolean }) =>
       projectApi.setPinned(projectId, pinned),
+
+    onMutate: ({ projectId, pinned }) => {
+      const snapshot = queryClient.getQueriesData({ queryKey: queryKeys.projects.all });
+      patchProjectPinned(queryClient, projectId, pinned);
+      return { snapshot };
+    },
+
+    onError: (error, _variables, context) => {
+      context?.snapshot.forEach(([key, value]) => queryClient.setQueryData(key, value));
+      toast.error(errorMessage(error, translate('toast.pinFailed')));
+    },
+
     onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.projects.all }),
-    onError: (error) => toast.error(errorMessage(error, translate('toast.pinFailed'))),
   });
 };
 

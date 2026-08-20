@@ -244,47 +244,115 @@ const PostItBase = ({
   const isSelectable = Boolean(onSelect) && !isConnecting;
   const showCheckbox = isSelectable && (isPickingMultiple || isSelected);
 
-  /**
-   * Corner drag.
+  /*
+   * Corner drag, wired natively rather than through React.
+   *
+   * ## The bug this shape exists to fix
+   *
+   * The handle previously used `onPointerDown`, a React synthetic handler, and
+   * called `stopPropagation()` to keep the gesture off the note. It did not
+   * work: the note moved *while* it was being resized, which looked like the
+   * card tearing itself apart under the pointer.
+   *
+   * The reason is where each listener actually lives. React attaches its
+   * listeners once, at the root container, and replays them; Framer Motion
+   * attaches `pointerdown` directly to the motion element. So for a press on
+   * the handle the order is:
+   *
+   *   1. target phase — the handle
+   *   2. bubble — the motion element, where **Framer starts the drag**
+   *   3. bubble — the document root, where React finally runs our handler
+   *
+   * `stopPropagation()` at step 3 cannot un-start a drag begun at step 2. The
+   * only place that can is a listener on the handle itself, in the target
+   * phase, which is what this registers. Framer's own listener then never sees
+   * the event, so there is nothing to cancel.
    *
    * Pointer capture rather than window listeners, so the gesture survives the
-   * pointer leaving the 14px handle — which at any speed it immediately does —
+   * pointer leaving the 20px handle — which at any speed it immediately does —
    * and cannot be stranded by a `pointerup` that lands on another element.
    */
-  const handleResizeStart = (event: React.PointerEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
+  const resizeRef = useRef<HTMLButtonElement>(null);
 
-    const target = event.currentTarget;
-    target.setPointerCapture(event.pointerId);
+  // Read through refs so the effect can register once per note rather than on
+  // every render: re-attaching a listener mid-gesture would drop the drag.
+  const resizeState = useRef({ commit, width: note.width, height: note.height });
+  resizeState.current = { commit, width: note.width, height: note.height };
 
-    const origin = { x: event.clientX, y: event.clientY };
-    const start = { width: width.get(), height: height.get() };
+  useEffect(() => {
+    const handle = resizeRef.current;
+    if (!handle || !canResize) return;
 
     const clamp = (value: number) => Math.round(Math.min(MAX_SIZE, Math.max(MIN_SIZE, value)));
 
-    const move = (moveEvent: PointerEvent) => {
-      width.set(clamp(start.width + (moveEvent.clientX - origin.x)));
-      height.set(clamp(start.height + (moveEvent.clientY - origin.y)));
+    const onPointerDown = (event: PointerEvent) => {
+      // Primary button only: a right-click on the corner should open the menu,
+      // not silently begin a resize the user cannot see they have started.
+      if (event.button !== 0) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      handle.setPointerCapture(event.pointerId);
+
+      const origin = { x: event.clientX, y: event.clientY };
+      const start = { width: width.get(), height: height.get() };
+
+      /*
+       * A photograph is scaled; a written sheet is reshaped.
+       *
+       * Both are the same object with the same handle, but stretching a picture
+       * to an arbitrary box is not resizing it — the image is `object-cover`
+       * inside its frame, so a free drag crops the photograph rather than
+       * making it bigger, which is not what a corner handle promises. Locking
+       * to the ratio it already has means the corner does the one thing that
+       * reads as correct on an image.
+       *
+       * Captured once per gesture rather than read per frame, so the ratio
+       * cannot drift as the clamp bites at the edges of the allowed range.
+       */
+      const aspect = start.height / (start.width || 1);
+
+      const move = (moveEvent: PointerEvent) => {
+        const nextWidth = clamp(start.width + (moveEvent.clientX - origin.x));
+        width.set(nextWidth);
+        height.set(
+          isImage
+            ? clamp(Math.round(nextWidth * aspect))
+            : clamp(start.height + (moveEvent.clientY - origin.y)),
+        );
+      };
+
+      const finish = () => {
+        handle.removeEventListener('pointermove', move);
+        handle.removeEventListener('pointerup', finish);
+        handle.removeEventListener('pointercancel', finish);
+
+        const next = { width: width.get(), height: height.get() };
+        const { commit: commitNow, width: savedWidth, height: savedHeight } = resizeState.current;
+        if (next.width === savedWidth && next.height === savedHeight) return;
+
+        // Straight through, not debounced: the gesture has ended, so there is
+        // nothing left to coalesce and no reason to make the user wait for it.
+        commitNow(next);
+      };
+
+      handle.addEventListener('pointermove', move);
+      handle.addEventListener('pointerup', finish);
+      handle.addEventListener('pointercancel', finish);
     };
 
-    const finish = () => {
-      target.removeEventListener('pointermove', move);
-      target.removeEventListener('pointerup', finish);
-      target.removeEventListener('pointercancel', finish);
-
-      const next = { width: width.get(), height: height.get() };
-      if (next.width === note.width && next.height === note.height) return;
-
-      // Straight through, not debounced: the gesture has ended, so there is
-      // nothing left to coalesce and no reason to make the user wait for it.
-      commit(next);
-    };
-
-    target.addEventListener('pointermove', move);
-    target.addEventListener('pointerup', finish);
-    target.addEventListener('pointercancel', finish);
-  };
+    /*
+     * `passive: false` because this handler calls `preventDefault`.
+     *
+     * Chrome treats `pointerdown` on a touch-capable device as passive by
+     * default, and a passive listener's `preventDefault` is ignored with a
+     * console warning — which on touch means the browser scrolls the board
+     * while the corner is being dragged.
+     */
+    handle.addEventListener('pointerdown', onPointerDown, { passive: false });
+    return () => handle.removeEventListener('pointerdown', onPointerDown);
+  }, [canResize, height, isImage, width]);
 
   return (
     <motion.div
@@ -390,7 +458,7 @@ const PostItBase = ({
       {showCheckbox && (
         <button
           type="button"
-          aria-label={isSelected ? 'Deselect this note' : 'Select this note'}
+          aria-label={t(isSelected ? 'notes.deselectNote' : 'notes.selectNote')}
           aria-pressed={isSelected}
           onPointerDown={(event) => event.stopPropagation()}
           onClick={(event) => {
@@ -420,7 +488,7 @@ const PostItBase = ({
             dirtyRef.current.title = false;
             if (titleDraft !== (note.title ?? '')) commit({ title: titleDraft });
           }}
-          placeholder={isImage ? 'Caption' : 'Title'}
+          placeholder={t(isImage ? 'notes.imageCaption' : 'notes.noteTitle')}
           maxLength={120}
           className={cn(
             'w-full bg-transparent text-sm font-bold outline-none placeholder:opacity-40',
@@ -471,7 +539,7 @@ const PostItBase = ({
             <button
               key={color}
               type="button"
-              aria-label={`Use ${color}`}
+              aria-label={t('notes.useColour', { color })}
               onClick={() => {
                 commit({ color });
                 setIsPaletteOpen(false);
@@ -486,7 +554,7 @@ const PostItBase = ({
       {isImage ? (
         <motion.img
           src={note.imageUrl ?? ''}
-          alt={note.title ?? 'Board image'}
+          alt={note.title ?? t('notes.boardImage')}
           draggable={false}
           // Decoded off the main thread and fetched only once it is worth
           // fetching: a board can pin dozens of photographs, and the ones below
@@ -539,10 +607,13 @@ const PostItBase = ({
        */}
       {canResize && (
         <button
+          ref={resizeRef}
           type="button"
           aria-label={t('notes.resizeNote')}
           title={t('notes.resizeNote')}
-          onPointerDown={handleResizeStart}
+          // The gesture itself is registered natively — see the effect above.
+          // This only stops the click that follows the drag from reaching the
+          // note underneath and selecting it.
           onClick={(event) => event.stopPropagation()}
           className={cn(
             'absolute -bottom-1 -right-1 z-20 h-5 w-5 cursor-nwse-resize touch-none rounded-sm',

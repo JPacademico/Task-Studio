@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import type { AppNotification } from '@/entities/notification/model/types';
 import { useSessionStore } from '@/features/auth/model/session.store';
 import { connectSocket, disconnectSocket, getSocket } from '@/shared/api/socket';
+import { showDesktopNotification } from '@/shared/lib/notifications';
 import { queryKeys } from '@/shared/api/query-keys';
 
 interface RealtimeContextValue {
@@ -61,6 +62,29 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
       if (level === 'success') toast.success(notification.title, options);
       else if (level === 'warning') toast.warning(notification.title, options);
       else toast(notification.title, options);
+
+      /*
+       * The same event again, on the desktop — but only when it would tell the
+       * user something the toast cannot.
+       *
+       * `document.hidden` is the whole condition. With the tab in front the
+       * toast has already said it, and a system notification on top of it is
+       * the duplicate-alert pattern that makes people turn notifications off.
+       * The value is entirely in the case where nobody is looking.
+       *
+       * A pure no-op unless the user opted in through the bell — see
+       * `showDesktopNotification`, which checks permission itself rather than
+       * trusting callers to. Nothing here can throw, and nothing downstream
+       * depends on it having run.
+       */
+      if (document.hidden) {
+        showDesktopNotification({
+          title: notification.title,
+          body: notification.body ?? undefined,
+          // One notice per notification, so a burst replaces rather than piles.
+          tag: notification.id,
+        });
+      }
 
       if (notification.type === 'PROJECT_INVITE') {
         void queryClient.invalidateQueries({ queryKey: queryKeys.invitations.mine });

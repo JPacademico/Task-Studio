@@ -657,14 +657,36 @@ export const useToggleMyCompletion = (currentUserId?: string) => {
   });
 };
 
+/**
+ * The same fix as the project pin, for the same reason.
+ *
+ * This had the identical shape — write, then invalidate, and nothing on screen
+ * moves until both have landed — so the pin on a task card was as unresponsive
+ * as the one on a project, just less often noticed. `patchCachedTask` already
+ * knows how to reach a task in all three cache shapes, so the optimistic half
+ * is a two-line change.
+ *
+ * No overview delta: pinning changes nothing the dashboard counters count.
+ */
 export const useToggleTaskPin = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ taskId, pinned }: { taskId: string; pinned: boolean }) =>
       taskApi.setPinned(taskId, pinned),
+
+    onMutate: ({ taskId, pinned }) => {
+      const snapshot = queryClient.getQueriesData({ queryKey: queryKeys.tasks.all });
+      patchCachedTask(queryClient, taskId, (task) => ({ ...task, isPinned: pinned }));
+      return { snapshot };
+    },
+
+    onError: (error, _variables, context) => {
+      context?.snapshot.forEach(([key, value]) => queryClient.setQueryData(key, value));
+      toast.error(errorMessage(error));
+    },
+
     onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all }),
-    onError: (error) => toast.error(errorMessage(error)),
   });
 };
 

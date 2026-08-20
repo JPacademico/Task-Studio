@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, Sparkles, Wand2, X } from 'lucide-react';
+import { CalendarClock, Check, Sparkles, Wand2, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useAddCreatedTasks } from '@/entities/task/model/queries';
@@ -11,6 +11,32 @@ import { cn } from '@/shared/lib/cn';
 import { Badge, Button, EmptyState, Section, Spinner } from '@/shared/ui';
 import { aiApi, type ProjectTaskSuggestion } from '../api/ai.api';
 import { useSuggestionStream } from '../model/use-suggestion-stream';
+
+/**
+ * The proposed window in words, from the offsets the model returned.
+ *
+ * Deliberately relative rather than a formatted date: the suggestion carries
+ * offsets, and the real timestamps are only computed when it is accepted, so
+ * printing an absolute date here would be showing a value that does not exist
+ * yet and could still shift if the card sits unaccepted for a while.
+ */
+const describeSchedule = (
+  t: ReturnType<typeof useT>,
+  task: ProjectTaskSuggestion,
+): string => {
+  const days = task.startOffsetDays ?? 0;
+  const hours = task.durationHours ?? 0;
+
+  const start =
+    days === 0 ? t('ai.startsToday') : t('ai.startsInDays', { count: String(days) });
+
+  const length =
+    hours < 24
+      ? t('ai.lastsHours', { count: String(hours) })
+      : t('ai.lastsDays', { count: String(Math.round(hours / 24)) });
+
+  return `${start} · ${length}`;
+};
 
 const PRIORITY_STYLE: Record<string, string> = {
   LOW: 'border-edge text-content-faint',
@@ -149,9 +175,22 @@ export const AiPanel = ({ projectId }: { projectId: string }) => {
                 <div className="flex flex-wrap items-start gap-2">
                   <p className="flex-1 text-sm font-semibold leading-snug">{task.title}</p>
                   <Badge className={cn('shrink-0', PRIORITY_STYLE[task.priority])}>
-                    {task.priority.toLowerCase()}
+                    {t(`priority.${task.priority}` as const)}
                   </Badge>
                 </div>
+
+                {/* The window this will land on the board with.
+                    Accepting used to produce an unscheduled task, so the dates
+                    had to be added by hand afterwards — which meant the model
+                    had reasoned about the sequencing and then thrown it away.
+                    Shown here because a schedule the user cannot see before
+                    accepting is a surprise rather than a suggestion. */}
+                {task.durationHours !== undefined && (
+                  <p className="inline-flex items-center gap-1.5 text-[11px] text-content-faint">
+                    <CalendarClock className="h-3 w-3 shrink-0" />
+                    {describeSchedule(t, task)}
+                  </p>
+                )}
 
                 <p className="text-xs leading-relaxed text-content-muted">{task.description}</p>
 

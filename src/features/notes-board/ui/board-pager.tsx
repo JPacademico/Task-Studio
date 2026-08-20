@@ -145,7 +145,7 @@ export const BoardPager = ({
                 aria-label={`Remove ${page.name}`}
                 onClick={() => {
                   if (
-                    window.confirm(`Remove "${page.name}"? Its notes move to the recycle bin.`)
+                    window.confirm(t('notes.confirmRemovePage', { name: page.name }))
                   ) {
                     onRemove(page.index);
                   }

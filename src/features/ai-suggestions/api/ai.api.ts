@@ -13,6 +13,16 @@ export interface ProjectTaskSuggestion {
   description: string;
   rationale: string;
   priority: TaskPriority;
+  /**
+   * The proposed schedule, as offsets rather than dates.
+   *
+   * The API turns these into real timestamps when the suggestion is accepted —
+   * see `scheduleFor` — so a proposal read today and accepted tomorrow is
+   * scheduled from tomorrow rather than from a moment that has passed. Optional
+   * because a suggestion generated before this existed has neither.
+   */
+  startOffsetDays?: number;
+  durationHours?: number;
 }
 
 export interface AiSuggestion {

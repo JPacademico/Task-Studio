@@ -256,7 +256,9 @@ const TaskMenuPage = () => {
                   {formatDayLabel(date)}
                 </h2>
                 <span className="h-px flex-1 bg-edge" />
-                <span className="text-[11px] text-content-faint">{tasks.length} task(s)</span>
+                <span className="text-[11px] text-content-faint">
+                  {t('views.taskCount', { count: tasks.length })}
+                </span>
               </header>
 
               <ol className="space-y-2 sm:space-y-2.5">

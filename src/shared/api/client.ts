@@ -5,6 +5,7 @@ import axios, {
 } from 'axios';
 
 import { env } from '@/shared/config/env';
+import { translate } from '@/shared/i18n';
 import { tokenStore } from './token-store';
 
 interface RetriableConfig extends InternalAxiosRequestConfig {
@@ -74,6 +75,24 @@ export const SLOW_ROUTE_TIMEOUT_MS = 90_000;
 
 let lastResponseAt = 0;
 
+/**
+ * Whether the unauthenticated `/health` probe has ever come back.
+ *
+ * This exists to tell two indistinguishable failures apart. Axios reports both
+ * "the host is unreachable" and "the browser refused to hand you the response"
+ * as `ERR_NETWORK` with no status and no body — by design, because a
+ * cross-origin rejection is not allowed to leak what happened. So the client
+ * cannot ask the failed request what went wrong.
+ *
+ * What it *can* do is remember whether the very same origin answered a moment
+ * ago. If `/health` succeeded and a normal call then fails at the network
+ * layer, the server is up and something in front of it said no — a missing CORS
+ * origin on the deployment, a blocking extension, a corporate proxy. That is a
+ * completely different thing to tell somebody than "check your connection", and
+ * on a first visit to a fresh deployment it is overwhelmingly the likely one.
+ */
+let healthProbeSucceeded = false;
+
 const apiIsWarm = (): boolean => Date.now() - lastResponseAt < WARM_TTL_MS;
 
 export const api: AxiosInstance = axios.create({
@@ -126,6 +145,7 @@ export const wakeApi = (): void => {
     .get(`${origin}/health`, { timeout: COLD_TIMEOUT_MS })
     .then(() => {
       lastResponseAt = Date.now();
+      healthProbeSucceeded = true;
     })
     .catch(() => undefined);
 };
@@ -201,7 +221,23 @@ export const errorMessage = (error: unknown, fallback = 'Something went wrong.')
      * against a server that accepted the connection, which on this hosting is
      * overwhelmingly a container still starting up.
      */
-    if (error.code === 'ERR_NETWORK') return 'Cannot reach the server. Check your connection.';
+    if (error.code === 'ERR_NETWORK') {
+      /*
+       * The API answered `/health` but refused this one, so the network is
+       * fine and the request never left the browser intact. Naming the origin
+       * is what makes this actionable: nine times out of ten the fix is adding
+       * this site's URL to `CORS_ORIGINS` on the API.
+       */
+      if (healthProbeSucceeded) {
+        console.error(
+          `[task-studio] Reached ${env.apiUrl} for /health but the request above was blocked. ` +
+            `If this is a deployment, check that CORS_ORIGINS on the API includes ${window.location.origin}.`,
+        );
+        return translate('session.blocked');
+      }
+
+      return 'Cannot reach the server. Check your connection.';
+    }
     if (error.code === 'ECONNABORTED') {
       return 'The server is taking too long to respond — it may be starting up. Try again in a moment.';
     }

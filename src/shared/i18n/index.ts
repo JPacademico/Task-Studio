@@ -90,6 +90,15 @@ export const useLocaleStore = create<LocaleState>((set) => {
 /** Just the active language, for components that switch on it. */
 export const useLocale = (): Locale => useLocaleStore((state) => state.locale);
 
+/**
+ * The active language, outside React.
+ *
+ * Same reasoning as `translate`: a plain function called during render reads the
+ * same value a hook would, and the formatters in `shared/lib/dates` need it to
+ * pick a date-fns locale without every one of them taking a parameter.
+ */
+export const getLocale = (): Locale => useLocaleStore.getState().locale;
+
 export type Translate = (key: TranslationKey, vars?: Record<string, string | number>) => string;
 
 const substitute = (

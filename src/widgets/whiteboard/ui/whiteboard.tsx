@@ -665,7 +665,7 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
             <span className="hidden h-6 w-px bg-edge sm:block" />
             <ColorPicker value={color} onChange={setColor} options={TASK_COLORS.slice(0, 6)} />
             <label className="flex items-center gap-2 text-xs text-content-muted">
-              Size
+              {t('board.inkSize')}
               <input
                 type="range"
                 min={1}
@@ -684,7 +684,7 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
           <>
             <span className="hidden h-6 w-px bg-edge sm:block" />
             <label className="flex items-center gap-2 text-xs text-content-muted">
-              Nib
+              {t('board.eraserNib')}
               <input
                 type="range"
                 min={10}
@@ -801,8 +801,7 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
               <PostItGlyph className="h-8 w-8 text-content-faint" />
               <p className="text-sm font-semibold">{t('board.sharedWall')}</p>
               <p className="max-w-xs text-xs leading-relaxed text-content-muted">
-                Stick up a Post-it, pin an image or draw straight on the canvas. Everyone on the
-                project sees it as you go.
+                {t('board.sharedWallBody')}
               </p>
             </div>
           </div>

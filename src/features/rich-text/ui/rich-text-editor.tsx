@@ -25,8 +25,8 @@ import { toast } from 'sonner';
 import { uploadImage } from '@/entities/user/api/user.api';
 import { cn } from '@/shared/lib/cn';
 import { sanitizeDocumentHtml } from '@/shared/lib/sanitize-html';
-import { Select, Spinner, type SelectOption } from '@/shared/ui';
-import { useT } from '@/shared/i18n';
+import { Select, Spinner } from '@/shared/ui';
+import { useT, type TranslationKey } from '@/shared/i18n';
 
 /**
  * The document surface.
@@ -99,11 +99,11 @@ const ToolButton = ({
 const Divider = () => <span aria-hidden className="mx-0.5 h-5 w-px shrink-0 bg-edge" />;
 
 /** Font sizes, in the 1–7 scale `execCommand('fontSize')` speaks. */
-const SIZES: SelectOption<string>[] = [
-  { value: '2', label: 'Small' },
-  { value: '3', label: 'Normal' },
-  { value: '5', label: 'Large' },
-  { value: '6', label: 'Huge' },
+const SIZES: { value: string; label: TranslationKey }[] = [
+  { value: '2', label: 'editor.sizeSmall' },
+  { value: '3', label: 'editor.sizeNormal' },
+  { value: '5', label: 'editor.sizeLarge' },
+  { value: '6', label: 'editor.sizeHuge' },
 ];
 
 const COLORS = ['#111827', '#b91c1c', '#c2410c', '#a16207', '#15803d', '#1d4ed8', '#7e22ce'];
@@ -320,7 +320,7 @@ export const RichTextEditor = ({
                   restoreSelection();
                   exec('fontSize', next);
                 }}
-                options={SIZES}
+                options={SIZES.map((size) => ({ ...size, label: t(size.label) }))}
               />
             </span>
 

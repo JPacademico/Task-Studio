@@ -144,7 +144,7 @@ const RecycleBinPage = () => {
                     size="sm"
                     variant="danger"
                     onClick={() => {
-                      if (window.confirm(`Delete "${task.title}" for good?`)) {
+                      if (window.confirm(t('bin.confirmPurgeTask', { title: task.title }))) {
                         purgeTask.mutate(task.id);
                       }
                     }}

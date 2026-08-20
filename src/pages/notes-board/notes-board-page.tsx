@@ -55,7 +55,7 @@ import {
   Segmented,
 } from '@/shared/ui';
 import { TextBoard } from '@/widgets/text-board/ui/text-board';
-import { useT } from '@/shared/i18n';
+import { useT, type TranslationKey } from '@/shared/i18n';
 
 /**
  * The two things a personal desk is made of.
@@ -70,9 +70,9 @@ import { useT } from '@/shared/i18n';
  */
 type BoardView = 'notes' | 'text';
 
-const VIEWS: { value: BoardView; label: string; icon: React.ReactNode }[] = [
-  { value: 'notes', label: 'Post-its', icon: <StickyNote className="h-3 w-3" /> },
-  { value: 'text', label: 'Text board', icon: <FileText className="h-3 w-3" /> },
+const VIEWS: { value: BoardView; label: TranslationKey; icon: React.ReactNode }[] = [
+  { value: 'notes', label: 'notes.postIts', icon: <StickyNote className="h-3 w-3" /> },
+  { value: 'text', label: 'notes.textBoardTab', icon: <FileText className="h-3 w-3" /> },
 ];
 
 /**
@@ -426,7 +426,11 @@ const NotesBoardPage = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Segmented value={view} options={VIEWS} onChange={setView} />
+            <Segmented
+              value={view}
+              options={VIEWS.map((entry) => ({ ...entry, label: t(entry.label) }))}
+              onChange={setView}
+            />
             {/* The pager belongs to the wall, not to the desk. */}
             {view === 'notes' && pager}
           </div>
@@ -441,7 +445,7 @@ const NotesBoardPage = () => {
       <ExpandableStage
         isExpanded={isExpanded}
         onCollapse={() => setIsExpanded(false)}
-        title="Your Post-it board"
+        title={t('notes.yourPostItBoard')}
         actions={pager}
       >
         <BoardToolbar
@@ -476,7 +480,7 @@ const NotesBoardPage = () => {
           showInkTools={!isTouch}
           onClearInk={() => clearInk.mutate()}
           onClearAll={() => {
-            if (window.confirm('Clear this page? Notes move to the recycle bin.')) {
+            if (window.confirm(t('notes.confirmClearPage'))) {
               clearBoard.mutate();
               setSelection([]);
             }

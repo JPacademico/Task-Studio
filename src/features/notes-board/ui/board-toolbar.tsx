@@ -13,7 +13,7 @@ import {
 import { BOARD_INK_COLORS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
 import { Button, ColorPicker, ExpandToggle, PostItGlyph, Spinner, Stepper } from '@/shared/ui';
-import { useT } from '@/shared/i18n';
+import { useT, type TranslationKey } from '@/shared/i18n';
 
 export type BoardTool = 'select' | 'connect' | 'draw';
 
@@ -46,10 +46,15 @@ interface BoardToolbarProps {
   onToggleExpand?: () => void;
 }
 
-const TOOLS: { value: BoardTool; label: string; icon: typeof MousePointer2; hint: string }[] = [
-  { value: 'select', label: 'Arrange', icon: MousePointer2, hint: 'Drag notes, lasso to select' },
-  { value: 'connect', label: 'Connect', icon: Link2, hint: 'Draw arrows between notes' },
-  { value: 'draw', label: 'Draw', icon: Pencil, hint: 'Freehand ink over the board' },
+const TOOLS: {
+  value: BoardTool;
+  label: TranslationKey;
+  icon: typeof MousePointer2;
+  hint: TranslationKey;
+}[] = [
+  { value: 'select', label: 'board.arrange', icon: MousePointer2, hint: 'board.arrangeNotesHint' },
+  { value: 'connect', label: 'board.connect', icon: Link2, hint: 'board.connectNotesHint' },
+  { value: 'draw', label: 'board.draw', icon: Pencil, hint: 'board.drawHint' },
 ];
 
 /** Everything the board can do, in one strip above the paper. */
@@ -83,7 +88,7 @@ export const BoardToolbar = ({
           <button
             key={value}
             type="button"
-            title={hint}
+            title={t(hint)}
             aria-pressed={tool === value}
             onClick={() => onToolChange(value)}
             className={cn(
@@ -94,7 +99,7 @@ export const BoardToolbar = ({
             )}
           >
             <Icon className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">{label}</span>
+            <span className="hidden sm:inline">{t(label)}</span>
           </button>
         ))}
       </div>
@@ -172,7 +177,7 @@ export const BoardToolbar = ({
             onChange={onInkWidthChange}
             min={1}
             max={18}
-            label="Nib"
+            label={t('board.eraserNib')}
             suffix="px"
           />
           {onClearInk && (
@@ -189,7 +194,7 @@ export const BoardToolbar = ({
           <ExpandToggle
             isExpanded={isExpanded}
             onToggle={onToggleExpand}
-            label={isExpanded ? 'Shrink' : 'Expand'}
+            label={t(isExpanded ? 'board.shrink' : 'board.expand')}
           />
         )}
 

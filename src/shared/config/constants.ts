@@ -1,4 +1,5 @@
 import type { TaskPriority, TaskStatus, TaskType } from '@/entities/task/model/types';
+import type { TranslationKey } from '@/shared/i18n/locales';
 
 export const STORAGE_KEYS = {
   accessToken: 'task-studio:access-token',
@@ -14,6 +15,14 @@ export const STORAGE_KEYS = {
   locale: 'task-studio:locale',
   /** Last session's task/project/board caches — see `query-persist.ts`. */
   queryCache: 'task-studio:query-cache',
+  /**
+   * Set once the user has turned our own notification offer down.
+   *
+   * Not the browser's permission state — that lives in the browser and answers
+   * a different question. This one exists so a "Not now" is final rather than
+   * re-asked on every visit. See `shared/lib/notifications.ts`.
+   */
+  notificationsDeclined: 'task-studio:notifications-declined',
 } as const;
 
 /** Curated task palette — arbitrary hex is allowed, these are the one-click set. */
@@ -40,12 +49,27 @@ export const NOTE_COLORS = [
   '#e2e8f0',
 ] as const;
 
+/*
+ * The words are keys, not words.
+ *
+ * These tables carry two different kinds of thing: presentation that belongs to
+ * the design system (the accent colour, the status dot) and vocabulary that
+ * belongs to the language the user reads in. Keeping literal English here made
+ * the second kind untranslatable — every card, badge and filter that rendered
+ * `meta.label` printed English regardless of the chosen language, which is most
+ * of the task surface.
+ *
+ * Storing a `TranslationKey` instead keeps the table where it belongs and moves
+ * the resolution to the call site, which is the only place that has a `t`. The
+ * type is what makes it safe: a key with no entry in the dictionary is a
+ * compile error, so this cannot silently drift out of step with the locales.
+ */
 export const TASK_TYPE_META: Record<
   TaskType,
-  { label: string; short: string; hint: string; accent: string }
+  { label: TranslationKey; short: TranslationKey; hint: TranslationKey; accent: string }
 > = {
   MEGA: {
-    label: 'MegaTask',
+    label: 'type.MEGA',
     /**
      * What a card shows when the full name will not fit.
      *
@@ -56,41 +80,44 @@ export const TASK_TYPE_META: Record<
      * word, the card drops the "Task" suffix it was repeating on every row
      * anyway and keeps the part that carries the meaning.
      */
-    short: 'Mega',
-    hint: 'Longer than 2 days',
+    short: 'type.MEGA.short',
+    hint: 'type.MEGA.hint',
     accent: 'text-violet-500',
   },
   MICRO: {
-    label: 'MicroTask',
-    short: 'Micro',
-    hint: 'Under 8 hours',
+    label: 'type.MICRO',
+    short: 'type.MICRO.short',
+    hint: 'type.MICRO.hint',
     accent: 'text-amber-500',
   },
   MULTI: {
-    label: 'MultiTask',
-    short: 'Multi',
-    hint: 'Several assignees',
+    label: 'type.MULTI',
+    short: 'type.MULTI.short',
+    hint: 'type.MULTI.hint',
     accent: 'text-emerald-500',
   },
   STANDARD: {
-    label: 'Task',
-    short: 'Task',
-    hint: 'Between 8 hours and 2 days',
+    label: 'type.STANDARD',
+    short: 'type.STANDARD.short',
+    hint: 'type.STANDARD.hint',
     accent: 'text-sky-500',
   },
 };
 
-export const TASK_STATUS_META: Record<TaskStatus, { label: string; dot: string }> = {
-  TODO: { label: 'To do', dot: 'bg-content-faint' },
-  IN_PROGRESS: { label: 'In progress', dot: 'bg-warning' },
-  COMPLETED: { label: 'Completed', dot: 'bg-positive' },
+export const TASK_STATUS_META: Record<TaskStatus, { label: TranslationKey; dot: string }> = {
+  TODO: { label: 'status.TODO', dot: 'bg-content-faint' },
+  IN_PROGRESS: { label: 'status.IN_PROGRESS', dot: 'bg-warning' },
+  COMPLETED: { label: 'status.COMPLETED', dot: 'bg-positive' },
 };
 
-export const TASK_PRIORITY_META: Record<TaskPriority, { label: string; className: string }> = {
-  LOW: { label: 'Low', className: 'text-content-faint' },
-  NORMAL: { label: 'Normal', className: 'text-content-muted' },
-  HIGH: { label: 'High', className: 'text-warning' },
-  URGENT: { label: 'Urgent', className: 'text-danger' },
+export const TASK_PRIORITY_META: Record<
+  TaskPriority,
+  { label: TranslationKey; className: string }
+> = {
+  LOW: { label: 'priority.LOW', className: 'text-content-faint' },
+  NORMAL: { label: 'priority.NORMAL', className: 'text-content-muted' },
+  HIGH: { label: 'priority.HIGH', className: 'text-warning' },
+  URGENT: { label: 'priority.URGENT', className: 'text-danger' },
 };
 
 /** Pen colours on the notes board — saturated enough to read over any Post-it. */

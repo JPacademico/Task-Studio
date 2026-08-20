@@ -10,8 +10,8 @@ import type {
 } from '@/entities/task/model/types';
 import { TASK_STATUS_META, TASK_TYPE_META } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
-import { PostItMark, Segmented, Select, type SelectOption } from '@/shared/ui';
-import { useT } from '@/shared/i18n';
+import { PostItMark, Segmented, Select } from '@/shared/ui';
+import { useT, type TranslationKey } from '@/shared/i18n';
 
 /**
  * `project` shows the whole roster's work, so it keeps the mine/team/all split.
@@ -34,18 +34,26 @@ interface TaskFiltersProps {
   className?: string;
 }
 
-const PROJECT_SCOPES: { value: TaskScope; label: string; icon: ReactNode }[] = [
-  { value: 'mine', label: 'My tasks', icon: <User className="h-3 w-3" /> },
-  { value: 'team', label: 'Team tasks', icon: <Users className="h-3 w-3" /> },
-  { value: 'all', label: 'All', icon: <></> },
+/*
+ * Options carry keys, and the component resolves them.
+ *
+ * These tables are module constants — evaluated once, before any component and
+ * therefore before any `t` exists — so the label cannot be translated where it
+ * is declared. Holding the key and mapping over it at render is what lets a
+ * static table stay static and still speak the reader's language.
+ */
+const PROJECT_SCOPES: { value: TaskScope; label: TranslationKey; icon: ReactNode }[] = [
+  { value: 'mine', label: 'filters.myTasks', icon: <User className="h-3 w-3" /> },
+  { value: 'team', label: 'filters.teamTasks', icon: <Users className="h-3 w-3" /> },
+  { value: 'all', label: 'filters.all', icon: <></> },
 ];
 
 /** Personal tabs are a view over the same query, not a different scope. */
 type PersonalTab = 'mine' | 'personal';
 
-const PERSONAL_TABS: { value: PersonalTab; label: string; icon: ReactNode }[] = [
-  { value: 'mine', label: 'My tasks', icon: <User className="h-3 w-3" /> },
-  { value: 'personal', label: 'Personal', icon: <UserRound className="h-3 w-3" /> },
+const PERSONAL_TABS: { value: PersonalTab; label: TranslationKey; icon: ReactNode }[] = [
+  { value: 'mine', label: 'filters.myTasks', icon: <User className="h-3 w-3" /> },
+  { value: 'personal', label: 'filters.personal', icon: <UserRound className="h-3 w-3" /> },
 ];
 
 const STATUSES: (TaskStatus | 'ALL')[] = ['ALL', 'TODO', 'IN_PROGRESS', 'COMPLETED'];
@@ -67,11 +75,11 @@ const STATUS_SWATCH: Record<TaskStatus, string> = {
  * nothing is chosen and gets replaced by the choice when something is, which
  * is what a dropdown does anyway.
  */
-const LATENESS: SelectOption<TaskLateness | 'ALL'>[] = [
-  { value: 'ALL', label: 'Time' },
-  { value: 'LATE', label: 'Late', hint: 'Past the deadline, still open' },
-  { value: 'COMPLETED_LATE', label: 'Late finish', hint: 'Finished after the deadline' },
-  { value: 'ON_TIME', label: 'On time' },
+const LATENESS: { value: TaskLateness | 'ALL'; label: TranslationKey; hint?: TranslationKey }[] = [
+  { value: 'ALL', label: 'filters.time' },
+  { value: 'LATE', label: 'filters.late', hint: 'filters.lateHint' },
+  { value: 'COMPLETED_LATE', label: 'filters.lateFinish', hint: 'filters.lateFinishHint' },
+  { value: 'ON_TIME', label: 'filters.onTime' },
 ];
 
 export const TaskFilters = ({
@@ -107,7 +115,7 @@ export const TaskFilters = ({
       {isPersonal ? (
         <Segmented
           value={value.personalOnly ? 'personal' : 'mine'}
-          options={PERSONAL_TABS}
+          options={PERSONAL_TABS.map((tab) => ({ ...tab, label: t(tab.label) }))}
           onChange={(tab) =>
             patch({
               personalOnly: tab === 'personal' || undefined,
@@ -126,7 +134,7 @@ export const TaskFilters = ({
       ) : (
         <Segmented
           value={value.scope ?? 'all'}
-          options={PROJECT_SCOPES}
+          options={PROJECT_SCOPES.map((scope) => ({ ...scope, label: t(scope.label) }))}
           onChange={(scope) => patch({ scope })}
         />
       )}
@@ -147,7 +155,7 @@ export const TaskFilters = ({
         onChange={(status) => patch({ status: status === 'ALL' ? undefined : status })}
         options={STATUSES.map((status) => ({
           value: status,
-          label: status === 'ALL' ? 'Status' : TASK_STATUS_META[status].label,
+          label: t(status === 'ALL' ? 'filters.status' : TASK_STATUS_META[status].label),
           swatch: status === 'ALL' ? undefined : STATUS_SWATCH[status],
         }))}
       />
@@ -156,7 +164,11 @@ export const TaskFilters = ({
         className="w-[7rem]"
         value={value.lateness ?? 'ALL'}
         onChange={(lateness) => patch({ lateness: lateness === 'ALL' ? undefined : lateness })}
-        options={LATENESS}
+        options={LATENESS.map((option) => ({
+          ...option,
+          label: t(option.label),
+          hint: option.hint ? t(option.hint) : undefined,
+        }))}
       />
 
       <Select
@@ -165,8 +177,8 @@ export const TaskFilters = ({
         onChange={(type) => patch({ type: type === 'ALL' ? undefined : type })}
         options={TYPES.map((type) => ({
           value: type,
-          label: type === 'ALL' ? 'Type' : TASK_TYPE_META[type].label,
-          hint: type === 'ALL' ? undefined : TASK_TYPE_META[type].hint,
+          label: t(type === 'ALL' ? 'filters.type' : TASK_TYPE_META[type].label),
+          hint: type === 'ALL' ? undefined : t(TASK_TYPE_META[type].hint),
         }))}
       />
 

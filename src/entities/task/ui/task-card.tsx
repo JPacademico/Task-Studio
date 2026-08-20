@@ -19,7 +19,7 @@ import { completionProgress, isSharedTask, outstandingAssignees } from '../lib/c
 import type { Task } from '../model/types';
 import { TaskOrigin } from './task-origin';
 import { TaskTypeTag } from './task-type-tag';
-import { useT } from '@/shared/i18n';
+import { translate, useT } from '@/shared/i18n';
 
 /**
  * The lateness stamp.
@@ -49,7 +49,7 @@ export const LateTag = ({ variant }: { variant: 'late' | 'completed-late' }) => 
         aria-hidden
         className={cn('h-1.5 w-1.5 rounded-full', isOpen ? 'bg-danger' : 'bg-warning')}
       />
-      {isOpen ? 'Late' : 'Done late'}
+      {translate(isOpen ? 'views.lateTag' : 'views.doneLateTag')}
     </motion.span>
   );
 };
@@ -254,7 +254,7 @@ const TaskCardBase = ({
 
       <footer className="flex flex-wrap items-center gap-2 pl-2">
         <TaskTypeTag type={task.type} />
-        <Badge dot={statusMeta.dot}>{statusMeta.label}</Badge>
+        <Badge dot={statusMeta.dot}>{t(statusMeta.label)}</Badge>
 
         {/* Lateness gets its own loud tag rather than a whole extra column. */}
         {task.isLate && <LateTag variant="late" />}
@@ -271,7 +271,7 @@ const TaskCardBase = ({
 
         {task.priority !== 'NORMAL' && (
           <Badge className={TASK_PRIORITY_META[task.priority].className}>
-            {TASK_PRIORITY_META[task.priority].label}
+            {t(TASK_PRIORITY_META[task.priority].label)}
           </Badge>
         )}
 
@@ -290,7 +290,7 @@ const TaskCardBase = ({
             )}
           >
             <UserCheck className="h-3 w-3" />
-            {signOff.done}/{signOff.total} signed off
+            {t('views.signedOff', { done: signOff.done, total: signOff.total })}
           </Badge>
         )}
 

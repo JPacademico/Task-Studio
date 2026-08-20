@@ -612,6 +612,13 @@ const en = {
   'notif.markAllRead': 'Mark all read',
   'notif.nothingYet': 'Nothing yet',
   'notif.nothingYetBody': 'Task assignments and deadlines land here.',
+  'session.blocked':
+    'The browser blocked the connection to the server. If this keeps happening, the site may not be allowed to reach the API.',
+  'notif.optInTitle': 'Get notified on your desktop',
+  'notif.optInBody':
+    'Be told the moment a task is assigned to you or a deadline is close — even when Task Studio is in another tab. You can turn this off whenever you like.',
+  'notif.optInAllow': 'Turn on',
+  'notif.optInLater': 'Not now',
 
   // ---- Chat --------------------------------------------------------------
   'chat.placeholder': 'Write a message…',
@@ -640,6 +647,125 @@ const en = {
   'common.close': 'Close',
   'common.retry': 'Try again',
   'common.loading': 'Loading…',
+  // ---- Task taxonomy -----------------------------------------------------
+  //
+  // The type, status and priority vocabularies. These live in
+  // `shared/config/constants.ts` as metadata, which is where the colours and
+  // the accents belong — but the words are words, so the metadata carries the
+  // key and the call site resolves it.
+  'type.MEGA': 'MegaTask',
+  'type.MEGA.short': 'Mega',
+  'type.MEGA.hint': 'Longer than 2 days',
+  'type.MICRO': 'MicroTask',
+  'type.MICRO.short': 'Micro',
+  'type.MICRO.hint': 'Under 8 hours',
+  'type.MULTI': 'MultiTask',
+  'type.MULTI.short': 'Multi',
+  'type.MULTI.hint': 'Several assignees',
+  'type.STANDARD': 'Task',
+  'type.STANDARD.short': 'Task',
+  'type.STANDARD.hint': 'Between 8 hours and 2 days',
+
+  'status.TODO': 'To do',
+  'status.IN_PROGRESS': 'In progress',
+  'status.COMPLETED': 'Completed',
+
+  'priority.LOW': 'Low',
+  'priority.NORMAL': 'Normal',
+  'priority.HIGH': 'High',
+  'priority.URGENT': 'Urgent',
+
+  // ---- Task filters ------------------------------------------------------
+  'dates.noDeadline': 'No deadline',
+  'dates.late': '{amount} late',
+  'dates.dueIn': 'in {amount}',
+  'dates.windowUnderHour': '< 1 hour',
+  'dates.windowHours': '{count}h window',
+  'dates.windowDays': '{count}d window',
+  'views.lateTag': 'Late',
+  'views.doneLateTag': 'Done late',
+  'views.signedOff': '{done}/{total} signed off',
+  'views.taskCount': '{count} task(s)',
+  'filters.myTasks': 'My tasks',
+  'filters.teamTasks': 'Team tasks',
+  'filters.all': 'All',
+  'filters.personal': 'Personal',
+  'filters.status': 'Status',
+  'filters.type': 'Type',
+  'filters.time': 'Time',
+  'filters.late': 'Late',
+  'filters.lateHint': 'Past the deadline, still open',
+  'filters.lateFinish': 'Late finish',
+  'filters.lateFinishHint': 'Finished after the deadline',
+  'filters.onTime': 'On time',
+
+  // ---- Layout switcher ---------------------------------------------------
+  'views.board': 'Board',
+  'views.boardHint': 'Status columns you can drag between',
+  'views.sprintHint': 'Status columns crossed with priority lanes',
+  'views.list': 'List',
+  'views.listHint': 'One dense line per task',
+  'views.calendar': 'Calendar',
+  'views.calendarHint': 'A month grid by deadline',
+  'views.agenda': 'Agenda',
+  'views.agendaHint': 'Day buckets, ordered by hour',
+
+  // ---- Boards ------------------------------------------------------------
+  'board.expand': 'Expand',
+  'board.shrink': 'Shrink',
+  'board.draw': 'Draw',
+  'board.drawHint': 'Freehand ink over the board',
+  'board.arrangeNotesHint': 'Drag notes, lasso to select',
+  'board.connectNotesHint': 'Draw arrows between notes',
+  'board.inkSize': 'Size',
+  'board.eraserNib': 'Nib',
+  'board.sharedWallBody':
+    'Stick up a Post-it, pin an image or draw straight on the canvas. Everyone on the project sees it as you go.',
+
+  'notes.selectNote': 'Select this note',
+  'notes.deselectNote': 'Deselect this note',
+  'notes.noteTitle': 'Title',
+  'notes.imageCaption': 'Caption',
+  'notes.boardImage': 'Board image',
+  'notes.useColour': 'Use {color}',
+  'notes.postIts': 'Post-its',
+  'notes.textBoardTab': 'Text board',
+  'notes.yourPostItBoard': 'Your Post-it board',
+  'notes.confirmClearPage': 'Clear this page? Notes move to the recycle bin.',
+  'notes.confirmRemovePage': 'Remove "{name}"? Its notes move to the recycle bin.',
+
+  // ---- Project workspace -------------------------------------------------
+  'project.tabChat': 'Chat',
+  'project.tabBoard': 'Board',
+  'project.tabMetrics': 'Metrics',
+  'project.tabRoster': 'Roster',
+  'project.tabWhiteboard': 'Whiteboard',
+  'project.tabText': 'Text board',
+  'project.tabAssistant': 'Assistant',
+  'project.newTask': 'New task',
+  'project.newTaskShort': 'Task',
+  'project.pinProject': 'Pin project',
+  'project.unpinProject': 'Unpin project',
+
+  // ---- Composer ----------------------------------------------------------
+  'task.autoClassified': 'auto-classified',
+  'task.subChecklist': 'Sub-checklist',
+
+  'bin.confirmPurgeTask': 'Delete "{title}" for good?',
+
+  'theme.light': 'Light',
+  'theme.dark': 'Dark',
+
+  'editor.sizeSmall': 'Small',
+  'editor.sizeNormal': 'Normal',
+  'editor.sizeLarge': 'Large',
+  'editor.sizeHuge': 'Huge',
+
+  // ---- Assistant schedule ------------------------------------------------
+  'ai.startsToday': 'starts today',
+  'ai.startsInDays': 'starts in {count}d',
+  'ai.lastsHours': '{count}h of work',
+  'ai.lastsDays': '{count}d of work',
 } as const;
 
 export type TranslationKey = keyof typeof en;
@@ -1210,6 +1336,13 @@ const ptBR: Record<TranslationKey, string> = {
   'notif.markAllRead': 'Marcar tudo como lido',
   'notif.nothingYet': 'Nada ainda',
   'notif.nothingYetBody': 'Atribuições de tarefas e prazos chegam aqui.',
+  'session.blocked':
+    'O navegador bloqueou a conexão com o servidor. Se continuar acontecendo, o site pode não ter permissão para acessar a API.',
+  'notif.optInTitle': 'Receba avisos no seu computador',
+  'notif.optInBody':
+    'Saiba na hora quando uma tarefa for atribuída a você ou um prazo estiver perto — mesmo com o Task Studio em outra aba. Você pode desligar quando quiser.',
+  'notif.optInAllow': 'Ativar',
+  'notif.optInLater': 'Agora não',
 
   'chat.placeholder': 'Escreva uma mensagem…',
   'chat.offline': 'Offline',
@@ -1235,6 +1368,113 @@ const ptBR: Record<TranslationKey, string> = {
   'common.close': 'Fechar',
   'common.retry': 'Tentar novamente',
   'common.loading': 'Carregando…',
+  'type.MEGA': 'MegaTarefa',
+  'type.MEGA.short': 'Mega',
+  'type.MEGA.hint': 'Mais de 2 dias',
+  'type.MICRO': 'MicroTarefa',
+  'type.MICRO.short': 'Micro',
+  'type.MICRO.hint': 'Menos de 8 horas',
+  'type.MULTI': 'MultiTarefa',
+  'type.MULTI.short': 'Multi',
+  'type.MULTI.hint': 'Vários responsáveis',
+  'type.STANDARD': 'Tarefa',
+  'type.STANDARD.short': 'Tarefa',
+  'type.STANDARD.hint': 'Entre 8 horas e 2 dias',
+
+  'status.TODO': 'A fazer',
+  'status.IN_PROGRESS': 'Em andamento',
+  'status.COMPLETED': 'Concluída',
+
+  'priority.LOW': 'Baixa',
+  'priority.NORMAL': 'Normal',
+  'priority.HIGH': 'Alta',
+  'priority.URGENT': 'Urgente',
+
+  'dates.noDeadline': 'Sem prazo',
+  'dates.late': '{amount} de atraso',
+  'dates.dueIn': 'em {amount}',
+  'dates.windowUnderHour': '< 1 hora',
+  'dates.windowHours': 'janela de {count}h',
+  'dates.windowDays': 'janela de {count}d',
+  'views.lateTag': 'Atrasada',
+  'views.doneLateTag': 'Concluída com atraso',
+  'views.signedOff': '{done}/{total} aprovaram',
+  'views.taskCount': '{count} tarefa(s)',
+  'filters.myTasks': 'Minhas tarefas',
+  'filters.teamTasks': 'Tarefas da equipe',
+  'filters.all': 'Todas',
+  'filters.personal': 'Pessoais',
+  'filters.status': 'Status',
+  'filters.type': 'Tipo',
+  'filters.time': 'Prazo',
+  'filters.late': 'Atrasada',
+  'filters.lateHint': 'Passou do prazo e ainda está aberta',
+  'filters.lateFinish': 'Concluída com atraso',
+  'filters.lateFinishHint': 'Terminada depois do prazo',
+  'filters.onTime': 'No prazo',
+
+  'views.board': 'Quadro',
+  'views.boardHint': 'Colunas de status para arrastar entre elas',
+  'views.sprintHint': 'Colunas de status cruzadas com faixas de prioridade',
+  'views.list': 'Lista',
+  'views.listHint': 'Uma linha compacta por tarefa',
+  'views.calendar': 'Calendário',
+  'views.calendarHint': 'Uma grade mensal por prazo',
+  'views.agenda': 'Agenda',
+  'views.agendaHint': 'Blocos por dia, ordenados por hora',
+
+  'board.expand': 'Expandir',
+  'board.shrink': 'Recolher',
+  'board.draw': 'Desenhar',
+  'board.drawHint': 'Traço livre sobre o mural',
+  'board.arrangeNotesHint': 'Arraste as notas, use o laço para selecionar',
+  'board.connectNotesHint': 'Desenhe setas entre as notas',
+  'board.inkSize': 'Espessura',
+  'board.eraserNib': 'Ponta',
+  'board.sharedWallBody':
+    'Cole um post-it, prenda uma imagem ou desenhe direto no mural. Todo mundo no projeto vê enquanto você faz.',
+
+  'notes.selectNote': 'Selecionar esta nota',
+  'notes.deselectNote': 'Desmarcar esta nota',
+  'notes.noteTitle': 'Título',
+  'notes.imageCaption': 'Legenda',
+  'notes.boardImage': 'Imagem do mural',
+  'notes.useColour': 'Usar {color}',
+  'notes.postIts': 'Post-its',
+  'notes.textBoardTab': 'Mural de texto',
+  'notes.yourPostItBoard': 'Seu mural de post-its',
+  'notes.confirmClearPage': 'Limpar esta página? As notas vão para a lixeira.',
+  'notes.confirmRemovePage': 'Remover "{name}"? As notas dela vão para a lixeira.',
+
+  'project.tabChat': 'Conversa',
+  'project.tabBoard': 'Quadro',
+  'project.tabMetrics': 'Métricas',
+  'project.tabRoster': 'Equipe',
+  'project.tabWhiteboard': 'Mural',
+  'project.tabText': 'Mural de texto',
+  'project.tabAssistant': 'Assistente',
+  'project.newTask': 'Nova tarefa',
+  'project.newTaskShort': 'Tarefa',
+  'project.pinProject': 'Fixar projeto',
+  'project.unpinProject': 'Desafixar projeto',
+
+  'task.autoClassified': 'classificada automaticamente',
+  'task.subChecklist': 'Subchecklist',
+
+  'bin.confirmPurgeTask': 'Excluir "{title}" definitivamente?',
+
+  'theme.light': 'Claro',
+  'theme.dark': 'Escuro',
+
+  'editor.sizeSmall': 'Pequeno',
+  'editor.sizeNormal': 'Normal',
+  'editor.sizeLarge': 'Grande',
+  'editor.sizeHuge': 'Enorme',
+
+  'ai.startsToday': 'começa hoje',
+  'ai.startsInDays': 'começa em {count}d',
+  'ai.lastsHours': '{count}h de trabalho',
+  'ai.lastsDays': '{count}d de trabalho',
 };
 
 export const DICTIONARIES: Record<Locale, Record<TranslationKey, string>> = {

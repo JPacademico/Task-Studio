@@ -1,6 +1,7 @@
 import { TASK_TYPE_META } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
 import type { TaskType } from '../model/types';
+import { useT } from '@/shared/i18n';
 
 interface TaskTypeTagProps {
   type: TaskType;
@@ -36,11 +37,12 @@ interface TaskTypeTagProps {
  * size and its lettering through `.type-tag`.
  */
 export const TaskTypeTag = ({ type, variant = 'compact', className }: TaskTypeTagProps) => {
+  const t = useT();
   const meta = TASK_TYPE_META[type];
 
   return (
     <span
-      title={`${meta.label} — ${meta.hint.toLowerCase()}`}
+      title={`${t(meta.label)} — ${t(meta.hint).toLowerCase()}`}
       className={cn(
         'type-tag shrink-0 font-semibold',
         variant === 'compact' ? 'text-[11px]' : 'text-sm',
@@ -48,7 +50,7 @@ export const TaskTypeTag = ({ type, variant = 'compact', className }: TaskTypeTa
         className,
       )}
     >
-      {variant === 'compact' ? meta.short : meta.label}
+      {t(variant === 'compact' ? meta.short : meta.label)}
     </span>
   );
 };

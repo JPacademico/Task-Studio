@@ -299,8 +299,8 @@ const ThemeGalleryPage = () => {
                   without the page committing to one. */}
               <div className="ui-segment inline-flex items-center gap-0.5 rounded-lg border border-edge bg-surface-sunken p-0.5">
                 {[
-                  { value: false, label: 'Light', icon: <Sun className="h-3 w-3" /> },
-                  { value: true, label: 'Dark', icon: <Moon className="h-3 w-3" /> },
+                  { value: false, label: t('theme.light'), icon: <Sun className="h-3 w-3" /> },
+                  { value: true, label: t('theme.dark'), icon: <Moon className="h-3 w-3" /> },
                 ].map((option) => (
                   <button
                     key={option.label}

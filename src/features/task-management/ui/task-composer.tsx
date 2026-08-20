@@ -184,9 +184,9 @@ export const TaskComposer = ({
         <div className="flex items-center justify-between gap-3 rounded-xl border border-edge bg-surface-sunken px-3.5 py-3">
           <div className="min-w-0">
             <TaskTypeTag type={derivedType} variant="full" />
-            <p className="truncate text-[11px] text-content-muted">{typeMeta.hint}</p>
+            <p className="truncate text-[11px] text-content-muted">{t(typeMeta.hint)}</p>
           </div>
-          <Badge className="shrink-0">auto-classified</Badge>
+          <Badge className="shrink-0">{t('task.autoClassified')}</Badge>
         </div>
 
         <Input
@@ -313,7 +313,7 @@ export const TaskComposer = ({
         {!task && (
           <div className="space-y-2">
             <p className="text-xs font-medium text-content-muted">
-              Sub-checklist{' '}
+              {t('task.subChecklist')}{' '}
               {checklist.length > 0 && (
                 <span className="text-content-faint">({checklist.length})</span>
               )}

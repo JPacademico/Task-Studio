@@ -108,7 +108,7 @@ export const TaskSprintView = ({
             className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-content-muted"
           >
             <span className={cn('h-1.5 w-1.5 rounded-full', TASK_STATUS_META[status].dot)} />
-            {TASK_STATUS_META[status].label}
+            {t(TASK_STATUS_META[status].label)}
           </span>
         ))}
       </div>
@@ -133,7 +133,7 @@ export const TaskSprintView = ({
                 )}
               >
                 {lane.priority === 'URGENT' && <Flame className="h-3.5 w-3.5" />}
-                {meta.label}
+                {t(meta.label)}
               </span>
               <span className="text-[11px] tabular-nums text-content-faint">
                 {lane.total} task(s)
@@ -148,7 +148,7 @@ export const TaskSprintView = ({
                   <span
                     className={cn('h-1 w-1 rounded-full', TASK_STATUS_META[column.status].dot)}
                   />
-                  {TASK_STATUS_META[column.status].label}
+                  {t(TASK_STATUS_META[column.status].label)}
                 </span>
 
                 {/* See `TaskCard`: nothing enters or exits, so there is

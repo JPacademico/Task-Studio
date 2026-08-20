@@ -104,6 +104,7 @@ const Column = ({
   blockedReason?: string | null;
   children: React.ReactNode;
 }) => {
+  const t = useT();
   const { setNodeRef, isOver } = useDroppable({ id: status });
   const meta = TASK_STATUS_META[status];
   const isBlocked = Boolean(blockedReason);
@@ -138,7 +139,7 @@ const Column = ({
           ) : (
             <span className={cn('h-1.5 w-1.5 rounded-full', meta.dot)} />
           )}
-          {meta.label}
+          {t(meta.label)}
         </span>
         <span className="rounded-full bg-surface-raised px-1.5 text-xs tabular-nums text-content-faint">
           {tasks.length}

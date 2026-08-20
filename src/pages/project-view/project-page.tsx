@@ -52,19 +52,19 @@ import { Avatar, Button, PageLoader, Segmented } from '@/shared/ui';
 import { ProjectDashboard } from '@/widgets/project-dashboard/ui/project-dashboard';
 import { TextBoard } from '@/widgets/text-board/ui/text-board';
 import { Whiteboard } from '@/widgets/whiteboard/ui/whiteboard';
-import { useT } from '@/shared/i18n';
+import { useT, type TranslationKey } from '@/shared/i18n';
 
 type Tab = 'board' | 'dashboard' | 'roster' | 'whiteboard' | 'text' | 'ai';
 
-const TABS: { value: Tab; label: string; icon: ReactNode }[] = [
-  { value: 'board', label: 'Board', icon: <KanbanSquare className="h-3 w-3" /> },
-  { value: 'dashboard', label: 'Metrics', icon: <BarChart3 className="h-3 w-3" /> },
-  { value: 'roster', label: 'Roster', icon: <Users className="h-3 w-3" /> },
-  { value: 'whiteboard', label: 'Whiteboard', icon: <PenTool className="h-3 w-3" /> },
+const TABS: { value: Tab; label: TranslationKey; icon: ReactNode }[] = [
+  { value: 'board', label: 'project.tabBoard', icon: <KanbanSquare className="h-3 w-3" /> },
+  { value: 'dashboard', label: 'project.tabMetrics', icon: <BarChart3 className="h-3 w-3" /> },
+  { value: 'roster', label: 'project.tabRoster', icon: <Users className="h-3 w-3" /> },
+  { value: 'whiteboard', label: 'project.tabWhiteboard', icon: <PenTool className="h-3 w-3" /> },
   // Next to the whiteboard on purpose: the two are the same idea in different
   // materials — one is what the project draws, the other is what it writes.
-  { value: 'text', label: 'Text board', icon: <FileText className="h-3 w-3" /> },
-  { value: 'ai', label: 'Assistant', icon: <Sparkles className="h-3 w-3" /> },
+  { value: 'text', label: 'project.tabText', icon: <FileText className="h-3 w-3" /> },
+  { value: 'ai', label: 'project.tabAssistant', icon: <Sparkles className="h-3 w-3" /> },
 ];
 
 /**
@@ -230,7 +230,7 @@ const ProjectPage = () => {
             <Button
               variant="ghost"
               size="icon"
-              aria-label={project.isPinned ? 'Unpin project' : 'Pin project'}
+              aria-label={t(project.isPinned ? 'project.unpinProject' : 'project.pinProject')}
               onClick={() => togglePin.mutate({ projectId, pinned: !project.isPinned })}
               className={cn(project.isPinned && 'text-brand')}
             >
@@ -245,14 +245,19 @@ const ProjectPage = () => {
                 }}
               >
                 <Plus className="h-4 w-4" strokeWidth={2.6} />
-                <span className="hidden sm:inline">New task</span>
-                <span className="sm:hidden">Task</span>
+                <span className="hidden sm:inline">{t('project.newTask')}</span>
+                <span className="sm:hidden">{t('project.newTaskShort')}</span>
               </Button>
             )}
           </div>
         </div>
 
-        <Segmented value={tab} options={TABS} onChange={setTab} className="flex-wrap" />
+        <Segmented
+          value={tab}
+          options={TABS.map((entry) => ({ ...entry, label: t(entry.label) }))}
+          onChange={setTab}
+          className="flex-wrap"
+        />
       </header>
 
       {tab === 'board' && (

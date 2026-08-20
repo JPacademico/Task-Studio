@@ -6,6 +6,7 @@ import { X } from 'lucide-react';
 import { cn } from '@/shared/lib/cn';
 import { useEscapeKey } from '@/shared/lib/hooks';
 import { Button } from './button';
+import { translate } from '@/shared/i18n';
 
 interface ModalProps {
   isOpen: boolean;
@@ -114,7 +115,7 @@ export const Modal = ({
                     <p className="text-xs text-content-muted">{description}</p>
                   )}
                 </div>
-                <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close">
+                <Button variant="ghost" size="icon" onClick={onClose} aria-label={translate('common.close')}>
                   <X className="h-4 w-4" />
                 </Button>
               </header>
