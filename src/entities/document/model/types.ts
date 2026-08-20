@@ -21,6 +21,18 @@ export interface ProjectDocument {
   projectId: string | null;
   taskId: string | null;
   task: { id: string; title: string; color: string } | null;
+  /**
+   * Set when the page is the minutes of a meeting. Mutually exclusive with
+   * `taskId`: a page hangs off one thing.
+   */
+  meetingId: string | null;
+  meeting: {
+    id: string;
+    title: string;
+    startAt: string;
+    /** A finished meeting keeps its minutes but takes no new pages. */
+    completedAt: string | null;
+  } | null;
   createdBy: UserSummary;
   updatedBy: UserSummary | null;
   createdAt: string;
@@ -32,6 +44,11 @@ export interface CreateDocumentPayload {
   projectId?: string;
   /** Omit for a project-wide page. Only valid alongside a project. */
   taskId?: string;
+  /**
+   * Makes the page the minutes of one meeting. Only valid alongside a project,
+   * and never together with `taskId`.
+   */
+  meetingId?: string;
   title?: string;
   content?: string;
 }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
+  CalendarDays,
   Download,
   FileText,
   Pencil,
@@ -22,6 +23,7 @@ import {
 } from '@/entities/document/model/queries';
 import type { ProjectDocument } from '@/entities/document/model/types';
 import { DocumentByline, DocumentCreatorStamp } from '@/entities/document/ui/document-byline';
+import type { Meeting } from '@/entities/meeting/model/types';
 import type { Task } from '@/entities/task/model/types';
 import { useCurrentUser } from '@/features/auth/model/session.store';
 import { RichTextEditor } from '@/features/rich-text/ui/rich-text-editor';
@@ -51,7 +53,29 @@ interface TextBoardProps {
   projectId?: string;
   /** The project's tasks, so a page can be attached to one of them. */
   tasks?: Task[];
+  /** The project's live meetings, so a page can be one's minutes. */
+  meetings?: Meeting[];
 }
+
+/**
+ * What a new page can be pinned to, encoded for one `<Select>`.
+ *
+ * Tasks and meetings are two different anchors and the picker offers both, so
+ * an id alone is ambiguous — `task:` / `meeting:` says which table it is from.
+ * An empty string is the project itself, which is the default and the most
+ * common answer.
+ */
+type AnchorValue = '' | `task:${string}` | `meeting:${string}`;
+
+const parseAnchor = (value: AnchorValue): { taskId?: string; meetingId?: string } => {
+  if (value.startsWith('task:')) return { taskId: value.slice('task:'.length) };
+  if (value.startsWith('meeting:')) return { meetingId: value.slice('meeting:'.length) };
+  return {};
+};
+
+/** Stable identities, so the defaults never re-trigger a memo. */
+const NO_TASKS: Task[] = [];
+const NO_MEETINGS: Meeting[] = [];
 
 /** A filename that survives a download folder: no separators, no surprises. */
 const toFileName = (title: string): string =>
@@ -118,7 +142,11 @@ ${body}
  * roster: no task to pin a page to, and no attribution anywhere. A byline on a
  * desk with one person at it is a label reading "you" on everything you own.
  */
-export const TextBoard = ({ projectId, tasks = [] }: TextBoardProps) => {
+export const TextBoard = ({
+  projectId,
+  tasks = NO_TASKS,
+  meetings = NO_MEETINGS,
+}: TextBoardProps) => {
   const t = useT();
   const { data: documents = [], isLoading } = useProjectDocuments(projectId);
 
@@ -135,7 +163,7 @@ export const TextBoard = ({ projectId, tasks = [] }: TextBoardProps) => {
   const [title, setTitle] = useState('');
   const [isDirty, setIsDirty] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [attachTo, setAttachTo] = useState<string>('');
+  const [attachTo, setAttachTo] = useState<AnchorValue>('');
 
   // The body lives in a ref, not in state: it changes on every keystroke and
   // nothing outside the editor renders from it until a save.
@@ -198,19 +226,72 @@ export const TextBoard = ({ projectId, tasks = [] }: TextBoardProps) => {
   }, [open]);
 
   const grouped = useMemo(() => {
-    const general = documents.filter((document) => !document.taskId);
-    const perTask = documents.filter((document) => document.taskId);
-    return { general, perTask };
+    const general: ProjectDocument[] = [];
+    const perTask: ProjectDocument[] = [];
+    const perMeeting: ProjectDocument[] = [];
+
+    for (const entry of documents) {
+      if (entry.meetingId) perMeeting.push(entry);
+      else if (entry.taskId) perTask.push(entry);
+      else general.push(entry);
+    }
+
+    return { general, perTask, perMeeting };
   }, [documents]);
 
+  /*
+   * What a *new* page may be pinned to.
+   *
+   * Finished work does not take new pages, and that is a rule rather than a
+   * tidiness preference — the API refuses the write either way (see
+   * `assertTaskAcceptsPages`), so offering the option would be offering an
+   * error. Pages already attached to something that has since finished are
+   * untouched: they stay in the list, they open, and they save.
+   *
+   * Meetings need no equivalent filter here — the board's snapshot only ever
+   * holds live ones, because a completed meeting leaves it.
+   */
+  const openTasks = useMemo(
+    () => tasks.filter((task) => task.status !== 'COMPLETED'),
+    [tasks],
+  );
+
+  const anchorOptions = useMemo(
+    () => [
+      {
+        value: '' as AnchorValue,
+        label: t('doc.projectDocument'),
+        hint: t('doc.belongsToProject'),
+      },
+      ...openTasks.map((task) => ({
+        value: `task:${task.id}` as AnchorValue,
+        label: task.title,
+        swatch: task.color,
+        hint: t('doc.pinnedToTask'),
+      })),
+      ...meetings.map((meeting) => ({
+        value: `meeting:${meeting.id}` as AnchorValue,
+        label: meeting.title,
+        hint: `${t('doc.pinnedToMeeting')} · ${formatDateTime(meeting.startAt)}`,
+      })),
+    ],
+    [meetings, openTasks, t],
+  );
+
   const handleCreate = () => {
+    const anchor = parseAnchor(attachTo);
+
+    const title = anchor.taskId
+      ? `Notes — ${tasks.find((task) => task.id === anchor.taskId)?.title ?? 'task'}`
+      : anchor.meetingId
+        ? `Minutes — ${meetings.find((entry) => entry.id === anchor.meetingId)?.title ?? 'meeting'}`
+        : t('doc.untitled');
+
     createDocument.mutate(
       {
         projectId,
-        taskId: attachTo || undefined,
-        title: attachTo
-          ? `Notes — ${tasks.find((task) => task.id === attachTo)?.title ?? 'task'}`
-          : t('doc.untitled'),
+        ...anchor,
+        title,
         content: '',
       },
       {
@@ -340,19 +421,7 @@ export const TextBoard = ({ projectId, tasks = [] }: TextBoardProps) => {
             className="w-48"
             value={attachTo}
             onChange={setAttachTo}
-            options={[
-              {
-                value: '',
-                label: t('doc.projectDocument'),
-                hint: t('doc.belongsToProject'),
-              },
-              ...tasks.map((task) => ({
-                value: task.id,
-                label: task.title,
-                swatch: task.color,
-                hint: t('doc.pinnedToTask'),
-              })),
-            ]}
+            options={anchorOptions}
           />
         )}
 
@@ -468,6 +537,17 @@ export const TextBoard = ({ projectId, tasks = [] }: TextBoardProps) => {
               ))}
             </div>
           )}
+
+          {grouped.perMeeting.length > 0 && (
+            <div className="space-y-1">
+              <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-content-faint">
+                {t('doc.meetings')}
+              </p>
+              {grouped.perMeeting.map((entry) => (
+                <DocumentRow key={entry.id} document={entry} />
+              ))}
+            </div>
+          )}
         </aside>
 
         {/* --- The page ---------------------------------------------------- */}
@@ -524,6 +604,19 @@ export const TextBoard = ({ projectId, tasks = [] }: TextBoardProps) => {
                         style={{ backgroundColor: open.task.color }}
                       />
                       <span className="max-w-[10rem] truncate">{open.task.title}</span>
+                    </span>
+                  )}
+
+                  {/* Minutes carry the appointment they belong to, with its
+                      date — the one thing that makes a page of notes findable
+                      six weeks later. */}
+                  {open.meeting && (
+                    <span
+                      className="ui-chip inline-flex items-center gap-1.5 rounded-full border border-edge px-2 py-0.5 text-[10px] text-content-muted"
+                      title={`${open.meeting.title} · ${formatDateTime(open.meeting.startAt)}`}
+                    >
+                      <CalendarDays className="h-2.5 w-2.5 shrink-0 text-content-faint" />
+                      <span className="max-w-[10rem] truncate">{open.meeting.title}</span>
                     </span>
                   )}
 

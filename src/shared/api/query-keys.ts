@@ -51,6 +51,18 @@ export const queryKeys = {
     detail: (documentId: string) => ['documents', documentId] as const,
   },
 
+  meetings: {
+    all: ['meetings'] as const,
+    /**
+     * One project's live meetings, as one entry.
+     *
+     * The board's day paging and name search are local filters over this
+     * snapshot, so they are deliberately *not* in the key: putting them there
+     * would make every arrow press a cache miss and a request.
+     */
+    list: (projectId: string) => ['meetings', 'list', projectId] as const,
+  },
+
   notifications: {
     all: ['notifications'] as const,
     list: (unread?: boolean) => ['notifications', 'list', Boolean(unread)] as const,

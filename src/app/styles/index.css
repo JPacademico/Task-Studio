@@ -6751,3 +6751,169 @@ svg.lucide[stroke-width='2'] {
   letter-spacing: 0.085em;
   word-spacing: 0.06em;
 }
+
+/* ==========================================================================
+ * Toasts, drawn in the design system.
+ *
+ * Sonner ships its own stylesheet with the palette written into it as literals
+ * — `#fff` and `#000` for the surfaces, `var(--gray4)` for the border, and a
+ * fixed set of pastel accents for the rich-colour variants. That is a sensible
+ * default for a component that knows nothing about its host, and it is exactly
+ * wrong here: this app has thirteen skins and two palettes, so a toast styled
+ * that way is guaranteed to be the one rectangle on screen that belongs to a
+ * different application — a white card over newsprint, a blurred grey border
+ * against pixel-art notches, a mint-green success next to a volcano's ember.
+ *
+ * The fix is to point Sonner's own variables at the design tokens rather than
+ * to restyle its elements. That is the supported seam: the library's rules
+ * already read every one of these, so this block never fights the cascade for
+ * colour, and it keeps working if the internals of a toast change.
+ *
+ * These rules sit outside `@layer`, and both halves of that matter. Unlayered
+ * rules outrank every Tailwind layer whatever their specificity, and the leading
+ * `html` puts them above Sonner's own `[data-sonner-toaster][data-theme='…']`
+ * (0,2,0) regardless of which stylesheet the browser inserted first — which is
+ * not something a build tool guarantees.
+ *
+ * `color-mix` is declared second, after a flat fallback, so a browser without
+ * it drops the tint and keeps a perfectly legible panel-coloured toast rather
+ * than an invalid declaration and a transparent one.
+ * ========================================================================== */
+
+html [data-sonner-toaster][data-theme] {
+  /* The ordinary toast is a small panel, and says so with the panel's tokens. */
+  --normal-bg: rgb(var(--surface-raised));
+  --normal-border: rgb(var(--edge));
+  --normal-text: rgb(var(--content));
+  --normal-bg-hover: rgb(var(--surface-sunken));
+  --normal-border-hover: rgb(var(--brand) / 0.55);
+
+  --success-bg: rgb(var(--surface-raised));
+  --success-bg: color-mix(in srgb, rgb(var(--positive)) 14%, rgb(var(--surface-raised)));
+  --success-border: rgb(var(--positive) / 0.45);
+  --success-text: rgb(var(--content));
+
+  --error-bg: rgb(var(--surface-raised));
+  --error-bg: color-mix(in srgb, rgb(var(--danger)) 14%, rgb(var(--surface-raised)));
+  --error-border: rgb(var(--danger) / 0.45);
+  --error-text: rgb(var(--content));
+
+  --warning-bg: rgb(var(--surface-raised));
+  --warning-bg: color-mix(in srgb, rgb(var(--warning)) 14%, rgb(var(--surface-raised)));
+  --warning-border: rgb(var(--warning) / 0.45);
+  --warning-text: rgb(var(--content));
+
+  --info-bg: rgb(var(--surface-raised));
+  --info-bg: color-mix(in srgb, rgb(var(--brand)) 14%, rgb(var(--surface-raised)));
+  --info-border: rgb(var(--brand) / 0.45);
+  --info-text: rgb(var(--content));
+
+  /* Sonner's greys back the close button and the cancel action. */
+  --gray1: rgb(var(--surface-raised));
+  --gray2: rgb(var(--surface));
+  --gray3: rgb(var(--surface-sunken));
+  --gray4: rgb(var(--edge));
+  --gray5: rgb(var(--edge));
+  --gray6: rgb(var(--edge));
+  --gray7: rgb(var(--edge));
+  --gray8: rgb(var(--content-faint));
+  --gray9: rgb(var(--content-faint));
+  --gray10: rgb(var(--content-muted));
+  --gray11: rgb(var(--content-muted));
+  --gray12: rgb(var(--content));
+
+  --border-radius: var(--radius-xl);
+
+  font-family: var(--font-sans);
+}
+
+/*
+ * The material, which no variable of Sonner's covers.
+ *
+ * (0,3,1) so it clears the `[data-rich-colors='true'][data-sonner-toast]
+ * [data-type='…']` rules at (0,3,0) — those set `background` as a shorthand,
+ * which resets `background-image` to none and would otherwise take the skin's
+ * grain off the tinted toasts only.
+ */
+html [data-sonner-toaster][data-theme] [data-sonner-toast] {
+  background-image: var(--panel-texture);
+  background-size: var(--panel-texture-size);
+  border-width: var(--panel-border-width);
+  border-style: var(--panel-border-style);
+  box-shadow: var(--shadow-panel);
+}
+
+/*
+ * A rule of colour down the leading edge, so the kind of message is readable
+ * before the words are. This is the tint's job on skins whose surfaces are
+ * dark or busy enough to swallow a 14% mix.
+ */
+html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='success'] {
+  box-shadow: var(--shadow-panel), inset 3px 0 0 0 rgb(var(--positive));
+}
+
+html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='error'] {
+  box-shadow: var(--shadow-panel), inset 3px 0 0 0 rgb(var(--danger));
+}
+
+html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='warning'] {
+  box-shadow: var(--shadow-panel), inset 3px 0 0 0 rgb(var(--warning));
+}
+
+html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='info'] {
+  box-shadow: var(--shadow-panel), inset 3px 0 0 0 rgb(var(--brand));
+}
+
+/* The icon keeps the accent even where the tint is nearly invisible. */
+html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='success'] [data-icon] {
+  color: rgb(var(--positive));
+}
+
+html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='error'] [data-icon] {
+  color: rgb(var(--danger));
+}
+
+html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='warning'] [data-icon] {
+  color: rgb(var(--warning));
+}
+
+html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='info'] [data-icon] {
+  color: rgb(var(--brand));
+}
+
+/* The description is secondary copy, and the app has a token for that. */
+html [data-sonner-toaster][data-theme] [data-sonner-toast] [data-description] {
+  color: rgb(var(--content-muted));
+}
+
+/*
+ * The close button, which Sonner paints per type so it disappears into a
+ * tinted toast. One neutral chip on every kind instead.
+ */
+html [data-sonner-toaster][data-theme] [data-sonner-toast] [data-close-button] {
+  background: rgb(var(--surface-raised));
+  border-color: rgb(var(--edge));
+  color: rgb(var(--content-muted));
+}
+
+html [data-sonner-toaster][data-theme] [data-sonner-toast] [data-close-button]:hover {
+  background: rgb(var(--surface-sunken));
+  border-color: rgb(var(--brand) / 0.55);
+  color: rgb(var(--content));
+}
+
+/* Actions are the app's buttons in miniature — brand fill, skin radius. */
+html [data-sonner-toaster][data-theme] [data-sonner-toast] [data-button] {
+  border-radius: var(--radius-md);
+  background: rgb(var(--brand));
+  color: rgb(var(--brand-contrast));
+  font-weight: var(--btn-weight);
+  letter-spacing: var(--btn-tracking);
+  text-transform: var(--btn-transform);
+}
+
+html [data-sonner-toaster][data-theme] [data-sonner-toast] [data-cancel] {
+  border-radius: var(--radius-md);
+  background: rgb(var(--surface-sunken));
+  color: rgb(var(--content-muted));
+}

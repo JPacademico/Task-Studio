@@ -13,6 +13,7 @@ import type {
   Project,
   ProjectListItem,
   ProjectRole,
+  RosterMember,
   UserOverview,
 } from './types';
 import { translate } from '@/shared/i18n';
@@ -376,16 +377,95 @@ export const useRespondToInvitation = () => {
   });
 };
 
+/**
+ * Drops one person from every cached copy of a roster.
+ *
+ * The roster is held in three shapes — the members query the panel reads, the
+ * `roster` array on the project detail, and the same array on every project
+ * *list* row (`ProjectListItem extends Project`) — and all three are on screen
+ * at once: the panel, the header's member count and the avatar stack. Patching
+ * one and refetching the rest is what made the row linger.
+ */
+const patchRosterRemoval = (
+  queryClient: QueryClient,
+  projectId: string,
+  memberId: string,
+): void => {
+  queryClient.setQueryData<RosterMember[]>(queryKeys.projects.members(projectId), (members) =>
+    Array.isArray(members) ? members.filter((member) => member.id !== memberId) : members,
+  );
+
+  for (const [key, data] of queryClient.getQueriesData({ queryKey: queryKeys.projects.all })) {
+    if (!data) continue;
+
+    if (key[1] === 'list' && Array.isArray(data)) {
+      queryClient.setQueryData(
+        key,
+        (data as ProjectListItem[]).map((project) =>
+          project.id === projectId
+            ? { ...project, roster: project.roster.filter((member) => member.id !== memberId) }
+            : project,
+        ),
+      );
+      continue;
+    }
+
+    if (key.length === 2 && key[1] === projectId) {
+      const project = data as Project;
+      queryClient.setQueryData(key, {
+        ...project,
+        roster: project.roster.filter((member) => member.id !== memberId),
+      });
+    }
+  }
+};
+
+/**
+ * Removal, felt on the click rather than on the response.
+ *
+ * The request behind this is not one write: it deletes the membership, hands
+ * back every task the person was assigned and clears their pin, inside a
+ * transaction, and then broadcasts. On a cold free-tier database that is
+ * comfortably over a second — during which the old UI did nothing at all. No
+ * spinner, no row change, nothing until the success toast, so the honest read
+ * of the screen was that the click had not registered. People clicked again.
+ *
+ * There is nothing to *wait* for, though: the client knows exactly which row
+ * is going, and the server has no say in the outcome beyond yes or no. So the
+ * row goes immediately and the caches are rolled back in full if the answer
+ * turns out to be no — the same trade `useTogglePin` already makes, on an
+ * action where the latency is far more visible.
+ *
+ * The invalidation stays, moved behind the optimistic write, where it is
+ * reconciliation nobody is waiting on rather than the thing that finally makes
+ * the panel correct.
+ */
 export const useRemoveMember = (projectId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (memberId: string) => projectApi.removeMember(projectId, memberId),
-    onSuccess: () => {
+
+    onMutate: async (memberId) => {
+      // The in-flight roster refetch would otherwise land after the patch and
+      // put the row straight back.
+      await queryClient.cancelQueries({ queryKey: queryKeys.projects.members(projectId) });
+
+      const snapshot = queryClient.getQueriesData({ queryKey: queryKeys.projects.all });
+      patchRosterRemoval(queryClient, projectId, memberId);
+      return { snapshot };
+    },
+
+    onError: (error, _memberId, context) => {
+      context?.snapshot.forEach(([key, value]) => queryClient.setQueryData(key, value));
+      toast.error(errorMessage(error, translate('toast.rosterRemoveFailed')));
+    },
+
+    onSuccess: () => toast.success(translate('toast.rosterUpdated')),
+
+    onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.members(projectId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(projectId) });
-      toast.success(translate('toast.rosterUpdated'));
     },
-    onError: (error) => toast.error(errorMessage(error)),
   });
 };

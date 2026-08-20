@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   BarChart3,
+  CalendarDays,
   FileText,
   KanbanSquare,
   MessageCircle,
@@ -13,6 +14,10 @@ import {
 } from 'lucide-react';
 
 import { useProjectRoom } from '@/app/providers/realtime-provider';
+import {
+  useProjectMeetings,
+  useProjectMeetingsRealtime,
+} from '@/entities/meeting/model/queries';
 import {
   useProject,
   usePrefetchProjectCollaboration,
@@ -35,6 +40,7 @@ import {
   useProjectChatUnread,
   usePrefetchProjectChat,
 } from '@/features/project-chat-dock/ui/chat-dock';
+import { MeetingsPanel } from '@/features/meetings/ui/meetings-panel';
 import { RosterPanel } from '@/features/roster/ui/roster-panel';
 import { TaskComposer } from '@/features/task-management/ui/task-composer';
 import { TaskDetailModal } from '@/features/task-management/ui/task-detail-modal';
@@ -54,12 +60,16 @@ import { TextBoard } from '@/widgets/text-board/ui/text-board';
 import { Whiteboard } from '@/widgets/whiteboard/ui/whiteboard';
 import { useT, type TranslationKey } from '@/shared/i18n';
 
-type Tab = 'board' | 'dashboard' | 'roster' | 'whiteboard' | 'text' | 'ai';
+type Tab = 'board' | 'dashboard' | 'roster' | 'meetings' | 'whiteboard' | 'text' | 'ai';
 
 const TABS: { value: Tab; label: TranslationKey; icon: ReactNode }[] = [
   { value: 'board', label: 'project.tabBoard', icon: <KanbanSquare className="h-3 w-3" /> },
   { value: 'dashboard', label: 'project.tabMetrics', icon: <BarChart3 className="h-3 w-3" /> },
   { value: 'roster', label: 'project.tabRoster', icon: <Users className="h-3 w-3" /> },
+  // Next to the roster rather than to the board: a meeting is an appointment
+  // between people, and the question it answers is "who, and when" — not
+  // "what state is this work in".
+  { value: 'meetings', label: 'project.tabMeetings', icon: <CalendarDays className="h-3 w-3" /> },
   { value: 'whiteboard', label: 'project.tabWhiteboard', icon: <PenTool className="h-3 w-3" /> },
   // Next to the whiteboard on purpose: the two are the same idea in different
   // materials — one is what the project draws, the other is what it writes.
@@ -126,6 +136,21 @@ const ProjectPage = () => {
 
   // Warm the roster tab while the user is reading the board.
   usePrefetchProjectCollaboration(projectId, canManage);
+
+  /*
+   * The calendar, read here rather than inside its own tab.
+   *
+   * Two surfaces want it — the meetings tab and the text board, where a page
+   * can be the minutes of a meeting and the "where does this go" picker has to
+   * list the ones still open. Holding it at the page means one request feeds
+   * both, and both open full rather than spending a round trip empty.
+   *
+   * The subscription sits here for the same reason: a colleague posting a
+   * meeting should land on the calendar whichever tab happens to be open, and
+   * one listener per project page is one listener.
+   */
+  useProjectMeetingsRealtime(projectId);
+  const { data: meetings = [] } = useProjectMeetings(projectId);
 
   const togglePin = useTogglePin();
   const updateStatus = useUpdateTaskStatus();
@@ -302,8 +327,11 @@ const ProjectPage = () => {
 
       {tab === 'dashboard' && <ProjectDashboard projectId={projectId} />}
       {tab === 'roster' && <RosterPanel projectId={projectId} canManage={canManage} />}
+      {tab === 'meetings' && (
+        <MeetingsPanel projectId={projectId} roster={project.roster} canManage={canManage} />
+      )}
       {tab === 'whiteboard' && <Whiteboard projectId={projectId} canClear={canManage} />}
-      {tab === 'text' && <TextBoard projectId={projectId} tasks={tasks} />}
+      {tab === 'text' && <TextBoard projectId={projectId} tasks={tasks} meetings={meetings} />}
       {tab === 'ai' && <AiPanel projectId={projectId} />}
 
       <TaskComposer

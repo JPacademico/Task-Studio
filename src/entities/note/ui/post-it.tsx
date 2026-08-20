@@ -271,13 +271,44 @@ const PostItBase = ({
    * Pointer capture rather than window listeners, so the gesture survives the
    * pointer leaving the 20px handle — which at any speed it immediately does —
    * and cannot be stranded by a `pointerup` that lands on another element.
+   *
+   * ## Why the position moves while the size does
+   *
+   * A sheet is drawn with `rotate`, and a rotation's origin is the box's
+   * *centre*. Growing the box moves that centre by half the delta, and the
+   * rotation then swings every corner around the new one — so dragging the
+   * bottom-right handle also walked the top-left corner across the board. That
+   * is what "it resizes from every side" was: not the size, the pivot.
+   *
+   * Setting `transform-origin: top left` would fix the pivot and silently
+   * re-place every note already on every board, because a sheet rotated about
+   * its corner sits somewhere else than the same sheet rotated about its
+   * middle. So the origin stays where it is and the translation absorbs the
+   * difference instead.
+   *
+   * With centre `c`, rotation `R` and layout position `P`, the sheet's top-left
+   * corner lands at `P + t + c − R·c`. Holding that fixed across a size change
+   * `c → c′` means the translation has to move by `(I − R)·(c − c′)`, which
+   * with `Δ` for the size delta expands to exactly the two lines in `anchor()`
+   * below. At zero rotation both terms vanish and nothing is compensated,
+   * which is correct: an unrotated absolute box already grows right and down.
    */
   const resizeRef = useRef<HTMLButtonElement>(null);
 
   // Read through refs so the effect can register once per note rather than on
   // every render: re-attaching a listener mid-gesture would drop the drag.
-  const resizeState = useRef({ commit, width: note.width, height: note.height });
-  resizeState.current = { commit, width: note.width, height: note.height };
+  const resizeState = useRef({
+    commit,
+    width: note.width,
+    height: note.height,
+    rotation: note.rotation,
+  });
+  resizeState.current = {
+    commit,
+    width: note.width,
+    height: note.height,
+    rotation: note.rotation,
+  };
 
   useEffect(() => {
     const handle = resizeRef.current;
@@ -296,7 +327,29 @@ const PostItBase = ({
       handle.setPointerCapture(event.pointerId);
 
       const origin = { x: event.clientX, y: event.clientY };
-      const start = { width: width.get(), height: height.get() };
+      const start = {
+        width: width.get(),
+        height: height.get(),
+        x: x.get(),
+        y: y.get(),
+      };
+
+      // Read once per gesture: the sheet's tilt cannot change while a pointer
+      // is down on the corner, and trigonometry per frame is not free.
+      const angle = (resizeState.current.rotation * Math.PI) / 180;
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+
+      /** Where the sheet has to sit for its top-left corner not to have moved. */
+      const anchor = (nextWidth: number, nextHeight: number) => {
+        const halfW = (nextWidth - start.width) / 2;
+        const halfH = (nextHeight - start.height) / 2;
+
+        return {
+          x: start.x - halfW * (1 - cos) - halfH * sin,
+          y: start.y + halfW * sin - halfH * (1 - cos),
+        };
+      };
 
       /*
        * A photograph is scaled; a written sheet is reshaped.
@@ -315,12 +368,18 @@ const PostItBase = ({
 
       const move = (moveEvent: PointerEvent) => {
         const nextWidth = clamp(start.width + (moveEvent.clientX - origin.x));
+        const nextHeight = isImage
+          ? clamp(Math.round(nextWidth * aspect))
+          : clamp(start.height + (moveEvent.clientY - origin.y));
+
         width.set(nextWidth);
-        height.set(
-          isImage
-            ? clamp(Math.round(nextWidth * aspect))
-            : clamp(start.height + (moveEvent.clientY - origin.y)),
-        );
+        height.set(nextHeight);
+
+        // Same frame as the size, on the same motion values the drag uses — so
+        // the corner under the pointer is the only corner that moves.
+        const placed = anchor(nextWidth, nextHeight);
+        x.set(placed.x);
+        y.set(placed.y);
       };
 
       const finish = () => {
@@ -328,13 +387,26 @@ const PostItBase = ({
         handle.removeEventListener('pointerup', finish);
         handle.removeEventListener('pointercancel', finish);
 
-        const next = { width: width.get(), height: height.get() };
-        const { commit: commitNow, width: savedWidth, height: savedHeight } = resizeState.current;
-        if (next.width === savedWidth && next.height === savedHeight) return;
+        const next = {
+          width: width.get(),
+          height: height.get(),
+          positionX: x.get(),
+          positionY: y.get(),
+        };
+
+        const saved = resizeState.current;
+        if (next.width === saved.width && next.height === saved.height) return;
+
+        // A drag that follows has to measure its delta from where the sheet
+        // actually is, not from where it was before the corner moved it.
+        lastDragRef.current = { x: next.positionX, y: next.positionY };
 
         // Straight through, not debounced: the gesture has ended, so there is
         // nothing left to coalesce and no reason to make the user wait for it.
-        commitNow(next);
+        // Position travels with the size because the two are one gesture —
+        // saving the box without the compensation would re-introduce the jump
+        // on the next page load.
+        saved.commit(next);
       };
 
       handle.addEventListener('pointermove', move);
@@ -352,7 +424,7 @@ const PostItBase = ({
      */
     handle.addEventListener('pointerdown', onPointerDown, { passive: false });
     return () => handle.removeEventListener('pointerdown', onPointerDown);
-  }, [canResize, height, isImage, width]);
+  }, [canResize, height, isImage, width, x, y]);
 
   return (
     <motion.div
