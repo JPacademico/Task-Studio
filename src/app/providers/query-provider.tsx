@@ -20,7 +20,25 @@ export const QueryProvider = ({ children }: { children: ReactNode }) => {
         defaultOptions: {
           queries: {
             staleTime: 30_000,
-            gcTime: 5 * 60_000,
+            /*
+             * Half an hour, raised from five minutes, and it is now load-bearing
+             * rather than a memory setting.
+             *
+             * An inactive query is one nobody is currently rendering — which,
+             * the moment you navigate away from the dashboard, is every query
+             * the dashboard owned. `gcTime` is how long those survive after the
+             * last observer unmounts, and task lists are now read *across*
+             * surfaces: `seedTasksFor` fills a project board from whatever the
+             * dashboard already fetched, and it can only do that while those
+             * entries still exist. At five minutes, wandering around the app
+             * for a few minutes quietly turned every seed back into a cold
+             * fetch, with no signal that anything had changed.
+             *
+             * The cost is bounded and small: these are lists of small JSON
+             * objects, deduplicated by React Query's structural sharing, and
+             * they are dropped wholesale on sign-out.
+             */
+            gcTime: 30 * 60_000,
             retry: (failureCount, error) => {
               // Never retry auth/permission failures — they will not fix themselves.
               const status = (error as { response?: { status?: number } }).response?.status;

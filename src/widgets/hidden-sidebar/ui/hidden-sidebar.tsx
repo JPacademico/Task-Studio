@@ -22,6 +22,7 @@ import {
   type ShortcutIcon,
 } from '@/features/floating-shortcuts/model/shortcuts.store';
 import { TearOffGhost } from '@/features/floating-shortcuts/ui/tear-off-ghost';
+import { useRouteIntentPrefetch } from '@/app/layouts/use-shell-prefetch';
 import { cn } from '@/shared/lib/cn';
 import { useEdgeReveal } from '@/shared/lib/use-edge-reveal';
 import { useIsTouchDevice } from '@/shared/lib/hooks';
@@ -116,6 +117,8 @@ interface SidebarLinkProps {
  */
 const SidebarLink = ({ item, badge, isTouch, onNavigate, onTearingChange }: SidebarLinkProps) => {
   const t = useT();
+  // Inert for every row but the two workspace routes — see the hook.
+  const intent = useRouteIntentPrefetch(item.to);
   const addShortcut = useFloatingShortcuts((state) => state.add);
   const isPinnedOut = useFloatingShortcuts((state) =>
     state.items.some((entry) => entry.id === `nav:${item.to}`),
@@ -148,6 +151,7 @@ const SidebarLink = ({ item, badge, isTouch, onNavigate, onTearingChange }: Side
         end={item.end}
         onClick={isTouch ? onNavigate : undefined}
         title={isTouch ? undefined : 'Drag me out to pin this anywhere on screen'}
+        {...intent}
         {...bind}
         className={({ isActive }) =>
           cn(

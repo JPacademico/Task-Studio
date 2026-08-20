@@ -38,6 +38,7 @@ import {
 import { RosterPanel } from '@/features/roster/ui/roster-panel';
 import { TaskComposer } from '@/features/task-management/ui/task-composer';
 import { TaskDetailModal } from '@/features/task-management/ui/task-detail-modal';
+import { PendingTasks } from '@/entities/task/ui/pending-tasks';
 import { TaskFilters } from '@/features/task-management/ui/task-filters';
 import {
   LayoutSwitcher,
@@ -100,7 +101,20 @@ const ProjectPage = () => {
   usePrefetchProjectChat(projectId);
 
   const { data: project, isLoading } = useProject(projectId);
-  const { data: tasks = [] } = useTasks({ ...filters, projectId });
+  /*
+   * `isPlaceholderData` is the whole point of reading it here.
+   *
+   * The board now paints from whatever tasks the app already held (see
+   * `seedTasksFor`), which on a project is only ever the current user's own —
+   * the dashboard had no reason to fetch the rest of the roster's. So the list
+   * on screen is real but knowingly short until the request lands, and this
+   * flag is what lets the surface say so instead of quietly growing.
+   */
+  const {
+    data: tasks = [],
+    isPlaceholderData: tasksArePartial,
+    isLoading: tasksLoading,
+  } = useTasks({ ...filters, projectId });
 
   /*
    * Derived up here rather than after the loading guard below, because the
@@ -273,6 +287,11 @@ const ProjectPage = () => {
           {layout === 'sprint' && <TaskSprintView tasks={tasks} {...taskHandlers} />}
           {layout === 'list' && <TaskListView tasks={tasks} {...taskHandlers} />}
           {layout === 'calendar' && <TaskCalendarView tasks={tasks} {...taskHandlers} />}
+
+          {/* The roster's work, still in flight. See `PendingTasks`. */}
+          {(tasksArePartial || tasksLoading) && (
+            <PendingTasks compact={layout === 'list'} />
+          )}
         </div>
       )}
 

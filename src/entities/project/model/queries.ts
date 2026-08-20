@@ -3,9 +3,18 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tansta
 import { toast } from 'sonner';
 
 import { errorMessage } from '@/shared/api/client';
+import { taskApi } from '@/entities/task/api/task.api';
+import type { ListTasksParams } from '@/entities/task/model/types';
 import { queryKeys } from '@/shared/api/query-keys';
+import { useIntentPrefetch, type IntentHandlers } from '@/shared/lib/use-intent-prefetch';
 import { projectApi, type ListProjectsParams } from '../api/project.api';
-import type { OverviewDelta, ProjectRole, UserOverview } from './types';
+import type {
+  OverviewDelta,
+  Project,
+  ProjectListItem,
+  ProjectRole,
+  UserOverview,
+} from './types';
 import { translate } from '@/shared/i18n';
 
 export const useProjects = (params: ListProjectsParams = {}) =>
@@ -15,12 +24,46 @@ export const useProjects = (params: ListProjectsParams = {}) =>
     staleTime: 30_000,
   });
 
-export const useProject = (projectId: string | undefined) =>
-  useQuery({
+/**
+ * The project as the list already knows it.
+ *
+ * `ProjectListItem extends Project`, which is not an accident of typing — the
+ * API shapes both from the same include, so a row from `/projects` carries
+ * every field `/projects/:id` returns, roster and role included, plus counts.
+ * There is genuinely nothing the detail page needs that the list did not
+ * already fetch.
+ *
+ * That matters because the project page gates its entire render on this query:
+ * until it resolved, the header, the tabs and the task board were all replaced
+ * by a loader — so arriving from the dashboard meant waiting on a round trip
+ * for data the dashboard had been holding all along, and the board underneath
+ * could not even begin to seed itself.
+ */
+const seedProjectFrom = (queryClient: QueryClient, projectId: string): Project | undefined => {
+  for (const [, data] of queryClient.getQueriesData<ProjectListItem[]>({
+    queryKey: queryKeys.projects.all,
+  })) {
+    if (!Array.isArray(data)) continue;
+
+    const hit = data.find((project) => project.id === projectId);
+    if (hit) return hit;
+  }
+
+  return undefined;
+};
+
+export const useProject = (projectId: string | undefined) => {
+  const queryClient = useQueryClient();
+
+  return useQuery({
     queryKey: queryKeys.projects.detail(projectId ?? ''),
     queryFn: () => projectApi.detail(projectId as string),
     enabled: Boolean(projectId),
+    // A placeholder, so it is never written to the cache and never counts as
+    // fresh: the request still goes out and still has the last word.
+    placeholderData: () => (projectId ? seedProjectFrom(queryClient, projectId) : undefined),
   });
+};
 
 export const useProjectDashboard = (projectId: string | undefined) =>
   useQuery({
@@ -200,6 +243,42 @@ export const usePrefetchProjectCollaboration = (
       staleTime: ROSTER_STALE_TIME,
     });
   }, [canManage, projectId, queryClient]);
+};
+
+/**
+ * Warms a project the pointer is resting on.
+ *
+ * Two requests, because opening a project needs both and neither is useful
+ * alone: the detail response draws the header and decides the user's role
+ * (which gates half the page), and the task list is the board itself. Fetching
+ * only one would still leave the page half-empty on arrival.
+ *
+ * The task key mirrors `ProjectPage`'s opening filters exactly — `{ scope:
+ * 'all', projectId }`. A prefetch under a different key fills a cache nothing
+ * will read, which is the worst of both: a request paid for and a spinner
+ * anyway. If those initial filters ever change, this has to change with them.
+ *
+ * `useIntentPrefetch` owns the restraint — dwell delay, per-destination
+ * cooldown, no touch, no Data Saver. See that hook for why each one is there.
+ */
+export const useProjectIntentPrefetch = (projectId: string | undefined): IntentHandlers => {
+  const queryClient = useQueryClient();
+
+  return useIntentPrefetch(projectId && `project:${projectId}`, () => {
+    if (!projectId) return;
+
+    void queryClient.prefetchQuery({
+      queryKey: queryKeys.projects.detail(projectId),
+      queryFn: () => projectApi.detail(projectId),
+    });
+
+    const taskParams: ListTasksParams = { scope: 'all', projectId };
+    void queryClient.prefetchQuery({
+      queryKey: queryKeys.tasks.list(taskParams),
+      queryFn: () => taskApi.list(taskParams),
+      staleTime: 60_000,
+    });
+  });
 };
 
 export const useInviteMember = (projectId: string) => {

@@ -1,5 +1,4 @@
 import {
-  keepPreviousData,
   useMutation,
   useQuery,
   useQueryClient,
@@ -241,31 +240,205 @@ const insertCachedTask = (queryClient: QueryClient, task: Task): void => {
   }
 };
 
-/*
- * `keepPreviousData` on both, and it is the difference between a filter being a
- * control and a filter being a page reload.
+
+/**
+ * Every task this client already holds, wherever it came from.
  *
- * Every filter is part of the query key, so ticking "Pinned" or typing a letter
- * into the search box asks for a cache that has never been filled — and without
- * this the list is `undefined` until the request lands, which blanks the screen
- * and drops the reader's place in it. Holding the previous rows keeps the page
- * still; `isFetching` is what says the new ones are on the way.
+ * The same task object appears in several caches at once — the dashboard's
+ * "Up next", the task menu's agenda, a project board's list — because the API
+ * builds all of them from one `taskInclude` and one `shape()`. So a task the
+ * dashboard fetched is, field for field, the task the project board is about
+ * to ask for.
+ *
+ * Deduped on id, keeping whichever copy was fetched most recently: two caches
+ * can legitimately disagree if one was invalidated and the other was not, and
+ * the newer one is the better guess by definition.
  */
-export const useTasks = (params: ListTasksParams = {}) =>
-  useQuery({
-    queryKey: queryKeys.tasks.list(params),
-    queryFn: () => taskApi.list(params),
-    staleTime: 15_000,
-    placeholderData: keepPreviousData,
+const collectCachedTasks = (queryClient: QueryClient): Map<string, Task> => {
+  const byId = new Map<string, Task>();
+  const seenAt = new Map<string, number>();
+
+  const offer = (task: Task, updatedAt: number) => {
+    if ((seenAt.get(task.id) ?? -1) >= updatedAt) return;
+    byId.set(task.id, task);
+    seenAt.set(task.id, updatedAt);
+  };
+
+  for (const query of queryClient.getQueryCache().findAll({ queryKey: queryKeys.tasks.all })) {
+    const data = query.state.data;
+    if (!data || query.state.status !== 'success') continue;
+
+    const updatedAt = query.state.dataUpdatedAt;
+
+    if (Array.isArray(data)) {
+      for (const task of data as Task[]) offer(task, updatedAt);
+      continue;
+    }
+
+    const agenda = data as TaskAgenda;
+    if (Array.isArray(agenda.days)) {
+      for (const day of agenda.days) for (const task of day.tasks) offer(task, updatedAt);
+      for (const task of agenda.unscheduled) offer(task, updatedAt);
+      continue;
+    }
+
+    const single = data as Task;
+    if (typeof single.id === 'string') offer(single, updatedAt);
+  }
+
+  return byId;
+};
+
+/**
+ * The subset of what we already hold that a given query would return.
+ *
+ * ## Why this exists
+ *
+ * Arriving at the task menu or a project board meant a blank surface until its
+ * own request landed — even though the dashboard the user had just come from
+ * had already fetched most of the very same rows. The data was in memory; the
+ * page simply had no way to reach it, because React Query caches by key and a
+ * different filter is a different key.
+ *
+ * ## What it is, and what it is not
+ *
+ * It is a *placeholder*: shown immediately, never written to the cache, and
+ * always followed by the real request. It is not a substitute for that request
+ * and cannot be — this client cannot know about tasks it has never seen, which
+ * on a project board is most of them, since the dashboard only ever fetched
+ * the user's own. That gap is the honest part: the surfaces that use this also
+ * show `PendingTasks` while the fetch completes, so a partial list never
+ * pretends to be a whole one.
+ *
+ * ## Correctness
+ *
+ * `matchesListParams` is the same predicate that decides where a newly created
+ * task belongs, and only a definite `true` is accepted here. A filter it
+ * declines to reproduce (`search`, `lateness`, a date window, the `team` scope)
+ * seeds nothing at all rather than seeding a guess — showing the wrong rows for
+ * a moment is worse than showing none.
+ */
+const seedTasksFor = (queryClient: QueryClient, params: ListTasksParams): Task[] | undefined => {
+  const matched: Task[] = [];
+
+  for (const task of collectCachedTasks(queryClient).values()) {
+    if (matchesListParams(task, params) !== true) continue;
+    matched.push(task);
+  }
+
+  if (matched.length === 0) return undefined;
+
+  // The server's ordering, so the rows do not visibly reshuffle when the real
+  // response replaces this one.
+  matched.sort((a, b) => {
+    const left = a.dueAt ? Date.parse(a.dueAt) : Number.POSITIVE_INFINITY;
+    const right = b.dueAt ? Date.parse(b.dueAt) : Number.POSITIVE_INFINITY;
+    if (left !== right) return left - right;
+    if (a.order !== b.order) return a.order - b.order;
+    return Date.parse(b.createdAt) - Date.parse(a.createdAt);
   });
 
-export const useTaskAgenda = (params: ListTasksParams = {}) =>
-  useQuery({
+  return params.limit ? matched.slice(0, params.limit) : matched;
+};
+
+/**
+ * The same seed, in the agenda's shape.
+ *
+ * Mirrors `TasksService.agenda` exactly — bucket on `dueAt ?? startAt`, one
+ * bucket per calendar day, everything undated in `unscheduled` — because a
+ * placeholder that groups differently from the response would reshuffle the
+ * whole page the moment the real data arrived, which is louder than the blank
+ * screen it replaced.
+ */
+const seedAgendaFor = (
+  queryClient: QueryClient,
+  params: ListTasksParams,
+): TaskAgenda | undefined => {
+  const seed = seedTasksFor(queryClient, params);
+  if (!seed) return undefined;
+
+  const buckets = new Map<string, Task[]>();
+  const unscheduled: Task[] = [];
+
+  for (const task of seed) {
+    const anchor = task.dueAt ?? task.startAt;
+    if (!anchor) {
+      unscheduled.push(task);
+      continue;
+    }
+    const day = anchor.slice(0, 10);
+    const bucket = buckets.get(day) ?? [];
+    bucket.push(task);
+    buckets.set(day, bucket);
+  }
+
+  const days = [...buckets.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, tasks]) => ({
+      date,
+      tasks: tasks.sort(
+        (a, b) =>
+          Date.parse(a.dueAt ?? a.startAt ?? '0') - Date.parse(b.dueAt ?? b.startAt ?? '0'),
+      ),
+    }));
+
+  return { days, unscheduled };
+};
+
+/*
+ * How long a task list is trusted without asking again.
+ *
+ * Raised from 15s, and the reason it can be is that this cache is not really
+ * kept fresh by polling — it is kept fresh by the socket. `task:created`,
+ * `task:updated`, `task:deleted` and `checklist:changed` all invalidate
+ * `tasks.all` in the realtime provider, and every mutation writes the server's
+ * own response straight into the cache. A short `staleTime` on top of that does
+ * not make anything more correct; it just means every navigation between two
+ * surfaces that show the same work pays for the same rows again.
+ *
+ * A minute is comfortably inside the window where the only thing that could
+ * have changed without telling us is something changed on another device while
+ * this one was disconnected — which `refetchOnReconnect` already covers.
+ */
+const TASK_STALE_TIME = 60_000;
+
+/*
+ * Two fallbacks, in order of how close they are to the truth.
+ *
+ * 1. The previous data for this same hook — a filter changed, and the rows on
+ *    screen are the right *shape*, just the wrong selection. Holding them keeps
+ *    a filter feeling like a control rather than a page reload.
+ * 2. Failing that, whatever other caches already hold that this query would
+ *    have returned. That is what stops a surface the user navigates *to* from
+ *    starting empty when the surface they came *from* already fetched the rows.
+ *
+ * Both are placeholders: neither is cached, and the request goes out either
+ * way. `isPlaceholderData` is what the surfaces read to admit the list may
+ * still be short.
+ */
+export const useTasks = (params: ListTasksParams = {}) => {
+  const queryClient = useQueryClient();
+
+  return useQuery({
+    queryKey: queryKeys.tasks.list(params),
+    queryFn: () => taskApi.list(params),
+    staleTime: TASK_STALE_TIME,
+    placeholderData: (previous: Task[] | undefined) =>
+      previous ?? seedTasksFor(queryClient, params),
+  });
+};
+
+export const useTaskAgenda = (params: ListTasksParams = {}) => {
+  const queryClient = useQueryClient();
+
+  return useQuery({
     queryKey: queryKeys.tasks.agenda(params),
     queryFn: () => taskApi.agenda(params),
-    staleTime: 15_000,
-    placeholderData: keepPreviousData,
+    staleTime: TASK_STALE_TIME,
+    placeholderData: (previous: TaskAgenda | undefined) =>
+      previous ?? seedAgendaFor(queryClient, params),
   });
+};
 
 /**
  * One task, opened from a card that was already holding it.

@@ -289,6 +289,7 @@ const en = {
 
   // ---- AI assistant ------------------------------------------------------
   'ai.failed': 'The assistant could not finish',
+  'ai.stillWriting': 'Still writing…',
   'ai.unavailable': 'The assistant is unavailable.',
   'ai.notConfigured': 'AI assistant not configured',
   'ai.notConfiguredBody':
@@ -898,6 +899,7 @@ const ptBR: Record<TranslationKey, string> = {
   'task.addNote': 'Adicionar nota',
 
   'ai.failed': 'O assistente não conseguiu terminar',
+  'ai.stillWriting': 'Ainda escrevendo…',
   'ai.unavailable': 'O assistente está indisponível.',
   'ai.notConfigured': 'Assistente de IA não configurado',
   'ai.notConfiguredBody':

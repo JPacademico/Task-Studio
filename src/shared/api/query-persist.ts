@@ -95,6 +95,14 @@ const VERSION = 1;
 const isPersistable = (key: readonly unknown[]): boolean =>
   typeof key[0] === 'string' && PERSISTED_PREFIXES.includes(key[0] as never);
 
+const serialise = (userId: string, entries: PersistedEntry[]): string =>
+  JSON.stringify({
+    version: VERSION,
+    userId,
+    savedAt: Date.now(),
+    entries,
+  } satisfies PersistedBlob);
+
 const read = (): PersistedBlob | null => {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.queryCache);
@@ -180,15 +188,33 @@ export const persistQueryCache = (client: QueryClient, userId: string): (() => v
         return;
       }
 
-      const payload = JSON.stringify({
-        version: VERSION,
-        userId,
-        savedAt: Date.now(),
-        entries,
-      } satisfies PersistedBlob);
+      /*
+       * Newest first, then dropped from the tail until it fits.
+       *
+       * This used to abandon the write entirely when it went over budget, which
+       * was survivable while the cache held a handful of entries and became a
+       * silent failure the moment `gcTime` was raised to half an hour: far more
+       * inactive queries stay alive now, so a session that visits several
+       * projects can cross the ceiling — and the symptom would have been the
+       * first-paint-from-cache behaviour quietly switching itself off, with
+       * nothing anywhere to say why.
+       *
+       * Sorting by recency first means what survives the trim is what the next
+       * visit is most likely to want. Serialising in a loop is a little wasteful
+       * and only happens on the rare oversized write.
+       */
+      entries.sort((a, b) => b.state.dataUpdatedAt - a.state.dataUpdatedAt);
 
-      // Over budget: keep the old copy rather than writing a truncated one.
-      // A slightly older head start beats none, and beats a quota error.
+      let kept = entries;
+      let payload = serialise(userId, kept);
+
+      while (payload.length > MAX_BYTES && kept.length > 1) {
+        kept = kept.slice(0, Math.max(1, Math.floor(kept.length / 2)));
+        payload = serialise(userId, kept);
+      }
+
+      // A single entry that is still too big is one enormous board or list;
+      // there is nothing left to trim, so keep whatever was already stored.
       if (payload.length > MAX_BYTES) return;
 
       localStorage.setItem(STORAGE_KEYS.queryCache, payload);

@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Sparkles, Wand2, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -9,8 +8,9 @@ import { errorMessage } from '@/shared/api/client';
 import { queryKeys } from '@/shared/api/query-keys';
 import { useT } from '@/shared/i18n';
 import { cn } from '@/shared/lib/cn';
-import { Badge, Button, EmptyState, Section } from '@/shared/ui';
+import { Badge, Button, EmptyState, Section, Spinner } from '@/shared/ui';
 import { aiApi, type ProjectTaskSuggestion } from '../api/ai.api';
+import { useSuggestionStream } from '../model/use-suggestion-stream';
 
 const PRIORITY_STYLE: Record<string, string> = {
   LOW: 'border-edge text-content-faint',
@@ -34,36 +34,31 @@ const PRIORITY_STYLE: Record<string, string> = {
  * ones become real tasks and are, from that moment, the board's business rather
  * than this panel's.
  *
- * Free-tier friendly: generation is explicitly triggered, never polled.
+ * Free-tier friendly: generation is explicitly triggered, never polled. The
+ * waiting is handled by `useSuggestionStream` — the request no longer blocks on
+ * the model, and each proposal appears here as it is finished rather than the
+ * whole set arriving at the end.
  */
 export const AiPanel = ({ projectId }: { projectId: string }) => {
   const t = useT();
-  const queryClient = useQueryClient();
   const addCreatedTasks = useAddCreatedTasks();
 
-  const [pending, setPending] = useState<ProjectTaskSuggestion[]>([]);
-  const [suggestionId, setSuggestionId] = useState<string | null>(null);
+  const {
+    suggestions: pending,
+    suggestionId,
+    status: streamStatus,
+    errorText,
+    isEmptyWorking,
+    start,
+    forget,
+  } = useSuggestionStream(projectId);
 
-  // Switching projects must not leave the previous board's proposals on screen.
-  useEffect(() => {
-    setPending([]);
-    setSuggestionId(null);
-  }, [projectId]);
+  const isWorking = streamStatus === 'working';
 
   const { data: status } = useQuery({
     queryKey: queryKeys.ai.status,
     queryFn: aiApi.status,
     staleTime: 5 * 60_000,
-  });
-
-  const suggest = useMutation({
-    mutationFn: () => aiApi.suggestProjectTasks(projectId),
-    onSuccess: (suggestion) => {
-      setSuggestionId(suggestion.id);
-      setPending(suggestion.result.tasks ?? []);
-      void queryClient.invalidateQueries({ queryKey: queryKeys.ai.history(projectId) });
-    },
-    onError: (error) => toast.error(errorMessage(error, t('ai.unavailable'))),
   });
 
   const accept = useMutation({
@@ -72,14 +67,13 @@ export const AiPanel = ({ projectId }: { projectId: string }) => {
     onSuccess: (result, task) => {
       // The board is on the next tab across; show the row without a refetch.
       addCreatedTasks(result.tasks);
-      setPending((current) => current.filter((entry) => entry.title !== task.title));
+      forget(task.title);
       toast.success(t('ai.taskAdded', { title: task.title }));
     },
     onError: (error) => toast.error(errorMessage(error, t('ai.addFailed'))),
   });
 
-  const decline = (task: ProjectTaskSuggestion) =>
-    setPending((current) => current.filter((entry) => entry.title !== task.title));
+  const decline = (task: ProjectTaskSuggestion) => forget(task.title);
 
   if (status && !status.enabled) {
     return (
@@ -96,13 +90,16 @@ export const AiPanel = ({ projectId }: { projectId: string }) => {
       title={t('ai.taskIdeas')}
       description={t('ai.taskIdeasBody')}
       action={
-        <Button size="sm" onClick={() => suggest.mutate()} isLoading={suggest.isPending}>
+        <Button size="sm" onClick={() => void start()} isLoading={isWorking}>
           <Wand2 className="h-3.5 w-3.5" />
           {t(pending.length > 0 ? 'ai.suggestAgain' : 'ai.suggestTasks')}
         </Button>
       }
     >
-      {suggest.isPending && (
+      {/* Only until the first proposal lands. After that the list itself is
+          the progress indicator, and a banner above it would be saying
+          "working" next to visible evidence of the work. */}
+      {isEmptyWorking && (
         <div className="space-y-2 rounded-2xl border border-edge bg-surface-raised p-4">
           <p className="text-sm font-medium">{t('ai.reading')}</p>
           <p className="text-xs text-content-muted">{t('ai.readingBody')}</p>
@@ -116,20 +113,20 @@ export const AiPanel = ({ projectId }: { projectId: string }) => {
         * outage from a misconfiguration, so `errorMessage` is worth showing
         * verbatim — and a timeout is exactly the case where trying again works.
         */}
-      {!suggest.isPending && suggest.isError && (
+      {streamStatus === 'error' && (
         <div className="space-y-2 rounded-2xl border border-danger/40 bg-danger/5 p-4">
           <p className="text-sm font-medium text-danger">{t('ai.failed')}</p>
           <p className="text-xs leading-relaxed text-content-muted">
-            {errorMessage(suggest.error, t('ai.unavailable'))}
+            {errorText ?? t('ai.unavailable')}
           </p>
-          <Button size="sm" variant="secondary" onClick={() => suggest.mutate()}>
+          <Button size="sm" variant="secondary" onClick={() => void start()}>
             <Wand2 className="h-3.5 w-3.5" />
             {t('common.retry')}
           </Button>
         </div>
       )}
 
-      {!suggest.isPending && !suggest.isError && pending.length === 0 && (
+      {streamStatus === 'idle' && pending.length === 0 && (
         <EmptyState
           icon={<Sparkles className="h-6 w-6" />}
           title={t('ai.noIdeas')}
@@ -139,8 +136,7 @@ export const AiPanel = ({ projectId }: { projectId: string }) => {
 
       <ul className="space-y-2.5">
         <AnimatePresence initial={false}>
-          {!suggest.isPending &&
-            pending.map((task) => (
+          {pending.map((task) => (
               <motion.li
                 key={task.title}
                 layout
@@ -181,9 +177,19 @@ export const AiPanel = ({ projectId }: { projectId: string }) => {
                   </Button>
                 </div>
               </motion.li>
-            ))}
+          ))}
         </AnimatePresence>
       </ul>
+
+      {/* More still being written. One row rather than three: unlike a board,
+          the schema caps this at three proposals, so the remaining count is
+          small and known to be small. */}
+      {isWorking && pending.length > 0 && (
+        <p className="flex items-center gap-2 px-1 pt-2 text-[11px] text-content-faint">
+          <Spinner />
+          {t('ai.stillWriting')}
+        </p>
+      )}
     </Section>
   );
 };

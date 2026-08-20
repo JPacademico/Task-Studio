@@ -105,11 +105,21 @@ const TaskCardBase = ({
   return (
     <motion.article
       layout="position"
-      // Only transform/opacity animate — never width/height — to stay on the
-      // compositor thread at 60fps on mobile.
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.97 }}
+      /*
+       * No entrance animation, deliberately.
+       *
+       * Every card used to fade and rise on mount. On one card that reads as
+       * polish; on a board it is the whole point of the page arriving in a
+       * blur, and it made *already-cached* data look like it was still loading
+       * — the animation runs on mount regardless of where the data came from,
+       * so a list served instantly from cache was still hidden for the length
+       * of a spring. Now the tasks are simply there.
+       *
+       * `layout="position"` stays: that animates a card *moving* — reordering,
+       * a status change, a column drop — which is a real state change worth
+       * showing, and it never delays first paint. `transition` is kept because
+       * it configures that, not an entrance.
+       */
       transition={{ type: 'spring', stiffness: 380, damping: 32 }}
       className={cn(
         'ui-card gpu group relative flex flex-col gap-3 overflow-hidden rounded-2xl border border-edge',

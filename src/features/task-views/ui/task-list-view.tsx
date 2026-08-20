@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { CalendarClock, Check, ListChecks, Pin, Trash2 } from 'lucide-react';
 
 import type { Task, TaskStatus } from '@/entities/task/model/types';
@@ -68,17 +68,15 @@ export const TaskListView = ({
             </header>
 
             <ol className="overflow-hidden rounded-2xl border border-edge bg-surface-raised">
-              <AnimatePresence initial={false}>
-                {items.map((task) => {
+              {/* No AnimatePresence: with no entrance or exit to play, it is
+                  pure bookkeeping on every row. See `TaskCard`. */}
+              {items.map((task) => {
                   const isDone = task.status === 'COMPLETED';
 
                   return (
                     <motion.li
                       key={task.id}
                       layout="position"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
                       className={cn(
                         'group/row relative flex items-center gap-2.5 border-b border-edge/60 px-2.5 py-2 last:border-b-0',
                         'transition-colors duration-150 hover:bg-surface-sunken/60',
@@ -205,7 +203,6 @@ export const TaskListView = ({
                     </motion.li>
                   );
                 })}
-              </AnimatePresence>
             </ol>
           </section>
         );

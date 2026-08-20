@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { AlertTriangle, CheckCircle2, Flame, Target } from 'lucide-react';
 
 import { TaskCard } from '@/entities/task/ui/task-card';
@@ -151,8 +151,9 @@ export const TaskSprintView = ({
                   {TASK_STATUS_META[column.status].label}
                 </span>
 
-                <AnimatePresence initial={false}>
-                  {column.items.map((task) => (
+                {/* See `TaskCard`: nothing enters or exits, so there is
+                    nothing for a presence wrapper to track. */}
+                {column.items.map((task) => (
                     <TaskCard
                       key={task.id}
                       task={task}
@@ -163,8 +164,7 @@ export const TaskSprintView = ({
                       onTogglePin={onTogglePin}
                       onDelete={onDelete}
                     />
-                  ))}
-                </AnimatePresence>
+                ))}
 
                 {column.items.length === 0 && (
                   <span className="rounded-xl border border-dashed border-edge/70 px-2 py-3 text-center text-[10px] text-content-faint">

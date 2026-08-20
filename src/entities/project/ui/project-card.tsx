@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { CheckCircle2, ListTodo, Pin, Users } from 'lucide-react';
 
 import { cn } from '@/shared/lib/cn';
+import { useProjectIntentPrefetch } from '../model/queries';
 import { withAlpha } from '@/shared/lib/colors';
 import { AvatarStack } from '@/shared/ui';
 import type { ProjectListItem } from '../model/types';
@@ -13,11 +14,22 @@ interface ProjectCardProps {
 }
 
 export const ProjectCard = ({ project, onTogglePin }: ProjectCardProps) => {
+  /*
+   * A card the pointer settles on is very probably the next page.
+   *
+   * Spread onto the wrapper rather than the stretched link inside it, so the
+   * whole card is the target — the link is a transparent overlay and the mouse
+   * spends most of its time over the banner and the counters, not over it. The
+   * hook does the deciding about whether this actually fires.
+   */
+  const intent = useProjectIntentPrefetch(project.id);
+
   const done = project.taskCount - project.openTaskCount;
   const progress = project.taskCount === 0 ? 0 : Math.round((done / project.taskCount) * 100);
 
   return (
     <motion.div
+      {...intent}
       layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}

@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { CalendarDays, CheckCircle2, Clock, Inbox, Plus } from 'lucide-react';
 
 import { completionBlockedReason } from '@/entities/task/lib/completion';
@@ -27,6 +26,7 @@ import {
 import { cn } from '@/shared/lib/cn';
 import { formatDayLabel, formatTime } from '@/shared/lib/dates';
 import { Button, EmptyState, RunicText, Section } from '@/shared/ui';
+import { PendingTasks } from '@/entities/task/ui/pending-tasks';
 import { AgendaSkeleton } from './agenda-skeleton';
 import { useT } from '@/shared/i18n';
 
@@ -60,7 +60,12 @@ const TaskMenuPage = () => {
   const showingCompleted = filters.status === 'COMPLETED';
   const showingPersonal = Boolean(filters.personalOnly);
 
-  const { data: agenda, isLoading, isFetching } = useTaskAgenda(filters);
+  const {
+    data: agenda,
+    isLoading,
+    isFetching,
+    isPlaceholderData: agendaIsPartial,
+  } = useTaskAgenda(filters);
   const toggleCompletion = useToggleMyCompletion(currentUser?.id);
   const togglePin = useToggleTaskPin();
   const deleteTask = useDeleteTask();
@@ -164,6 +169,7 @@ const TaskMenuPage = () => {
         )}
       </header>
 
+      {/* Nothing to stand in for yet: no cache, no seed, no rows. */}
       {isLoading && <AgendaSkeleton />}
 
       {isEmpty && (
@@ -213,6 +219,11 @@ const TaskMenuPage = () => {
         />
       )}
 
+      {/* Rows are on screen, but they came from another surface's cache and
+          the real answer is still in flight — so the page says it is short
+          rather than growing quietly under the reader. See `PendingTasks`. */}
+      {!isLoading && agendaIsPartial && <PendingTasks compact className="pt-1" />}
+
       {!isLoading && layout === 'agenda' && (
       <div className="space-y-6 sm:space-y-8">
         {/*
@@ -234,13 +245,7 @@ const TaskMenuPage = () => {
           * on a motion component need no presence tracking at all.
           */}
         {days.map(({ date, tasks }) => (
-            <motion.section
-              key={date}
-              layout
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="gpu space-y-2.5"
-            >
+            <section key={date} className="space-y-2.5">
               <header className="sticky top-14 z-10 -mx-1 flex items-center gap-3 bg-surface/85 px-1 py-1.5 backdrop-blur sm:py-2">
                 <h2
                   className={cn(
@@ -271,7 +276,7 @@ const TaskMenuPage = () => {
                   </li>
                 ))}
               </ol>
-            </motion.section>
+            </section>
         ))}
 
         {unscheduled.length > 0 && (

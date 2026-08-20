@@ -12,7 +12,6 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
-import { AnimatePresence } from 'framer-motion';
 import { Lock } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -245,8 +244,10 @@ export const TaskBoard = ({
             tasks={grouped[status]}
             blockedReason={status === 'COMPLETED' ? activeBlock : null}
           >
-            <AnimatePresence initial={false}>
-              {grouped[status].map((task) => (
+            {/* See `TaskCard`: no entrance, no exit, nothing to track — and
+                on a drag board the wrapper competed with dnd-kit's own
+                transforms for the card that was moving. */}
+            {grouped[status].map((task) => (
                 <DraggableTask
                   key={task.id}
                   task={task}
@@ -260,8 +261,7 @@ export const TaskBoard = ({
                     onDelete={onDelete}
                   />
                 </DraggableTask>
-              ))}
-            </AnimatePresence>
+            ))}
 
             {grouped[status].length === 0 && (
               <EmptyState

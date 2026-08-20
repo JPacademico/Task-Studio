@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FolderKanban, Plus, TriangleAlert } from 'lucide-react';
 
-import { useProjects } from '@/entities/project/model/queries';
+import { useProjectIntentPrefetch, useProjects } from '@/entities/project/model/queries';
 import type { ProjectListItem } from '@/entities/project/model/types';
 import { useTearOff } from '@/features/floating-shortcuts/lib/use-tear-off';
 import { useFloatingShortcuts } from '@/features/floating-shortcuts/model/shortcuts.store';
@@ -46,6 +46,8 @@ const RailProject = ({
 }) => {
   const t = useT();
   const to = `/projects/${project.id}`;
+  // Same destination as the dashboard card, so they share one cooldown.
+  const intent = useProjectIntentPrefetch(project.id);
   const addShortcut = useFloatingShortcuts((state) => state.add);
   const isPinnedOut = useFloatingShortcuts((state) =>
     state.items.some((entry) => entry.id === `project:${to}`),
@@ -75,6 +77,7 @@ const RailProject = ({
       <NavLink
         to={to}
         title={t('rail.dragToPin')}
+        {...intent}
         {...bind}
         className={({ isActive }) =>
           cn(

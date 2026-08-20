@@ -55,6 +55,24 @@ export const aiApi = {
     return data;
   },
 
+  /**
+   * Starts a generation and returns its receipt.
+   *
+   * Answers in milliseconds — the work happens on the server and reports back
+   * over the socket — so this one deliberately does *not* get the long
+   * `SLOW_ROUTE_TIMEOUT_MS` ceiling. If registering a job takes twenty seconds,
+   * something is wrong and waiting longer will not fix it.
+   *
+   * `alreadyRunning` means a job for this project was in flight and this call
+   * joined it rather than starting a second paid generation.
+   */
+  async startProjectTasks(projectId: string): Promise<{ jobId: string; alreadyRunning: boolean }> {
+    const { data } = await api.post<{ jobId: string; alreadyRunning: boolean }>(
+      `/ai/projects/${projectId}/tasks/stream`,
+    );
+    return data;
+  },
+
   /** 1-3 candidate tasks for a project, from its description and board. */
   async suggestProjectTasks(projectId: string): Promise<AiSuggestion> {
     const { data } = await api.post<AiSuggestion>(

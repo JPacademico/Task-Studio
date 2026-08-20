@@ -1,10 +1,13 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
+import { boardApi } from '@/entities/note/api/note.api';
 import { taskApi } from '@/entities/task/api/task.api';
 import type { ListTasksParams } from '@/entities/task/model/types';
 import { useSessionStore } from '@/features/auth/model/session.store';
 import { queryKeys } from '@/shared/api/query-keys';
+import { STORAGE_KEYS } from '@/shared/config/constants';
+import { useIntentPrefetch } from '@/shared/lib/use-intent-prefetch';
 
 /**
  * The task menu's opening query, exactly as the page asks for it.
@@ -15,6 +18,9 @@ import { queryKeys } from '@/shared/api/query-keys';
  * request paid for and a spinner anyway.
  */
 const AGENDA_PREFETCH: ListTasksParams = { scope: 'mine', hideCompleted: true };
+
+/** Matches `TASK_STALE_TIME` in the task queries — same data, same tolerance. */
+const TASK_PREFETCH_STALE_MS = 60_000;
 
 /**
  * Fetches the task menu's agenda before anybody asks for it.
@@ -58,8 +64,62 @@ export const useShellPrefetch = (): void => {
       .prefetchQuery({
         queryKey: queryKeys.tasks.agenda(AGENDA_PREFETCH),
         queryFn: () => taskApi.agenda(AGENDA_PREFETCH),
-        staleTime: 15_000,
+        staleTime: TASK_PREFETCH_STALE_MS,
       })
       .catch(() => undefined);
   }, [queryClient, status]);
+};
+
+/**
+ * The board page the notes desk will actually open on.
+ *
+ * `NotesBoardPage` restores it from local storage, and each page is its own
+ * cache entry — so prefetching page 0 for somebody who left the app on page 3
+ * fills a cache nothing will read. Reading the same key is the only way to
+ * warm the right one.
+ */
+const rememberedBoardPage = (): number => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.boardPage);
+    const parsed = raw ? (JSON.parse(raw) as unknown) : 0;
+    return typeof parsed === 'number' && Number.isInteger(parsed) && parsed >= 0 ? parsed : 0;
+  } catch {
+    return 0;
+  }
+};
+
+/**
+ * Warms a nav destination the pointer has settled on.
+ *
+ * Only the two workspace routes that cost a request worth anticipating. The
+ * dashboard is already warm — it is where everybody starts, and the shell
+ * prefetch above covers the task menu on cold start anyway; this is the path
+ * where somebody has been elsewhere long enough for that to have gone stale.
+ *
+ * The rest of the menu — invitations, the bin, themes, settings — is either
+ * trivial to fetch or rarely visited, and prefetching all of it on a sweep down
+ * the sidebar is exactly the request cannon `useIntentPrefetch` exists to
+ * prevent. A route not listed here simply returns inert handlers.
+ */
+export const useRouteIntentPrefetch = (to: string) => {
+  const queryClient = useQueryClient();
+  const isWarmable = to === '/tasks' || to === '/notes';
+
+  return useIntentPrefetch(isWarmable ? `route:${to}` : undefined, () => {
+    if (to === '/tasks') {
+      void queryClient.prefetchQuery({
+        queryKey: queryKeys.tasks.agenda(AGENDA_PREFETCH),
+        queryFn: () => taskApi.agenda(AGENDA_PREFETCH),
+        staleTime: TASK_PREFETCH_STALE_MS,
+      });
+      return;
+    }
+
+    const pageIndex = rememberedBoardPage();
+    void queryClient.prefetchQuery({
+      queryKey: queryKeys.notes.board(pageIndex),
+      queryFn: () => boardApi.snapshot(pageIndex),
+      staleTime: 20_000,
+    });
+  });
 };
