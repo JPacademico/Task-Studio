@@ -1,8 +1,6 @@
 import { memo } from 'react';
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  ArrowUpRight,
   CalendarClock,
   Check,
   ListChecks,
@@ -19,6 +17,7 @@ import { TASK_PRIORITY_META, TASK_STATUS_META } from '@/shared/config/constants'
 import { AvatarStack, Badge, PostItMark } from '@/shared/ui';
 import { completionProgress, isSharedTask, outstandingAssignees } from '../lib/completion';
 import type { Task } from '../model/types';
+import { TaskOrigin } from './task-origin';
 import { TaskTypeTag } from './task-type-tag';
 import { useT } from '@/shared/i18n';
 
@@ -307,30 +306,9 @@ const TaskCardBase = ({
           )}
 
           {/* Where this task actually lives. Carries the project's own colour so
-              a mixed agenda stays scannable by source, not just by date. */}
-          {showProjectLink && (
-            <Link
-              to={`/projects/${task.project.id}`}
-              onClick={(event) => event.stopPropagation()}
-              title={`Open ${task.project.name}`}
-              className={cn(
-                'group/link inline-flex max-w-[9rem] items-center gap-1.5 rounded-full border px-2 py-0.5',
-                'text-[11px] font-medium transition-all duration-150',
-                'border-edge text-content-muted hover:-translate-y-px hover:border-brand hover:text-brand',
-              )}
-            >
-              <span
-                aria-hidden
-                className="h-2 w-2 shrink-0 rounded-full"
-                style={{ backgroundColor: task.project.color }}
-              />
-              <span className="truncate">{task.project.name}</span>
-              <ArrowUpRight
-                className="h-3 w-3 shrink-0 transition-transform duration-150 group-hover/link:translate-x-px group-hover/link:-translate-y-px"
-                strokeWidth={2.6}
-              />
-            </Link>
-          )}
+              a mixed agenda stays scannable by source, not just by date — or
+              says "Personal" when there is no project behind it at all. */}
+          {showProjectLink && <TaskOrigin project={task.project} />}
 
           <AvatarStack people={task.assignees} max={3} />
         </span>

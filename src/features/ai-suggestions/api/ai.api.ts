@@ -1,4 +1,4 @@
-import { api } from '@/shared/api/client';
+import { api, SLOW_ROUTE_TIMEOUT_MS } from '@/shared/api/client';
 import type { Task, TaskPriority } from '@/entities/task/model/types';
 
 /** One step proposed for a task's checklist. */
@@ -36,15 +36,32 @@ export const aiApi = {
     return data;
   },
 
+  /*
+   * The two generation routes carry their own ceiling.
+   *
+   * Everything else in the app answers from Postgres and has no business
+   * taking twenty seconds; these two wait on a language model, on a free tier,
+   * behind a container that may itself be starting up. Sharing the default
+   * meant a healthy-but-slow generation was reported to the user as the server
+   * being unreachable — while the server went on producing an answer that had
+   * nowhere to go. See `SLOW_ROUTE_TIMEOUT_MS`.
+   */
+
   /** 1-3 steps for one task, from its title, description and type. */
   async suggestSubtasks(taskId: string): Promise<AiSuggestion> {
-    const { data } = await api.post<AiSuggestion>(`/ai/tasks/${taskId}/subtasks`);
+    const { data } = await api.post<AiSuggestion>(`/ai/tasks/${taskId}/subtasks`, undefined, {
+      timeout: SLOW_ROUTE_TIMEOUT_MS,
+    });
     return data;
   },
 
   /** 1-3 candidate tasks for a project, from its description and board. */
   async suggestProjectTasks(projectId: string): Promise<AiSuggestion> {
-    const { data } = await api.post<AiSuggestion>(`/ai/projects/${projectId}/tasks`);
+    const { data } = await api.post<AiSuggestion>(
+      `/ai/projects/${projectId}/tasks`,
+      undefined,
+      { timeout: SLOW_ROUTE_TIMEOUT_MS },
+    );
     return data;
   },
 

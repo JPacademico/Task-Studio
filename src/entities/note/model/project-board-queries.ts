@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { useRealtime } from '@/app/providers/realtime-provider';
 import { errorMessage } from '@/shared/api/client';
 import { queryKeys } from '@/shared/api/query-keys';
+import { markLocalNoteEdit, mergeRemoteNote, releaseLocalNoteEdit } from '../lib/local-edits';
 import { boardApi, noteApi } from '../api/note.api';
 import type {
   CreateNoteLinkPayload,
@@ -59,12 +60,24 @@ export const useProjectBoardRealtime = (projectId: string) => {
   useEffect(() => {
     if (!socket || !projectId) return;
 
+    /*
+     * A teammate's change, merged rather than assigned.
+     *
+     * The server broadcasts to the whole room including whoever caused the
+     * event, so this handler also sees the echo of our own writes — always at
+     * least one round trip stale. Replacing the cached note with it wholesale
+     * is what used to rewind a title under the cursor mid-word. See
+     * `mergeRemoteNote`: everything the server says lands except the fields
+     * this client is still holding.
+     */
     const upsertNote = (note: Note) => {
       if (note.projectId !== projectId) return;
       patch((snapshot) => ({
         ...snapshot,
         notes: snapshot.notes.some((entry) => entry.id === note.id)
-          ? snapshot.notes.map((entry) => (entry.id === note.id ? note : entry))
+          ? snapshot.notes.map((entry) =>
+              entry.id === note.id ? mergeRemoteNote(entry, note) : entry,
+            )
           : [...snapshot.notes, note],
       }));
     };
@@ -149,15 +162,28 @@ export const useCreateProjectNote = (projectId: string) => {
 };
 
 export const useUpdateProjectNote = (projectId: string) => {
-  const { key, queryClient, patch } = useProjectBoardCache(projectId);
+  const { queryClient, patch } = useProjectBoardCache(projectId);
 
   return useMutation({
     mutationFn: ({ noteId, payload }: { noteId: string; payload: UpdateNotePayload }) =>
       noteApi.update(noteId, payload),
 
-    onMutate: async ({ noteId, payload }) => {
-      await queryClient.cancelQueries({ queryKey: key });
-      const previous = queryClient.getQueryData<ProjectBoardSnapshot>(key);
+    onMutate: ({ noteId, payload }) => {
+      /*
+       * No `cancelQueries` here, and that is a deliberate removal.
+       *
+       * It was awaited, which made every keystroke's optimistic write land a
+       * microtask late and — worse — cancelled the board's own background
+       * refetch on a surface where several of these can be in flight at once.
+       * A note write does not race the snapshot query for the same field: the
+       * merge below and `markLocalNoteEdit` are what settle that argument.
+       */
+      const previous = queryClient
+        .getQueryData<ProjectBoardSnapshot>(queryKeys.notes.projectBoard(projectId))
+        ?.notes.find((note) => note.id === noteId);
+
+      // This client now owns these fields until the server catches up.
+      markLocalNoteEdit(noteId, payload);
 
       patch((snapshot) => ({
         ...snapshot,
@@ -169,10 +195,26 @@ export const useUpdateProjectNote = (projectId: string) => {
       return { previous };
     },
 
-    onError: (error, _variables, context) => {
-      if (context?.previous) queryClient.setQueryData(key, context.previous);
+    /*
+     * Roll back one note, not the whole board.
+     *
+     * Restoring a snapshot taken before the write would also undo every other
+     * change made since — a teammate's drag, another note's colour — because
+     * the snapshot is the entire page. On a live surface that is a much bigger
+     * lie than the failed write it is trying to correct.
+     */
+    onError: (error, { noteId }, context) => {
+      const previous = context?.previous;
+      if (previous) {
+        patch((snapshot) => ({
+          ...snapshot,
+          notes: snapshot.notes.map((note) => (note.id === noteId ? previous : note)),
+        }));
+      }
       toast.error(errorMessage(error, translate('toast.noteSaveFailed')));
     },
+
+    onSettled: (_data, _error, { noteId, payload }) => releaseLocalNoteEdit(noteId, payload),
   });
 };
 
@@ -206,6 +248,17 @@ export const useDeleteProjectNote = (projectId: string) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.notes.recycleBin });
     },
   });
+};
+
+/** Rewrites the wall's note list, cache-only. See the personal board's copy. */
+export const usePatchProjectNotes = (projectId: string) => {
+  const { patch } = useProjectBoardCache(projectId);
+
+  return useCallback(
+    (update: (notes: Note[]) => Note[]) =>
+      patch((snapshot) => ({ ...snapshot, notes: update(snapshot.notes) })),
+    [patch],
+  );
 };
 
 /** Writes drag coordinates into the cache without touching the network. */

@@ -20,6 +20,7 @@ import {
 import { HiddenSidebar } from '@/widgets/hidden-sidebar/ui/hidden-sidebar';
 import { ProjectRail } from '@/widgets/project-rail/ui/project-rail';
 import { TopNavigation } from '@/widgets/top-navigation/ui/top-navigation';
+import { useShellPrefetch } from './use-shell-prefetch';
 
 /**
  * The shell every authenticated page renders inside.
@@ -36,6 +37,10 @@ export const AppLayout = () => {
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
+
+  // Starts the task menu's request while the dashboard is still rendering, so
+  // that page draws populated rather than filling in behind itself.
+  useShellPrefetch();
 
   const openProjectDialog = () => setIsCreateProjectOpen(true);
 

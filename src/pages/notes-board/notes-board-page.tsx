@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { FileText, StickyNote } from 'lucide-react';
-import { toast } from 'sonner';
 
 import {
   useAddBoardStroke,
@@ -14,15 +13,16 @@ import {
   useDeleteBoardNote,
   useDeleteNoteLink,
   useGroupNotes,
+  usePatchBoardNotes,
   usePatchBoardPositions,
   useSaveBoardPositions,
   useUpdateBoardNote,
 } from '@/entities/note/model/board-queries';
 import type { UpdateNotePayload } from '@/entities/note/model/types';
 import { PostIt, type NoteHandle } from '@/entities/note/ui/post-it';
-import { uploadImage } from '@/entities/user/api/user.api';
 import { useCurrentUser } from '@/features/auth/model/session.store';
 import { createPositionBus } from '@/features/notes-board/lib/position-bus';
+import { isPendingNoteId, useImageDrop } from '@/features/notes-board/lib/use-image-drop';
 import { groupTintFor, notesInsideRect } from '@/features/notes-board/lib/selection';
 import {
   useMarqueeSelection,
@@ -36,6 +36,7 @@ import {
 } from '@/features/notes-board/ui/board-overlays';
 import { BoardPager } from '@/features/notes-board/ui/board-pager';
 import { BoardToolbar, type BoardTool } from '@/features/notes-board/ui/board-toolbar';
+import { BoardSkeleton } from '@/features/notes-board/ui/board-skeleton';
 import { ConnectorLayer } from '@/features/notes-board/ui/connector-layer';
 import { InkLayer } from '@/features/notes-board/ui/ink-layer';
 import {
@@ -50,7 +51,6 @@ import {
   Button,
   EmptyState,
   ExpandableStage,
-  PageLoader,
   RunicText,
   Segmented,
 } from '@/shared/ui';
@@ -74,13 +74,6 @@ const VIEWS: { value: BoardView; label: string; icon: React.ReactNode }[] = [
   { value: 'notes', label: 'Post-its', icon: <StickyNote className="h-3 w-3" /> },
   { value: 'text', label: 'Text board', icon: <FileText className="h-3 w-3" /> },
 ];
-
-/** Keeps an image note inside a sane box whatever the source resolution is. */
-const fitImage = (naturalWidth: number, naturalHeight: number) => {
-  const width = Math.min(320, Math.max(140, naturalWidth));
-  const scale = width / (naturalWidth || width);
-  return { width: Math.round(width), height: Math.round((naturalHeight || width) * scale) + 28 };
-};
 
 /**
  * The personal Post-it board: a free canvas of draggable objects, separate from
@@ -109,7 +102,6 @@ const NotesBoardPage = () => {
   const [selection, setSelection] = useState<string[]>([]);
   const [isPickingMultiple, setIsPickingMultiple] = useState(false);
   const [connectFrom, setConnectFrom] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
   const { data: board, isLoading } = useBoard(pageIndex);
@@ -119,6 +111,7 @@ const NotesBoardPage = () => {
   const deleteNote = useDeleteBoardNote(pageIndex);
   const savePositions = useSaveBoardPositions(pageIndex);
   const patchPositions = usePatchBoardPositions(pageIndex);
+  const patchNotes = usePatchBoardNotes(pageIndex);
   const createLink = useCreateNoteLink(pageIndex);
   const deleteLink = useDeleteNoteLink(pageIndex);
   const addStroke = useAddBoardStroke(pageIndex);
@@ -161,13 +154,28 @@ const NotesBoardPage = () => {
 
   // --- Object creation ------------------------------------------------------
 
-  const dropPoint = () => {
+  const dropPoint = useCallback(() => {
     const bounds = boardRef.current?.getBoundingClientRect();
     return {
       positionX: Math.round((bounds?.width ?? 900) / 2 - 110 + (Math.random() * 80 - 40)),
       positionY: Math.round(80 + Math.random() * 120),
     };
-  };
+  }, []);
+
+  /*
+   * The sheet goes up first and the file follows it.
+   *
+   * See `useImageDrop`: the picture is on the wall the instant it is chosen,
+   * with the upload running underneath. Before this, the board sat unchanged
+   * for the length of a downscale plus a round trip to object storage, which on
+   * a phone photograph is the whole interaction spent looking at nothing.
+   */
+  const { addImage, isUploading } = useImageDrop({
+    patchNotes,
+    createNote: createNote.mutate,
+    dropPoint,
+    currentUserId: currentUser?.id,
+  });
 
   const handleCreateNote = () => {
     createNote.mutate({
@@ -176,40 +184,6 @@ const NotesBoardPage = () => {
       rotation: Math.round((Math.random() * 8 - 4) * 10) / 10,
       ...dropPoint(),
     });
-  };
-
-  const handleAddImage = async (file: File) => {
-    setIsUploading(true);
-    try {
-      /*
-       * One decode, not two.
-       *
-       * This used to race `readImageSize` against the upload, which meant the
-       * file was decoded twice — once to measure it and once to send it. Now
-       * that `uploadImage` downscales before sending, it already knows the
-       * dimensions of what it produced, so the measurement comes back with the
-       * upload for free. On a 12-megapixel phone photo that is a whole redundant
-       * decode removed from the slowest device most likely to be doing this.
-       *
-       * The aspect ratio is unchanged by the downscale, so `fitImage` sizes the
-       * note identically either way.
-       */
-      const uploaded = await uploadImage(file, 'notes');
-
-      createNote.mutate({
-        content: '',
-        kind: 'IMAGE',
-        imageKey: uploaded.key,
-        title: file.name.replace(/\.[^.]+$/, '').slice(0, 60),
-        rotation: Math.round((Math.random() * 5 - 2.5) * 10) / 10,
-        ...fitImage(uploaded.width, uploaded.height),
-        ...dropPoint(),
-      });
-    } catch {
-      toast.error(t('editor.uploadFailed'));
-    } finally {
-      setIsUploading(false);
-    }
   };
 
   // --- Selection, grouping and connecting -----------------------------------
@@ -343,9 +317,12 @@ const NotesBoardPage = () => {
       }
 
       // Cache first so the arrows and cards agree instantly, then one batched
-      // write for the whole gesture.
+      // write for the whole gesture — minus anything that is still uploading,
+      // which has no row for the batch endpoint to move. See `useImageDrop`.
       patchPositions(moves);
-      persistPositions(moves);
+
+      const saveable = moves.filter((move) => !isPendingNoteId(move.id));
+      if (saveable.length > 0) persistPositions(saveable);
     },
     [bus, notes, patchPositions, persistPositions],
   );
@@ -356,17 +333,39 @@ const NotesBoardPage = () => {
    * draft connector in connect mode redraws on each animation frame — would
    * otherwise re-render every Post-it on the page along with it.
    */
+  /*
+   * Every write below refuses an id the server has never heard of.
+   *
+   * While a picture is uploading there is a sheet on the board with no row
+   * behind it (see `useImageDrop`), and it looks and behaves exactly like any
+   * other — so it can be picked up, renamed or binned. Each of those would
+   * PATCH or DELETE a `pending-image-…` id and come back 404, which surfaces as
+   * an error toast for an action that, from the user's side, was ordinary.
+   * Ignoring the write is the honest response: the note is not saveable yet,
+   * and it is about to be replaced by one that is.
+   */
   const handleChange = useCallback(
-    (id: string, payload: UpdateNotePayload) => updateNote.mutate({ noteId: id, payload }),
+    (id: string, payload: UpdateNotePayload) => {
+      if (isPendingNoteId(id)) return;
+      updateNote.mutate({ noteId: id, payload });
+    },
     [updateNote.mutate],
   );
 
-  const handleDelete = useCallback((id: string) => deleteNote.mutate(id), [deleteNote.mutate]);
+  const handleDelete = useCallback(
+    (id: string) => {
+      if (isPendingNoteId(id)) return;
+      deleteNote.mutate(id);
+    },
+    [deleteNote.mutate],
+  );
 
   const handleFocus = useCallback(
     (id: string) => {
       // Bring the grabbed note to the front — but only write when it is not
       // already on top, so picking a note up is usually free.
+      if (isPendingNoteId(id)) return;
+
       const note = notes.find((entry) => entry.id === id);
       if (!note) return;
 
@@ -377,16 +376,24 @@ const NotesBoardPage = () => {
     [notes, updateNote.mutate],
   );
 
-  if (isLoading || !board) return <PageLoader label={t('notes.opening')} />;
-
-  const isBlank = notes.length === 0 && strokes.length === 0;
+  /*
+   * No early return.
+   *
+   * The whole page used to be replaced by a centred loader until the snapshot
+   * landed, which took the header, the view switcher and the pager with it —
+   * so arriving at your own desk meant watching the furniture appear before
+   * the paper did, and then watching the layout settle around it. Now the
+   * chrome is drawn immediately and only the surface stands in for itself.
+   */
+  const boardPages = board?.pages ?? [];
+  const isBlank = !isLoading && notes.length === 0 && strokes.length === 0;
   const connectSource = connectFrom ? notes.find((note) => note.id === connectFrom) : undefined;
 
   // One instance, rendered either in the page header or in the full-screen bar
   // — the pager is how you move between pages and has to follow the board.
   const pager = (
     <BoardPager
-      pages={board.pages}
+      pages={boardPages}
       activeIndex={pageIndex}
       onSelect={goToPage}
       onAdd={() => pages.add.mutate()}
@@ -454,7 +461,7 @@ const NotesBoardPage = () => {
           isPickingMultiple={isPickingMultiple}
           onPickingMultipleChange={setIsPickingMultiple}
           onAddNote={handleCreateNote}
-          onAddImage={(file) => void handleAddImage(file)}
+          onAddImage={(file) => void addImage(file)}
           isUploading={isUploading}
           isAddingNote={createNote.isPending}
           isExpanded={isExpanded}
@@ -523,6 +530,8 @@ const NotesBoardPage = () => {
           }}
         />
 
+        {isLoading && <BoardSkeleton className="rounded-3xl" />}
+
         {isBlank ? (
           <div className="grid h-full min-h-[52dvh] place-items-center p-6">
             <EmptyState
@@ -553,6 +562,7 @@ const NotesBoardPage = () => {
                 // This desk has exactly one author, so stamping every sheet
                 // with their own avatar says nothing.
                 showAuthor={false}
+                canResize
                 onSelect={handleSelect}
                 onRegister={registerHandle}
                 onDragMove={bus.publish}

@@ -12,6 +12,8 @@ export const STORAGE_KEYS = {
   shortcuts: 'task-studio:floating-shortcuts',
   taskLayout: 'task-studio:task-layout',
   locale: 'task-studio:locale',
+  /** Last session's task/project/board caches — see `query-persist.ts`. */
+  queryCache: 'task-studio:query-cache',
 } as const;
 
 /** Curated task palette — arbitrary hex is allowed, these are the one-click set. */

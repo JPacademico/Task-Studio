@@ -56,6 +56,22 @@ const WARM_TIMEOUT_MS = 20_000;
 const COLD_TIMEOUT_MS = 60_000;
 const WARM_TTL_MS = 10 * 60_000;
 
+/**
+ * The ceiling for a route that is slow because of what it does, not because of
+ * where it is hosted.
+ *
+ * Generating suggestions is a call to a language model with a cold-start and a
+ * retry of its own behind it. Twenty seconds is the right verdict for a CRUD
+ * endpoint that has gone quiet and completely the wrong one here, where a
+ * perfectly healthy request routinely takes longer than that — which is why
+ * the assistant "failed because of a timeout" while the server was still
+ * working on an answer it would then throw away.
+ *
+ * The API bounds each of its own attempts well inside this, so in practice the
+ * server is what decides, and it can say something specific about why.
+ */
+export const SLOW_ROUTE_TIMEOUT_MS = 90_000;
+
 let lastResponseAt = 0;
 
 const apiIsWarm = (): boolean => Date.now() - lastResponseAt < WARM_TTL_MS;
@@ -69,7 +85,22 @@ export const api: AxiosInstance = axios.create({
 api.interceptors.request.use((config) => {
   const token = tokenStore.getAccessToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
-  config.timeout = apiIsWarm() ? WARM_TIMEOUT_MS : COLD_TIMEOUT_MS;
+
+  /*
+   * The warm/cold ceiling is a *default*, not an override.
+   *
+   * This line used to assign unconditionally, which quietly threw away any
+   * timeout a caller had passed — the value was set on the request config and
+   * then overwritten here before the request left. Nothing failed loudly; the
+   * per-route ceiling simply had no effect, and the one route that needed a
+   * longer one (the assistant) kept aborting at twenty seconds.
+   *
+   * `axios.create` seeds every config with the instance default, so "did the
+   * caller ask for something?" is "is it different from that default?".
+   */
+  const explicit = config.timeout !== undefined && config.timeout !== COLD_TIMEOUT_MS;
+  if (!explicit) config.timeout = apiIsWarm() ? WARM_TIMEOUT_MS : COLD_TIMEOUT_MS;
+
   return config;
 });
 

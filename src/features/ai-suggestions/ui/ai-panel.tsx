@@ -109,7 +109,27 @@ export const AiPanel = ({ projectId }: { projectId: string }) => {
         </div>
       )}
 
-      {!suggest.isPending && pending.length === 0 && (
+      {/*
+        * A failed generation says what happened and offers the one action that
+        * helps, instead of only a toast that has already faded by the time the
+        * user looks back at the panel. The API distinguishes a timeout from an
+        * outage from a misconfiguration, so `errorMessage` is worth showing
+        * verbatim — and a timeout is exactly the case where trying again works.
+        */}
+      {!suggest.isPending && suggest.isError && (
+        <div className="space-y-2 rounded-2xl border border-danger/40 bg-danger/5 p-4">
+          <p className="text-sm font-medium text-danger">{t('ai.failed')}</p>
+          <p className="text-xs leading-relaxed text-content-muted">
+            {errorMessage(suggest.error, t('ai.unavailable'))}
+          </p>
+          <Button size="sm" variant="secondary" onClick={() => suggest.mutate()}>
+            <Wand2 className="h-3.5 w-3.5" />
+            {t('common.retry')}
+          </Button>
+        </div>
+      )}
+
+      {!suggest.isPending && !suggest.isError && pending.length === 0 && (
         <EmptyState
           icon={<Sparkles className="h-6 w-6" />}
           title={t('ai.noIdeas')}

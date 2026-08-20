@@ -288,6 +288,7 @@ const en = {
   'task.addNote': 'Add note',
 
   // ---- AI assistant ------------------------------------------------------
+  'ai.failed': 'The assistant could not finish',
   'ai.unavailable': 'The assistant is unavailable.',
   'ai.notConfigured': 'AI assistant not configured',
   'ai.notConfiguredBody':
@@ -459,6 +460,7 @@ const en = {
   'notes.partOfGroup': 'Part of a group — dragging one moves them all',
   'notes.changeColour': 'Change colour',
   'notes.deleteNote': 'Delete note',
+  'notes.resizeNote': 'Drag to resize this note',
   'notes.writeSomething': 'Write something…',
   'notes.addPage': 'Add page',
   'notes.savePageName': 'Save page name',
@@ -479,6 +481,8 @@ const en = {
   'views.moveToBin': 'Move to recycle bin',
   'views.clear': 'Clear',
   'views.pinned': 'Pinned',
+  'views.withNotes': 'Notes',
+  'views.withNotesTitle': 'Only tasks somebody has attached a note to',
   'views.searchTasks': 'Search tasks',
   'views.markNotDone': 'Mark as not done',
   'views.assigneesOnly': 'Only the people this task is assigned to can complete it.',
@@ -554,6 +558,15 @@ const en = {
   'agenda.building': 'Building your agenda',
   'agenda.unscheduled': 'Unscheduled',
   'agenda.unscheduledBody': 'No start time and no deadline yet.',
+  'agenda.newTask': 'New task',
+  'agenda.newPersonalTask': 'New personal task',
+  'agenda.personal': 'Personal',
+  'agenda.personalTitle': 'A personal task — no project behind it',
+  'agenda.nothingPersonal': 'No personal tasks yet',
+  'agenda.personalBody':
+    'Personal tasks have no project behind them. They live here, on your task menu, and nowhere else.',
+  'agenda.personalComposerBody':
+    'This one is yours alone: no project, no roster, nobody else can see it.',
 
   // ---- Recycle bin -------------------------------------------------------
   'bin.title': 'Recycle bin',
@@ -884,6 +897,7 @@ const ptBR: Record<TranslationKey, string> = {
   'task.pinNote': 'Fixar uma nota nesta tarefa',
   'task.addNote': 'Adicionar nota',
 
+  'ai.failed': 'O assistente não conseguiu terminar',
   'ai.unavailable': 'O assistente está indisponível.',
   'ai.notConfigured': 'Assistente de IA não configurado',
   'ai.notConfiguredBody':
@@ -1049,6 +1063,7 @@ const ptBR: Record<TranslationKey, string> = {
   'notes.partOfGroup': 'Faz parte de um grupo — arrastar uma move todas',
   'notes.changeColour': 'Mudar a cor',
   'notes.deleteNote': 'Excluir nota',
+  'notes.resizeNote': 'Arraste para redimensionar esta nota',
   'notes.writeSomething': 'Escreva algo…',
   'notes.addPage': 'Adicionar página',
   'notes.savePageName': 'Salvar nome da página',
@@ -1068,6 +1083,8 @@ const ptBR: Record<TranslationKey, string> = {
   'views.moveToBin': 'Mover para a lixeira',
   'views.clear': 'Limpar',
   'views.pinned': 'Fixadas',
+  'views.withNotes': 'Notas',
+  'views.withNotesTitle': 'Apenas tarefas em que alguém anexou uma nota',
   'views.searchTasks': 'Buscar tarefas',
   'views.markNotDone': 'Marcar como não concluída',
   'views.assigneesOnly': 'Somente os responsáveis por esta tarefa podem concluí-la.',
@@ -1143,6 +1160,15 @@ const ptBR: Record<TranslationKey, string> = {
   'agenda.building': 'Montando sua agenda',
   'agenda.unscheduled': 'Sem agendamento',
   'agenda.unscheduledBody': 'Sem horário de início e sem prazo ainda.',
+  'agenda.newTask': 'Nova tarefa',
+  'agenda.newPersonalTask': 'Nova tarefa pessoal',
+  'agenda.personal': 'Pessoal',
+  'agenda.personalTitle': 'Uma tarefa pessoal — sem projeto por trás',
+  'agenda.nothingPersonal': 'Nenhuma tarefa pessoal ainda',
+  'agenda.personalBody':
+    'Tarefas pessoais não têm projeto por trás. Elas ficam aqui, no seu menu de tarefas, e em nenhum outro lugar.',
+  'agenda.personalComposerBody':
+    'Esta é só sua: sem projeto, sem equipe, ninguém mais consegue ver.',
 
   'bin.title': 'Lixeira',
   'bin.deletedItems': 'Itens excluídos',

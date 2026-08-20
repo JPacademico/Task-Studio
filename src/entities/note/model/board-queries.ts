@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { errorMessage } from '@/shared/api/client';
@@ -29,10 +29,23 @@ const useBoardCache = (pageIndex: number) => {
   return {
     key,
     queryClient,
-    patch: (update: (snapshot: BoardSnapshot) => BoardSnapshot) =>
-      queryClient.setQueryData<BoardSnapshot>(key, (snapshot) =>
-        snapshot ? update(snapshot) : snapshot,
-      ),
+    /*
+     * Memoised, like the project board's equivalent.
+     *
+     * `key` is a fresh array on every render, so a bare arrow here was a fresh
+     * function on every render too — which quietly defeats any `useCallback`
+     * built on top of it, and those are what keep a wall of memoised Post-its
+     * from re-rendering together. The key's *contents* are what matter, and
+     * they are the dependency.
+     */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    patch: useCallback(
+      (update: (snapshot: BoardSnapshot) => BoardSnapshot) =>
+        queryClient.setQueryData<BoardSnapshot>(key, (snapshot) =>
+          snapshot ? update(snapshot) : snapshot,
+        ),
+      [pageIndex, queryClient],
+    ),
   };
 };
 
@@ -41,6 +54,14 @@ export const useBoard = (pageIndex: number) =>
     queryKey: queryKeys.notes.board(pageIndex),
     queryFn: () => boardApi.snapshot(pageIndex),
     staleTime: 20_000,
+    /*
+     * Each page is its own cache entry, so flipping tabs used to empty the
+     * board — pager included, since the page list arrives inside the snapshot —
+     * and rebuild it a round trip later. Holding the previous page keeps the
+     * tabs in place and the surface populated while the next one loads, which
+     * on a board is the difference between turning a page and losing your desk.
+     */
+    placeholderData: keepPreviousData,
   });
 
 export const useCreateBoardNote = (pageIndex: number) => {
@@ -61,9 +82,14 @@ export const useUpdateBoardNote = (pageIndex: number) => {
     mutationFn: ({ noteId, payload }: { noteId: string; payload: UpdateNotePayload }) =>
       noteApi.update(noteId, payload),
 
-    onMutate: async ({ noteId, payload }) => {
-      await queryClient.cancelQueries({ queryKey: key });
-      const previous = queryClient.getQueryData<BoardSnapshot>(key);
+    // Synchronous, and holding one note rather than the page. See the longer
+    // note on the project board's copy of this mutation: awaiting
+    // `cancelQueries` delayed the optimistic paint by a microtask for no
+    // benefit, and a page-wide snapshot is the wrong unit to roll back.
+    onMutate: ({ noteId, payload }) => {
+      const previous = queryClient
+        .getQueryData<BoardSnapshot>(key)
+        ?.notes.find((note) => note.id === noteId);
 
       patch((snapshot) => ({
         ...snapshot,
@@ -75,8 +101,14 @@ export const useUpdateBoardNote = (pageIndex: number) => {
       return { previous };
     },
 
-    onError: (error, _variables, context) => {
-      if (context?.previous) queryClient.setQueryData(key, context.previous);
+    onError: (error, { noteId }, context) => {
+      const previous = context?.previous;
+      if (previous) {
+        patch((snapshot) => ({
+          ...snapshot,
+          notes: snapshot.notes.map((note) => (note.id === noteId ? previous : note)),
+        }));
+      }
       toast.error(errorMessage(error, translate('toast.noteSaveFailed')));
     },
   });
@@ -114,6 +146,23 @@ export const useDeleteBoardNote = (pageIndex: number) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.notes.recycleBin });
     },
   });
+};
+
+/**
+ * Rewrites the page's note list, cache-only.
+ *
+ * The board's optimistic surfaces need a way to put an object on the wall
+ * before the server has heard of it — see `useImageDrop` — and every existing
+ * mutation here couples that to a request. This is the write on its own.
+ */
+export const usePatchBoardNotes = (pageIndex: number) => {
+  const { patch } = useBoardCache(pageIndex);
+
+  return useCallback(
+    (update: (notes: Note[]) => Note[]) =>
+      patch((snapshot) => ({ ...snapshot, notes: update(snapshot.notes) })),
+    [patch],
+  );
 };
 
 /**

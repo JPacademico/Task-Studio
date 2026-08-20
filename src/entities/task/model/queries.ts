@@ -1,4 +1,10 @@
-import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { patchUserOverview } from '@/entities/project/model/queries';
@@ -150,7 +156,8 @@ const matchesListParams = (task: Task, params: ListTasksParams): boolean | 'unkn
   if (params.search || params.lateness || params.from || params.to) return 'unknown';
   if (params.scope === 'team') return 'unknown';
 
-  if (params.projectId && params.projectId !== task.project.id) return false;
+  if (params.projectId && params.projectId !== task.project?.id) return false;
+  if (params.personalOnly && task.project !== null) return false;
   if (params.status && params.status !== task.status) return false;
   if (params.type && params.type !== task.type) return false;
   if (params.priority && params.priority !== task.priority) return false;
@@ -234,11 +241,22 @@ const insertCachedTask = (queryClient: QueryClient, task: Task): void => {
   }
 };
 
+/*
+ * `keepPreviousData` on both, and it is the difference between a filter being a
+ * control and a filter being a page reload.
+ *
+ * Every filter is part of the query key, so ticking "Pinned" or typing a letter
+ * into the search box asks for a cache that has never been filled — and without
+ * this the list is `undefined` until the request lands, which blanks the screen
+ * and drops the reader's place in it. Holding the previous rows keeps the page
+ * still; `isFetching` is what says the new ones are on the way.
+ */
 export const useTasks = (params: ListTasksParams = {}) =>
   useQuery({
     queryKey: queryKeys.tasks.list(params),
     queryFn: () => taskApi.list(params),
     staleTime: 15_000,
+    placeholderData: keepPreviousData,
   });
 
 export const useTaskAgenda = (params: ListTasksParams = {}) =>
@@ -246,6 +264,7 @@ export const useTaskAgenda = (params: ListTasksParams = {}) =>
     queryKey: queryKeys.tasks.agenda(params),
     queryFn: () => taskApi.agenda(params),
     staleTime: 15_000,
+    placeholderData: keepPreviousData,
   });
 
 /**
@@ -317,7 +336,7 @@ export const useCreateTask = () => {
       // Show it from the response we already have, then reconcile in the
       // background. See `insertCachedTask` for why both halves are here.
       insertCachedTask(queryClient, task);
-      invalidate(task.project.id);
+      invalidate(task.project?.id);
       toast.success(translate('toast.taskCreated', { title: task.title }));
     },
     onError: (error) => toast.error(errorMessage(error, translate('toast.taskCreateFailed'))),
@@ -338,7 +357,7 @@ export const useAddCreatedTasks = () => {
 
   return (tasks: Task[]) => {
     for (const task of tasks) insertCachedTask(queryClient, task);
-    invalidate(tasks[0]?.project.id);
+    invalidate(tasks[0]?.project?.id);
   };
 };
 
@@ -348,7 +367,7 @@ export const useUpdateTask = () => {
   return useMutation({
     mutationFn: ({ taskId, payload }: { taskId: string; payload: UpdateTaskPayload }) =>
       taskApi.update(taskId, payload),
-    onSuccess: (task) => invalidate(task.project.id),
+    onSuccess: (task) => invalidate(task.project?.id),
     onError: (error) => toast.error(errorMessage(error, translate('toast.taskUpdateFailed'))),
   });
 };
@@ -396,7 +415,7 @@ export const useUpdateTaskStatus = () => {
     // `onSettled`, not `onSuccess`: a failed write has just been rolled back
     // from a snapshot that may itself be stale, and that is exactly when the
     // caches most need to be told to go and look again.
-    onSettled: (task) => invalidate(task?.project.id),
+    onSettled: (task) => invalidate(task?.project?.id),
   });
 };
 
@@ -461,7 +480,7 @@ export const useToggleMyCompletion = (currentUserId?: string) => {
       if (task.status === 'COMPLETED') toast.success(`"${task.title}" is done.`);
     },
 
-    onSettled: (task) => invalidate(task?.project.id),
+    onSettled: (task) => invalidate(task?.project?.id),
   });
 };
 
@@ -495,7 +514,7 @@ export const useRestoreTask = () => {
   return useMutation({
     mutationFn: (taskId: string) => taskApi.restore(taskId),
     onSuccess: (task) => {
-      invalidate(task.project.id);
+      invalidate(task.project?.id);
       toast.success(`"${task.title}" restored.`);
     },
     onError: (error) => toast.error(errorMessage(error)),

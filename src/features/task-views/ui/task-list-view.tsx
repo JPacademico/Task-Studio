@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
-import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CalendarClock, Check, ListChecks, Pin, Trash2 } from 'lucide-react';
 
 import type { Task, TaskStatus } from '@/entities/task/model/types';
+import { TaskOrigin } from '@/entities/task/ui/task-origin';
 import { TASK_PRIORITY_META, TASK_STATUS_META } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
 import { formatDeadline, formatDeadlineDate } from '@/shared/lib/dates';
@@ -156,18 +156,11 @@ export const TaskListView = ({
                       </span>
 
                       {showProjectLink && (
-                        <Link
-                          to={`/projects/${task.project.id}`}
-                          title={`Open ${task.project.name}`}
-                          className="hidden max-w-[8rem] shrink-0 items-center gap-1.5 text-[11px] text-content-muted transition-colors hover:text-brand lg:flex"
-                        >
-                          <span
-                            aria-hidden
-                            className="h-2 w-2 shrink-0 rounded-full"
-                            style={{ backgroundColor: task.project.color }}
-                          />
-                          <span className="truncate">{task.project.name}</span>
-                        </Link>
+                        <TaskOrigin
+                          project={task.project}
+                          variant="inline"
+                          className="hidden lg:flex"
+                        />
                       )}
 
                       <span

@@ -105,7 +105,7 @@ const RecycleBinPage = () => {
                     {task.title}
                   </p>
                   <p className="text-[11px] text-content-faint">
-                    {task.project.name} · deleted{' '}
+                    {task.project?.name ?? t('agenda.personal')} · deleted{' '}
                     {task.deletedAt ? formatRelative(task.deletedAt) : 'recently'}
                   </p>
                 </div>

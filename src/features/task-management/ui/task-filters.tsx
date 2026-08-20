@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Pin, Search, User, Users, X } from 'lucide-react';
+import { Pin, Search, User, UserRound, Users, X } from 'lucide-react';
 
 import type {
   ListTasksParams,
@@ -16,7 +16,14 @@ import { useT } from '@/shared/i18n';
 /**
  * `project` shows the whole roster's work, so it keeps the mine/team/all split.
  * `personal` is the task menu — that surface is about *you*, so the second tab
- * is the work somebody left you a note on rather than other people's tasks.
+ * narrows to the work that is *only* yours: the tasks with no project behind
+ * them at all.
+ *
+ * It used to be "With notes", which sat on the wrong axis. A note is a property
+ * of a task, like a deadline or a priority, and belongs with the dropdowns that
+ * filter by those; the tab strip is where the surface says *whose* work it is
+ * showing, and a personal task is the one kind of work this page is the only
+ * home for. Nothing was lost — see the `hasNotes` toggle further along the row.
  */
 type FiltersVariant = 'project' | 'personal';
 
@@ -34,15 +41,11 @@ const PROJECT_SCOPES: { value: TaskScope; label: string; icon: ReactNode }[] = [
 ];
 
 /** Personal tabs are a view over the same query, not a different scope. */
-type PersonalTab = 'mine' | 'noted';
+type PersonalTab = 'mine' | 'personal';
 
 const PERSONAL_TABS: { value: PersonalTab; label: string; icon: ReactNode }[] = [
   { value: 'mine', label: 'My tasks', icon: <User className="h-3 w-3" /> },
-  {
-    value: 'noted',
-    label: 'With notes',
-    icon: <PostItMark className="h-3.5 w-3.5 text-amber-400" />,
-  },
+  { value: 'personal', label: 'Personal', icon: <UserRound className="h-3 w-3" /> },
 ];
 
 const STATUSES: (TaskStatus | 'ALL')[] = ['ALL', 'TODO', 'IN_PROGRESS', 'COMPLETED'];
@@ -82,7 +85,12 @@ export const TaskFilters = ({
   const isPersonal = variant === 'personal';
 
   const hasActiveFilters = Boolean(
-    value.status ?? value.type ?? value.lateness ?? value.search ?? value.pinnedOnly,
+    value.status ??
+      value.type ??
+      value.lateness ??
+      value.search ??
+      value.pinnedOnly ??
+      value.hasNotes,
   );
 
   /*
@@ -98,9 +106,22 @@ export const TaskFilters = ({
     <div className={cn('flex flex-wrap items-center gap-1.5', className)}>
       {isPersonal ? (
         <Segmented
-          value={value.hasNotes ? 'noted' : 'mine'}
+          value={value.personalOnly ? 'personal' : 'mine'}
           options={PERSONAL_TABS}
-          onChange={(tab) => patch({ hasNotes: tab === 'noted' || undefined })}
+          onChange={(tab) =>
+            patch({
+              personalOnly: tab === 'personal' || undefined,
+              /*
+               * The scope goes with the tab.
+               *
+               * `mine` means "assigned to me", which a personal task always is
+               * — but the *assignment* is what the scope reads, and narrowing
+               * by both at once is one redundant predicate on every query. The
+               * personal tab is already the tightest filter there is.
+               */
+              scope: tab === 'personal' ? undefined : 'mine',
+            })
+          }
         />
       ) : (
         <Segmented
@@ -156,7 +177,11 @@ export const TaskFilters = ({
           onClick={() =>
             onChange(
               isPersonal
-                ? { hasNotes: value.hasNotes, hideCompleted: true }
+                ? {
+                    personalOnly: value.personalOnly,
+                    scope: value.scope,
+                    hideCompleted: true,
+                  }
                 : { scope: value.scope },
             )
           }
@@ -166,6 +191,24 @@ export const TaskFilters = ({
           {t('views.clear')}
         </button>
       )}
+
+      {/* What the personal tab strip used to carry. A note is a property of a
+          task, so it filters like one — next to "Pinned", not above it. */}
+      <button
+        type="button"
+        onClick={() => patch({ hasNotes: !value.hasNotes || undefined })}
+        aria-pressed={Boolean(value.hasNotes)}
+        title={t('views.withNotesTitle')}
+        className={cn(
+          'ui-filter inline-flex h-9 items-center gap-1.5 rounded-xl border px-2.5 text-xs transition-colors',
+          value.hasNotes
+            ? 'border-brand bg-brand/12 text-brand'
+            : 'border-edge text-content-muted hover:text-content',
+        )}
+      >
+        <PostItMark className="h-3.5 w-3.5 text-amber-400" />
+        {t('views.withNotes')}
+      </button>
 
       <button
         type="button"

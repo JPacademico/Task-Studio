@@ -99,7 +99,9 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
       isOpen={Boolean(taskId)}
       onClose={onClose}
       title={task?.title ?? 'Task'}
-      description={task ? task.project.name : undefined}
+      // A personal task has no project to name, so the subtitle says what it
+      // is instead of leaving the header looking half-rendered.
+      description={task ? (task.project?.name ?? t('agenda.personal')) : undefined}
       className="sm:max-w-2xl"
       footer={
         task && (

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
-import { CalendarDays, CheckCircle2, Clock, Inbox } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { CalendarDays, CheckCircle2, Clock, Inbox, Plus } from 'lucide-react';
 
 import { completionBlockedReason } from '@/entities/task/lib/completion';
 import {
@@ -15,6 +15,7 @@ import type { ListTasksParams, Task } from '@/entities/task/model/types';
 import { TaskCard } from '@/entities/task/ui/task-card';
 import { useCurrentUser } from '@/features/auth/model/session.store';
 import { TaskBoard } from '@/features/dnd-board/ui/task-board';
+import { TaskComposer } from '@/features/task-management/ui/task-composer';
 import { TaskDetailModal } from '@/features/task-management/ui/task-detail-modal';
 import { TaskFilters } from '@/features/task-management/ui/task-filters';
 import {
@@ -25,7 +26,8 @@ import {
 } from '@/features/task-views';
 import { cn } from '@/shared/lib/cn';
 import { formatDayLabel, formatTime } from '@/shared/lib/dates';
-import { EmptyState, PageLoader, RunicText, Section } from '@/shared/ui';
+import { Button, EmptyState, RunicText, Section } from '@/shared/ui';
+import { AgendaSkeleton } from './agenda-skeleton';
 import { useT } from '@/shared/i18n';
 
 const isSameDay = (isoDate: string, reference: Date): boolean =>
@@ -47,19 +49,29 @@ const TaskMenuPage = () => {
     scope: 'mine',
     hideCompleted: true,
   });
-  // The agenda is a reading surface, so a task opens read-only here: editing
-  // still belongs to the project board, which is one click away on the card.
+  // The agenda is a reading surface, so a *project* task opens read-only here:
+  // editing one still belongs to the project board, which is one click away on
+  // the card. A personal task has no board to send anybody to, so this page
+  // owns its composer.
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
+  const [composerTask, setComposerTask] = useState<Task | null>(null);
+  const [isComposerOpen, setIsComposerOpen] = useState(false);
 
   const showingCompleted = filters.status === 'COMPLETED';
+  const showingPersonal = Boolean(filters.personalOnly);
 
-  const { data: agenda, isLoading } = useTaskAgenda(filters);
+  const { data: agenda, isLoading, isFetching } = useTaskAgenda(filters);
   const toggleCompletion = useToggleMyCompletion(currentUser?.id);
   const togglePin = useToggleTaskPin();
   const deleteTask = useDeleteTask();
   const updateStatus = useUpdateTaskStatus();
 
   const { layout, setLayout, options: layoutOptions } = useTaskLayout('personal');
+
+  const openPersonalComposer = (task: Task | null) => {
+    setComposerTask(task);
+    setIsComposerOpen(true);
+  };
 
   const today = useMemo(() => new Date(), []);
 
@@ -85,18 +97,41 @@ const TaskMenuPage = () => {
     [days, unscheduled],
   );
 
-  if (isLoading) return <PageLoader label={t('agenda.building')} />;
-
-  const isEmpty = days.length === 0 && unscheduled.length === 0;
+  /*
+   * A skeleton in the shape of the agenda, not a spinner in place of it.
+   *
+   * The whole page used to be replaced by a centred loader, so arriving here
+   * meant watching the header, the filters and the layout switcher appear only
+   * once the tasks had landed — and then the page reflowed around them. Drawing
+   * the chrome immediately and standing in for the rows is both faster to first
+   * paint and steadier, because nothing moves when the data arrives.
+   *
+   * `isLoading` and not `isFetching`: this is only for the first fill of a
+   * cache. Changing a filter keeps the previous rows on screen (see
+   * `useTaskAgenda`) and reports progress through the header instead.
+   */
+  const isEmpty = !isLoading && days.length === 0 && unscheduled.length === 0;
 
   return (
     <div className="space-y-5 sm:space-y-7">
       <header className="space-y-3">
-        <div className="space-y-0.5 sm:space-y-1">
-          <p className="text-[10px] uppercase tracking-[0.18em] text-content-faint sm:text-xs">
-            <RunicText mode="always">{t('agenda.title')}</RunicText>
-          </p>
-          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{t('agenda.heading')}</h1>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div className="space-y-0.5 sm:space-y-1">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-content-faint sm:text-xs">
+              <RunicText mode="always">{t('agenda.title')}</RunicText>
+            </p>
+            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+              {t('agenda.heading')}
+            </h1>
+          </div>
+
+          {/* The one thing this page could not do. Every other task had to be
+              created from a project board, so work that belongs to nobody but
+              you had to be filed under a project to exist at all. */}
+          <Button size="sm" onClick={() => openPersonalComposer(null)}>
+            <Plus className="h-3.5 w-3.5" strokeWidth={2.8} />
+            {t('agenda.newTask')}
+          </Button>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -108,6 +143,11 @@ const TaskMenuPage = () => {
               setFilters({ ...next, hideCompleted: next.status === 'COMPLETED' ? undefined : true })
             }
           />
+          {/* Refetching keeps the current rows on screen, so the only honest
+              place to say a request is in flight is here. */}
+          {isFetching && !isLoading && (
+            <span className="text-[11px] text-content-faint">{t('common.loading')}</span>
+          )}
           <LayoutSwitcher
             value={layout}
             options={layoutOptions}
@@ -124,26 +164,44 @@ const TaskMenuPage = () => {
         )}
       </header>
 
+      {isLoading && <AgendaSkeleton />}
+
       {isEmpty && (
         <EmptyState
           icon={<CalendarDays className="h-6 w-6" />}
-          title={t(showingCompleted ? 'agenda.nothingCompleted' : 'agenda.nothingScheduled')}
+          title={t(
+            showingPersonal
+              ? 'agenda.nothingPersonal'
+              : showingCompleted
+                ? 'agenda.nothingCompleted'
+                : 'agenda.nothingScheduled',
+          )}
           description={
-            filters.hasNotes
-              ? t('agenda.noNotesBody')
-              : t('agenda.scheduledBody')
+            showingPersonal
+              ? t('agenda.personalBody')
+              : filters.hasNotes
+                ? t('agenda.noNotesBody')
+                : t('agenda.scheduledBody')
+          }
+          action={
+            showingPersonal ? (
+              <Button size="sm" onClick={() => openPersonalComposer(null)}>
+                <Plus className="h-3.5 w-3.5" strokeWidth={2.8} />
+                {t('agenda.newPersonalTask')}
+              </Button>
+            ) : undefined
           }
         />
       )}
 
       {/* Every layout reads the same agenda response — switching shape is a
           rendering decision, never another request. */}
-      {layout === 'list' && <TaskListView tasks={allTasks} showProjectLink {...handlers} />}
-      {layout === 'calendar' && <TaskCalendarView tasks={allTasks} showProjectLink {...handlers} />}
+      {!isLoading && layout === 'list' && <TaskListView tasks={allTasks} showProjectLink {...handlers} />}
+      {!isLoading && layout === 'calendar' && <TaskCalendarView tasks={allTasks} showProjectLink {...handlers} />}
       {/* No admin override on this board: the personal agenda has no project
           role to read, so a shared task always needs everybody's tick here.
           The project board is where an admin can overrule it. */}
-      {layout === 'board' && (
+      {!isLoading && layout === 'board' && (
         <TaskBoard
           tasks={allTasks}
           onStatusChange={(taskId, status) => updateStatus.mutate({ taskId, status })}
@@ -155,16 +213,32 @@ const TaskMenuPage = () => {
         />
       )}
 
-      {layout === 'agenda' && (
+      {!isLoading && layout === 'agenda' && (
       <div className="space-y-6 sm:space-y-8">
-        <AnimatePresence initial={false}>
-          {days.map(({ date, tasks }) => (
+        {/*
+          * No `AnimatePresence` around the day buckets, deliberately.
+          *
+          * It used to wrap this list, and it never worked: an emptied bucket
+          * was held mounted as an "exiting" child whose exit animation never
+          * ran, so the section stayed in the DOM at full opacity indefinitely.
+          * With a filter that matches nothing, the page rendered its empty
+          * state *and* the previous filter's tasks underneath it.
+          *
+          * It was invisible until now only because changing a filter used to
+          * blank the whole page to a loader, which tore this tree down and took
+          * the stranded node with it. Keeping the page up — which is the point
+          * of the change — is what exposed it.
+          *
+          * Nothing is lost by removing it: the exit was never rendering. The
+          * *enter* animation is what carries this list, and `initial`/`animate`
+          * on a motion component need no presence tracking at all.
+          */}
+        {days.map(({ date, tasks }) => (
             <motion.section
               key={date}
               layout
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
               className="gpu space-y-2.5"
             >
               <header className="sticky top-14 z-10 -mx-1 flex items-center gap-3 bg-surface/85 px-1 py-1.5 backdrop-blur sm:py-2">
@@ -198,8 +272,7 @@ const TaskMenuPage = () => {
                 ))}
               </ol>
             </motion.section>
-          ))}
-        </AnimatePresence>
+        ))}
 
         {unscheduled.length > 0 && (
           <Section title={t('agenda.unscheduled')} description={t('agenda.unscheduledBody')}>
@@ -229,8 +302,23 @@ const TaskMenuPage = () => {
         onClose={() => setDetailTaskId(null)}
         onEdit={(task) => {
           setDetailTaskId(null);
-          navigate(`/projects/${task.project.id}`);
+
+          // A project task is edited where its roster is. A personal task has
+          // no roster and no project page, so it is edited right here.
+          if (task.project) navigate(`/projects/${task.project.id}`);
+          else openPersonalComposer(task);
         }}
+      />
+
+      {/* No `projectId`: the composer drops the assignee picker and the API
+          files the task against nobody. See `TaskComposer`. */}
+      <TaskComposer
+        isOpen={isComposerOpen}
+        onClose={() => {
+          setIsComposerOpen(false);
+          setComposerTask(null);
+        }}
+        task={composerTask}
       />
     </div>
   );

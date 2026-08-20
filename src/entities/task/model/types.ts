@@ -37,7 +37,12 @@ export interface Task {
   autoArchivedAt: string | null;
   createdAt: string;
   updatedAt: string;
-  project: { id: string; name: string; color: string };
+  /**
+   * `null` on a personal task — work with no project behind it, which lives
+   * only on its owner's task menu. Every surface that links back to a board
+   * has to check this before drawing the link.
+   */
+  project: { id: string; name: string; color: string } | null;
   createdBy: UserSummary;
   assignees: TaskAssignee[];
   isMine: boolean;
@@ -64,6 +69,8 @@ export interface ListTasksParams {
   pinnedOnly?: boolean;
   /** Only tasks somebody has attached a note to. */
   hasNotes?: boolean;
+  /** Only the caller's own tasks that have no project behind them. */
+  personalOnly?: boolean;
   /** Drops completed work unless an explicit status filter asks for it. */
   hideCompleted?: boolean;
   lateness?: TaskLateness;
@@ -79,7 +86,8 @@ export interface TaskAgenda {
 }
 
 export interface CreateTaskPayload {
-  projectId: string;
+  /** Omitted for a personal task: no project, no roster, no fan-out. */
+  projectId?: string;
   title: string;
   description?: string;
   color?: string;

@@ -17,13 +17,21 @@ import { useT } from '@/shared/i18n';
 interface TaskComposerProps {
   isOpen: boolean;
   onClose: () => void;
-  projectId: string;
-  roster: RosterMember[];
+  /**
+   * Omitted for a personal task — work with no project behind it, created and
+   * edited from the task menu. The assignee picker disappears with it: there is
+   * no roster to pick from, and the task is the caller's by definition.
+   */
+  projectId?: string;
+  roster?: RosterMember[];
   /** Present when editing an existing task. */
   task?: Task | null;
 }
 
 const PRIORITIES: TaskPriority[] = ['LOW', 'NORMAL', 'HIGH', 'URGENT'];
+
+/** Stable identity, so the default never re-triggers the hydrate effect. */
+const EMPTY_ROSTER: RosterMember[] = [];
 
 /**
  * Create/edit form for a task.
@@ -36,10 +44,12 @@ export const TaskComposer = ({
   isOpen,
   onClose,
   projectId,
-  roster,
+  roster = EMPTY_ROSTER,
   task,
 }: TaskComposerProps) => {
   const t = useT();
+  // No project means a personal task: one assignee, no roster, no fan-out.
+  const isPersonal = !projectId;
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
 
@@ -78,9 +88,11 @@ export const TaskComposer = ({
       previewTaskType(
         fromDateTimeInput(startAt),
         fromDateTimeInput(dueAt),
-        assigneeIds.length,
+        // A personal task always has exactly one assignee, so the preview says
+        // so rather than reading an empty picker as "nobody".
+        isPersonal ? 1 : assigneeIds.length,
       ),
-    [assigneeIds.length, dueAt, startAt],
+    [assigneeIds.length, dueAt, isPersonal, startAt],
   );
 
   const windowIsInvalid =
@@ -108,7 +120,9 @@ export const TaskComposer = ({
       priority,
       startAt: fromDateTimeInput(startAt),
       dueAt: fromDateTimeInput(dueAt),
-      assigneeIds,
+      // A personal task has no roster to pick from; the server assigns it to
+      // its creator and rejects anybody else, so the field is simply omitted.
+      ...(isPersonal ? {} : { assigneeIds }),
     };
 
     if (task) {
@@ -123,7 +137,7 @@ export const TaskComposer = ({
       });
     } else {
       await createTask.mutateAsync({
-        projectId,
+        ...(projectId ? { projectId } : {}),
         ...shared,
         checklist: checklist.length > 0 ? checklist : undefined,
         attachmentKey: attachment?.key || undefined,
@@ -140,8 +154,10 @@ export const TaskComposer = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={t(task ? 'task.editTitle' : 'task.newTitle')}
-      description={t('task.composerSubtitle')}
+      title={t(
+        task ? 'task.editTitle' : isPersonal ? 'agenda.newPersonalTask' : 'task.newTitle',
+      )}
+      description={t(isPersonal ? 'agenda.personalComposerBody' : 'task.composerSubtitle')}
       className="sm:max-w-2xl"
       footer={
         <>
@@ -210,6 +226,7 @@ export const TaskComposer = ({
           />
         </div>
 
+        {!isPersonal && (
         <div className="space-y-1.5">
           <p className="text-xs font-medium text-content-muted">
             {t('task.assignees')}{' '}
@@ -266,6 +283,7 @@ export const TaskComposer = ({
             </p>
           )}
         </div>
+        )}
 
         <div className="grid gap-4 sm:grid-cols-2">
           <ColorPicker label={t('task.colour')} value={color} onChange={setColor} options={TASK_COLORS} />

@@ -22,6 +22,7 @@ import {
   useDeleteProjectNote,
   useDeleteProjectNoteLink,
   useGroupProjectNotes,
+  usePatchProjectNotes,
   usePatchProjectPositions,
   useProjectBoard,
   useProjectBoardRealtime,
@@ -30,9 +31,9 @@ import {
 } from '@/entities/note/model/project-board-queries';
 import type { UpdateNotePayload } from '@/entities/note/model/types';
 import { PostIt, type NoteHandle } from '@/entities/note/ui/post-it';
-import { uploadImage } from '@/entities/user/api/user.api';
 import { useCurrentUser } from '@/features/auth/model/session.store';
 import { createPositionBus } from '@/features/notes-board/lib/position-bus';
+import { isPendingNoteId, useImageDrop } from '@/features/notes-board/lib/use-image-drop';
 import { groupTintFor, notesInsideRect } from '@/features/notes-board/lib/selection';
 import {
   useMarqueeSelection,
@@ -44,6 +45,7 @@ import {
   MarqueeBox,
   SelectionBar,
 } from '@/features/notes-board/ui/board-overlays';
+import { BoardSkeleton } from '@/features/notes-board/ui/board-skeleton';
 import { ConnectorLayer } from '@/features/notes-board/ui/connector-layer';
 import { queryKeys } from '@/shared/api/query-keys';
 import { CONNECTOR_COLORS, NOTE_COLORS, TASK_COLORS } from '@/shared/config/constants';
@@ -82,16 +84,6 @@ const adoptStroke = (stroke: WhiteboardStrokeData): WhiteboardStrokeData =>
     ? { ...stroke, erase: true }
     : stroke;
 
-/** Keeps an image note inside a sane box whatever the source resolution is. */
-const fitImage = (naturalWidth: number, naturalHeight: number) => {
-  const width = Math.min(320, Math.max(140, naturalWidth));
-  const scale = width / (naturalWidth || width);
-  return {
-    width: Math.round(width),
-    height: Math.round((naturalHeight || width) * scale) + 28,
-  };
-};
-
 
 /**
  * The project's shared canvas.
@@ -126,7 +118,6 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
   const [selection, setSelection] = useState<string[]>([]);
   const [isPickingMultiple, setIsPickingMultiple] = useState(false);
   const [connectFrom, setConnectFrom] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   // Bumped by the stage whenever the surface changes host, which is the
   // moment the <canvas> below is a different element.
@@ -138,7 +129,7 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
 
   const isInking = tool === 'pen' || tool === 'eraser';
 
-  const { data: scene = [] } = useQuery({
+  const { data: scene = [], isLoading: isSceneLoading } = useQuery({
     queryKey: queryKeys.whiteboard.scene(projectId),
     queryFn: () => whiteboardApi.scene(projectId),
     enabled: Boolean(projectId),
@@ -146,8 +137,16 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
 
   // --- Post-it layer --------------------------------------------------------
 
-  const { data: board } = useProjectBoard(projectId);
+  const { data: board, isLoading: isBoardLoading } = useProjectBoard(projectId);
   useProjectBoardRealtime(projectId);
+
+  /*
+   * The wall is two requests — the ink scene and the Post-it snapshot — and it
+   * is not a board until both have landed. Before this, neither had a loading
+   * state at all: an arriving user got an empty grid with "Stick up a Post-it"
+   * written in the middle of it, which is not "loading", it is the wrong answer.
+   */
+  const isBoardPending = isBoardLoading || isSceneLoading;
 
   const notes = useMemo(() => board?.notes ?? [], [board?.notes]);
   const links = board?.links ?? [];
@@ -156,6 +155,7 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
   const updateNote = useUpdateProjectNote(projectId);
   const deleteNote = useDeleteProjectNote(projectId);
   const patchPositions = usePatchProjectPositions(projectId);
+  const patchNotes = usePatchProjectNotes(projectId);
   const savePositions = useSaveProjectPositions(projectId);
   const createLink = useCreateProjectNoteLink(projectId);
   const deleteLink = useDeleteProjectNoteLink(projectId);
@@ -334,13 +334,23 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
 
   // --- Post-it gestures -----------------------------------------------------
 
-  const dropPoint = () => {
+  const dropPoint = useCallback(() => {
     const bounds = surfaceRef.current?.getBoundingClientRect();
     return {
       positionX: Math.round((bounds?.width ?? 900) / 2 - 110 + (Math.random() * 120 - 60)),
       positionY: Math.round(70 + Math.random() * 140),
     };
-  };
+  }, []);
+
+  // Optimistic on a shared wall too — the placeholder is local to whoever
+  // dropped the file, and the roster sees the real note when it is created.
+  // See `useImageDrop`.
+  const { addImage, isUploading } = useImageDrop({
+    patchNotes,
+    createNote: createNote.mutate,
+    dropPoint,
+    currentUserId: currentUser?.id,
+  });
 
   const handleAddNote = () => {
     createNote.mutate({
@@ -349,31 +359,6 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
       rotation: Math.round((Math.random() * 8 - 4) * 10) / 10,
       ...dropPoint(),
     });
-  };
-
-  const handleAddImage = async (file: File) => {
-    setIsUploading(true);
-    try {
-      // One decode: `uploadImage` downscales before sending and hands back the
-      // dimensions of what it produced, so measuring the file separately would
-      // be decoding the same photograph twice. See the note on the personal
-      // board, which had the same pair of calls.
-      const uploaded = await uploadImage(file, 'notes');
-
-      createNote.mutate({
-        content: '',
-        kind: 'IMAGE',
-        imageKey: uploaded.key,
-        title: file.name.replace(/\.[^.]+$/, '').slice(0, 60),
-        rotation: Math.round((Math.random() * 5 - 2.5) * 10) / 10,
-        ...fitImage(uploaded.width, uploaded.height),
-        ...dropPoint(),
-      });
-    } catch {
-      toast.error(t('editor.uploadFailed'));
-    } finally {
-      setIsUploading(false);
-    }
   };
 
   const handleSelect = useCallback(
@@ -491,8 +476,11 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
         }
       }
 
+      // Anything still uploading has no row for the batch endpoint to move.
       patchPositions(moves);
-      persistPositions(moves);
+
+      const saveable = moves.filter((move) => !isPendingNoteId(move.id));
+      if (saveable.length > 0) persistPositions(saveable);
     },
     [bus, notes, patchPositions, persistPositions],
   );
@@ -503,15 +491,37 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
    * being aimed, and without these every teammate's Post-it re-rendered with
    * it.
    */
+  /*
+   * Every write below refuses an id the server has never heard of.
+   *
+   * While a picture is uploading there is a sheet on the board with no row
+   * behind it (see `useImageDrop`), and it looks and behaves exactly like any
+   * other — so it can be picked up, renamed or binned. Each of those would
+   * PATCH or DELETE a `pending-image-…` id and come back 404, which surfaces as
+   * an error toast for an action that, from the user's side, was ordinary.
+   * Ignoring the write is the honest response: the note is not saveable yet,
+   * and it is about to be replaced by one that is.
+   */
   const handleChange = useCallback(
-    (id: string, payload: UpdateNotePayload) => updateNote.mutate({ noteId: id, payload }),
+    (id: string, payload: UpdateNotePayload) => {
+      if (isPendingNoteId(id)) return;
+      updateNote.mutate({ noteId: id, payload });
+    },
     [updateNote.mutate],
   );
 
-  const handleDelete = useCallback((id: string) => deleteNote.mutate(id), [deleteNote.mutate]);
+  const handleDelete = useCallback(
+    (id: string) => {
+      if (isPendingNoteId(id)) return;
+      deleteNote.mutate(id);
+    },
+    [deleteNote.mutate],
+  );
 
   const handleFocus = useCallback(
     (id: string) => {
+      if (isPendingNoteId(id)) return;
+
       const note = notes.find((entry) => entry.id === id);
       if (!note) return;
 
@@ -626,7 +636,7 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
           className="hidden"
           onChange={(event) => {
             const file = event.target.files?.[0];
-            if (file) void handleAddImage(file);
+            if (file) void addImage(file);
             event.target.value = '';
           }}
         />
@@ -770,6 +780,7 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
               // A shared wall: anybody may rearrange, only the author may bin.
               canDelete={note.userId === currentUser?.id}
               currentUserId={currentUser?.id}
+              canResize
               onSelect={handleSelect}
               onRegister={registerHandle}
               onDragMove={bus.publish}
@@ -782,7 +793,9 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
           ))}
         </AnimatePresence>
 
-        {notes.length === 0 && !isInking && (
+        {isBoardPending && <BoardSkeleton />}
+
+        {!isBoardPending && notes.length === 0 && !isInking && (
           <div className="pointer-events-none absolute inset-0 grid place-items-center">
             <div className="flex flex-col items-center gap-2 text-center">
               <PostItGlyph className="h-8 w-8 text-content-faint" />
