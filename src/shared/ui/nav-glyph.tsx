@@ -48,9 +48,10 @@ interface NavGlyphProps {
  * pill and a header all agree on what "your notes board" looks like.
  */
 export const NavGlyph = ({ glyph, fallback: Fallback, className }: NavGlyphProps) => {
-  const set = GLYPH_SETS[useSkin()];
-  if (!set) return <Fallback className={className} />;
+  // Two ways to end up with the line icon, and both are fine: the skin brings
+  // no set at all, or it brings one that has nothing for this destination yet.
+  // See `GlyphSet`.
+  const Drawn = GLYPH_SETS[useSkin()]?.[glyph];
 
-  const Drawn = set[glyph];
-  return <Drawn className={className} />;
+  return Drawn ? <Drawn className={className} /> : <Fallback className={className} />;
 };

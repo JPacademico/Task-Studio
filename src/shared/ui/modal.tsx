@@ -16,6 +16,14 @@ interface ModalProps {
   children: ReactNode;
   footer?: ReactNode;
   className?: string;
+  /**
+   * Drops the skin's surface pattern for this dialog, keeping everything else.
+   *
+   * For the dense forms — the task composer above all — where the material
+   * stops reading as atmosphere and starts reading as interference behind a
+   * grid of small labels, dates and swatches. See `.ui-modal--flat`.
+   */
+  flat?: boolean;
 }
 
 /** Matches the exit transition below, so the portal unmounts once it is done. */
@@ -44,6 +52,7 @@ export const Modal = ({
   children,
   footer,
   className,
+  flat = false,
 }: ModalProps) => {
   const reduceMotion = useReducedMotion();
   const [isMounted, setIsMounted] = useState(isOpen);
@@ -91,6 +100,7 @@ export const Modal = ({
               // against the viewport *without* the address bar, so the sheet
               // ran under it and the footer buttons were the part that went.
               'ui-modal panel relative z-10 flex max-h-[92dvh] w-full flex-col overflow-hidden',
+              flat && 'ui-modal--flat',
               'rounded-b-none sm:max-w-lg sm:rounded-3xl',
               // Clears the home indicator when the sheet is flush to the bottom.
               'safe-b sm:pb-0',

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import {
   BarChart3,
   CalendarDays,
@@ -9,6 +9,7 @@ import {
   PenTool,
   Pin,
   Plus,
+  Settings2,
   Sparkles,
   Users,
 } from 'lucide-react';
@@ -41,6 +42,7 @@ import {
   usePrefetchProjectChat,
 } from '@/features/project-chat-dock/ui/chat-dock';
 import { MeetingsPanel } from '@/features/meetings/ui/meetings-panel';
+import { ProjectSettingsDialog } from '@/features/project-management/ui/project-settings-dialog';
 import { RosterPanel } from '@/features/roster/ui/roster-panel';
 import { TaskComposer } from '@/features/task-management/ui/task-composer';
 import { TaskDetailModal } from '@/features/task-management/ui/task-detail-modal';
@@ -93,6 +95,7 @@ const ProjectPage = () => {
   const [composerTask, setComposerTask] = useState<Task | null>(null);
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   /*
    * The chat window belongs to the app shell, not to this page — that is what
@@ -133,6 +136,9 @@ const ProjectPage = () => {
    * simply skips the invitations half until it has, and re-runs when it does.
    */
   const canManage = project?.myRole === 'OWNER' || project?.myRole === 'ADMIN';
+  // Renaming, re-colouring and deleting are the owner's alone — see
+  // `ProjectSettingsDialog` for why this is stricter than the API.
+  const isOwner = project?.myRole === 'OWNER';
 
   // Warm the roster tab while the user is reading the board.
   usePrefetchProjectCollaboration(projectId, canManage);
@@ -204,8 +210,30 @@ const ProjectPage = () => {
               style={{ backgroundColor: project.color }}
             />
             <div className="min-w-0 space-y-0.5 sm:space-y-1">
-              <p className="text-[10px] uppercase tracking-[0.18em] text-content-faint sm:text-xs">
-                {project.myRole.toLowerCase()} · {project.roster.length} member(s)
+              <p className="flex flex-wrap items-center gap-x-1.5 text-[10px] uppercase tracking-[0.18em] text-content-faint sm:text-xs">
+                <span>
+                  {project.myRole.toLowerCase()} · {project.roster.length} member(s)
+                </span>
+
+                {/* Where this project is filed. A link rather than a label:
+                    the folder is the fastest route to its siblings, which is
+                    the only reason to have filed it in the first place. */}
+                {project.organization && (
+                  <Link
+                    to="/organizations"
+                    title={t('org.filedUnder', { name: project.organization.name })}
+                    className="inline-flex items-center gap-1 rounded-full border border-edge px-1.5 py-0.5 normal-case tracking-normal transition-colors hover:border-brand/50 hover:text-content"
+                  >
+                    <span
+                      aria-hidden
+                      className="h-1.5 w-1.5 shrink-0 rounded-full"
+                      style={{ backgroundColor: project.organization.color }}
+                    />
+                    <span className="max-w-[10rem] truncate">
+                      {project.organization.name}
+                    </span>
+                  </Link>
+                )}
               </p>
               <h1 className="truncate text-xl font-semibold tracking-tight sm:text-2xl">
                 {project.name}
@@ -261,6 +289,20 @@ const ProjectPage = () => {
             >
               <Pin className={cn('h-4 w-4', project.isPinned && 'fill-current')} />
             </Button>
+
+            {/* Next to the pin, because both are things you do *to* the project
+                rather than inside it. */}
+            {isOwner && (
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={t('project.settingsTitle')}
+                title={t('project.settingsTitle')}
+                onClick={() => setIsSettingsOpen(true)}
+              >
+                <Settings2 className="h-4 w-4" />
+              </Button>
+            )}
 
             {canManage && (
               <Button
@@ -344,6 +386,14 @@ const ProjectPage = () => {
         roster={project.roster}
         task={composerTask}
       />
+
+      {isOwner && (
+        <ProjectSettingsDialog
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+          project={project}
+        />
+      )}
 
       <TaskDetailModal
         taskId={detailTaskId}

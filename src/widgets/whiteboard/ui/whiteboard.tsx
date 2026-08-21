@@ -29,11 +29,12 @@ import {
   useSaveProjectPositions,
   useUpdateProjectNote,
 } from '@/entities/note/model/project-board-queries';
+import { isPendingNoteId } from '@/entities/note/lib/optimistic';
 import type { UpdateNotePayload } from '@/entities/note/model/types';
 import { PostIt, type NoteHandle } from '@/entities/note/ui/post-it';
 import { useCurrentUser } from '@/features/auth/model/session.store';
 import { createPositionBus } from '@/features/notes-board/lib/position-bus';
-import { isPendingNoteId, useImageDrop } from '@/features/notes-board/lib/use-image-drop';
+import { useImageDrop } from '@/features/notes-board/lib/use-image-drop';
 import { groupTintFor, notesInsideRect } from '@/features/notes-board/lib/selection';
 import {
   useMarqueeSelection,
@@ -151,7 +152,7 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
   const notes = useMemo(() => board?.notes ?? [], [board?.notes]);
   const links = board?.links ?? [];
 
-  const createNote = useCreateProjectNote(projectId);
+  const createNote = useCreateProjectNote(projectId, currentUser?.id);
   const updateNote = useUpdateProjectNote(projectId);
   const deleteNote = useDeleteProjectNote(projectId);
   const patchPositions = usePatchProjectPositions(projectId);
@@ -602,11 +603,11 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
 
         <span className="hidden h-6 w-px bg-edge sm:block" />
 
-        {/* Same Post-it affordances as the personal board. */}
+        {/* Same Post-it affordances as the personal board, pending state
+            included — which is to say, none. See `BoardToolbar`. */}
         <Button
           size="sm"
           onClick={handleAddNote}
-          isLoading={createNote.isPending}
           title={t('board.addPostItTitle')}
           aria-label={t('board.addPostIt')}
           className="px-2.5"

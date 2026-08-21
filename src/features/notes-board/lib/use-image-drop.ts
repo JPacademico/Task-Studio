@@ -1,22 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import type { CreateNotePayload, Note } from '@/entities/note/model/types';
+import {
+  optimisticNote,
+  pendingImageId,
+  type CreateNoteRequest,
+} from '@/entities/note/lib/optimistic';
+import type { Note } from '@/entities/note/model/types';
 import { uploadImage } from '@/entities/user/api/user.api';
 import { translate } from '@/shared/i18n';
-
-/**
- * Marks a note that exists only in this tab's cache.
- *
- * A placeholder has no row behind it, so every handler that would write to the
- * server has to let it pass — a `PATCH /notes/pending-image-…` is a guaranteed
- * 404 and an error toast for what looks, to the user, like picking up a note
- * they can see. The prefix is the whole mechanism: it cannot collide with a
- * uuid, and it needs no second list to be kept in step.
- */
-const PENDING_PREFIX = 'pending-image-';
-
-export const isPendingNoteId = (id: string): boolean => id.startsWith(PENDING_PREFIX);
 
 /** Keeps an image note inside a sane box whatever the source resolution is. */
 export const fitImage = (naturalWidth: number, naturalHeight: number) => {
@@ -28,8 +20,17 @@ export const fitImage = (naturalWidth: number, naturalHeight: number) => {
 interface ImageDropOptions {
   /** Rewrites the board's note list in place — the optimistic cache write. */
   patchNotes: (update: (notes: Note[]) => Note[]) => void;
-  /** Persists the real note once the file is in object storage. */
-  createNote: (payload: CreateNotePayload) => void;
+  /**
+   * Persists the real note once the file is in object storage.
+   *
+   * Typed against React Query's `mutate`, per-call callbacks included: this
+   * hook holds a `blob:` URL that must not be revoked until the request that
+   * replaces it has settled, and `onSettled` is where it knows.
+   */
+  createNote: (
+    request: CreateNoteRequest,
+    options?: { onSettled?: () => void },
+  ) => void;
   /** Where on the board a new object lands. */
   dropPoint: () => { positionX: number; positionY: number };
   /** Whose sheet this is, for the attribution stamp on a shared wall. */
@@ -92,7 +93,7 @@ export const useImageDrop = ({
 
   const addImage = useCallback(
     async (file: File) => {
-      const placeholderId = `${PENDING_PREFIX}${crypto.randomUUID()}`;
+      const placeholderId = pendingImageId();
       const previewUrl = URL.createObjectURL(file);
       objectUrls.current.add(previewUrl);
 
@@ -119,30 +120,18 @@ export const useImageDrop = ({
         probe.src = previewUrl;
       });
 
+      /*
+       * Built through the shared placeholder factory, with the two fields an
+       * image note owns on top: the local `blob:` preview and the measured box.
+       */
       const placeholder: Note = {
-        id: placeholderId,
-        title,
-        content: '',
-        color: '#ffffff',
-        scope: 'PERSONAL',
+        ...optimisticNote(
+          { content: '', title, rotation, ...measured, ...position },
+          { id: placeholderId, userId: currentUserId, scope: 'PERSONAL' },
+        ),
         kind: 'IMAGE',
-        imageKey: null,
+        color: '#ffffff',
         imageUrl: previewUrl,
-        positionX: position.positionX,
-        positionY: position.positionY,
-        width: measured.width,
-        height: measured.height,
-        rotation,
-        zIndex: 0,
-        pageIndex: 0,
-        groupId: null,
-        isPinned: false,
-        deletedAt: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        userId: currentUserId ?? '',
-        taskId: null,
-        projectId: null,
       };
 
       patchNotes((notes) => [...notes, placeholder]);
@@ -153,25 +142,30 @@ export const useImageDrop = ({
         const uploaded = await uploadImage(file, 'notes');
 
         /*
-         * The placeholder comes down before the real one goes up.
+         * The sheet stays exactly where it is; the create adopts it.
          *
-         * `createNote` appends the server's row on success, so leaving the
-         * placeholder in place would show the same picture twice for as long
-         * as that request takes — and the local copy is worthless the moment
-         * there is a real one on its way.
+         * `replacesId` hands this placeholder to the create mutation, which
+         * swaps it for the server's row when the response lands and removes it
+         * if the request fails. Taking it down here instead — which is what
+         * this used to do — put a hole in the wall for the length of the
+         * create request, right after the upload had finally finished.
+         *
+         * The object URL is released on `onSettled` rather than now, because
+         * until the swap happens it is still the thing being drawn.
          */
-        drop();
-        release(previewUrl);
-
-        createNote({
-          content: '',
-          kind: 'IMAGE',
-          imageKey: uploaded.key,
-          title,
-          rotation,
-          ...fitImage(uploaded.width, uploaded.height),
-          ...position,
-        });
+        createNote(
+          {
+            content: '',
+            kind: 'IMAGE',
+            imageKey: uploaded.key,
+            title,
+            rotation,
+            ...fitImage(uploaded.width, uploaded.height),
+            ...position,
+            replacesId: placeholderId,
+          },
+          { onSettled: () => release(previewUrl) },
+        );
       } catch {
         drop();
         release(previewUrl);

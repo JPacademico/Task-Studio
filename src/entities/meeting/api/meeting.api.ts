@@ -1,5 +1,6 @@
 import { api } from '@/shared/api/client';
 import type {
+  AgendaParams,
   CreateMeetingPayload,
   ListMeetingsParams,
   Meeting,
@@ -18,6 +19,17 @@ export const meetingApi = {
    */
   async list(params: ListMeetingsParams): Promise<Meeting[]> {
     const { data } = await api.get<Meeting[]>('/meetings', { params });
+    return data;
+  },
+
+  /**
+   * Everything one person is expected at, across every project they are on.
+   *
+   * Each row carries its own `project`, because this is the one meetings
+   * surface where "which project is this?" is a real question.
+   */
+  async agenda(params: AgendaParams = {}): Promise<Meeting[]> {
+    const { data } = await api.get<Meeting[]>('/meetings/agenda', { params });
     return data;
   },
 

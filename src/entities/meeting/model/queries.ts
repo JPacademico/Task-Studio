@@ -7,7 +7,12 @@ import { errorMessage } from '@/shared/api/client';
 import { queryKeys } from '@/shared/api/query-keys';
 import { translate } from '@/shared/i18n';
 import { meetingApi } from '../api/meeting.api';
-import type { CreateMeetingPayload, Meeting, UpdateMeetingPayload } from './types';
+import type {
+  AgendaParams,
+  CreateMeetingPayload,
+  Meeting,
+  UpdateMeetingPayload,
+} from './types';
 
 /**
  * How long a cached calendar stays fresh.
@@ -53,12 +58,31 @@ const upsertMeeting = (queryClient: QueryClient, meeting: Meeting): void => {
 
     return [...next].sort(byStart);
   });
+
+  invalidateAgenda(queryClient);
 };
 
 const removeMeeting = (queryClient: QueryClient, projectId: string, meetingId: string): void => {
   queryClient.setQueryData<Meeting[]>(listKey(projectId), (meetings) =>
     Array.isArray(meetings) ? meetings.filter((entry) => entry.id !== meetingId) : meetings,
   );
+  invalidateAgenda(queryClient);
+};
+
+/**
+ * The personal agenda holds the same rows under a different question.
+ *
+ * It is invalidated rather than patched, and that asymmetry is deliberate. A
+ * board's cache can be edited in place because membership is settled — the row
+ * belongs to that project and always will. Whether a meeting belongs on
+ * *somebody's agenda* is a server-side predicate (are they a participant, or is
+ * the guest list empty, or have they left the project since?), and
+ * re-implementing it here would be a second copy of a rule that can only be
+ * right in one place. The agenda is also rarely mounted at the same time as a
+ * board, so in practice this marks a cache nobody is looking at.
+ */
+const invalidateAgenda = (queryClient: QueryClient): void => {
+  void queryClient.invalidateQueries({ queryKey: ['meetings', 'agenda'] });
 };
 
 /**
@@ -76,6 +100,33 @@ export const useProjectMeetings = (projectId: string | undefined) =>
     queryKey: listKey(projectId ?? ''),
     queryFn: () => meetingApi.list({ projectId: projectId as string }),
     enabled: Boolean(projectId),
+    staleTime: MEETINGS_STALE_TIME,
+  });
+
+/**
+ * Everything the signed-in person is expected at, across every project.
+ *
+ * ## Why this is its own query rather than a merge of the board's
+ *
+ * "Which meetings am I expected at" is a question only the server can answer:
+ * it spans projects this client has never fetched, and the rule includes
+ * meetings with an *empty* guest list, which mean "the whole roster" and are
+ * therefore about membership rather than about the row. Assembling it from
+ * cached per-project lists would be both incomplete and a copy of a permission
+ * rule.
+ *
+ * ## No realtime
+ *
+ * Socket rooms are per project, and this page is in none of them — joining a
+ * dozen rooms to keep a calendar warm would cost more than it saves. Writes
+ * made anywhere in this tab invalidate the agenda (see `invalidateAgenda`), and
+ * a colleague's change lands on the next visit. A minute-fresh agenda is the
+ * right trade for a surface people open to plan their week.
+ */
+export const useMyAgenda = (params: AgendaParams = {}) =>
+  useQuery({
+    queryKey: queryKeys.meetings.agenda(params.projectId),
+    queryFn: () => meetingApi.agenda(params),
     staleTime: MEETINGS_STALE_TIME,
   });
 

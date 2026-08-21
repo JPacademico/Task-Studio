@@ -4,12 +4,17 @@ import { toast } from 'sonner';
 
 import { errorMessage } from '@/shared/api/client';
 import { queryKeys } from '@/shared/api/query-keys';
+import {
+  optimisticNote,
+  pendingNoteId,
+  splitCreateRequest,
+  type CreateNoteRequest,
+} from '../lib/optimistic';
 import { boardApi, noteApi } from '../api/note.api';
 import type {
   BoardSnapshot,
   CreateBoardStrokePayload,
   CreateNoteLinkPayload,
-  CreateNotePayload,
   Note,
   UpdateNotePayload,
 } from './types';
@@ -64,14 +69,105 @@ export const useBoard = (pageIndex: number) =>
     placeholderData: keepPreviousData,
   });
 
-export const useCreateBoardNote = (pageIndex: number) => {
+/**
+ * Sticks the note on the wall now, and tells the server afterwards.
+ *
+ * ## What this replaces
+ *
+ * The mutation used to append the note in `onSuccess`, which meant "add a
+ * Post-it" — a gesture whose entire content is *a blank square appears where I
+ * asked for one* — cost a full round trip before anything happened. On the
+ * free-tier API that is a few hundred milliseconds warm and several seconds
+ * from cold, spent looking at an unchanged board with a spinner in the toolbar.
+ * Long enough that the usual response was to press the button again, which
+ * produced two notes.
+ *
+ * Everything about a new note is already known here. Its colour, position and
+ * rotation are picked *by the caller* before the request is made; the server
+ * contributes an id, a `zIndex` and two timestamps. There is nothing to wait
+ * for, so it does not wait: the sheet goes up against a placeholder id and is
+ * swapped for the real row when it lands.
+ *
+ * `isPendingNoteId` is what keeps the gap safe — the board refuses to PATCH or
+ * DELETE an id the server has never heard of, so a note picked up, typed into
+ * or binned during those few hundred milliseconds cannot 404. See
+ * `entities/note/lib/optimistic`.
+ *
+ * `currentUserId` is passed rather than read from the session store because
+ * this is the entity layer: it does not get to know that a feature called auth
+ * exists. The personal board hides the author stamp anyway; the project board's
+ * copy of this needs it to decide whether the card is yours to edit.
+ */
+export const useCreateBoardNote = (pageIndex: number, currentUserId?: string) => {
   const { patch } = useBoardCache(pageIndex);
 
   return useMutation({
-    mutationFn: (payload: CreateNotePayload) =>
-      noteApi.create({ ...payload, scope: 'PERSONAL', pageIndex }),
-    onSuccess: (note) => patch((snapshot) => ({ ...snapshot, notes: [...snapshot.notes, note] })),
-    onError: (error) => toast.error(errorMessage(error, translate('toast.boardAddFailed'))),
+    mutationFn: (request: CreateNoteRequest) =>
+      noteApi.create({
+        ...splitCreateRequest(request).payload,
+        scope: 'PERSONAL',
+        pageIndex,
+      }),
+
+    onMutate: (request) => {
+      const { payload, replacesId } = splitCreateRequest(request);
+
+      /*
+       * A sheet the caller already drew is adopted, not duplicated.
+       *
+       * `useImageDrop` puts a picture on the wall the moment the file is
+       * chosen and only calls this once the upload finishes, so by now there is
+       * already a note there showing a `blob:` preview. Appending a second
+       * placeholder would show the same picture twice; taking the first one
+       * down first would blink it out of existence for the length of this
+       * request. Adopting its id does neither — the sheet never moves, and the
+       * swap below simply replaces it with the server's row.
+       */
+      if (replacesId) return { placeholderId: replacesId };
+
+      const placeholderId = pendingNoteId();
+
+      patch((snapshot) => ({
+        ...snapshot,
+        notes: [
+          ...snapshot.notes,
+          optimisticNote(payload, {
+            id: placeholderId,
+            userId: currentUserId,
+            scope: 'PERSONAL',
+            pageIndex,
+          }),
+        ],
+      }));
+
+      return { placeholderId };
+    },
+
+    /*
+     * Replace in place rather than remove-then-append.
+     *
+     * Appending the real row after dropping the placeholder would move the note
+     * to the end of the list, and the list is paint order — so a note created
+     * while another was still in flight would visibly jump above its neighbour
+     * the moment the response arrived.
+     */
+    onSuccess: (note, _request, context) =>
+      patch((snapshot) => ({
+        ...snapshot,
+        notes: snapshot.notes.map((entry) =>
+          entry.id === context?.placeholderId ? note : entry,
+        ),
+      })),
+
+    onError: (error, _request, context) => {
+      if (context?.placeholderId) {
+        patch((snapshot) => ({
+          ...snapshot,
+          notes: snapshot.notes.filter((entry) => entry.id !== context.placeholderId),
+        }));
+      }
+      toast.error(errorMessage(error, translate('toast.boardAddFailed')));
+    },
   });
 };
 

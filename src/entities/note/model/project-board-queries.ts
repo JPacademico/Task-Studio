@@ -6,10 +6,15 @@ import { useRealtime } from '@/app/providers/realtime-provider';
 import { errorMessage } from '@/shared/api/client';
 import { queryKeys } from '@/shared/api/query-keys';
 import { markLocalNoteEdit, mergeRemoteNote, releaseLocalNoteEdit } from '../lib/local-edits';
+import {
+  optimisticNote,
+  pendingNoteId,
+  splitCreateRequest,
+  type CreateNoteRequest,
+} from '../lib/optimistic';
 import { boardApi, noteApi } from '../api/note.api';
 import type {
   CreateNoteLinkPayload,
-  CreateNotePayload,
   Note,
   NoteLink,
   ProjectBoardSnapshot,
@@ -150,14 +155,85 @@ export const useProjectBoardRealtime = (projectId: string) => {
   }, [patch, projectId, socket]);
 };
 
-export const useCreateProjectNote = (projectId: string) => {
+/**
+ * The personal board's optimistic create, on a wall other people are watching.
+ *
+ * See `useCreateBoardNote` for why the note goes up before the request does.
+ * The one addition here is the echo: the server broadcasts `note:created` to
+ * the whole room including us, and that handler upserts by id — so the real row
+ * can arrive over the socket *before* the mutation resolves. The swap below
+ * therefore drops the placeholder rather than replacing it whenever the row is
+ * already on the wall, which is the difference between one note and two.
+ *
+ * `currentUserId` matters more here than on the personal board: it is what
+ * decides whether the card draws its own delete button and whose stamp goes in
+ * the corner. Without it a note would be un-deletable by its author for as long
+ * as the request took.
+ */
+export const useCreateProjectNote = (projectId: string, currentUserId?: string) => {
   const { patch } = useProjectBoardCache(projectId);
 
   return useMutation({
-    mutationFn: (payload: CreateNotePayload) =>
-      noteApi.create({ ...payload, scope: 'PROJECT', projectId }),
-    onSuccess: (note) => patch((snapshot) => ({ ...snapshot, notes: [...snapshot.notes, note] })),
-    onError: (error) => toast.error(errorMessage(error, translate('toast.boardAddFailed'))),
+    mutationFn: (request: CreateNoteRequest) =>
+      noteApi.create({ ...splitCreateRequest(request).payload, scope: 'PROJECT', projectId }),
+
+    onMutate: (request) => {
+      const { payload, replacesId } = splitCreateRequest(request);
+
+      /*
+       * A sheet the caller already drew is adopted, not duplicated.
+       *
+       * `useImageDrop` puts a picture on the wall the moment the file is
+       * chosen and only calls this once the upload finishes, so by now there is
+       * already a note there showing a `blob:` preview. Appending a second
+       * placeholder would show the same picture twice; taking the first one
+       * down first would blink it out of existence for the length of this
+       * request. Adopting its id does neither — the sheet never moves, and the
+       * swap below simply replaces it with the server's row.
+       */
+      if (replacesId) return { placeholderId: replacesId };
+
+      const placeholderId = pendingNoteId();
+
+      patch((snapshot) => ({
+        ...snapshot,
+        notes: [
+          ...snapshot.notes,
+          optimisticNote(payload, {
+            id: placeholderId,
+            userId: currentUserId,
+            scope: 'PROJECT',
+            projectId,
+          }),
+        ],
+      }));
+
+      return { placeholderId };
+    },
+
+    onSuccess: (note, _request, context) =>
+      patch((snapshot) => {
+        const alreadyArrived = snapshot.notes.some((entry) => entry.id === note.id);
+
+        return {
+          ...snapshot,
+          notes: alreadyArrived
+            ? snapshot.notes.filter((entry) => entry.id !== context?.placeholderId)
+            : snapshot.notes.map((entry) =>
+                entry.id === context?.placeholderId ? note : entry,
+              ),
+        };
+      }),
+
+    onError: (error, _request, context) => {
+      if (context?.placeholderId) {
+        patch((snapshot) => ({
+          ...snapshot,
+          notes: snapshot.notes.filter((entry) => entry.id !== context.placeholderId),
+        }));
+      }
+      toast.error(errorMessage(error, translate('toast.boardAddFailed')));
+    },
   });
 };
 

@@ -20,6 +20,7 @@ export { Select, type SelectOption } from './select';
 export { RouteBoundary } from './route-boundary';
 export { EdgeAffordance, NavPinButton } from './edge-affordance';
 export { ExpandToggle, ExpandableStage } from './expandable-stage';
+export { ZoomableImage } from './zoomable-image';
 export { PageStack, PostItGlyph, PostItMark, PushPin, SendGlyph, StudioMark } from './studio-icons';
 export { type NavGlyphKey } from './glyph-kit';
 export { NavGlyph } from './nav-glyph';

@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 import { authApi } from '@/features/auth/api/auth.api';
 import { useSessionStore } from '@/features/auth/model/session.store';
+import { OAuthButtons } from '@/features/auth/ui/oauth-buttons';
 import { errorMessage } from '@/shared/api/client';
 import { useT } from '@/shared/i18n';
 import { Button, Input } from '@/shared/ui';
@@ -101,6 +102,10 @@ export const SignupPage = () => {
           {t('auth.signUp.confirmNote')}
         </p>
       </form>
+
+      {/* The short way in: a provider has already confirmed the address, so
+          signing up this way skips the inbox round trip entirely. */}
+      <OAuthButtons intent="signUp" className="mt-5" />
     </AuthShell>
   );
 };

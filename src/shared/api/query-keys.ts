@@ -61,12 +61,29 @@ export const queryKeys = {
      * would make every arrow press a cache miss and a request.
      */
     list: (projectId: string) => ['meetings', 'list', projectId] as const,
+    /**
+     * The personal agenda, keyed by its one server-side filter.
+     *
+     * `projectId` *is* in the key, unlike the board's local filters above,
+     * because narrowing the agenda to a project is a different query rather
+     * than a different view of the same answer — the unfiltered response is
+     * capped, so it is not guaranteed to contain the filtered one.
+     */
+    agenda: (projectId?: string) => ['meetings', 'agenda', projectId ?? 'all'] as const,
   },
 
   notifications: {
     all: ['notifications'] as const,
     list: (unread?: boolean) => ['notifications', 'list', Boolean(unread)] as const,
     unreadCount: ['notifications', 'unread-count'] as const,
+  },
+
+  organizations: {
+    all: ['organizations'] as const,
+    list: ['organizations', 'list'] as const,
+    detail: (organizationId: string) => ['organizations', organizationId] as const,
+    /** What the "file a project here" picker offers. */
+    attachable: ['organizations', 'attachable'] as const,
   },
 
   invitations: {

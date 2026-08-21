@@ -33,7 +33,6 @@ interface BoardToolbarProps {
   onAddNote: () => void;
   onAddImage: (file: File) => void;
   isUploading: boolean;
-  isAddingNote: boolean;
 
   onClearInk?: () => void;
   onClearAll: () => void;
@@ -70,7 +69,6 @@ export const BoardToolbar = ({
   onAddNote,
   onAddImage,
   isUploading,
-  isAddingNote,
   onClearInk,
   onClearAll,
   showInkTools = true,
@@ -107,11 +105,15 @@ export const BoardToolbar = ({
       <span className="hidden h-6 w-px bg-edge sm:block" />
 
       {/* The paper itself is the button. "+ Note" made the primary action of a
-          Post-it board read like a database row. */}
+          Post-it board read like a database row.
+
+          No pending state either: the note is on the wall on the next frame
+          and the request runs underneath it, so a spinner here would only ever
+          be a flash on a button whose job is already done. See
+          `useCreateBoardNote`. */}
       <Button
         size="sm"
         onClick={onAddNote}
-        isLoading={isAddingNote}
         title={t('board.addPostIt')}
         aria-label={t('board.addPostIt')}
         className="px-2.5"

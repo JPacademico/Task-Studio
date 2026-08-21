@@ -31,7 +31,7 @@ export const NotificationBell = () => {
 
   const { data: unread = 0 } = useUnreadCount();
   const { data: notifications = [], isLoading } = useNotifications();
-  const { markRead, markAllRead } = useNotificationActions();
+  const { dismiss, markAllRead } = useNotificationActions();
 
   return (
     <div className="relative">
@@ -109,8 +109,24 @@ export const NotificationBell = () => {
                     <button
                       key={notification.id}
                       type="button"
+                      /*
+                       * Clicking one deals with it and takes it away.
+                       *
+                       * This used to mark the row read and leave it in place,
+                       * which meant the only way to get a notification off the
+                       * list was to empty the entire list. So the bell filled
+                       * up with weeks of greyed-out rows and the two that
+                       * mattered were somewhere underneath them.
+                       *
+                       * Dismissing on click is the same gesture doing the
+                       * obvious thing: you have seen it, it is gone, and the
+                       * deep link still opens if there is one to open. Nothing
+                       * is lost that was not already only a record of
+                       * something that had happened elsewhere — the invitation,
+                       * the task and the project all still exist.
+                       */
                       onClick={() => {
-                        if (!notification.readAt) markRead.mutate(notification.id);
+                        dismiss.mutate(notification.id);
                         if (link) {
                           navigate(link);
                           setIsOpen(false);

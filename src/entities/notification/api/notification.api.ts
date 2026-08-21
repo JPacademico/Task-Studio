@@ -22,6 +22,11 @@ export const notificationApi = {
     await api.patch('/notifications/read-all');
   },
 
+  /** Removes a single notification outright. See `useNotificationActions`. */
+  async dismiss(id: string): Promise<void> {
+    await api.delete(`/notifications/${id}`);
+  },
+
   async clear(): Promise<void> {
     await api.delete('/notifications');
   },

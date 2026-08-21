@@ -18,11 +18,12 @@ import {
   useSaveBoardPositions,
   useUpdateBoardNote,
 } from '@/entities/note/model/board-queries';
+import { isPendingNoteId } from '@/entities/note/lib/optimistic';
 import type { UpdateNotePayload } from '@/entities/note/model/types';
 import { PostIt, type NoteHandle } from '@/entities/note/ui/post-it';
 import { useCurrentUser } from '@/features/auth/model/session.store';
 import { createPositionBus } from '@/features/notes-board/lib/position-bus';
-import { isPendingNoteId, useImageDrop } from '@/features/notes-board/lib/use-image-drop';
+import { useImageDrop } from '@/features/notes-board/lib/use-image-drop';
 import { groupTintFor, notesInsideRect } from '@/features/notes-board/lib/selection';
 import {
   useMarqueeSelection,
@@ -106,7 +107,7 @@ const NotesBoardPage = () => {
 
   const { data: board, isLoading } = useBoard(pageIndex);
 
-  const createNote = useCreateBoardNote(pageIndex);
+  const createNote = useCreateBoardNote(pageIndex, currentUser?.id);
   const updateNote = useUpdateBoardNote(pageIndex);
   const deleteNote = useDeleteBoardNote(pageIndex);
   const savePositions = useSaveBoardPositions(pageIndex);
@@ -467,7 +468,6 @@ const NotesBoardPage = () => {
           onAddNote={handleCreateNote}
           onAddImage={(file) => void addImage(file)}
           isUploading={isUploading}
-          isAddingNote={createNote.isPending}
           isExpanded={isExpanded}
           onToggleExpand={() => setIsExpanded((expanded) => !expanded)}
           /*

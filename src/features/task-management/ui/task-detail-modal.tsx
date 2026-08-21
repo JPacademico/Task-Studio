@@ -33,7 +33,7 @@ import { NOTE_COLORS, TASK_STATUS_META } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
 import { readableInk } from '@/shared/lib/colors';
 import { formatDateTime, formatDeadline, formatDeadlineDate } from '@/shared/lib/dates';
-import { Avatar, AvatarStack, Badge, Button, Modal, Spinner } from '@/shared/ui';
+import { Avatar, AvatarStack, Badge, Button, Modal, Spinner, ZoomableImage } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
 interface TaskDetailModalProps {
@@ -103,6 +103,9 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
       // is instead of leaving the header looking half-rendered.
       description={task ? (task.project?.name ?? t('agenda.personal')) : undefined}
       className="sm:max-w-2xl"
+      // A task sheet is the densest surface in the app; the skin keeps its
+      // palette, border and shadow here but gives up its pattern.
+      flat
       footer={
         task && (
           <>
@@ -145,12 +148,13 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
             </p>
           )}
 
+          {/* Small, whole, and cheap until somebody actually wants to look at
+              it — see `ZoomableImage`. */}
           {task.attachmentUrl && (
-            <img
+            <ZoomableImage
               src={task.attachmentUrl}
-              alt="Task attachment"
-              className="max-h-56 w-full rounded-xl border border-edge object-cover"
-              loading="lazy"
+              thumbSrc={task.attachmentThumbUrl}
+              alt={`${task.title} — attachment`}
             />
           )}
 

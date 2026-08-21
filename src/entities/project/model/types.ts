@@ -1,3 +1,4 @@
+import type { OrganizationRef } from '@/entities/organization/model/types';
 import type { UserSummary } from '@/entities/user/model/types';
 
 export type ProjectRole = 'OWNER' | 'ADMIN' | 'MEMBER';
@@ -18,6 +19,13 @@ export interface Project {
   updatedAt: string;
   owner: UserSummary;
   isOwner: boolean;
+  /**
+   * The folder this project is filed under, if any.
+   *
+   * Sent to the whole roster, and grants nothing — an organization is a
+   * grouping, not a permission. See `entities/organization/model/types`.
+   */
+  organization: OrganizationRef | null;
   myRole: ProjectRole;
   isPinned: boolean;
   roster: RosterMember[];

@@ -5,7 +5,13 @@ import { useCreateMeeting, useUpdateMeeting } from '@/entities/meeting/model/que
 import type { Meeting } from '@/entities/meeting/model/types';
 import type { RosterMember } from '@/entities/project/model/types';
 import { cn } from '@/shared/lib/cn';
-import { fromDateTimeInput, toDateTimeInput } from '@/shared/lib/dates';
+import {
+  DATE_INPUT_MAX,
+  DATE_INPUT_MIN,
+  fromDateTimeInput,
+  isDateTimeInput,
+  toDateTimeInput,
+} from '@/shared/lib/dates';
 import { Avatar, Button, Input, Modal, Textarea } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
@@ -100,12 +106,21 @@ export const MeetingComposer = ({
     setEndAt(toDateTimeInput(new Date(nextStart + (previousEnd - previousStart))));
   };
 
+  // Same guard as the task composer: an unparseable year is its own failure,
+  // and it has to be excluded before the two ends can be compared at all.
+  // See `shared/lib/dates`.
+  const startIsMalformed = !isDateTimeInput(startAt);
+  const endIsMalformed = !isDateTimeInput(endAt);
+
   const windowIsInvalid =
-    Boolean(startAt && endAt) && new Date(endAt).getTime() <= new Date(startAt).getTime();
+    !startIsMalformed &&
+    !endIsMalformed &&
+    Boolean(startAt && endAt) &&
+    new Date(endAt).getTime() <= new Date(startAt).getTime();
 
   const canSubmit =
     title.trim().length >= 2 && room.trim().length >= 1 && Boolean(startAt) &&
-    Boolean(endAt) && !windowIsInvalid;
+    Boolean(endAt) && !windowIsInvalid && !startIsMalformed && !endIsMalformed;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
@@ -114,6 +129,7 @@ export const MeetingComposer = ({
       title: title.trim(),
       room: room.trim(),
       description: description.trim() || undefined,
+      // `canSubmit` has already proved both parse; the cast documents that.
       startAt: fromDateTimeInput(startAt) as string,
       endAt: fromDateTimeInput(endAt) as string,
       participantIds,
@@ -180,16 +196,27 @@ export const MeetingComposer = ({
             label={t('meetings.starts')}
             name="startAt"
             type="datetime-local"
+            min={DATE_INPUT_MIN}
+            max={DATE_INPUT_MAX}
             value={startAt}
             onChange={(event) => handleStartChange(event.target.value)}
+            error={startIsMalformed ? t('task.dateInvalid') : undefined}
           />
           <Input
             label={t('meetings.ends')}
             name="endAt"
             type="datetime-local"
+            min={DATE_INPUT_MIN}
+            max={DATE_INPUT_MAX}
             value={endAt}
             onChange={(event) => setEndAt(event.target.value)}
-            error={windowIsInvalid ? t('meetings.windowInvalid') : undefined}
+            error={
+              endIsMalformed
+                ? t('task.dateInvalid')
+                : windowIsInvalid
+                  ? t('meetings.windowInvalid')
+                  : undefined
+            }
           />
         </div>
 

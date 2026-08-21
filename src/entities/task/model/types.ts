@@ -31,6 +31,13 @@ export interface Task {
   dueAt: string | null;
   completedAt: string | null;
   attachmentUrl: string | null;
+  /**
+   * Small rendition of the attachment, drawn inline on the task sheet.
+   *
+   * Null for anything uploaded before thumbnails existed; the sheet falls back
+   * to `attachmentUrl` in that case. See `ZoomableImage`.
+   */
+  attachmentThumbUrl: string | null;
   order: number;
   deletedAt: string | null;
   /** Set when the 7-day housekeeping sweep binned it, not a person. */
@@ -97,6 +104,7 @@ export interface CreateTaskPayload {
   assigneeIds?: string[];
   checklist?: string[];
   attachmentKey?: string;
+  attachmentThumbKey?: string;
 }
 
 export interface UpdateTaskPayload {
@@ -109,5 +117,6 @@ export interface UpdateTaskPayload {
   dueAt?: string | null;
   assigneeIds?: string[];
   attachmentKey?: string | null;
+  attachmentThumbKey?: string | null;
   order?: number;
 }

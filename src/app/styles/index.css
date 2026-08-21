@@ -6917,3 +6917,29 @@ html [data-sonner-toaster][data-theme] [data-sonner-toast] [data-cancel] {
   background: rgb(var(--surface-sunken));
   color: rgb(var(--content-muted));
 }
+
+/* ==========================================================================
+ * A dialog that gives up the skin's pattern.
+ *
+ * `.ui-modal` already went flat on the underwater and volcano skins, for a
+ * reason that turned out to be general rather than specific to those two: a
+ * dialog is read at close range, it is the densest thing the app draws, and
+ * every skin's surface pattern sits directly behind that type. The task
+ * composer is the worst case — a title, a description, two dates, a colour
+ * row, a priority row, an assignee list and a checklist inside 672 pixels —
+ * and on the halftone, the laid paper, the dithered fill and the basalt
+ * crazing alike the labels were being read through the material.
+ *
+ * So the composer and the task sheet ask for `flat` (see `Modal`), on every
+ * theme. Nothing else about the skin is given up: the palette, the radius, the
+ * border, the bevel and the shadow all stay, and the page behind the dialog
+ * still carries the full material two hundred milliseconds of fade away.
+ *
+ * Unlayered and written through `[data-skin]` so it outranks both the layered
+ * per-skin `.panel` rules and the runic skin's three-layer frame, which
+ * declares `background-image` in its own right.
+ * ======================================================================== */
+.ui-modal--flat,
+[data-skin] .ui-modal--flat {
+  background-image: none;
+}

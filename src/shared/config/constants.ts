@@ -145,3 +145,14 @@ export const MAX_BOARD_PAGES = 10;
 
 /** Distance from a screen edge (px) that reveals a hidden menu. */
 export const EDGE_REVEAL_PX = 24;
+
+/**
+ * Height of the top bar, in pixels — `3.5rem` plus a little slack.
+ *
+ * Mirrors `.safe-top-bar` in `index.css`. Read by the right-hand rail, which
+ * refuses to open from inside this band so that reaching for the account menu
+ * at the far right of the bar cannot throw the project rail across the page.
+ * The notch inset is not added: over-reserving here would block a strip of the
+ * page proper, and the controls that caused the problem all sit in the row.
+ */
+export const TOP_BAR_PX = 60;

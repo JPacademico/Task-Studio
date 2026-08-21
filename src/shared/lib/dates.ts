@@ -109,13 +109,77 @@ export const formatWindow = (
   return translate('dates.windowDays', { count: Math.round(hours / 24) });
 };
 
+/*
+ * The two ends of a `<input type="datetime-local">`, and why they are defensive.
+ *
+ * A `datetime-local` control does not hand back a date — it hands back a
+ * *string*, and the HTML spec lets the year segment run to six digits. Holding
+ * a key down in it produces `123456-04-02T10:00`, which is a perfectly legal
+ * value for the control and an `Invalid Date` for `Date`. `toISOString()` on
+ * that throws a `RangeError`, and because the composer derives the task type
+ * from these fields inside a `useMemo`, the throw happened *during render* —
+ * which unmounts the tree and takes the whole app down with it. Holding a key
+ * down in a date field should produce a silly date, not a blank screen.
+ *
+ * So the boundary is treated as untrusted input in both directions: anything
+ * that will not survive the round trip is reported as "nothing", the composers
+ * ask `isDateTimeInput` before letting a form submit, and the controls carry
+ * `min`/`max` so the browser marks an out-of-range year invalid as it is typed.
+ */
+
+/**
+ * The window the app will accept.
+ *
+ * Not the full ECMAScript range (±271821 years), which is nothing a project
+ * plan needs and everything a validator has to keep re-proving. The Unix epoch
+ * to the end of the millennium covers every deadline anybody will ever type and
+ * keeps the value inside the four-digit year that date inputs, database columns
+ * and readers all expect.
+ */
+export const DATE_INPUT_MIN = '1970-01-01T00:00';
+export const DATE_INPUT_MAX = '2999-12-31T23:59';
+
+const MIN_MS = new Date(DATE_INPUT_MIN).getTime();
+const MAX_MS = new Date(DATE_INPUT_MAX).getTime();
+
 /** `datetime-local` input value (local time, no timezone suffix). */
 export const toDateTimeInput = (value: string | Date | null): string => {
   if (!value) return '';
+
   const date = toDate(value);
+  // A stored value can be unparseable too — a half-written draft that reached
+  // the server before this guard existed, say.
+  if (Number.isNaN(date.getTime())) return '';
+
   const offset = date.getTimezoneOffset() * 60_000;
-  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+  const local = new Date(date.getTime() - offset);
+  if (Number.isNaN(local.getTime())) return '';
+
+  return local.toISOString().slice(0, 16);
 };
 
-export const fromDateTimeInput = (value: string): string | undefined =>
-  value ? new Date(value).toISOString() : undefined;
+/**
+ * Whether a `datetime-local` string is a real, in-range moment.
+ *
+ * An empty field is *valid* — these are optional everywhere they appear, and
+ * "no deadline" is a legitimate answer. Only a filled field that cannot be
+ * parsed is a problem.
+ */
+export const isDateTimeInput = (value: string): boolean => {
+  if (!value) return true;
+
+  const time = new Date(value).getTime();
+  return Number.isFinite(time) && time >= MIN_MS && time <= MAX_MS;
+};
+
+/**
+ * The ISO instant behind a `datetime-local` value, or `undefined`.
+ *
+ * `undefined` for an empty field *and* for an unusable one. Both mean the same
+ * thing to every caller — there is no moment here to send — and neither is
+ * worth throwing over.
+ */
+export const fromDateTimeInput = (value: string): string | undefined => {
+  if (!value || !isDateTimeInput(value)) return undefined;
+  return new Date(value).toISOString();
+};

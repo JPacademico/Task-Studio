@@ -11,8 +11,9 @@ import { TearOffGhost } from '@/features/floating-shortcuts/ui/tear-off-ghost';
 import { cn } from '@/shared/lib/cn';
 import { formatDeadline } from '@/shared/lib/dates';
 import { useIsTouchDevice } from '@/shared/lib/hooks';
+import { TOP_BAR_PX } from '@/shared/config/constants';
 import { useNavPreferences } from '@/shared/lib/nav-preferences.store';
-import { useEdgeReveal } from '@/shared/lib/use-edge-reveal';
+import { useEdgeReveal, useReleaseAfterTearOff } from '@/shared/lib/use-edge-reveal';
 import {
   AutumnHedge,
   Button,
@@ -158,7 +159,18 @@ export const ProjectRail = ({ onCreateProject }: ProjectRailProps) => {
     hideDistance: 300,
     enabled: !isTouch,
     locked: isPinned || isTearing,
+    /*
+     * The top bar is not a way in.
+     *
+     * The account avatar, the theme toggle and the notification bell all live
+     * within a few pixels of the right edge of the screen, and overshooting any
+     * of them used to open this rail over the page. Coming down the right edge
+     * from below the bar still works, which is the gesture the rail is for.
+     */
+    keepOut: { top: TOP_BAR_PX },
   });
+
+  useReleaseAfterTearOff(isTearing, { unpin, close });
 
   // Server-side ordering: whatever is due soonest for this user comes first.
   const { data: projects = [], isLoading } = useProjects({ sort: 'deadline' });

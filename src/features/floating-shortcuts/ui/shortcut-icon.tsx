@@ -1,5 +1,7 @@
 import {
+  Building2,
   CalendarDays,
+  CalendarRange,
   FolderKanban,
   LayoutDashboard,
   Mail,
@@ -21,6 +23,8 @@ export const SHORTCUT_ICONS: Record<ShortcutIcon, LucideIcon> = {
   dashboard: LayoutDashboard,
   tasks: CalendarDays,
   notes: StickyNote,
+  meetings: CalendarRange,
+  organizations: Building2,
   invitations: Mail,
   recycle: Trash2,
   settings: Settings,

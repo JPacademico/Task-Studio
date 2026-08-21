@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
+  Building2,
   CalendarDays,
+  CalendarRange,
   LayoutDashboard,
   LogOut,
   Mail,
@@ -24,7 +26,7 @@ import {
 import { TearOffGhost } from '@/features/floating-shortcuts/ui/tear-off-ghost';
 import { useRouteIntentPrefetch } from '@/app/layouts/use-shell-prefetch';
 import { cn } from '@/shared/lib/cn';
-import { useEdgeReveal } from '@/shared/lib/use-edge-reveal';
+import { useEdgeReveal, useReleaseAfterTearOff } from '@/shared/lib/use-edge-reveal';
 import { useIsTouchDevice } from '@/shared/lib/hooks';
 import { useNavPreferences } from '@/shared/lib/nav-preferences.store';
 import {
@@ -85,11 +87,30 @@ const GROUPS: { heading: TranslationKey; items: NavItem[] }[] = [
         shortcutIcon: 'notes',
         hint: 'nav.notesBoardHint',
       },
+      // Alongside the task menu rather than under "Manage": both answer "what
+      // is on me", one in work and the other in appointments. The project tabs
+      // still own posting and editing a meeting — this is the read across all
+      // of them. See `MeetingsPage`.
+      {
+        to: '/meetings',
+        label: 'nav.meetings',
+        icon: CalendarRange,
+        shortcutIcon: 'meetings',
+        hint: 'nav.meetingsHint',
+      },
     ],
   },
   {
     heading: 'nav.groupManage',
     items: [
+      // Under "Manage" rather than "Workspace": a folder is something you keep
+      // tidy, not somewhere you go to work. See `OrganizationsPage`.
+      {
+        to: '/organizations',
+        label: 'nav.organizations',
+        icon: Building2,
+        shortcutIcon: 'organizations',
+      },
       { to: '/invitations', label: 'nav.invitations', icon: Mail, shortcutIcon: 'invitations' },
       { to: '/recycle-bin', label: 'nav.recycleBin', icon: Trash2, shortcutIcon: 'recycle' },
       // Its own entry rather than a section inside settings: choosing a look is
@@ -269,6 +290,11 @@ export const HiddenSidebar = ({ isMobileOpen, onMobileClose }: HiddenSidebarProp
     enabled: !isTouch,
     locked: isPinned || isTearing,
   });
+
+  // Dragging a row out of the rail ends with the pointer nowhere near it, and
+  // pointer capture eats the `mouseleave` that would let go of the hover lock.
+  // See `useReleaseAfterTearOff`.
+  useReleaseAfterTearOff(isTearing, { unpin, close });
 
   const { data: invitations } = useMyInvitations();
   const pendingCount = invitations?.length ?? 0;

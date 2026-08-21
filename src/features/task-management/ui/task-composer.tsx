@@ -10,7 +10,13 @@ import { TaskTypeTag } from '@/entities/task/ui/task-type-tag';
 import { uploadImage } from '@/entities/user/api/user.api';
 import { TASK_COLORS, TASK_TYPE_META } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
-import { fromDateTimeInput, toDateTimeInput } from '@/shared/lib/dates';
+import {
+  DATE_INPUT_MAX,
+  DATE_INPUT_MIN,
+  fromDateTimeInput,
+  isDateTimeInput,
+  toDateTimeInput,
+} from '@/shared/lib/dates';
 import { Avatar, Badge, Button, ColorPicker, Input, Modal, Spinner, Textarea } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
@@ -62,7 +68,21 @@ export const TaskComposer = ({
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [checklist, setChecklist] = useState<string[]>([]);
   const [checklistDraft, setChecklistDraft] = useState('');
-  const [attachment, setAttachment] = useState<{ key: string; publicUrl: string } | null>(null);
+  /*
+   * The picture on the form, in as much detail as this session knows.
+   *
+   * `key` is empty when the state was hydrated from an existing task: there is
+   * a picture, but this session did not upload it, so there is no object key to
+   * send and nothing about the attachment to change. A non-empty `key` means a
+   * fresh upload; `null` for the whole thing means the user took it off. The
+   * submit handler turns those three states into three different payloads.
+   */
+  const [attachment, setAttachment] = useState<{
+    key: string;
+    publicUrl: string;
+    thumbKey: string | null;
+    thumbUrl: string | null;
+  } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
   // Reset (or hydrate) whenever the dialog opens.
@@ -79,7 +99,14 @@ export const TaskComposer = ({
     setChecklist([]);
     setChecklistDraft('');
     setAttachment(
-      task?.attachmentUrl ? { key: '', publicUrl: task.attachmentUrl } : null,
+      task?.attachmentUrl
+        ? {
+            key: '',
+            publicUrl: task.attachmentUrl,
+            thumbKey: null,
+            thumbUrl: task.attachmentThumbUrl,
+          }
+        : null,
     );
   }, [isOpen, task]);
 
@@ -95,13 +122,45 @@ export const TaskComposer = ({
     [assigneeIds.length, dueAt, isPersonal, startAt],
   );
 
-  const windowIsInvalid =
-    Boolean(startAt && dueAt) && new Date(dueAt).getTime() <= new Date(startAt).getTime();
+  /*
+   * Two different complaints, kept apart.
+   *
+   * A malformed date ("what you typed is not a date") and a backwards window
+   * ("the deadline is before the start") need different words, and only the
+   * first can take the form down with it — see the note in `shared/lib/dates`.
+   * Both block the submit; neither throws.
+   */
+  const startIsMalformed = !isDateTimeInput(startAt);
+  const dueIsMalformed = !isDateTimeInput(dueAt);
 
+  const windowIsInvalid =
+    !startIsMalformed &&
+    !dueIsMalformed &&
+    Boolean(startAt && dueAt) &&
+    new Date(dueAt).getTime() <= new Date(startAt).getTime();
+
+  const canSubmit =
+    title.trim().length >= 2 && !windowIsInvalid && !startIsMalformed && !dueIsMalformed;
+
+  /*
+   * Two renditions go up, not one.
+   *
+   * The second encode costs a moment of the phone's CPU and one extra presigned
+   * request; what it buys is every future reader of this task downloading ~40 kB
+   * instead of the whole photograph to look at a thumbnail they may never open.
+   * That trade is paid once, by the person attaching it, and collected by
+   * everybody on the roster every time the sheet is opened.
+   */
   const handleUpload = async (file: File) => {
     setIsUploading(true);
     try {
-      setAttachment(await uploadImage(file, 'attachments'));
+      const uploaded = await uploadImage(file, 'attachments', { thumbnail: true });
+      setAttachment({
+        key: uploaded.key,
+        publicUrl: uploaded.publicUrl,
+        thumbKey: uploaded.thumbKey,
+        thumbUrl: uploaded.thumbUrl,
+      });
       toast.success(t('task.imageAttached'));
     } catch {
       toast.error(t('settings.uploadFailed'));
@@ -111,7 +170,7 @@ export const TaskComposer = ({
   };
 
   const handleSubmit = async () => {
-    if (title.trim().length < 2 || windowIsInvalid) return;
+    if (!canSubmit) return;
 
     const shared = {
       title: title.trim(),
@@ -132,7 +191,27 @@ export const TaskComposer = ({
           ...shared,
           startAt: fromDateTimeInput(startAt) ?? null,
           dueAt: fromDateTimeInput(dueAt) ?? null,
-          ...(attachment?.key ? { attachmentKey: attachment.key } : {}),
+          /*
+           * Three states, not two.
+           *
+           * `attachmentKey` had been sent only when this session uploaded
+           * something, which quietly made removing a picture impossible: the
+           * X took it off the form and the field was then simply omitted from
+           * the PATCH, which the API reads as "leave it alone". Reopening the
+           * task brought the picture straight back.
+           *
+           *   - a fresh upload  -> the new key (and its thumbnail)
+           *   - cleared         -> `null`, which is how the API deletes it
+           *   - untouched       -> omitted, which is how the API keeps it
+           */
+          ...(attachment?.key
+            ? {
+                attachmentKey: attachment.key,
+                attachmentThumbKey: attachment.thumbKey,
+              }
+            : attachment === null && task.attachmentUrl
+              ? { attachmentKey: null, attachmentThumbKey: null }
+              : {}),
         },
       });
     } else {
@@ -141,6 +220,7 @@ export const TaskComposer = ({
         ...shared,
         checklist: checklist.length > 0 ? checklist : undefined,
         attachmentKey: attachment?.key || undefined,
+        attachmentThumbKey: attachment?.thumbKey ?? undefined,
       });
     }
 
@@ -159,6 +239,9 @@ export const TaskComposer = ({
       )}
       description={t(isPersonal ? 'agenda.personalComposerBody' : 'task.composerSubtitle')}
       className="sm:max-w-2xl"
+      // A task sheet is the densest surface in the app; the skin keeps its
+      // palette, border and shadow here but gives up its pattern.
+      flat
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
@@ -167,7 +250,7 @@ export const TaskComposer = ({
           <Button
             onClick={() => void handleSubmit()}
             isLoading={isPending}
-            disabled={title.trim().length < 2 || windowIsInvalid}
+            disabled={!canSubmit}
           >
             {t(task ? 'task.saveChanges' : 'task.create')}
           </Button>
@@ -209,20 +292,34 @@ export const TaskComposer = ({
         />
 
         <div className="grid gap-4 sm:grid-cols-2">
+          {/* `min`/`max` are what stop a six-digit year being typed in the
+              first place: the control marks itself invalid as it goes, rather
+              than handing back a string nothing can parse. */}
           <Input
             label={t('task.starts')}
             name="startAt"
             type="datetime-local"
+            min={DATE_INPUT_MIN}
+            max={DATE_INPUT_MAX}
             value={startAt}
             onChange={(event) => setStartAt(event.target.value)}
+            error={startIsMalformed ? t('task.dateInvalid') : undefined}
           />
           <Input
             label={t('task.deadline')}
             name="dueAt"
             type="datetime-local"
+            min={DATE_INPUT_MIN}
+            max={DATE_INPUT_MAX}
             value={dueAt}
             onChange={(event) => setDueAt(event.target.value)}
-            error={windowIsInvalid ? t('task.windowInvalid') : undefined}
+            error={
+              dueIsMalformed
+                ? t('task.dateInvalid')
+                : windowIsInvalid
+                  ? t('task.windowInvalid')
+                  : undefined
+            }
           />
         </div>
 
@@ -377,11 +474,15 @@ export const TaskComposer = ({
           <p className="text-xs font-medium text-content-muted">{t('task.imageAttachment')}</p>
 
           {attachment ? (
-            <div className="relative overflow-hidden rounded-xl border border-edge">
+            <div className="relative overflow-hidden rounded-xl border border-edge bg-surface-sunken">
+              {/* `object-contain`: a preview that crops is a preview of
+                  something else. The small rendition is used where there is
+                  one, so re-opening the composer to edit a task does not
+                  re-download the full-size picture. */}
               <img
-                src={attachment.publicUrl}
+                src={attachment.thumbUrl ?? attachment.publicUrl}
                 alt="Task attachment"
-                className="max-h-40 w-full object-cover"
+                className="mx-auto max-h-40 w-full object-contain"
               />
               <button
                 type="button"

@@ -151,6 +151,37 @@ export const wakeApi = (): void => {
 };
 
 /**
+ * The endpoints where a 401 means "those credentials are wrong", not
+ * "your session has ended".
+ *
+ * Everything under `/auth/` that a signed-*out* visitor calls answers 401 as
+ * its ordinary failure: a wrong password, an expired reset link, a spent OAuth
+ * code. Sending those through the refresh-and-retry path below is wrong twice
+ * over — there is no session to refresh, so the refresh fails immediately, and
+ * the failure is then reported to the user as "Your session expired, sign in
+ * again" on the very screen they are trying to sign in *from*. That message is
+ * confusing after a mistyped password and actively misleading in a browser
+ * that has never held a session at all.
+ *
+ * `/auth/me` and `/auth/change-password` are deliberately not here: those are
+ * called *with* a session, and a 401 from them is exactly the case the retry
+ * below exists for.
+ */
+const SIGN_IN_PATHS = [
+  '/auth/login',
+  '/auth/register',
+  '/auth/refresh',
+  '/auth/verify-email',
+  '/auth/resend-verification',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+  '/auth/oauth/',
+];
+
+const isSignInCall = (url: string | undefined): boolean =>
+  Boolean(url && SIGN_IN_PATHS.some((path) => url.includes(path)));
+
+/**
  * Single in-flight refresh shared by every waiting request: a burst of 401s
  * after a cold start must not fire N refreshes and invalidate the token family.
  */
@@ -183,8 +214,7 @@ api.interceptors.response.use(
     // A rejection that carries a response still proves the container answered.
     if (error.response) lastResponseAt = Date.now();
 
-    const isRefreshCall = config?.url?.includes('/auth/refresh');
-    if (status !== 401 || !config || config._retried || isRefreshCall) {
+    if (status !== 401 || !config || config._retried || isSignInCall(config.url)) {
       return Promise.reject(error);
     }
 

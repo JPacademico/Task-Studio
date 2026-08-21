@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Pin, Search, User, UserRound, Users, X } from 'lucide-react';
+import { Search, User, UserRound, Users, X } from 'lucide-react';
 
 import type {
   ListTasksParams,
@@ -10,7 +10,7 @@ import type {
 } from '@/entities/task/model/types';
 import { TASK_STATUS_META, TASK_TYPE_META } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
-import { PostItMark, Segmented, Select } from '@/shared/ui';
+import { Segmented, Select } from '@/shared/ui';
 import { useT, type TranslationKey } from '@/shared/i18n';
 
 /**
@@ -23,7 +23,16 @@ import { useT, type TranslationKey } from '@/shared/i18n';
  * of a task, like a deadline or a priority, and belongs with the dropdowns that
  * filter by those; the tab strip is where the surface says *whose* work it is
  * showing, and a personal task is the one kind of work this page is the only
- * home for. Nothing was lost — see the `hasNotes` toggle further along the row.
+ * home for.
+ *
+ * ## Why there is no "With notes" or "Pinned" toggle any more
+ *
+ * Both were removed from this row on purpose. They were the two widest controls
+ * on a line that already carries a tab strip, a search box, three dropdowns and
+ * the layout switcher, and they earned the least: a board is read to find out
+ * what state the work is in, and "has somebody stuck a note on it" is not that.
+ * Sticking notes on a task and pinning one are both untouched — only the
+ * filters are gone, and the row is legible on a laptop again.
  */
 type FiltersVariant = 'project' | 'personal';
 
@@ -92,6 +101,14 @@ export const TaskFilters = ({
   const patch = (next: Partial<ListTasksParams>) => onChange({ ...value, ...next });
   const isPersonal = variant === 'personal';
 
+  /*
+   * `pinnedOnly` and `hasNotes` are still counted, and still cleared.
+   *
+   * The two toggles that set them are gone from this row — see the note above
+   * the component — but the parameters themselves are not: a surface can still
+   * arrive here holding one (a deep link, a remembered view), and "Clear" has
+   * to be able to get rid of anything that is actually narrowing the list.
+   */
   const hasActiveFilters = Boolean(
     value.status ??
       value.type ??
@@ -203,38 +220,6 @@ export const TaskFilters = ({
           {t('views.clear')}
         </button>
       )}
-
-      {/* What the personal tab strip used to carry. A note is a property of a
-          task, so it filters like one — next to "Pinned", not above it. */}
-      <button
-        type="button"
-        onClick={() => patch({ hasNotes: !value.hasNotes || undefined })}
-        aria-pressed={Boolean(value.hasNotes)}
-        title={t('views.withNotesTitle')}
-        className={cn(
-          'ui-filter inline-flex h-9 items-center gap-1.5 rounded-xl border px-2.5 text-xs transition-colors',
-          value.hasNotes
-            ? 'border-brand bg-brand/12 text-brand'
-            : 'border-edge text-content-muted hover:text-content',
-        )}
-      >
-        <PostItMark className="h-3.5 w-3.5 text-amber-400" />
-        {t('views.withNotes')}
-      </button>
-
-      <button
-        type="button"
-        onClick={() => patch({ pinnedOnly: !value.pinnedOnly })}
-        className={cn(
-          'ui-filter inline-flex h-9 items-center gap-1.5 rounded-xl border px-2.5 text-xs transition-colors',
-          value.pinnedOnly
-            ? 'border-brand bg-brand/12 text-brand'
-            : 'border-edge text-content-muted hover:text-content',
-        )}
-      >
-        <Pin className={cn('h-3 w-3', value.pinnedOnly && 'fill-current')} />
-        {t('views.pinned')}
-      </button>
     </div>
   );
 };

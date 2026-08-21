@@ -17,6 +17,8 @@ export type NavGlyphKey =
   | 'dashboard'
   | 'tasks'
   | 'notes'
+  | 'meetings'
+  | 'organizations'
   | 'invitations'
   | 'recycle'
   | 'settings'
@@ -25,7 +27,18 @@ export type NavGlyphKey =
 
 export type GlyphProps = { className?: string };
 
-export type GlyphSet = Record<NavGlyphKey, ComponentType<GlyphProps>>;
+/**
+ * What one skin draws, which need not be everything.
+ *
+ * `Partial`, deliberately. Eight skins bring a hand-drawn set, and requiring
+ * every one of them to answer for every destination means that adding a single
+ * menu entry is sixteen new drawings before the entry can exist at all — so the
+ * pressure is always to skip the entry, or to ship eight hurried glyphs nobody
+ * looked at twice. A key a skin has no drawing for falls back to the line icon
+ * the entry already carries (see `NavGlyph`), which is the same thing the two
+ * skins with no set at all get, and is never wrong — only plainer.
+ */
+export type GlyphSet = Partial<Record<NavGlyphKey, ComponentType<GlyphProps>>>;
 
 /** The frame. Same box, same defaults, so a set is only ever its drawings. */
 export const Glyph = ({ className, children }: GlyphProps & { children: ReactNode }) => (

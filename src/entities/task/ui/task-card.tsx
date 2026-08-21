@@ -3,8 +3,8 @@ import { motion } from 'framer-motion';
 import {
   CalendarClock,
   Check,
+  ImageIcon,
   ListChecks,
-  Paperclip,
   Pin,
   Trash2,
   UserCheck,
@@ -13,7 +13,7 @@ import {
 import { cn } from '@/shared/lib/cn';
 import { withAlpha } from '@/shared/lib/colors';
 import { formatDeadline, formatDeadlineDate, formatWindow } from '@/shared/lib/dates';
-import { TASK_PRIORITY_META, TASK_STATUS_META } from '@/shared/config/constants';
+import { TASK_PRIORITY_META } from '@/shared/config/constants';
 import { AvatarStack, Badge, PostItMark } from '@/shared/ui';
 import { completionProgress, isSharedTask, outstandingAssignees } from '../lib/completion';
 import type { Task } from '../model/types';
@@ -93,8 +93,19 @@ const TaskCardBase = ({
   showProjectLink,
 }: TaskCardProps) => {
   const t = useT();
-  const statusMeta = TASK_STATUS_META[task.status];
   const isDone = task.status === 'COMPLETED';
+
+  /*
+   * What the card marks in its corner, rather than spells out in its footer.
+   *
+   * Both of these answer "is there something else attached to this?", which is
+   * a yes/no a glyph says faster than a labelled pill — and the footer is where
+   * the card's genuinely varying information lives (deadline, priority,
+   * sign-off, progress). A note already worked this way; the attachment used to
+   * spend a whole badge and the word "Image" saying the same thing.
+   */
+  const hasNote = task.noteCount > 0;
+  const markerCount = (hasNote ? 1 : 0) + (task.attachmentUrl ? 1 : 0);
 
   // A task several people carry needs all of their ticks, so the card has to
   // say how many it has — otherwise "why is this still open?" has no answer on
@@ -136,24 +147,38 @@ const TaskCardBase = ({
         style={{ backgroundColor: task.color }}
       />
 
-      {/* Somebody stuck a note on this one — the paper sits on the corner the
-          way a real one would, rather than hiding in the badge row.
+      {/* What is stuck to this card, marked on the corner the way a real note
+          or a clipped photograph would be, rather than hiding in the badge row.
 
           Inside the padding box, not straddling it: the card clips its own
           overflow (for the colour rail), so a marker hung off the corner was
           being sliced in half. */}
-      {task.noteCount > 0 && (
-        <span
-          title={
-            task.noteAuthors.length > 0
-              ? `${task.noteCount} note(s) from ${task.noteAuthors
-                  .map((author) => author.displayName)
-                  .join(', ')}`
-              : `${task.noteCount} note(s)`
-          }
-          className="absolute right-1.5 top-1.5 z-10 text-amber-400 drop-shadow-[0_2px_3px_rgb(0_0_0/0.35)]"
-        >
-          <PostItMark count={task.noteCount} className="h-[18px] w-[18px]" />
+      {markerCount > 0 && (
+        <span className="absolute right-1.5 top-1.5 z-10 flex items-center gap-1">
+          {task.attachmentUrl && (
+            <span
+              title={t('task.hasImage')}
+              aria-label={t('task.hasImage')}
+              className="text-content-faint drop-shadow-[0_2px_3px_rgb(0_0_0/0.35)]"
+            >
+              <ImageIcon className="h-[15px] w-[15px]" strokeWidth={2.2} />
+            </span>
+          )}
+
+          {hasNote && (
+            <span
+              title={
+                task.noteAuthors.length > 0
+                  ? `${task.noteCount} note(s) from ${task.noteAuthors
+                      .map((author) => author.displayName)
+                      .join(', ')}`
+                  : `${task.noteCount} note(s)`
+              }
+              className="text-amber-400 drop-shadow-[0_2px_3px_rgb(0_0_0/0.35)]"
+            >
+              <PostItMark count={task.noteCount} className="h-[18px] w-[18px]" />
+            </span>
+          )}
         </span>
       )}
 
@@ -222,8 +247,10 @@ const TaskCardBase = ({
           className={cn(
             'flex shrink-0 items-center gap-1 opacity-0 transition-opacity',
             'group-hover:opacity-100 focus-within:opacity-100',
-            // Leave the corner free when a note marker is pinned to it.
-            task.noteCount > 0 && 'mr-5',
+            // Leave the corner free for whatever is pinned to it — one marker
+            // or two, so the row does not slide under them.
+            markerCount === 1 && 'mr-5',
+            markerCount === 2 && 'mr-11',
           )}
         >
           {onTogglePin && (
@@ -254,7 +281,17 @@ const TaskCardBase = ({
 
       <footer className="flex flex-wrap items-center gap-2 pl-2">
         <TaskTypeTag type={task.type} />
-        <Badge dot={statusMeta.dot}>{t(statusMeta.label)}</Badge>
+
+        {/*
+          No status badge.
+
+          Every surface that draws these cards already says the status *around*
+          them — the board by column, the list and the sprint view by grouped
+          heading — and the detail sheet says it again when you open one. So the
+          badge repeated, on every card, a fact the reader had just been told by
+          the thing they were looking at. The card keeps the two cues that carry
+          it without a label: a completed task fades and strikes its own title.
+        */}
 
         {/* Lateness gets its own loud tag rather than a whole extra column. */}
         {task.isLate && <LateTag variant="late" />}
@@ -298,13 +335,6 @@ const TaskCardBase = ({
           <Badge>
             <ListChecks className="h-3 w-3" />
             {task.checklistProgress.done}/{task.checklistProgress.total}
-          </Badge>
-        )}
-
-        {task.attachmentUrl && (
-          <Badge>
-            <Paperclip className="h-3 w-3" />
-            {t('task.image')}
           </Badge>
         )}
 

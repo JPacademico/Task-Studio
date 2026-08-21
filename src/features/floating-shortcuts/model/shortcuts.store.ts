@@ -8,6 +8,8 @@ export type ShortcutIcon =
   | 'dashboard'
   | 'tasks'
   | 'notes'
+  | 'meetings'
+  | 'organizations'
   | 'invitations'
   | 'recycle'
   | 'settings'
