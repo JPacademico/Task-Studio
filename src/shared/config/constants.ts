@@ -9,6 +9,8 @@ export const STORAGE_KEYS = {
   chatPosition: 'task-studio:chat-position',
   chatDock: 'task-studio:chat-dock',
   pinnedNav: 'task-studio:pinned-nav',
+  /** Whether the right rail is listing projects or organizations. */
+  railScope: 'task-studio:rail-scope',
   boardPage: 'task-studio:board-page',
   shortcuts: 'task-studio:floating-shortcuts',
   taskLayout: 'task-studio:task-layout',

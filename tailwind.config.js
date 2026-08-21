@@ -15,6 +15,25 @@ export default {
           sunken: 'rgb(var(--surface-sunken) / <alpha-value>)',
         },
         edge: 'rgb(var(--edge) / <alpha-value>)',
+        /**
+         * The outline of a control you are meant to *aim at* — a checkbox, a
+         * radio, a toggle's track.
+         *
+         * Separate from `edge` because the two are asked to do different jobs.
+         * A panel border only has to divide two surfaces, so every skin tunes
+         * `--edge` to be as quiet as it can get away with; on the default
+         * studio dark that is `38 38 46` against a `23 23 28` card, a contrast
+         * ratio of 1.19, which is invisible. That is correct for a divider and
+         * useless for the one 20px square on a task card that the user has to
+         * find before they can tick it.
+         *
+         * `--check-edge` defaults to `--content-faint` — the quietest colour a
+         * skin still considers *legible* — and is overridden back to `--edge`
+         * on the skins drawn with a heavy ink outline, where the border is
+         * already the stronger of the two and also the stylistically right
+         * one. See the token block in `app/styles/index.css`.
+         */
+        check: 'rgb(var(--check-edge) / <alpha-value>)',
         content: {
           DEFAULT: 'rgb(var(--content) / <alpha-value>)',
           muted: 'rgb(var(--content-muted) / <alpha-value>)',

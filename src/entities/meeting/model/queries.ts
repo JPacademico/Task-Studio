@@ -29,43 +29,72 @@ const MEETINGS_STALE_TIME = 60_000;
 const byStart = (a: Meeting, b: Meeting): number =>
   new Date(a.startAt).getTime() - new Date(b.startAt).getTime();
 
-const listKey = (projectId: string) => queryKeys.meetings.list(projectId);
+const projectKey = (projectId: string) => queryKeys.meetings.list('project', projectId);
+const organizationKey = (organizationId: string) =>
+  queryKeys.meetings.list('organization', organizationId);
 
 /**
- * The snapshot the board reads, edited in place.
+ * The snapshot a board reads, edited in place — where that is honest, and
+ * refetched where it is not.
  *
- * Every write here patches the cached array rather than invalidating it. That
- * is the same rule the Post-it board and the text board already follow, and it
- * is not a micro-optimisation: the API hands back the finished row on create
- * and update, so a refetch would be a round trip spent asking for something
- * already in hand — on a free-tier database where that round trip is most of a
- * second of a board sitting on stale data.
+ * ## The project calendar is patched
+ *
+ * Every write to a project's board patches the cached array rather than
+ * invalidating it. That is the same rule the Post-it board and the text board
+ * already follow, and it is not a micro-optimisation: the API hands back the
+ * finished row on create and update, so a refetch would be a round trip spent
+ * asking for something already in hand — on a free-tier database where that
+ * round trip is most of a second of a board sitting on stale data.
+ *
+ * ## A company calendar is refetched
+ *
+ * It cannot be patched, and the reason is worth stating rather than working out
+ * twice. A company's calendar is a *union*: what it booked itself, plus what
+ * every project filed under it booked. Whether a given meeting falls in that
+ * union is a join the server performs — the row carries its project, and the
+ * project reference does not say which company holds it. So the client cannot
+ * decide from the row in its hand whether the row belongs on the company
+ * calendar in its cache, and a guess in either direction is a meeting that
+ * appears where it should not or fails to appear where it should.
+ *
+ * `refetchType: 'active'` keeps the cost proportionate: at most one company
+ * calendar is mounted at a time, and one that nobody is looking at is simply
+ * marked stale and re-asked when it next opens.
  */
 const upsertMeeting = (queryClient: QueryClient, meeting: Meeting): void => {
-  queryClient.setQueryData<Meeting[]>(listKey(meeting.projectId), (meetings) => {
-    if (!Array.isArray(meetings)) return meetings;
+  if (meeting.projectId) {
+    queryClient.setQueryData<Meeting[]>(projectKey(meeting.projectId), (meetings) => {
+      if (!Array.isArray(meetings)) return meetings;
 
-    // A completed meeting leaves the board — the server says so with a
-    // `meeting:deleted`, but a local write knows it a beat sooner.
-    if (meeting.completedAt) {
-      return meetings.filter((entry) => entry.id !== meeting.id);
-    }
+      // A completed meeting leaves the board — the server says so with a
+      // `meeting:deleted`, but a local write knows it a beat sooner.
+      if (meeting.completedAt) {
+        return meetings.filter((entry) => entry.id !== meeting.id);
+      }
 
-    const isKnown = meetings.some((entry) => entry.id === meeting.id);
-    const next = isKnown
-      ? meetings.map((entry) => (entry.id === meeting.id ? meeting : entry))
-      : [...meetings, meeting];
+      const isKnown = meetings.some((entry) => entry.id === meeting.id);
+      const next = isKnown
+        ? meetings.map((entry) => (entry.id === meeting.id ? meeting : entry))
+        : [...meetings, meeting];
 
-    return [...next].sort(byStart);
+      return [...next].sort(byStart);
+    });
+  }
+
+  void queryClient.invalidateQueries({
+    queryKey: ['meetings', 'list', 'organization'],
+    refetchType: 'active',
   });
 
   invalidateAgenda(queryClient);
 };
 
-const removeMeeting = (queryClient: QueryClient, projectId: string, meetingId: string): void => {
-  queryClient.setQueryData<Meeting[]>(listKey(projectId), (meetings) =>
-    Array.isArray(meetings) ? meetings.filter((entry) => entry.id !== meetingId) : meetings,
-  );
+const removeMeeting = (queryClient: QueryClient, meetingId: string): void => {
+  for (const query of queryClient.getQueryCache().findAll({ queryKey: ['meetings', 'list'] })) {
+    queryClient.setQueryData<Meeting[]>(query.queryKey, (meetings) =>
+      Array.isArray(meetings) ? meetings.filter((entry) => entry.id !== meetingId) : meetings,
+    );
+  }
   invalidateAgenda(queryClient);
 };
 
@@ -74,7 +103,7 @@ const removeMeeting = (queryClient: QueryClient, projectId: string, meetingId: s
  *
  * It is invalidated rather than patched, and that asymmetry is deliberate. A
  * board's cache can be edited in place because membership is settled — the row
- * belongs to that project and always will. Whether a meeting belongs on
+ * belongs to that calendar and always will. Whether a meeting belongs on
  * *somebody's agenda* is a server-side predicate (are they a participant, or is
  * the guest list empty, or have they left the project since?), and
  * re-implementing it here would be a second copy of a rule that can only be
@@ -97,23 +126,43 @@ const invalidateAgenda = (queryClient: QueryClient): void => {
  */
 export const useProjectMeetings = (projectId: string | undefined) =>
   useQuery({
-    queryKey: listKey(projectId ?? ''),
+    queryKey: projectKey(projectId ?? ''),
     queryFn: () => meetingApi.list({ projectId: projectId as string }),
     enabled: Boolean(projectId),
     staleTime: MEETINGS_STALE_TIME,
   });
 
 /**
- * Everything the signed-in person is expected at, across every project.
+ * One company's calendar: what it booked, plus what its projects booked.
  *
- * ## Why this is its own query rather than a merge of the board's
+ * The union is assembled by the server rather than by merging cached project
+ * calendars here, and for the usual reason — the client does not hold the
+ * meetings of projects the reader is not on, and a company's calendar is meant
+ * to show them. See the API's `MeetingsService.list`.
+ */
+export const useOrganizationMeetings = (
+  organizationId: string | undefined,
+  enabled = true,
+) =>
+  useQuery({
+    queryKey: organizationKey(organizationId ?? ''),
+    queryFn: () => meetingApi.list({ organizationId: organizationId as string }),
+    enabled: Boolean(organizationId) && enabled,
+    staleTime: MEETINGS_STALE_TIME,
+  });
+
+/**
+ * Everything the signed-in person is expected at, across every project and
+ * every company.
+ *
+ * ## Why this is its own query rather than a merge of the boards'
  *
  * "Which meetings am I expected at" is a question only the server can answer:
  * it spans projects this client has never fetched, and the rule includes
- * meetings with an *empty* guest list, which mean "the whole roster" and are
- * therefore about membership rather than about the row. Assembling it from
- * cached per-project lists would be both incomplete and a copy of a permission
- * rule.
+ * meetings with an *empty* guest list, which mean "everybody who can see this"
+ * and are therefore about membership rather than about the row. Assembling it
+ * from cached per-calendar lists would be both incomplete and a copy of a
+ * permission rule.
  *
  * ## No realtime
  *
@@ -138,6 +187,10 @@ export const useMyAgenda = (params: AgendaParams = {}) =>
  * thing worth noting is that completion arrives as `meeting:deleted` — the
  * server decides that a signed-off meeting is a removal so that every client
  * does not have to reach the same conclusion separately.
+ *
+ * Only project meetings arrive this way. A company has no socket room of its
+ * own — see the API's `MeetingsService.announce` for why — so a company's
+ * calendar refetches on open instead.
  */
 export const useProjectMeetingsRealtime = (projectId: string | undefined): void => {
   const { socket } = useRealtime();
@@ -152,7 +205,7 @@ export const useProjectMeetingsRealtime = (projectId: string | undefined): void 
     };
 
     const handleDelete = ({ meetingId }: { meetingId: string }) =>
-      removeMeeting(queryClient, projectId, meetingId);
+      removeMeeting(queryClient, meetingId);
 
     socket.on('meeting:created', handleUpsert);
     socket.on('meeting:updated', handleUpsert);
@@ -166,12 +219,33 @@ export const useProjectMeetingsRealtime = (projectId: string | undefined): void 
   }, [projectId, queryClient, socket]);
 };
 
-export const useCreateMeeting = (projectId: string) => {
+/**
+ * Posting a meeting, from wherever it is being posted.
+ *
+ * Takes the whole scope rather than a project id, because that scope is the one
+ * thing the two composers disagree about: a project board can only ever book
+ * against itself, while a company can book against itself, or against itself
+ * *and* one of its projects. Passing it through as an object keeps that a
+ * caller's decision instead of two nearly identical hooks.
+ */
+export const useCreateMeeting = (scope: {
+  projectId?: string;
+  organizationId?: string;
+}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: Omit<CreateMeetingPayload, 'projectId'>) =>
-      meetingApi.create({ ...payload, projectId }),
+    mutationFn: (
+      payload: Omit<CreateMeetingPayload, 'projectId' | 'organizationId'> & {
+        /** Set by the company composer when the meeting is about a project. */
+        projectId?: string;
+      },
+    ) =>
+      meetingApi.create({
+        ...payload,
+        organizationId: scope.organizationId,
+        projectId: payload.projectId ?? scope.projectId,
+      }),
     onSuccess: (meeting) => {
       upsertMeeting(queryClient, meeting);
       toast.success(translate('meetings.created'));
@@ -181,11 +255,11 @@ export const useCreateMeeting = (projectId: string) => {
 };
 
 /**
- * Takes no project id, unlike its siblings.
+ * Takes no scope, unlike its siblings.
  *
- * The response carries `projectId`, and that is the one the cache has to be
- * keyed by: a meeting cannot move between projects, so a second copy passed in
- * by the caller could only ever agree or be wrong.
+ * The response carries `projectId` and `organizationId`, and those are the ones
+ * the cache has to be keyed by: a meeting cannot move between calendars, so a
+ * second copy passed in by the caller could only ever agree or be wrong.
  */
 export const useUpdateMeeting = () => {
   const queryClient = useQueryClient();
@@ -217,22 +291,31 @@ export const useUpdateMeeting = () => {
  * trade the Post-it board and the roster make. There is nothing to wait for:
  * the client knows exactly which row is going, and the server's only
  * contribution is yes or no.
+ *
+ * The rollback snapshots every cached calendar rather than one, because a
+ * meeting can be on several at once and restoring only the board somebody
+ * happens to be looking at would leave the others a row short until they
+ * refetched.
  */
-export const useDeleteMeeting = (projectId: string) => {
+export const useDeleteMeeting = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (meetingId: string) => meetingApi.remove(meetingId),
 
     onMutate: async (meetingId) => {
-      await queryClient.cancelQueries({ queryKey: listKey(projectId) });
-      const previous = queryClient.getQueryData<Meeting[]>(listKey(projectId));
-      removeMeeting(queryClient, projectId, meetingId);
+      await queryClient.cancelQueries({ queryKey: queryKeys.meetings.all });
+      const previous = queryClient.getQueriesData<Meeting[]>({
+        queryKey: ['meetings', 'list'],
+      });
+      removeMeeting(queryClient, meetingId);
       return { previous };
     },
 
     onError: (error, _meetingId, context) => {
-      if (context?.previous) queryClient.setQueryData(listKey(projectId), context.previous);
+      for (const [key, data] of context?.previous ?? []) {
+        queryClient.setQueryData(key, data);
+      }
       toast.error(errorMessage(error, translate('meetings.deleteFailed')));
     },
 
@@ -243,12 +326,12 @@ export const useDeleteMeeting = (projectId: string) => {
 /**
  * Marking a meeting done, which is also how it leaves the board.
  *
- * Optimistic for the same reason the delete is — from the reader's side the
- * two are the same gesture, and it would be odd for one to be instant and the
- * other to hang. Wrapped around the update mutation rather than duplicating it,
- * so there is one write path and one error message.
+ * Optimistic for the same reason the delete is — from the reader's side the two
+ * are the same gesture, and it would be odd for one to be instant and the other
+ * to hang. Wrapped around the update mutation rather than duplicating it, so
+ * there is one write path and one error message.
  */
-export const useCompleteMeeting = (projectId: string) => {
+export const useCompleteMeeting = () => {
   const queryClient = useQueryClient();
   // Keyed off `mutate` rather than the mutation object: React Query hands back
   // a fresh object every render, so depending on that would rebuild this
@@ -257,18 +340,20 @@ export const useCompleteMeeting = (projectId: string) => {
 
   return useCallback(
     (meetingId: string) => {
-      const previous = queryClient.getQueryData<Meeting[]>(listKey(projectId));
-      removeMeeting(queryClient, projectId, meetingId);
+      const previous = queryClient.getQueriesData<Meeting[]>({
+        queryKey: ['meetings', 'list'],
+      });
+      removeMeeting(queryClient, meetingId);
 
       mutate(
         { meetingId, payload: { isCompleted: true } },
         {
           onError: () => {
-            if (previous) queryClient.setQueryData(listKey(projectId), previous);
+            for (const [key, data] of previous) queryClient.setQueryData(key, data);
           },
         },
       );
     },
-    [mutate, projectId, queryClient],
+    [mutate, queryClient],
   );
 };

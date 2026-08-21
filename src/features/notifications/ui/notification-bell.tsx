@@ -4,6 +4,10 @@ import { Bell, CheckCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import {
+  notificationBody,
+  notificationDeadline,
+} from '@/entities/notification/lib/notification-copy';
+import {
   useNotificationActions,
   useNotifications,
   useUnreadCount,
@@ -17,7 +21,17 @@ import { NotificationOptIn } from './notification-opt-in';
 
 const deepLink = (notification: AppNotification): string | null => {
   const { payload } = notification;
-  if (notification.type === 'PROJECT_INVITE') return '/invitations';
+  if (notification.type === 'PROJECT_INVITE' || notification.type === 'ORG_INVITE') {
+    return '/invitations';
+  }
+  /*
+   * Checked before `projectId`, because a meeting posted at organization level
+   * against one of its projects carries both — and the row that announced it
+   * came from the organization.
+   */
+  if (payload?.organizationId && !payload.projectId) {
+    return `/organizations/${payload.organizationId}`;
+  }
   // Task notifications open the project board, where the task can be inspected.
   if (payload?.projectId) return `/projects/${payload.projectId}`;
   if (payload?.taskId) return '/tasks';
@@ -104,6 +118,11 @@ export const NotificationBell = () => {
 
                 {notifications.map((notification) => {
                   const link = deepLink(notification);
+                  // Both read the row rather than the raw columns — the API
+                  // sends a deadline as an instant, not as prose. See
+                  // `entities/notification/lib/notification-copy`.
+                  const body = notificationBody(notification);
+                  const deadline = notificationDeadline(notification);
 
                   return (
                     <button
@@ -148,9 +167,14 @@ export const NotificationBell = () => {
                         <span className="block text-xs font-medium leading-snug">
                           {notification.title}
                         </span>
-                        {notification.body && (
+                        {body && (
                           <span className="block text-[11px] text-content-muted">
-                            {notification.body}
+                            {body}
+                          </span>
+                        )}
+                        {deadline && (
+                          <span className="block text-[11px] font-medium text-warning">
+                            {deadline}
                           </span>
                         )}
                         <span className="block text-[10px] uppercase tracking-wide text-content-faint">

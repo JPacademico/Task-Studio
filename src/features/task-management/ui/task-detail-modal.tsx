@@ -358,7 +358,10 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
                       'grid h-4 w-4 shrink-0 place-items-center rounded border transition-colors',
                       item.isCompleted
                         ? 'border-positive bg-positive text-white'
-                        : 'border-edge hover:border-brand',
+                        // The row sits on `surface-sunken`, so the box is
+                        // filled from `surface-raised` to read as a well
+                        // rather than a hole. See `--check-edge`.
+                        : 'border-check bg-surface-raised/60 hover:border-brand',
                     )}
                   >
                     {item.isCompleted && <Check className="h-2.5 w-2.5" strokeWidth={3} />}

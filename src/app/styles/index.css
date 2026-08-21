@@ -26,6 +26,25 @@
     --surface-raised: 255 255 255;
     --surface-sunken: 235 235 240;
     --edge: 219 219 228;
+    /*
+     * The outline of something you have to aim at, as opposed to something
+     * that merely divides two surfaces.
+     *
+     * Defaults to `--content-faint` rather than `--edge` because the two
+     * borders are tuned for opposite ends: a divider wants to disappear, and
+     * every skin pushes `--edge` as close to its surface as it can get away
+     * with. On the default studio dark that is a contrast ratio of 1.19
+     * against a raised card — correct for a rule between rows, and invisible
+     * for the 20px box on a task card somebody is trying to tick.
+     *
+     * `--content-faint` is by definition the quietest colour a skin still
+     * considers legible, so it clears 3.2:1 against the raised surface on
+     * every skin in the app, in both palettes. The skins drawn with a heavy
+     * ink outline — paper, pixel, newspaper and the rest — set this back to
+     * `--edge` beside their own palette, because there the border is both the
+     * stronger colour and the one the whole look is built out of.
+     */
+    --check-edge: var(--content-faint);
     --content: 24 24 32;
     --content-muted: 92 92 110;
     --content-faint: 140 140 158;
@@ -118,6 +137,7 @@
     --surface-raised: 252 253 255;
     --surface-sunken: 214 226 252;
     --edge: 26 26 48;
+    --check-edge: var(--edge);
     --content: 18 18 36;
     --content-muted: 71 74 106;
     --content-faint: 118 122 154;
@@ -193,6 +213,7 @@
     --surface-raised: 252 249 255;
     --surface-sunken: 228 218 240;
     --edge: 150 60 178;
+    --check-edge: var(--edge);
     --content: 46 12 66;
     --content-muted: 104 54 132;
     --content-faint: 142 104 166;
@@ -254,6 +275,7 @@
     --surface-raised: 39 10 68;
     --surface-sunken: 14 3 26;
     --edge: 196 38 208;
+    --check-edge: var(--content-faint);
     --content: 122 250 246;
     --content-muted: 96 206 224;
     --content-faint: 148 108 210;
@@ -280,6 +302,7 @@
     --surface-raised: 247 238 219;
     --surface-sunken: 219 199 166;
     --edge: 138 106 61;
+    --check-edge: var(--edge);
     --content: 51 34 18;
     --content-muted: 106 80 50;
     --content-faint: 145 119 86;
@@ -401,6 +424,7 @@
     --surface-raised: 250 250 255;
     --surface-sunken: 176 190 216;
     --edge: 22 20 44;
+    --check-edge: var(--edge);
     --content: 22 20 44;
     --content-muted: 78 72 124;
     --content-faint: 122 116 166;
@@ -718,6 +742,7 @@
     --surface-raised: 242 241 230;
     --surface-sunken: 206 204 188;
     --edge: 30 30 24;
+    --check-edge: var(--edge);
     --content: 22 22 16;
     --content-muted: 84 82 62;
     --content-faint: 126 124 102;
@@ -820,6 +845,7 @@
     --surface-raised: 21 25 19;
     --surface-sunken: 5 6 5;
     --edge: 92 110 48;
+    --check-edge: var(--content-faint);
     --content: 223 237 209;
     --content-muted: 150 174 128;
     --content-faint: 104 126 88;
@@ -890,6 +916,7 @@
     --surface-raised: 244 240 230;
     --surface-sunken: 217 211 196;
     --edge: 26 24 22;
+    --check-edge: var(--edge);
     --content: 20 18 16;
     --content-muted: 78 72 66;
     --content-faint: 124 116 106;
@@ -977,6 +1004,7 @@
     --surface-raised: 29 27 25;
     --surface-sunken: 12 11 10;
     --edge: 106 99 90;
+    --check-edge: var(--content-faint);
     --content: 240 236 226;
     --content-muted: 176 168 156;
     --content-faint: 128 120 110;
@@ -1040,6 +1068,7 @@
     --surface-raised: 238 232 214;
     --surface-sunken: 206 197 174;
     --edge: 74 76 62;
+    --check-edge: var(--edge);
     --content: 32 30 24;
     --content-muted: 90 84 68;
     --content-faint: 136 128 108;
@@ -1135,6 +1164,7 @@
     --surface-raised: 13 21 23;
     --surface-sunken: 2 5 6;
     --edge: 44 80 74;
+    --check-edge: var(--content-faint);
     --content: 214 232 226;
     --content-muted: 138 168 160;
     --content-faint: 92 120 114;
@@ -1208,6 +1238,7 @@
     --surface-raised: 253 245 231;
     --surface-sunken: 236 219 192;
     --edge: 146 98 52;
+    --check-edge: var(--edge);
     --content: 46 30 18;
     --content-muted: 116 82 52;
     --content-faint: 158 126 94;
@@ -1315,6 +1346,7 @@
     --surface-raised: 38 27 19;
     --surface-sunken: 17 11 8;
     --edge: 96 62 36;
+    --check-edge: var(--content-faint);
     --content: 244 229 206;
     --content-muted: 194 165 132;
     --content-faint: 142 115 86;
@@ -2087,6 +2119,7 @@
     --surface-raised: 228 219 211;
     --surface-sunken: 172 159 150;
     --edge: 92 74 64;
+    --check-edge: var(--edge);
     --content: 32 22 18;
     --content-muted: 96 76 66;
     --content-faint: 136 116 104;
@@ -2252,6 +2285,7 @@
     --surface-raised: 29 21 20;
     --surface-sunken: 7 5 5;
     --edge: 92 58 42;
+    --check-edge: var(--content-faint);
     --content: 246 232 222;
     --content-muted: 180 156 144;
     --content-faint: 128 106 96;

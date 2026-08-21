@@ -7,10 +7,24 @@ export type NavEdge = 'left' | 'top' | 'right';
 
 type PinnedEdges = Record<NavEdge, boolean>;
 
+/**
+ * What the right rail is a list *of*.
+ *
+ * Projects by default, because that is what the rail has always been and what
+ * most people open it for — a company is a place you visit occasionally, a
+ * project is a place you work. The choice persists per device for the same
+ * reason the pins do: it describes how somebody has arranged this screen, not
+ * anything about their account.
+ */
+export type RailScope = 'projects' | 'organizations';
+
 interface NavPreferencesState {
   pinned: PinnedEdges;
   togglePin: (edge: NavEdge) => void;
   setPin: (edge: NavEdge, pinned: boolean) => void;
+
+  railScope: RailScope;
+  setRailScope: (scope: RailScope) => void;
 }
 
 /**
@@ -81,6 +95,16 @@ const write = (pinned: PinnedEdges): void => {
  * one place all day should be able to nail one down. The choice is per device,
  * so it lives in localStorage rather than on the profile.
  */
+const readRailScope = (): RailScope => {
+  try {
+    return localStorage.getItem(STORAGE_KEYS.railScope) === 'organizations'
+      ? 'organizations'
+      : 'projects';
+  } catch {
+    return 'projects';
+  }
+};
+
 export const useNavPreferences = create<NavPreferencesState>((set) => {
   const initial = read();
 
@@ -110,6 +134,26 @@ export const useNavPreferences = create<NavPreferencesState>((set) => {
         write(pinned);
         return { pinned };
       }),
+
+    /*
+     * Read lazily rather than written back on boot, unlike the pins above.
+     *
+     * The pins need an eager write because a *default* moved and the migration
+     * has to be recorded. Nothing has moved here — there is one default and it
+     * has always been `projects` — so an absent key and the string `projects`
+     * mean exactly the same thing, and writing one on every load would be a
+     * storage write per page view to record that nothing happened.
+     */
+    railScope: readRailScope(),
+
+    setRailScope: (scope) => {
+      try {
+        localStorage.setItem(STORAGE_KEYS.railScope, scope);
+      } catch {
+        /* private mode — the choice holds for this session only */
+      }
+      set({ railScope: scope });
+    },
   };
 });
 

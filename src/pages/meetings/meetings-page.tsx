@@ -91,12 +91,26 @@ const AgendaRow = ({ meeting, t }: AgendaRowProps) => {
         )}
       </div>
 
-      {/* Which project called it, carrying that project's own colour so a
-          mixed week stays scannable by source as well as by time. */}
-      {meeting.project && (
+      {/*
+        Who called it, carrying that source's own colour so a mixed week stays
+        scannable by origin as well as by time.
+
+        The project when there is one, and otherwise the company — a meeting
+        booked on a company's own calendar belongs to no project, and an agenda
+        row with no source at all leaves the reader working out where it came
+        from. A meeting on both shows the project, which is the more specific
+        of the two and the one whose board it can be opened from.
+      */}
+      {(meeting.project ?? meeting.organization) && (
         <Link
-          to={`/projects/${meeting.project.id}`}
-          title={t('agenda.openProject', { name: meeting.project.name })}
+          to={
+            meeting.project
+              ? `/projects/${meeting.project.id}`
+              : `/organizations/${meeting.organization?.id}`
+          }
+          title={t('agenda.openProject', {
+            name: (meeting.project ?? meeting.organization)?.name ?? '',
+          })}
           className={cn(
             'inline-flex shrink-0 items-center gap-1.5 self-start rounded-full border border-edge',
             'px-2.5 py-1 text-[11px] text-content-muted transition-colors',
@@ -106,9 +120,13 @@ const AgendaRow = ({ meeting, t }: AgendaRowProps) => {
           <span
             aria-hidden
             className="h-2 w-2 shrink-0 rounded-full"
-            style={{ backgroundColor: meeting.project.color }}
+            style={{
+              backgroundColor: (meeting.project ?? meeting.organization)?.color,
+            }}
           />
-          <span className="max-w-[9rem] truncate">{meeting.project.name}</span>
+          <span className="max-w-[9rem] truncate">
+            {(meeting.project ?? meeting.organization)?.name}
+          </span>
         </Link>
       )}
     </li>

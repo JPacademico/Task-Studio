@@ -3,6 +3,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { Socket } from 'socket.io-client';
 import { toast } from 'sonner';
 
+import {
+  notificationBody,
+  notificationDeadline,
+} from '@/entities/notification/lib/notification-copy';
 import type { AppNotification } from '@/entities/notification/model/types';
 import { useSessionStore } from '@/features/auth/model/session.store';
 import { connectSocket, disconnectSocket, getSocket } from '@/shared/api/socket';
@@ -23,6 +27,8 @@ const NOTIFICATION_TOAST: Record<AppNotification['type'], 'info' | 'success' | '
   TASK_OVERDUE: 'warning',
   PROJECT_INVITE: 'info',
   PROJECT_INVITE_ACCEPTED: 'success',
+  ORG_INVITE: 'info',
+  ORG_INVITE_ACCEPTED: 'success',
   CHAT_MENTION: 'info',
   AI_SUGGESTION: 'info',
 };
@@ -57,7 +63,21 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
 
       const level = NOTIFICATION_TOAST[notification.type] ?? 'info';
-      const options = { description: notification.body ?? undefined };
+
+      /*
+       * The same wording the bell renders, not the raw columns.
+       *
+       * A due-soon alert carries its deadline as an instant in the payload, so
+       * the description has to be assembled here exactly as the panel
+       * assembles it — otherwise the toast and the row that follows it a
+       * second later say different things about the same task. See
+       * `entities/notification/lib/notification-copy`.
+       */
+      const description =
+        [notificationBody(notification), notificationDeadline(notification)]
+          .filter(Boolean)
+          .join(' · ') || undefined;
+      const options = { description };
 
       if (level === 'success') toast.success(notification.title, options);
       else if (level === 'warning') toast.warning(notification.title, options);
@@ -80,13 +100,13 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
       if (document.hidden) {
         showDesktopNotification({
           title: notification.title,
-          body: notification.body ?? undefined,
+          body: description,
           // One notice per notification, so a burst replaces rather than piles.
           tag: notification.id,
         });
       }
 
-      if (notification.type === 'PROJECT_INVITE') {
+      if (notification.type === 'PROJECT_INVITE' || notification.type === 'ORG_INVITE') {
         void queryClient.invalidateQueries({ queryKey: queryKeys.invitations.mine });
       }
     };

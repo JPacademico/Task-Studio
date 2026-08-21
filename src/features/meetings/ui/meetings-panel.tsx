@@ -1,4 +1,5 @@
 import { memo, useCallback, useDeferredValue, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   addDays,
@@ -35,10 +36,11 @@ import {
 import {
   useCompleteMeeting,
   useDeleteMeeting,
+  useOrganizationMeetings,
   useProjectMeetings,
 } from '@/entities/meeting/model/queries';
-import type { Meeting } from '@/entities/meeting/model/types';
-import type { RosterMember } from '@/entities/project/model/types';
+import type { Meeting, MeetingProjectRef } from '@/entities/meeting/model/types';
+import type { UserSummary } from '@/entities/user/model/types';
 import { cn } from '@/shared/lib/cn';
 import { formatDayLabel, formatTime } from '@/shared/lib/dates';
 import {
@@ -65,6 +67,14 @@ const dayKey = (value: string | Date): string => format(new Date(value), 'yyyy-M
 interface MeetingRowProps {
   meeting: Meeting;
   canManage: boolean;
+  /**
+   * Draw the project this came from.
+   *
+   * Off on a project's own board, where it would be the same name on every row,
+   * and on for a company's calendar, which mixes meetings from several projects
+   * with meetings that belong to no project at all.
+   */
+  showSource: boolean;
   /** The row is one click from vanishing — see the two-step in the panel. */
   isConfirmingDelete: boolean;
   onEdit: (meeting: Meeting) => void;
@@ -87,6 +97,7 @@ interface MeetingRowProps {
 const MeetingRowBase = ({
   meeting,
   canManage,
+  showSource,
   isConfirmingDelete,
   onEdit,
   onComplete,
@@ -148,6 +159,34 @@ const MeetingRowBase = ({
             {meeting.description}
           </p>
         )}
+
+        {/* Where this one came from, carrying that project's own colour so a
+            company's week stays scannable by source as well as by time. A
+            meeting the company booked for itself names no project, and says so
+            rather than leaving a gap the reader has to interpret. */}
+        {showSource &&
+          (meeting.project ? (
+            <Link
+              to={`/projects/${meeting.project.id}`}
+              title={t('agenda.openProject', { name: meeting.project.name })}
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-full border border-edge px-2 py-0.5',
+                'text-[11px] text-content-muted transition-colors',
+                'hover:border-brand/50 hover:text-content',
+              )}
+            >
+              <span
+                aria-hidden
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{ backgroundColor: meeting.project.color }}
+              />
+              <span className="max-w-[10rem] truncate">{meeting.project.name}</span>
+            </Link>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-edge px-2 py-0.5 text-[11px] text-content-faint">
+              {t('meetings.companyWide')}
+            </span>
+          ))}
       </div>
 
       {canManage && (
@@ -200,8 +239,20 @@ const MeetingRow = memo(MeetingRowBase);
 MeetingRow.displayName = 'MeetingRow';
 
 interface MeetingsPanelProps {
-  projectId: string;
-  roster: RosterMember[];
+  /**
+   * Which calendar this panel is showing. Exactly one of the two.
+   *
+   * A company's is the *union* of what it booked and what every project filed
+   * under it booked, assembled by the API — which is how a meeting posted on a
+   * project turns up on its company's tab without anything having been copied
+   * there. See the API's `MeetingsService`.
+   */
+  projectId?: string;
+  organizationId?: string;
+  /** Who may be named in the room: a project's roster, or a company's staff. */
+  roster: UserSummary[];
+  /** Projects a company meeting may additionally be posted to. */
+  linkableProjects?: MeetingProjectRef[];
   /** Owner or admin: only they may post, edit, complete or delete. */
   canManage: boolean;
 }
@@ -230,15 +281,36 @@ interface MeetingsPanelProps {
  * on the board, and patched in place by the realtime layer — the same
  * arrangement the Post-it board and the text board already use.
  */
-export const MeetingsPanel = ({ projectId, roster, canManage }: MeetingsPanelProps) => {
+export const MeetingsPanel = ({
+  projectId,
+  organizationId,
+  roster,
+  linkableProjects,
+  canManage,
+}: MeetingsPanelProps) => {
   const t = useT();
 
-  // Reads the snapshot the project page already holds and keeps live; see
-  // `useProjectMeetings`.
-  const { data: meetings = [], isPending } = useProjectMeetings(projectId);
+  /*
+   * Both hooks are always called, and one of them is always disabled.
+   *
+   * Hooks cannot be called conditionally, so the branch has to be in the
+   * argument rather than around the call. The disabled one issues no request
+   * and holds no cache entry, so the cost of the arrangement is a hook that
+   * returns `undefined`.
+   *
+   * The project side reads the snapshot the project page already holds and
+   * keeps live — see `useProjectMeetings`. The company side has no socket room
+   * and refetches on open, which is the same trade the personal agenda makes.
+   */
+  const projectCalendar = useProjectMeetings(projectId);
+  const organizationCalendar = useOrganizationMeetings(organizationId);
+  const calendar = projectId ? projectCalendar : organizationCalendar;
 
-  const deleteMeeting = useDeleteMeeting(projectId);
-  const completeMeeting = useCompleteMeeting(projectId);
+  const meetings = calendar.data ?? [];
+  const isPending = calendar.isPending;
+
+  const deleteMeeting = useDeleteMeeting();
+  const completeMeeting = useCompleteMeeting();
 
   const [view, setView] = useState<MeetingView>('upcoming');
   const [search, setSearch] = useState('');
@@ -314,6 +386,8 @@ export const MeetingsPanel = ({ projectId, roster, canManage }: MeetingsPanelPro
         key={meeting.id}
         meeting={meeting}
         canManage={canManage}
+        // A project's board would say the same name on every row.
+        showSource={Boolean(organizationId)}
         isConfirmingDelete={confirmingId === meeting.id}
         onEdit={handleEdit}
         onComplete={handleComplete}
@@ -653,7 +727,9 @@ export const MeetingsPanel = ({ projectId, roster, canManage }: MeetingsPanelPro
             setEditing(null);
           }}
           projectId={projectId}
+          organizationId={organizationId}
           roster={roster}
+          linkableProjects={linkableProjects}
           meeting={editing}
           // A new meeting posted from the calendar lands on the day being read,
           // not on today — which is almost never the day being looked at.

@@ -54,13 +54,20 @@ export const queryKeys = {
   meetings: {
     all: ['meetings'] as const,
     /**
-     * One project's live meetings, as one entry.
+     * One calendar, as one entry.
      *
      * The board's day paging and name search are local filters over this
      * snapshot, so they are deliberately *not* in the key: putting them there
      * would make every arrow press a cache miss and a request.
+     *
+     * The scope is part of the key rather than just the id, because a project's
+     * calendar and a company's are different questions with overlapping
+     * answers — a company's includes the meetings of every project filed under
+     * it, so keying both on a bare id would have one overwrite the other the
+     * first time somebody opened a project from the company page.
      */
-    list: (projectId: string) => ['meetings', 'list', projectId] as const,
+    list: (scope: 'project' | 'organization', id: string) =>
+      ['meetings', 'list', scope, id] as const,
     /**
      * The personal agenda, keyed by its one server-side filter.
      *
@@ -82,12 +89,31 @@ export const queryKeys = {
     all: ['organizations'] as const,
     list: ['organizations', 'list'] as const,
     detail: (organizationId: string) => ['organizations', organizationId] as const,
+    /** The company's staff list. */
+    members: (organizationId: string) =>
+      ['organizations', organizationId, 'members'] as const,
+    /** Invitations this company has sent and nobody has answered yet. */
+    invitations: (organizationId: string) =>
+      ['organizations', organizationId, 'invitations'] as const,
+    /** Project-level metrics for the whole company. */
+    dashboard: (organizationId: string) =>
+      ['organizations', organizationId, 'dashboard'] as const,
     /** What the "file a project here" picker offers. */
     attachable: ['organizations', 'attachable'] as const,
   },
 
   invitations: {
+    /**
+     * Project invitations addressed to the signed-in user.
+     *
+     * Kept apart from the organization ones below rather than merged into one
+     * key, because they come from two endpoints and are answered by two
+     * different routes — one cache entry holding both would have to be
+     * invalidated by every write to either, and a reply to one would refetch
+     * the other for nothing.
+     */
     mine: ['invitations', 'mine'] as const,
+    organizations: ['invitations', 'organizations'] as const,
   },
 
   ai: {

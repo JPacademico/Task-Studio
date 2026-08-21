@@ -215,12 +215,17 @@ const ProjectPage = () => {
                   {project.myRole.toLowerCase()} · {project.roster.length} member(s)
                 </span>
 
-                {/* Where this project is filed. A link rather than a label:
-                    the folder is the fastest route to its siblings, which is
-                    the only reason to have filed it in the first place. */}
+                {/* Which company this belongs to. A link rather than a label:
+                    the company page is the fastest route to the sibling
+                    projects, the shared calendar and the people — which is the
+                    reason to have filed it there in the first place.
+
+                    Straight to that company rather than to the list of them:
+                    the reader already knows which one, and the list would be a
+                    step they have to take before getting anywhere. */}
                 {project.organization && (
                   <Link
-                    to="/organizations"
+                    to={`/organizations/${project.organization.id}`}
                     title={t('org.filedUnder', { name: project.organization.name })}
                     className="inline-flex items-center gap-1 rounded-full border border-edge px-1.5 py-0.5 normal-case tracking-normal transition-colors hover:border-brand/50 hover:text-content"
                   >

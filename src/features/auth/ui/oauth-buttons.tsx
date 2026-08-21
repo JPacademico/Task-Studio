@@ -114,16 +114,33 @@ export const OAuthButtons = ({ intent, className }: OAuthButtonsProps) => {
               href={authApi.oauthStartUrl(provider)}
               className={cn(
                 'ui-btn inline-flex h-10 select-none items-center justify-center gap-2 rounded-xl',
-                'border border-edge px-4 text-sm text-content',
+                /*
+                 * `text-xs` and a narrower gutter, because the label is the
+                 * one string here nobody controls the length of.
+                 *
+                 * "Continue with Google" at `text-sm` in `px-4` overflows the
+                 * half-width cell these sit in from about 380px down, and in
+                 * Portuguese ("Criar conta com GitHub") it does so at every
+                 * width — the text ran into both borders with no gutter left.
+                 * Dropping a step and trimming the padding buys back roughly
+                 * four characters on each side; `min-w-0` plus `truncate` is
+                 * what stops the remaining cases pushing the mark out of the
+                 * button instead of ellipsising.
+                 */
+                'border border-edge px-3 text-xs font-medium text-content',
                 'transition-[transform,background-color,border-color] duration-150 ease-studio',
                 'hover:border-brand/50 hover:bg-surface-sunken active:scale-[0.98]',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
               )}
             >
-              <Mark />
-              {t(intent === 'signUp' ? 'auth.oauth.signUpWith' : 'auth.oauth.continueWith', {
-                provider: LABELS[provider],
-              })}
+              <span className="shrink-0">
+                <Mark />
+              </span>
+              <span className="min-w-0 truncate">
+                {t(intent === 'signUp' ? 'auth.oauth.signUpWith' : 'auth.oauth.continueWith', {
+                  provider: LABELS[provider],
+                })}
+              </span>
             </a>
           );
         })}

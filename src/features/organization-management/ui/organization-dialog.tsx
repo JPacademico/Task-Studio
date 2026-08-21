@@ -1,15 +1,24 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle, Trash2 } from 'lucide-react';
+import { AlertTriangle, Check, FolderPlus, Trash2, UserPlus, X } from 'lucide-react';
 
 import {
+  useAttachableProjects,
   useCreateOrganization,
   useDeleteOrganization,
   useUpdateOrganization,
 } from '@/entities/organization/model/queries';
-import type { Organization } from '@/entities/organization/model/types';
+import type {
+  Organization,
+  OrganizationInviteDraft,
+  OrgRole,
+} from '@/entities/organization/model/types';
 import { TASK_COLORS } from '@/shared/config/constants';
-import { Button, ColorPicker, Input, Modal, Textarea } from '@/shared/ui';
-import { useT } from '@/shared/i18n';
+import { cn } from '@/shared/lib/cn';
+import { Button, ColorPicker, Input, Modal, Select, Textarea } from '@/shared/ui';
+import { useT, type Translate } from '@/shared/i18n';
+
+/** The two roles that can be handed out. OWNER is transferred, not granted. */
+const ASSIGNABLE_ROLES: OrgRole[] = ['ADMIN', 'MEMBER'];
 
 interface OrganizationDialogProps {
   isOpen: boolean;
@@ -18,19 +27,238 @@ interface OrganizationDialogProps {
   organization?: Organization | null;
 }
 
+interface InviteListProps {
+  invites: OrganizationInviteDraft[];
+  onAdd: (invite: OrganizationInviteDraft) => void;
+  onRemove: (index: number) => void;
+  t: Translate;
+}
+
 /**
- * Create or edit a folder, and delete one.
+ * The people who will be invited once the company exists.
  *
- * One dialog for both, unlike the project pair (`CreateProjectDialog` and
- * `ProjectSettingsDialog`), because an organization has exactly three editable
- * fields and no settings beyond them — splitting three inputs across two files
- * would be ceremony rather than separation.
+ * A staging list rather than a live one, and that is the whole point: nothing
+ * is sent until the dialog is submitted, so somebody assembling a founding team
+ * can add four colleagues, notice a typo in the second, fix it, and only then
+ * commit. Sending each one on Enter would make every mistake a real invitation
+ * that has to be revoked from a screen that does not exist yet.
  *
- * Deletion sits behind a typed confirmation for the same reason a project's
- * does, with one important difference in the copy: this really does only delete
- * the folder. The projects inside are unfiled, not touched, and the sheet says
- * so plainly — a confirmation that overstates the damage trains people to
- * ignore confirmations.
+ * Addresses only, and no directory search. The person creating a company knows
+ * the addresses of the people they are creating it with, and a search across
+ * every account in the system is a different feature with a different risk
+ * profile — see `toDirectoryEntry` on the API for what it costs to offer one.
+ */
+const InviteList = ({ invites, onAdd, onRemove, t }: InviteListProps) => {
+  const [email, setEmail] = useState('');
+  const [jobTitle, setJobTitle] = useState('');
+  const [role, setRole] = useState<OrgRole>('MEMBER');
+
+  const trimmed = email.trim().toLowerCase();
+  const isWellFormed = /.+@.+\..+/.test(trimmed);
+  const isDuplicate = invites.some(
+    (invite) => invite.email?.toLowerCase() === trimmed,
+  );
+  const canAdd = isWellFormed && !isDuplicate;
+
+  const add = () => {
+    if (!canAdd) return;
+    onAdd({ email: trimmed, role, jobTitle: jobTitle.trim() || undefined });
+    setEmail('');
+    setJobTitle('');
+  };
+
+  return (
+    <section className="space-y-2.5">
+      <div className="space-y-1">
+        <p className="text-xs font-medium text-content-muted">{t('org.invitePeople')}</p>
+        <p className="text-[11px] leading-relaxed text-content-faint">
+          {t('org.invitePeopleHint')}
+        </p>
+      </div>
+
+      <div className="flex flex-wrap items-end gap-2">
+        <Input
+          name="inviteEmail"
+          type="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          placeholder={t('org.inviteEmailPlaceholder')}
+          wrapperClassName="min-w-[12rem] flex-1"
+          className="h-9 py-0 text-xs"
+          error={isDuplicate ? t('org.inviteDuplicate') : undefined}
+          onKeyDown={(event) => {
+            if (event.key !== 'Enter') return;
+            // Inside a `<form>` whose submit creates the organization, so a
+            // stray Enter here would create it with this address untyped.
+            event.preventDefault();
+            add();
+          }}
+        />
+
+        <Input
+          name="inviteJobTitle"
+          value={jobTitle}
+          onChange={(event) => setJobTitle(event.target.value)}
+          placeholder={t('org.jobTitlePlaceholder')}
+          maxLength={280}
+          wrapperClassName="min-w-[9rem] flex-1"
+          className="h-9 py-0 text-xs"
+        />
+
+        <Select
+          value={role}
+          onChange={setRole}
+          options={ASSIGNABLE_ROLES.map((option) => ({
+            value: option,
+            label: t(option === 'ADMIN' ? 'org.roleAdmin' : 'org.roleMember'),
+          }))}
+        />
+
+        <Button type="button" size="sm" variant="secondary" onClick={add} disabled={!canAdd}>
+          <UserPlus className="h-3.5 w-3.5" />
+          {t('org.addPerson')}
+        </Button>
+      </div>
+
+      {invites.length > 0 && (
+        <ul className="space-y-1">
+          {invites.map((invite, index) => (
+            <li
+              key={invite.email ?? index}
+              className="flex items-center gap-2 rounded-xl border border-edge bg-surface-sunken/60 px-2.5 py-1.5"
+            >
+              <UserPlus className="h-3.5 w-3.5 shrink-0 text-content-faint" />
+              <span className="min-w-0 flex-1 truncate text-xs">{invite.email}</span>
+              {invite.jobTitle && (
+                <span className="hidden max-w-[8rem] truncate text-[11px] text-content-faint sm:block">
+                  {invite.jobTitle}
+                </span>
+              )}
+              <span className="shrink-0 text-[10px] uppercase tracking-wide text-content-faint">
+                {t(invite.role === 'ADMIN' ? 'org.roleAdmin' : 'org.roleMember')}
+              </span>
+              <button
+                type="button"
+                aria-label={t('org.removePerson', { name: invite.email ?? '' })}
+                onClick={() => onRemove(index)}
+                className="shrink-0 rounded-lg p-1 text-content-faint transition-colors hover:text-danger"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+};
+
+interface ProjectPickerProps {
+  selected: string[];
+  onToggle: (projectId: string) => void;
+  isOpen: boolean;
+  t: Translate;
+}
+
+/**
+ * Which of the caller's own projects this company starts with.
+ *
+ * Multi-select chips rather than a dropdown, because the answer is usually
+ * several and a dropdown makes "several" into several separate acts. Only
+ * projects the caller *owns* and has not filed anywhere else are offered —
+ * that is the API's rule, not a UI convenience, and the picker is filled from
+ * the endpoint that enforces it rather than from the general project list.
+ */
+const ProjectPicker = ({ selected, onToggle, isOpen, t }: ProjectPickerProps) => {
+  // Only asked for while this dialog is actually open — see the query.
+  const { data: projects = [], isPending } = useAttachableProjects(isOpen);
+
+  return (
+    <section className="space-y-2">
+      <div className="space-y-1">
+        <p className="text-xs font-medium text-content-muted">
+          {t('org.linkProjects')}{' '}
+          {selected.length > 0 && (
+            <span className="text-content-faint">({selected.length})</span>
+          )}
+        </p>
+        <p className="text-[11px] leading-relaxed text-content-faint">
+          {t('org.linkProjectsHint')}
+        </p>
+      </div>
+
+      {isPending && <p className="text-[11px] text-content-faint">{t('common.loading')}</p>}
+
+      {!isPending && projects.length === 0 && (
+        <p className="rounded-xl border border-dashed border-edge px-3 py-3 text-[11px] text-content-faint">
+          {t('org.nothingToFile')}
+        </p>
+      )}
+
+      {projects.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {projects.map((project) => {
+            const isSelected = selected.includes(project.id);
+
+            return (
+              <button
+                key={project.id}
+                type="button"
+                aria-pressed={isSelected}
+                onClick={() => onToggle(project.id)}
+                className={cn(
+                  'inline-flex items-center gap-2 rounded-full border py-1 pl-2 pr-2.5 text-xs transition-all duration-150',
+                  isSelected
+                    ? 'border-brand bg-brand/12 text-brand'
+                    : 'border-edge text-content-muted hover:border-content-faint',
+                )}
+              >
+                <span
+                  aria-hidden
+                  className="h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: project.color }}
+                />
+                <span className="max-w-[9rem] truncate">{project.name}</span>
+                {isSelected ? (
+                  <Check className="h-3 w-3" strokeWidth={3} />
+                ) : (
+                  <FolderPlus className="h-3 w-3" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+};
+
+/**
+ * Create or edit a company, and delete one.
+ *
+ * ## Why creation asks for more than a name
+ *
+ * An organization used to be a folder, and a folder needs a name and a colour.
+ * A company needs to know whose work it holds and who works there, and both of
+ * those are answered *at the moment somebody decides to make one* — "these four
+ * projects are this company's, and these three people run them" is a single
+ * thought. Splitting it into a create, then a visit to the page, then a picker,
+ * then an invite screen is the same thought re-entered four times, and every
+ * one of those steps is one somebody can forget.
+ *
+ * The two halves land differently on purpose, and the API is built around that:
+ * the projects are filed in the same transaction as the create, so a company
+ * never exists holding half of what it was meant to; the invitations are sent
+ * afterwards and reported per person, so one mistyped address does not undo the
+ * company and the three good invitations. See `OrganizationsService.create`.
+ *
+ * ## Why editing asks for less
+ *
+ * In edit mode the picker and the invite list are gone. Both have better homes
+ * once the company exists — the projects board files a project next to the
+ * projects it will sit beside, and the staff tab invites somebody next to the
+ * list of everybody already invited. A settings dialog that duplicated them
+ * would be a second way to do each, with no context around either.
  */
 export const OrganizationDialog = ({
   isOpen,
@@ -47,6 +275,8 @@ export const OrganizationDialog = ({
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [color, setColor] = useState<string>(TASK_COLORS[0]);
+  const [projectIds, setProjectIds] = useState<string[]>([]);
+  const [invites, setInvites] = useState<OrganizationInviteDraft[]>([]);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [confirmation, setConfirmation] = useState('');
 
@@ -58,6 +288,8 @@ export const OrganizationDialog = ({
     setName(organization?.name ?? '');
     setDescription(organization?.description ?? '');
     setColor(organization?.color ?? TASK_COLORS[0]);
+    setProjectIds([]);
+    setInvites([]);
     setIsConfirmingDelete(false);
     setConfirmation('');
   }, [isOpen, organization]);
@@ -69,7 +301,7 @@ export const OrganizationDialog = ({
    *
    * Guarded on `organization` rather than compared against a fallback string,
    * so that in create mode — where there is nothing to delete — this is false
-   * because there is no folder, not because a sentinel failed to match.
+   * because there is no company, not because a sentinel failed to match.
    */
   const canDelete = Boolean(
     organization &&
@@ -92,6 +324,8 @@ export const OrganizationDialog = ({
         name: trimmedName,
         description: description.trim() || undefined,
         color,
+        projectIds: projectIds.length > 0 ? projectIds : undefined,
+        invites: invites.length > 0 ? invites : undefined,
       });
     }
 
@@ -111,6 +345,7 @@ export const OrganizationDialog = ({
       onClose={onClose}
       title={t(isEditing ? 'org.editTitle' : 'org.newTitle')}
       description={t(isEditing ? 'org.editSubtitle' : 'org.newSubtitle')}
+      className={cn(!isEditing && 'sm:max-w-2xl')}
       flat
       footer={
         <>
@@ -160,8 +395,39 @@ export const OrganizationDialog = ({
           options={TASK_COLORS}
         />
 
-        {/* Only an existing folder can be deleted, and only by its owner —
-            which is the only person this dialog opens for in edit mode. */}
+        {/* Only while creating — see the note above for where each of these
+            lives once the company exists. */}
+        {!isEditing && (
+          <>
+            <div className="h-px bg-edge" />
+
+            <ProjectPicker
+              isOpen={isOpen}
+              selected={projectIds}
+              onToggle={(projectId) =>
+                setProjectIds((current) =>
+                  current.includes(projectId)
+                    ? current.filter((id) => id !== projectId)
+                    : [...current, projectId],
+                )
+              }
+              t={t}
+            />
+
+            <div className="h-px bg-edge" />
+
+            <InviteList
+              invites={invites}
+              onAdd={(invite) => setInvites((current) => [...current, invite])}
+              onRemove={(index) =>
+                setInvites((current) => current.filter((_, at) => at !== index))
+              }
+              t={t}
+            />
+          </>
+        )}
+
+        {/* Only an existing company can be deleted, and only by its owner. */}
         {organization?.isOwner && (
           <section className="space-y-2.5 rounded-xl border border-danger/30 bg-danger/[0.04] p-3.5">
             <header className="flex items-center gap-2">

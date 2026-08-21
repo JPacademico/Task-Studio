@@ -103,7 +103,7 @@ export const TaskListView = ({
                           'grid h-[18px] w-[18px] shrink-0 place-items-center rounded border transition-colors duration-150',
                           task.isCompletedByMe || isDone
                             ? 'border-positive bg-positive text-white'
-                            : 'border-edge',
+                            : 'border-check bg-surface-sunken/40',
                           task.isMine ? 'hover:border-brand' : 'cursor-default opacity-60',
                         )}
                       >

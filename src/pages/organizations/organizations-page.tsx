@@ -1,86 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
-import {
-  Building2,
-  ChevronDown,
-  FolderPlus,
-  Plus,
-  Settings2,
-  X,
-} from 'lucide-react';
+import { ArrowRight, Building2, Lock, Plus, Settings2, Users } from 'lucide-react';
 
-import {
-  useAttachableProjects,
-  useAttachProject,
-  useDetachProject,
-  useOrganizations,
-} from '@/entities/organization/model/queries';
+import { useOrganizations } from '@/entities/organization/model/queries';
 import type { Organization } from '@/entities/organization/model/types';
 import { OrganizationDialog } from '@/features/organization-management/ui/organization-dialog';
-import { useProjectIntentPrefetch } from '@/entities/project/model/queries';
 import { cn } from '@/shared/lib/cn';
 import { withAlpha } from '@/shared/lib/colors';
-import { Avatar, Button, EmptyState, RunicText, Select, Skeleton } from '@/shared/ui';
+import { Avatar, Button, EmptyState, RunicText, Skeleton } from '@/shared/ui';
 import { useT, type Translate } from '@/shared/i18n';
-
-interface ProjectRowProps {
-  organizationId: string;
-  project: Organization['projects'][number];
-  canUnfile: boolean;
-  t: Translate;
-}
-
-/** One project inside a folder — a link out, plus the owner's unfile control. */
-const ProjectRow = ({ organizationId, project, canUnfile, t }: ProjectRowProps) => {
-  const detach = useDetachProject(organizationId);
-  const intent = useProjectIntentPrefetch(project.id);
-
-  return (
-    <li className="group/row flex items-center gap-2.5 rounded-xl px-2.5 py-2 transition-colors hover:bg-surface-sunken/70">
-      <span
-        aria-hidden
-        className="h-7 w-1 shrink-0 rounded-full"
-        style={{ backgroundColor: project.color }}
-      />
-
-      <Link
-        to={`/projects/${project.id}`}
-        {...intent}
-        className="min-w-0 flex-1 leading-tight focus-visible:outline-none"
-      >
-        <span className="flex items-center gap-1.5">
-          <span className="truncate text-xs font-semibold transition-colors group-hover/row:text-brand">
-            {project.name}
-          </span>
-          {project.isArchived && (
-            <span className="shrink-0 text-[10px] uppercase tracking-wide text-content-faint">
-              {t('org.archived')}
-            </span>
-          )}
-        </span>
-        <span className="block truncate text-[11px] text-content-faint">
-          {project.description ?? t('org.noDescription')}
-        </span>
-      </Link>
-
-      {canUnfile && (
-        <button
-          type="button"
-          aria-label={t('org.unfile', { name: project.name })}
-          title={t('org.unfile', { name: project.name })}
-          onClick={() => detach.mutate(project.id)}
-          className={cn(
-            'shrink-0 rounded-lg p-1.5 text-content-faint opacity-0 transition-all',
-            'hover:text-danger group-hover/row:opacity-100 focus-visible:opacity-100',
-          )}
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
-      )}
-    </li>
-  );
-};
 
 interface OrganizationCardProps {
   organization: Organization;
@@ -89,182 +17,145 @@ interface OrganizationCardProps {
 }
 
 /**
- * One folder, with its projects listed underneath.
+ * One company, as a card that leads somewhere.
  *
- * Expanded inline rather than behind a detail route. A folder holds nothing but
- * a list of links, so a page of its own would be a navigation step that arrives
- * at the same handful of rows the card can simply show — and the useful view of
- * organizations is nearly always the comparison between them.
+ * This used to expand inline, on the reasoning that a folder holds nothing but
+ * a list of links and a page of its own would be a navigation step arriving at
+ * the same handful of rows. That reasoning belonged to the folder. A company
+ * has a projects board, a metrics page, a staff list and a calendar, and none
+ * of those fit under a chevron — so the card's job is now to say enough to
+ * choose between companies, and the page's job is everything else.
+ *
+ * What it says is deliberately the same three facts for each: how many people,
+ * how much work, and whether the reader is staff or just passing through.
  */
-const OrganizationCard = ({ organization, onEdit, t }: OrganizationCardProps) => {
-  const [isOpen, setIsOpen] = useState(true);
-  const [isFiling, setIsFiling] = useState(false);
+const OrganizationCard = ({ organization, onEdit, t }: OrganizationCardProps) => (
+  <article
+    className="ui-card group relative overflow-hidden rounded-2xl border border-edge bg-surface-raised transition-shadow duration-200 hover:shadow-panel"
+    style={{
+      background: organization.bannerUrl
+        ? undefined
+        : `linear-gradient(120deg, ${withAlpha(organization.color, 0.09)}, transparent 55%)`,
+    }}
+  >
+    {/* The banner as a strip, if there is one. Short: this is a chooser, and a
+        full letterhead per card would push the third company off the screen. */}
+    {organization.bannerUrl && (
+      <span
+        aria-hidden
+        className="block h-16 w-full"
+        style={{ background: `url(${organization.bannerUrl}) center/cover` }}
+      />
+    )}
 
-  const attach = useAttachProject(organization.id);
-  // Only asked for while the picker is actually open — see the query.
-  const { data: attachable = [] } = useAttachableProjects(isFiling);
+    <div className="flex flex-wrap items-start gap-3 p-4">
+      <span
+        aria-hidden
+        className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl"
+        style={{
+          backgroundColor: withAlpha(organization.color, 0.16),
+          color: organization.color,
+        }}
+      >
+        <Building2 className="h-4 w-4" />
+      </span>
 
-  return (
-    <article
-      className="ui-card overflow-hidden rounded-2xl border border-edge bg-surface-raised"
-      style={{
-        background: `linear-gradient(120deg, ${withAlpha(organization.color, 0.09)}, transparent 55%)`,
-      }}
-    >
-      <header className="flex flex-wrap items-start gap-3 p-4">
-        <span
-          aria-hidden
-          className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl"
-          style={{
-            backgroundColor: withAlpha(organization.color, 0.16),
-            color: organization.color,
-          }}
+      <div className="min-w-0 flex-1 space-y-0.5">
+        <Link
+          to={`/organizations/${organization.id}`}
+          className="block focus-visible:outline-none"
         >
-          <Building2 className="h-4 w-4" />
-        </span>
-
-        <div className="min-w-0 flex-1 space-y-0.5">
-          <h2 className="truncate text-sm font-semibold tracking-tight">
+          <h2 className="truncate text-sm font-semibold tracking-tight transition-colors group-hover:text-brand">
             {organization.name}
           </h2>
-          {organization.description && (
-            <p className="line-clamp-2 text-xs leading-relaxed text-content-muted">
-              {organization.description}
-            </p>
-          )}
-          <p className="flex items-center gap-1.5 pt-0.5 text-[11px] text-content-faint">
-            <Avatar
-              name={organization.owner.displayName}
-              src={organization.owner.avatarUrl}
-              size="xs"
-            />
-            <span className="truncate">
-              {organization.isOwner
-                ? t('org.ownedByYou')
-                : t('org.ownedBy', { name: organization.owner.displayName })}
-            </span>
-            <span aria-hidden>·</span>
-            <span className="tabular-nums">
-              {t('org.projectCount', { count: organization.projectCount })}
-            </span>
+        </Link>
+
+        {organization.description && (
+          <p className="line-clamp-2 text-xs leading-relaxed text-content-muted">
+            {organization.description}
           </p>
-        </div>
+        )}
 
-        <div className="flex shrink-0 items-center gap-1">
-          {organization.isOwner && (
-            <Button
-              size="icon"
-              variant="ghost"
-              aria-label={t('org.editTitle')}
-              title={t('org.editTitle')}
-              onClick={() => onEdit(organization)}
-            >
-              <Settings2 className="h-4 w-4" />
-            </Button>
+        <p className="flex flex-wrap items-center gap-1.5 pt-0.5 text-[11px] text-content-faint">
+          <Avatar
+            name={organization.owner.displayName}
+            src={organization.owner.avatarUrl}
+            size="xs"
+          />
+          <span className="truncate">
+            {organization.isOwner
+              ? t('org.ownedByYou')
+              : t('org.ownedBy', { name: organization.owner.displayName })}
+          </span>
+          <span aria-hidden>·</span>
+          <span className="inline-flex items-center gap-1 tabular-nums">
+            <Users className="h-3 w-3" />
+            {organization.memberCount}
+          </span>
+          <span aria-hidden>·</span>
+          <span className="tabular-nums">
+            {t('org.projectCount', { count: organization.projectCount })}
+          </span>
+
+          {/* A guest reached this company through a project inside it and is
+              not on its staff list. Saying so on the card explains why the
+              page they are about to open has fewer controls than they expect. */}
+          {!organization.myRole && (
+            <>
+              <span aria-hidden>·</span>
+              <span
+                className="inline-flex items-center gap-1"
+                title={t('org.guestNotice')}
+              >
+                <Lock className="h-3 w-3" />
+                {t('org.roleGuest')}
+              </span>
+            </>
           )}
+        </p>
+      </div>
 
+      <div className="flex shrink-0 items-center gap-1">
+        {organization.canManage && (
           <Button
             size="icon"
             variant="ghost"
-            aria-expanded={isOpen}
-            aria-label={t(isOpen ? 'org.collapse' : 'org.expand')}
-            onClick={() => setIsOpen((open) => !open)}
+            aria-label={t('org.editTitle')}
+            title={t('org.editTitle')}
+            onClick={() => onEdit(organization)}
           >
-            <ChevronDown
-              className={cn('h-4 w-4 transition-transform duration-150', isOpen && 'rotate-180')}
-            />
+            <Settings2 className="h-4 w-4" />
           </Button>
-        </div>
-      </header>
-
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-            className="overflow-hidden"
-          >
-            <div className="space-y-2 border-t border-edge/70 px-2.5 py-2.5">
-              {organization.projects.length > 0 ? (
-                <ul className="space-y-0.5">
-                  {organization.projects.map((project) => (
-                    <ProjectRow
-                      key={project.id}
-                      organizationId={organization.id}
-                      project={project}
-                      canUnfile={organization.isOwner}
-                      t={t}
-                    />
-                  ))}
-                </ul>
-              ) : (
-                <p className="px-2.5 py-3 text-center text-xs leading-relaxed text-content-faint">
-                  {t('org.empty')}
-                </p>
-              )}
-
-              {/*
-                Filing is the owner's, and only over projects they own — see
-                the API's `OrganizationsService`. So the picker is hidden
-                entirely for everybody else rather than shown and then failing.
-              */}
-              {organization.isOwner && (
-                <div className="px-1 pt-0.5">
-                  {isFiling ? (
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <Select
-                        className="w-[13rem]"
-                        value=""
-                        onChange={(projectId) => {
-                          if (!projectId) return;
-                          attach.mutate(projectId, { onSuccess: () => setIsFiling(false) });
-                        }}
-                        options={[
-                          { value: '', label: t('org.chooseProject') },
-                          ...attachable.map((project) => ({
-                            value: project.id,
-                            label: project.name,
-                            swatch: project.color,
-                          })),
-                        ]}
-                      />
-                      <Button size="sm" variant="ghost" onClick={() => setIsFiling(false)}>
-                        {t('common.cancel')}
-                      </Button>
-
-                      {attachable.length === 0 && (
-                        <p className="text-[11px] text-content-faint">
-                          {t('org.nothingToFile')}
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <Button size="sm" variant="ghost" onClick={() => setIsFiling(true)}>
-                      <FolderPlus className="h-3.5 w-3.5" />
-                      {t('org.fileProject')}
-                    </Button>
-                  )}
-                </div>
-              )}
-            </div>
-          </motion.div>
         )}
-      </AnimatePresence>
-    </article>
-  );
-};
+
+        {/* A link, styled like the ghost icon button beside it. `Button` has
+            no `asChild`, and a button that calls `navigate` would lose
+            middle-click, "open in new tab" and the status-bar preview — on the
+            one control whose entire job is going somewhere. */}
+        <Link
+          to={`/organizations/${organization.id}`}
+          aria-label={t('org.open', { name: organization.name })}
+          title={t('org.open', { name: organization.name })}
+          className={cn(
+            'ui-btn grid h-9 w-9 shrink-0 place-items-center rounded-xl',
+            'text-content-muted transition-colors hover:bg-surface-sunken hover:text-content',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
+          )}
+        >
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </div>
+    </div>
+  </article>
+);
 
 /**
- * Organizations: somewhere to put projects.
+ * Organizations: the companies whose work lives in here.
  *
- * Once somebody is on a dozen projects the flat list stops being a list and
- * starts being a pile — a client's three projects, an internal tool and last
- * year's rebuild all sitting at the same level with nothing saying which
- * belongs with which. A folder is the smallest thing that fixes that, and it is
- * deliberately *only* a folder: no roster, no permissions, no content. See
- * `entities/organization/model/types`.
+ * The list is a chooser and nothing more — everything a company *has* is on its
+ * own page now. What this page still owns is the one act that has no page to
+ * live on yet: creating one. See `OrganizationDialog` for why creation asks for
+ * projects and people rather than only a name.
  */
 const OrganizationsPage = () => {
   const t = useT();
@@ -301,9 +192,9 @@ const OrganizationsPage = () => {
       </header>
 
       {isPending && (
-        <div className="space-y-3">
-          {Array.from({ length: 3 }, (_, index) => (
-            <Skeleton key={index} className="h-[120px] rounded-2xl" />
+        <div className={cn('grid gap-3 md:grid-cols-2')}>
+          {Array.from({ length: 4 }, (_, index) => (
+            <Skeleton key={index} className="h-[132px] rounded-2xl" />
           ))}
         </div>
       )}
@@ -321,7 +212,7 @@ const OrganizationsPage = () => {
         />
       )}
 
-      <div className="space-y-3">
+      <div className="grid gap-3 md:grid-cols-2">
         {organizations.map((organization) => (
           <OrganizationCard
             key={organization.id}

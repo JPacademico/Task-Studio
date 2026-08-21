@@ -20,6 +20,7 @@ const TaskMenuPage = lazy(() => import('@/pages/task-menu/task-menu-page'));
 const NotesBoardPage = lazy(() => import('@/pages/notes-board/notes-board-page'));
 const MeetingsPage = lazy(() => import('@/pages/meetings/meetings-page'));
 const OrganizationsPage = lazy(() => import('@/pages/organizations/organizations-page'));
+const OrganizationPage = lazy(() => import('@/pages/organizations/organization-page'));
 const RecycleBinPage = lazy(() => import('@/pages/recycle-bin/recycle-bin-page'));
 const InvitationsPage = lazy(() => import('@/pages/invitations/invitations-page'));
 const SettingsPage = lazy(() => import('@/pages/settings/settings-page'));
@@ -56,6 +57,7 @@ export const AppRouter = () => (
         <Route path="/notes" element={<NotesBoardPage />} />
         <Route path="/meetings" element={<MeetingsPage />} />
         <Route path="/organizations" element={<OrganizationsPage />} />
+        <Route path="/organizations/:organizationId" element={<OrganizationPage />} />
         <Route path="/recycle-bin" element={<RecycleBinPage />} />
         <Route path="/invitations" element={<InvitationsPage />} />
         <Route path="/themes" element={<ThemeGalleryPage />} />

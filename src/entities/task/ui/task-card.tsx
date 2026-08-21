@@ -211,7 +211,10 @@ const TaskCardBase = ({
               'mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md border transition-all duration-150',
               task.isCompletedByMe || isDone
                 ? 'border-positive bg-positive text-white'
-                : 'border-edge',
+                // `border-check`, not `border-edge`: an empty box has nothing
+                // but its outline to be found by, and `--edge` is tuned to
+                // vanish. See the token note in `app/styles/index.css`.
+                : 'border-check bg-surface-sunken/40',
               task.isMine ? 'hover:border-brand' : 'cursor-default opacity-60',
             )}
           >

@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { Check } from 'lucide-react';
 
 import { useCreateMeeting, useUpdateMeeting } from '@/entities/meeting/model/queries';
-import type { Meeting } from '@/entities/meeting/model/types';
-import type { RosterMember } from '@/entities/project/model/types';
+import type { Meeting, MeetingProjectRef } from '@/entities/meeting/model/types';
+import type { UserSummary } from '@/entities/user/model/types';
 import { cn } from '@/shared/lib/cn';
 import {
   DATE_INPUT_MAX,
@@ -12,14 +12,38 @@ import {
   isDateTimeInput,
   toDateTimeInput,
 } from '@/shared/lib/dates';
-import { Avatar, Button, Input, Modal, Textarea } from '@/shared/ui';
+import { Avatar, Button, Input, Modal, Select, Textarea } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
 interface MeetingComposerProps {
   isOpen: boolean;
   onClose: () => void;
-  projectId: string;
-  roster: RosterMember[];
+  /**
+   * Which calendar this is being posted to. Exactly one, and it is fixed for
+   * the life of the surface that opened the composer — a project board can only
+   * book against itself, and a company only against itself.
+   */
+  projectId?: string;
+  organizationId?: string;
+  /**
+   * Who may be named in the room: a project's roster, or a company's staff.
+   *
+   * Typed as the summary both of those already are, rather than as
+   * `RosterMember`, because the composer needs a name, a face and an id and has
+   * no business knowing what role anybody holds in either place.
+   */
+  roster: UserSummary[];
+  /**
+   * Projects this meeting may be attached to, offered only in company mode.
+   *
+   * The whole of feature 5's "link the meeting to a project": picking one puts
+   * the meeting on that project's board as well as on the company's calendar,
+   * because a company meeting *about* a project is something both audiences
+   * need in front of them. Absent — or empty — and the field is not drawn at
+   * all, which is the right answer both for a project board (it is already
+   * attached to itself) and for a company that has filed nothing yet.
+   */
+  linkableProjects?: MeetingProjectRef[];
   /** Present when editing; absent when posting a new one. */
   meeting?: Meeting | null;
   /** Prefilled start, so "new" from a calendar cell lands on that day. */
@@ -53,12 +77,14 @@ export const MeetingComposer = ({
   isOpen,
   onClose,
   projectId,
+  organizationId,
   roster,
+  linkableProjects,
   meeting,
   defaultDay,
 }: MeetingComposerProps) => {
   const t = useT();
-  const createMeeting = useCreateMeeting(projectId);
+  const createMeeting = useCreateMeeting({ projectId, organizationId });
   const updateMeeting = useUpdateMeeting();
 
   const [title, setTitle] = useState('');
@@ -67,6 +93,18 @@ export const MeetingComposer = ({
   const [startAt, setStartAt] = useState('');
   const [endAt, setEndAt] = useState('');
   const [participantIds, setParticipantIds] = useState<string[]>([]);
+  /**
+   * The project a company meeting is about, or `''` for none.
+   *
+   * Only ever set in company mode. `''` rather than `undefined` because it is
+   * bound to a `Select`, and a controlled select with an undefined value is an
+   * uncontrolled one.
+   */
+  const [linkedProjectId, setLinkedProjectId] = useState('');
+
+  const canLinkProject = Boolean(
+    organizationId && !meeting && (linkableProjects?.length ?? 0) > 0,
+  );
 
   // Reset (or hydrate) whenever the dialog opens.
   useEffect(() => {
@@ -83,6 +121,7 @@ export const MeetingComposer = ({
     setStartAt(toDateTimeInput(start));
     setEndAt(toDateTimeInput(end));
     setParticipantIds(meeting?.participants.map((person) => person.id) ?? []);
+    setLinkedProjectId(meeting?.projectId ?? '');
   }, [defaultDay, isOpen, meeting]);
 
   /*
@@ -136,9 +175,21 @@ export const MeetingComposer = ({
     };
 
     if (meeting) {
+      /*
+       * The link is not editable.
+       *
+       * Moving a meeting off one project's board and onto another is not a
+       * change to the meeting — it is a change to whose calendar it was ever
+       * on, and to who was told about it. The API refuses it for that reason,
+       * and the composer does not offer it: delete and repost is both clearer
+       * and the only thing that actually notifies the new audience.
+       */
       await updateMeeting.mutateAsync({ meetingId: meeting.id, payload });
     } else {
-      await createMeeting.mutateAsync(payload);
+      await createMeeting.mutateAsync({
+        ...payload,
+        ...(canLinkProject && linkedProjectId ? { projectId: linkedProjectId } : {}),
+      });
     }
 
     onClose();
@@ -219,6 +270,29 @@ export const MeetingComposer = ({
             }
           />
         </div>
+
+        {canLinkProject && (
+          <div className="space-y-1.5">
+            <Select
+              size="md"
+              className="w-full"
+              label={t('meetings.linkProject')}
+              value={linkedProjectId}
+              onChange={setLinkedProjectId}
+              options={[
+                { value: '', label: t('meetings.linkProjectNone') },
+                ...(linkableProjects ?? []).map((project) => ({
+                  value: project.id,
+                  label: project.name,
+                  swatch: project.color,
+                })),
+              ]}
+            />
+            <p className="text-[11px] leading-relaxed text-content-faint">
+              {t('meetings.linkProjectHint')}
+            </p>
+          </div>
+        )}
 
         <Textarea
           label={t('meetings.descriptionLabel')}
