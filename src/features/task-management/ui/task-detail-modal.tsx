@@ -1,7 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
-import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowUpRight,
   Check,
@@ -10,13 +8,11 @@ import {
   Pencil,
   Play,
   Plus,
-  Sparkles,
   StickyNote,
   Trash2,
   UserCheck,
   X,
 } from 'lucide-react';
-import { toast } from 'sonner';
 
 import {
   useCreateNote,
@@ -30,9 +26,7 @@ import { completionProgress, isSharedTask } from '@/entities/task/lib/completion
 import { useChecklistMutations, useTask } from '@/entities/task/model/queries';
 import type { Task } from '@/entities/task/model/types';
 import { TaskTypeTag } from '@/entities/task/ui/task-type-tag';
-import { aiApi, type SubtaskSuggestion } from '@/features/ai-suggestions/api/ai.api';
 import { useCurrentUser } from '@/features/auth/model/session.store';
-import { errorMessage } from '@/shared/api/client';
 import { NOTE_COLORS, TASK_STATUS_META, TEXT_LIMITS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
 import { clampText, truncateText } from '@/shared/lib/text';
@@ -57,8 +51,13 @@ interface TaskDetailModalProps {
 }
 
 /**
- * Everything attached to a single task: the sub-checklist, its notes, and the
- * AI sub-task suggestions that can be promoted into checklist items.
+ * Everything attached to a single task: the sub-checklist, its notes, the
+ * documents pinned to it, and the pages written against it on the text board.
+ *
+ * The AI sub-task suggester used to live on the checklist header here. It is
+ * gone: the project's own assistant tab does the same job with the whole board
+ * in view, and a second entry point to the same model on the densest surface in
+ * the app was a button most people pressed once out of curiosity.
  */
 export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProps) => {
   const t = useT();
@@ -88,39 +87,6 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
 
   const [itemDraft, setItemDraft] = useState('');
   const [noteDraft, setNoteDraft] = useState('');
-  const [suggestions, setSuggestions] = useState<SubtaskSuggestion[]>([]);
-  const [suggestionId, setSuggestionId] = useState<string | null>(null);
-
-  const suggest = useMutation({
-    mutationFn: () => aiApi.suggestSubtasks(taskId as string),
-    onSuccess: (suggestion) => {
-      setSuggestions(suggestion.result.suggestions ?? []);
-      setSuggestionId(suggestion.id);
-    },
-    onError: (error) => toast.error(errorMessage(error, t('ai.unavailable'))),
-  });
-
-  /*
-   * Accepted one at a time, like the project panel's task ideas.
-   *
-   * This was an all-or-nothing "Add all", which forced a choice between three
-   * steps you mostly wanted and none at all — so the usual outcome was adding
-   * all three and deleting one. Per-step is the same number of clicks for the
-   * case where every step is good, and far fewer for the case where one is not.
-   */
-  const acceptStep = useMutation({
-    mutationFn: (suggestion: SubtaskSuggestion) =>
-      aiApi.accept(suggestionId as string, [suggestion.title]),
-    onSuccess: (_result, suggestion) => {
-      setSuggestions((current) => current.filter((entry) => entry.title !== suggestion.title));
-      toast.success(t('ai.stepAdded'));
-      void checklist.add.reset();
-    },
-    onError: (error) => toast.error(errorMessage(error)),
-  });
-
-  const declineStep = (suggestion: SubtaskSuggestion) =>
-    setSuggestions((current) => current.filter((entry) => entry.title !== suggestion.title));
 
   return (
     <Modal
@@ -367,80 +333,17 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
                   </li>
                 ))}
               </ul>
-
-              <p className="text-[11px] leading-relaxed text-content-faint">
-                Everybody assigned ticks their own box, and the task completes itself when the last
-                one does. A project admin can close it early.
-              </p>
             </section>
           )}
 
           {/* --- Sub-checklist -------------------------------------------- */}
           <section className="space-y-2.5">
-            <header className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold">
-                {t('task.checklist')}{' '}
-                <span className="text-xs font-normal text-content-faint">
-                  {task.checklistProgress.done}/{task.checklistProgress.total}
-                </span>
-              </h3>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => suggest.mutate()}
-                isLoading={suggest.isPending}
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-                {t('task.suggestSteps')}
-              </Button>
-            </header>
-
-            <AnimatePresence>
-              {suggestions.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="space-y-2 overflow-hidden rounded-xl border border-brand/40 bg-brand/[0.06] p-3"
-                >
-                  <p className="text-xs font-semibold text-brand">{t('task.suggestedSubtasks')}</p>
-                  <ul className="space-y-2">
-                    {suggestions.map((suggestion) => (
-                      <li
-                        key={suggestion.title}
-                        className="space-y-1.5 rounded-lg bg-surface-raised/60 p-2.5 text-xs"
-                      >
-                        <p className="font-medium leading-snug">{suggestion.title}</p>
-                        <p className="leading-relaxed text-content-muted">
-                          {suggestion.rationale}
-                        </p>
-                        <div className="flex gap-1.5 pt-0.5">
-                          <Button
-                            size="sm"
-                            isLoading={
-                              acceptStep.isPending &&
-                              acceptStep.variables?.title === suggestion.title
-                            }
-                            onClick={() => acceptStep.mutate(suggestion)}
-                          >
-                            <Check className="h-3 w-3" />
-                            {t('ai.accept')}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => declineStep(suggestion)}
-                          >
-                            <X className="h-3 w-3" />
-                            {t('ai.decline')}
-                          </Button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <h3 className="text-sm font-semibold">
+              {t('task.checklist')}{' '}
+              <span className="text-xs font-normal text-content-faint">
+                {task.checklistProgress.done}/{task.checklistProgress.total}
+              </span>
+            </h3>
 
             <ul className="space-y-1.5">
               {task.checklist.map((item) => (

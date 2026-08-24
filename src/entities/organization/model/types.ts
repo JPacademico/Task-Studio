@@ -18,6 +18,8 @@ export interface OrganizationProject {
   color: string;
   bannerUrl: string | null;
   isArchived: boolean;
+  /** Set once the owner concluded it — see `Project.completedAt`. */
+  completedAt: string | null;
   updatedAt: string;
   ownerId: string;
   /**

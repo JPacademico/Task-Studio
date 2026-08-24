@@ -293,10 +293,6 @@ export const OrganizationMembersPanel = ({
     <div className="space-y-5">
       {organization.canManage && <InviteForm organizationId={organization.id} t={t} />}
 
-      <p className="rounded-xl border border-edge bg-surface-sunken/60 px-3.5 py-2.5 text-[11px] leading-relaxed text-content-muted">
-        {t('org.staffExplain')}
-      </p>
-
       <Section
         title={t('org.staff')}
         description={t('org.headcount', { count: organization.memberCount })}

@@ -46,10 +46,9 @@ const RecycleBinPage = () => {
       <header className="space-y-3">
         <div className="space-y-1">
           <p className="text-xs uppercase tracking-[0.18em] text-content-faint">{t('bin.title')}</p>
-          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{t('bin.deletedItems')}</h1>
-          <p className="text-sm text-content-muted">
-            {t('bin.subtitle')}
-          </p>
+          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+            {t('bin.deletedItems')}
+          </h1>
         </div>
 
         <Segmented

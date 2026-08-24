@@ -248,7 +248,6 @@ export const CreateProjectDialog = ({
             }
             isOpen={isOpen}
             label={t('project.staffFromTeams')}
-            hint={t('project.staffFromTeamsHint')}
           />
         )}
       </form>

@@ -412,7 +412,6 @@ export const TaskComposer = ({
               }
               isOpen={isOpen}
               label={t('task.assignees')}
-              hint={t('task.assignTeamsHint')}
             />
 
             {assigneeIds.length > 1 && (

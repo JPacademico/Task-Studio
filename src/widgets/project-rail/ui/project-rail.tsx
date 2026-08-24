@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Building2, FolderKanban, Plus, TriangleAlert, Users } from 'lucide-react';
+import { Building2, CheckCircle2, FolderKanban, Plus, TriangleAlert, Users } from 'lucide-react';
 
 import { useOrganizations } from '@/entities/organization/model/queries';
 import type { Organization } from '@/entities/organization/model/types';
@@ -102,6 +102,14 @@ const RailProject = ({
         <span className="min-w-0 flex-1 leading-tight">
           <span className="flex items-center gap-1.5">
             <span className="truncate text-xs font-semibold">{project.name}</span>
+            {/* A finished project is still on the rail — it is a record worth
+                reaching — but it is not work, so it says so. */}
+            {project.completedAt && (
+              <CheckCircle2
+                className="h-3 w-3 shrink-0 text-positive"
+                aria-label={t('project.finished')}
+              />
+            )}
             {isOverdue && (
               <TriangleAlert
                 className="h-3 w-3 shrink-0 text-danger"

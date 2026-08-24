@@ -15,6 +15,15 @@ export interface Project {
   color: string;
   bannerUrl: string | null;
   isArchived: boolean;
+  /**
+   * When the owner concluded it, or `null`.
+   *
+   * A finished project keeps its name, description, roster and teams and has
+   * had every task and page cleared out of it. It is readable but takes no new
+   * work; reopening gives back the shell and nothing that was in it. See the
+   * API's `ProjectsService.complete`.
+   */
+  completedAt: string | null;
   createdAt: string;
   updatedAt: string;
   owner: UserSummary;

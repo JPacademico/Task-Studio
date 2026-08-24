@@ -1,8 +1,20 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useCallback, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CalendarClock, FolderPlus, Layers, ListTodo, Pin, TriangleAlert } from 'lucide-react';
+import {
+  ArrowRight,
+  Building2,
+  CalendarClock,
+  FolderPlus,
+  Layers,
+  ListTodo,
+  Pin,
+  TriangleAlert,
+  Users,
+} from 'lucide-react';
 
+import { useOrganizations } from '@/entities/organization/model/queries';
+import type { Organization } from '@/entities/organization/model/types';
 import {
   useProjects,
   useTogglePin,
@@ -12,8 +24,10 @@ import { ProjectCard } from '@/entities/project/ui/project-card';
 import { useTasks, useToggleMyCompletion, useToggleTaskPin } from '@/entities/task/model/queries';
 import { TaskCard } from '@/entities/task/ui/task-card';
 import { CreateProjectDialog } from '@/features/project-management/ui/create-project-dialog';
+import type { Task } from '@/entities/task/model/types';
 import { useCurrentUser } from '@/features/auth/model/session.store';
 import { cn } from '@/shared/lib/cn';
+import { withAlpha } from '@/shared/lib/colors';
 import { Button, EmptyState, RunicText, Section, Skeleton } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
@@ -51,17 +65,97 @@ const StatTile = ({
 );
 
 /**
- * Home surface: personal counters, pinned projects, and the work that is due
- * next across every project the user belongs to.
+ * One company, at the size a dashboard can afford to give it.
+ *
+ * Deliberately a row and not the card the organizations page draws. This
+ * surface already carries four counters, a grid of project cards and a task
+ * list; a second grid of full-height cards with banners and bylines would push
+ * the work — which is what anybody opened the dashboard for — below the fold.
+ *
+ * So it says the three things that decide whether to click: which company, how
+ * many people, how much work. Everything else is one navigation away.
+ */
+const OrganizationTile = ({ organization }: { organization: Organization }) => {
+  const t = useT();
+
+  return (
+    <Link
+      to={`/organizations/${organization.id}`}
+      className={cn(
+        'ui-card group flex items-center gap-3 rounded-2xl border border-edge bg-surface-raised px-3 py-2.5',
+        'transition-colors duration-150 hover:border-brand/50',
+      )}
+      style={{
+        background: `linear-gradient(120deg, ${withAlpha(organization.color, 0.08)}, transparent 60%)`,
+      }}
+    >
+      <span
+        aria-hidden
+        className="grid h-9 w-9 shrink-0 place-items-center rounded-xl"
+        style={{
+          backgroundColor: withAlpha(organization.color, 0.16),
+          color: organization.color,
+        }}
+      >
+        <Building2 className="h-4 w-4" />
+      </span>
+
+      <span className="min-w-0 flex-1 leading-tight">
+        <span className="block truncate text-sm font-semibold transition-colors group-hover:text-brand">
+          {organization.name}
+        </span>
+        <span className="flex items-center gap-1.5 text-[11px] text-content-faint">
+          <Users className="h-3 w-3 shrink-0" />
+          <span className="tabular-nums">{organization.memberCount}</span>
+          <span aria-hidden>·</span>
+          <span className="truncate">
+            {t('org.projectCount', { count: organization.projectCount })}
+          </span>
+        </span>
+      </span>
+
+      <ArrowRight className="h-3.5 w-3.5 shrink-0 text-content-faint transition-colors group-hover:text-brand" />
+    </Link>
+  );
+};
+
+/**
+ * Home surface: personal counters, the companies the user belongs to, pinned
+ * projects, and the work that is due next across every project they are on.
  */
 const DashboardPage = () => {
   const t = useT();
   const user = useCurrentUser();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
+  const navigate = useNavigate();
+
   const { data: overview, isLoading: overviewLoading } = useUserOverview();
   const { data: projects = [], isLoading: projectsLoading } = useProjects();
+  const { data: organizations = [] } = useOrganizations();
   const { data: myTasks = [] } = useTasks({ scope: 'mine', status: 'TODO', limit: 6 });
+
+  /*
+   * Opening a task from here means leaving here.
+   *
+   * These cards were inert — the whole row of "what is on you next" was a
+   * read-only list, and the only way to act on any of it was to remember which
+   * project it belonged to and navigate there by hand. A task's home is its
+   * project's board, so that is where this goes, carrying the task id so the
+   * sheet opens on arrival rather than dropping the reader at the top of a
+   * board to go and find it again. See `ProjectPage`'s `?task=` handling.
+   *
+   * A *personal* task has no project and therefore no board; the task menu is
+   * its only home, so that is where it goes instead.
+   */
+  const openTask = useCallback(
+    (task: Task) => {
+      navigate(
+        task.project ? `/projects/${task.project.id}?task=${task.id}` : '/tasks',
+      );
+    },
+    [navigate],
+  );
 
   const togglePin = useTogglePin();
   const toggleTaskPin = useToggleTaskPin();
@@ -109,6 +203,30 @@ const DashboardPage = () => {
           </>
         )}
       </div>
+
+      {/*
+        Where you belong, above what you are working on.
+
+        Rendered only when there is something to show. Somebody who runs no
+        company should not be given a permanent empty section explaining a
+        feature they have not asked for — the same rule the team picker follows.
+      */}
+      {organizations.length > 0 && (
+        <Section
+          title={t('org.title')}
+          action={
+            <Link to="/organizations" className="text-xs font-medium text-brand hover:underline">
+              {t('dash.openOrganizations')}
+            </Link>
+          }
+        >
+          <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+            {organizations.map((organization) => (
+              <OrganizationTile key={organization.id} organization={organization} />
+            ))}
+          </div>
+        </Section>
+      )}
 
       {pinned.length > 0 && (
         <Section title={t('dash.pinnedProjects')}>
@@ -192,6 +310,11 @@ const DashboardPage = () => {
                 key={task.id}
                 task={task}
                 compact
+                onOpen={openTask}
+                /* These come from every project at once, so the card has to
+                   say which one — otherwise "Draft the brief" appears twice
+                   with no way to tell the two apart. */
+                showProjectLink
                 onToggleComplete={() =>
                   toggleCompletion.mutate({
                     taskId: task.id,

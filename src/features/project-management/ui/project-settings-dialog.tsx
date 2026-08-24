@@ -1,8 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Trash2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, RotateCcw, Trash2 } from 'lucide-react';
 
-import { useDeleteProject, useUpdateProject } from '@/entities/project/model/queries';
+import {
+  useCompleteProject,
+  useDeleteProject,
+  useReopenProject,
+  useUpdateProject,
+} from '@/entities/project/model/queries';
 import type { Project } from '@/entities/project/model/types';
 import { TASK_COLORS, TEXT_LIMITS } from '@/shared/config/constants';
 import { clampText } from '@/shared/lib/text';
@@ -47,13 +52,23 @@ interface ProjectSettingsDialogProps {
  * A project has exactly one owner, so "can I change this project" has exactly
  * one honest answer.
  *
- * ## Deleting
+ * ## Finishing, and deleting
  *
- * Behind a typed confirmation rather than a second button, because this is the
- * one action here that takes other people's work with it — every task, note,
- * document and conversation the project holds goes quiet at once. It is a soft
- * delete: the project lands in the owner's recycle bin and can be restored, and
- * the copy says so rather than implying a permanence the API does not have.
+ * Two different endings, and the difference is what survives.
+ *
+ * **Finishing** keeps the project and empties it: the name, the description,
+ * the roster and the teams stay as the record of a piece of work, and every
+ * task and page is destroyed. It can be reopened, which gives back that shell
+ * and nothing that was in it. Confirmed with a **password** rather than a typed
+ * project name, because nothing here is recoverable afterwards — a typed name
+ * proves you read the dialog, a password proves it is you.
+ *
+ * **Deleting** takes the whole thing, and is a *soft* delete: the project lands
+ * in the owner's recycle bin and can be restored. Confirmed by typing the
+ * project's name, which is the right bar for something reversible.
+ *
+ * The gentler of the two sits first, because it is the one most people
+ * reaching for "delete" actually want.
  */
 export const ProjectSettingsDialog = ({
   isOpen,
@@ -66,12 +81,26 @@ export const ProjectSettingsDialog = ({
 
   const updateProject = useUpdateProject(project.id);
   const deleteProject = useDeleteProject();
+  const completeProject = useCompleteProject();
+  const reopenProject = useReopenProject();
 
   const [name, setName] = useState(project.name);
   const [description, setDescription] = useState(project.description ?? '');
   const [color, setColor] = useState(project.color);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [confirmation, setConfirmation] = useState('');
+  const [isConfirmingFinish, setIsConfirmingFinish] = useState(false);
+  /**
+   * Held only long enough to be sent.
+   *
+   * Cleared on every open and on every outcome — see the effect below and
+   * `handleFinish`. It is never put anywhere but this component's own state:
+   * not in a query cache, not in a mutation variable that lingers, and not in
+   * anything that gets logged.
+   */
+  const [password, setPassword] = useState('');
+
+  const isFinished = Boolean(project.completedAt);
 
   // Re-seeded on every open: the dialog is mounted by the page, so its state
   // would otherwise be whatever was last typed into it — including a half-typed
@@ -84,6 +113,8 @@ export const ProjectSettingsDialog = ({
     setColor(project.color);
     setIsConfirmingDelete(false);
     setConfirmation('');
+    setIsConfirmingFinish(false);
+    setPassword('');
   }, [isOpen, project.color, project.description, project.name]);
 
   const trimmedName = name.trim();
@@ -107,6 +138,22 @@ export const ProjectSettingsDialog = ({
       color,
     });
 
+    onClose();
+  };
+
+  const handleFinish = async () => {
+    if (password.length === 0) return;
+
+    await completeProject.mutateAsync({ projectId: project.id, password });
+    // Gone from state the instant it is no longer needed, whatever happens
+    // next — a rejected password leaves the field cleared and the dialog open.
+    setPassword('');
+    setIsConfirmingFinish(false);
+    onClose();
+  };
+
+  const handleReopen = async () => {
+    await reopenProject.mutateAsync(project.id);
     onClose();
   };
 
@@ -183,6 +230,95 @@ export const ProjectSettingsDialog = ({
             <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-danger" />
             <h3 className="text-xs font-semibold text-danger">{t('project.dangerZone')}</h3>
           </header>
+
+          {/*
+            Finishing, above deleting.
+
+            A project that is over is the common case and deleting it is the
+            rare one, so the reversible-shaped action comes first — and putting
+            it here rather than in the calm half of the sheet is deliberate:
+            it destroys tasks and pages, and it belongs behind the same rule.
+          */}
+          {isFinished ? (
+            <div className="space-y-2.5 border-b border-danger/20 pb-3">
+              <p className="text-[11px] leading-relaxed text-content-muted">
+                {t('project.reopenExplain')}
+              </p>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => void handleReopen()}
+                isLoading={reopenProject.isPending}
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                {t('project.reopen')}
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-2.5 border-b border-danger/20 pb-3">
+              {!isConfirmingFinish ? (
+                <>
+                  <p className="text-[11px] leading-relaxed text-content-muted">
+                    {t('project.finishExplain')}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setIsConfirmingFinish(true)}
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    {t('project.finishProject')}
+                  </Button>
+                </>
+              ) : (
+                <div className="space-y-2.5">
+                  <p className="text-[11px] leading-relaxed text-danger">
+                    {t('project.finishConfirmBody')}
+                  </p>
+
+                  <Input
+                    name="finishPassword"
+                    type="password"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(event) =>
+                      setPassword(clampText(event.target.value, TEXT_LIMITS.password))
+                    }
+                    maxLength={TEXT_LIMITS.password}
+                    label={t('project.finishConfirmLabel')}
+                    autoFocus
+                  />
+
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="danger"
+                      size="sm"
+                      onClick={() => void handleFinish()}
+                      isLoading={completeProject.isPending}
+                      disabled={password.length === 0}
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      {t('project.finishConfirmAction')}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setIsConfirmingFinish(false);
+                        setPassword('');
+                      }}
+                    >
+                      {t('common.cancel')}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {!isConfirmingDelete ? (
             <>

@@ -28,6 +28,30 @@ export const projectApi = {
     return data;
   },
 
+  /**
+   * Conclude a project: it keeps its record, and loses every task and page.
+   *
+   * The password is re-confirmed by the API against the account's own hash —
+   * it is never stored, compared or even held on this side. See the note on
+   * `CompleteProjectDto`.
+   */
+  async complete(
+    projectId: string,
+    password: string,
+  ): Promise<{ tasksCleared: number; documentsCleared: number }> {
+    const { data } = await api.post<{ tasksCleared: number; documentsCleared: number }>(
+      `/projects/${projectId}/complete`,
+      { password },
+    );
+    return data;
+  },
+
+  /** Put a finished project back into service. Nothing cleared comes back. */
+  async reopen(projectId: string): Promise<Project> {
+    const { data } = await api.post<Project>(`/projects/${projectId}/reopen`);
+    return data;
+  },
+
   async create(payload: {
     name: string;
     description?: string;

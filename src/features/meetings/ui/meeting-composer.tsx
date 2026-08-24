@@ -285,7 +285,6 @@ export const MeetingComposer = ({
           onChange={(event) => setRoom(clampText(event.target.value, TEXT_LIMITS.meetingLocation))}
           placeholder={t('meetings.roomPlaceholder')}
           maxLength={TEXT_LIMITS.meetingLocation}
-          hint={t('meetings.roomHint')}
         />
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -382,7 +381,6 @@ export const MeetingComposer = ({
           }
           isOpen={isOpen}
           label={t('meetings.participants')}
-          hint={t('meetings.participantsHint')}
         />
 
         {/*

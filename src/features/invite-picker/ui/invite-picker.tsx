@@ -46,7 +46,6 @@ interface InvitePickerProps {
   isOpen: boolean;
 
   label: string;
-  hint?: string;
   className?: string;
 }
 
@@ -85,7 +84,6 @@ export const InvitePicker = ({
   onToggleTeam,
   isOpen,
   label,
-  hint,
   className,
 }: InvitePickerProps) => {
   const t = useT();
@@ -154,8 +152,6 @@ export const InvitePicker = ({
           />
         )}
       </div>
-
-      {hint && <p className="text-[11px] leading-relaxed text-content-faint">{hint}</p>}
 
       {tab === 'people' || !canPickTeams ? (
         <div className="space-y-2 pt-1">

@@ -19,7 +19,7 @@ import { TaskCard } from '@/entities/task/ui/task-card';
 import type { Task, TaskStatus } from '@/entities/task/model/types';
 import { TASK_STATUS_META } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
-import { EmptyState } from '@/shared/ui';
+import { EmptyState, Skeleton } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
 interface TaskBoardProps {
@@ -50,6 +50,19 @@ interface TaskBoardProps {
    * the column's hint while dragging and the toast when a drop is refused.
    */
   completionBlock?: (task: Task) => string | null;
+  /**
+   * Skeleton cards to draw in each column while more tasks are on the way.
+   *
+   * A number per column rather than a boolean, because the two waits are not
+   * the same: an empty board on a cold load has nothing at all to show and
+   * wants a couple of cards' worth of weight in each column, while a board that
+   * has already painted the reader's own tasks and is topping up with the rest
+   * of the roster's only needs to say "not finished". The caller knows which it
+   * is in; see `ProjectPage`.
+   *
+   * `0` — the default — draws nothing and lets the empty state through.
+   */
+  pendingPerColumn?: number;
 }
 
 const COLUMNS: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'COMPLETED'];
@@ -96,12 +109,15 @@ const Column = ({
   status,
   tasks,
   blockedReason,
+  isPending = false,
   children,
 }: {
   status: TaskStatus;
   tasks: Task[];
   /** Set while a card that may not land here is being dragged. */
   blockedReason?: string | null;
+  /** More cards are still on the way into this column. */
+  isPending?: boolean;
   children: React.ReactNode;
 }) => {
   const t = useT();
@@ -112,6 +128,7 @@ const Column = ({
   return (
     <section
       ref={setNodeRef}
+      aria-busy={isPending || undefined}
       title={blockedReason ?? undefined}
       className={cn(
         'flex flex-col gap-2.5 rounded-2xl border p-2.5 transition-colors duration-150',
@@ -141,8 +158,21 @@ const Column = ({
           )}
           {t(meta.label)}
         </span>
-        <span className="rounded-full bg-surface-raised px-1.5 text-xs tabular-nums text-content-faint">
+        {/*
+          The count is the truth about what has arrived, not about what exists.
+
+          While cards are still coming in, a bare "2" reads as a finished
+          answer and then silently becomes a "5" — so the number is dimmed and
+          followed by an ellipsis, which is the cheapest way to say "so far".
+        */}
+        <span
+          className={cn(
+            'rounded-full bg-surface-raised px-1.5 text-xs tabular-nums',
+            isPending ? 'text-content-faint/60' : 'text-content-faint',
+          )}
+        >
           {tasks.length}
+          {isPending && '…'}
         </span>
       </header>
 
@@ -166,6 +196,7 @@ export const TaskBoard = ({
   onDelete,
   canChangeStatus,
   completionBlock,
+  pendingPerColumn = 0,
 }: TaskBoardProps) => {
   const t = useT();
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -244,6 +275,7 @@ export const TaskBoard = ({
             status={status}
             tasks={grouped[status]}
             blockedReason={status === 'COMPLETED' ? activeBlock : null}
+            isPending={pendingPerColumn > 0}
           >
             {/* See `TaskCard`: no entrance, no exit, nothing to track — and
                 on a drag board the wrapper competed with dnd-kit's own
@@ -264,7 +296,22 @@ export const TaskBoard = ({
                 </DraggableTask>
             ))}
 
-            {grouped[status].length === 0 && (
+            {/*
+              Loading happens *in* the column, not under the board.
+
+              These placeholders used to be a two-column grid below all three
+              columns, which read as a fourth thing on the page rather than as
+              a board filling up — and it put the "still loading" signal
+              furthest from the columns it was about. A grey card in the
+              column it will land in is the whole affordance.
+            */}
+            {Array.from({ length: pendingPerColumn }, (_, index) => (
+              <Skeleton key={`pending-${index}`} className="h-[104px] shrink-0 rounded-2xl" />
+            ))}
+
+            {/* "Nothing here" is a claim, and it cannot be made while cards
+                are still arriving. */}
+            {grouped[status].length === 0 && pendingPerColumn === 0 && (
               <EmptyState
                 className="flex-1 border-none px-3 py-5 lg:py-8"
                 title={t('board.nothingHere')}

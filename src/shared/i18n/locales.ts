@@ -192,8 +192,6 @@ const en = {
   'agenda.nothingScheduled': 'Nothing scheduled',
   'agenda.noNotesBody': 'No one has attached a note to your tasks yet.',
   'agenda.scheduledBody': 'Tasks with a start time or a deadline appear here, ordered by hour.',
-  'bin.subtitle':
-    'Restore anything, or delete it permanently. Purging cannot be undone. Tasks completed more than a week ago tidy themselves in here automatically.',
   'bin.tasks': 'Tasks',
   'bin.notes': 'Notes',
   'bin.noDeletedTasks': 'No deleted tasks',
@@ -244,7 +242,26 @@ const en = {
   'project.settingsTitle': 'Project settings',
   'project.settingsSubtitle': 'Rename it, re-colour it, or move it to the recycle bin.',
   'project.saveChanges': 'Save changes',
-  'project.dangerZone': 'Delete this project',
+  'project.dangerZone': 'Ending this project',
+
+  // Finishing: keeps the record, clears the work. See the settings dialog.
+  'project.finishProject': 'Finish project',
+  'project.finishExplain':
+    'Keeps the project, its people and its teams as a record, and clears every task and page inside it. Nothing cleared can be recovered.',
+  'project.finishConfirmBody':
+    'This deletes every task and every page on this project, permanently. The name, description, roster and teams stay. Enter your password to confirm.',
+  'project.finishConfirmLabel': 'Your password',
+  'project.finishConfirmAction': 'Finish it',
+  'project.finishedToast': 'Project finished. {tasks} task(s) and {documents} page(s) cleared.',
+  'project.finished': 'Finished',
+  'project.finishedOn': 'Finished {date}',
+  'project.finishedBanner':
+    'This project is finished. It is read-only until somebody reopens it.',
+  'project.reopen': 'Reopen project',
+  'project.reopenExplain':
+    'Puts the project back into service with its people and teams. The tasks and pages that were cleared do not come back.',
+  'project.reopenedToast': 'Project reopened.',
+
   'project.deleteExplain':
     'Everything in it — tasks, notes, documents and the conversation — goes with it. It lands in your recycle bin and can be restored from there.',
   'project.deleteProject': 'Delete project',
@@ -313,8 +330,6 @@ const en = {
   'task.editTask': 'Edit task',
   'task.waiting': 'Waiting',
   'task.checklist': 'Checklist',
-  'task.suggestSteps': 'Suggest steps',
-  'task.suggestedSubtasks': 'Suggested sub-tasks',
   'task.addAll': 'Add all',
   'task.dismiss': 'Dismiss',
   'task.markPending': 'Mark as pending',
@@ -345,7 +360,6 @@ const en = {
   'ai.decline': 'Decline',
   'ai.taskAdded': '"{title}" added to the board.',
   'ai.addFailed': 'Could not add that task.',
-  'ai.stepAdded': 'Step added to the checklist.',
   'ai.workflowReview': 'Workflow review',
   'ai.workflowReviewBody':
     "Gemini reads the project's completed and open work, then names the bottlenecks.",
@@ -595,8 +609,6 @@ const en = {
   'session.expired': 'Your session expired. Please sign in again.',
   'session.refreshFailed': 'Could not refresh data.',
   'task.signOff': 'Sign-off',
-  'task.assignTeamsHint':
-    'Pick people one at a time, or a whole team — everybody on it is assigned.',
   'task.assignees': 'Assignees',
   'task.multiTaskNote': 'More than one assignee — this becomes a MultiTask.',
   'nav.dragAnywhere': 'Drag me anywhere',
@@ -619,6 +631,7 @@ const en = {
   'dash.subtitle': 'Everything you own and everything assigned to you, in one place.',
   'dash.createProject': 'Create a project',
   'dash.openTaskMenu': 'Open task menu',
+  'dash.openOrganizations': 'All organizations',
   'dash.openTasks': 'Open tasks',
   'dash.completed': 'Completed',
   'dash.overdue': 'Overdue',
@@ -758,8 +771,6 @@ const en = {
   // Staff
   'org.staff': 'People',
   'org.headcount': '{count} on the staff list',
-  'org.staffExplain':
-    'Being on this list lets somebody see the organization: its projects, its numbers and its calendar. It does not put them on any project, so opening one still needs an invitation from the project itself.',
   'org.you': 'you',
   'org.role': 'Role',
   'org.roleOwner': 'Owner',
@@ -829,10 +840,6 @@ const en = {
 
   // ---- Teams -------------------------------------------------------------
   'team.title': 'Teams',
-  'team.explainOrg':
-    'A team is a shortcut for a group of colleagues. Pick one when starting a project or booking a meeting and everybody on it comes along — as individuals, then and there. It grants nothing on its own.',
-  'team.explainProject':
-    'A team is a shortcut for a group of people on this project. Pick one when creating a task and it is assigned to all of them — as individuals, then and there.',
   'team.new': 'New team',
   'team.newTitle': 'New team',
   'team.editTitle': 'Edit team',
@@ -842,8 +849,6 @@ const en = {
   'team.namePlaceholder': 'Back end',
   'team.descriptionPlaceholder': 'What does this group do?',
   'team.members': 'Members',
-  'team.membersHintOrg': 'Anybody on the organization can be on a team.',
-  'team.membersHintProject': 'Anybody on the project roster can be on a team.',
   'team.noStaffYet': 'Invite people to the organization first.',
   'team.noRosterYet': 'Invite people to the project first.',
   'team.headcount': '{count} member(s)',
@@ -864,8 +869,6 @@ const en = {
   'project.organizationHint':
     'Only organizations you own or administer. You can file it later instead.',
   'project.staffFromTeams': 'Start with a roster',
-  'project.staffFromTeamsHint':
-    'Everybody you pick — one at a time, or a whole team — joins as a member. You can invite anybody else later.',
 
   // ---- Recycle bin -------------------------------------------------------
   'bin.title': 'Recycle bin',
@@ -1083,14 +1086,12 @@ const en = {
   'meetings.namePlaceholder': 'Sprint review',
   'meetings.roomLabel': 'Room',
   'meetings.roomPlaceholder': 'Meeting room 2',
-  'meetings.roomHint': 'A room, a floor, or the name of the call.',
   'meetings.starts': 'Starts',
   'meetings.ends': 'Ends',
   'meetings.windowInvalid': 'A meeting has to end after it starts.',
   'meetings.descriptionLabel': 'Agenda',
   'meetings.descriptionPlaceholder': 'What this meeting is for, and what to bring.',
   'meetings.participants': 'Participants',
-  'meetings.participantsHint': 'Optional. Nobody picked means the whole roster is invited.',
   'meetings.linkProject': 'About a project',
   'meetings.linkProjectNone': 'The organization as a whole',
   'meetings.linkProjectHint':
@@ -1299,8 +1300,6 @@ const ptBR: Record<TranslationKey, string> = {
   'agenda.noNotesBody': 'Ninguém anexou uma nota às suas tarefas ainda.',
   'agenda.scheduledBody':
     'Tarefas com horário de início ou prazo aparecem aqui, ordenadas por hora.',
-  'bin.subtitle':
-    'Restaure qualquer coisa, ou exclua definitivamente. A exclusão permanente não pode ser desfeita. Tarefas concluídas há mais de uma semana vêm para cá sozinhas.',
   'bin.tasks': 'Tarefas',
   'bin.notes': 'Notas',
   'bin.noDeletedTasks': 'Nenhuma tarefa excluída',
@@ -1350,7 +1349,25 @@ const ptBR: Record<TranslationKey, string> = {
   'project.settingsTitle': 'Configurações do projeto',
   'project.settingsSubtitle': 'Renomeie, mude a cor ou mova para a lixeira.',
   'project.saveChanges': 'Salvar alterações',
-  'project.dangerZone': 'Excluir este projeto',
+  'project.dangerZone': 'Encerrando este projeto',
+
+  'project.finishProject': 'Concluir projeto',
+  'project.finishExplain':
+    'Mantém o projeto, as pessoas e as equipes como registro, e apaga todas as tarefas e páginas dentro dele. Nada do que for apagado pode ser recuperado.',
+  'project.finishConfirmBody':
+    'Isso apaga todas as tarefas e todas as páginas deste projeto, de forma permanente. Nome, descrição, equipe e times permanecem. Digite sua senha para confirmar.',
+  'project.finishConfirmLabel': 'Sua senha',
+  'project.finishConfirmAction': 'Concluir',
+  'project.finishedToast': 'Projeto concluído. {tasks} tarefa(s) e {documents} página(s) apagadas.',
+  'project.finished': 'Concluído',
+  'project.finishedOn': 'Concluído em {date}',
+  'project.finishedBanner':
+    'Este projeto está concluído. Ele fica somente leitura até alguém reabri-lo.',
+  'project.reopen': 'Reabrir projeto',
+  'project.reopenExplain':
+    'Coloca o projeto de volta em atividade com as pessoas e os times. As tarefas e páginas apagadas não voltam.',
+  'project.reopenedToast': 'Projeto reaberto.',
+
   'project.deleteExplain':
     'Tudo que está nele — tarefas, notas, documentos e a conversa — vai junto. Ele fica na sua lixeira e pode ser restaurado de lá.',
   'project.deleteProject': 'Excluir projeto',
@@ -1415,8 +1432,6 @@ const ptBR: Record<TranslationKey, string> = {
   'task.editTask': 'Editar tarefa',
   'task.waiting': 'Aguardando',
   'task.checklist': 'Lista de etapas',
-  'task.suggestSteps': 'Sugerir etapas',
-  'task.suggestedSubtasks': 'Subtarefas sugeridas',
   'task.addAll': 'Adicionar todas',
   'task.dismiss': 'Descartar',
   'task.markPending': 'Marcar como pendente',
@@ -1446,7 +1461,6 @@ const ptBR: Record<TranslationKey, string> = {
   'ai.decline': 'Recusar',
   'ai.taskAdded': '"{title}" adicionada ao quadro.',
   'ai.addFailed': 'Não foi possível adicionar essa tarefa.',
-  'ai.stepAdded': 'Etapa adicionada à lista.',
   'ai.workflowReview': 'Análise do fluxo',
   'ai.workflowReviewBody':
     'O Gemini lê o trabalho concluído e em aberto do projeto e aponta os gargalos.',
@@ -1688,8 +1702,6 @@ const ptBR: Record<TranslationKey, string> = {
   'session.expired': 'Sua sessão expirou. Entre novamente.',
   'session.refreshFailed': 'Não foi possível atualizar os dados.',
   'task.signOff': 'Conclusão',
-  'task.assignTeamsHint':
-    'Escolha pessoa por pessoa ou um time inteiro — todo mundo dele fica responsável.',
   'task.assignees': 'Responsáveis',
   'task.multiTaskNote': 'Mais de um responsável — isto vira uma MultiTask.',
   'nav.dragAnywhere': 'Arraste para onde quiser',
@@ -1712,6 +1724,7 @@ const ptBR: Record<TranslationKey, string> = {
   'dash.subtitle': 'Tudo o que é seu e tudo o que foi atribuído a você, em um só lugar.',
   'dash.createProject': 'Criar um projeto',
   'dash.openTaskMenu': 'Abrir menu de tarefas',
+  'dash.openOrganizations': 'Todas as organizações',
   'dash.openTasks': 'Tarefas abertas',
   'dash.completed': 'Concluídas',
   'dash.overdue': 'Atrasadas',
@@ -1847,8 +1860,6 @@ const ptBR: Record<TranslationKey, string> = {
 
   'org.staff': 'Pessoas',
   'org.headcount': '{count} na equipe',
-  'org.staffExplain':
-    'Estar nesta lista permite ver a organização: seus projetos, seus números e sua agenda. Não coloca ninguém em nenhum projeto, então para abrir um deles ainda é preciso um convite do próprio projeto.',
   'org.you': 'você',
   'org.role': 'Papel',
   'org.roleOwner': 'Dono',
@@ -1914,10 +1925,6 @@ const ptBR: Record<TranslationKey, string> = {
     'Os times são para quem faz parte desta organização. Você chegou aqui por um projeto que está dentro dela.',
 
   'team.title': 'Times',
-  'team.explainOrg':
-    'Um time é um atalho para um grupo de colegas. Escolha um ao criar um projeto ou marcar uma reunião e todos vêm junto — como pessoas, ali e naquele momento. Por si só, ele não dá acesso a nada.',
-  'team.explainProject':
-    'Um time é um atalho para um grupo de pessoas deste projeto. Escolha um ao criar uma tarefa e ela é atribuída a todas elas — como pessoas, ali e naquele momento.',
   'team.new': 'Novo time',
   'team.newTitle': 'Novo time',
   'team.editTitle': 'Editar time',
@@ -1927,8 +1934,6 @@ const ptBR: Record<TranslationKey, string> = {
   'team.namePlaceholder': 'Back end',
   'team.descriptionPlaceholder': 'O que este grupo faz?',
   'team.members': 'Integrantes',
-  'team.membersHintOrg': 'Qualquer pessoa da organização pode entrar em um time.',
-  'team.membersHintProject': 'Qualquer pessoa da equipe do projeto pode entrar em um time.',
   'team.noStaffYet': 'Convide pessoas para a organização primeiro.',
   'team.noRosterYet': 'Convide pessoas para o projeto primeiro.',
   'team.headcount': '{count} integrante(s)',
@@ -1950,8 +1955,6 @@ const ptBR: Record<TranslationKey, string> = {
   'project.organizationHint':
     'Apenas organizações que você criou ou administra. Dá para guardar depois também.',
   'project.staffFromTeams': 'Começar com uma equipe',
-  'project.staffFromTeamsHint':
-    'Quem você escolher — uma pessoa por vez ou um time inteiro — entra como membro. Dá para convidar mais gente depois.',
 
   'bin.title': 'Lixeira',
   'bin.deletedItems': 'Itens excluídos',
@@ -2148,15 +2151,12 @@ const ptBR: Record<TranslationKey, string> = {
   'meetings.namePlaceholder': 'Revisão da sprint',
   'meetings.roomLabel': 'Sala',
   'meetings.roomPlaceholder': 'Sala de reunião 2',
-  'meetings.roomHint': 'Uma sala, um andar ou o nome da chamada.',
   'meetings.starts': 'Começa',
   'meetings.ends': 'Termina',
   'meetings.windowInvalid': 'A reunião precisa terminar depois de começar.',
   'meetings.descriptionLabel': 'Pauta',
   'meetings.descriptionPlaceholder': 'Para que é a reunião e o que levar.',
   'meetings.participants': 'Participantes',
-  'meetings.participantsHint':
-    'Opcional. Sem ninguém marcado, toda a equipe está convidada.',
   'meetings.linkProject': 'Sobre um projeto',
   'meetings.linkProjectNone': 'A organização como um todo',
   'meetings.linkProjectHint':

@@ -57,13 +57,15 @@ export const aiApi = {
    * nowhere to go. See `SLOW_ROUTE_TIMEOUT_MS`.
    */
 
-  /** 1-3 steps for one task, from its title, description and type. */
-  async suggestSubtasks(taskId: string): Promise<AiSuggestion> {
-    const { data } = await api.post<AiSuggestion>(`/ai/tasks/${taskId}/subtasks`, undefined, {
-      timeout: SLOW_ROUTE_TIMEOUT_MS,
-    });
-    return data;
-  },
+  /*
+   * There is no `suggestSubtasks` / `accept` pair here any more.
+   *
+   * They drove the "Suggest steps" button on the task sheet, which is gone —
+   * the project's assistant tab does the same job with the whole board in view,
+   * and one entry point to the model is enough. The API still exposes
+   * `POST /ai/tasks/:id/subtasks` and `POST /ai/suggestions/:id/accept`; only
+   * the client's callers went away.
+   */
 
   /**
    * Starts a generation and returns its receipt.
@@ -97,15 +99,6 @@ export const aiApi = {
     const { data } = await api.get<AiSuggestion[]>('/ai/suggestions', {
       params: projectId ? { projectId } : undefined,
     });
-    return data;
-  },
-
-  /** Materialises accepted steps as checklist items on the task. */
-  async accept(suggestionId: string, titles?: string[]): Promise<{ added: number }> {
-    const { data } = await api.post<{ suggestionId: string; added: number }>(
-      `/ai/suggestions/${suggestionId}/accept`,
-      { titles },
-    );
     return data;
   },
 

@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   BarChart3,
   CalendarDays,
+  CheckCircle2,
   FileText,
   KanbanSquare,
   MessageCircle,
@@ -58,6 +59,7 @@ import {
   useTaskLayout,
 } from '@/features/task-views';
 import { cn } from '@/shared/lib/cn';
+import { formatDateTime } from '@/shared/lib/dates';
 import { Avatar, Button, PageLoader, Segmented } from '@/shared/ui';
 import { ProjectDashboard } from '@/widgets/project-dashboard/ui/project-dashboard';
 import { TextBoard } from '@/widgets/text-board/ui/text-board';
@@ -141,6 +143,34 @@ const ProjectPage = () => {
   const [composerTask, setComposerTask] = useState<Task | null>(null);
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
+
+  /*
+   * A task named in the URL opens its sheet on arrival.
+   *
+   * This is how the dashboard's "up next" list lands somewhere useful: a task
+   * there belongs to some project the reader may not have open, so the card
+   * navigates to `/projects/:id?task=:taskId` and the board opens on the
+   * actual task rather than dropping them at the top of a board to go find it.
+   *
+   * The parameter is consumed rather than kept: once the sheet is open the
+   * state owns it, and leaving `?task=` in the address would reopen the sheet
+   * every time the reader closed it and touched a filter.
+   */
+  const taskParam = searchParams.get('task');
+
+  useEffect(() => {
+    if (!taskParam) return;
+
+    setDetailTaskId(taskParam);
+    setSearchParams(
+      (current) => {
+        const params = new URLSearchParams(current);
+        params.delete('task');
+        return params;
+      },
+      { replace: true },
+    );
+  }, [setSearchParams, taskParam]);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   /*
@@ -193,6 +223,8 @@ const ProjectPage = () => {
    * organization dialog already uses.
    */
   const isOwner = project?.myRole === 'OWNER';
+  /** Concluded: readable everywhere, writable nowhere. See `project.completedAt`. */
+  const isFinished = Boolean(project?.completedAt);
 
   // Warm the roster tab while the user is reading the board.
   usePrefetchProjectCollaboration(projectId, canManage);
@@ -363,7 +395,10 @@ const ProjectPage = () => {
               </Button>
             )}
 
-            {canManage && (
+            {/* A finished project takes no new work — the API refuses the
+                write either way, so the button is absent rather than present
+                and rejected. See `ProjectsService.complete`. */}
+            {canManage && !isFinished && (
               <Button
                 onClick={() => {
                   setComposerTask(null);
@@ -377,6 +412,29 @@ const ProjectPage = () => {
             )}
           </div>
         </div>
+
+        {/*
+          Said once, at the top, rather than by disabling forty controls.
+
+          A finished project still reads normally — that is the point of
+          finishing rather than deleting — so the honest thing is one line
+          explaining why the board is empty and why nothing can be added,
+          instead of a page full of greyed-out affordances with no explanation
+          between them.
+        */}
+        {isFinished && (
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-edge bg-surface-sunken px-3.5 py-2.5">
+            <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-positive" />
+            <span className="text-[11px] leading-relaxed text-content-muted">
+              {t('project.finishedBanner')}
+            </span>
+            {project.completedAt && (
+              <span className="text-[11px] text-content-faint">
+                · {t('project.finishedOn', { date: formatDateTime(project.completedAt) })}
+              </span>
+            )}
+          </div>
+        )}
 
         <Segmented
           value={tab}
@@ -401,6 +459,17 @@ const ProjectPage = () => {
           {layout === 'board' && (
             <TaskBoard
               tasks={tasks}
+              /*
+               * Two waits, two weights.
+               *
+               * `tasksLoading` is a cold board with nothing painted yet, so
+               * each column gets two cards' worth of grey and looks like a
+               * board loading. `tasksArePartial` means the reader's own tasks
+               * are already on screen and the rest of the roster's are a round
+               * trip behind — one placeholder per column is enough to say
+               * "not finished" without overstating how many are missing.
+               */
+              pendingPerColumn={tasksLoading ? 2 : tasksArePartial ? 1 : 0}
               onStatusChange={(taskId, status) => updateStatus.mutate({ taskId, status })}
               {...taskHandlers}
               // Mirrors the API rule exactly: assignees, or an owner/admin.
@@ -419,8 +488,14 @@ const ProjectPage = () => {
           {layout === 'list' && <TaskListView tasks={tasks} {...taskHandlers} />}
           {layout === 'calendar' && <TaskCalendarView tasks={tasks} {...taskHandlers} />}
 
-          {/* The roster's work, still in flight. See `PendingTasks`. */}
-          {(tasksArePartial || tasksLoading) && (
+          {/* The roster's work, still in flight. See `PendingTasks`.
+
+              The board layout is excluded: it draws its own placeholders
+              inside the columns, where they read as a board filling up rather
+              than as a fourth block under it. The other three layouts are flat
+              lists with no columns to put anything in, so for them a strip of
+              grey after the content is still the right shape. */}
+          {layout !== 'board' && (tasksArePartial || tasksLoading) && (
             <PendingTasks compact={layout === 'list'} />
           )}
         </div>

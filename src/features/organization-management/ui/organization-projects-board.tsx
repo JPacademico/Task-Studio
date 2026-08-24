@@ -1,6 +1,15 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Archive, FolderPlus, Lock, Plus, Search, TriangleAlert, X } from 'lucide-react';
+import {
+  Archive,
+  CheckCircle2,
+  FolderPlus,
+  Lock,
+  Plus,
+  Search,
+  TriangleAlert,
+  X,
+} from 'lucide-react';
 
 import {
   useAttachableProjects,
@@ -53,7 +62,9 @@ const laneOf = (
   project: OrganizationProject,
   metrics: OrganizationProjectMetrics | undefined,
 ): Lane => {
-  if (project.isArchived) return 'archived';
+  // A concluded project shares the archived lane: both are "not being worked
+  // on", which is the only question this grouping is asking.
+  if (project.isArchived || project.completedAt) return 'archived';
   return (metrics?.overdue ?? 0) > 0 ? 'at-risk' : 'active';
 };
 
@@ -115,6 +126,12 @@ const OrganizationProjectCard = ({
               <Archive
                 className="h-3 w-3 shrink-0 text-content-faint"
                 aria-label={t('org.archived')}
+              />
+            )}
+            {project.completedAt && (
+              <CheckCircle2
+                className="h-3 w-3 shrink-0 text-positive"
+                aria-label={t('project.finished')}
               />
             )}
           </span>

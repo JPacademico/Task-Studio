@@ -18,6 +18,11 @@ import { cn } from '@/shared/lib/cn';
  * Capped at three regardless of how many are actually missing, because the
  * count is not knowable — the point is to say "not finished", not to predict a
  * number, and a screenful of grey would overstate it.
+ *
+ * Used by the flat layouts only — the list, the sprint and the calendar, which
+ * have nowhere else to put this. The *board* draws its own placeholders inside
+ * its columns instead: see `TaskBoard.pendingPerColumn`, and the note there for
+ * why a strip of grey beneath three columns was the wrong shape.
  */
 const MAX_PLACEHOLDERS = 3;
 

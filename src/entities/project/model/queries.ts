@@ -163,6 +163,50 @@ export const useDeleteProject = () => {
 };
 
 /**
+ * Conclude a project.
+ *
+ * Everything is invalidated rather than patched, and this is the one place
+ * where that bluntness is right: the write deletes every task and every page
+ * the project held, so the task caches, the document caches, the dashboards
+ * and the rail's counts are all wrong at once. Working out which keys to edit
+ * would be re-implementing "the project is empty now" in the client.
+ */
+export const useCompleteProject = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ projectId, password }: { projectId: string; password: string }) =>
+      projectApi.complete(projectId, password),
+
+    onSuccess: (result) => {
+      void queryClient.invalidateQueries();
+      toast.success(
+        translate('project.finishedToast', {
+          tasks: String(result.tasksCleared),
+          documents: String(result.documentsCleared),
+        }),
+      );
+    },
+
+    onError: (error) => toast.error(errorMessage(error)),
+  });
+};
+
+/** Put a finished project back into service. Nothing cleared comes back. */
+export const useReopenProject = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (projectId: string) => projectApi.reopen(projectId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      toast.success(translate('project.reopenedToast'));
+    },
+    onError: (error) => toast.error(errorMessage(error)),
+  });
+};
+
+/**
  * Pin toggling is optimistic: the star must feel instant, and a rollback on
  * failure is cheap because nothing else depends on the flag.
  */

@@ -153,10 +153,6 @@ const TeamComposer = ({ isOpen, onClose, scope, roster, team }: TeamComposerProp
               ({memberIds.length}/{roster.length})
             </span>
           </p>
-          <p className="text-[11px] leading-relaxed text-content-faint">
-            {t(scope.organizationId ? 'team.membersHintOrg' : 'team.membersHintProject')}
-          </p>
-
           <div className="flex flex-wrap gap-2 pt-1">
             {roster.map((person) => {
               const isSelected = memberIds.includes(person.id);
@@ -310,13 +306,8 @@ export const TeamsPanel = ({ scope, roster, canManage }: TeamsPanelProps) => {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0 space-y-1">
-          <h2 className="text-sm font-semibold tracking-tight">{t('team.title')}</h2>
-          <p className="max-w-2xl text-[11px] leading-relaxed text-content-muted">
-            {t(scope.organizationId ? 'team.explainOrg' : 'team.explainProject')}
-          </p>
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="min-w-0 text-sm font-semibold tracking-tight">{t('team.title')}</h2>
 
         {canManage && (
           <Button size="sm" onClick={() => openComposer(null)}>
