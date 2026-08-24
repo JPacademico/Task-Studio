@@ -7,6 +7,8 @@ import { authApi } from '@/features/auth/api/auth.api';
 import { errorMessage } from '@/shared/api/client';
 import { Button, Input } from '@/shared/ui';
 import { AuthShell } from './auth-shell';
+import { TEXT_LIMITS } from '@/shared/config/constants';
+import { clampText } from '@/shared/lib/text';
 import { useT } from '@/shared/i18n';
 
 export const ResetPasswordPage = () => {
@@ -58,7 +60,10 @@ export const ResetPasswordPage = () => {
             autoComplete="new-password"
             required
             value={password}
-            onChange={(event) => setPassword(event.target.value)}
+            onChange={(event) =>
+              setPassword(clampText(event.target.value, TEXT_LIMITS.password))
+            }
+            maxLength={TEXT_LIMITS.password}
             hint={t('auth.reset.hint')}
           />
           <Input
@@ -68,7 +73,10 @@ export const ResetPasswordPage = () => {
             autoComplete="new-password"
             required
             value={confirmation}
-            onChange={(event) => setConfirmation(event.target.value)}
+            onChange={(event) =>
+              setConfirmation(clampText(event.target.value, TEXT_LIMITS.password))
+            }
+            maxLength={TEXT_LIMITS.password}
             error={
               confirmation.length > 0 && confirmation !== password
                 ? t('auth.reset.mismatch')

@@ -6,12 +6,15 @@ import { CalendarRange, Clock, MapPin, Search, Users } from 'lucide-react';
 import { useMyAgenda } from '@/entities/meeting/model/queries';
 import type { Meeting } from '@/entities/meeting/model/types';
 import { useProjects } from '@/entities/project/model/queries';
+import { TEXT_LIMITS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
+import { clampText } from '@/shared/lib/text';
 import { formatDayLabel, formatTime } from '@/shared/lib/dates';
 import {
   AvatarStack,
   Badge,
   EmptyState,
+  FileAttachmentRow,
   RunicText,
   Select,
   Skeleton,
@@ -89,6 +92,8 @@ const AgendaRow = ({ meeting, t }: AgendaRowProps) => {
             {meeting.description}
           </p>
         )}
+
+        {meeting.file && <FileAttachmentRow file={meeting.file} />}
       </div>
 
       {/*
@@ -226,8 +231,9 @@ const MeetingsPage = () => {
             <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-content-faint" />
             <input
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => setSearch(clampText(event.target.value, TEXT_LIMITS.search))}
               placeholder={t('agenda.searchMeetings')}
+              maxLength={TEXT_LIMITS.search}
               className="field h-9 w-40 pl-8 text-xs sm:w-48"
             />
           </div>

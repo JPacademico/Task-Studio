@@ -15,7 +15,9 @@ import type {
   OrgRole,
 } from '@/entities/organization/model/types';
 import { useCurrentUser } from '@/features/auth/model/session.store';
+import { TEXT_LIMITS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
+import { clampText } from '@/shared/lib/text';
 import { formatRelative } from '@/shared/lib/dates';
 import {
   Avatar,
@@ -85,9 +87,9 @@ const MemberRow = ({
           <Input
             name="jobTitle"
             value={jobTitle}
-            onChange={(event) => setJobTitle(event.target.value)}
+            onChange={(event) => setJobTitle(clampText(event.target.value, TEXT_LIMITS.jobTitle))}
             placeholder={t('org.jobTitlePlaceholder')}
-            maxLength={280}
+            maxLength={TEXT_LIMITS.jobTitle}
             autoFocus
             onBlur={saveTitle}
             onKeyDown={(event) => {
@@ -229,7 +231,7 @@ const InviteForm = ({ organizationId, t }: InviteFormProps) => {
         value={jobTitle}
         onChange={(event) => setJobTitle(event.target.value)}
         placeholder={t('org.jobTitlePlaceholder')}
-        maxLength={280}
+        maxLength={TEXT_LIMITS.jobTitle}
         wrapperClassName="min-w-[10rem] flex-1"
         className="h-9 py-0 text-xs"
       />

@@ -35,6 +35,27 @@ export interface ProjectDocument {
   } | null;
   createdBy: UserSummary;
   updatedBy: UserSummary | null;
+  /**
+   * Everybody the author has handed the pen to.
+   *
+   * Reading a project's page is the roster's right; rewriting one is not. A
+   * page is one person's argument at a particular moment, so it is editable by
+   * its author, by the people in this list, and by the project's owner — see
+   * the API's `DocumentEditorGrant` for why the owner and not every admin.
+   */
+  editors: UserSummary[];
+  /**
+   * Whether *this* reader may rewrite it.
+   *
+   * Answered by the server rather than worked out here. The rule reads three
+   * different things — the author, this list, the project's owner — and a
+   * client that re-derived it would be a second implementation of an
+   * authorisation decision, drifting from the real one the first time either
+   * changed.
+   */
+  canEdit: boolean;
+  /** Whether this reader may change who else may edit. Narrower than `canEdit`. */
+  canManageAccess: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -57,3 +78,15 @@ export interface UpdateDocumentPayload {
   title?: string;
   content?: string;
 }
+
+/**
+ * A page as it arrives over the socket.
+ *
+ * `canEdit` and `canManageAccess` are answers to "may *you*", computed by the
+ * API from whoever made the request that caused the broadcast — which is not
+ * the person receiving it. The API therefore strips them before emitting (see
+ * `DocumentsService.broadcastShape`), and this type is what is left. Every
+ * consumer merges it *over* what it already holds, so the reader keeps their
+ * own answer to a question the event was never about.
+ */
+export type DocumentBroadcast = Omit<ProjectDocument, 'canEdit' | 'canManageAccess'>;

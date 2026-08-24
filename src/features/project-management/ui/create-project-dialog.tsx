@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { useOrganizations } from '@/entities/organization/model/queries';
+import { useOrganizationMembers, useOrganizations } from '@/entities/organization/model/queries';
 import { useCreateProject } from '@/entities/project/model/queries';
-import { TeamPicker } from '@/features/teams/ui/teams-panel';
-import { TASK_COLORS } from '@/shared/config/constants';
+import { InvitePicker } from '@/features/invite-picker/ui/invite-picker';
+import { TASK_COLORS, TEXT_LIMITS } from '@/shared/config/constants';
+import { clampText } from '@/shared/lib/text';
 import { Button, ColorPicker, Input, Modal, Select, Textarea } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
@@ -37,12 +38,16 @@ interface CreateProjectDialogProps {
  * admin act — the API refuses the rest, and a picker that offered them would be
  * offering a failure.
  *
- * ## Why teams appear only once a company is chosen
+ * ## Why the starting roster appears only once a company is chosen
  *
- * A team is drawn from a company's staff list, so there is nothing to offer
- * until there is a company. Picking one puts its people on the new project's
- * roster as MEMBERs, then and there — see the API's `TeamsService` for why that
- * expansion happens once rather than being stored and resolved later.
+ * Both halves of it — named people and whole teams — are drawn from a company's
+ * staff list, so there is nothing to offer until there is a company. A loose
+ * project starts with one person on it, and everybody else arrives through an
+ * invitation, because there is no shared membership to draw on.
+ *
+ * Picking either puts those people on the new project's roster as MEMBERs, then
+ * and there — see the API's `TeamsService` for why a team is expanded once
+ * rather than stored and resolved later.
  */
 export const CreateProjectDialog = ({
   isOpen,
@@ -58,6 +63,7 @@ export const CreateProjectDialog = ({
   const [color, setColor] = useState<string>(TASK_COLORS[0]);
   const [filedUnder, setFiledUnder] = useState<string>(UNFILED);
   const [teamIds, setTeamIds] = useState<string[]>([]);
+  const [memberIds, setMemberIds] = useState<string[]>([]);
 
   // Only asked for while the dialog is open, and only when the caller has not
   // already decided — a locked picker has nothing to choose between.
@@ -75,6 +81,18 @@ export const CreateProjectDialog = ({
     [organizations],
   );
 
+  /*
+   * The chosen company's staff, fetched only once one has been chosen.
+   *
+   * A loose project has nobody to offer — the creator is the roster, and
+   * everybody else arrives by invitation — so this stays disabled until
+   * `filedUnder` is set, and the picker below is hidden with it.
+   */
+  const { data: staff = [] } = useOrganizationMembers(
+    filedUnder || undefined,
+    isOpen && Boolean(filedUnder),
+  );
+
   // Re-seeded on every open: the dialog is mounted by the shell, so its state
   // would otherwise be whatever was last typed into it.
   useEffect(() => {
@@ -85,6 +103,7 @@ export const CreateProjectDialog = ({
     setColor(TASK_COLORS[0]);
     setFiledUnder(organizationId ?? UNFILED);
     setTeamIds([]);
+    setMemberIds([]);
   }, [isOpen, organizationId]);
 
   /*
@@ -97,6 +116,10 @@ export const CreateProjectDialog = ({
   const chooseOrganization = (next: string) => {
     setFiledUnder(next);
     setTeamIds([]);
+    // Named individuals are scoped to the company for the same reason teams
+    // are: the API filters them against that company's staff, so carrying a
+    // selection across would silently create a project with nobody on it.
+    setMemberIds([]);
   };
 
   const handleSubmit = async () => {
@@ -108,6 +131,7 @@ export const CreateProjectDialog = ({
       color,
       organizationId: filedUnder || undefined,
       teamIds: filedUnder && teamIds.length > 0 ? teamIds : undefined,
+      memberIds: filedUnder && memberIds.length > 0 ? memberIds : undefined,
     });
 
     onClose();
@@ -146,19 +170,21 @@ export const CreateProjectDialog = ({
           label={t('project.name')}
           name="name"
           value={name}
-          onChange={(event) => setName(event.target.value)}
+          onChange={(event) => setName(clampText(event.target.value, TEXT_LIMITS.projectName))}
           placeholder={t('project.namePlaceholder')}
           autoFocus
-          maxLength={80}
+          maxLength={TEXT_LIMITS.projectName}
         />
 
         <Textarea
           label={t('project.description')}
           name="description"
           value={description}
-          onChange={(event) => setDescription(event.target.value)}
+          onChange={(event) =>
+            setDescription(clampText(event.target.value, TEXT_LIMITS.projectDescription))
+          }
           placeholder={t('project.descriptionPlaceholder')}
-          maxLength={500}
+          maxLength={TEXT_LIMITS.projectDescription}
         />
 
         <ColorPicker
@@ -197,20 +223,30 @@ export const CreateProjectDialog = ({
           </div>
         )}
 
-        {/* Nothing to draw from until a company is chosen, and `TeamPicker`
-            renders nothing at all when that company has no teams. */}
+        {/* Nothing to draw from until a company is chosen. Individuals is the
+            tab this opens on; the teams tab disappears when that company has
+            none. */}
         {filedUnder && (
-          <TeamPicker
-            scope={{ organizationId: filedUnder }}
-            isOpen={isOpen}
-            selected={teamIds}
-            onToggle={(teamId) =>
+          <InvitePicker
+            people={staff}
+            selectedPeople={memberIds}
+            onTogglePerson={(userId) =>
+              setMemberIds((current) =>
+                current.includes(userId)
+                  ? current.filter((id) => id !== userId)
+                  : [...current, userId],
+              )
+            }
+            teamScope={{ organizationId: filedUnder }}
+            selectedTeams={teamIds}
+            onToggleTeam={(teamId) =>
               setTeamIds((current) =>
                 current.includes(teamId)
                   ? current.filter((id) => id !== teamId)
                   : [...current, teamId],
               )
             }
+            isOpen={isOpen}
             label={t('project.staffFromTeams')}
             hint={t('project.staffFromTeamsHint')}
           />

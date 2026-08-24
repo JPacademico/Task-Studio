@@ -7,6 +7,8 @@ import { authApi } from '@/features/auth/api/auth.api';
 import { useSessionStore } from '@/features/auth/model/session.store';
 import { OAuthButtons } from '@/features/auth/ui/oauth-buttons';
 import { errorMessage } from '@/shared/api/client';
+import { TEXT_LIMITS } from '@/shared/config/constants';
+import { clampText } from '@/shared/lib/text';
 import { useT } from '@/shared/i18n';
 import { Button, Input } from '@/shared/ui';
 import { AuthShell } from './auth-shell';
@@ -60,7 +62,10 @@ export const SignupPage = () => {
           required
           minLength={2}
           value={displayName}
-          onChange={(event) => setDisplayName(event.target.value)}
+          onChange={(event) =>
+            setDisplayName(clampText(event.target.value, TEXT_LIMITS.displayName))
+          }
+          maxLength={TEXT_LIMITS.displayName}
           placeholder={t('auth.signUp.namePlaceholder')}
         />
 
@@ -71,7 +76,8 @@ export const SignupPage = () => {
           autoComplete="email"
           required
           value={email}
-          onChange={(event) => setEmail(event.target.value)}
+          onChange={(event) => setEmail(clampText(event.target.value, TEXT_LIMITS.email))}
+          maxLength={TEXT_LIMITS.email}
           placeholder={t('auth.emailPlaceholder')}
         />
 
@@ -82,7 +88,8 @@ export const SignupPage = () => {
           autoComplete="new-password"
           required
           value={password}
-          onChange={(event) => setPassword(event.target.value)}
+          onChange={(event) => setPassword(clampText(event.target.value, TEXT_LIMITS.password))}
+          maxLength={TEXT_LIMITS.password}
           placeholder={t('auth.signUp.passwordHint')}
           hint={t('auth.reset.hint')}
           error={password.length > 0 && !passwordIsValid ? t('auth.signUp.passwordError') : undefined}

@@ -12,7 +12,9 @@ import {
 import type { ProjectRole } from '@/entities/project/model/types';
 import { userApi } from '@/entities/user/api/user.api';
 import { useCurrentUser } from '@/features/auth/model/session.store';
+import { TEXT_LIMITS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
+import { clampText } from '@/shared/lib/text';
 import { formatRelative } from '@/shared/lib/dates';
 import {
   Avatar,
@@ -250,8 +252,9 @@ export const RosterPanel = ({ projectId, canManage, isOwner = false }: RosterPan
             label={t('roster.search')}
             name="search"
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(event) => setSearch(clampText(event.target.value, TEXT_LIMITS.search))}
             placeholder={t('roster.searchPlaceholder')}
+            maxLength={TEXT_LIMITS.search}
             autoFocus
           />
 

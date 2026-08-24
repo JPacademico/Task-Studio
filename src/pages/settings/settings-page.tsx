@@ -10,7 +10,9 @@ import { authApi } from '@/features/auth/api/auth.api';
 import { useSessionStore } from '@/features/auth/model/session.store';
 import { SkinPicker } from '@/features/theme-toggle/ui/skin-picker';
 import { errorMessage } from '@/shared/api/client';
+import { TEXT_LIMITS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
+import { clampText } from '@/shared/lib/text';
 import { Avatar, Button, Input, Section, Spinner, Textarea } from '@/shared/ui';
 import { useT, type TranslationKey } from '@/shared/i18n';
 
@@ -142,17 +144,19 @@ const SettingsPage = () => {
             label={t('auth.signUp.displayName')}
             name="displayName"
             value={displayName}
-            onChange={(event) => setDisplayName(event.target.value)}
+            onChange={(event) =>
+              setDisplayName(clampText(event.target.value, TEXT_LIMITS.displayName))
+            }
             minLength={2}
-            maxLength={60}
+            maxLength={TEXT_LIMITS.displayName}
           />
           <Input label={t('auth.email')} name="email" value={user?.email ?? ''} disabled />
           <Textarea
             label={t('settings.bio')}
             name="bio"
             value={bio}
-            onChange={(event) => setBio(event.target.value)}
-            maxLength={280}
+            onChange={(event) => setBio(clampText(event.target.value, TEXT_LIMITS.bio))}
+            maxLength={TEXT_LIMITS.bio}
             placeholder={t('settings.bioPlaceholder')}
           />
           <div className="flex justify-end">
@@ -206,7 +210,10 @@ const SettingsPage = () => {
             type="password"
             autoComplete="current-password"
             value={currentPassword}
-            onChange={(event) => setCurrentPassword(event.target.value)}
+            onChange={(event) =>
+              setCurrentPassword(clampText(event.target.value, TEXT_LIMITS.password))
+            }
+            maxLength={TEXT_LIMITS.password}
           />
           <Input
             label={t('auth.reset.newPassword')}
@@ -214,7 +221,10 @@ const SettingsPage = () => {
             type="password"
             autoComplete="new-password"
             value={newPassword}
-            onChange={(event) => setNewPassword(event.target.value)}
+            onChange={(event) =>
+              setNewPassword(clampText(event.target.value, TEXT_LIMITS.password))
+            }
+            maxLength={TEXT_LIMITS.password}
             hint={t('auth.reset.hint')}
           />
           <div className="flex justify-end">

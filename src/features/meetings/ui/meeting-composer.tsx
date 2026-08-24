@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Check } from 'lucide-react';
 
 import { useCreateMeeting, useUpdateMeeting } from '@/entities/meeting/model/queries';
 import type { Meeting, MeetingProjectRef } from '@/entities/meeting/model/types';
-import type { UserSummary } from '@/entities/user/model/types';
-import { cn } from '@/shared/lib/cn';
+import type { AttachedFileDraft, UserSummary } from '@/entities/user/model/types';
+import { TEXT_LIMITS } from '@/shared/config/constants';
+import { clampText } from '@/shared/lib/text';
 import {
   DATE_INPUT_MAX,
   DATE_INPUT_MIN,
@@ -12,8 +12,15 @@ import {
   isDateTimeInput,
   toDateTimeInput,
 } from '@/shared/lib/dates';
-import { TeamPicker } from '@/features/teams/ui/teams-panel';
-import { Avatar, Button, Input, Modal, Select, Textarea } from '@/shared/ui';
+import { InvitePicker } from '@/features/invite-picker/ui/invite-picker';
+import {
+  Button,
+  FileAttachmentField,
+  Input,
+  Modal,
+  Select,
+  Textarea,
+} from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
 interface MeetingComposerProps {
@@ -103,6 +110,14 @@ export const MeetingComposer = ({
    * uncontrolled one.
    */
   const [linkedProjectId, setLinkedProjectId] = useState('');
+  /**
+   * The paper the meeting is about.
+   *
+   * Three states, matching the task composer's: an empty `key` means the file
+   * came from the row rather than from this session, so the PATCH leaves it
+   * alone; a real key is a fresh upload; `null` is somebody taking it off.
+   */
+  const [file, setFile] = useState<AttachedFileDraft | null>(null);
 
   const canLinkProject = Boolean(
     organizationId && !meeting && (linkableProjects?.length ?? 0) > 0,
@@ -133,6 +148,11 @@ export const MeetingComposer = ({
      * inventing a fact the row does not carry.
      */
     setTeamIds([]);
+    setFile(
+      meeting?.file
+        ? { key: '', name: meeting.file.name, size: meeting.file.size, url: meeting.file.url }
+        : null,
+    );
   }, [defaultDay, isOpen, meeting]);
 
   /*
@@ -187,6 +207,15 @@ export const MeetingComposer = ({
       ...(teamIds.length > 0 ? { teamIds } : {}),
     };
 
+    // The document: a fresh key attaches or replaces, `null` detaches, and an
+    // untouched one is omitted so the API keeps what is already there.
+    const filePatch =
+      file?.key
+        ? { file: { key: file.key, name: file.name, size: file.size } }
+        : file === null && meeting?.file
+          ? { file: null }
+          : {};
+
     if (meeting) {
       /*
        * The link is not editable.
@@ -197,10 +226,14 @@ export const MeetingComposer = ({
        * and the composer does not offer it: delete and repost is both clearer
        * and the only thing that actually notifies the new audience.
        */
-      await updateMeeting.mutateAsync({ meetingId: meeting.id, payload });
+      await updateMeeting.mutateAsync({
+        meetingId: meeting.id,
+        payload: { ...payload, ...filePatch },
+      });
     } else {
       await createMeeting.mutateAsync({
         ...payload,
+        ...(file?.key ? { file: { key: file.key, name: file.name, size: file.size } } : {}),
         ...(canLinkProject && linkedProjectId ? { projectId: linkedProjectId } : {}),
       });
     }
@@ -239,9 +272,9 @@ export const MeetingComposer = ({
           label={t('meetings.nameLabel')}
           name="title"
           value={title}
-          onChange={(event) => setTitle(event.target.value)}
+          onChange={(event) => setTitle(clampText(event.target.value, TEXT_LIMITS.meetingTitle))}
           placeholder={t('meetings.namePlaceholder')}
-          maxLength={140}
+          maxLength={TEXT_LIMITS.meetingTitle}
           autoFocus
         />
 
@@ -249,9 +282,9 @@ export const MeetingComposer = ({
           label={t('meetings.roomLabel')}
           name="room"
           value={room}
-          onChange={(event) => setRoom(event.target.value)}
+          onChange={(event) => setRoom(clampText(event.target.value, TEXT_LIMITS.meetingLocation))}
           placeholder={t('meetings.roomPlaceholder')}
-          maxLength={120}
+          maxLength={TEXT_LIMITS.meetingLocation}
           hint={t('meetings.roomHint')}
         />
 
@@ -311,78 +344,59 @@ export const MeetingComposer = ({
           label={t('meetings.descriptionLabel')}
           name="description"
           value={description}
-          onChange={(event) => setDescription(event.target.value)}
+          onChange={(event) =>
+            setDescription(clampText(event.target.value, TEXT_LIMITS.meetingAgenda))
+          }
           placeholder={t('meetings.descriptionPlaceholder')}
-          maxLength={4000}
+          maxLength={TEXT_LIMITS.meetingAgenda}
         />
 
         {/*
-          Whole groups, beside the individual faces below.
+          Who is expected in the room — named one at a time, or by team.
 
-          The scope follows the meeting: a company meeting reaches for the
-          company's teams, a project meeting for that project's. Renders nothing
-          at all when there are none. */}
-        <TeamPicker
-          scope={
-            organizationId
-              ? { organizationId }
-              : projectId
-                ? { projectId }
-                : null
+          The scope of the teams tab follows the meeting: a company meeting
+          reaches for the company's teams, a project meeting for that project's.
+          Individuals is the default, and the tab disappears where there are no
+          teams to offer.
+        */}
+        <InvitePicker
+          people={roster}
+          selectedPeople={participantIds}
+          onTogglePerson={(userId) =>
+            setParticipantIds((current) =>
+              current.includes(userId)
+                ? current.filter((id) => id !== userId)
+                : [...current, userId],
+            )
           }
-          isOpen={isOpen}
-          selected={teamIds}
-          onToggle={(teamId) =>
+          teamScope={
+            organizationId ? { organizationId } : projectId ? { projectId } : null
+          }
+          selectedTeams={teamIds}
+          onToggleTeam={(teamId) =>
             setTeamIds((current) =>
               current.includes(teamId)
                 ? current.filter((id) => id !== teamId)
                 : [...current, teamId],
             )
           }
-          label={t('meetings.inviteTeams')}
-          hint={t('meetings.inviteTeamsHint')}
+          isOpen={isOpen}
+          label={t('meetings.participants')}
+          hint={t('meetings.participantsHint')}
         />
 
-        <div className="space-y-1.5">
-          <p className="text-xs font-medium text-content-muted">
-            {t('meetings.participants')}{' '}
-            <span className="text-content-faint">
-              ({participantIds.length}/{roster.length})
-            </span>
-          </p>
-          <p className="text-[11px] text-content-faint">{t('meetings.participantsHint')}</p>
+        {/*
+          The paper the meeting is about: an agenda, a deck, a contract.
 
-          <div className="flex flex-wrap gap-2 pt-1">
-            {roster.map((member) => {
-              const isSelected = participantIds.includes(member.id);
-
-              return (
-                <button
-                  key={member.id}
-                  type="button"
-                  aria-pressed={isSelected}
-                  onClick={() =>
-                    setParticipantIds((current) =>
-                      isSelected
-                        ? current.filter((id) => id !== member.id)
-                        : [...current, member.id],
-                    )
-                  }
-                  className={cn(
-                    'inline-flex items-center gap-2 rounded-full border py-1 pl-2 pr-2.5 text-xs transition-all duration-150',
-                    isSelected
-                      ? 'border-brand bg-brand/12 text-brand'
-                      : 'border-edge text-content-muted hover:border-content-faint',
-                  )}
-                >
-                  <Avatar name={member.displayName} src={member.avatarUrl} size="xs" />
-                  <span className="max-w-[8rem] truncate">{member.displayName}</span>
-                  {isSelected && <Check className="h-3 w-3" strokeWidth={3} />}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+          Minutes written afterwards still belong on the text board, where the
+          people who were in the room can edit them. This is the thing everybody
+          is asked to read beforehand.
+        */}
+        <FileAttachmentField
+          label={t('meetings.documentAttachment')}
+          value={file}
+          onChange={setFile}
+        />
       </form>
     </Modal>
   );

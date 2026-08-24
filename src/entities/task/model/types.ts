@@ -1,9 +1,10 @@
-import type { UserSummary } from '@/entities/user/model/types';
+import type { AttachedFile, UserSummary } from '@/entities/user/model/types';
 
 export type TaskType = 'MEGA' | 'MICRO' | 'MULTI' | 'STANDARD';
 export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'COMPLETED';
 export type TaskPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
-export type TaskScope = 'mine' | 'team' | 'all';
+/** No `team`: the tab that meant "everyone but me" was removed — see `TaskFilters`. */
+export type TaskScope = 'mine' | 'all';
 export type TaskLateness = 'LATE' | 'COMPLETED_LATE' | 'ON_TIME';
 
 export interface ChecklistItem {
@@ -38,6 +39,14 @@ export interface Task {
    * to `attachmentUrl` in that case. See `ZoomableImage`.
    */
   attachmentThumbUrl: string | null;
+  /**
+   * The attached document, if there is one.
+   *
+   * Separate from `attachmentUrl` because the two are read in completely
+   * different ways: a picture is drawn on the sheet, a document is something
+   * you take away and open in another application.
+   */
+  file: AttachedFile | null;
   order: number;
   deletedAt: string | null;
   /** Set when the 7-day housekeeping sweep binned it, not a person. */
@@ -113,6 +122,8 @@ export interface CreateTaskPayload {
   checklist?: string[];
   attachmentKey?: string;
   attachmentThumbKey?: string;
+  /** The uploaded document to pin to it — key, filename and size. */
+  file?: { key: string; name: string; size: number };
 }
 
 export interface UpdateTaskPayload {
@@ -126,5 +137,10 @@ export interface UpdateTaskPayload {
   assigneeIds?: string[];
   attachmentKey?: string | null;
   attachmentThumbKey?: string | null;
+  /**
+   * Three states, like `attachmentKey`: an object attaches or replaces, `null`
+   * detaches, and leaving it out keeps whatever is already there.
+   */
+  file?: { key: string; name: string; size: number } | null;
   order?: number;
 }

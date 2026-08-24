@@ -41,7 +41,9 @@ import {
 } from '@/entities/meeting/model/queries';
 import type { Meeting, MeetingProjectRef } from '@/entities/meeting/model/types';
 import type { UserSummary } from '@/entities/user/model/types';
+import { TEXT_LIMITS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
+import { clampText } from '@/shared/lib/text';
 import { formatDayLabel, formatTime } from '@/shared/lib/dates';
 import {
   AvatarStack,
@@ -49,6 +51,7 @@ import {
   Button,
   DirectionArrow,
   EmptyState,
+  FileAttachmentRow,
   Section,
   Segmented,
   Skeleton,
@@ -159,6 +162,9 @@ const MeetingRowBase = ({
             {meeting.description}
           </p>
         )}
+
+        {/* The paper everybody is asked to read beforehand. */}
+        {meeting.file && <FileAttachmentRow file={meeting.file} />}
 
         {/* Where this one came from, carrying that project's own colour so a
             company's week stays scannable by source as well as by time. A
@@ -414,10 +420,10 @@ export const MeetingsPanel = ({
           <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-content-faint" />
           <input
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(event) => setSearch(clampText(event.target.value, TEXT_LIMITS.search))}
             placeholder={t('meetings.searchPlaceholder')}
             aria-label={t('meetings.search')}
-            maxLength={140}
+            maxLength={TEXT_LIMITS.search}
             className="field h-9 py-0 pl-9 text-xs"
           />
         </label>

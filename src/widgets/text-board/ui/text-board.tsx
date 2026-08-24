@@ -3,11 +3,13 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   CalendarDays,
   Download,
+  Eye,
   FileText,
   Pencil,
   Plus,
   Save,
   Trash2,
+  UserPlus,
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -21,13 +23,16 @@ import {
   useProjectDocumentsRealtime,
   useUpdateDocument,
 } from '@/entities/document/model/queries';
-import type { ProjectDocument } from '@/entities/document/model/types';
+import type { DocumentBroadcast, ProjectDocument } from '@/entities/document/model/types';
 import { DocumentByline, DocumentCreatorStamp } from '@/entities/document/ui/document-byline';
 import type { Meeting } from '@/entities/meeting/model/types';
+import type { RosterMember } from '@/entities/project/model/types';
 import type { Task } from '@/entities/task/model/types';
 import { useCurrentUser } from '@/features/auth/model/session.store';
 import { RichTextEditor } from '@/features/rich-text/ui/rich-text-editor';
+import { TEXT_LIMITS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
+import { clampText } from '@/shared/lib/text';
 import { formatDateTime, formatRelative } from '@/shared/lib/dates';
 import { sanitizeDocumentHtml } from '@/shared/lib/sanitize-html';
 import {
@@ -40,6 +45,7 @@ import {
   Spinner,
 } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
+import { DocumentAccessDialog } from './document-access-dialog';
 
 interface TextBoardProps {
   /**
@@ -55,6 +61,20 @@ interface TextBoardProps {
   tasks?: Task[];
   /** The project's live meetings, so a page can be one's minutes. */
   meetings?: Meeting[];
+  /**
+   * The project's roster, so a page's author can hand the pen to some of it.
+   *
+   * Only used by the access dialog. Absent on the personal desk, where there is
+   * nobody to hand anything to.
+   */
+  roster?: RosterMember[];
+  /**
+   * A page to open on arrival, from `?doc=` in the URL.
+   *
+   * How a task sheet's "open on the text board" button lands somewhere useful
+   * rather than on whatever page happened to be most recently edited.
+   */
+  initialDocumentId?: string;
 }
 
 /**
@@ -76,6 +96,7 @@ const parseAnchor = (value: AnchorValue): { taskId?: string; meetingId?: string 
 /** Stable identities, so the defaults never re-trigger a memo. */
 const NO_TASKS: Task[] = [];
 const NO_MEETINGS: Meeting[] = [];
+const NO_ROSTER: RosterMember[] = [];
 
 /** A filename that survives a download folder: no separators, no surprises. */
 const toFileName = (title: string): string =>
@@ -146,6 +167,8 @@ export const TextBoard = ({
   projectId,
   tasks = NO_TASKS,
   meetings = NO_MEETINGS,
+  roster = NO_ROSTER,
+  initialDocumentId,
 }: TextBoardProps) => {
   const t = useT();
   const { data: documents = [], isLoading } = useProjectDocuments(projectId);
@@ -164,6 +187,7 @@ export const TextBoard = ({
   const [isDirty, setIsDirty] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [attachTo, setAttachTo] = useState<AnchorValue>('');
+  const [isAccessOpen, setIsAccessOpen] = useState(false);
 
   // The body lives in a ref, not in state: it changes on every keystroke and
   // nothing outside the editor renders from it until a save.
@@ -176,7 +200,7 @@ export const TextBoard = ({
   const deleteDocument = useDeleteDocument();
 
   /** Set when a teammate saves the page you have open. Cleared on reload. */
-  const [remoteEdit, setRemoteEdit] = useState<ProjectDocument | null>(null);
+  const [remoteEdit, setRemoteEdit] = useState<DocumentBroadcast | null>(null);
 
   /*
    * A teammate's save arrives while you are reading.
@@ -189,7 +213,7 @@ export const TextBoard = ({
    * feature must not have.
    */
   const handleRemoteEdit = useCallback(
-    (document: ProjectDocument) => {
+    (document: DocumentBroadcast) => {
       if (isEditing || isDirty) {
         setRemoteEdit(document);
         return;
@@ -207,6 +231,18 @@ export const TextBoard = ({
     openDocumentId: selectedId ?? undefined,
     onRemoteEdit: handleRemoteEdit,
   });
+
+  /*
+   * A page named in the URL wins over "the most recent one".
+   *
+   * Keyed on `initialDocumentId` alone, so arriving from a task sheet opens
+   * that page — and so does arriving from a *different* task sheet a minute
+   * later, which is the case a `!selectedId` guard would silently swallow.
+   * Nothing fires on a plain visit, where the effect below picks the top row.
+   */
+  useEffect(() => {
+    if (initialDocumentId) setSelectedId(initialDocumentId);
+  }, [initialDocumentId]);
 
   // Open the most recent page on arrival, so the tab is never an empty frame
   // when there is something to read.
@@ -308,12 +344,28 @@ export const TextBoard = ({
   const handleSave = () => {
     if (!open) return;
 
+    // Sanitised here as well as on the server: what gets stored should be what
+    // the next reader's browser will actually be given.
+    const content = sanitizeDocumentHtml(draftRef.current);
+
+    /*
+     * Refused locally rather than 400'd remotely.
+     *
+     * The API caps a body at the same number, so an oversized page fails
+     * either way — but failing here keeps the draft in the editor and says
+     * what is wrong, instead of losing a round trip to a validation error that
+     * names a field rather than a paragraph. In practice this only ever fires
+     * on a paste of something that is not prose.
+     */
+    if (content.length > TEXT_LIMITS.documentContent) {
+      toast.error(t('doc.tooLong'));
+      return;
+    }
+
     updateDocument.mutate(
       {
         documentId: open.id,
-        // Sanitised here as well as on the server: what gets stored should be
-        // what the next reader's browser will actually be given.
-        payload: { title: title.trim() || t('doc.untitled'), content: sanitizeDocumentHtml(draftRef.current) },
+        payload: { title: title.trim() || t('doc.untitled'), content },
       },
       {
         onSuccess: () => {
@@ -454,10 +506,45 @@ export const TextBoard = ({
                     {t('common.cancel')}
                   </Button>
                 </>
-              ) : (
+              ) : open.canEdit ? (
                 <Button size="sm" variant="secondary" onClick={() => setIsEditing(true)}>
                   <Pencil className="h-3.5 w-3.5" />
                   Edit
+                </Button>
+              ) : (
+                /*
+                  Not a disabled Edit button.
+
+                  A greyed-out control says "you cannot do this" and leaves the
+                  reader to guess why; this says whose page it is and what to do
+                  about it, which is the only useful answer. See
+                  `DocumentEditorGrant` on the API for the rule.
+                */
+                <span
+                  title={t('doc.readOnlyHint', { author: open.createdBy.displayName })}
+                  className="ui-chip inline-flex items-center gap-1.5 rounded-full border border-edge px-2.5 py-1 text-[10px] text-content-muted"
+                >
+                  <Eye className="h-3 w-3 shrink-0" />
+                  {t('doc.readOnly')}
+                </span>
+              )}
+
+              {/* Handing the pen over is the author's call, and only theirs —
+                  an editor who could widen the circle would make the first
+                  grant irreversible in practice. */}
+              {!isPersonal && open.canManageAccess && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setIsAccessOpen(true)}
+                  title={t('doc.whoCanEdit')}
+                >
+                  <UserPlus className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">
+                    {open.editors.length > 0
+                      ? t('doc.editorCount', { count: String(open.editors.length) })
+                      : t('doc.shareEditing')}
+                  </span>
                 </Button>
               )}
 
@@ -580,10 +667,10 @@ export const TextBoard = ({
                     <input
                       value={title}
                       onChange={(event) => {
-                        setTitle(event.target.value);
+                        setTitle(clampText(event.target.value, TEXT_LIMITS.documentTitle));
                         setIsDirty(true);
                       }}
-                      maxLength={160}
+                      maxLength={TEXT_LIMITS.documentTitle}
                       aria-label={t('doc.documentTitle')}
                       className="field h-9 flex-1 text-sm font-semibold"
                     />
@@ -709,6 +796,15 @@ export const TextBoard = ({
           )}
         </section>
       </div>
+
+      {!isPersonal && open && open.canManageAccess && (
+        <DocumentAccessDialog
+          isOpen={isAccessOpen}
+          onClose={() => setIsAccessOpen(false)}
+          document={open}
+          roster={roster}
+        />
+      )}
     </ExpandableStage>
   );
 };

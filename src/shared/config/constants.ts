@@ -158,3 +158,96 @@ export const EDGE_REVEAL_PX = 24;
  * page proper, and the controls that caused the problem all sit in the row.
  */
 export const TOP_BAR_PX = 60;
+
+/**
+ * How long any one free-text field is allowed to get.
+ *
+ * ## Why this is one table rather than a number per form
+ *
+ * Every field in the app used to carry its own `maxLength`, or — for the ones
+ * added in a hurry — none at all. The ones with none were the bug: a step
+ * pasted from a document went into the database at whatever length the
+ * clipboard held, and from then on *every* open of that task's sheet paid to
+ * lay out a paragraph of text inside a one-line row. The sheet did not feel
+ * slow because it was doing more work; it felt slow because one row was doing
+ * an unbounded amount of it.
+ *
+ * A table also makes the limits comparable, which is how they stay sensible:
+ * a title is a line, a step is a sentence, a description is a paragraph, and
+ * anything that is genuinely a document goes to the text board instead.
+ *
+ * These mirror the API's own column limits. The client's job is to make the
+ * ceiling visible while somebody types rather than to be the only thing
+ * enforcing it — a rejected save after a long paste is a worse way to learn
+ * about a limit than a field that simply stops accepting characters.
+ */
+export const TEXT_LIMITS = {
+  /** One line, on a card. */
+  taskTitle: 140,
+  /** A paragraph, on the sheet. */
+  taskDescription: 4000,
+  /** A sentence: "Book the room", not the minutes of the meeting. */
+  checklistItem: 200,
+  /** What fits on a Post-it before it stops being one. */
+  noteContent: 2000,
+  /** The headline written across the top of one. */
+  noteTitle: 120,
+
+  meetingTitle: 140,
+  meetingLocation: 120,
+  meetingAgenda: 4000,
+
+  projectName: 80,
+  projectDescription: 500,
+  organizationName: 80,
+  organizationDescription: 500,
+  teamName: 60,
+  teamDescription: 280,
+
+  /** Free text on a person: "Head of Delivery". */
+  jobTitle: 280,
+  displayName: 60,
+  bio: 280,
+
+  /** Titles on the text board and the notes board's pages. */
+  documentTitle: 160,
+  /**
+   * A document's *body*, as sanitised HTML.
+   *
+   * Mirrors the API's `DOCUMENT_CONTENT_LIMIT`. Generous, because this is the
+   * one surface in the app that is genuinely meant to hold a document — rich
+   * text with a few inline images runs to tens of kilobytes. Past a quarter of
+   * a megabyte it is a pasted binary rather than a page, which is the case
+   * this stops: without it the save simply 400s after the user has already
+   * typed, and the editor gives no hint which of the last hour's paragraphs
+   * was the problem.
+   */
+  documentContent: 262_144,
+  boardPageName: 40,
+
+  /** A chat line. Longer than that is a note, or a document. */
+  chatMessage: 2000,
+
+  /**
+   * Search boxes.
+   *
+   * Short on purpose: a query is a few words, and the value ends up in a query
+   * key and often in a request, so an unbounded one is a cache key nobody can
+   * read and a URL some proxy will refuse.
+   */
+  search: 120,
+
+  /** RFC 5321's ceiling on an address. */
+  email: 254,
+  /**
+   * A password field.
+   *
+   * Generous — a passphrase manager will happily produce a hundred characters —
+   * and bounded anyway, because the value is hashed on the API and a bcrypt-
+   * family hash of an unbounded input is a CPU cost somebody else chooses for
+   * you. Long enough that no real password meets it.
+   */
+  password: 200,
+  /** Links pasted into the editor. Comfortably past any real URL. */
+  url: 2048,
+} as const;

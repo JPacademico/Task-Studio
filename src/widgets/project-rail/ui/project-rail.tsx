@@ -148,54 +148,103 @@ const RailProject = ({
 };
 
 /**
- * A company on the rail.
+ * A company on the rail — and, like every other row in either rail, something
+ * you can pull out and drop anywhere on screen.
  *
- * Deliberately plainer than `RailProject`, and not because it was cheaper. A
- * project row can be torn off into a floating shortcut because a project is a
- * place people return to a dozen times a day; a company is somewhere you go to
- * check on things, and a torn-off shortcut to one would be clutter with a
- * gesture attached. The row says the two numbers that decide whether it is
- * worth opening — how many people, how much work — and links.
+ * This used to be the one deliberately inert row, on the theory that a company
+ * is somewhere you check on rather than somewhere you work. That reasoning did
+ * not survive contact with people who run everything through one company: the
+ * gesture is the same everywhere else in the app, so a row that quietly refuses
+ * it reads as broken rather than as restraint. The row still says the two
+ * numbers that decide whether it is worth opening — how many people, how much
+ * work.
  */
-const RailOrganization = ({ organization }: { organization: Organization }) => {
+const RailOrganization = ({
+  organization,
+  onTearingChange,
+}: {
+  organization: Organization;
+  onTearingChange: (isTearing: boolean) => void;
+}) => {
   const t = useT();
+  const to = `/organizations/${organization.id}`;
+  const addShortcut = useFloatingShortcuts((state) => state.add);
+  const isPinnedOut = useFloatingShortcuts((state) =>
+    state.items.some((entry) => entry.id === `organization:${to}`),
+  );
+
+  const { bind, ghost } = useTearOff({
+    onTearOff: (point) =>
+      addShortcut({
+        id: `organization:${to}`,
+        kind: 'organization',
+        to,
+        // The company's own name, so no `labelKey` — see `FloatingShortcut`.
+        label: organization.name,
+        icon: 'organizations',
+        color: organization.color,
+        x: point.x - 90,
+        y: point.y - 22,
+      }),
+  });
+
+  useEffect(() => onTearingChange(Boolean(ghost)), [ghost, onTearingChange]);
 
   return (
-    <NavLink
-      to={`/organizations/${organization.id}`}
-      className={({ isActive }) =>
-        cn(
-          'group flex select-none items-center gap-2.5 rounded-2xl border px-2.5 py-2',
-          'transition-colors duration-150',
-          isActive
-            ? 'border-brand/30 bg-brand/12'
-            : 'border-transparent hover:border-edge hover:bg-surface-sunken/70',
-        )
-      }
-    >
-      <span
-        aria-hidden
-        className="grid h-8 w-8 shrink-0 place-items-center rounded-xl"
-        style={{
-          backgroundColor: `${organization.color}22`,
-          color: organization.color,
-        }}
+    <>
+      <NavLink
+        to={to}
+        title={t('rail.dragToPin')}
+        {...bind}
+        className={({ isActive }) =>
+          cn(
+            'group flex cursor-grab select-none items-center gap-2.5 rounded-2xl border px-2.5 py-2',
+            'transition-colors duration-150 active:cursor-grabbing',
+            isActive
+              ? 'border-brand/30 bg-brand/12'
+              : 'border-transparent hover:border-edge hover:bg-surface-sunken/70',
+          )
+        }
       >
-        <Building2 className="h-3.5 w-3.5" />
-      </span>
+        <span
+          aria-hidden
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-xl"
+          style={{
+            backgroundColor: `${organization.color}22`,
+            color: organization.color,
+          }}
+        >
+          <Building2 className="h-3.5 w-3.5" />
+        </span>
 
-      <span className="min-w-0 flex-1 leading-tight">
-        <span className="block truncate text-xs font-semibold">{organization.name}</span>
-        <span className="flex items-center gap-1.5 text-[10px] text-content-faint">
-          <Users className="h-2.5 w-2.5 shrink-0" />
-          <span className="tabular-nums">{organization.memberCount}</span>
-          <span aria-hidden>·</span>
-          <span className="truncate">
-            {t('org.projectCount', { count: organization.projectCount })}
+        <span className="min-w-0 flex-1 leading-tight">
+          <span className="block truncate text-xs font-semibold">{organization.name}</span>
+          <span className="flex items-center gap-1.5 text-[10px] text-content-faint">
+            <Users className="h-2.5 w-2.5 shrink-0" />
+            <span className="tabular-nums">{organization.memberCount}</span>
+            <span aria-hidden>·</span>
+            <span className="truncate">
+              {t('org.projectCount', { count: organization.projectCount })}
+            </span>
           </span>
         </span>
-      </span>
-    </NavLink>
+
+        {isPinnedOut && (
+          <span
+            aria-hidden
+            title={t('rail.pinnedHint')}
+            className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand"
+          />
+        )}
+      </NavLink>
+
+      <TearOffGhost
+        point={ghost}
+        label={organization.name}
+        icon={Building2}
+        color={organization.color}
+      />
+    </>
   );
 };
 
@@ -364,7 +413,11 @@ export const ProjectRail = ({ onCreateProject }: ProjectRailProps) => {
                 />
               ))
             : organizations.map((organization) => (
-                <RailOrganization key={organization.id} organization={organization} />
+                <RailOrganization
+                  key={organization.id}
+                  organization={organization}
+                  onTearingChange={setIsTearing}
+                />
               ))}
         </div>
 

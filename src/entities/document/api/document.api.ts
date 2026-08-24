@@ -38,6 +38,21 @@ export const documentApi = {
     return data;
   },
 
+  /**
+   * Replaces the list of people who may edit this page.
+   *
+   * The whole set, not a diff — granting and revoking are the same act, and a
+   * client that sends what it means cannot get out of step with a server
+   * applying a sequence of adds and removes. Returns the page, so the caller
+   * gets the recomputed `canEdit` back rather than guessing at it.
+   */
+  async setEditors(documentId: string, userIds: string[]): Promise<ProjectDocument> {
+    const { data } = await api.put<ProjectDocument>(`/documents/${documentId}/editors`, {
+      userIds,
+    });
+    return data;
+  },
+
   async remove(documentId: string): Promise<void> {
     await api.delete(`/documents/${documentId}`);
   },

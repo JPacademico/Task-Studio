@@ -1,4 +1,4 @@
-import type { UserSummary } from '@/entities/user/model/types';
+import type { AttachedFile, UserSummary } from '@/entities/user/model/types';
 
 /**
  * A scheduled gathering on a calendar — a project's, a company's, or both.
@@ -61,6 +61,15 @@ export interface Meeting {
   /** Which company posted it, for a calendar that mixes several sources. */
   organization: MeetingProjectRef | null;
 
+  /**
+   * The paper the meeting is about: an agenda, a deck, a contract.
+   *
+   * Minutes written *after* the fact still live on the text board, where they
+   * can be edited by whoever was in the room. This is the document people are
+   * asked to read *before* it.
+   */
+  file: AttachedFile | null;
+
   createdBy: UserSummary;
   participants: UserSummary[];
   createdAt: string;
@@ -99,6 +108,8 @@ export interface CreateMeetingPayload {
    * guest list stays a fact about this meeting — see the API's `TeamsService`.
    */
   teamIds?: string[];
+  /** The uploaded document to pin to it — key, filename and size. */
+  file?: { key: string; name: string; size: number };
 }
 
 export interface UpdateMeetingPayload {
@@ -108,6 +119,9 @@ export interface UpdateMeetingPayload {
   endAt?: string;
   description?: string;
   participantIds?: string[];
+  teamIds?: string[];
+  /** An object attaches or replaces, `null` detaches, absent leaves it alone. */
+  file?: { key: string; name: string; size: number } | null;
   isCompleted?: boolean;
 }
 

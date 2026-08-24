@@ -7,6 +7,7 @@ import { translate } from '@/shared/i18n';
 import { organizationApi } from '../api/organization.api';
 import type {
   OrganizationInviteDraft,
+  OrganizationMember,
   OrgRole,
   UpdateOrganizationPayload,
 } from './types';
@@ -138,12 +139,13 @@ export const useMyOrganizationInvitations = () =>
 /**
  * Everything that can change a company invalidates the same things.
  *
- * Organizations are not optimistic anywhere, and deliberately so: unlike a pin
- * or a Post-it, none of these are gestures somebody performs mid-flow — they
- * are deliberate, occasional acts on a settings-shaped surface, where a moment
- * of "saving…" is honest rather than sluggish. Writing an optimistic path for
- * each would be several more ways to be wrong about a cache nobody is staring
- * at.
+ * Organizations are almost never optimistic, and deliberately so: unlike a pin
+ * or a Post-it, most of these are not gestures somebody performs mid-flow —
+ * they are deliberate, occasional acts on a settings-shaped surface, where a
+ * moment of "saving…" is honest rather than sluggish. Writing an optimistic
+ * path for each would be several more ways to be wrong about a cache nobody is
+ * staring at. The one exception is a role dropdown — see
+ * `useUpdateOrganizationMember`.
  *
  * `projects.all` goes with them because filing a project changes what the
  * *project* says about itself — its header draws the company chip.
@@ -277,8 +279,32 @@ export const useRevokeOrganizationInvitation = (organizationId: string) => {
   });
 };
 
+/**
+ * Change somebody's role, or retitle them.
+ *
+ * ## Why a role change is silent, and optimistic
+ *
+ * Picking a role from a dropdown is not a form somebody submits — the choice
+ * *is* the answer, and it is already on screen the moment it is made. Toasting
+ * "Member updated" a beat later only tells the user how long the server took,
+ * which is the one thing they did not ask. So the row takes the new role
+ * immediately and nothing is announced; the write still happens, and if it
+ * fails the row goes back to what it was and *that* is announced, because a
+ * silent failure is the only outcome worse than a redundant success.
+ *
+ * The job title keeps its confirmation. That one is typed into a field and
+ * committed on blur, so there is a real question — did that save? — and a
+ * moment where the answer is not obvious from the screen.
+ *
+ * This is the one optimistic path in the feature, and the note on
+ * `useOrganizationRefresh` explains why the others are not: they are deliberate
+ * acts on a settings-shaped surface where "saving…" is honest. A dropdown is
+ * not one of those.
+ */
 export const useUpdateOrganizationMember = (organizationId: string) => {
+  const queryClient = useQueryClient();
   const refresh = useOrganizationRefresh();
+  const membersKey = queryKeys.organizations.members(organizationId);
 
   return useMutation({
     mutationFn: ({
@@ -289,11 +315,31 @@ export const useUpdateOrganizationMember = (organizationId: string) => {
       role?: OrgRole;
       jobTitle?: string;
     }) => organizationApi.updateMember(organizationId, memberId, payload),
-    onSuccess: () => {
-      refresh();
-      toast.success(translate('org.memberUpdated'));
+
+    onMutate: async ({ memberId, role }) => {
+      if (!role) return { previous: undefined };
+
+      // An in-flight refetch that resolves after this would overwrite the row
+      // with the role the server has not been told about yet.
+      await queryClient.cancelQueries({ queryKey: membersKey });
+      const previous = queryClient.getQueryData<OrganizationMember[]>(membersKey);
+
+      queryClient.setQueryData<OrganizationMember[]>(membersKey, (members) =>
+        members?.map((member) => (member.id === memberId ? { ...member, role } : member)),
+      );
+
+      return { previous };
     },
-    onError: (error) => toast.error(errorMessage(error)),
+
+    onSuccess: (_result, { role }) => {
+      refresh();
+      if (!role) toast.success(translate('org.memberUpdated'));
+    },
+
+    onError: (error, _variables, context) => {
+      if (context?.previous) queryClient.setQueryData(membersKey, context.previous);
+      toast.error(errorMessage(error));
+    },
   });
 };
 

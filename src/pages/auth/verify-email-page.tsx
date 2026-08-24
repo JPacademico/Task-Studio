@@ -9,6 +9,8 @@ import { useSessionStore } from '@/features/auth/model/session.store';
 import { errorMessage } from '@/shared/api/client';
 import { Button, Input, Spinner } from '@/shared/ui';
 import { AuthShell } from './auth-shell';
+import { TEXT_LIMITS } from '@/shared/config/constants';
+import { clampText } from '@/shared/lib/text';
 import { useT } from '@/shared/i18n';
 
 type Phase = 'idle' | 'verifying' | 'verified' | 'failed';
@@ -122,7 +124,8 @@ export const VerifyEmailPage = () => {
           name="email"
           type="email"
           value={email}
-          onChange={(event) => setEmail(event.target.value)}
+          onChange={(event) => setEmail(clampText(event.target.value, TEXT_LIMITS.email))}
+          maxLength={TEXT_LIMITS.email}
           placeholder={t('auth.emailPlaceholder')}
         />
 

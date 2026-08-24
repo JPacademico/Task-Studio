@@ -4,7 +4,8 @@ import { AlertTriangle, Trash2 } from 'lucide-react';
 
 import { useDeleteProject, useUpdateProject } from '@/entities/project/model/queries';
 import type { Project } from '@/entities/project/model/types';
-import { TASK_COLORS } from '@/shared/config/constants';
+import { TASK_COLORS, TEXT_LIMITS } from '@/shared/config/constants';
+import { clampText } from '@/shared/lib/text';
 import { Button, ColorPicker, Input, Modal, Textarea } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
@@ -153,7 +154,7 @@ export const ProjectSettingsDialog = ({
           value={name}
           onChange={(event) => setName(event.target.value)}
           placeholder={t('project.namePlaceholder')}
-          maxLength={80}
+          maxLength={TEXT_LIMITS.projectName}
           autoFocus
         />
 
@@ -163,7 +164,7 @@ export const ProjectSettingsDialog = ({
           value={description}
           onChange={(event) => setDescription(event.target.value)}
           placeholder={t('project.descriptionPlaceholder')}
-          maxLength={500}
+          maxLength={TEXT_LIMITS.projectDescription}
         />
 
         <ColorPicker
@@ -207,7 +208,10 @@ export const ProjectSettingsDialog = ({
               <Input
                 name="confirmation"
                 value={confirmation}
-                onChange={(event) => setConfirmation(event.target.value)}
+                onChange={(event) =>
+                  setConfirmation(clampText(event.target.value, TEXT_LIMITS.projectName))
+                }
+                maxLength={TEXT_LIMITS.projectName}
                 placeholder={project.name}
                 aria-label={t('project.deleteConfirmLabel')}
                 autoComplete="off"

@@ -14,7 +14,9 @@ import type {
 } from '@/entities/organization/model/types';
 import { useProjectIntentPrefetch } from '@/entities/project/model/queries';
 import { CreateProjectDialog } from '@/features/project-management/ui/create-project-dialog';
+import { TEXT_LIMITS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
+import { clampText } from '@/shared/lib/text';
 import { withAlpha } from '@/shared/lib/colors';
 import { formatDeadline } from '@/shared/lib/dates';
 import { Badge, Button, EmptyState, Section, Select } from '@/shared/ui';
@@ -295,10 +297,10 @@ export const OrganizationProjectsBoard = ({
           <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-content-faint" />
           <input
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(event) => setSearch(clampText(event.target.value, TEXT_LIMITS.search))}
             placeholder={t('org.searchProjects')}
             aria-label={t('org.searchProjects')}
-            maxLength={140}
+            maxLength={TEXT_LIMITS.search}
             className="field h-9 py-0 pl-9 text-xs"
           />
         </label>

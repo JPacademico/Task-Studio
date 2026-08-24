@@ -23,7 +23,9 @@ import {
 import { toast } from 'sonner';
 
 import { uploadImage } from '@/entities/user/api/user.api';
+import { TEXT_LIMITS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
+import { clampText } from '@/shared/lib/text';
 import { sanitizeDocumentHtml } from '@/shared/lib/sanitize-html';
 import { Select, Spinner } from '@/shared/ui';
 import { useT, type TranslationKey } from '@/shared/i18n';
@@ -378,7 +380,8 @@ export const RichTextEditor = ({
               <input
                 autoFocus
                 value={promptValue}
-                onChange={(event) => setPromptValue(event.target.value)}
+                onChange={(event) => setPromptValue(clampText(event.target.value, TEXT_LIMITS.url))}
+                maxLength={TEXT_LIMITS.url}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter') {
                     event.preventDefault();

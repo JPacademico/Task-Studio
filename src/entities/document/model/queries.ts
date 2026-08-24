@@ -6,7 +6,12 @@ import { useRealtime } from '@/app/providers/realtime-provider';
 import { errorMessage } from '@/shared/api/client';
 import { queryKeys } from '@/shared/api/query-keys';
 import { documentApi } from '../api/document.api';
-import type { CreateDocumentPayload, ProjectDocument, UpdateDocumentPayload } from './types';
+import type {
+  CreateDocumentPayload,
+  DocumentBroadcast,
+  ProjectDocument,
+  UpdateDocumentPayload,
+} from './types';
 import { translate } from '@/shared/i18n';
 
 /**
@@ -58,7 +63,7 @@ const useDocumentListCache = () => {
    * result, just continuous pointless work.
    */
   const upsertRow = useCallback(
-    (document: ProjectDocument) => {
+    (document: ProjectDocument | DocumentBroadcast) => {
       const { content: _content, ...row } = document;
 
       queryClient.setQueriesData<ProjectDocument[]>(
@@ -68,11 +73,21 @@ const useDocumentListCache = () => {
 
           const index = rows.findIndex((entry) => entry.id === row.id);
           if (index === -1) {
-            // A page created by somebody else. Newest first, matching the API's
-            // ordering, so it lands where a refetch would have put it.
-            return [row, ...rows];
+            /*
+             * A page created by somebody else. Newest first, matching the
+             * API's ordering, so it lands where a refetch would have put it.
+             *
+             * A socket row has no permission flags at all, and a *new* row has
+             * nothing to merge them from, so they default to false: this
+             * reader may not edit a page somebody else has just written, which
+             * is both the correct answer and the safe one to guess. Opening it
+             * fetches the real answer.
+             */
+            return [{ canEdit: false, canManageAccess: false, ...row } as ProjectDocument, ...rows];
           }
 
+          // Spread order matters: a socket row carries no `canEdit`, so the
+          // reader's own answer survives the merge. See `DocumentBroadcast`.
           const next = [...rows];
           next[index] = { ...next[index], ...row };
           return next;
@@ -134,6 +149,31 @@ export const useUpdateDocument = () => {
   });
 };
 
+/**
+ * Hand the pen to some of the roster, or take it back.
+ *
+ * The response is the whole page with a recomputed `canEdit` and `editors`, so
+ * both caches are written from it and neither is invalidated — the same
+ * reasoning as `useUpdateDocument`.
+ */
+export const useSetDocumentEditors = () => {
+  const queryClient = useQueryClient();
+  const { upsertRow } = useDocumentListCache();
+
+  return useMutation({
+    mutationFn: ({ documentId, userIds }: { documentId: string; userIds: string[] }) =>
+      documentApi.setEditors(documentId, userIds),
+
+    onSuccess: (document) => {
+      queryClient.setQueryData<ProjectDocument>(queryKeys.documents.detail(document.id), document);
+      upsertRow(document);
+      toast.success(translate('doc.editorsSaved'));
+    },
+
+    onError: (error) => toast.error(errorMessage(error, translate('doc.editorsFailed'))),
+  });
+};
+
 export const useDeleteDocument = () => {
   const { removeRow } = useDocumentListCache();
 
@@ -160,8 +200,16 @@ export const useAdoptDocument = () => {
   const { upsertRow } = useDocumentListCache();
 
   return useCallback(
-    (document: ProjectDocument) => {
-      queryClient.setQueryData<ProjectDocument>(queryKeys.documents.detail(document.id), document);
+    (document: DocumentBroadcast) => {
+      // Merged, not replaced: the socket row has no permission flags, and this
+      // reader's own are the one thing the broadcast could not know.
+      queryClient.setQueryData<ProjectDocument>(
+        queryKeys.documents.detail(document.id),
+        (current) =>
+          current
+            ? { ...current, ...document }
+            : ({ canEdit: false, canManageAccess: false, ...document } as ProjectDocument),
+      );
       upsertRow(document);
     },
     [queryClient, upsertRow],
@@ -197,7 +245,7 @@ export const useAdoptDocument = () => {
  */
 export const useProjectDocumentsRealtime = (
   projectId: string | undefined,
-  options: { openDocumentId?: string; onRemoteEdit?: (document: ProjectDocument) => void } = {},
+  options: { openDocumentId?: string; onRemoteEdit?: (document: DocumentBroadcast) => void } = {},
 ) => {
   const { socket } = useRealtime();
   const queryClient = useQueryClient();
@@ -208,7 +256,7 @@ export const useProjectDocumentsRealtime = (
   useEffect(() => {
     if (!socket || !projectId) return;
 
-    const handleUpsert = (document: ProjectDocument) => {
+    const handleUpsert = (document: DocumentBroadcast) => {
       if (document.projectId !== projectId) return;
 
       upsertRow(document);
@@ -220,9 +268,18 @@ export const useProjectDocumentsRealtime = (
         return;
       }
 
+      /*
+       * Merged over what is cached, never replacing it.
+       *
+       * The event carries no `canEdit` — see `DocumentBroadcast` — so writing
+       * it wholesale would blank this reader's own answer, and the toolbar
+       * reads that answer to decide whether to draw an Edit button. Nothing
+       * cached yet means nothing to correct; the detail fetch on open is
+       * authoritative either way.
+       */
       queryClient.setQueryData<ProjectDocument>(
         queryKeys.documents.detail(document.id),
-        document,
+        (current) => (current ? { ...current, ...document } : undefined),
       );
     };
 

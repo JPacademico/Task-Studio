@@ -72,3 +72,26 @@ export interface AuthSession {
   expiresIn: string;
   user: CurrentUser;
 }
+
+/**
+ * A PDF or Word file pinned to a task or a meeting.
+ *
+ * One object or `null`, never three sibling nulls: the URL, the name and the
+ * size are meaningless apart — the object key is a UUID, so without the name a
+ * download arrives called nothing — and every surface that reads this branches
+ * on "is there a file" exactly once. Mirrors the API's own shape.
+ */
+export interface AttachedFile {
+  url: string;
+  name: string;
+  size: number;
+}
+
+/** What the composer sends back up: the key it uploaded, plus the two labels. */
+export interface AttachedFileDraft {
+  key: string;
+  name: string;
+  size: number;
+  /** Only known in the session that uploaded it; used for the local preview. */
+  url: string;
+}

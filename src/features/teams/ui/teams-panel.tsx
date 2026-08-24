@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Check, Pencil, Plus, Trash2, Users, X } from 'lucide-react';
+import { Check, Pencil, Plus, Trash2, Users } from 'lucide-react';
 
 import {
   useCreateTeam,
@@ -9,8 +9,9 @@ import {
 } from '@/entities/team/model/queries';
 import type { Team, TeamScope } from '@/entities/team/model/types';
 import type { UserSummary } from '@/entities/user/model/types';
-import { TASK_COLORS } from '@/shared/config/constants';
+import { TASK_COLORS, TEXT_LIMITS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
+import { clampText } from '@/shared/lib/text';
 import { withAlpha } from '@/shared/lib/colors';
 import {
   Avatar,
@@ -121,9 +122,9 @@ const TeamComposer = ({ isOpen, onClose, scope, roster, team }: TeamComposerProp
           label={t('team.name')}
           name="name"
           value={name}
-          onChange={(event) => setName(event.target.value)}
+          onChange={(event) => setName(clampText(event.target.value, TEXT_LIMITS.teamName))}
           placeholder={t('team.namePlaceholder')}
-          maxLength={60}
+          maxLength={TEXT_LIMITS.teamName}
           autoFocus
         />
 
@@ -131,9 +132,11 @@ const TeamComposer = ({ isOpen, onClose, scope, roster, team }: TeamComposerProp
           label={t('project.description')}
           name="description"
           value={description}
-          onChange={(event) => setDescription(event.target.value)}
+          onChange={(event) =>
+            setDescription(clampText(event.target.value, TEXT_LIMITS.teamDescription))
+          }
           placeholder={t('team.descriptionPlaceholder')}
-          maxLength={280}
+          maxLength={TEXT_LIMITS.teamDescription}
         />
 
         <ColorPicker
@@ -380,81 +383,13 @@ export const TeamsPanel = ({ scope, roster, canManage }: TeamsPanelProps) => {
   );
 };
 
-/**
- * The chip row a composer draws to pick teams.
+/*
+ * `TeamPicker` used to live here.
  *
- * Exported from here rather than duplicated in the three composers that need it
- * (project, meeting, task), because the affordance is the same everywhere: a
- * row of groups you can toggle, each showing how many people it would add. What
- * differs is only which scope it reads, which is the prop.
- *
- * Renders nothing at all when there are no teams. A picker that says "no teams
- * yet" on every composer is a permanent advertisement for a feature the user
- * has already decided not to use.
+ * It was a standalone chip row that every composer stacked above its own list
+ * of faces — two controls asking the same question ("who is in on this?") at
+ * two granularities, and neither of them answering it well. It is now one tab
+ * of `InvitePicker`, which is also where the paging that a company roster
+ * needs lives. Nothing was lost: picking a team still expands to its people at
+ * the moment it is picked, which is the whole contract — see `Team`.
  */
-export const TeamPicker = ({
-  scope,
-  selected,
-  onToggle,
-  isOpen,
-  label,
-  hint,
-}: {
-  scope: TeamScope | null;
-  selected: string[];
-  onToggle: (teamId: string) => void;
-  /** Only fetched while the surface holding it is actually open. */
-  isOpen: boolean;
-  label: string;
-  hint: string;
-}) => {
-  const { data: teams = [] } = useTeams(scope, isOpen);
-
-  if (teams.length === 0) return null;
-
-  return (
-    <div className="space-y-1.5">
-      <p className="text-xs font-medium text-content-muted">
-        {label}{' '}
-        {selected.length > 0 && <span className="text-content-faint">({selected.length})</span>}
-      </p>
-      <p className="text-[11px] leading-relaxed text-content-faint">{hint}</p>
-
-      <div className="flex flex-wrap gap-2 pt-1">
-        {teams.map((team) => {
-          const isSelected = selected.includes(team.id);
-
-          return (
-            <button
-              key={team.id}
-              type="button"
-              aria-pressed={isSelected}
-              onClick={() => onToggle(team.id)}
-              className={cn(
-                'inline-flex items-center gap-2 rounded-full border py-1 pl-2.5 pr-2.5 text-xs transition-all duration-150',
-                isSelected
-                  ? 'border-brand bg-brand/12 text-brand'
-                  : 'border-edge text-content-muted hover:border-content-faint',
-              )}
-            >
-              <span
-                aria-hidden
-                className="h-2.5 w-2.5 shrink-0 rounded-full"
-                style={{ backgroundColor: team.color }}
-              />
-              <span className="max-w-[9rem] truncate">{team.name}</span>
-              <span className="shrink-0 tabular-nums text-[10px] text-content-faint">
-                {team.memberCount}
-              </span>
-              {isSelected ? (
-                <Check className="h-3 w-3" strokeWidth={3} />
-              ) : (
-                <X className="h-3 w-3 opacity-0" aria-hidden />
-              )}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-};

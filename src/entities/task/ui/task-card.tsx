@@ -4,6 +4,7 @@ import {
   CalendarClock,
   Check,
   ImageIcon,
+  Paperclip,
   ListChecks,
   Pin,
   Trash2,
@@ -13,7 +14,8 @@ import {
 import { cn } from '@/shared/lib/cn';
 import { withAlpha } from '@/shared/lib/colors';
 import { formatDeadline, formatDeadlineDate, formatWindow } from '@/shared/lib/dates';
-import { TASK_PRIORITY_META } from '@/shared/config/constants';
+import { TASK_PRIORITY_META, TEXT_LIMITS } from '@/shared/config/constants';
+import { truncateText } from '@/shared/lib/text';
 import { AvatarStack, Badge, PostItMark } from '@/shared/ui';
 import { completionProgress, isSharedTask, outstandingAssignees } from '../lib/completion';
 import { useIsTaskSyncing } from '../model/sync.store';
@@ -175,6 +177,18 @@ const TaskCardBase = ({
             </span>
           )}
 
+          {/* A paper is attached — separate from the picture, because a task
+              can perfectly well carry both. */}
+          {task.file && (
+            <span
+              title={task.file.name}
+              aria-label={t('task.hasDocument')}
+              className="text-content-faint drop-shadow-[0_2px_3px_rgb(0_0_0/0.35)]"
+            >
+              <Paperclip className="h-[15px] w-[15px]" strokeWidth={2.2} />
+            </span>
+          )}
+
           {hasNote && (
             <span
               title={
@@ -260,13 +274,21 @@ const TaskCardBase = ({
             to the task, not to the summary of it, so it lives in the detail
             modal that opening the card already gives you.
           */}
+          {/*
+            Truncated for layout, not for taste. `TEXT_LIMITS.taskTitle` keeps
+            new titles to a line, but rows written before that limit existed
+            can be arbitrarily long, and `text-balance` on an arbitrarily long
+            string is the most expensive line-breaking mode there is — paid
+            once per card, on a board that draws dozens.
+          */}
           <h3
+            title={task.title.length > TEXT_LIMITS.taskTitle ? task.title : undefined}
             className={cn(
               'text-sm font-semibold leading-snug text-balance',
               isDone && 'line-through decoration-content-faint',
             )}
           >
-            {task.title}
+            {truncateText(task.title, TEXT_LIMITS.taskTitle)}
           </h3>
         </button>
 

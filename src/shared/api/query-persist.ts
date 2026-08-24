@@ -89,8 +89,16 @@ interface PersistedBlob {
   entries: PersistedEntry[];
 }
 
-/** Bump to invalidate every persisted cache after a shape change. */
-const VERSION = 1;
+/**
+ * Bump to invalidate every persisted cache after a shape change.
+ *
+ * 2: a `Task` grew a `file`, and the removal of the board's "Team tasks" tab
+ * means a persisted `tasks` key can carry a `scope` the API no longer accepts.
+ * Neither would break anything on its own — a missing field reads as absent and
+ * an orphaned key has no observer to refetch it — but a cache whose entries
+ * predate the shape they are typed as is exactly what this number is for.
+ */
+const VERSION = 2;
 
 const isPersistable = (key: readonly unknown[]): boolean =>
   typeof key[0] === 'string' && PERSISTED_PREFIXES.includes(key[0] as never);

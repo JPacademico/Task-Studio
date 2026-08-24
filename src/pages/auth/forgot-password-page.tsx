@@ -7,6 +7,8 @@ import { authApi } from '@/features/auth/api/auth.api';
 import { errorMessage } from '@/shared/api/client';
 import { Button, Input } from '@/shared/ui';
 import { AuthShell } from './auth-shell';
+import { TEXT_LIMITS } from '@/shared/config/constants';
+import { clampText } from '@/shared/lib/text';
 import { useT } from '@/shared/i18n';
 
 export const ForgotPasswordPage = () => {
@@ -52,7 +54,8 @@ export const ForgotPasswordPage = () => {
             type="email"
             required
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(event) => setEmail(clampText(event.target.value, TEXT_LIMITS.email))}
+            maxLength={TEXT_LIMITS.email}
             placeholder={t('auth.emailPlaceholder')}
           />
           <Button type="submit" className="w-full" size="lg" isLoading={request.isPending}>

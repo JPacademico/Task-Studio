@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Search, User, UserRound, Users, X } from 'lucide-react';
+import { Search, User, UserRound, X } from 'lucide-react';
 
 import type {
   ListTasksParams,
@@ -8,13 +8,14 @@ import type {
   TaskStatus,
   TaskType,
 } from '@/entities/task/model/types';
-import { TASK_STATUS_META, TASK_TYPE_META } from '@/shared/config/constants';
+import { TASK_STATUS_META, TASK_TYPE_META, TEXT_LIMITS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
+import { clampText } from '@/shared/lib/text';
 import { Segmented, Select } from '@/shared/ui';
 import { useT, type TranslationKey } from '@/shared/i18n';
 
 /**
- * `project` shows the whole roster's work, so it keeps the mine/team/all split.
+ * `project` shows the whole roster's work, so it keeps the mine/all split.
  * `personal` is the task menu — that surface is about *you*, so the second tab
  * narrows to the work that is *only* yours: the tasks with no project behind
  * them at all.
@@ -51,9 +52,18 @@ interface TaskFiltersProps {
  * is declared. Holding the key and mapping over it at render is what lets a
  * static table stay static and still speak the reader's language.
  */
+/*
+ * Two, not three.
+ *
+ * There used to be a "Team tasks" tab between these, meaning "everyone's work
+ * except mine". Nobody reached for it: a board is opened either to see what is
+ * on you or to see the whole picture, and the middle answer — the picture with
+ * yourself cut out of it — is not a question people ask. It also cost a round
+ * trip the client could not seed from cache, because excluding yourself is not
+ * a predicate a cached task carries. `all` covers what it was reached for.
+ */
 const PROJECT_SCOPES: { value: TaskScope; label: TranslationKey; icon: ReactNode }[] = [
   { value: 'mine', label: 'filters.myTasks', icon: <User className="h-3 w-3" /> },
-  { value: 'team', label: 'filters.teamTasks', icon: <Users className="h-3 w-3" /> },
   { value: 'all', label: 'filters.all', icon: <></> },
 ];
 
@@ -160,8 +170,11 @@ export const TaskFilters = ({
         <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-content-faint" />
         <input
           value={value.search ?? ''}
-          onChange={(event) => patch({ search: event.target.value || undefined })}
+          onChange={(event) =>
+            patch({ search: clampText(event.target.value, TEXT_LIMITS.search) || undefined })
+          }
           placeholder={t('views.searchTasks')}
+          maxLength={TEXT_LIMITS.search}
           className="field h-9 w-36 pl-8 text-xs sm:w-40"
         />
       </div>

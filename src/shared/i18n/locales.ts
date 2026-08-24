@@ -299,6 +299,16 @@ const en = {
   'task.attachImage': 'Attach an image (max 5 MB)',
   'task.imageAttached': 'Image attached.',
 
+  // ---- Attached documents (a task's, a meeting's) ------------------------
+  'file.attach': 'Attach a PDF or Word document',
+  'file.attached': 'Document attached.',
+  'file.remove': 'Remove document',
+  'file.hint': 'PDF, DOCX or DOC, up to 10 MB. Uploaded as-is — nothing is re-encoded.',
+  'file.uploadFailed': 'Could not upload that document.',
+  'task.documentAttachment': 'Attached document',
+  'task.hasDocument': 'Has a document attached',
+  'meetings.documentAttachment': 'Attached document',
+
   // ---- Task detail -------------------------------------------------------
   'task.editTask': 'Edit task',
   'task.waiting': 'Waiting',
@@ -411,7 +421,32 @@ const en = {
   'doc.nothingOpenProject':
     'Write the brief, the spec or the meeting notes — for the project, or pinned to one task.',
   'doc.documentTitle': 'Document title',
+  'doc.tooLong': 'This page is too long to save. Trim it, or split it across two pages.',
   'doc.someone': 'Someone',
+  'doc.linkedDocuments': 'Linked pages',
+  'doc.openOnTextBoard': 'Open on the text board',
+  'doc.readOnly': 'Read-only',
+  'doc.readOnlyHint': 'Only {author} can edit this page. Ask them to share it with you.',
+  'doc.whoCanEdit': 'Who can edit',
+  'doc.whoCanEditHint':
+    'You wrote this page, so only you can change it. Anybody you pick here can too — everybody on the project can already read it.',
+  'doc.shareEditing': 'Share editing',
+  'doc.editorsSaved': 'Editing rights updated.',
+  'doc.editorsFailed': 'Could not update who may edit this page.',
+  'doc.noOneElse': 'Nobody else yet',
+  'doc.editorCount': '{count} can edit',
+  'doc.authorOnly': 'Only you can edit this',
+
+  // ---- Inviting people, one at a time or a team at a time ----------------
+  'invite.individually': 'People',
+  'invite.byTeam': 'Teams',
+  'invite.searchPeople': 'Search people',
+  'invite.noMatches': 'Nobody here by that name',
+  'invite.noTeams': 'No teams here yet',
+  'invite.selectedCount': '{count} selected',
+  'invite.page': '{from}–{to} of {total}',
+  'invite.previousPage': 'Previous people',
+  'invite.nextPage': 'More people',
 
   // ---- Whiteboard --------------------------------------------------------
   'board.inkCleared': 'Ink cleared. Post-its are untouched.',
@@ -560,8 +595,8 @@ const en = {
   'session.expired': 'Your session expired. Please sign in again.',
   'session.refreshFailed': 'Could not refresh data.',
   'task.signOff': 'Sign-off',
-  'task.assignTeams': 'Assign a team',
-  'task.assignTeamsHint': 'Everybody on the teams you pick is assigned to this task.',
+  'task.assignTeamsHint':
+    'Pick people one at a time, or a whole team — everybody on it is assigned.',
   'task.assignees': 'Assignees',
   'task.multiTaskNote': 'More than one assignee — this becomes a MultiTask.',
   'nav.dragAnywhere': 'Drag me anywhere',
@@ -828,9 +863,9 @@ const en = {
   'project.organizationNone': 'Not filed anywhere',
   'project.organizationHint':
     'Only organizations you own or administer. You can file it later instead.',
-  'project.staffFromTeams': 'Start with a team',
+  'project.staffFromTeams': 'Start with a roster',
   'project.staffFromTeamsHint':
-    'Everybody on the teams you pick joins the roster as a member.',
+    'Everybody you pick — one at a time, or a whole team — joins as a member. You can invite anybody else later.',
 
   // ---- Recycle bin -------------------------------------------------------
   'bin.title': 'Recycle bin',
@@ -956,7 +991,6 @@ const en = {
   'views.signedOff': '{done}/{total} signed off',
   'views.taskCount': '{count} task(s)',
   'filters.myTasks': 'My tasks',
-  'filters.teamTasks': 'Team tasks',
   'filters.all': 'All',
   'filters.personal': 'Personal',
   'filters.status': 'Status',
@@ -1057,8 +1091,6 @@ const en = {
   'meetings.descriptionPlaceholder': 'What this meeting is for, and what to bring.',
   'meetings.participants': 'Participants',
   'meetings.participantsHint': 'Optional. Nobody picked means the whole roster is invited.',
-  'meetings.inviteTeams': 'Invite a team',
-  'meetings.inviteTeamsHint': 'Everybody on the teams you pick is added to the guest list.',
   'meetings.linkProject': 'About a project',
   'meetings.linkProjectNone': 'The organization as a whole',
   'meetings.linkProjectHint':
@@ -1371,6 +1403,15 @@ const ptBR: Record<TranslationKey, string> = {
   'task.attachImage': 'Anexar uma imagem (máx. 5 MB)',
   'task.imageAttached': 'Imagem anexada.',
 
+  'file.attach': 'Anexar um PDF ou documento do Word',
+  'file.attached': 'Documento anexado.',
+  'file.remove': 'Remover documento',
+  'file.hint': 'PDF, DOCX ou DOC, até 10 MB. Enviado como está — nada é recodificado.',
+  'file.uploadFailed': 'Não foi possível enviar este documento.',
+  'task.documentAttachment': 'Documento anexado',
+  'task.hasDocument': 'Tem um documento anexado',
+  'meetings.documentAttachment': 'Documento anexado',
+
   'task.editTask': 'Editar tarefa',
   'task.waiting': 'Aguardando',
   'task.checklist': 'Lista de etapas',
@@ -1478,7 +1519,31 @@ const ptBR: Record<TranslationKey, string> = {
   'doc.nothingOpenProject':
     'Escreva o briefing, a especificação ou a ata — para o projeto, ou fixado em uma tarefa.',
   'doc.documentTitle': 'Título do documento',
+  'doc.tooLong': 'Esta página está longa demais para salvar. Reduza o texto ou divida em duas páginas.',
   'doc.someone': 'Alguém',
+  'doc.linkedDocuments': 'Páginas vinculadas',
+  'doc.openOnTextBoard': 'Abrir no quadro de textos',
+  'doc.readOnly': 'Somente leitura',
+  'doc.readOnlyHint': 'Só {author} pode editar esta página. Peça para compartilhar com você.',
+  'doc.whoCanEdit': 'Quem pode editar',
+  'doc.whoCanEditHint':
+    'Você escreveu esta página, então só você pode alterá-la. Quem você marcar aqui também poderá — todo mundo do projeto já consegue ler.',
+  'doc.shareEditing': 'Compartilhar edição',
+  'doc.editorsSaved': 'Permissões de edição atualizadas.',
+  'doc.editorsFailed': 'Não foi possível atualizar quem pode editar esta página.',
+  'doc.noOneElse': 'Ninguém mais por enquanto',
+  'doc.editorCount': '{count} podem editar',
+  'doc.authorOnly': 'Só você pode editar',
+
+  'invite.individually': 'Pessoas',
+  'invite.byTeam': 'Equipes',
+  'invite.searchPeople': 'Buscar pessoas',
+  'invite.noMatches': 'Ninguém aqui com esse nome',
+  'invite.noTeams': 'Nenhuma equipe por aqui ainda',
+  'invite.selectedCount': '{count} selecionados',
+  'invite.page': '{from}–{to} de {total}',
+  'invite.previousPage': 'Pessoas anteriores',
+  'invite.nextPage': 'Mais pessoas',
 
   'board.inkCleared': 'Traços apagados. Os recados não foram tocados.',
   'board.adminsOnlyClear': 'Somente administradores do projeto podem limpar a tela.',
@@ -1623,8 +1688,8 @@ const ptBR: Record<TranslationKey, string> = {
   'session.expired': 'Sua sessão expirou. Entre novamente.',
   'session.refreshFailed': 'Não foi possível atualizar os dados.',
   'task.signOff': 'Conclusão',
-  'task.assignTeams': 'Atribuir a um time',
-  'task.assignTeamsHint': 'Todo mundo dos times escolhidos recebe esta tarefa.',
+  'task.assignTeamsHint':
+    'Escolha pessoa por pessoa ou um time inteiro — todo mundo dele fica responsável.',
   'task.assignees': 'Responsáveis',
   'task.multiTaskNote': 'Mais de um responsável — isto vira uma MultiTask.',
   'nav.dragAnywhere': 'Arraste para onde quiser',
@@ -1884,9 +1949,9 @@ const ptBR: Record<TranslationKey, string> = {
   'project.organizationNone': 'Sem organização',
   'project.organizationHint':
     'Apenas organizações que você criou ou administra. Dá para guardar depois também.',
-  'project.staffFromTeams': 'Começar com um time',
+  'project.staffFromTeams': 'Começar com uma equipe',
   'project.staffFromTeamsHint':
-    'Todo mundo dos times escolhidos entra na equipe como membro.',
+    'Quem você escolher — uma pessoa por vez ou um time inteiro — entra como membro. Dá para convidar mais gente depois.',
 
   'bin.title': 'Lixeira',
   'bin.deletedItems': 'Itens excluídos',
@@ -1997,7 +2062,6 @@ const ptBR: Record<TranslationKey, string> = {
   'views.signedOff': '{done}/{total} aprovaram',
   'views.taskCount': '{count} tarefa(s)',
   'filters.myTasks': 'Minhas tarefas',
-  'filters.teamTasks': 'Tarefas da equipe',
   'filters.all': 'Todas',
   'filters.personal': 'Pessoais',
   'filters.status': 'Status',
@@ -2093,8 +2157,6 @@ const ptBR: Record<TranslationKey, string> = {
   'meetings.participants': 'Participantes',
   'meetings.participantsHint':
     'Opcional. Sem ninguém marcado, toda a equipe está convidada.',
-  'meetings.inviteTeams': 'Convidar um time',
-  'meetings.inviteTeamsHint': 'Todo mundo dos times escolhidos entra na lista de convidados.',
   'meetings.linkProject': 'Sobre um projeto',
   'meetings.linkProjectNone': 'A organização como um todo',
   'meetings.linkProjectHint':

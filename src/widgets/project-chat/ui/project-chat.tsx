@@ -13,7 +13,8 @@ import { emitWithAck } from '@/shared/api/socket';
 import { queryKeys } from '@/shared/api/query-keys';
 import { cn } from '@/shared/lib/cn';
 import { formatTime } from '@/shared/lib/dates';
-import { STORAGE_KEYS } from '@/shared/config/constants';
+import { STORAGE_KEYS, TEXT_LIMITS } from '@/shared/config/constants';
+import { clampText } from '@/shared/lib/text';
 import { useIsTouchDevice, useLocalStorage } from '@/shared/lib/hooks';
 import { Avatar, Button, SendGlyph } from '@/shared/ui';
 
@@ -435,10 +436,11 @@ export const ProjectChat = ({
           <input
             value={draft}
             onChange={(event) => {
-              setDraft(event.target.value);
+              setDraft(clampText(event.target.value, TEXT_LIMITS.chatMessage));
               socket?.emit('chat:typing', { projectId });
             }}
             placeholder={isConnected ? t('chat.placeholder') : t('chat.offline')}
+            maxLength={TEXT_LIMITS.chatMessage}
             disabled={!isConnected}
             className="field h-9 text-xs"
           />

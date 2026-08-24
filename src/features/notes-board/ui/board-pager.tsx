@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Check, Pencil, Plus, X } from 'lucide-react';
 
 import type { BoardPage } from '@/entities/note/model/types';
-import { MAX_BOARD_PAGES } from '@/shared/config/constants';
+import { MAX_BOARD_PAGES, TEXT_LIMITS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
+import { clampText } from '@/shared/lib/text';
 import { PageStack } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
@@ -17,7 +18,7 @@ interface BoardPagerProps {
   isAdding: boolean;
 }
 
-const MAX_NAME = 40;
+const MAX_NAME = TEXT_LIMITS.boardPageName;
 
 /** Tabs across the top of the board — one per page, up to ten. */
 export const BoardPager = ({
@@ -80,7 +81,7 @@ export const BoardPager = ({
                 value={draft}
                 maxLength={MAX_NAME}
                 autoFocus
-                onChange={(event) => setDraft(event.target.value)}
+                onChange={(event) => setDraft(clampText(event.target.value, MAX_NAME))}
                 onBlur={commit}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter') commit();

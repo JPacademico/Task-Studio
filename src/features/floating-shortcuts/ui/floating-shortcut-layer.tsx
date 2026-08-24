@@ -14,11 +14,19 @@ import { iconFor } from './shortcut-icon';
 /**
  * Where a pill sits in the app's stacking order.
  *
- * Named because these two numbers only make sense against the rails they are
- * chosen relative to: the top bar is 40 and both side rails are 50, so resting
- * below and dragging above is the whole behaviour.
+ * Named because these two numbers only make sense against the chrome they are
+ * chosen relative to: the top bar is 40 and both side rails are 50.
+ *
+ * Resting used to be 30, which put a pill under everything — including the top
+ * bar, which is a strip the user can perfectly well drop a pill onto. Doing so
+ * made it disappear: it was still there, still clickable at the edges, but the
+ * bar was painted over it the moment the bar was revealed, so the pill looked
+ * lost. 45 sits above the top bar and below the side rails, which keeps the
+ * original intent where it actually applied — a 260px rail sliding out passes
+ * over its own shortcuts rather than fighting them for the same strip of
+ * screen — while a pill parked in the header stays visible.
  */
-const RESTING_Z = 30;
+const RESTING_Z = 45;
 const DRAGGING_Z = 70;
 
 /**
@@ -68,10 +76,9 @@ const ShortcutPill = ({ shortcut }: { shortcut: FloatingShortcut }) => {
        * `display: contents` now and generates no box at all, which is what lets
        * these two values compete with the rails directly.
        *
-       * At rest the pill stays at 30, preserving the original intent — a menu
-       * sliding out passes over its own shortcuts. While dragged it goes to 70:
-       * above both rails, below the tear-off ghost (90) and the expanded stage
-       * (80).
+       * At rest the pill sits above the top bar and below the side rails — see
+       * `RESTING_Z`. While dragged it goes to 70: above both rails, below the
+       * tear-off ghost (90) and the expanded stage (80).
        */
       style={{ x, y, left: shortcut.x, top: shortcut.y, zIndex: RESTING_Z }}
       whileDrag={{ scale: 1.04, zIndex: DRAGGING_Z }}

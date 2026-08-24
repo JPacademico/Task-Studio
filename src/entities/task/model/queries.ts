@@ -149,12 +149,11 @@ const rollbackTaskWrite = (queryClient: QueryClient, context: TaskRollback | und
  * client is how the two quietly drift apart, and a card that appears in the
  * wrong column and then vanishes is worse than a card that takes another moment
  * to appear. So only the filters that are a plain equality check on a field the
- * task already carries are answered here; `search`, `lateness`, `from`/`to` and
- * the `team` scope are all conceded to the refetch.
+ * task already carries are answered here; `search`, `lateness` and `from`/`to`
+ * are all conceded to the refetch.
  */
 const matchesListParams = (task: Task, params: ListTasksParams): boolean | 'unknown' => {
   if (params.search || params.lateness || params.from || params.to) return 'unknown';
-  if (params.scope === 'team') return 'unknown';
 
   if (params.projectId && params.projectId !== task.project?.id) return false;
   if (params.personalOnly && task.project !== null) return false;
@@ -315,8 +314,8 @@ const collectCachedTasks = (queryClient: QueryClient): Map<string, Task> => {
  *
  * `matchesListParams` is the same predicate that decides where a newly created
  * task belongs, and only a definite `true` is accepted here. A filter it
- * declines to reproduce (`search`, `lateness`, a date window, the `team` scope)
- * seeds nothing at all rather than seeding a guess — showing the wrong rows for
+ * declines to reproduce (`search`, `lateness`, a date window) seeds nothing at
+ * all rather than seeding a guess — showing the wrong rows for
  * a moment is worse than showing none.
  */
 const seedTasksFor = (queryClient: QueryClient, params: ListTasksParams): Task[] | undefined => {

@@ -1,8 +1,11 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
+  ArrowUpRight,
   Check,
+  FileText,
   Flag,
   Pencil,
   Play,
@@ -21,6 +24,7 @@ import {
   useNotes,
   useUpdateNote,
 } from '@/entities/note/model/queries';
+import { useProjectDocuments } from '@/entities/document/model/queries';
 import { NoteAuthorStamp } from '@/entities/note/ui/note-author';
 import { completionProgress, isSharedTask } from '@/entities/task/lib/completion';
 import { useChecklistMutations, useTask } from '@/entities/task/model/queries';
@@ -29,11 +33,21 @@ import { TaskTypeTag } from '@/entities/task/ui/task-type-tag';
 import { aiApi, type SubtaskSuggestion } from '@/features/ai-suggestions/api/ai.api';
 import { useCurrentUser } from '@/features/auth/model/session.store';
 import { errorMessage } from '@/shared/api/client';
-import { NOTE_COLORS, TASK_STATUS_META } from '@/shared/config/constants';
+import { NOTE_COLORS, TASK_STATUS_META, TEXT_LIMITS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
+import { clampText, truncateText } from '@/shared/lib/text';
 import { readableInk } from '@/shared/lib/colors';
 import { formatDateTime, formatDeadline, formatDeadlineDate } from '@/shared/lib/dates';
-import { Avatar, AvatarStack, Badge, Button, Modal, Spinner, ZoomableImage } from '@/shared/ui';
+import {
+  Avatar,
+  AvatarStack,
+  Badge,
+  Button,
+  FileAttachmentRow,
+  Modal,
+  Spinner,
+  ZoomableImage,
+} from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
 interface TaskDetailModalProps {
@@ -48,9 +62,23 @@ interface TaskDetailModalProps {
  */
 export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProps) => {
   const t = useT();
+  const navigate = useNavigate();
   const currentUser = useCurrentUser();
   const { data: task, isLoading } = useTask(taskId ?? undefined);
   const checklist = useChecklistMutations(taskId ?? '');
+
+  /*
+   * Pages somebody has written against this task, on the project's text board.
+   *
+   * Scoped to the task, so this is a short list — usually none, sometimes one.
+   * Only asked for once there is a project to ask about: a personal task has no
+   * text board behind it, and the endpoint would answer with the caller's own
+   * desk, which is a different thing entirely.
+   */
+  const { data: linkedDocuments = [] } = useProjectDocuments(
+    task?.project?.id,
+    task?.project ? task.id : undefined,
+  );
 
   const noteParams = { taskId: taskId ?? undefined };
   const { data: notes = [] } = useNotes(taskId ? noteParams : {});
@@ -98,7 +126,7 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
     <Modal
       isOpen={Boolean(taskId)}
       onClose={onClose}
-      title={task?.title ?? 'Task'}
+      title={task ? truncateText(task.title, TEXT_LIMITS.taskTitle) : 'Task'}
       // A personal task has no project to name, so the subtitle says what it
       // is instead of leaving the header looking half-rendered.
       description={task ? (task.project?.name ?? t('agenda.personal')) : undefined}
@@ -156,6 +184,78 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
               thumbSrc={task.attachmentThumbUrl}
               alt={`${task.title} — attachment`}
             />
+          )}
+
+          {/* The attached paper. A row rather than a preview: rendering a PDF
+              inline is a second document viewer to build and a megabyte to
+              fetch before anybody has said they want it. */}
+          {task.file && <FileAttachmentRow file={task.file} />}
+
+          {/*
+            Pages written against this task, on the project's text board.
+
+            The link was one-directional until now: the board could say which
+            task a page belonged to, and the task could not say a page existed.
+            So somebody reading a task with a whole spec attached to it had no
+            way to reach the spec except by opening the text board and reading
+            titles. `?tab=text&doc=` is what makes that one click — see
+            `ProjectPage` for why the tab lives in the URL.
+          */}
+          {linkedDocuments.length > 0 && task.project && (
+            <section className="space-y-2">
+              <h3 className="flex items-center gap-2 text-sm font-semibold">
+                <FileText className="h-3.5 w-3.5" />
+                {t('doc.linkedDocuments')}
+                <span className="text-xs font-normal text-content-faint">
+                  {linkedDocuments.length}
+                </span>
+              </h3>
+
+              <ul className="space-y-1.5">
+                {linkedDocuments.map((entry) => (
+                  <li key={entry.id}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // Closed first: the sheet is a modal over the board, and
+                        // leaving it mounted over the tab we just navigated to
+                        // would hide the thing the click asked for.
+                        onClose();
+                        navigate(
+                          `/projects/${task.project?.id}?tab=text&doc=${entry.id}`,
+                        );
+                      }}
+                      className={cn(
+                        'group/doc flex w-full items-center gap-2.5 rounded-xl border border-edge',
+                        'bg-surface-sunken px-3 py-2.5 text-left transition-colors duration-150',
+                        'hover:border-brand/50 hover:bg-brand/[0.06]',
+                      )}
+                    >
+                      <span
+                        aria-hidden
+                        className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-brand/12 text-brand"
+                      >
+                        <FileText className="h-4 w-4" />
+                      </span>
+
+                      <span className="min-w-0 flex-1 leading-tight">
+                        <span className="block truncate text-xs font-semibold">
+                          {entry.title}
+                        </span>
+                        <span className="block truncate text-[10px] text-content-faint">
+                          {entry.excerpt || t('doc.emptyPage')}
+                        </span>
+                      </span>
+
+                      <span className="inline-flex shrink-0 items-center gap-1 text-[10px] font-semibold text-content-faint transition-colors group-hover/doc:text-brand">
+                        {t('doc.openOnTextBoard')}
+                        <ArrowUpRight className="h-3 w-3" />
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
           )}
 
           {/*
@@ -367,13 +467,22 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
                     {item.isCompleted && <Check className="h-2.5 w-2.5" strokeWidth={3} />}
                   </button>
 
+                  {/*
+                    Truncated on the way *out*, not only on the way in.
+                    `TEXT_LIMITS` stops a new step being pasted in at length,
+                    but rows written before it existed are already in the
+                    database, and laying one of those out inside a one-line row
+                    is what made opening this sheet feel slow. The full text is
+                    still on the element's `title`.
+                  */}
                   <span
+                    title={item.content.length > TEXT_LIMITS.checklistItem ? item.content : undefined}
                     className={cn(
-                      'flex-1 text-xs',
+                      'min-w-0 flex-1 break-words text-xs',
                       item.isCompleted && 'text-content-faint line-through',
                     )}
                   >
-                    {item.content}
+                    {truncateText(item.content, TEXT_LIMITS.checklistItem)}
                   </span>
 
                   <button
@@ -399,8 +508,11 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
             >
               <input
                 value={itemDraft}
-                onChange={(event) => setItemDraft(event.target.value)}
+                onChange={(event) =>
+                  setItemDraft(clampText(event.target.value, TEXT_LIMITS.checklistItem))
+                }
                 placeholder={t('task.addStepShort')}
+                maxLength={TEXT_LIMITS.checklistItem}
                 className="field h-9 text-xs"
               />
               <Button type="submit" size="icon" variant="secondary" aria-label={t('task.addStepAction')}>
@@ -427,6 +539,7 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
                     defaultValue={note.content}
                     // Only the author may rewrite somebody else's paper.
                     readOnly={note.userId !== currentUser?.id}
+                    maxLength={TEXT_LIMITS.noteContent}
                     onBlur={(event) =>
                       event.target.value !== note.content &&
                       updateNote.mutate({
@@ -474,8 +587,11 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
             >
               <input
                 value={noteDraft}
-                onChange={(event) => setNoteDraft(event.target.value)}
+                onChange={(event) =>
+                  setNoteDraft(clampText(event.target.value, TEXT_LIMITS.noteContent))
+                }
                 placeholder={t('task.pinNote')}
+                maxLength={TEXT_LIMITS.noteContent}
                 className="field h-9 text-xs"
               />
               <Button type="submit" size="icon" variant="secondary" aria-label={t('task.addNote')}>

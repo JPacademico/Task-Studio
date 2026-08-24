@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   BarChart3,
   CalendarDays,
@@ -103,7 +103,40 @@ const ProjectPage = () => {
 
   const currentUser = useCurrentUser();
 
-  const [tab, setTab] = useState<Tab>('board');
+  /*
+   * The open tab lives in the URL, not in state.
+   *
+   * Two things need it there. A link from somewhere else in the app has to be
+   * able to say *which* tab — the task sheet's "open on the text board" button
+   * is exactly that, and with the tab in component state the only thing it
+   * could do was land the reader on the board and ask them to find it. And a
+   * reload, or a shared link, now comes back to the tab somebody was actually
+   * on rather than to the task board.
+   *
+   * `replace` on the write, so flipping between tabs does not build a history
+   * stack that takes eight back presses to escape.
+   */
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const tab: Tab = TABS.some((entry) => entry.value === tabParam)
+    ? (tabParam as Tab)
+    : 'board';
+
+  const setTab = (next: Tab) => {
+    setSearchParams(
+      (current) => {
+        const params = new URLSearchParams(current);
+        if (next === 'board') params.delete('tab');
+        else params.set('tab', next);
+        // The page named by `?doc=` belongs to the visit that arrived on it,
+        // not to every tab the reader visits afterwards.
+        params.delete('doc');
+        return params;
+      },
+      { replace: true },
+    );
+  };
+
   const [filters, setFilters] = useState<ListTasksParams>({ scope: 'all' });
   const [composerTask, setComposerTask] = useState<Task | null>(null);
   const [isComposerOpen, setIsComposerOpen] = useState(false);
@@ -408,7 +441,15 @@ const ProjectPage = () => {
         <MeetingsPanel projectId={projectId} roster={project.roster} canManage={canManage} />
       )}
       {tab === 'whiteboard' && <Whiteboard projectId={projectId} canClear={canManage} />}
-      {tab === 'text' && <TextBoard projectId={projectId} tasks={tasks} meetings={meetings} />}
+      {tab === 'text' && (
+        <TextBoard
+          projectId={projectId}
+          tasks={tasks}
+          meetings={meetings}
+          roster={project.roster}
+          initialDocumentId={searchParams.get('doc') ?? undefined}
+        />
+      )}
       {tab === 'ai' && <AiPanel projectId={projectId} />}
 
       <TaskComposer

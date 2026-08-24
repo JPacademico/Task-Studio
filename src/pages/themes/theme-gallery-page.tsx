@@ -21,7 +21,9 @@ import {
   type SkinDefinition,
 } from '@/features/theme-toggle/model/skin-catalog';
 import { SkinMock } from '@/features/theme-toggle/ui/skin-mock';
+import { TEXT_LIMITS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
+import { clampText } from '@/shared/lib/text';
 import { useSkinMotion } from '@/shared/lib/skin-motion';
 import { Button, DirectionArrow, EmptyState, RunicText } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
@@ -173,11 +175,12 @@ const ThemeGalleryPage = () => {
               <input
                 value={query}
                 onChange={(event) => {
-                  setQuery(event.target.value);
+                  setQuery(clampText(event.target.value, TEXT_LIMITS.search));
                   setPage(0);
                 }}
                 placeholder={t('themes.searchPlaceholder')}
                 aria-label={t('themes.searchLabel')}
+                maxLength={TEXT_LIMITS.search}
                 className="field h-10 pl-9 pr-9"
               />
               {query && (

@@ -36,6 +36,15 @@ export const projectApi = {
     organizationId?: string;
     /** Organization teams whose people join the roster as MEMBERs. */
     teamIds?: string[];
+    /**
+     * Named company staff who join the roster as MEMBERs.
+     *
+     * The other half of `teamIds`, and the more common one — most projects
+     * start with three or four specific people. Added, not invited: somebody
+     * already inside the company has a relationship with the creator that a
+     * stranger reached through `POST /projects/:id/invitations` does not.
+     */
+    memberIds?: string[];
   }): Promise<Project> {
     const { data } = await api.post<Project>('/projects', payload);
     return data;

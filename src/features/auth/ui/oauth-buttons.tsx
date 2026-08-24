@@ -104,7 +104,16 @@ export const OAuthButtons = ({ intent, className }: OAuthButtonsProps) => {
         <span className="h-px flex-1 bg-edge" />
       </div>
 
-      <div className={cn('grid gap-2', available.length > 1 && 'sm:grid-cols-2')}>
+      {/*
+        One per row, always. These used to sit two-up on a half-width cell,
+        which left roughly 170px for a string nobody controls the length of —
+        "Continue with Google", "Criar conta com GitHub" — so the label was
+        ellipsised on every render rather than in some edge case. A stacked
+        list gives each button the card's full width, which every locale's
+        wording fits at the normal text size, and the marks stay optically
+        aligned down the left edge instead of floating mid-cell.
+      */}
+      <div className="grid gap-2">
         {available.map((provider) => {
           const Mark = MARKS[provider];
 
@@ -113,21 +122,8 @@ export const OAuthButtons = ({ intent, className }: OAuthButtonsProps) => {
               key={provider}
               href={authApi.oauthStartUrl(provider)}
               className={cn(
-                'ui-btn inline-flex h-10 select-none items-center justify-center gap-2 rounded-xl',
-                /*
-                 * `text-xs` and a narrower gutter, because the label is the
-                 * one string here nobody controls the length of.
-                 *
-                 * "Continue with Google" at `text-sm` in `px-4` overflows the
-                 * half-width cell these sit in from about 380px down, and in
-                 * Portuguese ("Criar conta com GitHub") it does so at every
-                 * width — the text ran into both borders with no gutter left.
-                 * Dropping a step and trimming the padding buys back roughly
-                 * four characters on each side; `min-w-0` plus `truncate` is
-                 * what stops the remaining cases pushing the mark out of the
-                 * button instead of ellipsising.
-                 */
-                'border border-edge px-3 text-xs font-medium text-content',
+                'ui-btn inline-flex h-10 w-full select-none items-center justify-center gap-2.5 rounded-xl',
+                'border border-edge px-4 text-sm font-medium text-content',
                 'transition-[transform,background-color,border-color] duration-150 ease-studio',
                 'hover:border-brand/50 hover:bg-surface-sunken active:scale-[0.98]',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
@@ -136,7 +132,7 @@ export const OAuthButtons = ({ intent, className }: OAuthButtonsProps) => {
               <span className="shrink-0">
                 <Mark />
               </span>
-              <span className="min-w-0 truncate">
+              <span className="whitespace-nowrap">
                 {t(intent === 'signUp' ? 'auth.oauth.signUpWith' : 'auth.oauth.continueWith', {
                   provider: LABELS[provider],
                 })}

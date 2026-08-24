@@ -12,8 +12,9 @@ import type {
   OrganizationInviteDraft,
   OrgRole,
 } from '@/entities/organization/model/types';
-import { TASK_COLORS } from '@/shared/config/constants';
+import { TASK_COLORS, TEXT_LIMITS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
+import { clampText } from '@/shared/lib/text';
 import { Button, ColorPicker, Input, Modal, Select, Textarea } from '@/shared/ui';
 import { useT, type Translate } from '@/shared/i18n';
 
@@ -79,8 +80,9 @@ const InviteList = ({ invites, onAdd, onRemove, t }: InviteListProps) => {
           name="inviteEmail"
           type="email"
           value={email}
-          onChange={(event) => setEmail(event.target.value)}
+          onChange={(event) => setEmail(clampText(event.target.value, TEXT_LIMITS.email))}
           placeholder={t('org.inviteEmailPlaceholder')}
+          maxLength={TEXT_LIMITS.email}
           wrapperClassName="min-w-[12rem] flex-1"
           className="h-9 py-0 text-xs"
           error={isDuplicate ? t('org.inviteDuplicate') : undefined}
@@ -368,7 +370,7 @@ export const OrganizationDialog = ({
           value={name}
           onChange={(event) => setName(event.target.value)}
           placeholder={t('org.namePlaceholder')}
-          maxLength={80}
+          maxLength={TEXT_LIMITS.organizationName}
           autoFocus
         />
 
@@ -378,7 +380,7 @@ export const OrganizationDialog = ({
           value={description}
           onChange={(event) => setDescription(event.target.value)}
           placeholder={t('org.descriptionPlaceholder')}
-          maxLength={500}
+          maxLength={TEXT_LIMITS.organizationDescription}
         />
 
         <ColorPicker
@@ -452,8 +454,11 @@ export const OrganizationDialog = ({
                 <Input
                   name="confirmation"
                   value={confirmation}
-                  onChange={(event) => setConfirmation(event.target.value)}
+                  onChange={(event) =>
+                    setConfirmation(clampText(event.target.value, TEXT_LIMITS.organizationName))
+                  }
                   placeholder={organization.name}
+                  maxLength={TEXT_LIMITS.organizationName}
                   aria-label={t('org.name')}
                   autoComplete="off"
                 />
