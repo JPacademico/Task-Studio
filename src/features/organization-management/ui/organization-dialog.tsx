@@ -50,7 +50,6 @@ interface InviteListProps {
  */
 const InviteList = ({ invites, onAdd, onRemove, t }: InviteListProps) => {
   const [email, setEmail] = useState('');
-  const [jobTitle, setJobTitle] = useState('');
   const [role, setRole] = useState<OrgRole>('MEMBER');
 
   const trimmed = email.trim().toLowerCase();
@@ -62,9 +61,8 @@ const InviteList = ({ invites, onAdd, onRemove, t }: InviteListProps) => {
 
   const add = () => {
     if (!canAdd) return;
-    onAdd({ email: trimmed, role, jobTitle: jobTitle.trim() || undefined });
+    onAdd({ email: trimmed, role });
     setEmail('');
-    setJobTitle('');
   };
 
   return (
@@ -95,16 +93,16 @@ const InviteList = ({ invites, onAdd, onRemove, t }: InviteListProps) => {
           }}
         />
 
-        <Input
-          name="inviteJobTitle"
-          value={jobTitle}
-          onChange={(event) => setJobTitle(event.target.value)}
-          placeholder={t('org.jobTitlePlaceholder')}
-          maxLength={280}
-          wrapperClassName="min-w-[9rem] flex-1"
-          className="h-9 py-0 text-xs"
-        />
+        {/*
+          No job title here any more.
 
+          It was asked for at the moment somebody is assembling a founding team
+          from a list of email addresses, which is the moment they are least
+          likely to know or care what each person's title is — and it made the
+          row three fields wide for a label nothing in the app reads. Where
+          people are grouped for a *purpose* is a team, which has its own tab
+          and can be built once everybody has actually accepted.
+        */}
         <Select
           value={role}
           onChange={setRole}
@@ -129,11 +127,6 @@ const InviteList = ({ invites, onAdd, onRemove, t }: InviteListProps) => {
             >
               <UserPlus className="h-3.5 w-3.5 shrink-0 text-content-faint" />
               <span className="min-w-0 flex-1 truncate text-xs">{invite.email}</span>
-              {invite.jobTitle && (
-                <span className="hidden max-w-[8rem] truncate text-[11px] text-content-faint sm:block">
-                  {invite.jobTitle}
-                </span>
-              )}
               <span className="shrink-0 text-[10px] uppercase tracking-wide text-content-faint">
                 {t(invite.role === 'ADMIN' ? 'org.roleAdmin' : 'org.roleMember')}
               </span>

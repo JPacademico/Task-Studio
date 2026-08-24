@@ -102,6 +102,14 @@ export interface CreateTaskPayload {
   startAt?: string;
   dueAt?: string;
   assigneeIds?: string[];
+  /**
+   * Project teams to assign wholesale, merged into `assigneeIds` by the API.
+   *
+   * Create only. Editing a task edits the people on it — a team was a way of
+   * naming them once, and re-expanding it later would silently re-add somebody
+   * who had been taken off. See the API's `TeamsService`.
+   */
+  teamIds?: string[];
   checklist?: string[];
   attachmentKey?: string;
   attachmentThumbKey?: string;

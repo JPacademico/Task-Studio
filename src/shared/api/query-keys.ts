@@ -102,6 +102,20 @@ export const queryKeys = {
     attachable: ['organizations', 'attachable'] as const,
   },
 
+  teams: {
+    all: ['teams'] as const,
+    /**
+     * One roster's teams, keyed by the altitude they belong to.
+     *
+     * The scope is in the key rather than just the id because an organization
+     * and a project can never share one: they are different rosters with
+     * different membership rules, and a bare id would let a project's teams
+     * answer a query for a company's.
+     */
+    list: (scope: 'organization' | 'project', id: string) =>
+      ['teams', 'list', scope, id] as const,
+  },
+
   invitations: {
     /**
      * Project invitations addressed to the signed-in user.

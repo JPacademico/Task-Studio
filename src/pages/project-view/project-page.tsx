@@ -12,6 +12,7 @@ import {
   Settings2,
   Sparkles,
   Users,
+  UsersRound,
 } from 'lucide-react';
 
 import { useProjectRoom } from '@/app/providers/realtime-provider';
@@ -44,6 +45,7 @@ import {
 import { MeetingsPanel } from '@/features/meetings/ui/meetings-panel';
 import { ProjectSettingsDialog } from '@/features/project-management/ui/project-settings-dialog';
 import { RosterPanel } from '@/features/roster/ui/roster-panel';
+import { TeamsPanel } from '@/features/teams/ui/teams-panel';
 import { TaskComposer } from '@/features/task-management/ui/task-composer';
 import { TaskDetailModal } from '@/features/task-management/ui/task-detail-modal';
 import { PendingTasks } from '@/entities/task/ui/pending-tasks';
@@ -62,12 +64,23 @@ import { TextBoard } from '@/widgets/text-board/ui/text-board';
 import { Whiteboard } from '@/widgets/whiteboard/ui/whiteboard';
 import { useT, type TranslationKey } from '@/shared/i18n';
 
-type Tab = 'board' | 'dashboard' | 'roster' | 'meetings' | 'whiteboard' | 'text' | 'ai';
+type Tab =
+  | 'board'
+  | 'dashboard'
+  | 'roster'
+  | 'teams'
+  | 'meetings'
+  | 'whiteboard'
+  | 'text'
+  | 'ai';
 
 const TABS: { value: Tab; label: TranslationKey; icon: ReactNode }[] = [
   { value: 'board', label: 'project.tabBoard', icon: <KanbanSquare className="h-3 w-3" /> },
   { value: 'dashboard', label: 'project.tabMetrics', icon: <BarChart3 className="h-3 w-3" /> },
   { value: 'roster', label: 'project.tabRoster', icon: <Users className="h-3 w-3" /> },
+  // Beside the roster, because a team is a subset of it — the same reasoning
+  // that puts the company's teams tab next to its staff list.
+  { value: 'teams', label: 'project.tabTeams', icon: <UsersRound className="h-3 w-3" /> },
   // Next to the roster rather than to the board: a meeting is an appointment
   // between people, and the question it answers is "who, and when" — not
   // "what state is this work in".
@@ -136,8 +149,16 @@ const ProjectPage = () => {
    * simply skips the invitations half until it has, and re-runs when it does.
    */
   const canManage = project?.myRole === 'OWNER' || project?.myRole === 'ADMIN';
-  // Renaming, re-colouring and deleting are the owner's alone — see
-  // `ProjectSettingsDialog` for why this is stricter than the API.
+  /*
+   * Deleting is still the owner's alone; editing is not.
+   *
+   * The settings dialog used to open for the owner only, which was stricter
+   * than the API has ever been — `ProjectsService.update` has always accepted
+   * an ADMIN. That left an admin able to run the project day to day and unable
+   * to fix a typo in its name. The dialog now opens for both and hides its own
+   * danger zone from anybody who is not the owner, which is the same split the
+   * organization dialog already uses.
+   */
   const isOwner = project?.myRole === 'OWNER';
 
   // Warm the roster tab while the user is reading the board.
@@ -297,7 +318,7 @@ const ProjectPage = () => {
 
             {/* Next to the pin, because both are things you do *to* the project
                 rather than inside it. */}
-            {isOwner && (
+            {canManage && (
               <Button
                 variant="ghost"
                 size="icon"
@@ -373,7 +394,16 @@ const ProjectPage = () => {
       )}
 
       {tab === 'dashboard' && <ProjectDashboard projectId={projectId} />}
-      {tab === 'roster' && <RosterPanel projectId={projectId} canManage={canManage} />}
+      {tab === 'roster' && (
+        <RosterPanel projectId={projectId} canManage={canManage} isOwner={isOwner} />
+      )}
+      {tab === 'teams' && (
+        <TeamsPanel
+          scope={{ projectId }}
+          roster={project.roster}
+          canManage={canManage}
+        />
+      )}
       {tab === 'meetings' && (
         <MeetingsPanel projectId={projectId} roster={project.roster} canManage={canManage} />
       )}
@@ -392,11 +422,12 @@ const ProjectPage = () => {
         task={composerTask}
       />
 
-      {isOwner && (
+      {canManage && (
         <ProjectSettingsDialog
           isOpen={isSettingsOpen}
           onClose={() => setIsSettingsOpen(false)}
           project={project}
+          isOwner={isOwner}
         />
       )}
 

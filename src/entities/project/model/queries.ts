@@ -440,6 +440,77 @@ const patchRosterRemoval = (
  * reconciliation nobody is waiting on rather than the thing that finally makes
  * the panel correct.
  */
+/**
+ * Changing somebody's role on the roster.
+ *
+ * ## Why this hook did not exist before
+ *
+ * The endpoint and the API client method have been there all along; nothing
+ * called them, because the panel treated a role as something set once at
+ * invitation time. That left the only way to correct a mistake being to remove
+ * the person and invite them again — which loses their task assignments on the
+ * way out (see `RosterService.removeMember`) to fix a dropdown.
+ *
+ * Optimistic, matching the removal below: the badge is the whole feedback, and
+ * a badge that waits for a round trip before changing reads as a click that did
+ * not register.
+ */
+export const useUpdateMemberRole = (projectId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ memberId, role }: { memberId: string; role: ProjectRole }) =>
+      projectApi.updateMemberRole(projectId, memberId, role),
+
+    onMutate: async ({ memberId, role }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.projects.members(projectId) });
+
+      const snapshot = queryClient.getQueriesData({ queryKey: queryKeys.projects.all });
+
+      queryClient.setQueryData<RosterMember[]>(
+        queryKeys.projects.members(projectId),
+        (members) =>
+          Array.isArray(members)
+            ? members.map((member) =>
+                member.id === memberId ? { ...member, role } : member,
+              )
+            : members,
+      );
+
+      /*
+       * The project detail carries its own copy of the roster, and the header
+       * reads `myRole` from it. Patching only the members list would leave the
+       * two disagreeing until the next refetch — visibly, if the person whose
+       * role changed is the one looking at the page.
+       */
+      queryClient.setQueryData<Project>(queryKeys.projects.detail(projectId), (project) =>
+        project
+          ? {
+              ...project,
+              roster: project.roster.map((member) =>
+                member.id === memberId ? { ...member, role } : member,
+              ),
+            }
+          : project,
+      );
+
+      return { snapshot };
+    },
+
+    onError: (error, _variables, context) => {
+      context?.snapshot.forEach(([key, value]) => queryClient.setQueryData(key, value));
+      toast.error(errorMessage(error, translate('toast.rosterRoleFailed')));
+    },
+
+    onSuccess: () => toast.success(translate('toast.rosterUpdated')),
+
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.members(projectId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(projectId) });
+    },
+  });
+};
+
 export const useRemoveMember = (projectId: string) => {
   const queryClient = useQueryClient();
 

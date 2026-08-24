@@ -151,6 +151,14 @@ const PostItBase = ({
   const [titleDraft, setTitleDraft] = useState(note.title ?? '');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lastDragRef = useRef({ x: note.positionX, y: note.positionY });
+  /**
+   * True between `onDragStart` and `onDragEnd`.
+   *
+   * A ref rather than state: it is read by an effect and never rendered, and
+   * making it state would re-render the sheet twice per gesture for a value
+   * nothing draws. See the position-sync effect below for what it guards.
+   */
+  const isDraggingRef = useRef(false);
 
   /*
    * What this component has said and the server has not confirmed yet.
@@ -217,15 +225,35 @@ const PostItBase = ({
     if (!dirtyRef.current.title) setTitleDraft(note.title ?? '');
   }, [note.title]);
 
-  // A position that changed elsewhere (group drag, page switch) has to land on
-  // the motion values, which React never touches on its own.
+  /*
+   * A position that changed elsewhere (group drag, page switch, a teammate's
+   * socket echo) has to land on the motion values, which React never touches on
+   * its own — *unless this sheet is currently under somebody's finger*.
+   *
+   * That guard is the fix for a specific and very visible bug. Drop a note and
+   * drag it immediately: the create response arrives mid-gesture carrying the
+   * position the note was *posted* at, this effect fired, and the sheet jumped
+   * out of the user's grip and back to where it started. The same thing could
+   * happen on a shared board from a colleague's echo landing at the wrong
+   * moment.
+   *
+   * Whoever is holding the sheet is the authority on where it is. Anything that
+   * arrives while they are is not lost, only deferred: `onDragEnd` writes the
+   * final position, and the next render after the gesture reconciles the rest.
+   */
   useEffect(() => {
+    if (isDraggingRef.current) return;
+
     x.set(note.positionX);
     y.set(note.positionY);
     lastDragRef.current = { x: note.positionX, y: note.positionY };
   }, [note.positionX, note.positionY, x, y]);
 
+  // Same guard as the position: a resize is a drag too, and an echo landing
+  // mid-gesture would snap the corner back under the pointer.
   useEffect(() => {
+    if (isDraggingRef.current) return;
+
     width.set(note.width);
     height.set(note.height);
   }, [height, note.height, note.width, width]);
@@ -325,6 +353,9 @@ const PostItBase = ({
       event.stopPropagation();
 
       handle.setPointerCapture(event.pointerId);
+      // A resize is a gesture too, so it takes the same authority over the
+      // sheet's geometry that a drag does — see the sync effects above.
+      isDraggingRef.current = true;
 
       const origin = { x: event.clientX, y: event.clientY };
       const start = {
@@ -386,6 +417,7 @@ const PostItBase = ({
         handle.removeEventListener('pointermove', move);
         handle.removeEventListener('pointerup', finish);
         handle.removeEventListener('pointercancel', finish);
+        isDraggingRef.current = false;
 
         const next = {
           width: width.get(),
@@ -454,6 +486,9 @@ const PostItBase = ({
           isPickingMultiple || event.shiftKey || event.ctrlKey || event.metaKey,
         );
       }}
+      onDragStart={() => {
+        isDraggingRef.current = true;
+      }}
       onDrag={() => {
         const next = { x: x.get(), y: y.get() };
         onDragMove?.(note.id, next.x, next.y);
@@ -461,7 +496,14 @@ const PostItBase = ({
         lastDragRef.current = next;
       }}
       onDragEnd={() => {
+        isDraggingRef.current = false;
         lastDragRef.current = { x: x.get(), y: y.get() };
+        /*
+         * `note.id` is read at call time, so a sheet whose placeholder id was
+         * swapped for the server's mid-drag persists under the *real* id — the
+         * element survived the swap (see `Note.clientKey`), so this closure is
+         * the current render's and knows the new one.
+         */
         onDragEnd(note.id, { positionX: x.get(), positionY: y.get() });
       }}
       className={cn(

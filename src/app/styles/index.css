@@ -4765,6 +4765,23 @@
   width: 2.75rem;
   height: 2.75rem;
   color: rgb(var(--brand));
+
+  /*
+   * The one colour every loader draws itself in.
+   *
+   * It exists because the loaders used to reach for `rgb(var(--brand))`
+   * directly, and inside a *filled* control that is the background they are
+   * sitting on: pressing a primary button on the studio skin painted an indigo
+   * arc on an indigo field and the button simply went blank for the length of
+   * the request. Every skin whose loader is a single accent-coloured shape had
+   * the same bug — studio, terminal and vintage completely, space and eldritch
+   * partly.
+   *
+   * `--inherit` below re-points this at the label's colour, which is by
+   * definition legible on that background, so one variable fixes all of them
+   * and any loader added later inherits the fix instead of the bug.
+   */
+  --loader-ink: rgb(var(--brand));
 }
 
 .skin-loader--sm {
@@ -4776,6 +4793,7 @@
    has to take the label's colour instead of the brand. */
 .skin-loader--inherit {
   color: inherit;
+  --loader-ink: currentColor;
 }
 
 /* The CRT writes a word, so its box is as wide as the line it prints. */
@@ -4811,8 +4829,8 @@
   width: 100%;
   height: 100%;
   border-radius: 9999px;
-  border: 2px solid rgb(var(--brand) / 0.18);
-  border-top-color: rgb(var(--brand));
+  border: 2px solid color-mix(in srgb, var(--loader-ink) 18%, transparent);
+  border-top-color: var(--loader-ink);
   animation: loader-spin 720ms cubic-bezier(0.5, 0.1, 0.4, 0.9) infinite;
 }
 
@@ -4865,7 +4883,7 @@
   font-family: var(--font-mono);
   font-size: 0.75rem;
   letter-spacing: 0.14em;
-  color: rgb(var(--brand));
+  color: var(--loader-ink);
 }
 
 .loader-caret > b {
@@ -4873,7 +4891,7 @@
   width: 0.5rem;
   height: 1rem;
   background: currentColor;
-  box-shadow: 0 0 10px -1px rgb(var(--brand) / 0.9);
+  box-shadow: 0 0 10px -1px color-mix(in srgb, var(--loader-ink) 90%, transparent);
   animation: loader-blink 900ms steps(1, end) infinite;
 }
 
@@ -4893,7 +4911,7 @@
   position: relative;
   width: 100%;
   height: 100%;
-  color: rgb(var(--brand));
+  color: var(--loader-ink);
 }
 
 .loader-gears > svg {
@@ -4975,7 +4993,7 @@
   background: radial-gradient(
     circle at 32% 30%,
     rgb(var(--space-plasma)),
-    rgb(var(--brand)) 60%,
+    var(--loader-ink) 60%,
     rgb(var(--space-flare)) 100%
   );
   box-shadow: 0 0 18px -2px rgb(var(--space-plasma) / 0.85);
@@ -5090,9 +5108,13 @@
   position: absolute;
   inset: 16% 0;
   border-radius: 50%;
-  background: radial-gradient(circle at 50% 50%, rgb(var(--brand) / 0.28), transparent 72%);
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in srgb, var(--loader-ink) 28%, transparent),
+    transparent 72%
+  );
   box-shadow:
-    inset 0 0 0 1.5px rgb(var(--brand) / 0.85),
+    inset 0 0 0 1.5px color-mix(in srgb, var(--loader-ink) 85%, transparent),
     0 0 16px -4px rgb(var(--eldritch-glow) / 0.9);
   animation: eye-blink 3.6s ease-in-out infinite;
 }
@@ -5109,10 +5131,10 @@
   background: radial-gradient(
     circle at 38% 34%,
     rgb(var(--eldritch-glow)),
-    rgb(var(--brand)) 55%,
+    var(--loader-ink) 55%,
     rgb(0 0 0) 100%
   );
-  box-shadow: 0 0 12px -1px rgb(var(--brand) / 0.9);
+  box-shadow: 0 0 12px -1px color-mix(in srgb, var(--loader-ink) 90%, transparent);
   animation: eye-watch 3.6s ease-in-out infinite;
 }
 

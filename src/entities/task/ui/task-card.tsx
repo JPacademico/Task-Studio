@@ -16,6 +16,7 @@ import { formatDeadline, formatDeadlineDate, formatWindow } from '@/shared/lib/d
 import { TASK_PRIORITY_META } from '@/shared/config/constants';
 import { AvatarStack, Badge, PostItMark } from '@/shared/ui';
 import { completionProgress, isSharedTask, outstandingAssignees } from '../lib/completion';
+import { useIsTaskSyncing } from '../model/sync.store';
 import type { Task } from '../model/types';
 import { TaskOrigin } from './task-origin';
 import { TaskTypeTag } from './task-type-tag';
@@ -94,6 +95,15 @@ const TaskCardBase = ({
 }: TaskCardProps) => {
   const t = useT();
   const isDone = task.status === 'COMPLETED';
+
+  /*
+   * A write of this task's own is still in the air.
+   *
+   * Subscribed here rather than passed down, so a board of several hundred
+   * cards costs no prop plumbing and re-renders exactly the one card whose
+   * answer changed. See `entities/task/model/sync.store`.
+   */
+  const isSyncing = useIsTaskSyncing(task.id);
 
   /*
    * What the card marks in its corner, rather than spells out in its footer.
@@ -188,7 +198,17 @@ const TaskCardBase = ({
         {onToggleComplete && (
           <button
             type="button"
-            disabled={!task.isMine}
+            /*
+             * Locked while its own write is in flight.
+             *
+             * The tick itself is already instant — the cache is patched before
+             * the request leaves — so this costs the user nothing they can
+             * feel. What it buys is that a second click cannot start a second
+             * write for the same row, which is what used to let a quick
+             * tick-untick settle as "done", flash back and settle again.
+             */
+            disabled={!task.isMine || isSyncing}
+            aria-busy={isSyncing || undefined}
             title={
               !task.isMine
                 ? 'Only the people this task is assigned to can complete it.'
@@ -216,6 +236,10 @@ const TaskCardBase = ({
                 // vanish. See the token note in `app/styles/index.css`.
                 : 'border-check bg-surface-sunken/40',
               task.isMine ? 'hover:border-brand' : 'cursor-default opacity-60',
+              // Not `opacity-50`: the box has just been ticked and the tick is
+              // the thing being confirmed, so it stays fully drawn. Only the
+              // cursor says the control is momentarily closed.
+              isSyncing && 'cursor-progress',
             )}
           >
             {(task.isCompletedByMe || isDone) && <Check className="h-3 w-3" strokeWidth={3} />}

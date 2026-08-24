@@ -6,6 +6,7 @@ import {
   useInviteMember,
   usePendingInvitations,
   useRemoveMember,
+  useUpdateMemberRole,
   useRoster,
 } from '@/entities/project/model/queries';
 import type { ProjectRole } from '@/entities/project/model/types';
@@ -21,6 +22,7 @@ import {
   Input,
   Modal,
   Section,
+  Select,
   Skeleton,
   Spinner,
 } from '@/shared/ui';
@@ -28,8 +30,22 @@ import { useT } from '@/shared/i18n';
 
 interface RosterPanelProps {
   projectId: string;
+  /** Owner or admin: may invite, remove and change roles. */
   canManage: boolean;
+  /**
+   * Whether the reader is the project's owner.
+   *
+   * Only the owner may change an *admin's* role — otherwise any admin could
+   * demote every other one and be the last one standing, which is a takeover
+   * performed with a dropdown. The API refuses it either way; this is what
+   * stops the control being offered in the first place. See
+   * `RosterService.updateMemberRole`.
+   */
+  isOwner?: boolean;
 }
+
+/** The two roles that can be handed out. OWNER moves by transfer, not here. */
+const ASSIGNABLE_ROLES: ProjectRole[] = ['ADMIN', 'MEMBER'];
 
 const ROLE_ICON: Record<ProjectRole, ReactNode> = {
   OWNER: <Crown className="h-3 w-3 text-warning" />,
@@ -66,7 +82,7 @@ const RosterSkeleton = () => (
  * Roster management: who is on the project, plus invitations. Invites target
  * registered, verified accounts only — that is a domain rule, not a UI choice.
  */
-export const RosterPanel = ({ projectId, canManage }: RosterPanelProps) => {
+export const RosterPanel = ({ projectId, canManage, isOwner = false }: RosterPanelProps) => {
   const t = useT();
   const currentUser = useCurrentUser();
   const [isInviteOpen, setIsInviteOpen] = useState(false);
@@ -78,6 +94,7 @@ export const RosterPanel = ({ projectId, canManage }: RosterPanelProps) => {
   const { data: pending = [] } = usePendingInvitations(canManage ? projectId : undefined);
   const invite = useInviteMember(projectId);
   const removeMember = useRemoveMember(projectId);
+  const updateRole = useUpdateMemberRole(projectId);
 
   // Debounce so typing an email does not fire a query per keystroke.
   useEffect(() => {
@@ -147,7 +164,38 @@ export const RosterPanel = ({ projectId, canManage }: RosterPanelProps) => {
                     <p className="truncate text-[11px] text-content-faint">{member.email}</p>
                   </div>
 
-                  <Badge>{member.role.toLowerCase()}</Badge>
+                  {/*
+                    The role is editable in place for an owner or admin.
+
+                    It used to be a read-only badge, which meant the only way to
+                    correct a role was to remove the person and invite them
+                    again — and removal takes their task assignments with it
+                    (see the API's `RosterService.removeMember`). A dropdown is
+                    a great deal less destructive than that.
+
+                    The owner's own row stays a badge: ownership moves through a
+                    transfer, not through here. An admin also cannot change
+                    another admin — the API refuses it, so the control is not
+                    offered. See `RosterService.updateMemberRole`.
+                  */}
+                  {canManage &&
+                  member.role !== 'OWNER' &&
+                  member.id !== currentUser?.id &&
+                  (isOwner || member.role !== 'ADMIN') ? (
+                    <Select
+                      value={member.role}
+                      onChange={(role) => updateRole.mutate({ memberId: member.id, role })}
+                      options={ASSIGNABLE_ROLES.map((option) => ({
+                        value: option,
+                        label: t(option === 'ADMIN' ? 'roster.roleAdmin' : 'roster.roleMember'),
+                        hint: t(
+                          option === 'ADMIN' ? 'roster.roleAdminHint' : 'roster.roleMemberHint',
+                        ),
+                      }))}
+                    />
+                  ) : (
+                    <Badge>{member.role.toLowerCase()}</Badge>
+                  )}
 
                   {canManage && member.role !== 'OWNER' && member.id !== currentUser?.id && (
                     <Button

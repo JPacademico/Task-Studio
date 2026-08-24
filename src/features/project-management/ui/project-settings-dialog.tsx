@@ -12,6 +12,17 @@ interface ProjectSettingsDialogProps {
   isOpen: boolean;
   onClose: () => void;
   project: Project;
+  /**
+   * Whether to draw the danger zone at all.
+   *
+   * The dialog opens for owners *and* admins — editing a project has always
+   * been an ADMIN capability on the API, and gating the whole sheet on
+   * ownership left an admin running a project unable to fix a typo in its name.
+   * Deleting it is a different matter and stays the owner's, so the half that
+   * does that is simply absent for everybody else rather than present and
+   * refused.
+   */
+  isOwner?: boolean;
 }
 
 /**
@@ -47,6 +58,7 @@ export const ProjectSettingsDialog = ({
   isOpen,
   onClose,
   project,
+  isOwner = false,
 }: ProjectSettingsDialogProps) => {
   const t = useT();
   const navigate = useNavigate();
@@ -163,7 +175,8 @@ export const ProjectSettingsDialog = ({
 
         {/* --- The dangerous half ------------------------------------------
             Below a rule and behind its own disclosure, so it cannot be reached
-            by tabbing past the colour swatches. */}
+            by tabbing past the colour swatches. Owner only — see `isOwner`. */}
+        {isOwner && (
         <section className="space-y-2.5 rounded-xl border border-danger/30 bg-danger/[0.04] p-3.5">
           <header className="flex items-center gap-2">
             <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-danger" />
@@ -227,6 +240,7 @@ export const ProjectSettingsDialog = ({
             </div>
           )}
         </section>
+        )}
       </form>
     </Modal>
   );

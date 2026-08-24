@@ -91,6 +91,14 @@ export interface CreateMeetingPayload {
   endAt: string;
   description?: string;
   participantIds?: string[];
+  /**
+   * Teams to invite wholesale, merged into `participantIds` by the API.
+   *
+   * A company meeting draws on the company's teams; a project meeting on that
+   * project's. Expanded when the meeting is posted rather than stored, so the
+   * guest list stays a fact about this meeting — see the API's `TeamsService`.
+   */
+  teamIds?: string[];
 }
 
 export interface UpdateMeetingPayload {

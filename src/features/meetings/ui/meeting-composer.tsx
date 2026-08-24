@@ -12,6 +12,7 @@ import {
   isDateTimeInput,
   toDateTimeInput,
 } from '@/shared/lib/dates';
+import { TeamPicker } from '@/features/teams/ui/teams-panel';
 import { Avatar, Button, Input, Modal, Select, Textarea } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
@@ -93,6 +94,7 @@ export const MeetingComposer = ({
   const [startAt, setStartAt] = useState('');
   const [endAt, setEndAt] = useState('');
   const [participantIds, setParticipantIds] = useState<string[]>([]);
+  const [teamIds, setTeamIds] = useState<string[]>([]);
   /**
    * The project a company meeting is about, or `''` for none.
    *
@@ -122,6 +124,15 @@ export const MeetingComposer = ({
     setEndAt(toDateTimeInput(end));
     setParticipantIds(meeting?.participants.map((person) => person.id) ?? []);
     setLinkedProjectId(meeting?.projectId ?? '');
+    /*
+     * Always empty, including when editing.
+     *
+     * Teams are expanded into people the moment they are picked, so an existing
+     * meeting has a guest *list*, not a memory of which teams produced it —
+     * see the API's `TeamsService`. Pre-selecting anything here would be
+     * inventing a fact the row does not carry.
+     */
+    setTeamIds([]);
   }, [defaultDay, isOpen, meeting]);
 
   /*
@@ -172,6 +183,8 @@ export const MeetingComposer = ({
       startAt: fromDateTimeInput(startAt) as string,
       endAt: fromDateTimeInput(endAt) as string,
       participantIds,
+      // Merged with the names above by the API; empty is simply omitted.
+      ...(teamIds.length > 0 ? { teamIds } : {}),
     };
 
     if (meeting) {
@@ -301,6 +314,33 @@ export const MeetingComposer = ({
           onChange={(event) => setDescription(event.target.value)}
           placeholder={t('meetings.descriptionPlaceholder')}
           maxLength={4000}
+        />
+
+        {/*
+          Whole groups, beside the individual faces below.
+
+          The scope follows the meeting: a company meeting reaches for the
+          company's teams, a project meeting for that project's. Renders nothing
+          at all when there are none. */}
+        <TeamPicker
+          scope={
+            organizationId
+              ? { organizationId }
+              : projectId
+                ? { projectId }
+                : null
+          }
+          isOpen={isOpen}
+          selected={teamIds}
+          onToggle={(teamId) =>
+            setTeamIds((current) =>
+              current.includes(teamId)
+                ? current.filter((id) => id !== teamId)
+                : [...current, teamId],
+            )
+          }
+          label={t('meetings.inviteTeams')}
+          hint={t('meetings.inviteTeamsHint')}
         />
 
         <div className="space-y-1.5">

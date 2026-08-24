@@ -16,6 +16,7 @@ import {
 } from 'date-fns';
 import { CalendarClock, ChevronLeft, ChevronRight, Inbox } from 'lucide-react';
 
+import { useIsTaskSyncing } from '@/entities/task/model/sync.store';
 import type { Task } from '@/entities/task/model/types';
 import { cn } from '@/shared/lib/cn';
 import { formatTime } from '@/shared/lib/dates';
@@ -41,6 +42,65 @@ const anchorOf = (task: Task): Date | null => {
  * Undated work is kept visible in a tray under the grid rather than dropped —
  * it is the backlog the month is competing with.
  */
+/**
+ * One task under the picked day.
+ *
+ * A component rather than inline JSX because it needs `useIsTaskSyncing`, and a
+ * hook cannot be called inside a loop body. The Done/Undo button here is the
+ * calendar's own completion control — the other three layouts go through
+ * `TaskCard`, which carries the same lock.
+ */
+const DayRow = ({
+  task,
+  onOpen,
+  onToggleComplete,
+}: {
+  task: Task;
+  onOpen: (task: Task) => void;
+  onToggleComplete: (task: Task) => void;
+}) => {
+  // A write of this task's own is still in the air — see the store's note.
+  const isSyncing = useIsTaskSyncing(task.id);
+
+  return (
+    <li className="flex items-center gap-2.5">
+      <span className="w-10 shrink-0 text-[11px] tabular-nums text-content-faint">
+        {task.dueAt ? formatTime(task.dueAt) : '--:--'}
+      </span>
+      <button
+        type="button"
+        onClick={() => onOpen(task)}
+        className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-edge px-2.5 py-1.5 text-left transition-colors hover:border-brand/40 hover:bg-surface-sunken/60"
+      >
+        <span
+          aria-hidden
+          className="h-4 w-1 shrink-0 rounded-full"
+          style={{ backgroundColor: task.color }}
+        />
+        <span className="truncate text-xs font-medium">{task.title}</span>
+        {task.isLate && (
+          <span className="ml-auto shrink-0 text-[10px] font-bold uppercase text-danger">
+            Late
+          </span>
+        )}
+      </button>
+      {task.isMine && (
+        <Button
+          size="sm"
+          variant="ghost"
+          // The label already flipped optimistically; this only stops a second
+          // write starting before the first has been acknowledged.
+          disabled={isSyncing}
+          isLoading={isSyncing}
+          onClick={() => onToggleComplete(task)}
+        >
+          {task.isCompletedByMe ? 'Undo' : 'Done'}
+        </Button>
+      )}
+    </li>
+  );
+};
+
 export const TaskCalendarView = ({ tasks, onOpen, onToggleComplete }: TaskViewProps) => {
   const t = useT();
   const [cursor, setCursor] = useState(() => new Date());
@@ -214,33 +274,12 @@ export const TaskCalendarView = ({ tasks, onOpen, onToggleComplete }: TaskViewPr
           ) : (
             <ul className="space-y-1.5">
               {selectedTasks.map((task) => (
-                <li key={task.id} className="flex items-center gap-2.5">
-                  <span className="w-10 shrink-0 text-[11px] tabular-nums text-content-faint">
-                    {task.dueAt ? formatTime(task.dueAt) : '--:--'}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => onOpen(task)}
-                    className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-edge px-2.5 py-1.5 text-left transition-colors hover:border-brand/40 hover:bg-surface-sunken/60"
-                  >
-                    <span
-                      aria-hidden
-                      className="h-4 w-1 shrink-0 rounded-full"
-                      style={{ backgroundColor: task.color }}
-                    />
-                    <span className="truncate text-xs font-medium">{task.title}</span>
-                    {task.isLate && (
-                      <span className="ml-auto shrink-0 text-[10px] font-bold uppercase text-danger">
-                        Late
-                      </span>
-                    )}
-                  </button>
-                  {task.isMine && (
-                    <Button size="sm" variant="ghost" onClick={() => onToggleComplete(task)}>
-                      {task.isCompletedByMe ? 'Undo' : 'Done'}
-                    </Button>
-                  )}
-                </li>
+                <DayRow
+                  key={task.id}
+                  task={task}
+                  onOpen={onOpen}
+                  onToggleComplete={onToggleComplete}
+                />
               ))}
             </ul>
           )}

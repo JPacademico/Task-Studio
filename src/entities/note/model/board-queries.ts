@@ -5,6 +5,8 @@ import { toast } from 'sonner';
 import { errorMessage } from '@/shared/api/client';
 import { queryKeys } from '@/shared/api/query-keys';
 import {
+  adoptServerNote,
+  geometryDiffers,
   optimisticNote,
   pendingNoteId,
   splitCreateRequest,
@@ -150,14 +152,52 @@ export const useCreateBoardNote = (pageIndex: number, currentUserId?: string) =>
      * to the end of the list, and the list is paint order — so a note created
      * while another was still in flight would visibly jump above its neighbour
      * the moment the response arrived.
+     *
+     * The replacement is an *adoption*, not an overwrite: the sheet keeps the
+     * key it was drawn under and whatever position it has been dragged to since
+     * the request left. See `adoptServerNote` for why both of those matter, and
+     * the follow-up write below for the half of it the server needs to hear
+     * about.
      */
-    onSuccess: (note, _request, context) =>
+    onSuccess: (note, _request, context) => {
+      let moved: Note | null = null;
+
       patch((snapshot) => ({
         ...snapshot,
-        notes: snapshot.notes.map((entry) =>
-          entry.id === context?.placeholderId ? note : entry,
-        ),
-      })),
+        notes: snapshot.notes.map((entry) => {
+          if (entry.id !== context?.placeholderId) return entry;
+
+          if (geometryDiffers(entry, note)) moved = entry;
+          return adoptServerNote(entry, note);
+        }),
+      }));
+
+      /*
+       * The sheet was dragged while the create was in flight, so the row the
+       * server just wrote is already in the wrong place.
+       *
+       * Fired here rather than left to the drag's own `onDragEnd`, because that
+       * has already run — against a `pending-…` id the board correctly refused
+       * to write. This is the one moment the real id and the intended position
+       * are both known.
+       */
+      if (moved) {
+        const local: Note = moved;
+        void noteApi
+          .update(note.id, {
+            positionX: local.positionX,
+            positionY: local.positionY,
+            width: local.width,
+            height: local.height,
+          })
+          .catch(() => {
+            // Nothing to say. The note exists and is where the user put it on
+            // screen; the worst case is that it returns to the drop point on
+            // the next full load, which is a great deal better than a toast
+            // about a request the user never made.
+          });
+      }
+    },
 
     onError: (error, _request, context) => {
       if (context?.placeholderId) {

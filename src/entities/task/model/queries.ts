@@ -12,6 +12,7 @@ import { errorMessage } from '@/shared/api/client';
 import { queryKeys } from '@/shared/api/query-keys';
 import { taskApi } from '../api/task.api';
 import { overviewDeltaFor } from '../lib/overview-delta';
+import { taskSync } from './sync.store';
 import type {
   CreateTaskPayload,
   ListTasksParams,
@@ -613,10 +614,33 @@ export const useToggleMyCompletion = (currentUserId?: string) => {
   const invalidate = useInvalidateTasks();
 
   return useMutation({
+    /*
+     * Serialised, which is the half of the fix the user cannot see.
+     *
+     * React Query runs mutations sharing a `scope.id` one after another instead
+     * of concurrently. Two writes for the same row therefore cannot be in the
+     * air together, so they cannot land out of order — which is what made a
+     * quick tick-untick settle as "done", flash back, and settle again.
+     *
+     * The scope is a constant rather than one id per task, because `scope` is
+     * fixed when the hook is created and cannot read the variables. That is a
+     * blunter instrument than it needs to be — ticking two *different* tasks
+     * quickly now queues the second behind the first — and it costs nothing
+     * observable: both cards changed optimistically on the click, and all that
+     * is being ordered is the acknowledgement. Given the box is also disabled
+     * for the length of the round trip, a queue of more than one is already the
+     * rare case.
+     */
+    scope: { id: 'task-completion' },
+
     mutationFn: ({ taskId, completed }: { taskId: string; completed: boolean }) =>
       taskApi.setMyCompletion(taskId, completed),
 
     onMutate: ({ taskId, completed }) => {
+      // Locks this task's checkbox for the length of the round trip. Released
+      // in `onSettled`, which runs on both success and failure.
+      taskSync.begin(taskId);
+
       const now = new Date().toISOString();
 
       return applyOptimisticTaskWrite(queryClient, taskId, (task) => {
@@ -653,7 +677,32 @@ export const useToggleMyCompletion = (currentUserId?: string) => {
       if (task.status === 'COMPLETED') toast.success(`"${task.title}" is done.`);
     },
 
-    onSettled: (task) => invalidate(task?.project?.id),
+    onSettled: (task, _error, variables) => {
+      taskSync.end(variables.taskId);
+
+      /*
+       * The refetch waits for this task's queue to drain.
+       *
+       * A second toggle for the same task may be sitting behind this one.
+       * Invalidating now would refetch a server that has heard about the first
+       * write and not the second, and paint that answer over an optimistic
+       * state that is already correct — the card would visibly flip back and
+       * then forward again, which is the exact symptom being fixed.
+       *
+       * `isMutating` counts only *pending* mutations, and this one has already
+       * settled by the time `onSettled` runs — so any count at all means
+       * somebody else is still queued for this task and will invalidate when
+       * they are done.
+       */
+      const queuedForThisTask = queryClient.isMutating({
+        predicate: (mutation) =>
+          (mutation.state.variables as { taskId?: string } | undefined)?.taskId ===
+          variables.taskId,
+      });
+
+      if (queuedForThisTask > 0) return;
+      invalidate(task?.project?.id);
+    },
   });
 };
 
@@ -743,11 +792,56 @@ export const useChecklistMutations = (taskId: string) => {
       onSuccess: refresh,
       onError: (error) => toast.error(errorMessage(error)),
     }),
+    /**
+     * Ticking a checklist item, felt on the click.
+     *
+     * This was the last pessimistic tick left in the app: the box did nothing
+     * until the PATCH *and* the refetch it triggered had both landed, which on
+     * a list of eight subtasks meant eight visible waits to work through one
+     * task. The card's own box has been optimistic for a while; the small one
+     * inside the sheet was simply missed.
+     *
+     * `scope` serialises the writes so that running down a list quickly cannot
+     * land them out of order — the same guarantee `useToggleMyCompletion` has,
+     * and for the same reason. Scoped to this task rather than globally,
+     * because `useChecklistMutations` is already per task and the id is
+     * therefore available where `scope` is declared.
+     */
     toggle: useMutation({
+      scope: { id: `checklist:${taskId}` },
+
       mutationFn: ({ itemId, isCompleted }: { itemId: string; isCompleted: boolean }) =>
         taskApi.updateChecklistItem(taskId, itemId, { isCompleted }),
-      onSuccess: refresh,
-      onError: (error) => toast.error(errorMessage(error)),
+
+      onMutate: ({ itemId, isCompleted }) => {
+        const snapshot = queryClient.getQueriesData({ queryKey: queryKeys.tasks.all });
+
+        patchCachedTask(queryClient, taskId, (task) => {
+          const checklist = task.checklist.map((item) =>
+            item.id === itemId ? { ...item, isCompleted } : item,
+          );
+
+          return {
+            ...task,
+            checklist,
+            // The badge on the card counts from this, so it has to move with
+            // the tick or the sheet and the card behind it disagree.
+            checklistProgress: {
+              total: checklist.length,
+              done: checklist.filter((item) => item.isCompleted).length,
+            },
+          };
+        });
+
+        return { snapshot };
+      },
+
+      onError: (error, _variables, context) => {
+        context?.snapshot.forEach(([key, value]) => queryClient.setQueryData(key, value));
+        toast.error(errorMessage(error));
+      },
+
+      onSettled: refresh,
     }),
     remove: useMutation({
       mutationFn: (itemId: string) => taskApi.removeChecklistItem(taskId, itemId),

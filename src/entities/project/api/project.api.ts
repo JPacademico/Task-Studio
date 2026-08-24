@@ -32,6 +32,10 @@ export const projectApi = {
     name: string;
     description?: string;
     color?: string;
+    /** File it under a company at birth; needs owner or admin there. */
+    organizationId?: string;
+    /** Organization teams whose people join the roster as MEMBERs. */
+    teamIds?: string[];
   }): Promise<Project> {
     const { data } = await api.post<Project>('/projects', payload);
     return data;

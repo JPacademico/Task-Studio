@@ -8,6 +8,7 @@ import { useCreateTask, useUpdateTask } from '@/entities/task/model/queries';
 import type { Task, TaskPriority } from '@/entities/task/model/types';
 import { TaskTypeTag } from '@/entities/task/ui/task-type-tag';
 import { uploadImage } from '@/entities/user/api/user.api';
+import { TeamPicker } from '@/features/teams/ui/teams-panel';
 import { TASK_COLORS, TASK_TYPE_META } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
 import {
@@ -66,6 +67,15 @@ export const TaskComposer = ({
   const [startAt, setStartAt] = useState('');
   const [dueAt, setDueAt] = useState('');
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
+  /**
+   * Teams whose people should be assigned, offered only when creating.
+   *
+   * Not seeded when editing: a team is expanded into individuals at the moment
+   * it is picked, so an existing task carries assignees rather than a memory of
+   * which teams produced them. Re-expanding one on an edit would silently
+   * re-add somebody who had deliberately been taken off.
+   */
+  const [teamIds, setTeamIds] = useState<string[]>([]);
   const [checklist, setChecklist] = useState<string[]>([]);
   const [checklistDraft, setChecklistDraft] = useState('');
   /*
@@ -96,6 +106,7 @@ export const TaskComposer = ({
     setStartAt(toDateTimeInput(task?.startAt ?? null));
     setDueAt(toDateTimeInput(task?.dueAt ?? null));
     setAssigneeIds(task?.assignees.map((assignee) => assignee.id) ?? []);
+    setTeamIds([]);
     setChecklist([]);
     setChecklistDraft('');
     setAttachment(
@@ -218,6 +229,8 @@ export const TaskComposer = ({
       await createTask.mutateAsync({
         ...(projectId ? { projectId } : {}),
         ...shared,
+        // Merged with the individual picks above by the API; empty is omitted.
+        ...(!isPersonal && teamIds.length > 0 ? { teamIds } : {}),
         checklist: checklist.length > 0 ? checklist : undefined,
         attachmentKey: attachment?.key || undefined,
         attachmentThumbKey: attachment?.thumbKey ?? undefined,
@@ -322,6 +335,30 @@ export const TaskComposer = ({
             }
           />
         </div>
+
+        {/*
+          Whole teams, above the individual faces.
+
+          Create only — see the `teamIds` state. Renders nothing when the
+          project has no teams, so a board that does not use them never learns
+          the feature exists.
+        */}
+        {!isPersonal && !task && projectId && (
+          <TeamPicker
+            scope={{ projectId }}
+            isOpen={isOpen}
+            selected={teamIds}
+            onToggle={(teamId) =>
+              setTeamIds((current) =>
+                current.includes(teamId)
+                  ? current.filter((id) => id !== teamId)
+                  : [...current, teamId],
+              )
+            }
+            label={t('task.assignTeams')}
+            hint={t('task.assignTeamsHint')}
+          />
+        )}
 
         {!isPersonal && (
         <div className="space-y-1.5">

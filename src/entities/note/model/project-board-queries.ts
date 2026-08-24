@@ -7,6 +7,8 @@ import { errorMessage } from '@/shared/api/client';
 import { queryKeys } from '@/shared/api/query-keys';
 import { markLocalNoteEdit, mergeRemoteNote, releaseLocalNoteEdit } from '../lib/local-edits';
 import {
+  adoptServerNote,
+  geometryDiffers,
   optimisticNote,
   pendingNoteId,
   splitCreateRequest,
@@ -211,7 +213,22 @@ export const useCreateProjectNote = (projectId: string, currentUserId?: string) 
       return { placeholderId };
     },
 
-    onSuccess: (note, _request, context) =>
+    /*
+     * The swap is an adoption — see `adoptServerNote`.
+     *
+     * The sheet keeps the key it was drawn under, so replacing a `pending-…` id
+     * with the real one does not unmount the element and tear a drag in
+     * progress out from under the pointer; and it keeps whatever position it
+     * has been dragged to since the request left, so the row the server just
+     * wrote does not yank it back to where it was dropped.
+     *
+     * `alreadyArrived` is this board's own wrinkle: the socket echo of our own
+     * create can beat the HTTP response, in which case the real row is already
+     * on the wall and the placeholder is simply removed.
+     */
+    onSuccess: (note, _request, context) => {
+      let moved: Note | null = null;
+
       patch((snapshot) => {
         const alreadyArrived = snapshot.notes.some((entry) => entry.id === note.id);
 
@@ -219,11 +236,36 @@ export const useCreateProjectNote = (projectId: string, currentUserId?: string) 
           ...snapshot,
           notes: alreadyArrived
             ? snapshot.notes.filter((entry) => entry.id !== context?.placeholderId)
-            : snapshot.notes.map((entry) =>
-                entry.id === context?.placeholderId ? note : entry,
-              ),
+            : snapshot.notes.map((entry) => {
+                if (entry.id !== context?.placeholderId) return entry;
+
+                if (geometryDiffers(entry, note)) moved = entry;
+                return adoptServerNote(entry, note);
+              }),
         };
-      }),
+      });
+
+      // Dragged while the create was in flight, so the server's copy is in the
+      // wrong place. This is the one moment the real id and the intended
+      // position are both known — see the personal board for the full note.
+      if (moved) {
+        const local: Note = moved;
+        const geometry = {
+          positionX: local.positionX,
+          positionY: local.positionY,
+          width: local.width,
+          height: local.height,
+        };
+
+        // Marked as a local edit so this client's own socket echo does not
+        // arrive a moment later and undo it. See `local-edits`.
+        markLocalNoteEdit(note.id, geometry);
+        void noteApi
+          .update(note.id, geometry)
+          .catch(() => undefined)
+          .finally(() => releaseLocalNoteEdit(note.id, geometry));
+      }
+    },
 
     onError: (error, _request, context) => {
       if (context?.placeholderId) {

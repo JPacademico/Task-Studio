@@ -770,7 +770,11 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
         <AnimatePresence initial={false}>
           {notes.map((note) => (
             <PostIt
-              key={note.id}
+              // Keyed on `clientKey` where there is one: a sheet drawn
+              // optimistically keeps the same element when the server's row
+              // takes its place, so a drag in progress is never torn out from
+              // under the pointer. See `Note.clientKey`.
+              key={note.clientKey ?? note.id}
               note={note}
               constraintsRef={surfaceRef}
               isSelected={selection.includes(note.id)}

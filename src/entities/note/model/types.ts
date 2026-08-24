@@ -35,6 +35,22 @@ export interface Note {
    * shared surface is part of the note, not an extra lookup per card.
    */
   author?: UserSummary;
+
+  /**
+   * The id this sheet was *first* drawn under, which is not always its id.
+   *
+   * Client-only: the API never sends it and never sees it. It exists because a
+   * note is drawn on the wall before the server has heard of it, under a
+   * `pending-…` id, and is later replaced by the real row. Keying React on
+   * `id` meant that swap unmounted the sheet and mounted a new one — which,
+   * if the user was still dragging it, tore the drag out from under the
+   * pointer and dropped the note back where it started.
+   *
+   * Keying on `clientKey ?? id` instead keeps one element for the whole life of
+   * the sheet: the id underneath it changes, the DOM node does not, and the
+   * gesture in progress never notices. See `adoptServerNote`.
+   */
+  clientKey?: string;
 }
 
 export interface NoteLink {

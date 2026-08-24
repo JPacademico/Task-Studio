@@ -1,6 +1,14 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { BarChart3, Building2, CalendarDays, LayoutGrid, Settings2, Users } from 'lucide-react';
+import {
+  BarChart3,
+  Building2,
+  CalendarDays,
+  LayoutGrid,
+  Settings2,
+  Users,
+  UsersRound,
+} from 'lucide-react';
 
 import {
   useOrganization,
@@ -13,10 +21,11 @@ import { OrganizationDashboard } from '@/features/organization-management/ui/org
 import { OrganizationDialog } from '@/features/organization-management/ui/organization-dialog';
 import { OrganizationMembersPanel } from '@/features/organization-management/ui/organization-members-panel';
 import { OrganizationProjectsBoard } from '@/features/organization-management/ui/organization-projects-board';
+import { TeamsPanel } from '@/features/teams/ui/teams-panel';
 import { Avatar, Button, PageLoader, Segmented } from '@/shared/ui';
 import { useT, type TranslationKey } from '@/shared/i18n';
 
-type Tab = 'projects' | 'metrics' | 'staff' | 'meetings';
+type Tab = 'projects' | 'metrics' | 'staff' | 'teams' | 'meetings';
 
 /**
  * Four tabs, and what is deliberately missing from them.
@@ -37,6 +46,10 @@ const TABS: { value: Tab; label: TranslationKey; icon: ReactNode }[] = [
   { value: 'projects', label: 'org.tabProjects', icon: <LayoutGrid className="h-3 w-3" /> },
   { value: 'metrics', label: 'org.tabMetrics', icon: <BarChart3 className="h-3 w-3" /> },
   { value: 'staff', label: 'org.tabStaff', icon: <Users className="h-3 w-3" /> },
+  // Next to the staff list rather than the projects board: a team is a subset
+  // of the people, and the question it answers is "who works together", not
+  // "what are we working on".
+  { value: 'teams', label: 'org.tabTeams', icon: <UsersRound className="h-3 w-3" /> },
   { value: 'meetings', label: 'org.tabMeetings', icon: <CalendarDays className="h-3 w-3" /> },
 ];
 
@@ -240,6 +253,17 @@ const OrganizationPage = () => {
           <OrganizationMembersPanel organization={organization} />
         ) : (
           <StaffOnly message={t('org.staffStaffOnly')} />
+        ))}
+
+      {tab === 'teams' &&
+        (isStaff ? (
+          <TeamsPanel
+            scope={{ organizationId }}
+            roster={members}
+            canManage={organization.canManage}
+          />
+        ) : (
+          <StaffOnly message={t('org.teamsStaffOnly')} />
         ))}
 
       {tab === 'meetings' &&

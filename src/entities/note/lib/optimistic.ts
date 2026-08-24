@@ -73,6 +73,9 @@ export const optimisticNote = (
 
   return {
     id,
+    // Stable for the life of the sheet, even once `id` becomes the server's.
+    // See `Note.clientKey` and `adoptServerNote`.
+    clientKey: id,
     title: payload.title ?? null,
     content: payload.content ?? '',
     color: payload.color ?? NOTE_COLORS[0],
@@ -100,3 +103,52 @@ export const optimisticNote = (
     projectId: payload.projectId ?? projectId,
   };
 };
+
+/**
+ * The server's row, taking the place of the sheet already on the wall.
+ *
+ * Two things have to survive the swap, and neither is obvious until you watch
+ * somebody drop a note and immediately drag it.
+ *
+ * **The element.** React keys the wall by note id, so replacing a `pending-…`
+ * id with a uuid unmounts one component and mounts another. Framer Motion's
+ * drag lives on that element — its pointer capture, its motion values, its
+ * gesture state — so the swap ended the drag mid-gesture and the sheet fell
+ * back to where it was dropped. Carrying `clientKey` across means the key never
+ * changes and the element is never replaced.
+ *
+ * **The position.** The server answers with the note as it was *posted*, which
+ * is one round trip behind a sheet the user has been moving ever since. So
+ * anything the user can have changed in that window is taken from the local
+ * copy rather than the response — the same principle `mergeRemoteNote` applies
+ * to a socket echo, for the same reason, at a different moment.
+ *
+ * `local` is the placeholder as the cache holds it *now*, not as it was
+ * created. That distinction is the whole point: it is where the drag has got to.
+ */
+export const adoptServerNote = (local: Note | undefined, server: Note): Note => {
+  if (!local) return server;
+
+  return {
+    ...server,
+    clientKey: local.clientKey ?? local.id,
+    positionX: local.positionX,
+    positionY: local.positionY,
+    width: local.width,
+    height: local.height,
+  };
+};
+
+/**
+ * Whether the sheet moved or was resized while the create was in flight.
+ *
+ * If it did, the server is holding the wrong geometry and has to be told — the
+ * adoption above only fixes what is on screen. Compared with a tolerance of one
+ * pixel because these are floats that have been through a drag, and a write per
+ * sub-pixel of rounding noise is a request for nothing.
+ */
+export const geometryDiffers = (local: Note, server: Note): boolean =>
+  Math.abs(local.positionX - server.positionX) > 1 ||
+  Math.abs(local.positionY - server.positionY) > 1 ||
+  Math.abs(local.width - server.width) > 1 ||
+  Math.abs(local.height - server.height) > 1;

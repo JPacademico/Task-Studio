@@ -1,13 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Archive,
-  FolderPlus,
-  Lock,
-  Search,
-  TriangleAlert,
-  X,
-} from 'lucide-react';
+import { Archive, FolderPlus, Lock, Plus, Search, TriangleAlert, X } from 'lucide-react';
 
 import {
   useAttachableProjects,
@@ -20,6 +13,7 @@ import type {
   OrganizationProjectMetrics,
 } from '@/entities/organization/model/types';
 import { useProjectIntentPrefetch } from '@/entities/project/model/queries';
+import { CreateProjectDialog } from '@/features/project-management/ui/create-project-dialog';
 import { cn } from '@/shared/lib/cn';
 import { withAlpha } from '@/shared/lib/colors';
 import { formatDeadline } from '@/shared/lib/dates';
@@ -251,6 +245,7 @@ export const OrganizationProjectsBoard = ({
   const t = useT();
   const [search, setSearch] = useState('');
   const [isFiling, setIsFiling] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
   const attach = useAttachProject(organization.id);
   // Only asked for while the picker is actually open — see the query.
@@ -315,6 +310,20 @@ export const OrganizationProjectsBoard = ({
         */}
         {organization.canManage && (
           <div className="ml-auto flex flex-wrap items-center gap-1.5">
+            {/*
+              Two different acts, and the order says which is the common one.
+
+              "New project" makes one that belongs here from the first second —
+              no picker, because being on this page has already answered the
+              question. "File a project" is for work that already exists
+              somewhere else and is being moved in, which is the rarer errand
+              and therefore the quieter button.
+            */}
+            <Button size="sm" onClick={() => setIsCreating(true)}>
+              <Plus className="h-3.5 w-3.5" strokeWidth={2.8} />
+              {t('org.newProject')}
+            </Button>
+
             {isFiling ? (
               <>
                 <Select
@@ -341,7 +350,7 @@ export const OrganizationProjectsBoard = ({
                 )}
               </>
             ) : (
-              <Button size="sm" onClick={() => setIsFiling(true)}>
+              <Button size="sm" variant="ghost" onClick={() => setIsFiling(true)}>
                 <FolderPlus className="h-3.5 w-3.5" />
                 {t('org.fileProject')}
               </Button>
@@ -357,6 +366,24 @@ export const OrganizationProjectsBoard = ({
           description={t(
             organization.canManage ? 'org.boardEmptyAdmin' : 'org.boardEmptyBody',
           )}
+          action={
+            organization.canManage ? (
+              <Button size="sm" variant="secondary" onClick={() => setIsCreating(true)}>
+                <Plus className="h-3.5 w-3.5" strokeWidth={2.8} />
+                {t('org.newProject')}
+              </Button>
+            ) : undefined
+          }
+        />
+      )}
+
+      {/* Locked to this company: the picker is not drawn, because standing on
+          the page is the answer it would have asked for. */}
+      {organization.canManage && (
+        <CreateProjectDialog
+          isOpen={isCreating}
+          onClose={() => setIsCreating(false)}
+          organizationId={organization.id}
         />
       )}
 

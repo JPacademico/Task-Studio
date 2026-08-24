@@ -107,7 +107,16 @@ const MemberRow = ({
         )}
       </div>
 
-      {isOwner && !isCompanyOwner ? (
+      {/*
+        Admins can change roles now, not only the owner.
+        
+        The one thing they cannot do is change *another admin's* role — the API
+        refuses it, because otherwise any admin could demote every other one and
+        be the last one standing. So the control is a dropdown for a member and
+        a badge for a fellow admin, which says who may be edited without having
+        to explain it. See `OrganizationRosterService.updateMember`.
+      */}
+      {canManage && !isCompanyOwner && (isOwner || member.role !== 'ADMIN') ? (
         <Select
           value={member.role}
           onChange={(role) => update.mutate({ memberId: member.id, role })}
