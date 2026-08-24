@@ -136,8 +136,19 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
             </span>
           </div>
 
+          {/*
+            Wrapped, and bounded in height.
+
+            `whitespace-pre-wrap` alone was the bug: it honours every newline
+            and every space in a pasted block, and it does *not* break a long
+            unbroken token — so a description pasted from a web page either ran
+            off the side of the sheet or turned into a thousand-line column
+            that pushed the checklist, the notes and the attachments out of
+            reach. `break-words` handles the first, the height cap and its own
+            scroller handle the second.
+          */}
           {task.description && (
-            <p className="whitespace-pre-wrap rounded-xl bg-surface-sunken p-3.5 text-sm leading-relaxed text-content-muted">
+            <p className="scrollbar-thin max-h-64 overflow-y-auto whitespace-pre-wrap break-words rounded-xl bg-surface-sunken p-3.5 text-sm leading-relaxed text-content-muted">
               {task.description}
             </p>
           )}

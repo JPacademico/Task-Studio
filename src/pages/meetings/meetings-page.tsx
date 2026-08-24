@@ -88,7 +88,7 @@ const AgendaRow = ({ meeting, t }: AgendaRowProps) => {
         </div>
 
         {meeting.description && (
-          <p className="line-clamp-2 whitespace-pre-line text-xs leading-relaxed text-content-muted">
+          <p className="line-clamp-2 whitespace-pre-line break-words text-xs leading-relaxed text-content-muted">
             {meeting.description}
           </p>
         )}

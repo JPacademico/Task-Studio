@@ -128,19 +128,62 @@ export const formatWindow = (
  */
 
 /**
- * The window the app will accept.
+ * The window the app will accept, as *years either side of today*.
  *
- * Not the full ECMAScript range (±271821 years), which is nothing a project
- * plan needs and everything a validator has to keep re-proving. The Unix epoch
- * to the end of the millennium covers every deadline anybody will ever type and
- * keeps the value inside the four-digit year that date inputs, database columns
- * and readers all expect.
+ * This used to be the epoch to the end of the millennium — a range chosen to
+ * keep the value parseable rather than to mean anything. It did that job and
+ * nothing else: a deadline in 2100 sailed through, which is not a deadline, it
+ * is a typo that then sorts to the bottom of every agenda for the rest of the
+ * project's life and quietly skews every "next due" calculation that reads it.
+ *
+ * Five years is the widest thing anybody schedules a *task* for, by a
+ * comfortable margin, and the number is deliberately symmetric: back-dating the
+ * start of work that began some time ago is as legitimate as planning ahead.
+ *
+ * Relative to now, not a fixed pair of dates, because a hard-coded ceiling is a
+ * ceiling that goes stale — and the failure when it does is a field that
+ * refuses today's perfectly reasonable date.
  */
-export const DATE_INPUT_MIN = '1970-01-01T00:00';
-export const DATE_INPUT_MAX = '2999-12-31T23:59';
+export const DATE_WINDOW_YEARS = 5;
 
-const MIN_MS = new Date(DATE_INPUT_MIN).getTime();
-const MAX_MS = new Date(DATE_INPUT_MAX).getTime();
+/** The window's edges as `datetime-local` strings, computed per call. */
+const windowEdge = (years: number): string => {
+  const edge = new Date();
+  edge.setFullYear(edge.getFullYear() + years);
+  return toDateTimeInput(edge);
+};
+
+export const dateInputMin = (): string => windowEdge(-DATE_WINDOW_YEARS);
+export const dateInputMax = (): string => windowEdge(DATE_WINDOW_YEARS);
+
+/**
+ * The bounds a control should carry, widened to admit what it already holds.
+ *
+ * Without this, tightening the window would make existing records uneditable:
+ * a task saved last year with a 2100 deadline would open in a form whose `max`
+ * says 2031, the browser would mark the field invalid, and the owner could not
+ * save a correction to any *other* field until they had also fixed a date they
+ * may not have set. The bound stretches to include whatever is on the record,
+ * so an out-of-range value is something you can see and fix rather than
+ * something that locks the form.
+ */
+export const dateInputBounds = (
+  ...values: (string | null | undefined)[]
+): { min: string; max: string } => {
+  let min = dateInputMin();
+  let max = dateInputMax();
+
+  for (const value of values) {
+    if (!value) continue;
+    const time = new Date(value).getTime();
+    if (!Number.isFinite(time)) continue;
+
+    if (value < min) min = value;
+    if (value > max) max = value;
+  }
+
+  return { min, max };
+};
 
 /** `datetime-local` input value (local time, no timezone suffix). */
 export const toDateTimeInput = (value: string | Date | null): string => {
@@ -168,8 +211,32 @@ export const toDateTimeInput = (value: string | Date | null): string => {
 export const isDateTimeInput = (value: string): boolean => {
   if (!value) return true;
 
+  return Number.isFinite(new Date(value).getTime());
+};
+
+/**
+ * Whether a filled field is inside the five-year window.
+ *
+ * Separate from `isDateTimeInput` because the two failures need different
+ * words and only one of them is the user typing nonsense: "that is not a date"
+ * and "that is too far away" are different complaints, and a form that
+ * conflates them tells somebody who typed a real date in 2100 that their date
+ * is malformed.
+ *
+ * An out-of-range value that came *from the record* is still reported as out of
+ * range — the field says so, and the form still saves, because refusing to save
+ * an unrelated edit over a pre-existing date is the behaviour `dateInputBounds`
+ * exists to avoid.
+ */
+export const isWithinDateWindow = (value: string): boolean => {
+  if (!value) return true;
+
   const time = new Date(value).getTime();
-  return Number.isFinite(time) && time >= MIN_MS && time <= MAX_MS;
+  if (!Number.isFinite(time)) return false;
+
+  return (
+    time >= new Date(dateInputMin()).getTime() && time <= new Date(dateInputMax()).getTime()
+  );
 };
 
 /**

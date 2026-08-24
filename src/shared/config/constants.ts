@@ -184,8 +184,23 @@ export const TOP_BAR_PX = 60;
 export const TEXT_LIMITS = {
   /** One line, on a card. */
   taskTitle: 140,
-  /** A paragraph, on the sheet. */
-  taskDescription: 4000,
+  /**
+   * A few paragraphs, on the sheet — not a document.
+   *
+   * Was 4000, which is around two pages of prose. That is not a task note; it
+   * is the thing people paste in when they have nowhere better to put it, and
+   * "nowhere better" stopped being true when the task sheet grew a link to the
+   * project's text board. A task that needs two pages of context should have a
+   * page, and the sheet will now take you to it.
+   *
+   * Deliberately *lower* than the API's own ceiling, which stays at 4000. The
+   * two do different jobs: this one bounds what somebody can type into a fresh
+   * field, and the API's admits descriptions written before this number
+   * changed — so editing the title of an old task with a long description
+   * still saves, rather than failing on a field the user never touched. The
+   * same reasoning as `dateInputBounds`.
+   */
+  taskDescription: 1500,
   /** A sentence: "Book the room", not the minutes of the meeting. */
   checklistItem: 200,
   /** What fits on a Post-it before it stops being one. */

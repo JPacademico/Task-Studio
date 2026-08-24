@@ -119,10 +119,27 @@ export const Modal = ({
           >
             {(title ?? description) && (
               <header className="flex items-start justify-between gap-4 border-b border-edge px-4 py-3.5 sm:px-5 sm:py-4">
-                <div className="space-y-1">
-                  {title && <h2 className="text-base font-semibold leading-tight">{title}</h2>}
+                {/*
+                  `min-w-0` and `break-words`, because the title is user text.
+
+                  A flex child refuses to shrink below its content's intrinsic
+                  width by default, and an unbroken 140-character string — a
+                  pasted URL, a base64 blob — has no break opportunity in it at
+                  all. Without both of these the header grew past the dialog,
+                  pushed the close button off the edge, and took the rounded
+                  corner with it. The clamp bounds the other direction: a title
+                  full of newlines is not allowed to become the whole sheet.
+                */}
+                <div className="min-w-0 space-y-1">
+                  {title && (
+                    <h2 className="line-clamp-2 break-words text-base font-semibold leading-tight">
+                      {title}
+                    </h2>
+                  )}
                   {description && (
-                    <p className="text-xs text-content-muted">{description}</p>
+                    <p className="line-clamp-2 break-words text-xs text-content-muted">
+                      {description}
+                    </p>
                   )}
                 </div>
                 <Button variant="ghost" size="icon" onClick={onClose} aria-label={translate('common.close')}>

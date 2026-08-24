@@ -14,10 +14,11 @@ import { TASK_COLORS, TASK_TYPE_META, TEXT_LIMITS } from '@/shared/config/consta
 import { cn } from '@/shared/lib/cn';
 import { clampText } from '@/shared/lib/text';
 import {
-  DATE_INPUT_MAX,
-  DATE_INPUT_MIN,
+  DATE_WINDOW_YEARS,
+  dateInputBounds,
   fromDateTimeInput,
   isDateTimeInput,
+  isWithinDateWindow,
   toDateTimeInput,
 } from '@/shared/lib/dates';
 import {
@@ -167,6 +168,16 @@ export const TaskComposer = ({
   const startIsMalformed = !isDateTimeInput(startAt);
   const dueIsMalformed = !isDateTimeInput(dueAt);
 
+  /*
+   * Out of range is its own complaint, separate from malformed.
+   *
+   * A deadline in 2100 is a real date and a typo, and telling somebody it is
+   * "not a date" sends them looking for a formatting mistake that is not there.
+   * See `isWithinDateWindow`.
+   */
+  const startIsTooFar = !startIsMalformed && !isWithinDateWindow(startAt);
+  const dueIsTooFar = !dueIsMalformed && !isWithinDateWindow(dueAt);
+
   const windowIsInvalid =
     !startIsMalformed &&
     !dueIsMalformed &&
@@ -174,7 +185,23 @@ export const TaskComposer = ({
     new Date(dueAt).getTime() <= new Date(startAt).getTime();
 
   const canSubmit =
-    title.trim().length >= 2 && !windowIsInvalid && !startIsMalformed && !dueIsMalformed;
+    title.trim().length >= 2 &&
+    !windowIsInvalid &&
+    !startIsMalformed &&
+    !dueIsMalformed &&
+    !startIsTooFar &&
+    !dueIsTooFar;
+
+  /*
+   * The bounds the two controls carry, widened to admit whatever the task
+   * already holds — otherwise tightening the window would make a task saved
+   * with an old out-of-range date impossible to edit at all. See
+   * `dateInputBounds`.
+   */
+  const bounds = dateInputBounds(
+    toDateTimeInput(task?.startAt ?? null),
+    toDateTimeInput(task?.dueAt ?? null),
+  );
 
   /*
    * Two renditions go up, not one.
@@ -348,33 +375,43 @@ export const TaskComposer = ({
         />
 
         <div className="grid gap-4 sm:grid-cols-2">
-          {/* `min`/`max` are what stop a six-digit year being typed in the
-              first place: the control marks itself invalid as it goes, rather
-              than handing back a string nothing can parse. */}
+          {/* `min`/`max` are what make the browser mark an out-of-range year
+              invalid as it is typed, so the picker itself refuses to walk out
+              to 2100. They are a courtesy, not the control: the check that
+              actually decides is `canSubmit`, and the API enforces the same
+              window again — see `assertValidWindow`. */}
           <Input
             label={t('task.starts')}
             name="startAt"
             type="datetime-local"
-            min={DATE_INPUT_MIN}
-            max={DATE_INPUT_MAX}
+            min={bounds.min}
+            max={bounds.max}
             value={startAt}
             onChange={(event) => setStartAt(event.target.value)}
-            error={startIsMalformed ? t('task.dateInvalid') : undefined}
+            error={
+              startIsMalformed
+                ? t('task.dateInvalid')
+                : startIsTooFar
+                  ? t('task.dateOutOfRange', { years: String(DATE_WINDOW_YEARS) })
+                  : undefined
+            }
           />
           <Input
             label={t('task.deadline')}
             name="dueAt"
             type="datetime-local"
-            min={DATE_INPUT_MIN}
-            max={DATE_INPUT_MAX}
+            min={bounds.min}
+            max={bounds.max}
             value={dueAt}
             onChange={(event) => setDueAt(event.target.value)}
             error={
               dueIsMalformed
                 ? t('task.dateInvalid')
-                : windowIsInvalid
-                  ? t('task.windowInvalid')
-                  : undefined
+                : dueIsTooFar
+                  ? t('task.dateOutOfRange', { years: String(DATE_WINDOW_YEARS) })
+                  : windowIsInvalid
+                    ? t('task.windowInvalid')
+                    : undefined
             }
           />
         </div>

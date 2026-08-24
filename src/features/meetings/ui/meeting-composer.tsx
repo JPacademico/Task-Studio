@@ -6,10 +6,11 @@ import type { AttachedFileDraft, UserSummary } from '@/entities/user/model/types
 import { TEXT_LIMITS } from '@/shared/config/constants';
 import { clampText } from '@/shared/lib/text';
 import {
-  DATE_INPUT_MAX,
-  DATE_INPUT_MIN,
+  DATE_WINDOW_YEARS,
+  dateInputBounds,
   fromDateTimeInput,
   isDateTimeInput,
+  isWithinDateWindow,
   toDateTimeInput,
 } from '@/shared/lib/dates';
 import { InvitePicker } from '@/features/invite-picker/ui/invite-picker';
@@ -182,6 +183,16 @@ export const MeetingComposer = ({
   const startIsMalformed = !isDateTimeInput(startAt);
   const endIsMalformed = !isDateTimeInput(endAt);
 
+  // Same five-year window as a task's — a meeting booked for 2100 is a typo,
+  // not a plan. See `isWithinDateWindow`.
+  const startIsTooFar = !startIsMalformed && !isWithinDateWindow(startAt);
+  const endIsTooFar = !endIsMalformed && !isWithinDateWindow(endAt);
+
+  const bounds = dateInputBounds(
+    toDateTimeInput(meeting?.startAt ?? null),
+    toDateTimeInput(meeting?.endAt ?? null),
+  );
+
   const windowIsInvalid =
     !startIsMalformed &&
     !endIsMalformed &&
@@ -189,8 +200,15 @@ export const MeetingComposer = ({
     new Date(endAt).getTime() <= new Date(startAt).getTime();
 
   const canSubmit =
-    title.trim().length >= 2 && room.trim().length >= 1 && Boolean(startAt) &&
-    Boolean(endAt) && !windowIsInvalid && !startIsMalformed && !endIsMalformed;
+    title.trim().length >= 2 &&
+    room.trim().length >= 1 &&
+    Boolean(startAt) &&
+    Boolean(endAt) &&
+    !windowIsInvalid &&
+    !startIsMalformed &&
+    !endIsMalformed &&
+    !startIsTooFar &&
+    !endIsTooFar;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
@@ -292,26 +310,34 @@ export const MeetingComposer = ({
             label={t('meetings.starts')}
             name="startAt"
             type="datetime-local"
-            min={DATE_INPUT_MIN}
-            max={DATE_INPUT_MAX}
+            min={bounds.min}
+            max={bounds.max}
             value={startAt}
             onChange={(event) => handleStartChange(event.target.value)}
-            error={startIsMalformed ? t('task.dateInvalid') : undefined}
+            error={
+              startIsMalformed
+                ? t('task.dateInvalid')
+                : startIsTooFar
+                  ? t('task.dateOutOfRange', { years: String(DATE_WINDOW_YEARS) })
+                  : undefined
+            }
           />
           <Input
             label={t('meetings.ends')}
             name="endAt"
             type="datetime-local"
-            min={DATE_INPUT_MIN}
-            max={DATE_INPUT_MAX}
+            min={bounds.min}
+            max={bounds.max}
             value={endAt}
             onChange={(event) => setEndAt(event.target.value)}
             error={
               endIsMalformed
                 ? t('task.dateInvalid')
-                : windowIsInvalid
-                  ? t('meetings.windowInvalid')
-                  : undefined
+                : endIsTooFar
+                  ? t('task.dateOutOfRange', { years: String(DATE_WINDOW_YEARS) })
+                  : windowIsInvalid
+                    ? t('meetings.windowInvalid')
+                    : undefined
             }
           />
         </div>
