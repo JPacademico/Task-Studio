@@ -56,6 +56,15 @@ export interface ProjectDocument {
   canEdit: boolean;
   /** Whether this reader may change who else may edit. Narrower than `canEdit`. */
   canManageAccess: boolean;
+  /**
+   * Whether this reader may destroy it: the author, or a project admin.
+   *
+   * Deliberately not the same set as `canEdit`, and not a subset of it either.
+   * A granted editor can rewrite the page and cannot delete it; an admin can
+   * delete it and cannot rewrite it. Both directions are intentional — see the
+   * API's `DocumentsService.canDelete`.
+   */
+  canDelete: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -82,11 +91,14 @@ export interface UpdateDocumentPayload {
 /**
  * A page as it arrives over the socket.
  *
- * `canEdit` and `canManageAccess` are answers to "may *you*", computed by the
- * API from whoever made the request that caused the broadcast — which is not
- * the person receiving it. The API therefore strips them before emitting (see
+ * Every `can*` flag is an answer to "may *you*", computed by the API from
+ * whoever made the request that caused the broadcast — which is not the person
+ * receiving it. The API therefore strips them all before emitting (see
  * `DocumentsService.broadcastShape`), and this type is what is left. Every
  * consumer merges it *over* what it already holds, so the reader keeps their
  * own answer to a question the event was never about.
  */
-export type DocumentBroadcast = Omit<ProjectDocument, 'canEdit' | 'canManageAccess'>;
+export type DocumentBroadcast = Omit<
+  ProjectDocument,
+  'canEdit' | 'canManageAccess' | 'canDelete'
+>;

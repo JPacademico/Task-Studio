@@ -247,23 +247,26 @@ const en = {
   // Finishing: keeps the record, clears the work. See the settings dialog.
   'project.finishProject': 'Finish project',
   'project.finishExplain':
-    'Keeps the project, its people and its teams as a record, and clears every task and page inside it. Nothing cleared can be recovered.',
+    'Keeps the name, description, colour, people and teams as a record, and clears everything else: tasks, pages, notes, the whiteboard, the conversation, the meetings and the banner. Nothing cleared can be recovered.',
   'project.finishConfirmBody':
-    'This deletes every task and every page on this project, permanently. The name, description, roster and teams stay. Enter your password to confirm.',
+    'This permanently deletes every task, page, note, whiteboard stroke, message, meeting and uploaded file on this project. Only the name, description, colour, roster and teams stay. Enter your password to confirm.',
   'project.finishConfirmLabel': 'Your password',
   'project.finishConfirmAction': 'Finish it',
-  'project.finishedToast': 'Project finished. {tasks} task(s) and {documents} page(s) cleared.',
+  'project.finishedToast':
+    'Project finished. {items} item(s) cleared, including {tasks} task(s) and {documents} page(s).',
   'project.finished': 'Finished',
   'project.finishedOn': 'Finished {date}',
   'project.finishedBanner':
     'This project is finished. It is read-only until somebody reopens it.',
   'project.reopen': 'Reopen project',
   'project.reopenExplain':
-    'Puts the project back into service with its people and teams. The tasks and pages that were cleared do not come back.',
+    'Puts the project back into service with its people and teams. Nothing that was cleared comes back.',
   'project.reopenedToast': 'Project reopened.',
+  'project.archiveWhileFinished':
+    'A finished project is already off the board — reopen it first if you want to archive it instead.',
 
   'project.deleteExplain':
-    'Everything in it — tasks, notes, documents and the conversation — goes with it. It lands in your recycle bin and can be restored from there.',
+    'Everything in it — tasks, notes, documents and the conversation — goes with it. It lands in your recycle bin, where it can be restored for 30 days before it is destroyed.',
   'project.deleteProject': 'Delete project',
   'project.deleteConfirmBody': 'Type {name} to confirm.',
   'project.deleteConfirmLabel': 'Project name',
@@ -505,6 +508,8 @@ const en = {
   'toast.projectCreateFailed': 'Could not create the project.',
   'toast.projectUpdated': 'Project updated.',
   'toast.projectBinned': 'Project moved to the recycle bin.',
+  'toast.projectRestored': 'Project restored.',
+  'toast.projectPurged': 'Project deleted for good.',
   'toast.pinFailed': 'Could not update the pin.',
   'toast.inviteSent': 'Invitation sent.',
   'toast.inviteFailed': 'Could not send the invitation.',
@@ -878,6 +883,23 @@ const en = {
   'bin.restore': 'Restore',
   'bin.emptyNote': 'Empty note',
   'bin.opening': 'Opening the bin',
+
+  // Projects: the only tab where an item expires on its own.
+  'bin.projects': 'Projects',
+  'bin.noDeletedProjects': 'No deleted projects',
+  'bin.deletedProjectsBody':
+    'A deleted project waits here for 30 days with everything still inside it. After that it is destroyed, and so are its files.',
+  'bin.expiresOn': 'Destroyed {date}',
+  'bin.expiresToday': 'Destroyed today',
+  'bin.expiresInDays': 'Destroyed in {days} day(s)',
+  'bin.projectContents': '{tasks} task(s) · {notes} note(s) · {messages} message(s)',
+  'bin.projectStillFinished': 'Was finished',
+  'bin.deleteForever': 'Delete for good',
+  'bin.purgeProjectTitle': 'Delete "{name}" for good?',
+  'bin.purgeProjectBody':
+    'This destroys the project and everything still inside it — tasks, pages, notes, the whiteboard, the conversation, the meetings and every uploaded file. It cannot be undone, and there is no copy anywhere. Enter your password to confirm.',
+  'bin.purgeProjectLabel': 'Your password',
+  'bin.purgeProjectAction': 'Delete permanently',
 
   // ---- Invitations -------------------------------------------------------
   'invites.title': 'Invitations',
@@ -1354,23 +1376,26 @@ const ptBR: Record<TranslationKey, string> = {
 
   'project.finishProject': 'Concluir projeto',
   'project.finishExplain':
-    'Mantém o projeto, as pessoas e as equipes como registro, e apaga todas as tarefas e páginas dentro dele. Nada do que for apagado pode ser recuperado.',
+    'Mantém o nome, a descrição, a cor, as pessoas e os times como registro, e apaga todo o resto: tarefas, páginas, notas, a lousa, a conversa, as reuniões e a capa. Nada do que for apagado pode ser recuperado.',
   'project.finishConfirmBody':
-    'Isso apaga todas as tarefas e todas as páginas deste projeto, de forma permanente. Nome, descrição, equipe e times permanecem. Digite sua senha para confirmar.',
+    'Isso apaga permanentemente todas as tarefas, páginas, notas, traços da lousa, mensagens, reuniões e arquivos enviados neste projeto. Só o nome, a descrição, a cor, a equipe e os times permanecem. Digite sua senha para confirmar.',
   'project.finishConfirmLabel': 'Sua senha',
   'project.finishConfirmAction': 'Concluir',
-  'project.finishedToast': 'Projeto concluído. {tasks} tarefa(s) e {documents} página(s) apagadas.',
+  'project.finishedToast':
+    'Projeto concluído. {items} item(ns) apagado(s), incluindo {tasks} tarefa(s) e {documents} página(s).',
   'project.finished': 'Concluído',
   'project.finishedOn': 'Concluído em {date}',
   'project.finishedBanner':
     'Este projeto está concluído. Ele fica somente leitura até alguém reabri-lo.',
   'project.reopen': 'Reabrir projeto',
   'project.reopenExplain':
-    'Coloca o projeto de volta em atividade com as pessoas e os times. As tarefas e páginas apagadas não voltam.',
+    'Coloca o projeto de volta em atividade com as pessoas e os times. Nada do que foi apagado volta.',
   'project.reopenedToast': 'Projeto reaberto.',
+  'project.archiveWhileFinished':
+    'Um projeto concluído já sai do quadro — reabra antes se quiser arquivá-lo.',
 
   'project.deleteExplain':
-    'Tudo que está nele — tarefas, notas, documentos e a conversa — vai junto. Ele fica na sua lixeira e pode ser restaurado de lá.',
+    'Tudo que está nele — tarefas, notas, documentos e a conversa — vai junto. Ele fica na sua lixeira, onde pode ser restaurado por 30 dias antes de ser destruído.',
   'project.deleteProject': 'Excluir projeto',
   'project.deleteConfirmBody': 'Digite {name} para confirmar.',
   'project.deleteConfirmLabel': 'Nome do projeto',
@@ -1601,6 +1626,8 @@ const ptBR: Record<TranslationKey, string> = {
   'toast.projectCreateFailed': 'Não foi possível criar o projeto.',
   'toast.projectUpdated': 'Projeto atualizado.',
   'toast.projectBinned': 'Projeto movido para a lixeira.',
+  'toast.projectRestored': 'Projeto restaurado.',
+  'toast.projectPurged': 'Projeto excluído definitivamente.',
   'toast.pinFailed': 'Não foi possível atualizar a fixação.',
   'toast.inviteSent': 'Convite enviado.',
   'toast.inviteFailed': 'Não foi possível enviar o convite.',
@@ -1964,6 +1991,22 @@ const ptBR: Record<TranslationKey, string> = {
   'bin.restore': 'Restaurar',
   'bin.emptyNote': 'Nota vazia',
   'bin.opening': 'Abrindo a lixeira',
+
+  'bin.projects': 'Projetos',
+  'bin.noDeletedProjects': 'Nenhum projeto excluído',
+  'bin.deletedProjectsBody':
+    'Um projeto excluído espera aqui por 30 dias com tudo ainda dentro dele. Depois disso ele é destruído, e os arquivos também.',
+  'bin.expiresOn': 'Destruído em {date}',
+  'bin.expiresToday': 'Destruído hoje',
+  'bin.expiresInDays': 'Destruído em {days} dia(s)',
+  'bin.projectContents': '{tasks} tarefa(s) · {notes} nota(s) · {messages} mensagem(ns)',
+  'bin.projectStillFinished': 'Estava concluído',
+  'bin.deleteForever': 'Excluir definitivamente',
+  'bin.purgeProjectTitle': 'Excluir "{name}" definitivamente?',
+  'bin.purgeProjectBody':
+    'Isso destrói o projeto e tudo que ainda está nele — tarefas, páginas, notas, a lousa, a conversa, as reuniões e todos os arquivos enviados. Não dá para desfazer, e não existe cópia em lugar nenhum. Digite sua senha para confirmar.',
+  'bin.purgeProjectLabel': 'Sua senha',
+  'bin.purgeProjectAction': 'Excluir definitivamente',
 
   'invites.title': 'Convites',
   'invites.heading': 'Convites de projeto',

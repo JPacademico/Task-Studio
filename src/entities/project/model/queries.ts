@@ -163,13 +163,67 @@ export const useDeleteProject = () => {
 };
 
 /**
+ * The owner's recycle bin: binned projects, and when each expires.
+ *
+ * Not cached for long. A binned project is a decision waiting to be made and
+ * the page it is drawn on is opened deliberately, so the round trip is
+ * affordable — and the one number on it that moves on its own, `purgeAt`, is
+ * the one nobody should read stale.
+ */
+export const useBinnedProjects = () =>
+  useQuery({
+    queryKey: queryKeys.projects.recycleBin,
+    queryFn: projectApi.recycleBin,
+    staleTime: 15_000,
+  });
+
+export const useRestoreProject = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: projectApi.restore,
+    onSuccess: () => {
+      // `projects.all` is the shared prefix, so the bin and the live list both
+      // refresh — the project just moved from one to the other.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      toast.success(translate('toast.projectRestored'));
+    },
+    onError: (error) => toast.error(errorMessage(error)),
+  });
+};
+
+/**
+ * Destroy a binned project now.
+ *
+ * Everything is invalidated rather than patched, for the same reason
+ * `useCompleteProject` does it: the rows this removes are spread across the
+ * task, note, document, meeting and overview caches, and working out which
+ * keys to edit would be re-implementing "that project never existed" on the
+ * client.
+ */
+export const usePurgeProject = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ projectId, password }: { projectId: string; password: string }) =>
+      projectApi.purge(projectId, password),
+    onSuccess: () => {
+      void queryClient.invalidateQueries();
+      toast.success(translate('toast.projectPurged'));
+    },
+    onError: (error) => toast.error(errorMessage(error)),
+  });
+};
+
+/**
  * Conclude a project.
  *
  * Everything is invalidated rather than patched, and this is the one place
- * where that bluntness is right: the write deletes every task and every page
- * the project held, so the task caches, the document caches, the dashboards
- * and the rail's counts are all wrong at once. Working out which keys to edit
- * would be re-implementing "the project is empty now" in the client.
+ * where that bluntness is right: the write deletes every task, page, note,
+ * stroke, message and meeting the project held, so the task caches, the
+ * document caches, the dashboards and the rail's counts are all wrong at once.
+ * Working out which keys to edit would be re-implementing "the project is
+ * empty now" in the client.
  */
 export const useCompleteProject = () => {
   const queryClient = useQueryClient();
@@ -180,8 +234,15 @@ export const useCompleteProject = () => {
 
     onSuccess: (result) => {
       void queryClient.invalidateQueries();
+
+      // The total, not just the two headline counters: the dialog promised to
+      // clear the whole project, and a toast naming only tasks and pages
+      // understates what just happened to the whiteboard and the chat.
+      const items = Object.values(result.cleared).reduce((sum, count) => sum + count, 0);
+
       toast.success(
         translate('project.finishedToast', {
+          items: String(items),
           tasks: String(result.tasksCleared),
           documents: String(result.documentsCleared),
         }),

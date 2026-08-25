@@ -15,6 +15,15 @@ export const queryKeys = {
     members: (projectId: string) => ['projects', projectId, 'members'] as const,
     invitations: (projectId: string) => ['projects', projectId, 'invitations'] as const,
     overview: ['projects', 'overview'] as const,
+    /**
+     * The owner's binned projects.
+     *
+     * Under `projects` so that invalidating `projects.all` after a delete or a
+     * restore refreshes the bin too — the two lists are opposite halves of the
+     * same set, and one moving without the other is exactly the bug a shared
+     * prefix prevents.
+     */
+    recycleBin: ['projects', 'recycle-bin'] as const,
   },
 
   tasks: {

@@ -24,44 +24,10 @@
     <meta name="description" content="Personal and collaborative project management studio." />
     <title>Task Studio</title>
 
-    <script>
-      // Applied before first paint so the app never flashes the wrong theme.
-      // Palette (light/dark) and skin are independent.
-      (() => {
-        const root = document.documentElement;
-        try {
-          const stored = localStorage.getItem('task-studio:theme');
-          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          const dark = stored === 'DARK' || ((!stored || stored === 'SYSTEM') && prefersDark);
-          root.classList.toggle('dark', dark);
-
-          // Kept in step with SKIN_ATTRIBUTE in theme-provider.tsx.
-          // STEAMPUNK is the old name for VINTAGE and still sits in stored
-          // preferences, so it resolves to the same skin rather than silently
-          // dropping the user back to Studio on their next visit.
-          const SKINS = {
-            PAPER: 'paper',
-            TERMINAL: 'terminal',
-            VINTAGE: 'vintage',
-            STEAMPUNK: 'vintage',
-            PIXEL: 'pixel',
-            SPACE: 'space',
-            HAZARD: 'hazard',
-            NEWSPAPER: 'newspaper',
-            ELDRITCH: 'eldritch',
-            AUTUMN: 'autumn',
-            RUNIC: 'runic',
-            UNDERWATER: 'underwater',
-            VOLCANO: 'volcano',
-            STUDIO: 'studio',
-          };
-          root.dataset.skin = SKINS[localStorage.getItem('task-studio:theme-skin')] || 'studio';
-        } catch {
-          /* private mode — fall back to the class already on <html> */
-          root.dataset.skin = 'studio';
-        }
-      })();
-    </script>
+    <!-- Palette and skin, applied before first paint. An external file rather
+         than an inline block so the CSP in vercel.json can refuse
+         script-src 'unsafe-inline' outright - see public/theme-init.js. -->
+    <script src="/theme-init.js"></script>
   </head>
   <body>
     <div id="root"></div>

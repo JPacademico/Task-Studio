@@ -62,8 +62,17 @@ const laneOf = (
   project: OrganizationProject,
   metrics: OrganizationProjectMetrics | undefined,
 ): Lane => {
-  // A concluded project shares the archived lane: both are "not being worked
-  // on", which is the only question this grouping is asking.
+  /*
+   * A concluded project shares the archived lane: both are "not being worked
+   * on", which is the only question this grouping is asking.
+   *
+   * The two flags can no longer both be set — finishing clears `isArchived`,
+   * and the API refuses to archive a finished project (`ProjectsService.update`)
+   * — so this is now one condition rather than a collapse of an ambiguous
+   * pair. The `||` stays because rows written before that rule existed can
+   * still carry both, and a project that reads as neither active nor archived
+   * would simply vanish from the board.
+   */
   if (project.isArchived || project.completedAt) return 'archived';
   return (metrics?.overdue ?? 0) > 0 ? 'at-risk' : 'active';
 };
@@ -122,7 +131,10 @@ const OrganizationProjectCard = ({
                 aria-label={t('org.noAccess')}
               />
             )}
-            {project.isArchived && (
+            {/* Finished wins: a legacy row carrying both flags draws the
+                stronger, better-defined one rather than two badges that
+                appear to disagree. */}
+            {project.isArchived && !project.completedAt && (
               <Archive
                 className="h-3 w-3 shrink-0 text-content-faint"
                 aria-label={t('org.archived')}

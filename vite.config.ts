@@ -46,6 +46,58 @@ const assertDeployConfig = (mode: string): void => {
   );
 };
 
+/**
+ * The production Content-Security-Policy, so `vite preview` behaves like the
+ * deployed site.
+ *
+ * ## Why it is duplicated here
+ *
+ * Because a CSP fails *closed*: a wrong directive does not degrade the app, it
+ * stops a script or a stylesheet loading, and the symptom is a blank page. The
+ * policy is served by Vercel's edge (`vercel.json`), which means it is not
+ * present in any local build — so the one environment where a mistake could be
+ * caught before deploy was the one environment that did not have it.
+ *
+ * Mirroring it on `npm run preview` turns "hope it still works in production"
+ * into a check anybody can run in thirty seconds. `SECURITY.md` describes what
+ * to click.
+ *
+ * It has to be kept in step with `vercel.json` by hand, and there is no way
+ * around that: `vercel.json` is JSON with no imports, and Vercel reads it
+ * without executing anything. Divergence is caught by the check above — the
+ * preview breaks and production does not, or the other way round.
+ *
+ * One directive is intentionally *looser* here than in production; see the
+ * note on `connect-src` below.
+ */
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data:",
+  /*
+   * `http://localhost:*` and `ws://localhost:*` are the one deliberate
+   * difference from `vercel.json`, and they are added *here* rather than
+   * there so production never carries them.
+   *
+   * The deployed API is `https://…`, which the `https:` scheme already
+   * allows. A local one is plain HTTP on port 3333, which it does not — so
+   * without this, mirroring the policy would break every request in
+   * `npm run preview` while proving nothing about production. (Which is
+   * precisely what it did on first run, and is a fair demonstration that the
+   * mirror earns its keep.)
+   */
+  "connect-src 'self' https: wss: http://localhost:* ws://localhost:*",
+  "media-src 'self' https: blob:",
+  "worker-src 'self' blob:",
+  "manifest-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "frame-ancestors 'none'",
+  "form-action 'self'",
+].join('; ');
+
 export default defineConfig(({ mode }) => {
   assertDeployConfig(mode);
 
@@ -139,6 +191,22 @@ export default defineConfig(({ mode }) => {
       // Honour PORT so container hosts and preview tooling can place the server.
       port: Number(process.env.PORT) || 5173,
       strictPort: false,
+    },
+    /*
+     * `npm run preview` serves the built app under the real policy.
+     *
+     * Deliberately not applied to `server` (the dev server): Vite's dev
+     * transform injects the HMR client and React Refresh preamble inline, so a
+     * `script-src` without `unsafe-inline` breaks development entirely while
+     * proving nothing about the production bundle, which has no inline script
+     * at all.
+     */
+    preview: {
+      headers: {
+        'Content-Security-Policy': CONTENT_SECURITY_POLICY,
+        'X-Content-Type-Options': 'nosniff',
+        'Referrer-Policy': 'strict-origin-when-cross-origin',
+      },
     },
     build: {
       target: 'es2022',

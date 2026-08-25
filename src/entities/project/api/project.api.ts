@@ -1,5 +1,7 @@
 import { api } from '@/shared/api/client';
 import type {
+  BinnedProject,
+  ClearedCounts,
   PendingInvitation,
   Project,
   ProjectDashboard,
@@ -29,7 +31,11 @@ export const projectApi = {
   },
 
   /**
-   * Conclude a project: it keeps its record, and loses every task and page.
+   * Conclude a project: it keeps its record, and loses everything in it.
+   *
+   * "Everything" is literal — tasks, pages, notes, whiteboard, chat, meetings,
+   * pending invitations and the banner. What survives is the name, the
+   * description, the colour, the roster and the teams.
    *
    * The password is re-confirmed by the API against the account's own hash —
    * it is never stored, compared or even held on this side. See the note on
@@ -38,11 +44,12 @@ export const projectApi = {
   async complete(
     projectId: string,
     password: string,
-  ): Promise<{ tasksCleared: number; documentsCleared: number }> {
-    const { data } = await api.post<{ tasksCleared: number; documentsCleared: number }>(
-      `/projects/${projectId}/complete`,
-      { password },
-    );
+  ): Promise<{ tasksCleared: number; documentsCleared: number; cleared: ClearedCounts }> {
+    const { data } = await api.post<{
+      tasksCleared: number;
+      documentsCleared: number;
+      cleared: ClearedCounts;
+    }>(`/projects/${projectId}/complete`, { password });
     return data;
   },
 
@@ -88,8 +95,38 @@ export const projectApi = {
     return data;
   },
 
-  async remove(projectId: string): Promise<{ message: string }> {
-    const { data } = await api.delete<{ message: string }>(`/projects/${projectId}`);
+  async remove(projectId: string): Promise<{ message: string; purgeAt: string }> {
+    const { data } = await api.delete<{ message: string; purgeAt: string }>(
+      `/projects/${projectId}`,
+    );
+    return data;
+  },
+
+  // --- Recycle bin ----------------------------------------------------------
+
+  /** Binned projects, with what each still holds and when it expires. */
+  async recycleBin(): Promise<BinnedProject[]> {
+    const { data } = await api.get<BinnedProject[]>('/projects/recycle-bin');
+    return data;
+  },
+
+  async restore(projectId: string): Promise<{ message: string }> {
+    const { data } = await api.post<{ message: string }>(`/projects/${projectId}/restore`);
+    return data;
+  },
+
+  /**
+   * Destroy a binned project now, rather than waiting out its thirty days.
+   *
+   * `POST` with a body, not `DELETE` with a query string: this carries a
+   * password, and a password in a URL ends up in browser history and every
+   * proxy log along the way.
+   */
+  async purge(projectId: string, password: string): Promise<{ filesDeleted: number }> {
+    const { data } = await api.post<{ filesDeleted: number }>(
+      `/projects/${projectId}/purge`,
+      { password },
+    );
     return data;
   },
 

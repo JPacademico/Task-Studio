@@ -51,6 +51,57 @@ export interface ProjectListItem extends Project {
   myNextDueAt: string | null;
 }
 
+/**
+ * What `complete()` actually removed, so the client can say so.
+ *
+ * Every counter, not just the two the toast names: the dialog promised to
+ * clear the whole project, and reporting only tasks and pages would understate
+ * what just happened to the whiteboard and the conversation.
+ */
+export interface ClearedCounts {
+  tasks: number;
+  documents: number;
+  notes: number;
+  whiteboardElements: number;
+  chatMessages: number;
+  meetings: number;
+  invitations: number;
+  aiSuggestions: number;
+}
+
+/**
+ * One project in the owner's recycle bin.
+ *
+ * Not a `Project`. A binned project is not something the app can open — it has
+ * no board, no role and no membership to speak of from here — so it is its own
+ * shape, carrying only what the bin has to draw: what it was, how much is
+ * still inside it, and when the server will destroy it.
+ *
+ * `purgeAt` comes from the API rather than being computed here. The retention
+ * window is the server's rule (`PROJECT_PURGE_AFTER_MS`) and a client doing
+ * its own arithmetic is a client that will eventually disagree with the
+ * sweeper about which day something disappears.
+ */
+export interface BinnedProject {
+  id: string;
+  name: string;
+  description: string | null;
+  color: string;
+  bannerUrl: string | null;
+  deletedAt: string;
+  /** Set if it had been finished before it was binned. */
+  completedAt: string | null;
+  organization: OrganizationRef | null;
+  purgeAt: string | null;
+  counts: {
+    tasks: number;
+    documents: number;
+    notes: number;
+    chatMessages: number;
+    members: number;
+  };
+}
+
 export interface ProjectInvitation {
   id: string;
   status: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'REVOKED';

@@ -555,21 +555,30 @@ export const TextBoard = ({
 
               {/* Two-step rather than a confirm dialog: deleting a page is
                   reversible nowhere in this UI, and one stray click on a
-                  toolbar is exactly how it would happen. */}
-              <Button
-                size="sm"
-                variant={confirmingDelete ? 'danger' : 'ghost'}
-                onClick={() => (confirmingDelete ? handleDelete() : setConfirmingDelete(true))}
-                onBlur={() => setConfirmingDelete(false)}
-                isLoading={deleteDocument.isPending}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                {confirmingDelete ? (
-                  t('doc.confirm')
-                ) : (
-                  <span className="hidden sm:inline">{t('common.delete')}</span>
-                )}
-              </Button>
+                  toolbar is exactly how it would happen.
+
+                  Shown only to somebody who may actually do it. The rule is not
+                  `canEdit` — an admin can delete a page they cannot rewrite,
+                  and a granted editor can rewrite one they cannot delete — so
+                  the server answers it separately and this draws the answer.
+                  Before this the button was drawn for everybody and the API
+                  refused it, which is a control that exists to say no. */}
+              {open.canDelete && (
+                <Button
+                  size="sm"
+                  variant={confirmingDelete ? 'danger' : 'ghost'}
+                  onClick={() => (confirmingDelete ? handleDelete() : setConfirmingDelete(true))}
+                  onBlur={() => setConfirmingDelete(false)}
+                  isLoading={deleteDocument.isPending}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  {confirmingDelete ? (
+                    t('doc.confirm')
+                  ) : (
+                    <span className="hidden sm:inline">{t('common.delete')}</span>
+                  )}
+                </Button>
+              )}
             </>
           )}
 
