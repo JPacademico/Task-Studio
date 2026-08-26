@@ -25,6 +25,15 @@ export const STORAGE_KEYS = {
    * re-asked on every visit. See `shared/lib/notifications.ts`.
    */
   notificationsDeclined: 'task-studio:notifications-declined',
+  /**
+   * Grouping-board columns this reader has folded away, per project.
+   *
+   * Local rather than on the server on purpose: hiding a column is a statement
+   * about one person's screen this afternoon, not about the project. A column
+   * hidden for everybody would be a second kind of delete, and the board
+   * already has the real one. See `hidden-columns.ts`.
+   */
+  hiddenGroups: 'task-studio:hidden-groups',
 } as const;
 
 /** Curated task palette — arbitrary hex is allowed, these are the one-click set. */
@@ -155,13 +164,37 @@ export const MAX_TASK_NOTES = 3;
 
 /**
  * How many columns one project's grouping board may hold. Mirrored from the
- * API's `MAX_GROUPS_PER_PROJECT`.
+ * API's `MAX_GROUPS_PER_PROJECT`, which is the authority.
  *
- * Twelve is past what fits on a laptop screen without horizontal scrolling and
- * comfortably past what anybody can hold in their head as a set of categories.
- * A board with thirty columns is not a grouping, it is a second task list.
+ * Ten, down from twelve. The board pages now rather than scrolling sideways
+ * forever, and ten is two clean pages of five — a number somebody can still
+ * hold in their head as a set of categories. A board with thirty columns is
+ * not a grouping, it is a second task list.
+ *
+ * The untagged lane is not counted against this: it is not a column anybody
+ * created, and it appears and disappears on its own.
  */
-export const MAX_GROUPS_PER_PROJECT = 12;
+export const MAX_GROUPS_PER_PROJECT = 10;
+
+/**
+ * How many columns one page of the grouping board shows.
+ *
+ * Four, and the number is set by the *widest* the board ever gets rather than
+ * by the cap: four columns plus the untagged lane is five lanes sharing the
+ * width, which is where a lane stops being a column and starts being a ribbon
+ * on a laptop. Ten columns is therefore three pages at worst.
+ *
+ * Paging rather than an unbounded horizontal scroller because ten lanes of
+ * cards is a surface people *lose things on*: a column eight screens to the
+ * right is functionally invisible, and the scrollbar is the only thing that
+ * ever admits it is there.
+ *
+ * It applies at every width. A narrow screen still swipes between the lanes of
+ * the page it is on — see `GroupsBoard` — because hiding the pager there would
+ * leave the smallest screen as the only one where half the columns cannot be
+ * reached at all.
+ */
+export const GROUP_COLUMNS_PER_PAGE = 4;
 
 /** Distance from a screen edge (px) that reveals a hidden menu. */
 export const EDGE_REVEAL_PX = 24;

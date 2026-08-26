@@ -171,7 +171,7 @@ const SidebarLink = ({ item, badge, isTouch, onNavigate, onTearingChange }: Side
         to={item.to}
         end={item.end}
         onClick={isTouch ? onNavigate : undefined}
-        title={isTouch ? undefined : 'Drag me out to pin this anywhere on screen'}
+        title={isTouch ? undefined : t('nav.dragToPin')}
         {...intent}
         {...bind}
         className={({ isActive }) =>

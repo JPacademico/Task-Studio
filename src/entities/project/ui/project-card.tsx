@@ -6,6 +6,7 @@ import { cn } from '@/shared/lib/cn';
 import { useProjectIntentPrefetch } from '../model/queries';
 import { withAlpha } from '@/shared/lib/colors';
 import { AvatarStack } from '@/shared/ui';
+import { useT } from '@/shared/i18n';
 import type { ProjectListItem } from '../model/types';
 
 interface ProjectCardProps {
@@ -14,6 +15,7 @@ interface ProjectCardProps {
 }
 
 export const ProjectCard = ({ project, onTogglePin }: ProjectCardProps) => {
+  const t = useT();
   /*
    * A card the pointer settles on is very probably the next page.
    *
@@ -95,7 +97,7 @@ export const ProjectCard = ({ project, onTogglePin }: ProjectCardProps) => {
             {project.name}
           </p>
           <p className="line-clamp-2 min-h-[2rem] text-xs leading-relaxed text-content-muted">
-            {project.description ?? 'No description yet.'}
+            {project.description ?? t('common.noDescription')}
           </p>
         </div>
 

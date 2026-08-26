@@ -113,7 +113,7 @@ const RailProject = ({
             {isOverdue && (
               <TriangleAlert
                 className="h-3 w-3 shrink-0 text-danger"
-                aria-label={`${project.overdueTaskCount} overdue`}
+                aria-label={t('common.overdueCount', { count: String(project.overdueTaskCount) })}
               />
             )}
           </span>

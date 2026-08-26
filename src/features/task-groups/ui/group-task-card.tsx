@@ -11,6 +11,20 @@ import { useT } from '@/shared/i18n';
 interface GroupTaskCardProps {
   task: GroupedTask;
   onOpen?: (taskId: string) => void;
+  /**
+   * Ticks the card off, when this reader is allowed to.
+   *
+   * Omitted — rather than passed and disabled — for everybody who is neither an
+   * assignee nor an admin. Same reasoning as the status board: a box that
+   * cannot be ticked is a control that fails, and the server would refuse the
+   * write anyway. `canManage` says which of the two kinds of tick it is; see
+   * `useToggleGroupTaskCompletion`.
+   */
+  onToggleComplete?: (task: GroupedTask) => void;
+  /** True when the reader is an owner/admin, which widens what the box may do. */
+  canManage?: boolean;
+  /** Locked while this card's own write is in flight. */
+  isSyncing?: boolean;
   isDragging?: boolean;
   className?: string;
 }
@@ -46,16 +60,46 @@ const RIBBON: Record<GroupedTask['status'], string> = {
  * stripped back to what fits under it.
  *
  * That is also why the two do not share a component with a `variant` flag. They
- * agree on almost nothing: not the fields, not the density, not the gestures
- * (there is no complete-toggle, pin or delete here — this board is for looking
- * at the shape of the work, and every one of those actions has a home on the
- * board that owns it). A shared card would be two cards behind one `if`.
+ * agree on almost nothing: not the fields, not the density, not the gestures.
+ *
+ * ## The one gesture that came back
+ *
+ * The tick box. This card used to have none, on the reasoning that this board
+ * is about *where* work sits and the other one is about what state it is in.
+ * What that missed is that dragging and ticking are not the same act: the thing
+ * worth guarding against was a *drag* silently completing somebody's work, an
+ * accident of a few pixels. A labelled checkbox is deliberate, and it is the
+ * most-used control in the app — refusing it here meant leaving the board you
+ * were reading to tick a box you could already see.
+ *
+ * It still cannot be triggered by dragging: the box swallows its own pointer
+ * events, so the drag sensor never sees the press that ticks it.
  */
-export const GroupTaskCard = ({ task, onOpen, isDragging, className }: GroupTaskCardProps) => {
+export const GroupTaskCard = ({
+  task,
+  onOpen,
+  onToggleComplete,
+  canManage,
+  isSyncing,
+  isDragging,
+  className,
+}: GroupTaskCardProps) => {
   const t = useT();
 
   const isDone = task.status === 'COMPLETED';
   const priority = TASK_PRIORITY_META[task.priority];
+  const isShared = task.signOff.total > 1;
+
+  /*
+   * Ticked, from this reader's point of view.
+   *
+   * `isCompletedByMe` rather than the task's own status, and the difference is
+   * the whole point on a shared task: my box is ticked the moment I tick it,
+   * even though the task stays open until the last assignee does the same. An
+   * admin who is not on the task has no row of their own, so for them the
+   * task's status *is* the answer.
+   */
+  const isTicked = task.isMine ? task.isCompletedByMe : isDone;
 
   return (
     <article
@@ -75,26 +119,111 @@ export const GroupTaskCard = ({ task, onOpen, isDragging, className }: GroupTask
       }}
     >
       {/*
-        The status, as a label rather than as a column.
+        The status, as a label rather than as a column — with the tick box in
+        the same strip.
 
-        This is the whole reason the grouping board can exist alongside the
-        status board without the two contradicting each other: there is exactly
-        one place a task's state is *set* — dragging on the status board — and
-        here it is reported. A reader gets both facts at once ("this is
-        wireframe work, and it is in progress") without either board having to
-        pretend to be the other.
+        The two belong together: the ribbon reports the state and the box is the
+        one way to change it from here, so putting them on one line means the
+        card gains a control without gaining a row. The label stays centred on
+        the card rather than on the space left over, so a board of cards reads
+        as a column of centred ribbons whether or not the reader can tick them.
       */}
-      <p
+      <div
         className={cn(
-          'px-2.5 py-1 text-center text-[10px] font-semibold uppercase tracking-[0.14em]',
-          // Late work overrides the state's own colour. "In progress" and "in
-          // progress, three days past its deadline" are not the same news, and
-          // the second one has to survive being glanced at.
+          'relative flex items-center px-2.5 py-1',
           task.isLate ? 'bg-danger/20 text-danger' : RIBBON[task.status],
         )}
       >
-        {task.isLate ? t('views.late') : t(TASK_STATUS_META[task.status].label)}
-      </p>
+        {onToggleComplete && (
+          <button
+            type="button"
+            /*
+             * Locked while its own write is in flight.
+             *
+             * The tick is already instant — the board's cache is patched before
+             * the request leaves — so this costs nothing anybody can feel. What
+             * it buys is that a second click cannot start a second write for
+             * the same row, which is what lets a quick tick-untick settle as
+             * "done", flash back and settle again.
+             */
+            disabled={isSyncing}
+            aria-busy={isSyncing || undefined}
+            aria-pressed={isTicked}
+            aria-label={t(isTicked ? 'task.markPending' : 'task.markDone')}
+            title={t(
+              !task.isMine && canManage
+                ? 'groups.completeAsAdmin'
+                : isShared
+                  ? 'groups.completeShared'
+                  : isTicked
+                    ? 'task.markPending'
+                    : 'task.markDone',
+            )}
+            /*
+             * The drag sensor never sees this press.
+             *
+             * dnd-kit's listeners sit on the wrapper around this card, and they
+             * bind on pointerdown. `stopPropagation` there is what keeps a tick
+             * from also being the first millimetre of a drag — the activation
+             * distance makes that unlikely rather than impossible, and on touch
+             * a hold over the box would otherwise pick the card up.
+             */
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              onToggleComplete(task);
+            }}
+            className={cn(
+              'grid h-4 w-4 shrink-0 place-items-center rounded border transition-all duration-150',
+              isTicked
+                ? 'border-positive bg-positive text-white'
+                : // `border-check`, not `border-edge`: an empty box has nothing
+                  // but its outline to be found by, and `--edge` is tuned to
+                  // vanish. See the token note in `app/styles/index.css`.
+                  'border-check bg-surface-raised/70 hover:border-brand',
+              isSyncing && 'cursor-progress',
+            )}
+          >
+            {isTicked && <Check className="h-2.5 w-2.5" strokeWidth={3} />}
+          </button>
+        )}
+
+        <p
+          className={cn(
+            'pointer-events-none min-w-0 flex-1 truncate text-center text-[10px] font-semibold',
+            'uppercase tracking-[0.14em]',
+            // Keeps the label on the card's centre line rather than on the
+            // centre of whatever is left after the box. Mirrored on the right
+            // by the sign-off counter, when there is one.
+            onToggleComplete && 'pl-1',
+          )}
+        >
+          {task.isLate ? t('views.late') : t(TASK_STATUS_META[task.status].label)}
+        </p>
+
+        {/*
+          "1/3", on shared work only.
+
+          The obvious question a per-person tick box raises is "I ticked mine,
+          so why is this still open" — and on a task with one assignee it never
+          comes up, so the counter would be noise on most cards. It appears
+          exactly where the answer is needed.
+        */}
+        {isShared ? (
+          <span
+            title={t('groups.signOff', {
+              done: String(task.signOff.done),
+              total: String(task.signOff.total),
+            })}
+            className="shrink-0 pl-1 text-[9px] font-semibold tabular-nums opacity-70"
+          >
+            {task.signOff.done}/{task.signOff.total}
+          </span>
+        ) : (
+          // Balances the box so the label's centre is the card's centre.
+          onToggleComplete && <span aria-hidden className="h-4 w-4 shrink-0" />
+        )}
+      </div>
 
       <div className="space-y-2 p-2.5">
         <h4

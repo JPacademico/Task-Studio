@@ -1,3 +1,4 @@
+import { translate } from '@/shared/i18n';
 import type { Task, TaskAssignee } from '../model/types';
 
 /**
@@ -79,12 +80,18 @@ export const completionBlockedReason = (
   const listed = names.slice(0, 3);
   const people =
     listed.length === 0
-      ? `${blockingAssigneeCount(task)} more assignee(s)`
+      ? translate('task.sharedBlockedCount', { count: String(blockingAssigneeCount(task)) })
       : listed.length === 1
         ? listed[0]
-        : `${listed.slice(0, -1).join(', ')} and ${listed[listed.length - 1]}`;
+        : translate('task.listJoin', {
+            list: listed.slice(0, -1).join(', '),
+            last: listed[listed.length - 1],
+          });
 
-  const more = names.length > listed.length ? ` and ${names.length - listed.length} more` : '';
+  const more =
+    names.length > listed.length
+      ? translate('task.andMore', { count: String(names.length - listed.length) })
+      : '';
 
-  return `Shared task — still waiting on ${people}${more}. Everyone assigned has to tick their own box, or a project admin can close it.`;
+  return translate('task.sharedBlocked', { people: `${people}${more}` });
 };

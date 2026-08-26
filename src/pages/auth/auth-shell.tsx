@@ -128,7 +128,7 @@ export const AuthShell = ({ title, subtitle, children, footer }: AuthShellProps)
           >
             <GripHorizontal className="h-3.5 w-3.5 text-content-faint" />
             <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-content-faint">
-              {hasMoved ? 'Sign in' : 'Drag me anywhere'}
+              {t(hasMoved ? 'auth.dragCard.signIn' : 'auth.dragCard.dragMe')}
             </span>
             <span className="ml-auto flex gap-1" aria-hidden>
               {['bg-danger/60', 'bg-warning/60', 'bg-positive/60'].map((tone) => (

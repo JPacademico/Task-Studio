@@ -674,7 +674,8 @@ export const useToggleMyCompletion = (currentUserId?: string) => {
 
     onSuccess: (task) => {
       patchCachedTask(queryClient, task.id, () => task);
-      if (task.status === 'COMPLETED') toast.success(`"${task.title}" is done.`);
+      if (task.status === 'COMPLETED')
+        toast.success(translate('toast.taskDone', { title: task.title }));
     },
 
     onSettled: (task, _error, variables) => {
@@ -689,10 +690,17 @@ export const useToggleMyCompletion = (currentUserId?: string) => {
        * state that is already correct — the card would visibly flip back and
        * then forward again, which is the exact symptom being fixed.
        *
-       * `isMutating` counts only *pending* mutations, and this one has already
-       * settled by the time `onSettled` runs — so any count at all means
-       * somebody else is still queued for this task and will invalidate when
-       * they are done.
+       * The threshold is one, not zero, and that matters: this mutation is
+       * still in the count. `isMutating` counts mutations whose status is
+       * `pending`, and React Query does not dispatch `success` until *after*
+       * every `onSettled` has resolved — see `Mutation.execute`. So a mutation
+       * asking this from inside its own `onSettled` always counts itself, and
+       * `> 0` was true even with an empty queue: the reconciling refetch this
+       * guard exists to defer was in fact never running at all.
+       *
+       * One is me. More than one is me and somebody behind me, who will ask the
+       * same question with a shorter queue when they are done. The last one out
+       * turns the lights off.
        */
       const queuedForThisTask = queryClient.isMutating({
         predicate: (mutation) =>
@@ -700,7 +708,7 @@ export const useToggleMyCompletion = (currentUserId?: string) => {
           variables.taskId,
       });
 
-      if (queuedForThisTask > 0) return;
+      if (queuedForThisTask > 1) return;
       invalidate(task?.project?.id);
     },
   });
@@ -759,7 +767,7 @@ export const useRestoreTask = () => {
     mutationFn: (taskId: string) => taskApi.restore(taskId),
     onSuccess: (task) => {
       invalidate(task.project?.id);
-      toast.success(`"${task.title}" restored.`);
+      toast.success(translate('toast.taskRestored', { title: task.title }));
     },
     onError: (error) => toast.error(errorMessage(error)),
   });

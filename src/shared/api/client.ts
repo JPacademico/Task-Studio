@@ -236,7 +236,10 @@ api.interceptors.response.use(
 );
 
 /** Turns any axios failure into a message worth showing in a toast. */
-export const errorMessage = (error: unknown, fallback = 'Something went wrong.'): string => {
+export const errorMessage = (
+  error: unknown,
+  fallback = translate('common.somethingWentWrong'),
+): string => {
   if (axios.isAxiosError(error)) {
     const payload = error.response?.data as { message?: string | string[] } | undefined;
     const message = payload?.message;
@@ -266,10 +269,10 @@ export const errorMessage = (error: unknown, fallback = 'Something went wrong.')
         return translate('session.blocked');
       }
 
-      return 'Cannot reach the server. Check your connection.';
+      return translate('session.unreachable');
     }
     if (error.code === 'ECONNABORTED') {
-      return 'The server is taking too long to respond — it may be starting up. Try again in a moment.';
+      return translate('session.slowStart');
     }
   }
   if (error instanceof Error && error.message) return error.message;

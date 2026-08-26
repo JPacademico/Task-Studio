@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ImagePlus, Minus, Plus, X } from 'lucide-react';
+import { ImagePlus, Lock, Minus, Plus, Sparkles, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import type { RosterMember } from '@/entities/project/model/types';
@@ -10,8 +10,15 @@ import { TaskTypeTag } from '@/entities/task/ui/task-type-tag';
 import { useTaskGroups } from '@/entities/task-group/model/queries';
 import { uploadImage } from '@/entities/user/api/user.api';
 import type { AttachedFileDraft } from '@/entities/user/model/types';
+import { useAiStatus, useSuggestDraftSubtasks } from '@/features/ai-suggestions/model/queries';
 import { InvitePicker } from '@/features/invite-picker/ui/invite-picker';
-import { TASK_COLORS, TASK_TYPE_META, TEXT_LIMITS } from '@/shared/config/constants';
+import {
+  MAX_TASK_NOTES,
+  TASK_COLORS,
+  TASK_PRIORITY_META,
+  TASK_TYPE_META,
+  TEXT_LIMITS,
+} from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
 import { clampOnPaste, clampText } from '@/shared/lib/text';
 import {
@@ -29,8 +36,10 @@ import {
   FileAttachmentField,
   Input,
   Modal,
+  Select,
   Spinner,
   Textarea,
+  type SelectOption,
 } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
@@ -46,6 +55,20 @@ interface TaskComposerProps {
   roster?: RosterMember[];
   /** Present when editing an existing task. */
   task?: Task | null;
+  /**
+   * The grouping-board column this task is being written into, fixed.
+   *
+   * Set by the "+" at the top of a column on the grouping board, and the whole
+   * point of that button: the tag is not a field to fill in, it is *why* the
+   * composer was opened. So the picker is drawn as a read-only chip rather than
+   * left editable — a locked control that can be changed is not locked, and a
+   * dropdown that silently re-answers the question the button already answered
+   * is how somebody ends up filing work in the wrong lane.
+   *
+   * The page's own "new task" button passes nothing and gets the ordinary
+   * picker, which is the right shape when the column is genuinely a choice.
+   */
+  lockedGroupId?: string;
 }
 
 const PRIORITIES: TaskPriority[] = ['LOW', 'NORMAL', 'HIGH', 'URGENT'];
@@ -66,6 +89,7 @@ export const TaskComposer = ({
   projectId,
   roster = EMPTY_ROSTER,
   task,
+  lockedGroupId,
 }: TaskComposerProps) => {
   const t = useT();
   // No project means a personal task: one assignee, no roster, no fan-out.
@@ -82,6 +106,10 @@ export const TaskComposer = ({
   const { data: groups = [] } = useTaskGroups(projectId);
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
+
+  // Cached across every surface that asks — see `useAiStatus`.
+  const { data: aiStatus } = useAiStatus();
+  const suggestSteps = useSuggestDraftSubtasks();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -149,7 +177,15 @@ export const TaskComposer = ({
     setTeamIds([]);
     setChecklist([]);
     setChecklistDraft('');
-    setGroupId(task?.group?.id ?? '');
+    /*
+     * The lock wins on a fresh task, and is ignored on an edit.
+     *
+     * Editing is opened from a card, not from a column, so a `lockedGroupId`
+     * has no business overwriting the tag a task already carries — and the
+     * board never passes one for an edit. Belt and braces, because getting this
+     * backwards would silently re-file somebody's task on save.
+     */
+    setGroupId(task?.group?.id ?? (task ? '' : (lockedGroupId ?? '')));
     setAttachment(
       task?.attachmentUrl
         ? {
@@ -163,7 +199,7 @@ export const TaskComposer = ({
     setFile(
       task?.file ? { key: '', name: task.file.name, size: task.file.size, url: task.file.url } : null,
     );
-  }, [isOpen, task]);
+  }, [isOpen, lockedGroupId, task]);
 
   const derivedType = useMemo(
     () =>
@@ -328,9 +364,87 @@ export const TaskComposer = ({
   };
 
   const selectedGroup = groups.find((group) => group.id === groupId) ?? null;
+  /** Locked only if the column it names actually exists on this project. */
+  const isGroupLocked = Boolean(!task && lockedGroupId && selectedGroup);
+
+  /**
+   * What the tag picker offers: "no group", then every column.
+   *
+   * A `SelectOption[]` rather than raw `<option>`s, because this is now the
+   * app's own listbox instead of the OS's. The swatch is the whole reason it is
+   * worth the change on this particular field — the columns are told apart by
+   * colour on the board, and a dropdown of bare words made the picker the one
+   * place they were not.
+   */
+  const groupOptions: SelectOption<string>[] = [
+    { value: '', label: t('groups.noTag') },
+    ...groups.map((group) => ({ value: group.id, label: group.name, swatch: group.color })),
+  ];
 
   const typeMeta = TASK_TYPE_META[derivedType];
   const isPending = createTask.isPending || updateTask.isPending;
+
+  /*
+   * The assistant, and the two things it insists on first.
+   *
+   * A title and a description, both of them written, before the button does
+   * anything. Not politeness: `POST /ai/tasks/draft-subtasks` has nothing else
+   * to go on — there is no task row, no type, no board around it — so asking it
+   * to break down "Untitled" produces three confident sentences about nothing
+   * and spends a call against a free-tier quota to do it. The button says why
+   * it is closed rather than being hidden, because the fix is one field away.
+   */
+  const canSuggestSteps =
+    title.trim().length >= 2 && description.trim().length >= 2;
+  const checklistIsFull = checklist.length >= MAX_TASK_NOTES;
+
+  /**
+   * One more starting step, if there is room for it.
+   *
+   * The cap is `MAX_TASK_NOTES`, which is what `CreateTaskDto` accepts — this
+   * field had none at all, so typing a fourth step produced a form that looked
+   * complete and a save the API rejected with a validation error naming a field
+   * called `checklist` that nothing on screen is called.
+   */
+  const addStep = () => {
+    const step = checklistDraft.trim();
+    if (!step) return;
+
+    setChecklist((items) => (items.length >= MAX_TASK_NOTES ? items : [...items, step]));
+    setChecklistDraft('');
+  };
+
+  const handleSuggestSteps = async () => {
+    if (!canSuggestSteps || checklistIsFull) return;
+
+    try {
+      const suggestion = await suggestSteps.mutateAsync({
+        title: title.trim(),
+        description: description.trim(),
+      });
+
+      const proposed = (suggestion.result.suggestions ?? []).map((item) => item.title.trim());
+
+      /*
+       * Merged into what is already there, not dropped on top of it.
+       *
+       * Somebody who typed two steps and then pressed the sparkle wants a third
+       * suggested, not their own two replaced — and the duplicate check matters
+       * because the model is being asked to expand on a description that
+       * probably mentions the steps already written.
+       */
+      setChecklist((current) => {
+        const seen = new Set(current.map((item) => item.toLowerCase()));
+        const additions = proposed.filter(
+          (item) => item.length > 0 && !seen.has(item.toLowerCase()),
+        );
+
+        return [...current, ...additions].slice(0, MAX_TASK_NOTES);
+      });
+    } catch {
+      // `useSuggestDraftSubtasks` has already toasted what went wrong.
+    }
+  };
 
   return (
     <Modal
@@ -495,11 +609,22 @@ export const TaskComposer = ({
           <div className="space-y-1.5">
             <p className="text-xs font-medium text-content-muted">{t('task.priority')}</p>
             <div className="flex flex-wrap gap-1.5">
+              {/*
+                The word, not the enum.
+
+                These four buttons were printing `option.toLowerCase()` — the
+                raw `TaskPriority` value — which is English on every screen in
+                the app regardless of the language chosen, and is the only place
+                a task's priority was not translated. `TASK_PRIORITY_META`
+                already holds the key every card, badge and filter reads it
+                through; this was simply not going through it.
+              */}
               {PRIORITIES.map((option) => (
                 <button
                   key={option}
                   type="button"
                   onClick={() => setPriority(option)}
+                  aria-pressed={priority === option}
                   className={cn(
                     'rounded-lg border px-2.5 py-1 text-xs transition-colors',
                     priority === option
@@ -507,7 +632,7 @@ export const TaskComposer = ({
                       : 'border-edge text-content-muted hover:text-content',
                   )}
                 >
-                  {option.toLowerCase()}
+                  {t(TASK_PRIORITY_META[option].label)}
                 </button>
               ))}
             </div>
@@ -524,49 +649,133 @@ export const TaskComposer = ({
 
           Also absent on a personal task, which has no board to be grouped on —
           `useTaskGroups` is not even asked in that case.
+
+          ## Why this is `Select` and not a `<select>`
+
+          It was the native control, and it was the one field on this sheet that
+          belonged to a different application. A native `<select>` is drawn by
+          the operating system: it takes the skin's border and radius tokens as
+          suggestions and its own type as gospel. Two things followed from that,
+          and both were bugs rather than matters of taste.
+
+          The first is that the text was clipped. The box was forced to `h-9`
+          (36px) with `text-xs`, and the app's own iOS-zoom guard raises every
+          `select` to 16px below `md` — a 16px line in a 36px box that also has
+          to hold the OS's own vertical padding, so on a phone the column name
+          was cut off top and bottom. The second is that on the skins that run a
+          heavier face — the vintage serif, the arcade's pixel type — the
+          native control kept the system font while every other field on the
+          sheet changed, which is why it read as unstyled on the default skin
+          and outright foreign on the rest.
+
+          `Select` is the app's own listbox: same border, same radius token,
+          same motion curve, same type as the fields around it, and it carries
+          the column's colour as a swatch on the trigger *and* in the list —
+          which the old separate circle beside the box could only do for the
+          current value.
         */}
         {groups.length > 0 && (
           <div className="space-y-1.5">
-            <label htmlFor="task-group" className="text-xs font-medium text-content-muted">
-              {t('groups.tagLabel')}
-            </label>
+            {isGroupLocked ? (
+              /*
+                Opened from a column, so the column is not a question.
 
-            <div className="flex items-center gap-2">
-              <select
-                id="task-group"
+                Drawn as a chip rather than as a disabled dropdown: a greyed-out
+                control invites a click that does nothing, and this is not a
+                field that failed to load — it is an answer that was given by
+                the button that opened this sheet.
+              */
+              <>
+                <p className="text-xs font-medium text-content-muted">{t('groups.tagLabel')}</p>
+                <p
+                  className={cn(
+                    'flex h-9 items-center gap-2 rounded-xl border border-edge bg-surface-sunken',
+                    'px-2.5 text-xs',
+                  )}
+                >
+                  <span
+                    aria-hidden
+                    className="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-black/10"
+                    style={{ backgroundColor: selectedGroup?.color }}
+                  />
+                  <span className="min-w-0 flex-1 truncate font-medium">
+                    {selectedGroup?.name}
+                  </span>
+                  <Lock
+                    aria-hidden
+                    className="h-3 w-3 shrink-0 text-content-faint"
+                    strokeWidth={2.4}
+                  />
+                  <span className="sr-only">{t('groups.tagLocked')}</span>
+                </p>
+              </>
+            ) : (
+              <Select
+                label={t('groups.tagLabel')}
                 value={groupId}
-                onChange={(event) => setGroupId(event.target.value)}
-                className="field h-9 flex-1 text-xs"
-              >
-                <option value="">{t('groups.noTag')}</option>
-                {groups.map((group) => (
-                  <option key={group.id} value={group.id}>
-                    {group.name}
-                  </option>
-                ))}
-              </select>
-
-              {/* The column's own colour, so the picker reads like the board
-                  it files into rather than like a dropdown of words. */}
-              {selectedGroup && (
-                <span
-                  aria-hidden
-                  className="h-6 w-6 shrink-0 rounded-full border border-edge"
-                  style={{ backgroundColor: selectedGroup.color }}
-                />
-              )}
-            </div>
+                options={groupOptions}
+                onChange={setGroupId}
+              />
+            )}
           </div>
         )}
 
         {!task && (
           <div className="space-y-2">
-            <p className="text-xs font-medium text-content-muted">
-              {t('task.subChecklist')}{' '}
-              {checklist.length > 0 && (
-                <span className="text-content-faint">({checklist.length})</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-xs font-medium text-content-muted">
+                {t('task.subChecklist')}{' '}
+                <span className="text-content-faint tabular-nums">
+                  ({checklist.length}/{MAX_TASK_NOTES})
+                </span>
+              </p>
+
+              {/*
+                The assistant, on the sheet where the task is still being written.
+
+                The same feature the task sheet has, moved one step earlier —
+                and that is the whole of the difference. On the sheet the model
+                reads a saved row; here it reads what has been typed, which is
+                why the button waits for both a title *and* a description before
+                it will do anything: those two fields are the entire prompt, and
+                "Untitled" with nothing under it produces three confident
+                sentences about nothing at a cost against a free-tier quota.
+
+                Disabled with a reason rather than hidden, unlike the sheet's
+                version. There the button is absent when the model is not
+                configured, because that is a promise the deployment cannot
+                keep. Here the block is usually the user's own two empty fields,
+                and a control that says what it is waiting for is how they find
+                that out. It still disappears entirely with no model behind it.
+              */}
+              {aiStatus?.enabled && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="ml-auto"
+                  onClick={() => void handleSuggestSteps()}
+                  isLoading={suggestSteps.isPending}
+                  disabled={!canSuggestSteps || checklistIsFull}
+                  title={t(
+                    checklistIsFull
+                      ? 'task.stepsFull'
+                      : canSuggestSteps
+                        ? 'task.suggestStepsHint'
+                        : 'ai.needsTitleAndBody',
+                  )}
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  {t('task.suggestSteps')}
+                </Button>
               )}
-            </p>
+            </div>
+
+            {/* Says it out loud as well as in the tooltip: a disabled button
+                somebody cannot hover is a dead end on a touch screen. */}
+            {aiStatus?.enabled && !canSuggestSteps && !checklistIsFull && (
+              <p className="text-[11px] text-content-faint">{t('ai.needsTitleAndBody')}</p>
+            )}
 
             <div className="flex gap-2">
               <input
@@ -578,24 +787,20 @@ export const TaskComposer = ({
                 onKeyDown={(event) => {
                   if (event.key !== 'Enter') return;
                   event.preventDefault();
-                  if (!checklistDraft.trim()) return;
-                  setChecklist((items) => [...items, checklistDraft.trim()]);
-                  setChecklistDraft('');
+                  addStep();
                 }}
-                placeholder={t('task.addStep')}
+                placeholder={t(checklistIsFull ? 'task.stepsFull' : 'task.addStep')}
                 maxLength={TEXT_LIMITS.checklistItem}
-                className="field"
+                disabled={checklistIsFull}
+                className="field disabled:opacity-60"
               />
               <Button
                 type="button"
                 variant="secondary"
                 size="icon"
                 aria-label={t('task.addChecklistItem')}
-                onClick={() => {
-                  if (!checklistDraft.trim()) return;
-                  setChecklist((items) => [...items, checklistDraft.trim()]);
-                  setChecklistDraft('');
-                }}
+                disabled={checklistIsFull}
+                onClick={addStep}
               >
                 <Plus className="h-4 w-4" />
               </Button>
@@ -611,7 +816,7 @@ export const TaskComposer = ({
                     <span className="min-w-0 flex-1 break-words">{item}</span>
                     <button
                       type="button"
-                      aria-label={`Remove ${item}`}
+                      aria-label={t('task.removeStep', { step: item })}
                       onClick={() =>
                         setChecklist((items) => items.filter((_, at) => at !== index))
                       }

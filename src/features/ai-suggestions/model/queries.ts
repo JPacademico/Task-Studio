@@ -33,12 +33,48 @@ export const useSuggestSubtasks = (taskId: string) =>
   });
 
 /**
+ * Steps for a task that does not exist yet — the composer's version.
+ *
+ * No `taskId` and no accept step. `useSuggestSubtasks` proposes onto a saved
+ * row and `useAcceptSubtasks` files the answer; here the answer goes into the
+ * composer's own starting checklist, and it is the composer's Save that writes
+ * anything at all. So this is the whole feature rather than half of it, and
+ * nothing is invalidated: no cache is describing a task that has not been
+ * created.
+ */
+export const useSuggestDraftSubtasks = () =>
+  useMutation({
+    mutationFn: (draft: { title: string; description: string }) =>
+      aiApi.suggestDraftSubtasks(draft),
+    onError: (error) => toast.error(errorMessage(error, translate('ai.suggestFailed'))),
+  });
+
+/**
  * Files accepted steps onto the task's note checklist.
  *
  * Invalidates the task rather than patching it: the API decides how many of the
  * suggestions actually fit under the cap, and it can legitimately add fewer
  * than were proposed. Reconstructing that answer on the client would be
  * guessing at a number the server has just finished computing.
+ *
+ * ## Why the toast waits for the refetch
+ *
+ * `onSuccess` is `async` and the invalidation is **awaited**, which is the fix
+ * for the notice arriving before the thing it was announcing. It used to be a
+ * floating `void`: the toast fired on the same tick the request resolved, while
+ * the refetch it had just started was still in the air — so "3 steps added"
+ * appeared, sat there for the length of a round trip, and only then did three
+ * Post-its fade in underneath it. The order read as a bug because it was one:
+ * the app was reporting a result it had not yet fetched.
+ *
+ * `invalidateQueries` resolves once the active refetches it triggered have
+ * settled, so awaiting it means the notes are in the cache — and therefore on
+ * screen, since the sheet is what is being looked at — by the time the toast is
+ * raised. React Query holds `onSettled` until this returns, which costs nothing
+ * here: there is no `onSettled` on this mutation and the button's spinner is
+ * driven by `isPending`, which stays true for exactly as long as the work
+ * actually takes. The user sees the steps appear *and then* be announced,
+ * which is the sequence they were told about.
  */
 export const useAcceptSubtasks = () => {
   const queryClient = useQueryClient();
@@ -47,8 +83,8 @@ export const useAcceptSubtasks = () => {
     mutationFn: ({ suggestionId, titles }: { suggestionId: string; titles?: string[] }) =>
       aiApi.acceptSubtasks(suggestionId, titles),
 
-    onSuccess: (result) => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all });
+    onSuccess: async (result) => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all });
 
       if (result.added === 0) {
         toast.info(translate('ai.noStepsAdded'));

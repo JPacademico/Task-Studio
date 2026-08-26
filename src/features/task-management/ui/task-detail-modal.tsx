@@ -230,7 +230,10 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
           */}
           <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
             <span
-              title={`Created by ${task.createdBy.displayName} · ${formatDateTime(task.createdAt)}`}
+              title={t('common.createdBy', {
+                name: task.createdBy.displayName,
+                date: formatDateTime(task.createdAt),
+              })}
               className="avatar-chip inline-flex items-center gap-1.5 border border-edge bg-surface-sunken py-0.5 pr-2.5"
             >
               <Avatar
@@ -247,7 +250,7 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
               <span className="inline-flex items-center gap-2 rounded-full border border-edge bg-surface-sunken px-2.5 py-1 text-content-muted">
                 {task.startAt && (
                   <span
-                    title={`Starts ${formatDateTime(task.startAt)}`}
+                    title={t('common.startsOn', { date: formatDateTime(task.startAt) })}
                     className="inline-flex items-center gap-1"
                   >
                     <Play className="h-3 w-3 shrink-0 fill-current" />
@@ -263,7 +266,7 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
 
                 {task.dueAt && (
                   <span
-                    title={`Due ${formatDateTime(task.dueAt)}`}
+                    title={t('common.dueOn', { date: formatDateTime(task.dueAt) })}
                     className={cn(
                       'inline-flex items-center gap-1',
                       task.isOverdue && 'font-semibold text-danger',
@@ -276,7 +279,7 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
 
                 {task.completedAt && (
                   <span
-                    title={`Completed ${formatDateTime(task.completedAt)}`}
+                    title={t('common.completedOn', { date: formatDateTime(task.completedAt) })}
                     className="inline-flex items-center gap-1 font-semibold text-positive"
                   >
                     <Check className="h-3 w-3 shrink-0" strokeWidth={3} />

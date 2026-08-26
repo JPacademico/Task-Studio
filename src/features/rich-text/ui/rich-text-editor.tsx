@@ -331,8 +331,8 @@ export const RichTextEditor = ({
                 <button
                   key={color}
                   type="button"
-                  title={`Text colour ${color}`}
-                  aria-label={`Text colour ${color}`}
+                  title={t('common.textColour', { color })}
+                  aria-label={t('common.textColour', { color })}
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => exec('foreColor', color)}
                   className="h-5 w-5 rounded-full ring-1 ring-black/15 transition-transform duration-150 hover:scale-110"

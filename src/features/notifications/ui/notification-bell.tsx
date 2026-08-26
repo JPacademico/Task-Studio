@@ -52,7 +52,11 @@ export const NotificationBell = () => {
       <button
         type="button"
         onClick={() => setIsOpen((open) => !open)}
-        aria-label={`Notifications${unread > 0 ? ` (${unread} unread)` : ''}`}
+        aria-label={
+          unread > 0
+            ? t('common.notificationsUnread', { count: String(unread) })
+            : t('common.notifications')
+        }
         className={cn(
           'relative grid h-9 w-9 place-items-center rounded-xl transition-colors',
           'text-content-muted hover:bg-surface-sunken hover:text-content',

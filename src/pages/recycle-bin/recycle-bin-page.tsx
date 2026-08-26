@@ -205,8 +205,12 @@ const RecycleBinPage = () => {
                     {task.title}
                   </p>
                   <p className="text-[11px] text-content-faint">
-                    {task.project?.name ?? t('agenda.personal')} · deleted{' '}
-                    {task.deletedAt ? formatRelative(task.deletedAt) : 'recently'}
+                    {task.project?.name ?? t('agenda.personal')} ·{' '}
+                    {t('bin.deletedWhen', {
+                      when: task.deletedAt
+                        ? formatRelative(task.deletedAt)
+                        : t('bin.recently'),
+                    })}
                   </p>
                 </div>
 
@@ -221,13 +225,16 @@ const RecycleBinPage = () => {
                   </Badge>
                 )}
 
+                {/* The type's name, not its key. `TASK_TYPE_META` holds a
+                    `TranslationKey`; printing it raw is how this row came to
+                    read "type.MEGA" in every language. */}
                 <Badge
                   className={cn(
                     'border-transparent bg-transparent',
                     TASK_TYPE_META[task.type].accent,
                   )}
                 >
-                  {TASK_TYPE_META[task.type].label}
+                  {t(TASK_TYPE_META[task.type].label)}
                 </Badge>
 
                 <div className="ml-auto flex items-center gap-2">
@@ -296,8 +303,13 @@ const RecycleBinPage = () => {
                         ? t('bin.projectWhiteboard')
                         : note.scope === 'TASK'
                           ? t('bin.pinnedToTask')
-                          : `Notes board · page ${note.pageIndex + 1}`}{' '}
-                      · deleted {note.deletedAt ? formatRelative(note.deletedAt) : 'recently'}
+                          : t('bin.notesBoardPage', { page: String(note.pageIndex + 1) })}{' '}
+                      ·{' '}
+                      {t('bin.deletedWhen', {
+                        when: note.deletedAt
+                          ? formatRelative(note.deletedAt)
+                          : t('bin.recently'),
+                      })}
                     </p>
                   </div>
 
@@ -375,8 +387,8 @@ const RecycleBinPage = () => {
                         notes: String(project.counts.notes),
                         messages: String(project.counts.chatMessages),
                       })}
-                      {' · deleted '}
-                      {formatRelative(project.deletedAt)}
+                      {' · '}
+                      {t('bin.deletedWhen', { when: formatRelative(project.deletedAt) })}
                     </p>
                   </div>
 

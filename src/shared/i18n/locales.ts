@@ -338,7 +338,7 @@ const en = {
   'task.dismiss': 'Dismiss',
   'task.markPending': 'Mark as pending',
   'task.markDone': 'Mark as done',
-  'task.removeStep': 'Remove step',
+  'task.removeStep': 'Remove “{step}”',
   'task.addStepShort': 'Add a step',
   'task.addStepAction': 'Add step',
   'task.notes': 'Notes',
@@ -488,6 +488,9 @@ const en = {
   'board.offlineLocal': 'Offline — changes stay local',
 
   'toast.taskCreated': '"{title}" created.',
+  'toast.taskDone': '“{title}” is done.',
+  'toast.projectReady': '“{name}” is ready.',
+  'toast.skinApplied': '{name} applied.',
   // ---- Mutation toasts ---------------------------------------------------
   'toast.boardAddFailed': 'Could not add that to the board.',
   'toast.noteSaveFailed': 'Could not save the note.',
@@ -523,7 +526,7 @@ const en = {
   'toast.statusFailed': 'Could not change the status.',
   'toast.taskBinned': 'Task moved to the recycle bin.',
   'toast.taskPurged': 'Task deleted for good.',
-  'toast.taskRestored': 'Task restored.',
+  'toast.taskRestored': '“{title}” restored.',
   'toast.restoreFailed': 'Could not restore it.',
   'toast.deleteFailed': 'Could not delete it.',
 
@@ -883,6 +886,9 @@ const en = {
   'bin.restore': 'Restore',
   'bin.emptyNote': 'Empty note',
   'bin.opening': 'Opening the bin',
+  'bin.deletedWhen': 'deleted {when}',
+  'bin.recently': 'recently',
+  'bin.notesBoardPage': 'Notes board · page {page}',
 
   // Projects: the only tab where an item expires on its own.
   'bin.projects': 'Projects',
@@ -929,6 +935,9 @@ const en = {
   // ---- Project dashboard -------------------------------------------------
   'projectDash.crunching': 'Crunching metrics',
   'projectDash.completion': 'Completion',
+  'projectDash.doneOfTotal': '{done} of {total} tasks done',
+  'projectDash.tasksCompleted': '{count} tasks completed',
+  'projectDash.completedOnDay': '{count} completed on {date}',
   'projectDash.mostProductive': 'Most productive',
   'projectDash.noCompletions': 'No completions yet',
   'projectDash.noCompletionsBody':
@@ -978,6 +987,52 @@ const en = {
   'common.close': 'Close',
   'common.retry': 'Try again',
   'common.loading': 'Loading…',
+  'common.you': 'You',
+  'common.somethingWentWrong': 'Something went wrong.',
+  'common.noDescription': 'No description yet.',
+  'session.unreachable': 'Cannot reach the server. Check your connection.',
+  'session.slowStart':
+    'The server is taking too long to respond — it may be starting up. Try again in a moment.',
+  'board.pagesFull': 'A board holds at most {max} pages',
+  'board.addPage': 'Add a page',
+  'themes.previewFirst': 'Preview any of them before you commit',
+  'themes.moreInGallery':
+    '{count} more in the gallery — preview any of them before you commit',
+  'auth.dragCard.signIn': 'Sign in',
+  'auth.dragCard.dragMe': 'Drag me anywhere',
+  'nav.unpinHint': 'Unpin — let the menu hide again',
+  'nav.pinHint': 'Pin the menu open',
+  'nav.dragToPin': 'Drag me out to pin this anywhere on screen',
+  'stage.collapse': 'Back to the page',
+  'stage.expand': 'Expand to the full screen',
+  'chat.pinnedHint': 'Pinned to the screen — the chat follows you between tabs. Click to unpin.',
+  'chat.dragToPin': 'Drag me onto the chat to keep it on screen everywhere',
+  'chat.unpinAria': 'Unpin the chat from the screen',
+  'chat.pinAria': 'Pin the chat to the screen',
+  'board.moveLocked':
+    'Only the people this task is assigned to (or a project admin) can move it.',
+  'common.fullScreen': 'Full screen',
+  'common.renameNamed': 'Rename {name}',
+  'common.removeNamed': 'Remove {name}',
+  'common.openNamed': 'Open {name}',
+  'common.pageNumber': 'Page {number}',
+  'common.useColour': 'Use {color}',
+  'common.textColour': 'Text colour {color}',
+  'common.decrease': 'Decrease {label}',
+  'common.increase': 'Increase {label}',
+  'common.value': 'value',
+  'common.createdBy': 'Created by {name} · {date}',
+  'common.createdByWithEmail': 'Created by {name} ({email}) · {date}',
+  'common.lastEditedBy': 'Last edited by {name} · {date}',
+  'common.startsOn': 'Starts {date}',
+  'common.dueOn': 'Due {date}',
+  'common.completedOn': 'Completed {date}',
+  'common.attachedTo': 'Attached to {title}',
+  'common.overdueCount': '{count} overdue',
+  'common.notifications': 'Notifications',
+  'common.notificationsUnread': 'Notifications ({count} unread)',
+  'common.notesFrom': '{count} note(s) from {names}',
+  'common.notesCount': '{count} note(s)',
   // ---- Task taxonomy -----------------------------------------------------
   //
   // The type, status and priority vocabularies. These live in
@@ -1092,7 +1147,6 @@ const en = {
     'No steps yet. Press + to write one on a Post-it — up to three per task.',
   'task.noteChecklistFull': 'A task holds at most {max} notes. Tear one up to make room.',
   'task.note': 'Note',
-  'task.openNote': 'Open this note',
   'task.newNote': 'New note',
   'task.newNoteHint': 'One step, written on a Post-it. Anyone on the task can tick it off.',
   'task.newNotePlaceholder': 'What needs doing?',
@@ -1101,6 +1155,23 @@ const en = {
   'task.tickedBy': 'Done by {name}',
   'task.suggestSteps': 'Suggest',
   'task.suggestStepsHint': 'Ask the assistant for up to three steps for this task.',
+  'task.stepsFull': 'A task holds three starting steps.',
+  'task.lateOpen': 'Past its deadline and still open',
+  'task.lateDone': 'Finished after the deadline',
+  'task.pin': 'Pin task',
+  'task.unpin': 'Unpin task',
+  'task.completionNotYours': 'Only the people this task is assigned to can complete it.',
+  'task.completionOwnedByAssignees': 'Completion is owned by the assignees',
+  'task.completionTicksOwnBox':
+    'Ticks your own box. The task is only done once every assignee has ticked theirs.',
+  'task.everyoneTicked': 'Everyone has ticked their box.',
+  'task.waitingOn': 'Waiting on {names}',
+  'task.sharedBlocked':
+    'Shared task — still waiting on {people}. Everyone assigned has to tick their own box, or a project admin can close it.',
+  'task.sharedBlockedCount': '{count} more assignee(s)',
+  'task.andMore': ' and {count} more',
+  'task.listJoin': '{list} and {last}',
+  'task.noteBy': 'Written by {name} — open it to read the whole note.',
 
   // ---- Grouping board ----------------------------------------------------
   'project.tabGroups': 'Groups',
@@ -1132,10 +1203,77 @@ const en = {
   'groups.emptyBodyMember':
     'An owner or admin can set up columns here to group the project’s tasks.',
 
+  // Filtering, hiding and paging the board
+  'groups.filterOpen': 'Open',
+  'groups.filterDone': 'Completed',
+  'groups.noneDoneHere': 'Nothing finished in this column yet',
+  'groups.hiddenCount': '{count} hidden',
+  'groups.showAllColumns': 'Show all',
+  'groups.hideColumn': 'Hide “{name}” on my screen',
+  'groups.showColumn': 'Show “{name}” again',
+  'groups.previousPage': 'Previous columns',
+  'groups.nextPage': 'More columns',
+  'groups.allHiddenTitle': 'Every column is hidden',
+  'groups.allHiddenBody':
+    'You have folded away all of this board’s columns. They are hidden only on this device — bring them back whenever you like.',
+  'groups.noneMatchTitle': 'Nothing to show here',
+  'groups.noneOpenBody': 'There is no open work on this board right now.',
+  'groups.noneDoneBody': 'Nothing on this board has been completed yet.',
+  'groups.addTaskHere': 'New task in “{name}”',
+  'groups.tagLocked': 'Fixed by the column this was created from.',
+  'groups.signOff': '{done} of {total} assignees have signed off',
+  'groups.completeShared':
+    'Ticks your own box. The task is only done once every assignee has ticked theirs.',
+  'groups.completeAsAdmin': 'Close this task on the team’s behalf.',
+
   // ---- Steps from the assistant ------------------------------------------
   'ai.suggestFailed': 'Could not reach the assistant.',
   'ai.stepsAdded': '{count} step(s) added.',
   'ai.noStepsAdded': 'Nothing to add — this task is already full.',
+  'ai.needsTitleAndBody':
+    'Write a title and a description first — they are what the assistant reads.',
+
+
+  // ---- Theme gallery ------------------------------------------
+  'skin.STUDIO.tagline': 'The quiet default',
+  'skin.STUDIO.body':
+    'Soft surfaces, one indigo accent and nothing that asks for your attention — the look the rest of these are a departure from.',
+  'skin.PAPER.tagline': 'Illustrated and loud',
+  'skin.PAPER.body':
+    'Thick ink outlines, chunky corners and shadows that read as cut paper lying on the page rather than as a blur.',
+  'skin.TERMINAL.tagline': 'Phosphor and scanlines',
+  'skin.TERMINAL.body':
+    'Monospace everywhere, hard corners, neon rules and a faint scanline wash over the whole tube.',
+  'skin.VINTAGE.tagline': 'Brass and leather',
+  'skin.VINTAGE.body':
+    'Machined corners, engraved rules and controls that catch a highlight along the top edge and sink when pressed.',
+  'skin.PIXEL.tagline': '8-bit cartridge',
+  'skin.PIXEL.body':
+    'Nine-slice tiles with the corner pixels knocked out, ordered dither for a material, and motion quantised into whole frames.',
+  'skin.SPACE.tagline': 'The deep field',
+  'skin.SPACE.body':
+    'Lit glass instruments over a drifting starfield, with a singularity sunk into every screen edge where a menu hides.',
+  'skin.HAZARD.tagline': 'Containment breach',
+  'skin.HAZARD.body':
+    'Stencilled warnings, hazard tape at every seam and toxic sludge pooled in the bottom of every card — which sloshes.',
+  'skin.NEWSPAPER.tagline': 'The morning edition',
+  'skin.NEWSPAPER.body':
+    'Halftone paper, ruled columns, banner headlines under a double rule, and photographs printed the only way a press could — in black.',
+  'skin.ELDRITCH.tagline': 'Something is reading this',
+  'skin.ELDRITCH.body':
+    'Corners that grew rather than being cut, light with no source, inscribed capitals — and an eye that opens somewhere on the page while you are looking elsewhere.',
+  'skin.AUTUMN.tagline': 'Warm paper and falling leaves',
+  'skin.AUTUMN.body':
+    'Pressed rag paper under a low sun, corners rounded the whole way through, a serif you could read a novel in — and leaves coming down over all of it.',
+  'skin.RUNIC.tagline': 'Inked on old paper',
+  'skin.RUNIC.body':
+    'Foxed rag paper with the mould lines still in it, ruled margins that have worn through in places, and oxblood lettering that soaked into the fibre — on the rails, in the icons, under your pointer.',
+  'skin.UNDERWATER.tagline': 'Held under',
+  'skin.UNDERWATER.body':
+    'Broken light from a surface somewhere above you, corners water has had a long time to round off, colour that drains toward blue with depth — and bubbles going up past all of it.',
+  'skin.VOLCANO.tagline': 'The crust is a lid',
+  'skin.VOLCANO.body':
+    'Ash-grey plates crazed with fractures, a hot seam under every edge where the melt shows through, type struck rather than set — and embers going up off all of it.',
 
   'theme.light': 'Light',
   'theme.dark': 'Dark',
@@ -1517,7 +1655,7 @@ const ptBR: Record<TranslationKey, string> = {
   'task.dismiss': 'Descartar',
   'task.markPending': 'Marcar como pendente',
   'task.markDone': 'Marcar como concluída',
-  'task.removeStep': 'Remover etapa',
+  'task.removeStep': 'Remover “{step}”',
   'task.addStepShort': 'Adicionar uma etapa',
   'task.addStepAction': 'Adicionar etapa',
   'task.notes': 'Notas',
@@ -1661,6 +1799,9 @@ const ptBR: Record<TranslationKey, string> = {
   'board.offlineLocal': 'Offline — as alterações ficam locais',
 
   'toast.taskCreated': '"{title}" criada.',
+  'toast.taskDone': '“{title}” foi concluída.',
+  'toast.projectReady': '“{name}” está pronto.',
+  'toast.skinApplied': '{name} aplicado.',
   'toast.boardAddFailed': 'Não foi possível adicionar isso ao mural.',
   'toast.noteSaveFailed': 'Não foi possível salvar a nota.',
   'toast.layoutSaveFailed': 'Não foi possível salvar o layout.',
@@ -1695,7 +1836,7 @@ const ptBR: Record<TranslationKey, string> = {
   'toast.statusFailed': 'Não foi possível alterar o status.',
   'toast.taskBinned': 'Tarefa movida para a lixeira.',
   'toast.taskPurged': 'Tarefa excluída definitivamente.',
-  'toast.taskRestored': 'Tarefa restaurada.',
+  'toast.taskRestored': '“{title}” restaurada.',
   'toast.restoreFailed': 'Não foi possível restaurar.',
   'toast.deleteFailed': 'Não foi possível excluir.',
 
@@ -2045,6 +2186,9 @@ const ptBR: Record<TranslationKey, string> = {
   'bin.restore': 'Restaurar',
   'bin.emptyNote': 'Nota vazia',
   'bin.opening': 'Abrindo a lixeira',
+  'bin.deletedWhen': 'excluída {when}',
+  'bin.recently': 'há pouco',
+  'bin.notesBoardPage': 'Mural de notas · página {page}',
 
   'bin.projects': 'Projetos',
   'bin.noDeletedProjects': 'Nenhum projeto excluído',
@@ -2087,6 +2231,9 @@ const ptBR: Record<TranslationKey, string> = {
 
   'projectDash.crunching': 'Calculando métricas',
   'projectDash.completion': 'Conclusão',
+  'projectDash.doneOfTotal': '{done} de {total} tarefas concluídas',
+  'projectDash.tasksCompleted': '{count} tarefas concluídas',
+  'projectDash.completedOnDay': '{count} concluída(s) em {date}',
   'projectDash.mostProductive': 'Mais produtivo',
   'projectDash.noCompletions': 'Nenhuma conclusão ainda',
   'projectDash.noCompletionsBody':
@@ -2132,6 +2279,53 @@ const ptBR: Record<TranslationKey, string> = {
   'common.close': 'Fechar',
   'common.retry': 'Tentar novamente',
   'common.loading': 'Carregando…',
+  'common.you': 'Você',
+  'common.somethingWentWrong': 'Algo deu errado.',
+  'common.noDescription': 'Sem descrição ainda.',
+  'session.unreachable': 'Não foi possível alcançar o servidor. Verifique sua conexão.',
+  'session.slowStart':
+    'O servidor está demorando demais para responder — talvez esteja iniciando. Tente de novo em instantes.',
+  'board.pagesFull': 'Um mural comporta no máximo {max} páginas',
+  'board.addPage': 'Adicionar uma página',
+  'themes.previewFirst': 'Veja qualquer um deles antes de decidir',
+  'themes.moreInGallery':
+    'mais {count} na galeria — veja qualquer um deles antes de decidir',
+  'auth.dragCard.signIn': 'Entrar',
+  'auth.dragCard.dragMe': 'Arraste para onde quiser',
+  'nav.unpinHint': 'Desafixar — deixar o menu se esconder de novo',
+  'nav.pinHint': 'Manter o menu aberto',
+  'nav.dragToPin': 'Arraste para fixar isto em qualquer lugar da tela',
+  'stage.collapse': 'Voltar para a página',
+  'stage.expand': 'Expandir para tela cheia',
+  'chat.pinnedHint':
+    'Fixado na tela — o chat te acompanha entre as abas. Clique para desafixar.',
+  'chat.dragToPin': 'Arraste até o chat para mantê-lo na tela em todo lugar',
+  'chat.unpinAria': 'Desafixar o chat da tela',
+  'chat.pinAria': 'Fixar o chat na tela',
+  'board.moveLocked':
+    'Só quem está designado nesta tarefa (ou um admin do projeto) pode movê-la.',
+  'common.fullScreen': 'Tela cheia',
+  'common.renameNamed': 'Renomear {name}',
+  'common.removeNamed': 'Remover {name}',
+  'common.openNamed': 'Abrir {name}',
+  'common.pageNumber': 'Página {number}',
+  'common.useColour': 'Usar {color}',
+  'common.textColour': 'Cor do texto {color}',
+  'common.decrease': 'Diminuir {label}',
+  'common.increase': 'Aumentar {label}',
+  'common.value': 'valor',
+  'common.createdBy': 'Criado por {name} · {date}',
+  'common.createdByWithEmail': 'Criado por {name} ({email}) · {date}',
+  'common.lastEditedBy': 'Editado por último por {name} · {date}',
+  'common.startsOn': 'Começa {date}',
+  'common.dueOn': 'Prazo {date}',
+  'common.completedOn': 'Concluída {date}',
+  'common.attachedTo': 'Anexado a {title}',
+  'common.overdueCount': '{count} atrasada(s)',
+  'common.notifications': 'Notificações',
+  'common.notificationsUnread': 'Notificações ({count} não lidas)',
+  'common.notesFrom': '{count} nota(s) de {names}',
+  'common.notesCount': '{count} nota(s)',
   'type.MEGA': 'MegaTarefa',
   'type.MEGA.short': 'Mega',
   'type.MEGA.hint': 'Mais de 2 dias',
@@ -2233,7 +2427,6 @@ const ptBR: Record<TranslationKey, string> = {
     'Nenhum passo ainda. Toque em + para escrever um num post-it — até três por tarefa.',
   'task.noteChecklistFull': 'Uma tarefa guarda no máximo {max} notas. Apague uma para abrir espaço.',
   'task.note': 'Nota',
-  'task.openNote': 'Abrir esta nota',
   'task.newNote': 'Nova nota',
   'task.newNoteHint': 'Um passo, escrito num post-it. Qualquer pessoa na tarefa pode marcá-lo.',
   'task.newNotePlaceholder': 'O que precisa ser feito?',
@@ -2242,6 +2435,23 @@ const ptBR: Record<TranslationKey, string> = {
   'task.tickedBy': 'Concluído por {name}',
   'task.suggestSteps': 'Sugerir',
   'task.suggestStepsHint': 'Peça ao assistente até três passos para esta tarefa.',
+  'task.stepsFull': 'Uma tarefa comporta três passos iniciais.',
+  'task.lateOpen': 'Passou do prazo e ainda está aberta',
+  'task.lateDone': 'Concluída depois do prazo',
+  'task.pin': 'Fixar tarefa',
+  'task.unpin': 'Desafixar tarefa',
+  'task.completionNotYours': 'Só quem está designado nesta tarefa pode concluí-la.',
+  'task.completionOwnedByAssignees': 'A conclusão pertence aos responsáveis',
+  'task.completionTicksOwnBox':
+    'Marca apenas a sua parte. A tarefa só fica concluída quando todos os responsáveis marcarem a delas.',
+  'task.everyoneTicked': 'Todos já marcaram a parte deles.',
+  'task.waitingOn': 'Aguardando {names}',
+  'task.sharedBlocked':
+    'Tarefa compartilhada — ainda aguardando {people}. Todos os responsáveis precisam marcar a parte deles, ou um admin do projeto pode encerrá-la.',
+  'task.sharedBlockedCount': 'mais {count} responsável(is)',
+  'task.andMore': ' e mais {count}',
+  'task.listJoin': '{list} e {last}',
+  'task.noteBy': 'Escrito por {name} — abra para ler o recado inteiro.',
 
   'project.tabGroups': 'Grupos',
   'groups.tagLabel': 'Grupo',
@@ -2272,9 +2482,75 @@ const ptBR: Record<TranslationKey, string> = {
   'groups.emptyBodyMember':
     'Um proprietário ou admin pode criar colunas aqui para agrupar as tarefas do projeto.',
 
+  'groups.filterOpen': 'Em aberto',
+  'groups.filterDone': 'Concluídas',
+  'groups.noneDoneHere': 'Nada concluído nesta coluna ainda',
+  'groups.hiddenCount': '{count} oculta(s)',
+  'groups.showAllColumns': 'Mostrar todas',
+  'groups.hideColumn': 'Ocultar “{name}” na minha tela',
+  'groups.showColumn': 'Mostrar “{name}” novamente',
+  'groups.previousPage': 'Colunas anteriores',
+  'groups.nextPage': 'Mais colunas',
+  'groups.allHiddenTitle': 'Todas as colunas estão ocultas',
+  'groups.allHiddenBody':
+    'Você ocultou todas as colunas deste quadro. Elas ficam ocultas apenas neste dispositivo — traga-as de volta quando quiser.',
+  'groups.noneMatchTitle': 'Nada para mostrar aqui',
+  'groups.noneOpenBody': 'Não há trabalho em aberto neste quadro agora.',
+  'groups.noneDoneBody': 'Nada neste quadro foi concluído ainda.',
+  'groups.addTaskHere': 'Nova tarefa em “{name}”',
+  'groups.tagLocked': 'Definido pela coluna de onde esta tarefa foi criada.',
+  'groups.signOff': '{done} de {total} responsáveis já confirmaram',
+  'groups.completeAsAdmin': 'Encerrar esta tarefa em nome da equipe.',
+  'groups.completeShared':
+    'Marca apenas a sua parte. A tarefa só fica concluída quando todos os responsáveis marcarem a delas.',
+
   'ai.suggestFailed': 'Não foi possível falar com o assistente.',
   'ai.stepsAdded': '{count} passo(s) adicionado(s).',
   'ai.noStepsAdded': 'Nada a adicionar — esta tarefa já está cheia.',
+  'ai.needsTitleAndBody':
+    'Escreva um título e uma descrição primeiro — é o que o assistente lê.',
+
+
+  // ---- Theme gallery ------------------------------------------
+  'skin.STUDIO.tagline': 'O padrão discreto',
+  'skin.STUDIO.body':
+    'Superfícies suaves, um único acento índigo e nada que peça sua atenção — o visual do qual todos os outros são um desvio.',
+  'skin.PAPER.tagline': 'Ilustrado e barulhento',
+  'skin.PAPER.body':
+    'Contornos grossos de tinta, cantos robustos e sombras que parecem papel recortado pousado sobre a página, em vez de um borrão.',
+  'skin.TERMINAL.tagline': 'Fósforo e scanlines',
+  'skin.TERMINAL.body':
+    'Monoespaçada em tudo, cantos retos, linhas de neon e uma leve varredura de scanlines sobre o tubo inteiro.',
+  'skin.VINTAGE.tagline': 'Latão e couro',
+  'skin.VINTAGE.body':
+    'Cantos usinados, filetes gravados e controles que capturam um brilho na borda superior e afundam quando pressionados.',
+  'skin.PIXEL.tagline': 'Cartucho de 8 bits',
+  'skin.PIXEL.body':
+    'Ladrilhos nine-slice com os pixels dos cantos removidos, dithering ordenado como material e movimento quantizado em quadros inteiros.',
+  'skin.SPACE.tagline': 'O campo profundo',
+  'skin.SPACE.body':
+    'Instrumentos de vidro iluminados sobre um campo de estrelas à deriva, com uma singularidade afundada em cada borda da tela onde um menu se esconde.',
+  'skin.HAZARD.tagline': 'Falha de contenção',
+  'skin.HAZARD.body':
+    'Avisos estampados, fita de perigo em cada emenda e lodo tóxico acumulado no fundo de cada card — que balança junto.',
+  'skin.NEWSPAPER.tagline': 'A edição da manhã',
+  'skin.NEWSPAPER.body':
+    'Papel em meio-tom, colunas com filetes, manchetes sob um fio duplo e fotografias impressas do único jeito que a prensa permitia — em preto.',
+  'skin.ELDRITCH.tagline': 'Algo está lendo isto',
+  'skin.ELDRITCH.body':
+    'Cantos que cresceram em vez de serem cortados, luz sem origem, capitulares inscritas — e um olho que se abre em algum ponto da página enquanto você olha para outro lado.',
+  'skin.AUTUMN.tagline': 'Papel quente e folhas caindo',
+  'skin.AUTUMN.body':
+    'Papel de algodão prensado sob um sol baixo, cantos arredondados por inteiro, uma serifada em que dá para ler um romance — e folhas descendo sobre tudo isso.',
+  'skin.RUNIC.tagline': 'Escrito a tinta em papel antigo',
+  'skin.RUNIC.body':
+    'Papel de algodão manchado pelo tempo, com as marcas da fôrma ainda visíveis, margens gastas em alguns trechos e letras cor de sangue-de-boi que penetraram na fibra — nas barras, nos ícones, sob o seu cursor.',
+  'skin.UNDERWATER.tagline': 'Mantido sob a água',
+  'skin.UNDERWATER.body':
+    'Luz quebrada vinda de uma superfície lá em cima, cantos que a água teve muito tempo para arredondar, cores que escorrem para o azul conforme a profundidade — e bolhas subindo por tudo.',
+  'skin.VOLCANO.tagline': 'A crosta é uma tampa',
+  'skin.VOLCANO.body':
+    'Placas cinza-cinza rachadas por fraturas, uma costura quente sob cada borda onde o magma aparece, tipografia golpeada em vez de composta — e brasas subindo de tudo isso.',
 
   'theme.light': 'Claro',
   'theme.dark': 'Escuro',

@@ -2,6 +2,7 @@ import type { UserSummary } from '@/entities/user/model/types';
 import { cn } from '@/shared/lib/cn';
 import { formatDateTime, formatRelative } from '@/shared/lib/dates';
 import { Avatar } from '@/shared/ui';
+import { translate, useT } from '@/shared/i18n';
 
 /**
  * Who wrote this page, and who touched it last.
@@ -37,9 +38,15 @@ interface DocumentBylineProps {
   className?: string;
 }
 
-/** "You" on your own writing — a shared board still has to say which is yours. */
+/**
+ * "You" on your own writing — a shared board still has to say which is yours.
+ *
+ * `translate` rather than a `t` passed in: this is called during render, so it
+ * reads the same language a hook would, and threading the function through a
+ * pure string helper would be the only reason it took an argument at all.
+ */
 const nameFor = (person: UserSummary, currentUserId: string | undefined): string =>
-  person.id === currentUserId ? 'You' : person.displayName;
+  person.id === currentUserId ? translate('common.you') : person.displayName;
 
 export const DocumentByline = ({
   createdBy,
@@ -49,6 +56,8 @@ export const DocumentByline = ({
   currentUserId,
   className,
 }: DocumentBylineProps) => {
+  const t = useT();
+
   // The credit is the only thing this component draws, so a response that came
   // back without one has nothing to render rather than a broken line — and a
   // missing author must never be the reason a page fails to open. `NoteAuthorStamp`
@@ -65,7 +74,11 @@ export const DocumentByline = ({
   return (
     <span className={cn('inline-flex items-center gap-1.5 text-[10px]', className)}>
       <span
-        title={`Created by ${createdBy.displayName} (${createdBy.email}) · ${formatDateTime(createdAt)}`}
+        title={t('common.createdByWithEmail', {
+          name: createdBy.displayName,
+          email: createdBy.email,
+          date: formatDateTime(createdAt),
+        })}
         className="avatar-chip inline-flex items-center gap-1.5 border border-edge bg-surface-sunken py-0.5 pr-2"
       >
         <Avatar
@@ -85,7 +98,10 @@ export const DocumentByline = ({
 
       {wasEdited && updatedBy && updatedAt && (
         <span
-          title={`Last edited by ${updatedBy.displayName} · ${formatDateTime(updatedAt)}`}
+          title={t('common.lastEditedBy', {
+            name: updatedBy.displayName,
+            date: formatDateTime(updatedAt),
+          })}
           className="truncate text-content-faint"
         >
           · edited by {nameFor(updatedBy, currentUserId)} {formatRelative(updatedAt)}
@@ -114,6 +130,8 @@ export const DocumentCreatorStamp = ({
   createdAt,
   className,
 }: DocumentCreatorStampProps) => {
+  const t = useT();
+
   if (!createdBy) return null;
 
   return (
@@ -121,7 +139,10 @@ export const DocumentCreatorStamp = ({
       name={createdBy.displayName}
       src={createdBy.avatarUrl}
       size="xs"
-      title={`Created by ${createdBy.displayName} · ${formatDateTime(createdAt)}`}
+      title={t('common.createdBy', {
+        name: createdBy.displayName,
+        date: formatDateTime(createdAt),
+      })}
       className={cn('h-4 w-4 text-[8px] opacity-80', className)}
     />
   );

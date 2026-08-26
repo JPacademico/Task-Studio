@@ -97,7 +97,7 @@ const GalleryCard = ({ skin, isActive, isSelected, isDark, onSelect }: GalleryCa
               )}
             </span>
             <span className="mt-0.5 block truncate text-[11px] text-content-faint">
-              {skin.tagline}
+              {t(skin.tagline)}
             </span>
           </span>
 
@@ -151,7 +151,7 @@ const ThemeGalleryPage = () => {
   const apply = (value: ThemeSkin, name: string) => {
     setSkin(value);
     setSelected(value);
-    toast.success(`${name} applied.`);
+    toast.success(t('toast.skinApplied', { name }));
   };
 
   return (
@@ -264,7 +264,7 @@ const ThemeGalleryPage = () => {
                       key={index}
                       type="button"
                       onClick={() => setPage(index)}
-                      aria-label={`Page ${index + 1}`}
+                      aria-label={t('common.pageNumber', { number: String(index + 1) })}
                       aria-current={index === page}
                       className={cn(
                         'h-2 rounded-full transition-all duration-200 ease-studio',
@@ -341,14 +341,18 @@ const ThemeGalleryPage = () => {
               <div className="space-y-2.5 pt-3.5">
                 <div className="flex items-baseline gap-2">
                   <h2 className="text-base font-bold tracking-tight">{detail.name}</h2>
-                  <span className="truncate text-[11px] text-content-faint">{detail.tagline}</span>
+                  <span className="truncate text-[11px] text-content-faint">
+                    {t(detail.tagline)}
+                  </span>
                 </div>
 
                 {/* The description, and nothing else. The tag chips were a
                     second, worse description of the same theme sitting under
                     the first one — they still earn their keep as search terms,
                     which is where they now live and nowhere else. */}
-                <p className="text-xs leading-relaxed text-content-muted">{detail.description}</p>
+                <p className="text-xs leading-relaxed text-content-muted">
+                  {t(detail.description)}
+                </p>
 
                 <Button
                   className="w-full"

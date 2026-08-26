@@ -5,6 +5,7 @@ import { ChevronDown, Minus, Plus } from 'lucide-react';
 import { useSkin } from '@/app/providers/theme-provider';
 import { cn } from '@/shared/lib/cn';
 import { useSkinMotion } from '@/shared/lib/skin-motion';
+import { useT } from '@/shared/i18n';
 import { SkinLoader, skinLoaderWantsCaption } from './skin-loader';
 
 /** Inline "working on it", for buttons and rows. Drawn in the active skin. */
@@ -116,30 +117,34 @@ interface ColorPickerProps {
   label?: string;
 }
 
-export const ColorPicker = ({ value, onChange, options, label }: ColorPickerProps) => (
-  <div className="space-y-1.5">
-    {label && <p className="text-xs font-medium text-content-muted">{label}</p>}
-    <div className="flex flex-wrap gap-2">
-      {options.map((color) => (
-        <button
-          key={color}
-          type="button"
-          aria-label={`Use ${color}`}
-          aria-pressed={value.toLowerCase() === color.toLowerCase()}
-          onClick={() => onChange(color)}
-          className={cn(
-            'h-7 w-7 rounded-full transition-transform duration-150 ease-studio',
-            'hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60',
-            value.toLowerCase() === color.toLowerCase()
-              ? 'ring-2 ring-content ring-offset-2 ring-offset-surface-raised'
-              : 'ring-1 ring-black/10',
-          )}
-          style={{ backgroundColor: color }}
-        />
-      ))}
+export const ColorPicker = ({ value, onChange, options, label }: ColorPickerProps) => {
+  const t = useT();
+
+  return (
+    <div className="space-y-1.5">
+      {label && <p className="text-xs font-medium text-content-muted">{label}</p>}
+      <div className="flex flex-wrap gap-2">
+        {options.map((color) => (
+          <button
+            key={color}
+            type="button"
+            aria-label={t('common.useColour', { color })}
+            aria-pressed={value.toLowerCase() === color.toLowerCase()}
+            onClick={() => onChange(color)}
+            className={cn(
+              'h-7 w-7 rounded-full transition-transform duration-150 ease-studio',
+              'hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60',
+              value.toLowerCase() === color.toLowerCase()
+                ? 'ring-2 ring-content ring-offset-2 ring-offset-surface-raised'
+                : 'ring-1 ring-black/10',
+            )}
+            style={{ backgroundColor: color }}
+          />
+        ))}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 interface SwitchProps {
   checked: boolean;
@@ -200,6 +205,7 @@ export const Stepper = ({
   suffix,
   className,
 }: StepperProps) => {
+  const t = useT();
   const clamp = (next: number) => Math.min(max, Math.max(min, next));
 
   return (
@@ -209,7 +215,7 @@ export const Stepper = ({
       <div className="inline-flex items-center rounded-xl border border-edge bg-surface-sunken">
         <button
           type="button"
-          aria-label={`Decrease ${label ?? 'value'}`}
+          aria-label={t('common.decrease', { label: label ?? t('common.value') })}
           disabled={value <= min}
           onClick={() => onChange(clamp(value - step))}
           className="grid h-7 w-7 place-items-center rounded-l-xl text-content-muted transition-colors hover:bg-edge/50 hover:text-content disabled:opacity-35"
@@ -224,7 +230,7 @@ export const Stepper = ({
 
         <button
           type="button"
-          aria-label={`Increase ${label ?? 'value'}`}
+          aria-label={t('common.increase', { label: label ?? t('common.value') })}
           disabled={value >= max}
           onClick={() => onChange(clamp(value + step))}
           className="grid h-7 w-7 place-items-center rounded-r-xl text-content-muted transition-colors hover:bg-edge/50 hover:text-content disabled:opacity-35"

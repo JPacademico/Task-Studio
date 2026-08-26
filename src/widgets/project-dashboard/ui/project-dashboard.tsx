@@ -66,7 +66,10 @@ export const ProjectDashboard = ({ projectId }: { projectId: string }) => {
             <div className="flex items-end justify-between">
               <p className="text-3xl font-semibold tabular-nums">{totals.completionRate}%</p>
               <p className="text-xs text-content-muted">
-                {totals.completed} of {totals.tasks} tasks done
+                {t('projectDash.doneOfTotal', {
+                  done: String(totals.completed),
+                  total: String(totals.tasks),
+                })}
               </p>
             </div>
 
@@ -88,7 +91,10 @@ export const ProjectDashboard = ({ projectId }: { projectId: string }) => {
                     initial={{ height: 0 }}
                     animate={{ height: `${(point.completed / peak) * 100}%` }}
                     transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                    title={`${point.completed} completed on ${point.date}`}
+                    title={t('projectDash.completedOnDay', {
+                      count: String(point.completed),
+                      date: point.date,
+                    })}
                     style={{ minHeight: 2 }}
                   />
                   <span className="text-[9px] text-content-faint">
@@ -98,6 +104,16 @@ export const ProjectDashboard = ({ projectId }: { projectId: string }) => {
               ))}
             </div>
 
+            {/*
+              The type's *name*, not its key.
+
+              `TASK_TYPE_META[...].label` is a `TranslationKey` — the tables in
+              `shared/config/constants` hold keys precisely so a card, a badge
+              and a filter can all render the same word in the reader's own
+              language. This one row was printing the key itself, so the
+              completion board read "type.MEGA: 0" in every language including
+              English. The only thing missing was the `t()` around it.
+            */}
             <div className="flex flex-wrap gap-2 border-t border-edge pt-3">
               {Object.entries(byType).map(([type, count]) => (
                 <Badge
@@ -107,7 +123,7 @@ export const ProjectDashboard = ({ projectId }: { projectId: string }) => {
                     TASK_TYPE_META[type as keyof typeof byType].accent,
                   )}
                 >
-                  {TASK_TYPE_META[type as keyof typeof byType].label}: {count}
+                  {t(TASK_TYPE_META[type as keyof typeof byType].label)}: {count}
                 </Badge>
               ))}
             </div>
@@ -127,7 +143,9 @@ export const ProjectDashboard = ({ projectId }: { projectId: string }) => {
                   <p className="text-sm font-semibold">{mostProductiveMember.displayName}</p>
                   <p className="inline-flex items-center gap-1 text-[11px] text-content-muted">
                     <Award className="h-3 w-3 text-warning" />
-                    {mostProductiveMember.completed} tasks completed
+                    {t('projectDash.tasksCompleted', {
+                      count: String(mostProductiveMember.completed),
+                    })}
                   </p>
                 </div>
               </div>

@@ -517,7 +517,25 @@ const ProjectPage = () => {
         it opens is the one every other surface opens. See `GroupsBoard`.
       */}
       {tab === 'groups' && projectId && (
-        <GroupsBoard projectId={projectId} onOpenTask={setDetailTaskId} />
+        <GroupsBoard
+          /*
+           * Keyed on the project, so moving between two of them starts the
+           * board over.
+           *
+           * The route is the same and only the parameter changes, so React
+           * keeps this component mounted and hands it a new id — which would
+           * otherwise carry the page number, the open/completed filter and,
+           * worst of the three, a half-open "new task in this column" composer
+           * still holding a column id that belongs to the project you just
+           * left.
+           */
+          key={projectId}
+          projectId={projectId}
+          // For the composer the board's own "+" opens, with the column
+          // already locked in — see `lockedGroupId` on `TaskComposer`.
+          roster={project.roster}
+          onOpenTask={setDetailTaskId}
+        />
       )}
 
       {tab === 'dashboard' && <ProjectDashboard projectId={projectId} />}

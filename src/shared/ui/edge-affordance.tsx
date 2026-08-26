@@ -2,6 +2,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 
 import { useSkin } from '@/app/providers/theme-provider';
 import { cn } from '@/shared/lib/cn';
+import { translate } from '@/shared/i18n';
 import type { NavEdge } from '@/shared/lib/nav-preferences.store';
 import { PushPin } from './studio-icons';
 
@@ -210,7 +211,7 @@ export const NavPinButton = ({ isPinned, onToggle, className }: NavPinButtonProp
     type="button"
     onClick={onToggle}
     aria-pressed={isPinned}
-    title={isPinned ? 'Unpin — let the menu hide again' : 'Pin the menu open'}
+    title={translate(isPinned ? 'nav.unpinHint' : 'nav.pinHint')}
     aria-label={isPinned ? 'Unpin this menu' : 'Pin this menu open'}
     className={cn(
       'group/pin relative grid h-9 w-9 shrink-0 place-items-center rounded-xl text-brand',

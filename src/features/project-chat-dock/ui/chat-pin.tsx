@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { animate, motion, useMotionValue, useReducedMotion } from 'framer-motion';
 
 import { cn } from '@/shared/lib/cn';
+import { useT } from '@/shared/i18n';
 
 interface ChatPinProps {
   isPinned: boolean;
@@ -84,6 +85,7 @@ export const ChatPin = ({
   targetRef,
   onHoverTargetChange,
 }: ChatPinProps) => {
+  const t = useT();
   const reduceMotion = useReducedMotion();
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -155,12 +157,8 @@ export const ChatPin = ({
         // would rather not drag at all.
         onPinnedChange(!isPinned);
       }}
-      title={
-        isPinned
-          ? 'Pinned to the screen — the chat follows you between tabs. Click to unpin.'
-          : 'Drag me onto the chat to keep it on screen everywhere'
-      }
-      aria-label={isPinned ? 'Unpin the chat from the screen' : 'Pin the chat to the screen'}
+      title={t(isPinned ? 'chat.pinnedHint' : 'chat.dragToPin')}
+      aria-label={t(isPinned ? 'chat.unpinAria' : 'chat.pinAria')}
       role="button"
       tabIndex={0}
       onKeyDown={(event) => {

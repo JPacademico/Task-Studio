@@ -44,7 +44,7 @@ export const LateTag = ({ variant }: { variant: 'late' | 'completed-late' }) => 
       initial={{ scale: 0.7, rotate: -8, opacity: 0 }}
       animate={{ scale: 1, rotate: -2.5, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 480, damping: 18 }}
-      title={isOpen ? 'Past its deadline and still open' : 'Finished after the deadline'}
+      title={translate(isOpen ? 'task.lateOpen' : 'task.lateDone')}
       className={cn(
         'inline-flex items-center gap-1 rounded-[4px] border px-1.5 py-0.5',
         'text-[10px] font-black uppercase tracking-[0.09em]',
@@ -199,10 +199,11 @@ const TaskCardBase = ({
             <span
               title={
                 task.noteAuthors.length > 0
-                  ? `${noteCount} note(s) from ${task.noteAuthors
-                      .map((author) => author.displayName)
-                      .join(', ')}`
-                  : `${noteCount} note(s)`
+                  ? t('common.notesFrom', {
+                      count: String(noteCount),
+                      names: task.noteAuthors.map((author) => author.displayName).join(', '),
+                    })
+                  : t('common.notesCount', { count: String(noteCount) })
               }
               className="text-amber-400 drop-shadow-[0_2px_3px_rgb(0_0_0/0.35)]"
             >
@@ -231,17 +232,15 @@ const TaskCardBase = ({
             aria-busy={isSyncing || undefined}
             title={
               !task.isMine
-                ? 'Only the people this task is assigned to can complete it.'
+                ? t('task.completionNotYours')
                 : isShared
-                  ? 'Ticks your own box. The task is only done once every assignee has ticked theirs.'
+                  ? t('task.completionTicksOwnBox')
                   : undefined
             }
             aria-label={
               task.isMine
-                ? task.isCompletedByMe
-                  ? 'Mark as not done'
-                  : 'Mark as done'
-                : 'Completion is owned by the assignees'
+                ? t(task.isCompletedByMe ? 'task.markPending' : 'task.markDone')
+                : t('task.completionOwnedByAssignees')
             }
             onClick={(event) => {
               event.stopPropagation();
@@ -311,7 +310,7 @@ const TaskCardBase = ({
           {onTogglePin && (
             <button
               type="button"
-              aria-label={task.isPinned ? 'Unpin task' : 'Pin task'}
+              aria-label={t(task.isPinned ? 'task.unpin' : 'task.pin')}
               onClick={() => onTogglePin(task)}
               className={cn(
                 'rounded-lg p-1.5 transition-colors',
@@ -404,10 +403,12 @@ const TaskCardBase = ({
           <Badge
             title={
               signOff.done === signOff.total
-                ? 'Everyone has ticked their box.'
-                : `Waiting on ${outstandingAssignees(task)
-                    .map((assignee) => assignee.displayName)
-                    .join(', ')}`
+                ? t('task.everyoneTicked')
+                : t('task.waitingOn', {
+                    names: outstandingAssignees(task)
+                      .map((assignee) => assignee.displayName)
+                      .join(', '),
+                  })
             }
             className={cn(
               signOff.done === signOff.total && 'border-positive/40 text-positive',

@@ -1,4 +1,5 @@
 import type { ThemeSkin } from '@/entities/user/model/types';
+import { translate, type TranslationKey } from '@/shared/i18n';
 
 /**
  * The one description of every theme in the app.
@@ -91,17 +92,43 @@ export interface SkinPreview {
 
 export interface SkinDefinition {
   value: ThemeSkin;
+  /**
+   * The theme's name, and the one string here that is *not* a key.
+   *
+   * "Studio", "Newsprint", "Eldritch" are names rather than words — they do not
+   * translate any more than a font's does, and a Portuguese reader looking for
+   * the theme somebody described to them wants to find the same label.
+   */
   name: string;
-  /** Three or four words, shown under the name in the gallery. */
-  tagline: string;
-  /** One sentence. Only the gallery has room for it. */
-  description: string;
+  /**
+   * Three or four words, shown under the name in the gallery.
+   *
+   * A `TranslationKey`, not the words. Same reasoning as `TASK_TYPE_META`: this
+   * table carries presentation the design system owns *and* vocabulary the
+   * reader's language owns, and keeping literal English here made the whole
+   * theme gallery — the one screen in the app that is entirely prose —
+   * untranslatable. The type is what keeps it honest: a key with no entry in
+   * the dictionary is a compile error.
+   */
+  tagline: TranslationKey;
+  /** One sentence, also a key. Only the gallery has room for it. */
+  description: TranslationKey;
   /**
    * What somebody would type looking for this theme. Searched alongside the
    * name and the tagline, which is why "dark", "retro" and "loud" are in here
    * and not in the prose.
    */
   tags: string[];
+  /**
+   * The same keywords in Portuguese, searched alongside the English ones.
+   *
+   * Additive rather than a second table keyed by locale: somebody switching
+   * languages does not stop knowing the English word for "dark", and a search
+   * that quietly narrowed when they did would be worse than one that matches
+   * both. Optional, so a theme that has not been given any is simply searched
+   * in English.
+   */
+  tagsPtBR?: string[];
   light: SkinPreview;
   dark: SkinPreview;
 }
@@ -110,10 +137,19 @@ export const SKIN_CATALOG: SkinDefinition[] = [
   {
     value: 'STUDIO',
     name: 'Studio',
-    tagline: 'The quiet default',
-    description:
-      'Soft surfaces, one indigo accent and nothing that asks for your attention — the look the rest of these are a departure from.',
+    tagline: 'skin.STUDIO.tagline',
+    description: 'skin.STUDIO.body',
     tags: ['default', 'minimal', 'clean', 'neutral', 'indigo', 'calm', 'professional'],
+    tagsPtBR: [
+      'padrão',
+      'minimalista',
+      'limpo',
+      'neutro',
+      'índigo',
+      'calmo',
+      'profissional',
+      'claro',
+    ],
     light: {
       surface: '#f6f6f8',
       raised: '#ffffff',
@@ -138,10 +174,10 @@ export const SKIN_CATALOG: SkinDefinition[] = [
   {
     value: 'PAPER',
     name: 'Paper',
-    tagline: 'Illustrated and loud',
-    description:
-      'Thick ink outlines, chunky corners and shadows that read as cut paper lying on the page rather than as a blur.',
+    tagline: 'skin.PAPER.tagline',
+    description: 'skin.PAPER.body',
     tags: ['illustrated', 'playful', 'cartoon', 'yellow', 'bold', 'friendly', 'sticker'],
+    tagsPtBR: ['ilustrado', 'divertido', 'desenho', 'amarelo', 'marcante', 'adesivo', 'papel'],
     light: {
       surface: '#e4ecfe',
       raised: '#fcfdff',
@@ -166,10 +202,19 @@ export const SKIN_CATALOG: SkinDefinition[] = [
   {
     value: 'TERMINAL',
     name: 'Terminal',
-    tagline: 'Phosphor and scanlines',
-    description:
-      'Monospace everywhere, hard corners, neon rules and a faint scanline wash over the whole tube.',
+    tagline: 'skin.TERMINAL.tagline',
+    description: 'skin.TERMINAL.body',
     tags: ['retro', 'crt', 'monospace', 'neon', 'hacker', 'code', 'magenta', 'dark'],
+    tagsPtBR: [
+      'retrô',
+      'monoespaçada',
+      'néon',
+      'hacker',
+      'código',
+      'magenta',
+      'escuro',
+      'terminal',
+    ],
     light: {
       surface: '#f0e9f6',
       raised: '#fcf9ff',
@@ -194,10 +239,19 @@ export const SKIN_CATALOG: SkinDefinition[] = [
   {
     value: 'VINTAGE',
     name: 'Vintage',
-    tagline: 'Brass and leather',
-    description:
-      'Machined corners, engraved rules and controls that catch a highlight along the top edge and sink when pressed.',
+    tagline: 'skin.VINTAGE.tagline',
+    description: 'skin.VINTAGE.body',
     tags: ['brass', 'steampunk', 'serif', 'antique', 'warm', 'leather', 'classic'],
+    tagsPtBR: [
+      'latão',
+      'steampunk',
+      'serifada',
+      'antigo',
+      'quente',
+      'couro',
+      'clássico',
+      'vintage',
+    ],
     light: {
       surface: '#eadbc2',
       raised: '#f7eedb',
@@ -222,10 +276,10 @@ export const SKIN_CATALOG: SkinDefinition[] = [
   {
     value: 'PIXEL',
     name: 'Pixel art',
-    tagline: '8-bit cartridge',
-    description:
-      'Nine-slice tiles with the corner pixels knocked out, ordered dither for a material, and motion quantised into whole frames.',
+    tagline: 'skin.PIXEL.tagline',
+    description: 'skin.PIXEL.body',
     tags: ['arcade', '8-bit', 'game', 'sprite', 'retro', 'nes', 'blocky', 'magenta'],
+    tagsPtBR: ['fliperama', 'arcade', '8 bits', 'jogo', 'sprite', 'retrô', 'pixel', 'magenta'],
     light: {
       surface: '#d6deec',
       raised: '#fafaff',
@@ -252,10 +306,19 @@ export const SKIN_CATALOG: SkinDefinition[] = [
   {
     value: 'SPACE',
     name: 'Space',
-    tagline: 'The deep field',
-    description:
-      'Lit glass instruments over a drifting starfield, with a singularity sunk into every screen edge where a menu hides.',
+    tagline: 'skin.SPACE.tagline',
+    description: 'skin.SPACE.body',
     tags: ['space', 'stars', 'sci-fi', 'dark', 'void', 'mint', 'glow', 'futuristic'],
+    tagsPtBR: [
+      'espaço',
+      'estrelas',
+      'ficção científica',
+      'escuro',
+      'vazio',
+      'menta',
+      'brilho',
+      'futurista',
+    ],
     light: {
       surface: '#e6ecf9',
       raised: '#fcfdff',
@@ -284,9 +347,8 @@ export const SKIN_CATALOG: SkinDefinition[] = [
   {
     value: 'HAZARD',
     name: 'Hazard',
-    tagline: 'Containment breach',
-    description:
-      'Stencilled warnings, hazard tape at every seam and toxic sludge pooled in the bottom of every card — which sloshes.',
+    tagline: 'skin.HAZARD.tagline',
+    description: 'skin.HAZARD.body',
     tags: [
       'toxic',
       'radioactive',
@@ -298,6 +360,17 @@ export const SKIN_CATALOG: SkinDefinition[] = [
       'green',
       'loud',
       'danger',
+    ],
+    tagsPtBR: [
+      'tóxico',
+      'radioativo',
+      'atômico',
+      'nuclear',
+      'aviso',
+      'industrial',
+      'amarelo',
+      'verde',
+      'perigo',
     ],
     light: {
       surface: '#e2e0d2',
@@ -327,9 +400,8 @@ export const SKIN_CATALOG: SkinDefinition[] = [
   {
     value: 'NEWSPAPER',
     name: 'Newsprint',
-    tagline: 'The morning edition',
-    description:
-      'Halftone paper, ruled columns, banner headlines under a double rule, and photographs printed the only way a press could — in black.',
+    tagline: 'skin.NEWSPAPER.tagline',
+    description: 'skin.NEWSPAPER.body',
     tags: [
       'newspaper',
       'newsprint',
@@ -341,6 +413,17 @@ export const SKIN_CATALOG: SkinDefinition[] = [
       'paper',
       'red',
       'classic',
+    ],
+    tagsPtBR: [
+      'jornal',
+      'impresso',
+      'serifada',
+      'editorial',
+      'manchete',
+      'meio-tom',
+      'papel',
+      'vermelho',
+      'clássico',
     ],
     light: {
       surface: '#e7e2d6',
@@ -370,9 +453,8 @@ export const SKIN_CATALOG: SkinDefinition[] = [
   {
     value: 'ELDRITCH',
     name: 'Eldritch',
-    tagline: 'Something is reading this',
-    description:
-      'Corners that grew rather than being cut, light with no source, inscribed capitals — and an eye that opens somewhere on the page while you are looking elsewhere.',
+    tagline: 'skin.ELDRITCH.tagline',
+    description: 'skin.ELDRITCH.body',
     tags: [
       'lovecraft',
       'eldritch',
@@ -385,6 +467,18 @@ export const SKIN_CATALOG: SkinDefinition[] = [
       'violet',
       'mysterious',
       'gothic',
+    ],
+    tagsPtBR: [
+      'lovecraft',
+      'cósmico',
+      'horror',
+      'abissal',
+      'oculto',
+      'escuro',
+      'ciano',
+      'violeta',
+      'misterioso',
+      'gótico',
     ],
     light: {
       surface: '#e0d8c4',
@@ -414,9 +508,8 @@ export const SKIN_CATALOG: SkinDefinition[] = [
   {
     value: 'AUTUMN',
     name: 'Autumn',
-    tagline: 'Warm paper and falling leaves',
-    description:
-      'Pressed rag paper under a low sun, corners rounded the whole way through, a serif you could read a novel in — and leaves coming down over all of it.',
+    tagline: 'skin.AUTUMN.tagline',
+    description: 'skin.AUTUMN.body',
     tags: [
       'autumn',
       'fall',
@@ -431,6 +524,18 @@ export const SKIN_CATALOG: SkinDefinition[] = [
       'wood',
       'nature',
       'seasonal',
+    ],
+    tagsPtBR: [
+      'outono',
+      'folhas',
+      'colheita',
+      'quente',
+      'aconchegante',
+      'laranja',
+      'âmbar',
+      'madeira',
+      'natureza',
+      'sazonal',
     ],
     light: {
       surface: '#f7ebd6',
@@ -458,9 +563,8 @@ export const SKIN_CATALOG: SkinDefinition[] = [
   {
     value: 'RUNIC',
     name: 'Runic',
-    tagline: 'Inked on old paper',
-    description:
-      'Foxed rag paper with the mould lines still in it, ruled margins that have worn through in places, and oxblood lettering that soaked into the fibre — on the rails, in the icons, under your pointer.',
+    tagline: 'skin.RUNIC.tagline',
+    description: 'skin.RUNIC.body',
     tags: [
       'runic',
       'runes',
@@ -478,6 +582,16 @@ export const SKIN_CATALOG: SkinDefinition[] = [
       'arcane',
       'fantasy',
       'bold',
+    ],
+    tagsPtBR: [
+      'rúnico',
+      'runas',
+      'nórdico',
+      'viking',
+      'papel',
+      'pergaminho',
+      'antigo',
+      'medieval',
     ],
     light: {
       surface: '#dec79a',
@@ -505,9 +619,8 @@ export const SKIN_CATALOG: SkinDefinition[] = [
   {
     value: 'UNDERWATER',
     name: 'Underwater',
-    tagline: 'Held under',
-    description:
-      'Broken light from a surface somewhere above you, corners water has had a long time to round off, colour that drains toward blue with depth — and bubbles going up past all of it.',
+    tagline: 'skin.UNDERWATER.tagline',
+    description: 'skin.UNDERWATER.body',
     tags: [
       'underwater',
       'ocean',
@@ -525,6 +638,7 @@ export const SKIN_CATALOG: SkinDefinition[] = [
       'calm',
       'soft',
     ],
+    tagsPtBR: ['submerso', 'oceano', 'mar', 'água', 'azul', 'profundo', 'bolhas', 'aquático'],
     light: {
       surface: '#bae0e2',
       raised: '#d6f1f0',
@@ -551,9 +665,8 @@ export const SKIN_CATALOG: SkinDefinition[] = [
   {
     value: 'VOLCANO',
     name: 'Volcano',
-    tagline: 'The crust is a lid',
-    description:
-      'Ash-grey plates crazed with fractures, a hot seam under every edge where the melt shows through, type struck rather than set — and embers going up off all of it.',
+    tagline: 'skin.VOLCANO.tagline',
+    description: 'skin.VOLCANO.body',
     tags: [
       'volcano',
       'volcanic',
@@ -571,6 +684,17 @@ export const SKIN_CATALOG: SkinDefinition[] = [
       'loud',
       'bold',
       'dark',
+    ],
+    tagsPtBR: [
+      'vulcão',
+      'vulcânico',
+      'lava',
+      'magma',
+      'derretido',
+      'cinzas',
+      'brasas',
+      'fogo',
+      'quente',
     ],
     light: {
       surface: '#cec3bb',
@@ -623,8 +747,19 @@ export const searchSkins = (query: string): SkinDefinition[] => {
   const needle = query.trim().toLowerCase();
   if (!needle) return SKIN_CATALOG;
 
+  /*
+   * The tagline is searched in the reader's own language.
+   *
+   * `translate` rather than a `t` threaded down from the page: this is called
+   * from a `useMemo` keyed on the query, and the language it reads is the one
+   * that was active when the search ran — which is the only answer that can
+   * match what is on screen. The `tags` are deliberately *not* translated: they
+   * are the words somebody types looking for a theme, and a Portuguese reader
+   * hunting the dark one is as likely to type "dark" as "escuro", so both
+   * lists are kept and searched together.
+   */
   return SKIN_CATALOG.filter((skin) =>
-    [skin.name, skin.tagline, ...skin.tags].some((field) =>
+    [skin.name, translate(skin.tagline), ...skin.tags, ...(skin.tagsPtBR ?? [])].some((field) =>
       field.toLowerCase().includes(needle),
     ),
   );

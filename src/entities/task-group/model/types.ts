@@ -31,6 +31,26 @@ export interface GroupedTask {
   groupId: string | null;
   /** Past the deadline and still open — the card draws it in red. */
   isLate: boolean;
+  /**
+   * Assigned to the reader, which is what makes the card's tick box theirs.
+   *
+   * Answered by the server rather than derived from a comparison against the
+   * session here, for the same reason `canManage` is: who owns a completion is
+   * an authorisation rule, and a client that re-derived it would be a second
+   * copy of that rule to keep in step.
+   */
+  isMine: boolean;
+  /** …and whether they have already ticked it. */
+  isCompletedByMe: boolean;
+  /**
+   * How many assignees have signed off, out of how many there are.
+   *
+   * The board's tick box only ever ticks the reader's own row, so on a shared
+   * task this is what answers "I ticked mine, why is it still open" — and it is
+   * what lets the optimistic patch predict the status correctly, since a tick
+   * completes the task only when it is the last one outstanding.
+   */
+  signOff: { done: number; total: number };
   assignees: UserSummary[];
 }
 

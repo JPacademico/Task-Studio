@@ -129,7 +129,7 @@ export const useCreateProject = () => {
     mutationFn: projectApi.create,
     onSuccess: (project) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
-      toast.success(`"${project.name}" is ready.`);
+      toast.success(translate('toast.projectReady', { name: project.name }));
     },
     onError: (error) => toast.error(errorMessage(error, translate('toast.projectCreateFailed'))),
   });

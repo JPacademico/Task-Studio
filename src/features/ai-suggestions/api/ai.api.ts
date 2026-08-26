@@ -81,6 +81,29 @@ export const aiApi = {
   },
 
   /**
+   * The same 1-3 steps, for a task that has not been saved yet.
+   *
+   * No `taskId`, because there is no task: this is the composer asking while
+   * somebody is still typing. Nothing is written anywhere — the steps go into
+   * the composer's own starting checklist and become Post-its if, and only if,
+   * the task is actually created. That is why there is no `accept` half to
+   * this: the composer's Save *is* the accept.
+   *
+   * Carries the long ceiling for the same reason the other two generation
+   * routes do — it waits on a language model, on a free tier, behind a
+   * container that may itself be starting up.
+   */
+  async suggestDraftSubtasks(draft: {
+    title: string;
+    description: string;
+  }): Promise<AiSuggestion> {
+    const { data } = await api.post<AiSuggestion>('/ai/tasks/draft-subtasks', draft, {
+      timeout: SLOW_ROUTE_TIMEOUT_MS,
+    });
+    return data;
+  },
+
+  /**
    * Files accepted steps onto the task's note checklist, as Post-its.
    *
    * `titles` omitted means "all of them". The API trims whatever will not fit

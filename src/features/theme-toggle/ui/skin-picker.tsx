@@ -107,8 +107,8 @@ export const SkinPicker = () => {
           <span className="block text-sm font-bold tracking-tight">{t('themes.browse')}</span>
           <span className="block truncate text-[11px] text-content-muted">
             {remaining > 0
-              ? `${remaining} more in the gallery — preview any of them before you commit`
-              : 'Preview any of them before you commit'}
+              ? t('themes.moreInGallery', { count: String(remaining) })
+              : t('themes.previewFirst')}
           </span>
         </span>
 

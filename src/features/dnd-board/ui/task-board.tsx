@@ -20,7 +20,7 @@ import type { Task, TaskStatus } from '@/entities/task/model/types';
 import { TASK_STATUS_META } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
 import { EmptyState, Skeleton } from '@/shared/ui';
-import { useT } from '@/shared/i18n';
+import { translate, useT } from '@/shared/i18n';
 
 interface TaskBoardProps {
   tasks: Task[];
@@ -67,7 +67,9 @@ interface TaskBoardProps {
 
 const COLUMNS: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'COMPLETED'];
 
-const LOCKED_HINT = 'Only the people this task is assigned to (or a project admin) can move it.';
+/** Why a card refuses to be picked up. Read at render, so it follows the
+ *  language the reader has chosen. */
+const lockedHint = () => translate('board.moveLocked');
 
 const DraggableTask = ({
   task,
@@ -89,7 +91,7 @@ const DraggableTask = ({
       ref={setNodeRef}
       {...(isLocked ? {} : attributes)}
       {...(isLocked ? {} : listeners)}
-      title={isLocked ? LOCKED_HINT : undefined}
+      title={isLocked ? lockedHint() : undefined}
       style={{
         // translate3d keeps the drag on the compositor; no layout, no repaint.
         transform: transform

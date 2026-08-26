@@ -49,7 +49,7 @@ export const TaskOrigin = ({ project, variant = 'pill', className }: TaskOriginP
     return (
       <Link
         to={`/projects/${project.id}`}
-        title={`Open ${project.name}`}
+        title={t('common.openNamed', { name: project.name })}
         className={cn(
           'max-w-[8rem] shrink-0 items-center gap-1.5 text-[11px] text-content-muted',
           'transition-colors hover:text-brand',
@@ -70,7 +70,7 @@ export const TaskOrigin = ({ project, variant = 'pill', className }: TaskOriginP
     <Link
       to={`/projects/${project.id}`}
       onClick={(event) => event.stopPropagation()}
-      title={`Open ${project.name}`}
+      title={t('common.openNamed', { name: project.name })}
       className={cn(
         'group/link inline-flex max-w-[9rem] items-center gap-1.5 rounded-full border px-2 py-0.5',
         'text-[11px] font-medium transition-all duration-150',

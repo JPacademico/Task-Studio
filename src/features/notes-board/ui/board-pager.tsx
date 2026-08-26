@@ -87,7 +87,7 @@ export const BoardPager = ({
                   if (event.key === 'Enter') commit();
                   if (event.key === 'Escape') setEditingIndex(null);
                 }}
-                aria-label={`Rename ${page.name}`}
+                aria-label={t('common.renameNamed', { name: page.name })}
                 className="w-28 bg-transparent py-1.5 text-xs font-medium outline-none"
               />
               <button
@@ -128,7 +128,7 @@ export const BoardPager = ({
                 already knows it, but a rename must not be a hidden gesture. */}
             <button
               type="button"
-              aria-label={`Rename ${page.name}`}
+              aria-label={t('common.renameNamed', { name: page.name })}
               title={t('notes.renamePage')}
               onClick={() => startRename(page)}
               className={cn(
@@ -143,7 +143,7 @@ export const BoardPager = ({
             {pages.length > 1 && (
               <button
                 type="button"
-                aria-label={`Remove ${page.name}`}
+                aria-label={t('common.removeNamed', { name: page.name })}
                 onClick={() => {
                   if (
                     window.confirm(t('notes.confirmRemovePage', { name: page.name }))
@@ -164,7 +164,11 @@ export const BoardPager = ({
         type="button"
         onClick={onAdd}
         disabled={isFull || isAdding}
-        title={isFull ? `A board holds at most ${MAX_BOARD_PAGES} pages` : 'Add a page'}
+        title={
+          isFull
+            ? t('board.pagesFull', { max: String(MAX_BOARD_PAGES) })
+            : t('board.addPage')
+        }
         className={cn(
           'inline-flex items-center gap-1 rounded-xl border border-dashed px-2.5 py-1.5 text-xs transition-colors',
           isFull

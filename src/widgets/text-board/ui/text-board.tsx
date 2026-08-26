@@ -692,7 +692,7 @@ export const TextBoard = ({
                   {open.task && (
                     <span
                       className="ui-chip inline-flex items-center gap-1.5 rounded-full border border-edge px-2 py-0.5 text-[10px] text-content-muted"
-                      title={`Attached to ${open.task.title}`}
+                      title={t('common.attachedTo', { title: open.task.title })}
                     >
                       <span
                         aria-hidden

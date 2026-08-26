@@ -358,6 +358,20 @@ interface NoteCardProps {
  * elements are invalid HTML and, more practically, a checkbox inside a button
  * fires both handlers on one tap. `stopPropagation` on the two overlays is what
  * keeps ticking from also opening.
+ *
+ * ## What the closed note does not show
+ *
+ * Its author. There is a 150×112 square here, and it was spending its bottom
+ * quarter on a 16px avatar and a name at 9px — text below the size anybody
+ * reads, on the one surface in the app where the writing is the whole point.
+ * Three lines of somebody's step, clamped, with a face under it is a note you
+ * have to open to read; four lines without one usually is not.
+ *
+ * The author has not gone anywhere: the note is a button, and opening it puts
+ * the avatar, the full name and the time it was written under the text at
+ * reading size — see the reading dialog above. That is the right altitude for
+ * it. "Who wrote this" is a question you ask *about* a step you have already
+ * read, not one you need answered on every tile of a wall you are scanning.
  */
 const NoteCard = ({ note, isMine, onOpen, onToggle, onDelete }: NoteCardProps) => {
   const t = useT();
@@ -367,7 +381,9 @@ const NoteCard = ({ note, isMine, onOpen, onToggle, onDelete }: NoteCardProps) =
       <button
         type="button"
         onClick={onOpen}
-        title={t('task.openNote')}
+        // The tooltip carries what the face used to: hovering still says who
+        // wrote it, without spending a quarter of the note to do so.
+        title={t('task.noteBy', { name: note.author.displayName })}
         className={cn(
           'block h-[112px] w-[150px] rounded-[3px] p-2.5 pt-7 text-left shadow-postit',
           'transition-transform duration-150 hover:-translate-y-0.5 focus-visible:-translate-y-0.5',
@@ -375,19 +391,15 @@ const NoteCard = ({ note, isMine, onOpen, onToggle, onDelete }: NoteCardProps) =
         )}
         style={{ backgroundColor: note.color, color: readableInk(note.color) }}
       >
-        {/* Three lines, then an ellipsis. The note opens for the rest. */}
+        {/* Four lines, then an ellipsis — one more than before, which is what
+            the author strip was costing. The note opens for the rest. */}
         <span
           className={cn(
-            'line-clamp-3 break-words font-hand text-[13px] leading-snug',
+            'line-clamp-4 break-words font-hand text-[13px] leading-snug',
             note.isCompleted && 'line-through',
           )}
         >
           {note.content}
-        </span>
-
-        <span className="absolute bottom-1.5 left-2.5 right-2.5 flex items-center gap-1 opacity-60">
-          <Avatar name={note.author.displayName} src={note.author.avatarUrl} size="xs" />
-          <span className="truncate text-[9px] font-medium">{note.author.displayName}</span>
         </span>
       </button>
 

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Maximize2, Minimize2 } from 'lucide-react';
 
 import { cn } from '@/shared/lib/cn';
+import { translate, useT } from '@/shared/i18n';
 
 interface ExpandToggleProps {
   isExpanded: boolean;
@@ -24,7 +25,7 @@ export const ExpandToggle = ({ isExpanded, onToggle, className, label }: ExpandT
     type="button"
     onClick={onToggle}
     aria-pressed={isExpanded}
-    title={isExpanded ? 'Back to the page' : 'Expand to the full screen'}
+    title={translate(isExpanded ? 'stage.collapse' : 'stage.expand')}
     aria-label={isExpanded ? 'Collapse the board' : 'Expand the board to full screen'}
     className={cn(
       'ui-filter group/expand relative inline-flex h-8 items-center gap-1.5 overflow-hidden rounded-xl border px-2.5',
@@ -94,6 +95,7 @@ export const ExpandableStage = ({
   className,
   onSurfaceRemount,
 }: ExpandableStageProps) => {
+  const t = useT();
   const remountRef = useRef(onSurfaceRemount);
   remountRef.current = onSurfaceRemount;
 
@@ -141,7 +143,7 @@ export const ExpandableStage = ({
           shrink toggle, and two buttons for one gesture is one too many. */}
       <header className="flex flex-wrap items-center gap-2 sm:gap-3">
         <div className="min-w-0">
-          <p className="text-[10px] uppercase tracking-[0.18em] text-content-faint">Full screen</p>
+          <p className="text-[10px] uppercase tracking-[0.18em] text-content-faint">{t('common.fullScreen')}</p>
           <h2 className="truncate text-sm font-semibold tracking-tight sm:text-base">{title}</h2>
         </div>
 
