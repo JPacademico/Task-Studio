@@ -34,6 +34,21 @@ export const queryKeys = {
     recycleBin: (projectId?: string) => ['tasks', 'recycle-bin', projectId ?? 'all'] as const,
   },
 
+  /**
+   * The grouping board's columns.
+   *
+   * A root of its own rather than a branch of `tasks`, and the reason is what
+   * invalidating each one is *for*. A task write moves cards between columns
+   * and must refresh `taskGroups.board`; a column write renames or reorders a
+   * lane and must not blow away every task list in the cache to do it. Nesting
+   * these under `tasks` would make the second impossible to express.
+   */
+  taskGroups: {
+    all: ['task-groups'] as const,
+    list: (projectId: string) => ['task-groups', projectId] as const,
+    board: (projectId: string) => ['task-groups', projectId, 'board'] as const,
+  },
+
   notes: {
     all: ['notes'] as const,
     list: (params?: object) => ['notes', 'list', params ?? {}] as const,

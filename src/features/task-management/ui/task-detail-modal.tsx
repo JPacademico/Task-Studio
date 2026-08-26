@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowUpRight,
@@ -7,30 +6,19 @@ import {
   Flag,
   Pencil,
   Play,
-  Plus,
-  StickyNote,
-  Trash2,
   UserCheck,
-  X,
 } from 'lucide-react';
 
-import {
-  useCreateNote,
-  useDeleteNote,
-  useNotes,
-  useUpdateNote,
-} from '@/entities/note/model/queries';
 import { useProjectDocuments } from '@/entities/document/model/queries';
-import { NoteAuthorStamp } from '@/entities/note/ui/note-author';
 import { completionProgress, isSharedTask } from '@/entities/task/lib/completion';
-import { useChecklistMutations, useTask } from '@/entities/task/model/queries';
+import { useTask } from '@/entities/task/model/queries';
+import { useAiStatus } from '@/features/ai-suggestions/model/queries';
 import type { Task } from '@/entities/task/model/types';
 import { TaskTypeTag } from '@/entities/task/ui/task-type-tag';
 import { useCurrentUser } from '@/features/auth/model/session.store';
-import { NOTE_COLORS, TASK_STATUS_META, TEXT_LIMITS } from '@/shared/config/constants';
+import { TASK_STATUS_META, TEXT_LIMITS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
-import { clampText, truncateText } from '@/shared/lib/text';
-import { readableInk } from '@/shared/lib/colors';
+import { truncateText } from '@/shared/lib/text';
 import { formatDateTime, formatDeadline, formatDeadlineDate } from '@/shared/lib/dates';
 import {
   Avatar,
@@ -43,6 +31,7 @@ import {
   ZoomableImage,
 } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
+import { NoteChecklist } from './note-checklist';
 
 interface TaskDetailModalProps {
   taskId: string | null;
@@ -51,20 +40,22 @@ interface TaskDetailModalProps {
 }
 
 /**
- * Everything attached to a single task: the sub-checklist, its notes, the
- * documents pinned to it, and the pages written against it on the text board.
+ * Everything attached to a single task: its note checklist, the documents
+ * pinned to it, and the pages written against it on the text board.
  *
- * The AI sub-task suggester used to live on the checklist header here. It is
- * gone: the project's own assistant tab does the same job with the whole board
- * in view, and a second entry point to the same model on the densest surface in
- * the app was a button most people pressed once out of curiosity.
+ * The sheet used to carry two lists — a sub-checklist of plain rows and, below
+ * it, a wall of Post-its. They were the same list, and neither half could see
+ * the other, so a step written on a note and a step ticked in the checklist
+ * were two different answers to one question. `NoteChecklist` is the merge.
  */
 export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProps) => {
   const t = useT();
   const navigate = useNavigate();
   const currentUser = useCurrentUser();
   const { data: task, isLoading } = useTask(taskId ?? undefined);
-  const checklist = useChecklistMutations(taskId ?? '');
+  // Only to decide whether the note checklist draws its suggest button — see
+  // `useAiStatus`, which is cached across every surface that asks.
+  const { data: aiStatus } = useAiStatus();
 
   /*
    * Pages somebody has written against this task, on the project's text board.
@@ -78,15 +69,6 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
     task?.project?.id,
     task?.project ? task.id : undefined,
   );
-
-  const noteParams = { taskId: taskId ?? undefined };
-  const { data: notes = [] } = useNotes(taskId ? noteParams : {});
-  const createNote = useCreateNote(noteParams);
-  const updateNote = useUpdateNote(noteParams);
-  const deleteNote = useDeleteNote(noteParams);
-
-  const [itemDraft, setItemDraft] = useState('');
-  const [noteDraft, setNoteDraft] = useState('');
 
   return (
     <Modal
@@ -347,172 +329,16 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
             </section>
           )}
 
-          {/* --- Sub-checklist -------------------------------------------- */}
-          <section className="space-y-2.5">
-            <h3 className="text-sm font-semibold">
-              {t('task.checklist')}{' '}
-              <span className="text-xs font-normal text-content-faint">
-                {task.checklistProgress.done}/{task.checklistProgress.total}
-              </span>
-            </h3>
+          {/*
+            The note checklist.
 
-            <ul className="space-y-1.5">
-              {task.checklist.map((item) => (
-                <li
-                  key={item.id}
-                  className="group flex items-center gap-2.5 rounded-lg bg-surface-sunken px-3 py-2"
-                >
-                  <button
-                    type="button"
-                    aria-label={t(item.isCompleted ? 'task.markPending' : 'task.markDone')}
-                    onClick={() =>
-                      checklist.toggle.mutate({ itemId: item.id, isCompleted: !item.isCompleted })
-                    }
-                    className={cn(
-                      'grid h-4 w-4 shrink-0 place-items-center rounded border transition-colors',
-                      item.isCompleted
-                        ? 'border-positive bg-positive text-white'
-                        // The row sits on `surface-sunken`, so the box is
-                        // filled from `surface-raised` to read as a well
-                        // rather than a hole. See `--check-edge`.
-                        : 'border-check bg-surface-raised/60 hover:border-brand',
-                    )}
-                  >
-                    {item.isCompleted && <Check className="h-2.5 w-2.5" strokeWidth={3} />}
-                  </button>
+            One section where there were two. The sheet used to carry a
+            sub-checklist of plain rows *and*, below it, a wall of Post-its —
+            the same list drawn twice, neither half aware of the other. See
+            `NoteChecklist`.
+          */}
+          <NoteChecklist task={task} isAiEnabled={Boolean(aiStatus?.enabled)} />
 
-                  {/*
-                    Truncated on the way *out*, not only on the way in.
-                    `TEXT_LIMITS` stops a new step being pasted in at length,
-                    but rows written before it existed are already in the
-                    database, and laying one of those out inside a one-line row
-                    is what made opening this sheet feel slow. The full text is
-                    still on the element's `title`.
-                  */}
-                  <span
-                    title={item.content.length > TEXT_LIMITS.checklistItem ? item.content : undefined}
-                    className={cn(
-                      'min-w-0 flex-1 break-words text-xs',
-                      item.isCompleted && 'text-content-faint line-through',
-                    )}
-                  >
-                    {truncateText(item.content, TEXT_LIMITS.checklistItem)}
-                  </span>
-
-                  <button
-                    type="button"
-                    aria-label={t('task.removeStep')}
-                    onClick={() => checklist.remove.mutate(item.id)}
-                    className="text-content-faint opacity-0 transition-opacity hover:text-danger group-hover:opacity-100"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-
-            <form
-              className="flex gap-2"
-              onSubmit={(event) => {
-                event.preventDefault();
-                if (!itemDraft.trim()) return;
-                checklist.add.mutate(itemDraft.trim());
-                setItemDraft('');
-              }}
-            >
-              <input
-                value={itemDraft}
-                onChange={(event) =>
-                  setItemDraft(clampText(event.target.value, TEXT_LIMITS.checklistItem))
-                }
-                placeholder={t('task.addStepShort')}
-                maxLength={TEXT_LIMITS.checklistItem}
-                className="field h-9 text-xs"
-              />
-              <Button type="submit" size="icon" variant="secondary" aria-label={t('task.addStepAction')}>
-                <Plus className="h-3.5 w-3.5" />
-              </Button>
-            </form>
-          </section>
-
-          {/* --- Task notes ------------------------------------------------ */}
-          <section className="space-y-2.5">
-            <h3 className="flex items-center gap-2 text-sm font-semibold">
-              <StickyNote className="h-3.5 w-3.5" />
-              {t('task.notes')}
-            </h3>
-
-            <div className="flex flex-wrap gap-2.5">
-              {notes.map((note) => (
-                <div
-                  key={note.id}
-                  className="group/card relative w-[168px] rounded-[3px] p-2.5 pb-5 shadow-postit"
-                  style={{ backgroundColor: note.color, color: readableInk(note.color) }}
-                >
-                  <textarea
-                    defaultValue={note.content}
-                    // Only the author may rewrite somebody else's paper.
-                    readOnly={note.userId !== currentUser?.id}
-                    maxLength={TEXT_LIMITS.noteContent}
-                    onBlur={(event) =>
-                      event.target.value !== note.content &&
-                      updateNote.mutate({
-                        noteId: note.id,
-                        payload: { content: event.target.value },
-                      })
-                    }
-                    className="h-20 w-full resize-none bg-transparent font-hand text-[13px] leading-snug outline-none"
-                  />
-                  {note.userId === currentUser?.id && (
-                    <button
-                      type="button"
-                      aria-label={t('task.deleteNote')}
-                      onClick={() => deleteNote.mutate(note.id)}
-                      className="absolute right-1.5 top-1.5 opacity-0 transition-opacity group-hover/card:opacity-70"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                  )}
-
-                  {/* Who pinned it here — the whole point of a note on a task
-                      somebody else is carrying. */}
-                  <NoteAuthorStamp
-                    author={note.author}
-                    createdAt={note.createdAt}
-                    isMine={note.userId === currentUser?.id}
-                  />
-                </div>
-              ))}
-            </div>
-
-            <form
-              className="flex gap-2"
-              onSubmit={(event) => {
-                event.preventDefault();
-                if (!noteDraft.trim() || !taskId) return;
-                createNote.mutate({
-                  content: noteDraft.trim(),
-                  scope: 'TASK',
-                  taskId,
-                  color: NOTE_COLORS[Math.floor(Math.random() * NOTE_COLORS.length)],
-                });
-                setNoteDraft('');
-              }}
-            >
-              <input
-                value={noteDraft}
-                onChange={(event) =>
-                  setNoteDraft(clampText(event.target.value, TEXT_LIMITS.noteContent))
-                }
-                placeholder={t('task.pinNote')}
-                maxLength={TEXT_LIMITS.noteContent}
-                className="field h-9 text-xs"
-              />
-              <Button type="submit" size="icon" variant="secondary" aria-label={t('task.addNote')}>
-                <Plus className="h-3.5 w-3.5" />
-              </Button>
-            </form>
-          </section>
         </div>
       )}
     </Modal>

@@ -7,13 +7,29 @@ export type TaskPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
 export type TaskScope = 'mine' | 'all';
 export type TaskLateness = 'LATE' | 'COMPLETED_LATE' | 'ON_TIME';
 
-export interface ChecklistItem {
+/**
+ * One step on a task's note checklist: a Post-it that can be ticked off.
+ *
+ * Replaces `ChecklistItem`, which was the same list drawn twice — a column of
+ * plain rows next to a wall of notes, neither of which could see the other. The
+ * merge kept the note, because a note already carried the two things a
+ * checklist row could not: a colour, and an author.
+ *
+ * `author` and `completedBy` are different people far more often than not, and
+ * that is the point on a shared task — whoever wrote the step down is rarely
+ * whoever finished it.
+ */
+export interface TaskNote {
   id: string;
   content: string;
+  color: string;
   isCompleted: boolean;
   completedAt: string | null;
-  order: number;
-  taskId: string;
+  completedBy: UserSummary | null;
+  createdAt: string;
+  /** The author's id, for the "may I edit this" check on the sheet. */
+  userId: string;
+  author: UserSummary;
 }
 
 export interface TaskAssignee extends UserSummary {
@@ -69,11 +85,27 @@ export interface Task {
   isLate: boolean;
   /** Finished, but after the deadline. */
   isCompletedLate: boolean;
-  checklist: ChecklistItem[];
-  checklistProgress: { done: number; total: number };
-  noteCount: number;
-  /** Roster members who attached a note to this task. */
+  /**
+   * Which column this sits in on the project's grouping board, or `null`.
+   *
+   * Spelled out rather than sent as an id, because every surface that draws
+   * the tag draws a coloured chip with a name on it — see the API's
+   * `taskInclude`.
+   */
+  group: TaskGroupRef | null;
+  /** The note checklist, whole. Capped at `MAX_TASK_NOTES` by the API. */
+  notes: TaskNote[];
+  /** How many of those steps are ticked. */
+  noteProgress: { done: number; total: number };
+  /** Distinct authors, for the faces on a card's note marker. */
   noteAuthors: UserSummary[];
+}
+
+/** A grouping-board column, as a task carries it. */
+export interface TaskGroupRef {
+  id: string;
+  name: string;
+  color: string;
 }
 
 export interface ListTasksParams {
@@ -119,7 +151,16 @@ export interface CreateTaskPayload {
    * who had been taken off. See the API's `TeamsService`.
    */
   teamIds?: string[];
+  /**
+   * Starting steps for the note checklist, as plain lines.
+   *
+   * Still `checklist` on the wire: the composer sends a list of steps, which is
+   * what it has always meant, and the API turns them into Post-its. Capped at
+   * three by `MAX_TASK_NOTES`.
+   */
   checklist?: string[];
+  /** Which grouping-board column to file it under. Projects only. */
+  groupId?: string;
   attachmentKey?: string;
   attachmentThumbKey?: string;
   /** The uploaded document to pin to it — key, filename and size. */
@@ -143,4 +184,10 @@ export interface UpdateTaskPayload {
    */
   file?: { key: string; name: string; size: number } | null;
   order?: number;
+  /**
+   * Three states, like `file`: an id files the task under a column, `null`
+   * untags it back into the grouping board's dynamic lane, and omitting the
+   * field leaves the tag alone.
+   */
+  groupId?: string | null;
 }

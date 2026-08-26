@@ -139,6 +139,19 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
       }, 200);
     };
 
+    /**
+     * A column was added, renamed, reordered or deleted.
+     *
+     * Its own handler rather than another `handleTaskEvent` subscriber: the
+     * tasks did not change, only the lanes they sit in, and invalidating every
+     * task list in the cache to redraw a dozen short rows is a refetch of the
+     * whole board to learn a word changed. `taskGroups.all` is the prefix that
+     * covers both the picker's list and the board's read.
+     */
+    const handleTaskGroupEvent = () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.taskGroups.all });
+    };
+
     const handleRosterEvent = () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
     };
@@ -153,7 +166,19 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
     socket.on('task:created', handleTaskEvent);
     socket.on('task:updated', handleTaskEvent);
     socket.on('task:deleted', handleTaskEvent);
-    socket.on('checklist:changed', handleTaskEvent);
+    /*
+     * The task sub-checklist is gone: a task's steps are Post-its now, so a
+     * step arriving or being ticked comes through as a note event. `note:*`
+     * fires for the whiteboard too, which is why it lands on the debounced
+     * task handler rather than on anything more targeted — the alternative is
+     * inspecting every note's scope on the client to decide whether it was one
+     * of a task's.
+     */
+    socket.on('task-notes:changed', handleTaskEvent);
+    socket.on('note:created', handleTaskEvent);
+    socket.on('note:updated', handleTaskEvent);
+    socket.on('note:deleted', handleTaskEvent);
+    socket.on('task-groups:changed', handleTaskGroupEvent);
     socket.on('roster:joined', handleRosterEvent);
     socket.on('roster:left', handleRosterEvent);
     socket.on('project:updated', handleRosterEvent);
@@ -168,7 +193,11 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
       socket.off('task:created', handleTaskEvent);
       socket.off('task:updated', handleTaskEvent);
       socket.off('task:deleted', handleTaskEvent);
-      socket.off('checklist:changed', handleTaskEvent);
+      socket.off('task-notes:changed', handleTaskEvent);
+      socket.off('note:created', handleTaskEvent);
+      socket.off('note:updated', handleTaskEvent);
+      socket.off('note:deleted', handleTaskEvent);
+      socket.off('task-groups:changed', handleTaskGroupEvent);
       socket.off('roster:joined', handleRosterEvent);
       socket.off('roster:left', handleRosterEvent);
       socket.off('project:updated', handleRosterEvent);

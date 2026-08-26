@@ -7,12 +7,13 @@ import { previewTaskType } from '@/entities/task/lib/task-type';
 import { useCreateTask, useUpdateTask } from '@/entities/task/model/queries';
 import type { Task, TaskPriority } from '@/entities/task/model/types';
 import { TaskTypeTag } from '@/entities/task/ui/task-type-tag';
+import { useTaskGroups } from '@/entities/task-group/model/queries';
 import { uploadImage } from '@/entities/user/api/user.api';
 import type { AttachedFileDraft } from '@/entities/user/model/types';
 import { InvitePicker } from '@/features/invite-picker/ui/invite-picker';
 import { TASK_COLORS, TASK_TYPE_META, TEXT_LIMITS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
-import { clampText } from '@/shared/lib/text';
+import { clampOnPaste, clampText } from '@/shared/lib/text';
 import {
   DATE_WINDOW_YEARS,
   dateInputBounds,
@@ -69,6 +70,16 @@ export const TaskComposer = ({
   const t = useT();
   // No project means a personal task: one assignee, no roster, no fan-out.
   const isPersonal = !projectId;
+
+  /*
+   * The project's grouping-board columns, for the tag picker.
+   *
+   * Asked for only when there is a project — a personal task has no board to be
+   * grouped on, so `useTaskGroups` is disabled rather than sending a request
+   * that can only 404. Empty is the normal case for a project that has never
+   * opened the grouping board, and the picker is hidden entirely in that case.
+   */
+  const { data: groups = [] } = useTaskGroups(projectId);
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
 
@@ -90,6 +101,14 @@ export const TaskComposer = ({
   const [teamIds, setTeamIds] = useState<string[]>([]);
   const [checklist, setChecklist] = useState<string[]>([]);
   const [checklistDraft, setChecklistDraft] = useState('');
+  /**
+   * Which grouping-board column to file this under, or `''` for none.
+   *
+   * The empty string rather than `null`, because it is bound to a `<select>`
+   * and that is what an unselected option's value is. It becomes `null` on the
+   * way out, which is what untags a task on the API.
+   */
+  const [groupId, setGroupId] = useState<string>('');
   /*
    * The picture on the form, in as much detail as this session knows.
    *
@@ -130,6 +149,7 @@ export const TaskComposer = ({
     setTeamIds([]);
     setChecklist([]);
     setChecklistDraft('');
+    setGroupId(task?.group?.id ?? '');
     setAttachment(
       task?.attachmentUrl
         ? {
@@ -279,6 +299,15 @@ export const TaskComposer = ({
             : file === null && task.file
               ? { file: null }
               : {}),
+          /*
+           * The tag, on three states as well.
+           *
+           * `null` when the picker was cleared — which is the only way to take
+           * a task off a column from here — and omitted entirely when there are
+           * no columns to choose from, so a project that has never used the
+           * grouping board never sends a field about it.
+           */
+          ...(groups.length > 0 ? { groupId: groupId || null } : {}),
         },
       });
     } else {
@@ -288,6 +317,7 @@ export const TaskComposer = ({
         // Merged with the individual picks above by the API; empty is omitted.
         ...(!isPersonal && teamIds.length > 0 ? { teamIds } : {}),
         checklist: checklist.length > 0 ? checklist : undefined,
+        ...(groupId ? { groupId } : {}),
         attachmentKey: attachment?.key || undefined,
         attachmentThumbKey: attachment?.thumbKey ?? undefined,
         file: file?.key ? { key: file.key, name: file.name, size: file.size } : undefined,
@@ -296,6 +326,8 @@ export const TaskComposer = ({
 
     onClose();
   };
+
+  const selectedGroup = groups.find((group) => group.id === groupId) ?? null;
 
   const typeMeta = TASK_TYPE_META[derivedType];
   const isPending = createTask.isPending || updateTask.isPending;
@@ -482,6 +514,51 @@ export const TaskComposer = ({
           </div>
         </div>
 
+        {/*
+          The grouping-board tag.
+
+          Absent entirely until the project has invented at least one column,
+          which is the point: a picker with nothing in it is a control that
+          teaches the reader a feature exists by refusing to do anything. A
+          project that never opens the grouping board never sees this field.
+
+          Also absent on a personal task, which has no board to be grouped on —
+          `useTaskGroups` is not even asked in that case.
+        */}
+        {groups.length > 0 && (
+          <div className="space-y-1.5">
+            <label htmlFor="task-group" className="text-xs font-medium text-content-muted">
+              {t('groups.tagLabel')}
+            </label>
+
+            <div className="flex items-center gap-2">
+              <select
+                id="task-group"
+                value={groupId}
+                onChange={(event) => setGroupId(event.target.value)}
+                className="field h-9 flex-1 text-xs"
+              >
+                <option value="">{t('groups.noTag')}</option>
+                {groups.map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.name}
+                  </option>
+                ))}
+              </select>
+
+              {/* The column's own colour, so the picker reads like the board
+                  it files into rather than like a dropdown of words. */}
+              {selectedGroup && (
+                <span
+                  aria-hidden
+                  className="h-6 w-6 shrink-0 rounded-full border border-edge"
+                  style={{ backgroundColor: selectedGroup.color }}
+                />
+              )}
+            </div>
+          </div>
+        )}
+
         {!task && (
           <div className="space-y-2">
             <p className="text-xs font-medium text-content-muted">
@@ -497,6 +574,7 @@ export const TaskComposer = ({
                 onChange={(event) =>
                   setChecklistDraft(clampText(event.target.value, TEXT_LIMITS.checklistItem))
                 }
+                onPaste={(event) => clampOnPaste(event, TEXT_LIMITS.checklistItem)}
                 onKeyDown={(event) => {
                   if (event.key !== 'Enter') return;
                   event.preventDefault();

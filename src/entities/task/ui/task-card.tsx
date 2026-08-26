@@ -13,7 +13,12 @@ import {
 
 import { cn } from '@/shared/lib/cn';
 import { withAlpha } from '@/shared/lib/colors';
-import { formatDeadline, formatDeadlineDate, formatWindow } from '@/shared/lib/dates';
+import {
+  formatDateTime,
+  formatDeadline,
+  formatDeadlineDate,
+  formatWindow,
+} from '@/shared/lib/dates';
 import { TASK_PRIORITY_META, TEXT_LIMITS } from '@/shared/config/constants';
 import { truncateText } from '@/shared/lib/text';
 import { AvatarStack, Badge, PostItMark } from '@/shared/ui';
@@ -116,7 +121,8 @@ const TaskCardBase = ({
    * sign-off, progress). A note already worked this way; the attachment used to
    * spend a whole badge and the word "Image" saying the same thing.
    */
-  const hasNote = task.noteCount > 0;
+  const noteCount = task.notes.length;
+  const hasNote = noteCount > 0;
   const markerCount = (hasNote ? 1 : 0) + (task.attachmentUrl ? 1 : 0);
 
   // A task several people carry needs all of their ticks, so the card has to
@@ -193,14 +199,14 @@ const TaskCardBase = ({
             <span
               title={
                 task.noteAuthors.length > 0
-                  ? `${task.noteCount} note(s) from ${task.noteAuthors
+                  ? `${noteCount} note(s) from ${task.noteAuthors
                       .map((author) => author.displayName)
                       .join(', ')}`
-                  : `${task.noteCount} note(s)`
+                  : `${noteCount} note(s)`
               }
               className="text-amber-400 drop-shadow-[0_2px_3px_rgb(0_0_0/0.35)]"
             >
-              <PostItMark count={task.noteCount} className="h-[18px] w-[18px]" />
+              <PostItMark count={noteCount} className="h-[18px] w-[18px]" />
             </span>
           )}
         </span>
@@ -346,13 +352,45 @@ const TaskCardBase = ({
         {task.isLate && <LateTag variant="late" />}
         {task.isCompletedLate && <LateTag variant="completed-late" />}
 
-        {task.dueAt && (
-          <Badge className={cn(task.isLate && 'border-danger/40 text-danger')}>
-            <CalendarClock className="h-3 w-3" />
-            {/* A finished task gets the date it was due, not a running
-                countdown — "2d late" on delivered work reads as still overdue. */}
-            {isDone ? formatDeadlineDate(task.dueAt) : formatDeadline(task.dueAt)}
+        {/*
+          Finished work says when it *was* finished; open work says when it is
+          due.
+
+          The badge used to show the deadline either way, and on a completed
+          card that is the wrong fact: the deadline is a prediction, and once
+          the work has landed the only interesting number is when it actually
+          landed. Reading "24 Sept" on something delivered on the 19th invites
+          exactly the wrong conclusion.
+
+          `completedAt` rather than `dueAt`, and the tick rather than the clock,
+          so the two states are distinguishable at a glance without reading the
+          number at all. A finished task with no `completedAt` — a row written
+          before the column existed — falls back to the old behaviour rather
+          than showing an empty badge.
+        */}
+        {isDone && task.completedAt ? (
+          <Badge
+            title={t('views.completedOn', { date: formatDateTime(task.completedAt) })}
+            className={cn(
+              'border-positive/40 text-positive',
+              // Late delivery keeps its own loud tag beside this one, so the
+              // date itself stays calm rather than competing with it.
+              task.isCompletedLate && 'border-warning/40 text-warning',
+            )}
+          >
+            <Check className="h-3 w-3" strokeWidth={3} />
+            {formatDeadlineDate(task.completedAt)}
           </Badge>
+        ) : (
+          task.dueAt && (
+            <Badge className={cn(task.isLate && 'border-danger/40 text-danger')}>
+              <CalendarClock className="h-3 w-3" />
+              {/* A finished task with no recorded completion still gets the
+                  date it was due, not a running countdown — "2d late" on
+                  delivered work reads as still overdue. */}
+              {isDone ? formatDeadlineDate(task.dueAt) : formatDeadline(task.dueAt)}
+            </Badge>
+          )
         )}
 
         {task.priority !== 'NORMAL' && (
@@ -380,10 +418,15 @@ const TaskCardBase = ({
           </Badge>
         )}
 
-        {task.checklistProgress.total > 0 && (
-          <Badge>
+        {task.noteProgress.total > 0 && (
+          <Badge
+            className={cn(
+              task.noteProgress.done === task.noteProgress.total &&
+                'border-positive/40 text-positive',
+            )}
+          >
             <ListChecks className="h-3 w-3" />
-            {task.checklistProgress.done}/{task.checklistProgress.total}
+            {task.noteProgress.done}/{task.noteProgress.total}
           </Badge>
         )}
 

@@ -4,6 +4,7 @@ import {
   BarChart3,
   CalendarDays,
   CheckCircle2,
+  Columns3,
   FileText,
   KanbanSquare,
   MessageCircle,
@@ -38,6 +39,7 @@ import type { ListTasksParams, Task } from '@/entities/task/model/types';
 import { AiPanel } from '@/features/ai-suggestions/ui/ai-panel';
 import { useCurrentUser } from '@/features/auth/model/session.store';
 import { TaskBoard } from '@/features/dnd-board/ui/task-board';
+import { GroupsBoard } from '@/features/task-groups/ui/groups-board';
 import { useChatDock } from '@/features/project-chat-dock/model/chat-dock.store';
 import {
   useProjectChatUnread,
@@ -68,6 +70,7 @@ import { useT, type TranslationKey } from '@/shared/i18n';
 
 type Tab =
   | 'board'
+  | 'groups'
   | 'dashboard'
   | 'roster'
   | 'teams'
@@ -78,6 +81,11 @@ type Tab =
 
 const TABS: { value: Tab; label: TranslationKey; icon: ReactNode }[] = [
   { value: 'board', label: 'project.tabBoard', icon: <KanbanSquare className="h-3 w-3" /> },
+  // Next to the board, because it *is* the board — the same tasks, grouped by a
+  // label the project invented instead of by the state they are in. Anywhere
+  // else on this row would suggest it answers a different question about a
+  // different set of things.
+  { value: 'groups', label: 'project.tabGroups', icon: <Columns3 className="h-3 w-3" /> },
   { value: 'dashboard', label: 'project.tabMetrics', icon: <BarChart3 className="h-3 w-3" /> },
   { value: 'roster', label: 'project.tabRoster', icon: <Users className="h-3 w-3" /> },
   // Beside the roster, because a team is a subset of it — the same reasoning
@@ -499,6 +507,17 @@ const ProjectPage = () => {
             <PendingTasks compact={layout === 'list'} />
           )}
         </div>
+      )}
+
+      {/*
+        The same tasks, grouped by a label the project invented.
+
+        Given the project id and a way to open a task, and nothing else: the
+        board reads its own data and owns its own gestures, and the task sheet
+        it opens is the one every other surface opens. See `GroupsBoard`.
+      */}
+      {tab === 'groups' && projectId && (
+        <GroupsBoard projectId={projectId} onOpenTask={setDetailTaskId} />
       )}
 
       {tab === 'dashboard' && <ProjectDashboard projectId={projectId} />}

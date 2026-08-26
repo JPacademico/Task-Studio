@@ -57,15 +57,47 @@ export const aiApi = {
    * nowhere to go. See `SLOW_ROUTE_TIMEOUT_MS`.
    */
 
-  /*
-   * There is no `suggestSubtasks` / `accept` pair here any more.
+  /**
+   * 1-3 steps for one task, read from its own title, description and type.
    *
-   * They drove the "Suggest steps" button on the task sheet, which is gone —
-   * the project's assistant tab does the same job with the whole board in view,
-   * and one entry point to the model is enough. The API still exposes
-   * `POST /ai/tasks/:id/subtasks` and `POST /ai/suggestions/:id/accept`; only
-   * the client's callers went away.
+   * These two came back for the note checklist. They had been removed when the
+   * sheet's old "Suggest steps" button went away — the reasoning at the time
+   * was that the project's assistant tab did the same job with the whole board
+   * in view. It does a *different* job: it proposes whole tasks for a project,
+   * and this proposes steps inside one task somebody is already reading. The
+   * endpoints never went anywhere; only the client's callers did.
+   *
+   * Carries the long ceiling for the same reason `suggestProjectTasks` does:
+   * it waits on a language model, on a free tier, behind a container that may
+   * itself be starting up.
    */
+  async suggestSubtasks(taskId: string): Promise<AiSuggestion> {
+    const { data } = await api.post<AiSuggestion>(
+      `/ai/tasks/${taskId}/subtasks`,
+      undefined,
+      { timeout: SLOW_ROUTE_TIMEOUT_MS },
+    );
+    return data;
+  },
+
+  /**
+   * Files accepted steps onto the task's note checklist, as Post-its.
+   *
+   * `titles` omitted means "all of them". The API trims whatever will not fit
+   * under `MAX_TASK_NOTES` rather than refusing the lot, so `added` can be
+   * smaller than what was suggested — which is the normal case on a task that
+   * already had a step or two.
+   */
+  async acceptSubtasks(
+    suggestionId: string,
+    titles?: string[],
+  ): Promise<{ suggestionId: string; added: number }> {
+    const { data } = await api.post<{ suggestionId: string; added: number }>(
+      `/ai/suggestions/${suggestionId}/accept`,
+      { titles },
+    );
+    return data;
+  },
 
   /**
    * Starts a generation and returns its receipt.

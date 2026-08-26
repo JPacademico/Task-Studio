@@ -145,6 +145,24 @@ export const CONNECTOR_COLORS = [
 /** Hard ceiling on the personal board, mirrored from the API. */
 export const MAX_BOARD_PAGES = 10;
 
+/**
+ * How many notes one task's note checklist holds. Mirrored from the API's
+ * `MAX_TASK_NOTES`, which is the authority — this is what lets the sheet grey
+ * the "+" out *before* somebody writes a fourth note and is told it will not
+ * fit.
+ */
+export const MAX_TASK_NOTES = 3;
+
+/**
+ * How many columns one project's grouping board may hold. Mirrored from the
+ * API's `MAX_GROUPS_PER_PROJECT`.
+ *
+ * Twelve is past what fits on a laptop screen without horizontal scrolling and
+ * comfortably past what anybody can hold in their head as a set of categories.
+ * A board with thirty columns is not a grouping, it is a second task list.
+ */
+export const MAX_GROUPS_PER_PROJECT = 12;
+
 /** Distance from a screen edge (px) that reveals a hidden menu. */
 export const EDGE_REVEAL_PX = 24;
 
@@ -201,7 +219,13 @@ export const TEXT_LIMITS = {
    * same reasoning as `dateInputBounds`.
    */
   taskDescription: 1500,
-  /** A sentence: "Book the room", not the minutes of the meeting. */
+  /**
+   * A sentence: "Book the room", not the minutes of the meeting.
+   *
+   * Still used by the composer, which collects starting steps as plain lines
+   * before the task exists to hang notes off. Once it does, a step is a Post-it
+   * and `noteContent` is its ceiling.
+   */
   checklistItem: 200,
   /** What fits on a Post-it before it stops being one. */
   noteContent: 2000,
@@ -218,6 +242,9 @@ export const TEXT_LIMITS = {
   organizationDescription: 500,
   teamName: 60,
   teamDescription: 280,
+
+  /** A grouping-board column header, which has to fit without wrapping. */
+  groupName: 32,
 
   /** Free text on a person: "Head of Delivery". */
   jobTitle: 280,

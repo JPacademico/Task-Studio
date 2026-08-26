@@ -24,6 +24,16 @@ export interface Note {
   /** Objects sharing a group move, link and delete together. */
   groupId: string | null;
   isPinned: boolean;
+  /**
+   * Ticked off, on a task's note checklist.
+   *
+   * Meaningless outside `scope: 'TASK'` — a note on a board is a thought, not
+   * a step, and nothing draws a checkbox on one.
+   */
+  isCompleted: boolean;
+  completedAt: string | null;
+  /** Who ticked it. Null while it is open. */
+  completedBy?: UserSummary | null;
   deletedAt: string | null;
   createdAt: string;
   updatedAt: string;

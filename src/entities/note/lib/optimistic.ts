@@ -83,6 +83,10 @@ export const optimisticNote = (
     kind: payload.kind ?? 'TEXT',
     imageKey: null,
     imageUrl: null,
+    // A fresh note is never a ticked step, and only a task note can be one at
+    // all — the boards this placeholder serves draw no checkbox.
+    isCompleted: false,
+    completedAt: null,
     positionX: payload.positionX ?? 0,
     positionY: payload.positionY ?? 0,
     width: payload.width ?? 220,

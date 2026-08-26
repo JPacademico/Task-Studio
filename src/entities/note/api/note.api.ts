@@ -40,6 +40,19 @@ export const noteApi = {
     return data;
   },
 
+  /**
+   * Ticks a step on a task's note checklist, or un-ticks it.
+   *
+   * Its own endpoint rather than a field on `update`, because the two are
+   * authorised differently: only the author may rewrite what a note says, and
+   * anybody who can see the task may tick its boxes. See the API's
+   * `NotesService.setCompletion`.
+   */
+  async setCompletion(noteId: string, isCompleted: boolean): Promise<Note> {
+    const { data } = await api.patch<Note>(`/notes/${noteId}/completion`, { isCompleted });
+    return data;
+  },
+
   async remove(noteId: string): Promise<void> {
     await api.delete(`/notes/${noteId}`);
   },

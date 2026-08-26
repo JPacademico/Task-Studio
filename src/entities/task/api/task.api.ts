@@ -1,6 +1,5 @@
 import { api } from '@/shared/api/client';
 import type {
-  ChecklistItem,
   CreateTaskPayload,
   ListTasksParams,
   Task,
@@ -69,36 +68,6 @@ export const taskApi = {
   async recycleBin(projectId?: string): Promise<Task[]> {
     const { data } = await api.get<Task[]>('/tasks/recycle-bin', {
       params: projectId ? { projectId } : undefined,
-    });
-    return data;
-  },
-
-  // --- Sub-checklist --------------------------------------------------------
-
-  async addChecklistItem(taskId: string, content: string): Promise<ChecklistItem> {
-    const { data } = await api.post<ChecklistItem>(`/tasks/${taskId}/checklist`, { content });
-    return data;
-  },
-
-  async updateChecklistItem(
-    taskId: string,
-    itemId: string,
-    payload: { content?: string; isCompleted?: boolean; order?: number },
-  ): Promise<ChecklistItem> {
-    const { data } = await api.patch<ChecklistItem>(
-      `/tasks/${taskId}/checklist/${itemId}`,
-      payload,
-    );
-    return data;
-  },
-
-  async removeChecklistItem(taskId: string, itemId: string): Promise<void> {
-    await api.delete(`/tasks/${taskId}/checklist/${itemId}`);
-  },
-
-  async reorderChecklist(taskId: string, orderedIds: string[]): Promise<ChecklistItem[]> {
-    const { data } = await api.put<ChecklistItem[]>(`/tasks/${taskId}/checklist/reorder`, {
-      orderedIds,
     });
     return data;
   },

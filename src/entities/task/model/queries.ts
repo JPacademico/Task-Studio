@@ -6,6 +6,7 @@ import {
 } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
+import { noteApi } from '@/entities/note/api/note.api';
 import { patchUserOverview } from '@/entities/project/model/queries';
 import type { UserOverview } from '@/entities/project/model/types';
 import { errorMessage } from '@/shared/api/client';
@@ -162,7 +163,7 @@ const matchesListParams = (task: Task, params: ListTasksParams): boolean | 'unkn
   if (params.priority && params.priority !== task.priority) return false;
   if (params.scope === 'mine' && !task.isMine) return false;
   if (params.pinnedOnly && !task.isPinned) return false;
-  if (params.hasNotes && task.noteCount === 0) return false;
+  if (params.hasNotes && task.notes.length === 0) return false;
   if (params.hideCompleted && task.status === 'COMPLETED') return false;
 
   return true;
@@ -390,7 +391,7 @@ const seedAgendaFor = (
  *
  * Raised from 15s, and the reason it can be is that this cache is not really
  * kept fresh by polling — it is kept fresh by the socket. `task:created`,
- * `task:updated`, `task:deleted` and `checklist:changed` all invalidate
+ * `task:updated`, `task:deleted` and `task-notes:changed` all invalidate
  * `tasks.all` in the realtime provider, and every mutation writes the server's
  * own response straight into the cache. A short `staleTime` on top of that does
  * not make anything more correct; it just means every navigation between two
@@ -777,7 +778,27 @@ export const usePurgeTask = () => {
   });
 };
 
-export const useChecklistMutations = (taskId: string) => {
+/**
+ * The note checklist on one task: add a step, tick one off, tear one up.
+ *
+ * ## Why this replaced `useChecklistMutations`
+ *
+ * Because the two lists it used to sit between are one list now. A task carried
+ * a sub-checklist of plain rows *and* a wall of Post-its, and neither could see
+ * the other — so "is this step done" had two answers on one sheet and the card's
+ * progress badge only counted one of them. The merge kept the note, and this
+ * hook is what the sheet drives it with.
+ *
+ * ## Why the writes go to `noteApi` and the reads come from the task
+ *
+ * A step is a `Note` row, so creating and deleting one is the notes API's job.
+ * But the *list* arrives inside the task — `task.notes`, alongside the progress
+ * the card draws — because the sheet and the card need it in the same payload
+ * they were already fetching. So every write here invalidates the task rather
+ * than a notes query: there is no separate notes cache for a task to keep in
+ * step.
+ */
+export const useTaskNoteMutations = (taskId: string) => {
   const queryClient = useQueryClient();
 
   const refresh = () => {
@@ -787,47 +808,59 @@ export const useChecklistMutations = (taskId: string) => {
 
   return {
     add: useMutation({
-      mutationFn: (content: string) => taskApi.addChecklistItem(taskId, content),
+      mutationFn: (payload: { content: string; color: string }) =>
+        noteApi.create({
+          content: payload.content,
+          color: payload.color,
+          scope: 'TASK',
+          taskId,
+        }),
       onSuccess: refresh,
       onError: (error) => toast.error(errorMessage(error)),
     }),
+
+    edit: useMutation({
+      mutationFn: ({ noteId, content }: { noteId: string; content: string }) =>
+        noteApi.update(noteId, { content }),
+      onSuccess: refresh,
+      onError: (error) => toast.error(errorMessage(error)),
+    }),
+
     /**
-     * Ticking a checklist item, felt on the click.
+     * Ticking a step, felt on the click.
      *
-     * This was the last pessimistic tick left in the app: the box did nothing
-     * until the PATCH *and* the refetch it triggered had both landed, which on
-     * a list of eight subtasks meant eight visible waits to work through one
-     * task. The card's own box has been optimistic for a while; the small one
-     * inside the sheet was simply missed.
+     * Optimistic for the same reason the card's own box is: the tick *is* the
+     * feedback, and a checkbox that does nothing until a PATCH and the refetch
+     * behind it have both landed turns working down three steps into three
+     * visible waits.
      *
-     * `scope` serialises the writes so that running down a list quickly cannot
-     * land them out of order — the same guarantee `useToggleMyCompletion` has,
-     * and for the same reason. Scoped to this task rather than globally,
-     * because `useChecklistMutations` is already per task and the id is
-     * therefore available where `scope` is declared.
+     * `scope` serialises the writes so that running down the list quickly
+     * cannot land them out of order — the same guarantee `useToggleMyCompletion`
+     * has, and for the same reason. Scoped to this task, because the hook
+     * already is.
      */
     toggle: useMutation({
-      scope: { id: `checklist:${taskId}` },
+      scope: { id: `task-notes:${taskId}` },
 
-      mutationFn: ({ itemId, isCompleted }: { itemId: string; isCompleted: boolean }) =>
-        taskApi.updateChecklistItem(taskId, itemId, { isCompleted }),
+      mutationFn: ({ noteId, isCompleted }: { noteId: string; isCompleted: boolean }) =>
+        noteApi.setCompletion(noteId, isCompleted),
 
-      onMutate: ({ itemId, isCompleted }) => {
+      onMutate: ({ noteId, isCompleted }) => {
         const snapshot = queryClient.getQueriesData({ queryKey: queryKeys.tasks.all });
 
         patchCachedTask(queryClient, taskId, (task) => {
-          const checklist = task.checklist.map((item) =>
-            item.id === itemId ? { ...item, isCompleted } : item,
+          const notes = task.notes.map((note) =>
+            note.id === noteId ? { ...note, isCompleted } : note,
           );
 
           return {
             ...task,
-            checklist,
+            notes,
             // The badge on the card counts from this, so it has to move with
             // the tick or the sheet and the card behind it disagree.
-            checklistProgress: {
-              total: checklist.length,
-              done: checklist.filter((item) => item.isCompleted).length,
+            noteProgress: {
+              total: notes.length,
+              done: notes.filter((note) => note.isCompleted).length,
             },
           };
         });
@@ -842,13 +875,9 @@ export const useChecklistMutations = (taskId: string) => {
 
       onSettled: refresh,
     }),
+
     remove: useMutation({
-      mutationFn: (itemId: string) => taskApi.removeChecklistItem(taskId, itemId),
-      onSuccess: refresh,
-      onError: (error) => toast.error(errorMessage(error)),
-    }),
-    reorder: useMutation({
-      mutationFn: (orderedIds: string[]) => taskApi.reorderChecklist(taskId, orderedIds),
+      mutationFn: (noteId: string) => noteApi.remove(noteId),
       onSuccess: refresh,
       onError: (error) => toast.error(errorMessage(error)),
     }),

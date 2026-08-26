@@ -6,7 +6,7 @@ import { NOTE_COLORS, TEXT_LIMITS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
 import { readableInk, withAlpha } from '@/shared/lib/colors';
 import { useDebouncedCallback } from '@/shared/lib/hooks';
-import { clampText } from '@/shared/lib/text';
+import { clampOnPaste, clampText } from '@/shared/lib/text';
 import type { Note, UpdateNotePayload } from '../model/types';
 import { NoteAuthorStamp } from './note-author';
 import { useT } from '@/shared/i18n';
@@ -604,6 +604,11 @@ const PostItBase = ({
             dirtyRef.current.title = false;
             if (titleDraft !== (note.title ?? '')) commit({ title: titleDraft });
           }}
+          // Explicit, rather than relying on `maxlength` alone: the attribute
+          // silently swallows the tail of an over-long paste mid-word, and
+          // `clampText` above only sees what the browser already trimmed. See
+          // `clampOnPaste`.
+          onPaste={(event) => clampOnPaste(event, TEXT_LIMITS.noteTitle)}
           placeholder={t(isImage ? 'notes.imageCaption' : 'notes.noteTitle')}
           maxLength={TEXT_LIMITS.noteTitle}
           className={cn(
@@ -699,6 +704,7 @@ const PostItBase = ({
             dirtyRef.current.content = false;
             if (draft !== note.content) commit({ content: draft });
           }}
+          onPaste={(event) => clampOnPaste(event, TEXT_LIMITS.noteContent)}
           placeholder={t('notes.writeSomething')}
           maxLength={TEXT_LIMITS.noteContent}
           className="min-h-0 w-full flex-1 resize-none overflow-auto bg-transparent font-hand text-[15px] leading-relaxed outline-none placeholder:opacity-40"

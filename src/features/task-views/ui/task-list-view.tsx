@@ -98,8 +98,8 @@ const TaskRowBase = ({
           )}
         >
           {task.title}
-          {task.noteCount > 0 && (
-            <PostItMark count={task.noteCount} className="h-3.5 w-3.5 shrink-0 text-amber-400" />
+          {task.notes.length > 0 && (
+            <PostItMark count={task.notes.length} className="h-3.5 w-3.5 shrink-0 text-amber-400" />
           )}
         </span>
       </button>
@@ -116,10 +116,10 @@ const TaskRowBase = ({
           </span>
         )}
 
-        {task.checklistProgress.total > 0 && (
+        {task.noteProgress.total > 0 && (
           <Badge>
             <ListChecks className="h-3 w-3" />
-            {task.checklistProgress.done}/{task.checklistProgress.total}
+            {task.noteProgress.done}/{task.noteProgress.total}
           </Badge>
         )}
       </span>

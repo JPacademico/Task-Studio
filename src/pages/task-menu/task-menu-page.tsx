@@ -300,7 +300,7 @@ const TaskMenuPage = () => {
       </div>
       )}
 
-      {/* Same detail sheet the project board opens — checklist, notes and the
+      {/* Same detail sheet the project board opens — the note checklist and the
           assistant — so a task means the same thing on both surfaces. Editing
           needs the project roster, which lives on the project page, so "Edit"
           takes the user there rather than opening a composer with no options. */}
