@@ -2,22 +2,26 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   CalendarDays,
-  Download,
   Eye,
   FileText,
   Pencil,
   Plus,
   Save,
+  Sparkles,
   Trash2,
+  Upload,
   UserPlus,
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { MAX_PLAIN_TEXT_CHARS, plainTextToHtml } from '@/entities/document/lib/plain-text';
 import {
   useAdoptDocument,
+  useConvertDocument,
   useCreateDocument,
   useDeleteDocument,
+  useImportDocument,
   useProjectDocument,
   useProjectDocuments,
   useProjectDocumentsRealtime,
@@ -28,8 +32,10 @@ import { DocumentByline, DocumentCreatorStamp } from '@/entities/document/ui/doc
 import type { Meeting } from '@/entities/meeting/model/types';
 import type { RosterMember } from '@/entities/project/model/types';
 import type { Task } from '@/entities/task/model/types';
+import { IMPORT_ACCEPT, resolveFileMime, uploadImportFile } from '@/entities/user/api/user.api';
 import { useCurrentUser } from '@/features/auth/model/session.store';
 import { RichTextEditor } from '@/features/rich-text/ui/rich-text-editor';
+import { errorMessage } from '@/shared/api/client';
 import { TEXT_LIMITS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
 import { clampText } from '@/shared/lib/text';
@@ -46,6 +52,8 @@ import {
 } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 import { DocumentAccessDialog } from './document-access-dialog';
+import { DocumentDownloadMenu } from './download-menu';
+import { ImportedDocument, formatBadge } from './imported-document';
 
 interface TextBoardProps {
   /**
@@ -98,49 +106,15 @@ const NO_TASKS: Task[] = [];
 const NO_MEETINGS: Meeting[] = [];
 const NO_ROSTER: RosterMember[] = [];
 
-/** A filename that survives a download folder: no separators, no surprises. */
-const toFileName = (title: string): string =>
-  `${title.trim().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').slice(0, 60) || 'document'}.html`;
-
-/** Same treatment the title already got: strip the three characters that
-    would otherwise close a tag we opened. */
-const plain = (value: string): string => value.replace(/[<>&]/g, '');
-
 /**
- * Wraps a document body in enough of a page to open on its own.
+ * The title an imported file starts life with.
  *
- * The download is a standalone `.html` file rather than the raw fragment: a
- * fragment opens as unstyled text with no title and no character set, which is
- * not what anybody means by "download this document".
- *
- * The byline travels with it. A page that leaves the app loses every bit of
- * context the board around it was carrying, and the first question anybody asks
- * about a document in their downloads folder is who wrote it.
+ * `Q3 report.docx` → `Q3 report`. The extension is on the badge beside the
+ * name already; repeating it in the heading is the file manager's habit, not a
+ * document's.
  */
-const toDownloadableHtml = (title: string, body: string, byline: string): string =>
-  `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>${plain(title)}</title>
-<style>
-  body { max-width: 46rem; margin: 3rem auto; padding: 0 1.25rem;
-         font: 16px/1.65 Georgia, 'Times New Roman', serif; color: #1a1a1a; }
-  h1, h2, h3 { line-height: 1.25; }
-  .byline { margin: -0.5rem 0 2rem; padding-bottom: 1rem; border-bottom: 1px solid #ddd;
-            font-size: 0.8rem; color: #666; }
-  blockquote { border-left: 3px solid #ccc; margin: 0; padding-left: 1rem; color: #555; }
-  pre { background: #f4f4f5; padding: .75rem 1rem; border-radius: 6px; overflow-x: auto; }
-  img, video { max-width: 100%; height: auto; }
-</style>
-</head>
-<body>
-<h1>${plain(title)}</h1>
-${byline ? `<p class="byline">${plain(byline)}</p>` : ''}
-${body}
-</body>
-</html>`;
+const titleFromFileName = (fileName: string): string =>
+  clampText(fileName.replace(/\.[a-z0-9]+$/i, '').trim(), TEXT_LIMITS.documentTitle);
 
 /**
  * A text board — a project's, or your own.
@@ -188,14 +162,48 @@ export const TextBoard = ({
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [attachTo, setAttachTo] = useState<AnchorValue>('');
   const [isAccessOpen, setIsAccessOpen] = useState(false);
+  /**
+   * Held here rather than on the mutation, because an import is two requests.
+   *
+   * The upload to storage happens first and is not a mutation at all; the row
+   * is only registered once the bytes are there. A spinner tied to
+   * `importDocument.isPending` would therefore appear *after* the slow half
+   * had already finished.
+   */
+  const [isImporting, setIsImporting] = useState(false);
 
   // The body lives in a ref, not in state: it changes on every keystroke and
   // nothing outside the editor renders from it until a save.
   const draftRef = useRef('');
 
+  /**
+   * "Open the editor as soon as this page arrives."
+   *
+   * Two actions mean it — creating a blank page, and converting an imported
+   * one — and both were losing the race against the effect below, which resets
+   * `isEditing` every time `open` changes identity. Creating a page therefore
+   * dropped the user on a read-only blank sheet: `setIsEditing(true)` ran, the
+   * fetched document then landed, and the effect turned it straight back off.
+   *
+   * A ref rather than more state because it must survive that render without
+   * causing one, and because the effect has to be able to *consume* it — the
+   * intent applies to the next page that arrives and to no page after it.
+   */
+  const openForEditingRef = useRef(false);
+
+  /**
+   * The revision of the page currently held, so the socket can recognise it.
+   *
+   * `updatedAt` changes on every save, which makes it the identity of a
+   * version. See `handleRemoteEdit` for the echo it exists to swallow.
+   */
+  const openRevisionRef = useRef<string | null>(null);
+
   const { data: open, isLoading: isOpening } = useProjectDocument(selectedId ?? undefined);
 
   const createDocument = useCreateDocument();
+  const importDocument = useImportDocument();
+  const convertDocument = useConvertDocument();
   const updateDocument = useUpdateDocument();
   const deleteDocument = useDeleteDocument();
 
@@ -214,6 +222,20 @@ export const TextBoard = ({
    */
   const handleRemoteEdit = useCallback(
     (document: DocumentBroadcast) => {
+      /*
+       * Your own save, coming back off the socket.
+       *
+       * The API emits into the whole project room, the writer included, so
+       * every save and every conversion returns to the person who made it. The
+       * cache already holds that exact revision by then — the mutation wrote
+       * it from the response — so an event carrying the same `updatedAt` says
+       * nothing new, and treating it as a teammate's edit raised the
+       * "somebody saved this page while you were editing" notice against
+       * yourself. Conversion made that constant rather than a race: it opens
+       * the editor, so the flag it is tested against is always set.
+       */
+      if (document.updatedAt === openRevisionRef.current) return;
+
       if (isEditing || isDirty) {
         setRemoteEdit(document);
         return;
@@ -221,6 +243,7 @@ export const TextBoard = ({
 
       setTitle(document.title);
       draftRef.current = document.content ?? '';
+      openRevisionRef.current = document.updatedAt;
     },
     [isDirty, isEditing],
   );
@@ -255,7 +278,12 @@ export const TextBoard = ({
     setTitle(open.title);
     draftRef.current = open.content ?? '';
     setIsDirty(false);
-    setIsEditing(false);
+    openRevisionRef.current = open.updatedAt;
+    // Normally closes the editor — a different page is a different document.
+    // Unless the action that brought this page here asked for it open; see
+    // `openForEditingRef`. Consumed, so it applies once.
+    setIsEditing(openForEditingRef.current);
+    openForEditingRef.current = false;
     setConfirmingDelete(false);
     // Whatever a colleague did to the previous page is no longer relevant.
     setRemoteEdit(null);
@@ -333,7 +361,9 @@ export const TextBoard = ({
       {
         onSuccess: (created) => {
           setSelectedId(created.id);
-          setIsEditing(true);
+          // Not `setIsEditing(true)` — the page has not been fetched yet, and
+          // the effect that runs when it lands would close the editor again.
+          openForEditingRef.current = true;
           setAttachTo('');
           toast.success(t('doc.created'));
         },
@@ -377,30 +407,98 @@ export const TextBoard = ({
     );
   };
 
-  const handleDownload = () => {
+  /**
+   * Brings a document somebody already has onto the board.
+   *
+   * Two steps and one spinner. The bytes go straight to storage through a
+   * presigned PUT — the API never carries them, exactly as for a task
+   * attachment — and only then is the row registered against the object key.
+   *
+   * A `.txt` is turned into paragraphs here and arrives as an ordinary
+   * editable page: there is no judgement in that conversion, so there is no
+   * reason to spend a model call or a round trip on it. A PDF or a `.docx`
+   * arrives with no body at all and *is* the uploaded file until somebody
+   * presses Edit — see `handleEdit`.
+   */
+  const handleImport = async (file: File) => {
+    setIsImporting(true);
+
+    try {
+      const mime = resolveFileMime(file);
+      const uploaded = await uploadImportFile(file);
+
+      const content =
+        mime === 'text/plain'
+          ? plainTextToHtml((await file.text()).slice(0, MAX_PLAIN_TEXT_CHARS))
+          : undefined;
+
+      const created = await importDocument.mutateAsync({
+        projectId,
+        ...parseAnchor(attachTo),
+        title: titleFromFileName(uploaded.name) || t('doc.untitled'),
+        sourceKey: uploaded.key,
+        sourceUrl: uploaded.publicUrl,
+        sourceName: uploaded.name,
+        sourceMime: mime,
+        sourceSize: uploaded.size,
+        content,
+      });
+
+      // Deliberately *not* `openForEditingRef`: an import opens as the file
+      // that was uploaded. Converting it is the next, separate decision.
+      setSelectedId(created.id);
+      setAttachTo('');
+      toast.success(t('doc.imported'));
+    } catch (error) {
+      /*
+       * One toast for both halves.
+       *
+       * `uploadImportFile` throws its own words for the client-side rules
+       * (wrong type, empty, too large) and `useImportDocument` deliberately
+       * has no `onError`, so whichever step failed says why exactly once —
+       * rather than the two-toast pile-up that a hook-level handler plus a
+       * `mutateAsync` rejection produces.
+       */
+      toast.error(errorMessage(error, t('doc.importFailed')));
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  /**
+   * What the Edit button does.
+   *
+   * On an ordinary page: opens the editor. On an imported PDF or Word file
+   * that nobody has converted yet: runs the conversion first, and *then* opens
+   * the editor — which is the whole rule this feature is built around. Nothing
+   * converts at upload, because a conversion is a model's reading of somebody
+   * else's document and replacing the original with one is a decision, not a
+   * side effect of choosing a file.
+   */
+  const handleEdit = async () => {
     if (!open) return;
 
-    const body = sanitizeDocumentHtml(isEditing ? draftRef.current : (open.content ?? ''));
+    if (!open.source || open.source.isConverted) {
+      setIsEditing(true);
+      return;
+    }
 
-    // Nobody needs telling who wrote the page on their own desk.
-    const byline =
-      !isPersonal && open.createdBy
-        ? `Created by ${open.createdBy.displayName} · ${formatDateTime(open.createdAt)}` +
-          (open.updatedBy && open.updatedAt !== open.createdAt
-            ? ` — last edited by ${open.updatedBy.displayName} · ${formatDateTime(open.updatedAt)}`
-            : '')
-        : '';
+    // Set before the call, not after it: the converted page is written into
+    // the cache by the mutation's own `onSuccess`, so the effect that resets
+    // `isEditing` can run before this function is resumed.
+    openForEditingRef.current = true;
 
-    const blob = new Blob([toDownloadableHtml(title, body, byline)], {
-      type: 'text/html;charset=utf-8',
-    });
-
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = toFileName(title);
-    anchor.click();
-    URL.revokeObjectURL(url);
+    try {
+      const { isTruncated } = await convertDocument.mutateAsync(open.id);
+      setIsEditing(true);
+      toast.success(isTruncated ? t('doc.convertedTruncated') : t('doc.converted'));
+    } catch (error) {
+      openForEditingRef.current = false;
+      // The API tells three failures apart — unconfigured, out of quota, slow
+      // — and each one is different advice. Passing its words through is worth
+      // more than a house message about conversion.
+      toast.error(errorMessage(error, t('doc.convertFailed')));
+    }
   };
 
   const handleDelete = () => {
@@ -442,8 +540,26 @@ export const TextBoard = ({
           />
         )}
       </span>
-      <span className="mt-0.5 block truncate text-[10px] text-content-faint">
-        {entry.excerpt || t('doc.emptyPage')}
+      {/*
+        An imported page's row says what it is instead of showing an excerpt.
+
+        There is no excerpt to show: the body is empty until the file has been
+        converted, so every import would otherwise read "Empty page" — which is
+        both wrong and the exact opposite of what those rows are. The badge
+        answers the question the row actually raises, which is why this one
+        does not open in the editor.
+      */}
+      <span className="mt-0.5 flex items-center gap-1.5 text-[10px] text-content-faint">
+        {entry.source && !entry.source.isConverted && (
+          <span className="shrink-0 rounded bg-brand/12 px-1 py-px font-semibold uppercase tracking-wide text-brand">
+            {formatBadge(entry.source)}
+          </span>
+        )}
+        <span className="truncate">
+          {entry.source && !entry.source.isConverted
+            ? t('doc.uploadedFile')
+            : entry.excerpt || t('doc.emptyPage')}
+        </span>
       </span>
     </button>
   );
@@ -482,6 +598,45 @@ export const TextBoard = ({
           {t('doc.new')}
         </Button>
 
+        {/*
+          The other way a page comes into existence.
+
+          Beside "New" rather than behind a menu, because "start writing" and
+          "I already wrote this" are the two things anybody arrives at a text
+          board wanting, and they are equally common. It shares the anchor
+          picker to its left: an imported page belongs to the project, a task
+          or a meeting on exactly the same terms as a typed one.
+
+          A `<label>` wrapping a hidden input rather than a button with a click
+          handler — that is the only way to open a file picker without
+          synthesising a click, and it keeps the control keyboard-reachable.
+        */}
+        <label
+          className={cn(
+            'ui-btn ui-btn--secondary relative inline-flex h-8 select-none items-center gap-1.5',
+            'rounded-xl bg-surface-sunken px-3 text-xs text-content',
+            'transition-colors duration-150 ease-studio hover:bg-edge/60',
+            'focus-within:outline-none focus-within:ring-2 focus-within:ring-brand/50',
+            isImporting ? 'pointer-events-none opacity-60' : 'cursor-pointer',
+          )}
+          title={t('doc.importHint')}
+        >
+          {isImporting ? <Spinner /> : <Upload className="h-3.5 w-3.5" strokeWidth={2.4} />}
+          {t(isImporting ? 'doc.importing' : 'doc.import')}
+          <input
+            type="file"
+            accept={IMPORT_ACCEPT}
+            disabled={isImporting}
+            className="sr-only"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) void handleImport(file);
+              // Reset, so picking the same file twice still fires a change.
+              event.target.value = '';
+            }}
+          />
+        </label>
+
         <span className="ml-auto flex items-center gap-1.5">
           {open && (
             <>
@@ -489,7 +644,7 @@ export const TextBoard = ({
                 <>
                   <Button size="sm" onClick={handleSave} isLoading={updateDocument.isPending}>
                     <Save className="h-3.5 w-3.5" />
-                    Save
+                    {t('common.save')}
                   </Button>
                   <Button
                     size="sm"
@@ -507,9 +662,39 @@ export const TextBoard = ({
                   </Button>
                 </>
               ) : open.canEdit ? (
-                <Button size="sm" variant="secondary" onClick={() => setIsEditing(true)}>
-                  <Pencil className="h-3.5 w-3.5" />
-                  Edit
+                /*
+                  One button, two jobs — and the label says which one it is
+                  about to do.
+
+                  On an imported PDF or Word file this is what runs the
+                  conversion, so it stops saying "Edit" and says so: the click
+                  takes tens of seconds, spends assistant quota, and replaces
+                  what is on screen with a machine's reading of it. A control
+                  that does all that under a label reading "Edit" would be a
+                  surprise the first time and a distrusted button after that.
+                */
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => void handleEdit()}
+                  isLoading={convertDocument.isPending}
+                  title={
+                    open.source && !open.source.isConverted
+                      ? t('doc.convertHint')
+                      : undefined
+                  }
+                >
+                  {open.source && !open.source.isConverted ? (
+                    <>
+                      <Sparkles className="h-3.5 w-3.5" />
+                      {t('doc.convertToEdit')}
+                    </>
+                  ) : (
+                    <>
+                      <Pencil className="h-3.5 w-3.5" />
+                      {t('common.edit')}
+                    </>
+                  )}
                 </Button>
               ) : (
                 /*
@@ -548,10 +733,17 @@ export const TextBoard = ({
                 </Button>
               )}
 
-              <Button size="sm" variant="ghost" onClick={handleDownload} title={t('doc.downloadAsHtml')}>
-                <Download className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">{t('doc.download')}</span>
-              </Button>
+              {/*
+                Was one button that always produced HTML. The format is a
+                choice now, and the rendering moved to the API so that all
+                three agree about what a heading is — see `DownloadMenu`.
+              */}
+              <DocumentDownloadMenu
+                documentId={open.id}
+                title={title}
+                source={open.source}
+                draft={isEditing ? draftRef.current : undefined}
+              />
 
               {/* Two-step rather than a confirm dialog: deleting a page is
                   reversible nowhere in this UI, and one stray click on a
@@ -773,6 +965,23 @@ export const TextBoard = ({
                   </div>
                 )}
 
+                {open.source && !open.source.isConverted ? (
+                  /*
+                    The page is still the file that was uploaded.
+
+                    Not an editor with the document's text poured into it, and
+                    that distinction is the feature: what is on screen here is
+                    the original, byte for byte, rendered by the browser's own
+                    viewer. Nothing has read it, nothing has rewritten it, and
+                    nothing will until somebody presses the button above.
+                  */
+                  <ImportedDocument
+                    documentId={open.id}
+                    source={open.source}
+                    canEdit={open.canEdit}
+                    isConverting={convertDocument.isPending}
+                  />
+                ) : (
                 <RichTextEditor
                   /*
                     Keyed on the saved revision, not just the id.
@@ -800,6 +1009,7 @@ export const TextBoard = ({
                     if (!isDirty) setIsDirty(true);
                   }}
                 />
+                )}
               </motion.div>
             </AnimatePresence>
           )}

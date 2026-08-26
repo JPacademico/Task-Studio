@@ -18,6 +18,7 @@ connect-src 'self' https: wss:;
 media-src 'self' https: blob:;
 worker-src 'self' blob:;
 manifest-src 'self';
+frame-src 'self' blob:;
 object-src 'none';
 base-uri 'self';
 frame-ancestors 'none';
@@ -71,6 +72,21 @@ that never runs.
   outside this file. `blob:` and `data:` are needed by the client-side image
   downscaler before an upload is presigned.
 
+- **`frame-src 'self' blob:`** — the text board frames an imported PDF so it
+  can be read where it sits. There was no `frame-src` before it, so framing
+  fell through to `default-src 'self'` and the preview was simply blocked.
+  `blob:` is the narrowest thing that unblocks it: the file is fetched *through
+  the API* — which checks the project's roster on the way, something an
+  unguessable storage URL cannot do — and framed from an object URL built in
+  the page. Allowing the R2 hostname instead would have opened framing to a
+  whole third-party host, for every page in the app, to serve one feature.
+
+  A `blob:` frame is same-origin, so this is only safe because a blob's
+  recorded type is authoritative and never sniffed: `documentApi.sourceObjectUrl`
+  rebuilds the blob as the mime the API recorded at upload, so the frame gets
+  the PDF viewer or nothing. It can never be talked into rendering the bytes as
+  same-origin HTML.
+
 - **`object-src 'none'`, `base-uri 'self'`, `frame-ancestors 'none'`,
   `form-action 'self'`** — the four that cost nothing. They close plugin
   embedding, `<base>` hijacking (which can redirect every relative URL on the
@@ -87,7 +103,9 @@ preview`) and check the browser console for `Refused to …` messages on:
 1. first paint (theme + skin applied, no flash of the wrong palette),
 2. sign-in (the API call and the socket connection),
 3. a page with a user avatar and a project banner (R2 images),
-4. anything animated — opening a modal is enough.
+4. anything animated — opening a modal is enough,
+5. a project's **Text board** tab with an imported PDF open (the `blob:`
+   frame).
 
 ---
 

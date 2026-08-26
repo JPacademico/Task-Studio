@@ -824,20 +824,39 @@ const Lane = ({
           spot the pointer lands on when reaching for the header.
         */}
         {(onAddTask || onToggleHidden) && (
-          <span className="flex shrink-0 items-center gap-0.5">
+          <span className="flex shrink-0 items-center gap-1">
             {onAddTask && (
+              /*
+                Drawn as a filled control, not as a hover-only glyph.
+
+                It was a 24px icon in `--content-faint` that only took the brand
+                colour once the pointer was already on it, sitting beside a
+                second 24px icon that looked identical until then. Which meant
+                the most-used control on a column was the least visible thing in
+                its header, and on touch — where there is no hover at all — it
+                never announced itself as a button in the first place.
+
+                So it now carries the brand tint at rest, is a 28px target
+                rather than 24, and the hover *fills* rather than merely tints:
+                the state change reads as a press being invited. The eye beside
+                it keeps the quiet treatment, which is what makes this one the
+                obvious primary action of the two.
+              */
               <button
                 type="button"
                 onClick={onAddTask}
                 aria-label={t('groups.addTaskHere', { name: title })}
                 title={t('groups.addTaskHere', { name: title })}
                 className={cn(
-                  'grid h-6 w-6 place-items-center rounded-lg text-content-faint',
-                  'transition-colors duration-150 hover:bg-brand/10 hover:text-brand',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40',
+                  'grid h-7 w-7 place-items-center rounded-lg',
+                  'bg-brand/15 text-brand ring-1 ring-inset ring-brand/30',
+                  'transition-[background-color,color,box-shadow,transform] duration-150',
+                  'hover:bg-brand hover:text-brand-contrast hover:ring-brand',
+                  'active:scale-95',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60',
                 )}
               >
-                <Plus className="h-3.5 w-3.5" strokeWidth={2.4} />
+                <Plus className="h-4 w-4" strokeWidth={2.8} />
               </button>
             )}
 

@@ -92,6 +92,18 @@ const CONTENT_SECURITY_POLICY = [
   "media-src 'self' https: blob:",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
+  /*
+   * The text board's PDF preview, and nothing else.
+   *
+   * There was no `frame-src` at all, so framing fell through to `default-src
+   * 'self'` and the preview was blocked. `blob:` is the narrowest directive
+   * that unblocks it: the file is fetched through the API — which checks the
+   * project's roster on the way, something a storage URL cannot do — and
+   * framed from an object URL built in the page. Allowing the storage origin
+   * instead would have opened framing to a whole host for one feature, and to
+   * every other page in the app along with it.
+   */
+  "frame-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",
   "frame-ancestors 'none'",
@@ -158,7 +170,20 @@ export default defineConfig(({ mode }) => {
                * timeout: this decides when to *show* something stale, not when
                * to give up on the request.
                */
-              urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
+              /*
+               * `/source` is excluded, and it is the only exclusion.
+               *
+               * Every other API response is JSON measured in kilobytes. That
+               * one streams an imported document's original file back through
+               * the API — up to 10 MB of PDF per page — and this cache holds
+               * 200 entries. Ten opened imports would evict most of the JSON
+               * this cache exists to keep, to store binaries the offline app
+               * has no use for: the text board cannot render an imported page
+               * offline anyway, because the conversion it offers is a call to
+               * a language model.
+               */
+              urlPattern: ({ url }) =>
+                url.pathname.startsWith('/api/') && !url.pathname.endsWith('/source'),
               handler: 'NetworkFirst',
               options: {
                 cacheName: 'task-studio-api',

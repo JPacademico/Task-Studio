@@ -3087,6 +3087,31 @@
    * Per-skin materials.
    * --------------------------------------------------------------------- */
 
+  /*
+   * STUDIO — the secondary button's hover, which the palette had swallowed.
+   *
+   * `Button`'s secondary variant paints `bg-surface-sunken` and hovers to
+   * `bg-edge/60`. On every ink-drawn skin that is a dramatic change, because
+   * their `--edge` is a dark outline colour. On this one the two tokens are
+   * neighbours by design — `235 235 240` sunken against a `219 219 228` edge —
+   * and at 60% over a raised card the hover composites to `233 233 239`. Two
+   * steps out of 255. The control had a hover; nobody could see it, which on
+   * the rail's "New project" and "New organization" buttons read as a dead
+   * button sitting under the pointer.
+   *
+   * Full-opacity `--edge` is the fix, and it is deliberately *not* applied to
+   * every skin: on paper, pixel and newspaper it would paint a dark ink slab
+   * under `text-content`, which is that same ink. Studio is the only palette
+   * where `--edge` is a quiet neutral one step down from the sunken surface,
+   * which is exactly what a secondary hover wants to be.
+   *
+   * Scoped by `[data-skin='studio']` (0,3,0) so it outranks the Tailwind
+   * utility (0,2,0) — the same mechanism every skin override below uses.
+   */
+  [data-skin='studio'] .ui-btn--secondary:hover:not(:disabled) {
+    background-color: rgb(var(--edge));
+  }
+
   /* PAPER — everything is a cut-out with a hard drop shadow. */
   [data-skin='paper'] .ui-btn,
   [data-skin='paper'] .ui-filter {

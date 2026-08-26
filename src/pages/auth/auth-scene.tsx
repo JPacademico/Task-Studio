@@ -232,22 +232,34 @@ const TaskChip = ({ bounds }: { bounds: React.RefObject<HTMLElement | null> }) =
     tilt={-3}
     title={t('auth.desk.miniTask')}
   >
-    <div className="relative w-[172px] overflow-hidden rounded-xl border border-white/15 bg-white/10 p-3 backdrop-blur-md">
+    {/*
+      Drawn in design tokens, not in white.
+
+      Every one of these was `white/10` on a frosted panel, which is a card on
+      a dark desk and a blank rectangle on a light one — the desk is
+      `bg-surface`, and in light mode that is `246 246 248`. The card was
+      genuinely there; the only parts of it anybody could see were the brand
+      spine, the green pill and the three avatars, floating on nothing.
+
+      Tokens give the same glass on the dark palette and an actual card on the
+      light one, and the whole thing now follows a skin change for free.
+    */}
+    <div className="relative w-[172px] overflow-hidden rounded-xl border border-edge bg-surface-raised/85 p-3 shadow-[0_16px_32px_-18px_rgb(0_0_0/0.45)] backdrop-blur-md">
       <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-brand" />
-      <p className="text-[11px] font-semibold text-white/90">{t('auth.desk.rollOut')}</p>
+      <p className="text-[11px] font-semibold text-content">{t('auth.desk.rollOut')}</p>
       <div className="mt-2 flex items-center gap-1.5">
-        <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-1.5 py-0.5 text-[9px] font-medium text-white/80">
+        <span className="inline-flex items-center gap-1 rounded-full bg-surface-sunken px-1.5 py-0.5 text-[9px] font-medium text-content-muted">
           <Clock3 className="h-2.5 w-2.5" />
           2d
         </span>
-        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-400/20 px-1.5 py-0.5 text-[9px] font-medium text-emerald-200">
+        <span className="inline-flex items-center gap-1 rounded-full bg-positive/15 px-1.5 py-0.5 text-[9px] font-medium text-positive">
           {t('auth.desk.onTime')}
         </span>
         <span className="ml-auto flex -space-x-1.5">
           {['#f472b6', '#818cf8', '#34d399'].map((tone) => (
             <span
               key={tone}
-              className="h-4 w-4 rounded-full ring-2 ring-white/20"
+              className="h-4 w-4 rounded-full ring-2 ring-surface-raised"
               style={{ background: tone }}
             />
           ))}
@@ -278,7 +290,11 @@ const Trinket = ({
     <motion.span
       whileHover={{ rotate: 12 }}
       className={cn(
-        'grid h-11 w-11 place-items-center rounded-2xl border border-white/15 backdrop-blur-md',
+        // Same reasoning as the task chip: a white hairline on a white desk is
+        // not a hairline. `tone` carries the fill, and every caller now passes
+        // one built out of tokens.
+        'grid h-11 w-11 place-items-center rounded-2xl border border-edge backdrop-blur-md',
+        'shadow-[0_10px_24px_-16px_rgb(0_0_0/0.45)]',
         tone,
       )}
     >
@@ -325,7 +341,7 @@ export const AuthScene = ({ bounds }: { bounds: React.RefObject<HTMLElement | nu
         bounds={bounds}
         className="left-[19%] top-[46%]"
         delay={0.8}
-        tone="bg-white/10 text-white/80"
+        tone="bg-surface-raised/85 text-content-muted"
         title={t('auth.desk.clipOn')}
       >
         <Paperclip className="h-5 w-5" />
@@ -335,7 +351,7 @@ export const AuthScene = ({ bounds }: { bounds: React.RefObject<HTMLElement | nu
         bounds={bounds}
         className="right-[20%] top-[42%]"
         delay={3}
-        tone="bg-brand/25 text-white"
+        tone="bg-brand/20 text-brand"
         title={t('auth.desk.connect')}
       >
         <Link2 className="h-5 w-5" />
@@ -345,7 +361,7 @@ export const AuthScene = ({ bounds }: { bounds: React.RefObject<HTMLElement | nu
         bounds={bounds}
         className="bottom-[26%] left-[24%]"
         delay={4.2}
-        tone="bg-white/10 text-white/80"
+        tone="bg-surface-raised/85 text-content-muted"
         title={t('auth.desk.deadlines')}
       >
         <CalendarClock className="h-5 w-5" />

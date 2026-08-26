@@ -142,8 +142,54 @@ export const DOCUMENT_MIME_TYPES = [
 
 export const DOCUMENT_ACCEPT = `${DOCUMENT_MIME_TYPES.join(',')},.pdf,.docx,.doc`;
 
+/**
+ * What a **text board** will import, which is narrower on one side and wider
+ * on the other than what a task will take as an attachment.
+ *
+ * Wider: plain text is here, because a `.txt` becomes an editable page with no
+ * model involved at all — see `plainTextToHtml` on the API.
+ *
+ * Narrower: `.doc`, the pre-2007 binary, is not. It can be *attached* to a
+ * task, where nothing has to read it, and it cannot become a page, where
+ * something does: reading one means a compound-file parser for a format
+ * Microsoft stopped documenting. The honest answer to somebody holding one is
+ * "save it as .docx", not a conversion that half works.
+ */
+export const IMPORT_MIME_TYPES = [
+  'text/plain',
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+] as const;
+
+export const IMPORT_ACCEPT = `${IMPORT_MIME_TYPES.join(',')},.txt,.pdf,.docx`;
+
 /** The `files` scope's ceiling on the API. Checked here so the error is local. */
 export const MAX_DOCUMENT_BYTES = 10 * 1024 * 1024;
+
+/**
+ * What the operating system said the file was, or what its name implies.
+ *
+ * `File.type` is a hint, not a fact: it comes from the OS's own extension
+ * registry, and a machine with no Office installed routinely reports `''` for
+ * a `.docx` — at which point an allow-list check on the type alone rejects a
+ * perfectly good Word file with "only PDF and Word documents". Falling back to
+ * the extension is not a weakening of the rule: the API re-derives the type
+ * from the presign request and refuses anything outside its own list, and the
+ * bytes are never trusted here either way.
+ */
+const EXTENSION_MIME: Record<string, string> = {
+  txt: 'text/plain',
+  pdf: 'application/pdf',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  doc: 'application/msword',
+};
+
+export const resolveFileMime = (file: File): string => {
+  if (file.type) return file.type;
+
+  const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
+  return EXTENSION_MIME[extension] ?? '';
+};
 
 export interface UploadedFile {
   key: string;
@@ -154,7 +200,7 @@ export interface UploadedFile {
 }
 
 /**
- * Uploads a document — a PDF or a Word file — exactly as it was chosen.
+ * Uploads a document exactly as it was chosen, against a given allow-list.
  *
  * Deliberately *not* `uploadImage`. That one re-encodes what it is given
  * before sending it, which is right for a photograph and catastrophic for a
@@ -162,20 +208,37 @@ export interface UploadedFile {
  * whole point of attaching one is that the bytes the reader downloads are the
  * bytes the author attached. So this is `putObject` and nothing else.
  *
- * The two guards here are duplicates of the API's, on purpose. The API is what
+ * The guards here are duplicates of the API's, on purpose. The API is what
  * enforces them — a client check is a courtesy, not a control — but a person
  * who picked the wrong file should find out from the form they are looking at
  * rather than from a failed request after the upload has already started.
+ *
+ * The list is a parameter because the two callers genuinely differ: a task
+ * attachment takes `.doc` and refuses `.txt`, a text-board import is the other
+ * way round. See `IMPORT_MIME_TYPES` for why.
  */
-export const uploadFile = async (file: File): Promise<UploadedFile> => {
-  if (!(DOCUMENT_MIME_TYPES as readonly string[]).includes(file.type)) {
-    throw new Error('Only PDF and Word documents can be attached.');
-  }
-  if (file.size > MAX_DOCUMENT_BYTES) {
-    throw new Error('Documents must be 10 MB or smaller.');
-  }
+const putDocument = async (
+  file: File,
+  allowed: readonly string[],
+  rejection: string,
+): Promise<UploadedFile> => {
+  const mimeType = resolveFileMime(file);
 
-  const uploaded = await putObject(file, 'files');
+  if (!allowed.includes(mimeType)) throw new Error(rejection);
+  if (file.size === 0) throw new Error('That file is empty.');
+  if (file.size > MAX_DOCUMENT_BYTES) throw new Error('Documents must be 10 MB or smaller.');
+
+  /*
+   * Re-wrapped when the OS gave no type of its own.
+   *
+   * `putObject` signs the presign for `blob.type` and PUTs with that same
+   * `Content-Type`, so an empty one would sign a request the API's allow-list
+   * rejects — and, if it somehow did not, store an object R2 serves as
+   * `application/octet-stream` forever. A `Blob` copy is the cheapest way to
+   * attach the type we resolved; it does not re-encode anything.
+   */
+  const blob = file.type ? file : new Blob([file], { type: mimeType });
+  const uploaded = await putObject(blob, 'files');
 
   return {
     key: uploaded.key,
@@ -184,3 +247,19 @@ export const uploadFile = async (file: File): Promise<UploadedFile> => {
     size: file.size,
   };
 };
+
+export const uploadFile = (file: File): Promise<UploadedFile> =>
+  putDocument(file, DOCUMENT_MIME_TYPES, 'Only PDF and Word documents can be attached.');
+
+/**
+ * Uploads a document that is about to become a page on a text board.
+ *
+ * Same two-step presigned PUT and the same refusal to re-encode anything — see
+ * `uploadFile` — over the text board's own slightly different allow-list.
+ */
+export const uploadImportFile = (file: File): Promise<UploadedFile> =>
+  putDocument(
+    file,
+    IMPORT_MIME_TYPES,
+    'Only PDF, Word (.docx) and plain-text files can be imported.',
+  );

@@ -15,7 +15,15 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 const VARIANTS: Record<Variant, string> = {
   primary:
     'bg-brand text-brand-contrast hover:brightness-110 active:brightness-95 shadow-sm shadow-brand/30',
-  secondary: 'bg-surface-sunken text-content hover:bg-edge/60',
+  /*
+   * `ui-btn--secondary` is a skin hook, not a look — nothing in this file
+   * reads it. The studio palette keeps `--edge` within a couple of steps of
+   * `--surface-sunken`, so the `bg-edge/60` hover below composites to almost
+   * exactly the resting colour and the button appears to have no hover at all.
+   * The marker lets that one skin restate it; see the `[data-skin='studio']`
+   * rule in `index.css`.
+   */
+  secondary: 'ui-btn--secondary bg-surface-sunken text-content hover:bg-edge/60',
   ghost: 'text-content-muted hover:bg-surface-sunken hover:text-content',
   outline: 'border border-edge text-content hover:border-brand hover:text-brand',
   danger: 'bg-danger text-white hover:brightness-110',

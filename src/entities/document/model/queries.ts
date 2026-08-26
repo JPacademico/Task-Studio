@@ -9,6 +9,7 @@ import { documentApi } from '../api/document.api';
 import type {
   CreateDocumentPayload,
   DocumentBroadcast,
+  ImportDocumentPayload,
   ProjectDocument,
   UpdateDocumentPayload,
 } from './types';
@@ -171,6 +172,58 @@ export const useSetDocumentEditors = () => {
     },
 
     onError: (error) => toast.error(errorMessage(error, translate('doc.editorsFailed'))),
+  });
+};
+
+/**
+ * Registers an uploaded file as a page.
+ *
+ * Deliberately not folded into `useCreateDocument` with an optional source.
+ * The two differ in what has to happen first — an import is the second half of
+ * a presigned upload — in which errors are worth showing, and in what the row
+ * that comes back means: one is a blank page somebody is about to write, the
+ * other is a document that already exists.
+ */
+export const useImportDocument = () => {
+  const { upsertRow } = useDocumentListCache();
+
+  return useMutation({
+    mutationFn: (payload: ImportDocumentPayload) => documentApi.import(payload),
+    onSuccess: (document) => upsertRow(document),
+    /*
+     * No `onError`, deliberately.
+     *
+     * An import is two requests — a presigned PUT to storage, then this — and
+     * only the caller knows which of them the person was waiting on. A handler
+     * here would toast for the second half while the caller's own `catch`
+     * toasts for both, which is how a single failure ends up saying the same
+     * thing twice. See `handleImport` in the text board.
+     */
+  });
+};
+
+/**
+ * Turns an imported PDF or Word file into an editable page.
+ *
+ * Writes both caches from the response, like every other document mutation
+ * here: the API returns the converted page in full, so invalidating would
+ * refetch what we are holding.
+ *
+ * The error toast is left to the caller. This is the one document mutation
+ * whose failures are worth distinguishing — the assistant being unconfigured,
+ * out of quota, or simply slow are three different pieces of advice, and the
+ * API says which; a generic "could not convert" here would throw that away.
+ */
+export const useConvertDocument = () => {
+  const queryClient = useQueryClient();
+  const { upsertRow } = useDocumentListCache();
+
+  return useMutation({
+    mutationFn: (documentId: string) => documentApi.convert(documentId),
+    onSuccess: ({ document }) => {
+      queryClient.setQueryData<ProjectDocument>(queryKeys.documents.detail(document.id), document);
+      upsertRow(document);
+    },
   });
 };
 

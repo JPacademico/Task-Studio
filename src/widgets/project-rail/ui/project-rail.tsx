@@ -445,8 +445,15 @@ export const ProjectRail = ({ onCreateProject }: ProjectRailProps) => {
           ) : (
             <NavLink
               to="/organizations"
+              /*
+                Hand-drawn rather than a `Button`, because it is a link — but it
+                borrows the same two class hooks so it hovers like one. Without
+                `ui-btn--secondary` this was the one control in the footer with
+                no visible hover on the default skin; see the note on the
+                variant in `button.tsx`.
+              */
               className={cn(
-                'ui-btn flex h-8 w-full items-center justify-center gap-1.5 rounded-xl',
+                'ui-btn ui-btn--secondary flex h-8 w-full items-center justify-center gap-1.5 rounded-xl',
                 'bg-surface-sunken px-3 text-xs text-content transition-colors hover:bg-edge/60',
               )}
             >

@@ -1,6 +1,42 @@
 import type { UserSummary } from '@/entities/user/model/types';
 
 /**
+ * The file behind an imported page.
+ *
+ * A page can arrive two ways: typed into the editor, or uploaded as a document
+ * somebody already had. This is set for the second kind and is what the board
+ * reads to decide whether it is drawing an editor or a file.
+ */
+export interface DocumentSource {
+  /** The uploader's own filename. The object key is a UUID, so this is it. */
+  name: string;
+  mime: string;
+  size: number;
+  /**
+   * Whether the page's body is a conversion of that file.
+   *
+   * False means the page **is** the upload: there is no body yet, the board
+   * shows the file itself, and pressing Edit is what runs the conversion.
+   * Answered by the API rather than inferred from an empty `content`, which
+   * would misread a converted page somebody has since emptied.
+   */
+  isConverted: boolean;
+  convertedAt: string | null;
+  /**
+   * Whether Edit has to go through the assistant first.
+   *
+   * False for `.txt`, which the browser converts at upload — turning plain
+   * text into paragraphs is a `split`, not a judgement, so it costs no model
+   * call and the page is editable from the first moment. True for PDF and
+   * `.docx`.
+   */
+  needsConversion: boolean;
+}
+
+/** The three things a page can be downloaded as. */
+export type DocumentExportFormat = 'pdf' | 'txt' | 'html';
+
+/**
  * A written page belonging to a project — or, when `taskId` is set, to one
  * task inside it, or — when `projectId` is null — to one person's own desk.
  */
@@ -35,6 +71,13 @@ export interface ProjectDocument {
   } | null;
   createdBy: UserSummary;
   updatedBy: UserSummary | null;
+  /**
+   * The file this page was imported from, or null if it was typed here.
+   *
+   * Present on table-of-contents rows as well as on an open page, so the list
+   * can badge an import before anybody clicks it.
+   */
+  source: DocumentSource | null;
   /**
    * Everybody the author has handed the pen to.
    *
@@ -85,6 +128,33 @@ export interface CreateDocumentPayload {
 
 export interface UpdateDocumentPayload {
   title?: string;
+  content?: string;
+}
+
+/**
+ * Registering an already-uploaded file as a page.
+ *
+ * The bytes are not here. They went straight from the browser to storage
+ * through a presigned PUT, exactly as a task attachment does; this is the
+ * receipt, and the API checks that the object key really belongs to whoever
+ * is sending it.
+ */
+export interface ImportDocumentPayload {
+  projectId?: string;
+  taskId?: string;
+  meetingId?: string;
+  title?: string;
+  sourceKey: string;
+  sourceUrl: string;
+  sourceName: string;
+  sourceMime: string;
+  sourceSize: number;
+  /**
+   * The page body, when the browser could produce it without a model.
+   *
+   * Only ever set for `text/plain` — see `DocumentSource.needsConversion`. The
+   * API refuses to honour it for any other format.
+   */
   content?: string;
 }
 

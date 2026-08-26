@@ -16,7 +16,7 @@ import { formatTime } from '@/shared/lib/dates';
 import { STORAGE_KEYS, TEXT_LIMITS } from '@/shared/config/constants';
 import { clampText } from '@/shared/lib/text';
 import { useIsTouchDevice, useLocalStorage } from '@/shared/lib/hooks';
-import { Avatar, Button, SendGlyph } from '@/shared/ui';
+import { Avatar, Button, SendGlyph, SkinLoader } from '@/shared/ui';
 
 interface ProjectChatProps {
   projectId: string;
@@ -94,7 +94,7 @@ export const ProjectChat = ({
    * against: a dropped connection is the one situation where events were
    * genuinely missed and the history really is behind.
    */
-  const { data: history = [] } = useQuery({
+  const { data: history = [], isLoading: isLoadingHistory } = useQuery({
     queryKey: queryKeys.chat.history(projectId),
     queryFn: () => chatApi.history(projectId, { limit: 50 }),
     enabled: Boolean(projectId),
@@ -364,7 +364,33 @@ export const ProjectChat = ({
         </header>
 
         <div ref={scrollRef} className="scrollbar-thin flex-1 space-y-3 overflow-y-auto px-3 py-3">
-          {messages.length === 0 && (
+          {/*
+            Waiting, rather than an empty box that looks like an empty room.
+
+            `isLoading` and not `isPending`: the query is gated on `projectId`,
+            and a disabled query is pending forever — which would have left the
+            loader spinning on a window with no project behind it. `isLoading`
+            is pending *and fetching*, i.e. the one state where bytes are
+            actually on their way.
+
+            The history is cached for half an hour (see the note on the query),
+            so this is the first open of a conversation and almost nothing else.
+            That is exactly when the difference matters: before this, a cold
+            fetch drew "No messages yet" for the length of a round trip, which
+            is not slow — it is *wrong*, and on a shared project it is the one
+            wrong thing a chat window can say.
+
+            `SkinLoader` rather than a spinner, so the wait is drawn in whatever
+            the reader's theme is made of — ink, gears, sprites, an orbit.
+          */}
+          {isLoadingHistory && messages.length === 0 && (
+            <div className="flex flex-col items-center gap-2 py-10">
+              <SkinLoader label={t('chat.loading')} />
+              <p className="text-[11px] text-content-faint">{t('chat.loading')}</p>
+            </div>
+          )}
+
+          {!isLoadingHistory && messages.length === 0 && (
             <p className="py-8 text-center text-xs text-content-faint">
               {t('chat.empty')}
             </p>
