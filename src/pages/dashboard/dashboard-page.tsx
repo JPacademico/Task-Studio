@@ -32,11 +32,47 @@ import { Button, EmptyState, RunicText, Section, Skeleton } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
 /**
- * One counter on the masthead.
+ * What a counter is *about*, in colour.
  *
- * Sunken rather than raised, because it now sits *inside* the plate instead of
- * floating on the page beside three copies of itself. A raised card on a
- * raised panel is two shadows arguing; an inset well reads as something
+ * Semantic rather than decorative: finishing work is the green outcome and
+ * running late is the red one, and a reader who has learned that anywhere else
+ * in the app already knows it here. `open` keeps the brand accent because
+ * "still to do" is the neutral state — it is the work, not a verdict on it.
+ *
+ * Overdue is red whether or not anything is overdue. The colour classifies the
+ * *category*; the number underneath it reports the state, and "0" in a red
+ * well is unambiguous in a way that a well which changes colour behind your
+ * back is not.
+ */
+const TONES = {
+  open: 'bg-brand/12 text-brand',
+  done: 'bg-positive/12 text-positive',
+  late: 'bg-danger/12 text-danger',
+} as const;
+
+/**
+ * One counter on the masthead: a number at rest, a sentence on approach.
+ *
+ * ## Why the label hides
+ *
+ * Four labelled tiles were four lines of small uppercase text competing with
+ * the greeting beside them, and none of it is read twice — "OPEN TASKS" tells
+ * you nothing the second time you see it, while the number changes daily. So
+ * the resting state is the icon and the figure, and the words come back when
+ * the pointer arrives and somebody is actually asking what they mean.
+ *
+ * The reveal is `grid-template-columns: 0fr → 1fr`, the same mechanism the
+ * project cards use: no JavaScript, no measurement, and it animates correctly
+ * whatever the translated label turns out to be. `prefers-reduced-motion`
+ * flattens it through the global rule.
+ *
+ * Where there is **no hover** — a phone — the label is simply always on. That
+ * is what `@media (hover: hover)` gates: a control whose meaning is only
+ * reachable by an interaction the device cannot perform is not a design, it is
+ * a lockout.
+ *
+ * Sunken rather than raised, because it sits *inside* the plate. A raised card
+ * on a raised panel is two shadows arguing; an inset well reads as something
  * stamped into the plate, which is what a counter on a masthead is.
  */
 const StatTile = ({
@@ -48,23 +84,61 @@ const StatTile = ({
   label: string;
   value: number;
   icon: React.ReactNode;
-  tone?: 'default' | 'warning';
-}) => (
-  <div className="flex items-center gap-2.5 rounded-xl border border-edge/70 bg-surface/80 px-3 py-2.5">
-    <span
+  tone: keyof typeof TONES;
+}) => {
+  const t = useT();
+
+  return (
+    <div
       className={cn(
-        'grid h-8 w-8 shrink-0 place-items-center rounded-lg',
-        tone === 'warning' ? 'bg-warning/15 text-warning' : 'bg-brand/12 text-brand',
+        'group/stat flex items-center gap-2.5 rounded-xl border border-edge/70 bg-surface/80',
+        'px-3 py-2.5 transition-colors duration-200 ease-studio hover:border-edge',
       )}
     >
-      {icon}
-    </span>
-    <div className="min-w-0 leading-tight">
-      <p className="text-lg font-semibold tabular-nums">{value}</p>
-      <p className="truncate text-[10px] uppercase tracking-wide text-content-faint">{label}</p>
+      <span className={cn('grid h-8 w-8 shrink-0 place-items-center rounded-lg', TONES[tone])}>
+        {icon}
+      </span>
+
+      <p className="shrink-0 text-lg font-semibold leading-tight tabular-nums">{value}</p>
+
+      <div
+        className={cn(
+          'grid min-w-0 grid-cols-[1fr] transition-[grid-template-columns] duration-200 ease-studio',
+          '[@media(hover:hover)]:grid-cols-[0fr]',
+          '[@media(hover:hover)]:group-hover/stat:grid-cols-[1fr]',
+          '[@media(hover:hover)]:group-focus-within/stat:grid-cols-[1fr]',
+        )}
+      >
+        <div className="flex min-w-0 items-center gap-1.5 overflow-hidden">
+          <span className="truncate pl-0.5 text-[10px] uppercase tracking-wide text-content-faint">
+            {label}
+          </span>
+          {/*
+            The arrow is the only thing here that goes anywhere.
+
+            Every one of these counters is a slice of the same list — the
+            personal task menu — so the tile does not need three destinations,
+            it needs one, and it is worth reaching only once somebody has
+            leaned in far enough to read the label. It keeps its own accessible
+            name because "→" announced on its own is not a destination.
+          */}
+          <Link
+            to="/tasks"
+            aria-label={t('dash.openTaskMenuFor', { label })}
+            title={t('dash.openTaskMenu')}
+            className={cn(
+              'grid h-6 w-6 shrink-0 place-items-center rounded-lg text-content-faint',
+              'transition-colors hover:bg-brand/12 hover:text-brand',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
+            )}
+          >
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 /**
  * One company, at the size a dashboard can afford to give it.
@@ -288,13 +362,25 @@ const DashboardPage = () => {
             <p className="hidden text-sm text-content-muted sm:block">{t('dash.subtitle')}</p>
           </div>
 
-          {/* Two across on a phone: four stacked tiles was most of the first
-              screen. Four across from `sm` up, held to a fixed width on `lg`
-              so the greeting keeps the room it needs. */}
-          <div className="grid shrink-0 grid-cols-2 gap-2 sm:grid-cols-4 lg:max-w-[26rem]">
+          {/*
+            Three counters, not four.
+
+            The project count left this row entirely: it is a property of the
+            list two sections down, not a statistic about the reader's day, and
+            it now sits in that section's own heading where the thing it counts
+            is directly underneath it.
+
+            A flex row rather than a grid, because the tiles no longer have a
+            fixed size — each one grows when the pointer reaches it (see
+            `StatTile`) and its neighbours give up the space. A grid with fixed
+            tracks would have clipped the reveal instead. `flex-wrap` is the
+            safety net for the narrowest desktop, where three expanded tiles
+            plus the greeting genuinely do not fit on one line.
+          */}
+          <div className="flex shrink-0 flex-wrap justify-start gap-2 lg:justify-end">
             {overviewLoading || !overview ? (
-              Array.from({ length: 4 }, (_, index) => (
-                <Skeleton key={index} className="h-[58px] rounded-xl" />
+              Array.from({ length: 3 }, (_, index) => (
+                <Skeleton key={index} className="h-[58px] w-[104px] rounded-xl" />
               ))
             ) : (
               <>
@@ -302,22 +388,19 @@ const DashboardPage = () => {
                   label={t('dash.openTasks')}
                   value={overview.openTasks}
                   icon={<ListTodo className="h-4 w-4" />}
+                  tone="open"
                 />
                 <StatTile
                   label={t('dash.completed')}
                   value={overview.completedTasks}
                   icon={<CalendarClock className="h-4 w-4" />}
+                  tone="done"
                 />
                 <StatTile
                   label={t('dash.overdue')}
                   value={overview.overdueTasks}
                   icon={<TriangleAlert className="h-4 w-4" />}
-                  tone={overview.overdueTasks > 0 ? 'warning' : 'default'}
-                />
-                <StatTile
-                  label={t('dash.projects')}
-                  value={overview.projects}
-                  icon={<Layers className="h-4 w-4" />}
+                  tone="late"
                 />
               </>
             )}
@@ -329,7 +412,22 @@ const DashboardPage = () => {
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-6 xl:gap-7">
         <Section
           className="min-w-0"
-          title={t('dash.yourProjects')}
+          title={
+            <span className="flex items-baseline gap-1.5">
+              {t('dash.yourProjects')}
+              {/*
+                The count the masthead used to carry, returned to the thing it
+                counts. Hidden while the list is still loading rather than
+                shown as `(0)`, which would be a wrong answer rather than an
+                absent one.
+              */}
+              {!projectsLoading && (
+                <span className="text-xs font-normal tabular-nums text-content-faint">
+                  ({ordered.length})
+                </span>
+              )}
+            </span>
+          }
           action={
             <Button size="sm" variant="secondary" onClick={() => setIsCreateOpen(true)}>
               <FolderPlus className="h-3.5 w-3.5" />

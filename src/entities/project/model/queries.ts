@@ -149,12 +149,41 @@ export const useUpdateProject = (projectId: string) => {
   });
 };
 
+/**
+ * Bin a project.
+ *
+ * The binned project's own subtree is **removed** rather than invalidated, for
+ * the same reason the organization delete does it (see
+ * `useDeleteOrganization`): `projects.detail(id)` is `['projects', id]` with
+ * the dashboard, members and invitations nested under it, so invalidating the
+ * `projects` prefix asks the server four times about a project it has just
+ * binned. Every one of those answers 404 and every one carries an error toast.
+ *
+ * This path got away with it only because `ProjectSettingsDialog` redirects to
+ * the dashboard immediately, so the observers usually unmounted before the
+ * refetch landed — a race that happened to be winnable, not a design. Removing
+ * the entries makes it not a race.
+ *
+ * The recycle bin is invalidated explicitly: it is the one list where the
+ * project has just *appeared* rather than disappeared.
+ */
 export const useDeleteProject = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: projectApi.remove,
-    onSuccess: () => {
+    onSuccess: (_result, projectId) => {
+      queryClient.removeQueries({ queryKey: queryKeys.projects.detail(projectId) });
+      /*
+       * The prefix, *after* the removal.
+       *
+       * Invalidating `['projects']` covers the lists, the overview and the
+       * recycle bin — where this project has just appeared — in one call, and
+       * it cannot resurrect the detail subtree because the line above already
+       * dropped those entries. Naming the lists individually would have missed
+       * the parameterised ones: `projects.list({})` is an exact three-element
+       * key, so it does not prefix-match `projects.list({ organizationId })`.
+       */
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
       toast.success(translate('toast.projectBinned'));
     },

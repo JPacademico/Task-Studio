@@ -240,7 +240,7 @@ export const RichTextEditor = ({
   return (
     <div className={cn('flex min-h-0 flex-col', className)}>
       {!readOnly && (
-        <div className="ui-textured flex flex-col gap-1.5 rounded-t-2xl border border-b-0 border-edge bg-surface-raised p-2">
+        <div className="ui-textured flex flex-col gap-1.5 rounded-2xl rounded-b-none border border-b-0 border-edge bg-surface-raised p-2">
           <div className="flex flex-wrap items-center gap-0.5">
             <ToolButton onAction={() => exec('bold')} title={t('editor.bold')}>
               <Bold className="h-3.5 w-3.5" />
@@ -448,7 +448,7 @@ export const RichTextEditor = ({
         className={cn(
           'rich-text scrollbar-thin min-h-0 flex-1 overflow-y-auto border border-edge bg-surface-raised p-4',
           'text-sm leading-relaxed outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand/40',
-          readOnly ? 'rounded-2xl' : 'rounded-b-2xl',
+          readOnly ? 'rounded-2xl' : 'rounded-2xl rounded-t-none',
         )}
       />
     </div>

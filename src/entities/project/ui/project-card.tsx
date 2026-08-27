@@ -182,7 +182,7 @@ export const ProjectCard = ({ project, onTogglePin }: ProjectCardProps) => {
       to={`/projects/${project.id}`}
       aria-hidden
       tabIndex={-1}
-      className="absolute inset-0 z-10 rounded-b-2xl focus:outline-none"
+      className="absolute inset-0 z-10 rounded-2xl rounded-t-none focus:outline-none"
     />
   );
 
@@ -245,7 +245,7 @@ export const ProjectCard = ({ project, onTogglePin }: ProjectCardProps) => {
       >
         {link}
         {/* Clipped separately: the card itself must not hide the panel. */}
-        <div className="overflow-hidden rounded-t-2xl">{banner}</div>
+        <div className="overflow-hidden rounded-2xl rounded-b-none">{banner}</div>
         {pin}
         {title}
       </div>
@@ -260,7 +260,7 @@ export const ProjectCard = ({ project, onTogglePin }: ProjectCardProps) => {
         <div className="overflow-hidden">
           <div
             className={cn(
-              'relative rounded-b-2xl border-x border-b border-edge bg-surface-raised shadow-lg',
+              'relative rounded-2xl rounded-t-none border-x border-b border-edge bg-surface-raised shadow-lg',
               // The link above stops at the collapsed box, so the panel gets
               // its own copy — otherwise the half of the card somebody is
               // actually reading would not be clickable.

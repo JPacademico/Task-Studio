@@ -208,13 +208,45 @@ export const useUpdateOrganization = (organizationId: string) => {
   });
 };
 
+/**
+ * Destroy a company.
+ *
+ * ## Why this does not simply `refresh()`
+ *
+ * Every other mutation here invalidates the whole `organizations` prefix,
+ * which is right when the company still exists: the list, the detail, the
+ * staff and the metrics all want re-reading. After a *delete* it is the worst
+ * possible thing to do. `organizations.detail(id)` is `['organizations', id]`
+ * and the members, invitations and dashboard queries all nest under it — so
+ * invalidating the prefix refetches four endpoints for a company the server
+ * has just destroyed. All four 404, and because each carries its own
+ * `onError` toast, deleting one organization put four red toasts on screen.
+ * That is what the user was seeing, and it happened *because* they were still
+ * on the company's page with those queries mounted.
+ *
+ * So the deleted company's subtree is **removed** rather than invalidated —
+ * `removeQueries` drops the cache entries and cancels their observers instead
+ * of asking again — and only the list and the projects (which carry an
+ * `organization` ref that is now stale) are invalidated.
+ *
+ * Navigating away is the caller's job, not this hook's: it is a mutation, it
+ * has no idea which route is mounted, and a hook that redirected would also
+ * redirect the organizations index where the dialog is opened from a card.
+ * See `handleDelete` in `OrganizationDialog`.
+ */
 export const useDeleteOrganization = () => {
-  const refresh = useOrganizationRefresh();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: organizationApi.remove,
-    onSuccess: () => {
-      refresh();
+    onSuccess: (_result, organizationId) => {
+      queryClient.removeQueries({ queryKey: queryKeys.organizations.detail(organizationId) });
+      // The prefix is safe here only because the removal above ran first — it
+      // has no detail, members, invitations or dashboard entries left to ask
+      // the server about. Projects carry an `organization` ref that is now
+      // stale, so they are refreshed too.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.organizations.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
       toast.success(translate('org.deleted'));
     },
     onError: (error) => toast.error(errorMessage(error)),

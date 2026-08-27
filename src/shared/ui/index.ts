@@ -27,6 +27,7 @@ export { type NavGlyphKey } from './glyph-kit';
 export { NavGlyph } from './nav-glyph';
 export { SpaceMark } from './space-icons';
 export { HazardMark } from './hazard-icons';
+export { HazardDrift } from './hazard-decor';
 export { NewspaperMark } from './newspaper-icons';
 export { EldritchMark } from './eldritch-icons';
 export { EldritchTendrils, WanderingEye } from './eldritch-decor';

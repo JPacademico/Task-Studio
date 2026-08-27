@@ -409,8 +409,8 @@ export const ProjectChat = ({
                   className={cn(
                     'max-w-[72%] rounded-2xl px-3 py-2 text-xs leading-relaxed',
                     isMine
-                      ? 'rounded-br-sm bg-brand text-brand-contrast'
-                      : 'rounded-bl-sm bg-surface-sunken text-content',
+                      ? 'rounded-br-corner bg-brand text-brand-contrast'
+                      : 'rounded-bl-corner bg-surface-sunken text-content',
                     // A failed send is the one state that must survive being
                     // glanced at, so it changes the bubble rather than adding a
                     // detail inside it.

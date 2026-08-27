@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { AlertTriangle, Check, FolderPlus, Trash2, UserPlus, X } from 'lucide-react';
 
 import {
@@ -266,6 +267,8 @@ export const OrganizationDialog = ({
   const createOrganization = useCreateOrganization();
   const updateOrganization = useUpdateOrganization(organization?.id ?? '');
   const deleteOrganization = useDeleteOrganization();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -330,8 +333,26 @@ export const OrganizationDialog = ({
   const handleDelete = async () => {
     if (!organization || !canDelete) return;
 
+    /*
+     * Leave the company's page before the page notices it is gone.
+     *
+     * This dialog opens from two places: a card on the organizations index,
+     * and the settings button *inside* the company's own workspace. In the
+     * second case the route that is mounted is `/organizations/:id` for the
+     * id being destroyed, and staying there means a page whose every query
+     * points at a 404 — which is how deleting one company used to produce a
+     * pile of error toasts (see `useDeleteOrganization` for the other half).
+     *
+     * Checked against the current path rather than done unconditionally: from
+     * the index there is nothing to leave, and a redirect that fires anyway
+     * would replace a history entry for no reason.
+     */
+    const isOnItsOwnPage = location.pathname.startsWith(`/organizations/${organization.id}`);
+
     await deleteOrganization.mutateAsync(organization.id);
     onClose();
+
+    if (isOnItsOwnPage) navigate('/organizations', { replace: true });
   };
 
   return (

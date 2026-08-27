@@ -76,6 +76,16 @@ export default {
        * how round the boxes are. `full` stays a literal pill on every skin.
        */
       borderRadius: {
+        /**
+         * For rounding exactly one corner.
+         *
+         * The size tokens below feed `border-radius`, a shorthand, so a skin
+         * may set an asymmetric four-value radius — and eldritch does. Those
+         * are invalid in a per-corner longhand (`rounded-br-2xl` and friends),
+         * where the browser drops the declaration outright and the corner
+         * silently stays square. This one is single-valued on every skin.
+         */
+        corner: 'var(--radius-corner)',
         sm: 'var(--radius-sm)',
         DEFAULT: 'var(--radius-md)',
         md: 'var(--radius-md)',

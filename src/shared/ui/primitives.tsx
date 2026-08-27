@@ -90,7 +90,11 @@ export const EmptyState = ({ icon, title, description, action, className }: Empt
 );
 
 interface SectionProps {
-  title: string;
+  /**
+   * `ReactNode`, not `string`, so a heading can carry a counter or a badge
+   * beside its words without the caller having to rebuild the whole header.
+   */
+  title: ReactNode;
   description?: string;
   action?: ReactNode;
   children: ReactNode;
@@ -218,7 +222,7 @@ export const Stepper = ({
           aria-label={t('common.decrease', { label: label ?? t('common.value') })}
           disabled={value <= min}
           onClick={() => onChange(clamp(value - step))}
-          className="grid h-7 w-7 place-items-center rounded-l-xl text-content-muted transition-colors hover:bg-edge/50 hover:text-content disabled:opacity-35"
+          className="grid h-7 w-7 place-items-center rounded-xl rounded-r-none text-content-muted transition-colors hover:bg-edge/50 hover:text-content disabled:opacity-35"
         >
           <Minus className="h-3.5 w-3.5" strokeWidth={2.6} />
         </button>
@@ -233,7 +237,7 @@ export const Stepper = ({
           aria-label={t('common.increase', { label: label ?? t('common.value') })}
           disabled={value >= max}
           onClick={() => onChange(clamp(value + step))}
-          className="grid h-7 w-7 place-items-center rounded-r-xl text-content-muted transition-colors hover:bg-edge/50 hover:text-content disabled:opacity-35"
+          className="grid h-7 w-7 place-items-center rounded-xl rounded-l-none text-content-muted transition-colors hover:bg-edge/50 hover:text-content disabled:opacity-35"
         >
           <Plus className="h-3.5 w-3.5" strokeWidth={2.6} />
         </button>

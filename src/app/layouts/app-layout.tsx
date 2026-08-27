@@ -12,6 +12,7 @@ import {
   AutumnFall,
   BubbleRise,
   EmberRise,
+  HazardDrift,
   PageLoader,
   RouteBoundary,
   RuneScribe,
@@ -90,6 +91,11 @@ export const AppLayout = () => {
           these they cost one `null` return each. */}
       <BubbleRise />
       <EmberRise />
+
+      {/* And contamination going up off the containment skin. Same contract
+          again, and the cheapest of the three: transform and opacity only, so
+          it composites without a repaint. See `hazard-decor`. */}
+      <HazardDrift />
 
       <div
         className={cn(

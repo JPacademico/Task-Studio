@@ -72,6 +72,21 @@
     --warning: 245 158 11;
     --danger: 239 68 68;
 
+    /*
+     * A single corner's radius, which `--radius-sm` cannot always be.
+     *
+     * Every `--radius-*` token feeds `border-radius`, a shorthand — so a skin
+     * is free to set an asymmetric value, and eldritch does exactly that
+     * (`1.5rem 0.4rem 1.5rem 0.4rem`, four different corners). That is fine
+     * for the shorthand and **invalid** in a per-corner longhand like
+     * `border-top-left-radius`, where more than two values is a parse error
+     * and the whole declaration is dropped.
+     *
+     * So anything that has to round exactly one corner reads this instead. It
+     * is guaranteed single-valued on every skin, which the size tokens are
+     * not. See the chat bubble's tail for the one place that needs it.
+     */
+    --radius-corner: 0.375rem;
     --radius-sm: 0.375rem;
     --radius-md: 0.5rem;
     --radius-lg: 0.75rem;
@@ -814,7 +829,15 @@
     );
     --btn-shadow: 3px 3px 0 0 rgb(var(--edge) / 0.9);
     --btn-shadow-active: 1px 1px 0 0 rgb(var(--edge) / 0.9);
-    --btn-tracking: 0.14em;
+    /*
+     * Wider than any other skin's, and it has to be.
+     *
+     * This is the only theme that sets an 800-weight condensed face in
+     * uppercase, and those three together close the counters up: at 12px on a
+     * 1366x768 laptop "CONCLUIDAS" ran into a single black bar. Tracking is
+     * the only one of the three that can give without losing the stencil look.
+     */
+    --btn-tracking: 0.18em;
     --btn-transform: uppercase;
     --btn-weight: 800;
     --control-border-width: 2px;
@@ -838,15 +861,23 @@
     --speed-ui: 130ms;
     --icon-stroke: 2.6;
     --heading-transform: uppercase;
-    --heading-tracking: 0.06em;
+    /* Same reasoning as `--btn-tracking`: condensed uppercase needs the air. */
+    --heading-tracking: 0.1em;
 
     /* --- The skin's own materials ---------------------------------------- */
 
-    /* One roll of tape, reused everywhere something must not be crossed. */
+    /*
+     * One roll of tape, reused everywhere something must not be crossed.
+     *
+     * 7px bands rather than 10px. At the old width a 6px strip down an
+     * accordion showed barely one full diagonal and read as a smear of
+     * yellow-and-black rather than as tape; narrowing the band means the same
+     * strip carries two, which is the smallest number that reads as a repeat.
+     */
     --hazard-stripe: repeating-linear-gradient(
       -45deg,
-      rgb(var(--brand)) 0 10px,
-      rgb(var(--edge)) 10px 20px
+      rgb(var(--brand)) 0 7px,
+      rgb(var(--edge)) 7px 14px
     );
     /* What is in the tanks. Deliberately not the accent: the yellow is paint
        somebody applied, the sludge is the thing the paint is warning about. */
@@ -1098,6 +1129,7 @@
     --danger: 142 34 52;
 
     /* Nothing here was cut to size; it grew. */
+    --radius-corner: 0.1rem;
     --radius-sm: 0.35rem 0.1rem 0.35rem 0.1rem;
     --radius-md: 0.5rem 0.15rem 0.5rem 0.15rem;
     --radius-lg: 0.9rem 0.25rem 0.9rem 0.25rem;
@@ -3402,12 +3434,30 @@
   /* ---------------------------------------------------------------------
    * HAZARD — stencilled warnings and leaking vessels.
    * --------------------------------------------------------------------- */
+  /*
+   * The hatch stays off anything with a label on it.
+   *
+   * `--btn-overlay` is a 45-degree black hatch at 16%, and on a filled yellow
+   * button under 800-weight condensed uppercase it is a third pattern fighting
+   * the same pixels the letters are using. It read as damage rather than as
+   * texture, and it was the one place on this skin where the styling actively
+   * cost legibility.
+   *
+   * The chip keeps it: a chip is a badge with one short word on it, usually
+   * sitting on a quiet surface, and it is where the hatch reads as the
+   * stencilled tape it is meant to be. The skin loses nothing — the hard
+   * offset shadow, the 2px ink border, the uppercase condensed face, the tape
+   * and the sludge all still carry it.
+   */
   [data-skin='hazard'] .ui-btn,
   [data-skin='hazard'] .ui-filter,
   [data-skin='hazard'] .ui-chip {
-    background-image: var(--btn-overlay);
     box-shadow: var(--btn-shadow);
     border-width: var(--control-border-width);
+  }
+
+  [data-skin='hazard'] .ui-chip {
+    background-image: var(--btn-overlay);
   }
 
   [data-skin='hazard'] .ui-btn:active,
@@ -3496,9 +3546,9 @@
     content: '';
     position: absolute;
     inset: 0 auto 0 0;
-    width: 6px;
+    width: 4px;
     background: var(--hazard-stripe);
-    background-size: 14px 14px;
+    background-size: 10px 10px;
   }
 
   [data-skin='hazard'] .nav-rail {
@@ -3512,23 +3562,23 @@
     pointer-events: none;
     z-index: -1;
     background: var(--hazard-stripe);
-    background-size: 18px 18px;
+    background-size: 13px 13px;
     opacity: 0.9;
   }
 
   [data-skin='hazard'] .nav-rail--left::after {
     inset: 0 0 0 auto;
-    width: 9px;
+    width: 6px;
   }
 
   [data-skin='hazard'] .nav-rail--right::after {
     inset: 0 auto 0 0;
-    width: 9px;
+    width: 6px;
   }
 
   [data-skin='hazard'] .nav-rail--top::after {
     inset: auto 0 0 0;
-    height: 7px;
+    height: 5px;
   }
 
   /* ---------------------------------------------------------------------
@@ -5818,6 +5868,69 @@
     transform: translate3d(var(--ember-drift), -104vh, 0) scale(0.3);
     background: rgb(var(--lava-crust));
     box-shadow: none;
+    opacity: 0;
+  }
+}
+
+/* ==========================================================================
+ * HAZARD — what is leaking, on its way up.
+ *
+ * The containment skin's counterpart to the volcano's embers, and deliberately
+ * the cheaper of the two. `lava-ember-rise` animates `background` and
+ * `box-shadow` per frame, which that file flags as affordable only for ten 4px
+ * elements and explicitly tells you not to copy. This does not copy it.
+ *
+ * Everything that moves here is `transform` and `opacity`, both of which the
+ * compositor animates off the main thread with no repaint. The glow is a
+ * static `box-shadow` written once. Twelve motes therefore cost one composited
+ * layer each and no layout, no style recalc and no paint for the life of the
+ * animation — which is what makes it safe to leave running on every screen of
+ * the app rather than only on a landing page.
+ *
+ * See `HazardDrift` for the field itself; it renders nothing on the other
+ * twelve skins and nothing at all under `prefers-reduced-motion`.
+ * ========================================================================== */
+
+.hazard-mote {
+  position: absolute;
+  bottom: -6vh;
+  width: var(--mote-size);
+  height: var(--mote-size);
+  border-radius: 50%;
+  /* Set once and never animated — see the note above. */
+  background: rgb(var(--hazard-sludge));
+  box-shadow: 0 0 8px 1px rgb(var(--hazard-sludge) / 0.55);
+  animation: hazard-mote-drift var(--mote-life) linear infinite;
+  animation-delay: var(--mote-delay);
+  will-change: transform, opacity;
+}
+
+/*
+ * Rising, wandering, dispersing.
+ *
+ * `linear`, not an ease: an ember is thrown and slows, particulate is carried
+ * and does not. The sideways drift reverses twice on the way up so a mote
+ * wanders rather than travelling in a straight diagonal, and the scale grows
+ * slightly instead of shrinking — the opposite of the ember, because this is
+ * spreading out rather than burning down.
+ */
+@keyframes hazard-mote-drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0;
+  }
+  12% {
+    opacity: var(--mote-opacity);
+  }
+  40% {
+    transform: translate3d(var(--mote-drift), -38vh, 0) scale(1.15);
+  }
+  72% {
+    transform: translate3d(calc(var(--mote-drift) * -0.55), -72vh, 0) scale(1.3);
+    opacity: calc(var(--mote-opacity) * 0.55);
+  }
+  100% {
+    transform: translate3d(calc(var(--mote-drift) * 0.8), -108vh, 0) scale(1.5);
     opacity: 0;
   }
 }

@@ -15,6 +15,13 @@ export const STORAGE_KEYS = {
   shortcuts: 'task-studio:floating-shortcuts',
   taskLayout: 'task-studio:task-layout',
   locale: 'task-studio:locale',
+  /**
+   * Which provider sign-in buttons the API offered last time.
+   *
+   * Cached so the sign-in screen can draw them on the first frame instead of
+   * after a round trip to a container that may be asleep. See `OAuthButtons`.
+   */
+  oauthProviders: 'task-studio:oauth-providers',
   /** Last session's task/project/board caches — see `query-persist.ts`. */
   queryCache: 'task-studio:query-cache',
   /**

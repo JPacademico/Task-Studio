@@ -1,11 +1,48 @@
-import { useState, type MouseEvent, type ReactElement } from 'react';
+import { useEffect, useState, type MouseEvent, type ReactElement } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
-import { authApi, type OAuthProvider } from '@/features/auth/api/auth.api';
+import { authApi, type OAuthAvailability, type OAuthProvider } from '@/features/auth/api/auth.api';
 import { ensureApiAwake, isApiWarm } from '@/shared/api/client';
+import { STORAGE_KEYS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
 import { SkinLoader } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
+
+/**
+ * What this browser was told last time, if anything.
+ *
+ * The set of configured providers is a property of the *deployment* — it
+ * changes when somebody adds a client secret to the API, which is roughly
+ * never — so last visit's answer is very nearly always this visit's answer.
+ * Reading it synchronously is what lets the buttons exist on the first frame.
+ */
+const readRemembered = (): OAuthAvailability | undefined => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.oauthProviders);
+    if (!raw) return undefined;
+
+    const parsed = JSON.parse(raw) as Partial<OAuthAvailability>;
+    // Shaped, not trusted: this is user-writable storage, and a hand-edited
+    // value must not be able to put a button on the sign-in screen for a
+    // provider the API has never heard of.
+    return {
+      google: parsed.google === true,
+      github: parsed.github === true,
+    };
+  } catch {
+    return undefined;
+  }
+};
+
+/**
+ * The optimistic guess, used only on a browser that has never asked.
+ *
+ * Both on, because both are the common deployment and a button that appears a
+ * beat late is a worse first impression than one that turns out not to be
+ * offered. The real answer overwrites this the moment it lands, and from then
+ * on this browser never guesses again.
+ */
+const ASSUME_BOTH: OAuthAvailability = { google: true, github: true };
 
 /**
  * The two marks, inlined.
@@ -102,14 +139,45 @@ export const OAuthButtons = ({ intent, className }: OAuthButtonsProps) => {
   /** The provider whose click is waiting on the container, if any. */
   const [waking, setWaking] = useState<OAuthProvider | null>(null);
 
-  const { data: providers } = useQuery({
+  const { data: providers, isSuccess } = useQuery({
     queryKey: ['auth', 'oauth-providers'],
     queryFn: authApi.oauthProviders,
     // The answer changes when the server is redeployed, not while somebody is
     // looking at a login form.
     staleTime: Infinity,
     retry: false,
+    /*
+     * Drawn first, confirmed second.
+     *
+     * This used to render nothing until the request came back — and on a
+     * free-tier host that request is very often the one waking the container,
+     * so "Continue with Google" appeared tens of seconds after the rest of the
+     * form. The buttons are the fastest way in for somebody who has an account
+     * already, and they were the slowest thing on the screen.
+     *
+     * `placeholderData` is the right hook rather than `initialData`: it fills
+     * the render without being written into the cache, so the query still
+     * counts as never-fetched and still goes and gets the real answer. What is
+     * remembered from last visit wins over the blind guess.
+     */
+    placeholderData: readRemembered() ?? ASSUME_BOTH,
   });
+
+  /*
+   * Remember what the server actually said, for the next visit.
+   *
+   * Only on a real success — a failed request means "we do not know", and
+   * writing that down would turn one bad round trip into a sign-in screen
+   * with no provider buttons on it until storage was cleared.
+   */
+  useEffect(() => {
+    if (!isSuccess || !providers) return;
+    try {
+      localStorage.setItem(STORAGE_KEYS.oauthProviders, JSON.stringify(providers));
+    } catch {
+      /* private mode — the guess above is still a good one */
+    }
+  }, [isSuccess, providers]);
 
   const available = (['google', 'github'] as const).filter(
     (provider) => providers?.[provider],
