@@ -236,8 +236,17 @@ const OrganizationProjectCard = ({
           onClick={() => detach.mutate(project.id)}
           className={cn(
             'absolute right-1.5 top-1.5 rounded-lg p-1.5 text-content-faint',
-            'opacity-0 transition-all hover:text-danger',
-            'group-hover/card:opacity-100 focus-visible:opacity-100',
+            'transition-all hover:text-danger focus-visible:opacity-100',
+            /*
+              Drawn by default, and hidden behind hover only where hover exists.
+              It used to be `opacity-0` unconditionally, which on a phone or a
+              tablet made it permanently invisible and permanently unreachable —
+              the only way to unfile a project was a control nobody on a touch
+              device could see. The project's own settings sheet now carries the
+              same action for its owner; this is the company-side half, and it
+              has to be findable on the device somebody is holding.
+            */
+            'sm:opacity-0 sm:group-hover/card:opacity-100',
           )}
         >
           <X className="h-3.5 w-3.5" />

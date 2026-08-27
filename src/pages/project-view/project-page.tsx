@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   Columns3,
   FileText,
+  History,
   KanbanSquare,
   MessageCircle,
   PenTool,
@@ -63,6 +64,7 @@ import {
 import { cn } from '@/shared/lib/cn';
 import { formatDateTime } from '@/shared/lib/dates';
 import { Avatar, Button, PageLoader, Segmented } from '@/shared/ui';
+import { ProjectChangelog } from '@/widgets/project-changelog/ui/project-changelog';
 import { ProjectDashboard } from '@/widgets/project-dashboard/ui/project-dashboard';
 import { TextBoard } from '@/widgets/text-board/ui/text-board';
 import { Whiteboard } from '@/widgets/whiteboard/ui/whiteboard';
@@ -77,6 +79,7 @@ type Tab =
   | 'meetings'
   | 'whiteboard'
   | 'text'
+  | 'changelog'
   | 'ai';
 
 const TABS: { value: Tab; label: TranslationKey; icon: ReactNode }[] = [
@@ -99,6 +102,16 @@ const TABS: { value: Tab; label: TranslationKey; icon: ReactNode }[] = [
   // Next to the whiteboard on purpose: the two are the same idea in different
   // materials — one is what the project draws, the other is what it writes.
   { value: 'text', label: 'project.tabText', icon: <FileText className="h-3 w-3" /> },
+  /*
+   * Second from last, and never first.
+   *
+   * A changelog is what you open when something has already gone wrong or
+   * gone missing — "when did that task disappear", "who let this person in" —
+   * which makes it a reference, not a workspace. Putting it at the end of the
+   * row keeps it a click away without ever competing with the board, and next
+   * to the assistant because both are read rather than worked in.
+   */
+  { value: 'changelog', label: 'project.tabChangelog', icon: <History className="h-3 w-3" /> },
   { value: 'ai', label: 'project.tabAssistant', icon: <Sparkles className="h-3 w-3" /> },
 ];
 
@@ -562,6 +575,7 @@ const ProjectPage = () => {
           initialDocumentId={searchParams.get('doc') ?? undefined}
         />
       )}
+      {tab === 'changelog' && <ProjectChangelog projectId={projectId} />}
       {tab === 'ai' && <AiPanel projectId={projectId} />}
 
       <TaskComposer

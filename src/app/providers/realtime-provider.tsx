@@ -9,7 +9,13 @@ import {
 } from '@/entities/notification/lib/notification-copy';
 import type { AppNotification } from '@/entities/notification/model/types';
 import { useSessionStore } from '@/features/auth/model/session.store';
-import { connectSocket, disconnectSocket, getSocket } from '@/shared/api/socket';
+import {
+  connectSocket,
+  disconnectSocket,
+  getSocket,
+  isSocketConnected,
+  reviveSocket,
+} from '@/shared/api/socket';
 import { showDesktopNotification } from '@/shared/lib/notifications';
 import { queryKeys } from '@/shared/api/query-keys';
 
@@ -56,8 +62,88 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
     // effect run, so a reconnect or a sign-out cannot leave one pending.
     let taskRefreshTimer: number | undefined;
 
-    const handleConnect = () => setIsConnected(true);
-    const handleDisconnect = () => setIsConnected(false);
+    /*
+     * ---- Staying connected ------------------------------------------------
+     *
+     * socket.io reconnects by itself after a dropped transport, and does not
+     * after the two failures that actually happen here: the gateway refusing a
+     * handshake whose access token has expired (which it signals by
+     * disconnecting the socket server-side), and a `connect_error` raised
+     * before the socket was ever active. Both leave a client that has stopped
+     * trying, which is what put the header's "Live" pill permanently offline
+     * on any tab left open for more than a quarter of an hour.
+     *
+     * So those two are revived by hand, on a backoff of our own — the socket's
+     * own backoff does not apply to a retry it is not making. The delay grows
+     * to half a minute and resets the moment a connection succeeds or the user
+     * comes back to the tab, because somebody looking at the screen is the one
+     * situation where waiting another 30 seconds is worth spending a request
+     * to avoid.
+     */
+    let reviveTimer: number | undefined;
+    let reviveAttempt = 0;
+
+    const scheduleRevive = (immediate = false) => {
+      if (reviveTimer !== undefined || isSocketConnected()) return;
+
+      const delay = immediate
+        ? 0
+        : Math.min(2_000 * 2 ** Math.min(reviveAttempt, 4), 30_000);
+      reviveAttempt += 1;
+
+      reviveTimer = window.setTimeout(() => {
+        reviveTimer = undefined;
+        void reviveSocket().then((revived) => {
+          if (!revived) scheduleRevive();
+        });
+      }, delay);
+    };
+
+    const handleConnect = () => {
+      reviveAttempt = 0;
+      setIsConnected(true);
+    };
+
+    /**
+     * `reason` is the whole point of this handler.
+     *
+     * `io client disconnect` is our own sign-out and must not be undone.
+     * `io server disconnect` is the gateway rejecting us — a stale token,
+     * nine times out of ten — and is the case socket.io explicitly will not
+     * retry. Everything else is a transport problem the library is already
+     * working on, so it is left alone.
+     */
+    const handleDisconnect = (reason: string) => {
+      setIsConnected(false);
+      if (reason === 'io server disconnect') scheduleRevive(true);
+    };
+
+    /** Denied before the socket was ever live: `active` is false and stays false. */
+    const handleConnectError = () => {
+      setIsConnected(false);
+      if (!socket.active) scheduleRevive();
+    };
+
+    /** The library's budget is infinite now, but a guard costs nothing. */
+    const handleReconnectFailed = () => scheduleRevive();
+
+    /*
+     * The three moments worth spending a probe on.
+     *
+     * A laptop coming out of sleep fires none of the socket's own events for
+     * some time — the OS simply stops delivering to a closed socket — so the
+     * cheapest reliable signal that the connection may be stale is the user
+     * turning their attention back to the page. `online` covers the same
+     * thing for a network that came back while the tab was in front.
+     */
+    const handleWake = () => {
+      if (document.visibilityState === 'hidden') return;
+      reviveAttempt = 0;
+      if (!isSocketConnected()) {
+        connectSocket();
+        scheduleRevive(true);
+      }
+    };
 
     const handleNotification = (notification: AppNotification) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
@@ -162,6 +248,11 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
 
     socket.on('connect', handleConnect);
     socket.on('disconnect', handleDisconnect);
+    socket.on('connect_error', handleConnectError);
+    socket.io.on('reconnect_failed', handleReconnectFailed);
+    window.addEventListener('online', handleWake);
+    window.addEventListener('focus', handleWake);
+    document.addEventListener('visibilitychange', handleWake);
     socket.on('notification:new', handleNotification);
     socket.on('task:created', handleTaskEvent);
     socket.on('task:updated', handleTaskEvent);
@@ -186,9 +277,15 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
 
     return () => {
       if (taskRefreshTimer !== undefined) window.clearTimeout(taskRefreshTimer);
+      if (reviveTimer !== undefined) window.clearTimeout(reviveTimer);
 
       socket.off('connect', handleConnect);
       socket.off('disconnect', handleDisconnect);
+      socket.off('connect_error', handleConnectError);
+      socket.io.off('reconnect_failed', handleReconnectFailed);
+      window.removeEventListener('online', handleWake);
+      window.removeEventListener('focus', handleWake);
+      document.removeEventListener('visibilitychange', handleWake);
       socket.off('notification:new', handleNotification);
       socket.off('task:created', handleTaskEvent);
       socket.off('task:updated', handleTaskEvent);

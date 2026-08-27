@@ -489,9 +489,32 @@ export const TextBoard = ({
     openForEditingRef.current = true;
 
     try {
-      const { isTruncated } = await convertDocument.mutateAsync(open.id);
+      const { isTruncated, figuresKept, figuresSkipped } = await convertDocument.mutateAsync(
+        open.id,
+      );
       setIsEditing(true);
-      toast.success(isTruncated ? t('doc.convertedTruncated') : t('doc.converted'));
+
+      /*
+       * One line about the text, one about the pictures.
+       *
+       * The pictures are the half people used to lose without being told: a
+       * PDF's diagrams are lifted out of the original and placed in the page,
+       * and the ones the extractor cannot read are counted rather than dropped
+       * quietly. `figuresSkipped` is the only warning anybody gets that a
+       * figure did not make it, and it comes with the thing to do about it —
+       * the original file is still in the download menu, whole.
+       */
+      toast.success(isTruncated ? t('doc.convertedTruncated') : t('doc.converted'), {
+        description:
+          figuresSkipped > 0
+            ? t('doc.figuresPartly', {
+                kept: String(figuresKept),
+                skipped: String(figuresSkipped),
+              })
+            : figuresKept > 0
+              ? t('doc.figuresKept', { count: String(figuresKept) })
+              : undefined,
+      });
     } catch (error) {
       openForEditingRef.current = false;
       // The API tells three failures apart — unconfigured, out of quota, slow
@@ -782,10 +805,19 @@ export const TextBoard = ({
         </span>
       </div>
 
+      {/*
+        The table of contents is a list of names, not a second workspace.
+
+        It was 240px of a 1200px pane — a fifth of the surface spent on eight
+        short titles — and the document paying for it was a PDF being read
+        through a browser viewer that has its own toolbar and its own margins
+        inside whatever it is given. 184px still fits a two-line title without
+        wrapping mid-word, and the 10dvh it hands back goes to the page.
+      */}
       <div
         className={cn(
-          'grid min-h-0 gap-3 lg:grid-cols-[240px_minmax(0,1fr)]',
-          isExpanded ? 'flex-1' : 'h-[62dvh]',
+          'grid min-h-0 gap-3 lg:grid-cols-[184px_minmax(0,1fr)]',
+          isExpanded ? 'flex-1' : 'h-[72dvh]',
         )}
       >
         {/* --- Table of contents ------------------------------------------- */}

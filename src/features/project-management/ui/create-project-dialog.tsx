@@ -1,16 +1,28 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Github, PenLine } from 'lucide-react';
 
 import { useOrganizationMembers, useOrganizations } from '@/entities/organization/model/queries';
 import { useCreateProject } from '@/entities/project/model/queries';
 import { InvitePicker } from '@/features/invite-picker/ui/invite-picker';
+import { GithubImportPanel } from './github-import-panel';
 import { TASK_COLORS, TEXT_LIMITS } from '@/shared/config/constants';
 import { clampText } from '@/shared/lib/text';
-import { Button, ColorPicker, Input, Modal, Select, Textarea } from '@/shared/ui';
+import { Button, ColorPicker, Input, Modal, Segmented, Select, Textarea } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
 /** The value the organization picker uses for "nowhere in particular". */
 const UNFILED = '';
+
+/**
+ * The two ways a project comes into existence.
+ *
+ * A segmented control rather than a second dialog, because everything below
+ * the mode switch is shared: which company it is filed under, and what colour
+ * it is. An import that opened its own window would either ask those questions
+ * twice or not ask them at all.
+ */
+type Mode = 'blank' | 'github';
 
 interface CreateProjectDialogProps {
   isOpen: boolean;
@@ -58,6 +70,7 @@ export const CreateProjectDialog = ({
   const navigate = useNavigate();
   const createProject = useCreateProject();
 
+  const [mode, setMode] = useState<Mode>('blank');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [color, setColor] = useState<string>(TASK_COLORS[0]);
@@ -98,6 +111,7 @@ export const CreateProjectDialog = ({
   useEffect(() => {
     if (!isOpen) return;
 
+    setMode('blank');
     setName('');
     setDescription('');
     setColor(TASK_COLORS[0]);
@@ -149,13 +163,19 @@ export const CreateProjectDialog = ({
           <Button variant="ghost" onClick={onClose}>
             {t('common.cancel')}
           </Button>
-          <Button
-            onClick={() => void handleSubmit()}
-            isLoading={createProject.isPending}
-            disabled={name.trim().length < 2}
-          >
-            {t('project.create')}
-          </Button>
+          {/* The import has its own button, inside the panel and next to the
+              preview it acts on — a "Create" in the footer would be a control
+              that does nothing until a repository has been looked up, sitting
+              a long way from the thing it would create. */}
+          {mode === 'blank' && (
+            <Button
+              onClick={() => void handleSubmit()}
+              isLoading={createProject.isPending}
+              disabled={name.trim().length < 2}
+            >
+              {t('project.create')}
+            </Button>
+          )}
         </>
       }
     >
@@ -163,29 +183,53 @@ export const CreateProjectDialog = ({
         className="space-y-4"
         onSubmit={(event) => {
           event.preventDefault();
-          void handleSubmit();
+          if (mode === 'blank') void handleSubmit();
         }}
       >
-        <Input
-          label={t('project.name')}
-          name="name"
-          value={name}
-          onChange={(event) => setName(clampText(event.target.value, TEXT_LIMITS.projectName))}
-          placeholder={t('project.namePlaceholder')}
-          autoFocus
-          maxLength={TEXT_LIMITS.projectName}
+        <Segmented
+          value={mode}
+          onChange={setMode}
+          options={[
+            {
+              value: 'blank',
+              label: t('project.modeBlank'),
+              icon: <PenLine className="h-3 w-3" />,
+            },
+            {
+              value: 'github',
+              label: t('project.modeGithub'),
+              icon: <Github className="h-3 w-3" />,
+            },
+          ]}
         />
 
-        <Textarea
-          label={t('project.description')}
-          name="description"
-          value={description}
-          onChange={(event) =>
-            setDescription(clampText(event.target.value, TEXT_LIMITS.projectDescription))
-          }
-          placeholder={t('project.descriptionPlaceholder')}
-          maxLength={TEXT_LIMITS.projectDescription}
-        />
+        {/* The name and the blurb are what an import *produces*, so in that
+            mode they are absent rather than present and ignored. Everything
+            below — the company, the accent — applies to both and stays. */}
+        {mode === 'blank' && (
+          <>
+            <Input
+              label={t('project.name')}
+              name="name"
+              value={name}
+              onChange={(event) => setName(clampText(event.target.value, TEXT_LIMITS.projectName))}
+              placeholder={t('project.namePlaceholder')}
+              autoFocus
+              maxLength={TEXT_LIMITS.projectName}
+            />
+
+            <Textarea
+              label={t('project.description')}
+              name="description"
+              value={description}
+              onChange={(event) =>
+                setDescription(clampText(event.target.value, TEXT_LIMITS.projectDescription))
+              }
+              placeholder={t('project.descriptionPlaceholder')}
+              maxLength={TEXT_LIMITS.projectDescription}
+            />
+          </>
+        )}
 
         <ColorPicker
           label={t('project.accentColour')}
@@ -223,10 +267,25 @@ export const CreateProjectDialog = ({
           </div>
         )}
 
+        {mode === 'github' && (
+          <GithubImportPanel
+            organizationId={filedUnder || undefined}
+            color={color}
+            onImported={(projectId) => {
+              onClose();
+              navigate(`/projects/${projectId}`);
+            }}
+          />
+        )}
+
         {/* Nothing to draw from until a company is chosen. Individuals is the
             tab this opens on; the teams tab disappears when that company has
-            none. */}
-        {filedUnder && (
+            none.
+
+            Hidden for an import, whose starting roster comes from the
+            repository's contributors — offering both would be two answers to
+            "who is on this" with no rule for which wins. */}
+        {mode === 'blank' && filedUnder && (
           <InvitePicker
             people={staff}
             selectedPeople={memberIds}

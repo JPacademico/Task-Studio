@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, CheckCircle2, RotateCcw, Trash2 } from 'lucide-react';
+import { AlertTriangle, Building2, CheckCircle2, FolderMinus, RotateCcw, Trash2 } from 'lucide-react';
 
+import { useDetachProject } from '@/entities/organization/model/queries';
 import {
   useCompleteProject,
   useDeleteProject,
@@ -83,6 +84,15 @@ export const ProjectSettingsDialog = ({
   const deleteProject = useDeleteProject();
   const completeProject = useCompleteProject();
   const reopenProject = useReopenProject();
+  /*
+   * Unfiling is addressed to the *organization*, because that is where the
+   * endpoint lives — `DELETE /organizations/:id/projects/:projectId`. The hook
+   * needs an id at call time and a project that is filed nowhere has none, so
+   * it is handed the empty string and the whole section is hidden in that
+   * case: a mutation that can never be triggered is cheaper than a conditional
+   * hook, which React does not allow anyway.
+   */
+  const detachProject = useDetachProject(project.organization?.id ?? '');
 
   const [name, setName] = useState(project.name);
   const [description, setDescription] = useState(project.description ?? '');
@@ -90,6 +100,8 @@ export const ProjectSettingsDialog = ({
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [confirmation, setConfirmation] = useState('');
   const [isConfirmingFinish, setIsConfirmingFinish] = useState(false);
+  /** Two-step, like the danger-zone controls — but without the typed name. */
+  const [isConfirmingUnfile, setIsConfirmingUnfile] = useState(false);
   /**
    * Held only long enough to be sent.
    *
@@ -114,6 +126,7 @@ export const ProjectSettingsDialog = ({
     setIsConfirmingDelete(false);
     setConfirmation('');
     setIsConfirmingFinish(false);
+    setIsConfirmingUnfile(false);
     setPassword('');
   }, [isOpen, project.color, project.description, project.name]);
 
@@ -149,6 +162,30 @@ export const ProjectSettingsDialog = ({
     // next — a rejected password leaves the field cleared and the dialog open.
     setPassword('');
     setIsConfirmingFinish(false);
+    onClose();
+  };
+
+  /**
+   * Take the project out of its company, and leave everything else alone.
+   *
+   * A separate act from deleting, and the reason it needed its own control is
+   * that the only way to do it was from the *company's* board — a hover-only
+   * ✕ on a card, on a page somebody who wants to unfile their own project has
+   * no particular reason to visit, and which an org admin can reach but a
+   * project owner who is merely a member of that company cannot see at all.
+   * The API has always allowed either party to do it (see `detachProject`),
+   * so the project side gets the same control, said in full.
+   *
+   * Not in the danger zone. Nothing is destroyed: the roster, the tasks, the
+   * pages and the teams are all properties of the project, and filing is a
+   * label on top of them. Refiling it afterwards is one click on the company
+   * page.
+   */
+  const handleUnfile = async () => {
+    if (!project.organization) return;
+
+    await detachProject.mutateAsync(project.id);
+    setIsConfirmingUnfile(false);
     onClose();
   };
 
@@ -220,6 +257,49 @@ export const ProjectSettingsDialog = ({
           onChange={setColor}
           options={TASK_COLORS}
         />
+
+        {/* --- Where this project is filed ----------------------------------
+
+            Above the rule, because unfiling destroys nothing — see
+            `handleUnfile`. Owner only: the API accepts an organization admin
+            or the project's owner, and this dialog cannot tell whether the
+            reader is the first, so it offers the case it knows is allowed
+            rather than one that might be refused. An org admin still has the
+            ✕ on the company's own board. */}
+        {isOwner && project.organization && (
+          <section className="space-y-2.5 rounded-xl border border-edge bg-surface-sunken/50 p-3.5">
+            <header className="flex items-center gap-2">
+              <Building2 className="h-3.5 w-3.5 shrink-0 text-content-faint" />
+              <h3 className="text-xs font-semibold">{t('project.filedUnderTitle')}</h3>
+              <span className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-edge px-2 py-0.5 text-[10px] text-content-muted">
+                <span
+                  aria-hidden
+                  className="h-1.5 w-1.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: project.organization.color }}
+                />
+                <span className="max-w-[9rem] truncate">{project.organization.name}</span>
+              </span>
+            </header>
+
+            <p className="text-[11px] leading-relaxed text-content-muted">
+              {t('project.unfileExplain')}
+            </p>
+
+            <Button
+              type="button"
+              variant={isConfirmingUnfile ? 'danger' : 'secondary'}
+              size="sm"
+              onClick={() =>
+                isConfirmingUnfile ? void handleUnfile() : setIsConfirmingUnfile(true)
+              }
+              onBlur={() => setIsConfirmingUnfile(false)}
+              isLoading={detachProject.isPending}
+            >
+              <FolderMinus className="h-3.5 w-3.5" />
+              {t(isConfirmingUnfile ? 'project.unfileConfirm' : 'project.unfile')}
+            </Button>
+          </section>
+        )}
 
         {/* --- The dangerous half ------------------------------------------
             Below a rule and behind its own disclosure, so it cannot be reached

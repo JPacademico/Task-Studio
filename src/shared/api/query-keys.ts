@@ -26,6 +26,20 @@ export const queryKeys = {
     recycleBin: ['projects', 'recycle-bin'] as const,
   },
 
+  /**
+   * A project's changelog.
+   *
+   * A root of its own rather than a branch of `projects`, because every write
+   * anywhere in the app invalidates `projects.all` — a rename, a pin, a
+   * roster change — and a changelog nested under it would refetch its whole
+   * scrolled history each time. It is fed by the socket instead; see
+   * `useProjectActivityRealtime`.
+   */
+  activity: {
+    all: ['activity'] as const,
+    list: (projectId: string) => ['activity', projectId] as const,
+  },
+
   tasks: {
     all: ['tasks'] as const,
     list: (params?: ListTasksParams) => ['tasks', 'list', params ?? {}] as const,

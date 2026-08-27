@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { authApi } from '@/features/auth/api/auth.api';
 import { useSessionStore } from '@/features/auth/model/session.store';
 import { OAuthButtons } from '@/features/auth/ui/oauth-buttons';
-import { errorMessage } from '@/shared/api/client';
+import { ensureApiAwake, errorMessage, isApiWarm } from '@/shared/api/client';
 import { TEXT_LIMITS } from '@/shared/config/constants';
 import { clampText } from '@/shared/lib/text';
 import { useT } from '@/shared/i18n';
@@ -22,8 +22,44 @@ export const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  /**
+   * Signing in, with the container's nap accounted for.
+   *
+   * The mutation is not `authApi.login` any more, and the extra line in front
+   * of it is the whole fix. A sign-in POST is the *first* request of a session
+   * by definition, so it is the request most likely to land on a sleeping
+   * free-tier container — and a login page that has been sitting open in a tab
+   * for half an hour is the worst version of that, because the wake `AuthShell`
+   * fires on mount has long since expired.
+   *
+   * What happened then was not a clean wait. The POST went out against a
+   * container that had to cold-boot Node and reconnect a suspended Postgres
+   * before it could even look at the password, and it either took most of a
+   * minute or fell off the client's own ceiling and was reported as "the
+   * server is unreachable" — which is the one thing it demonstrably was not.
+   *
+   * So the boot happens first, on `/health`: unauthenticated, cheap, and safe
+   * to attempt three times because it changes nothing. Only then does the
+   * password go anywhere, by which point the request it is racing is a warm
+   * one. A `false` here is not a reason to stop — the probe may have been
+   * blocked while the API is perfectly reachable — so the sign-in goes ahead
+   * either way and whatever it hits produces the real error message.
+   */
+  const [isWaking, setIsWaking] = useState(false);
+
   const login = useMutation({
-    mutationFn: authApi.login,
+    mutationFn: async (credentials: { email: string; password: string }) => {
+      if (!isApiWarm()) {
+        setIsWaking(true);
+        try {
+          await ensureApiAwake();
+        } finally {
+          setIsWaking(false);
+        }
+      }
+
+      return authApi.login(credentials);
+    },
     onSuccess: (session) => {
       startSession(session);
       const from = (location.state as { from?: string } | null)?.from ?? '/';
@@ -95,8 +131,22 @@ export const LoginPage = () => {
         </div>
 
         <Button type="submit" className="w-full" size="lg" isLoading={login.isPending}>
-          {t('auth.signIn.submit')}
+          {t(isWaking ? 'auth.signIn.waking' : 'auth.signIn.submit')}
         </Button>
+
+        {/*
+          Said only while it is true, and only on the slow path.
+
+          A cold start is tens of seconds of a button that looks stuck. The
+          spinner alone reads as "something is wrong with my password"; this
+          says which of the two waits this is, and it disappears the moment the
+          container answers — on a warm API it is never drawn at all.
+        */}
+        {isWaking && (
+          <p className="text-center text-[11px] leading-relaxed text-content-faint">
+            {t('auth.signIn.wakingHint')}
+          </p>
+        )}
       </form>
 
       {/* Renders nothing at all unless the API has provider keys — see

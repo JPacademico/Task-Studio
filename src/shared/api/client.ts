@@ -268,6 +268,25 @@ const refreshSession = async (): Promise<string> => {
   return data.accessToken;
 };
 
+/**
+ * A fresh access token, shared with whoever else is asking.
+ *
+ * Exported because the socket needs one too. The gateway authenticates the
+ * handshake against the same 15-minute access token the REST calls carry, and
+ * a tab left open overnight reconnects with a dead one — so the realtime layer
+ * has to be able to renew it before retrying. Routing that through here rather
+ * than through a second copy of `refreshSession` is what keeps the
+ * single-flight promise single: a burst of 401s and a socket reconnect landing
+ * in the same tick are one refresh, not two, and two would rotate the token
+ * family out from under each other.
+ */
+export const refreshAccessToken = (): Promise<string> => {
+  refreshPromise ??= refreshSession().finally(() => {
+    refreshPromise = null;
+  });
+  return refreshPromise;
+};
+
 api.interceptors.response.use(
   (response) => {
     lastResponseAt = Date.now();
@@ -287,10 +306,7 @@ api.interceptors.response.use(
     config._retried = true;
 
     try {
-      refreshPromise ??= refreshSession().finally(() => {
-        refreshPromise = null;
-      });
-      const token = await refreshPromise;
+      const token = await refreshAccessToken();
 
       config.headers.Authorization = `Bearer ${token}`;
       return api.request(config);

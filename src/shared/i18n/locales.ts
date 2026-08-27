@@ -46,8 +46,6 @@ const en = {
 
   // ---- Auth: the desk behind the card ------------------------------------
   'auth.hero.title': 'Work that behaves like paper.',
-  'auth.hero.body':
-    'Boards you can pin, notes you can move, deadlines that speak up. Everything on this desk is real — go on, drag it. The card too.',
   'auth.hero.tagline': 'Personal & collaborative project studio',
   'auth.desk.tickIt': 'Go on, tick it',
   'auth.desk.today': 'Today',
@@ -72,6 +70,9 @@ const en = {
   'auth.signIn.title': 'Sign in',
   'auth.signIn.subtitle': 'Your projects, tasks and boards are waiting.',
   'auth.signIn.submit': 'Sign in',
+  'auth.signIn.waking': 'Waking the server…',
+  'auth.signIn.wakingHint':
+    'The API sleeps when nobody is using it. Starting it up takes a few seconds — your sign-in goes through as soon as it answers.',
   'auth.signIn.noAccount': 'No account yet?',
   'auth.signIn.createOne': 'Create one',
   'auth.signIn.forgot': 'Forgot your password?',
@@ -251,6 +252,43 @@ const en = {
   'project.settingsTitle': 'Project settings',
   'project.settingsSubtitle': 'Rename it, re-colour it, or move it to the recycle bin.',
   'project.saveChanges': 'Save changes',
+  'project.modeBlank': 'Blank project',
+  'project.modeGithub': 'From GitHub',
+
+  // ---- Importing a project from a GitHub repository -----------------------
+  'github.repository': 'Repository',
+  'github.look': 'Look up',
+  'github.hint':
+    'Paste a public repository — github.com/owner/name, or just owner/name. Nothing is created until you have seen what it found.',
+  'github.noDescription': 'No description on GitHub.',
+  'github.openIssues': '{count} open issues',
+  'github.archivedWarning':
+    'This repository is archived on GitHub. It imports fine — the project just starts life as a record of finished work.',
+  'github.pagesTitle': 'Pages it would create',
+  'github.noPages': 'No README or changelog found — the project starts with an empty Documents tab.',
+  'github.contributorsTitle': '{count} contributors can be invited',
+  'github.contributorsHint':
+    'Only contributors who sign in here with GitHub can be matched, and each one gets an invitation to accept or decline — nobody is added to the roster outright.',
+  'github.willInvite': '{name} will be invited',
+  'github.noAccount': '{login} has no Task Studio account linked to GitHub',
+  'github.useAssistant': 'Let the assistant read the repository',
+  'github.useAssistantOn':
+    'It reads the README, the file tree and the open issues, then writes the name, the description and up to three starting tasks. Everything it writes is yours to edit.',
+  'github.useAssistantOff':
+    'The project takes the repository’s own name and description, its pages still come across, and it starts with no tasks.',
+  'github.import': 'Create the project',
+  'github.importing': 'Importing…',
+  'github.importingHint':
+    'Reading the repository and writing the project. This takes a few seconds longer than a blank one.',
+  'github.importedSummary': '{tasks} tasks · {documents} pages · {invited} invited',
+  'github.previewFailed': 'Could not read that repository.',
+  'github.importFailed': 'Could not import that repository.',
+
+  'project.filedUnderTitle': 'Filed under',
+  'project.unfileExplain':
+    'Takes the project out of this company and leaves everything else where it is — the roster, the tasks, the pages and the teams all stay. You can file it again from the company page at any time.',
+  'project.unfile': 'Remove from organization',
+  'project.unfileConfirm': 'Confirm — remove',
   'project.dangerZone': 'Ending this project',
 
   // Finishing: keeps the record, clears the work. See the settings dialog.
@@ -441,11 +479,11 @@ const en = {
   'doc.downloadAs': 'Download as',
   'doc.downloadFailed': 'Could not download that document.',
   'doc.format.pdf': 'PDF',
-  'doc.format.pdf.hint': 'Typeset for printing and sharing',
+  'doc.format.pdf.hint': 'Typeset for printing and sharing, pictures included',
   'doc.format.txt': 'Plain text',
   'doc.format.txt.hint': 'The words only, no formatting',
   'doc.format.html': 'Web page',
-  'doc.format.html.hint': 'Opens in a browser, keeps pictures',
+  'doc.format.html.hint': 'Opens in a browser, keeps every link',
   'doc.convertedOnDownload': 'Converted by the assistant',
   'doc.originalFile': 'Original file',
 
@@ -462,6 +500,9 @@ const en = {
   'doc.convertingHint':
     'The assistant is reading the whole document. On a long one this takes a moment.',
   'doc.converted': 'Converted — you can edit it now.',
+  'doc.figuresKept': '{count} figures came across with the text.',
+  'doc.figuresPartly':
+    '{kept} figures came across; {skipped} could not be read. The original file is still whole under Download.',
   'doc.convertedTruncated':
     'Converted, but the document was too long to fit on one page. The end is missing.',
   'doc.convertFailed': 'Could not convert that document.',
@@ -1165,7 +1206,7 @@ const en = {
   'notes.boardImage': 'Board image',
   'notes.useColour': 'Use {color}',
   'notes.postIts': 'Post-its',
-  'notes.textBoardTab': 'Text board',
+  'notes.textBoardTab': 'Documents',
   'notes.yourPostItBoard': 'Your Post-it board',
   'notes.confirmClearPage': 'Clear this page? Notes move to the recycle bin.',
   'notes.confirmRemovePage': 'Remove "{name}"? Its notes move to the recycle bin.',
@@ -1176,9 +1217,51 @@ const en = {
   'project.tabMetrics': 'Metrics',
   'project.tabRoster': 'Roster',
   'project.tabWhiteboard': 'Whiteboard',
-  'project.tabText': 'Text board',
+  'project.tabText': 'Documents',
   'project.tabMeetings': 'Meetings',
   'project.tabAssistant': 'Assistant',
+  'project.tabChangelog': 'Changelog',
+
+  // ---- Project changelog --------------------------------------------------
+  //
+  // Every one of these is a *whole sentence* with the names substituted in,
+  // rather than a fragment the component glues together. Word order is not a
+  // property that survives translation: "Ana joined" and "Entrou Ana" put the
+  // subject in different places, and a component that concatenated a name and
+  // a verb would be a component that only works in English.
+  'activity.title': 'Changelog',
+  'activity.subtitle': 'Everything that has happened in this project, newest first.',
+  'activity.entryCount': '{count} entries',
+  'activity.loadMore': 'Load older entries',
+  'activity.empty': 'Nothing has happened yet',
+  'activity.emptyHint':
+    'Tasks, pages, meetings and roster changes all leave a line here. The first one arrives as soon as somebody does something.',
+  'activity.failed': 'Could not load the changelog',
+  'activity.failedHint': 'The rest of the project is unaffected — try again in a moment.',
+  'activity.someone': 'Someone',
+  'activity.somethingUnnamed': 'something',
+
+  'activity.projectCreated': '{actor} created this project',
+  'activity.projectImported': '{actor} imported this project from GitHub',
+  'activity.projectRenamed': '{actor} renamed the project from “{from}” to “{subject}”',
+  'activity.projectCompleted': '{actor} concluded the project',
+  'activity.projectReopened': '{actor} reopened the project',
+  'activity.projectFiled': '{actor} filed the project under {target}',
+  'activity.projectUnfiled': '{actor} removed the project from {target}',
+  'activity.memberInvited': '{actor} invited {target}',
+  'activity.memberJoined': '{actor} is now a member',
+  'activity.memberLeft': '{actor} left the project',
+  'activity.memberRemoved': '{actor} removed {target} from the project',
+  'activity.memberRoleChanged': '{actor} made {target} an {role}',
+  'activity.taskCreated': '{actor} created the task “{subject}”',
+  'activity.taskCompleted': '{actor} completed “{subject}”',
+  'activity.taskReopened': '{actor} reopened “{subject}”',
+  'activity.taskDeleted': '{actor} deleted the task “{subject}”',
+  'activity.documentCreated': '{actor} wrote the page “{subject}”',
+  'activity.documentImported': '{actor} imported the file “{subject}”',
+  'activity.documentConverted': '{actor} converted “{subject}” into an editable page',
+  'activity.documentDeleted': '{actor} deleted the page “{subject}”',
+  'activity.meetingScheduled': '{actor} scheduled the meeting “{subject}”',
   'project.newTask': 'New task',
   'project.newTaskShort': 'Task',
   'project.pinProject': 'Pin project',
@@ -1419,8 +1502,6 @@ const ptBR: Record<TranslationKey, string> = {
   'lang.change': 'Alterar idioma',
 
   'auth.hero.title': 'Trabalho que se comporta como papel.',
-  'auth.hero.body':
-    'Quadros que você pode fixar, notas que você pode mover, prazos que se fazem ouvir. Tudo nesta mesa é de verdade — pode arrastar. O cartão também.',
   'auth.hero.tagline': 'Estúdio de projetos pessoais e colaborativos',
   'auth.desk.tickIt': 'Vai, marque',
   'auth.desk.today': 'Hoje',
@@ -1443,6 +1524,9 @@ const ptBR: Record<TranslationKey, string> = {
   'auth.signIn.title': 'Entrar',
   'auth.signIn.subtitle': 'Seus projetos, tarefas e quadros estão esperando.',
   'auth.signIn.submit': 'Entrar',
+  'auth.signIn.waking': 'Acordando o servidor…',
+  'auth.signIn.wakingHint':
+    'A API hiberna quando ninguém está usando. Ligar leva alguns segundos — seu acesso segue assim que ela responder.',
   'auth.signIn.noAccount': 'Ainda não tem conta?',
   'auth.signIn.createOne': 'Criar uma',
   'auth.signIn.forgot': 'Esqueceu sua senha?',
@@ -1621,6 +1705,42 @@ const ptBR: Record<TranslationKey, string> = {
   'project.settingsTitle': 'Configurações do projeto',
   'project.settingsSubtitle': 'Renomeie, mude a cor ou mova para a lixeira.',
   'project.saveChanges': 'Salvar alterações',
+  'project.modeBlank': 'Projeto em branco',
+  'project.modeGithub': 'Do GitHub',
+
+  'github.repository': 'Repositório',
+  'github.look': 'Buscar',
+  'github.hint':
+    'Cole um repositório público — github.com/dono/nome, ou só dono/nome. Nada é criado antes de você ver o que foi encontrado.',
+  'github.noDescription': 'Sem descrição no GitHub.',
+  'github.openIssues': '{count} issues abertas',
+  'github.archivedWarning':
+    'Este repositório está arquivado no GitHub. A importação funciona — o projeto só nasce como registro de um trabalho concluído.',
+  'github.pagesTitle': 'Páginas que seriam criadas',
+  'github.noPages': 'Nenhum README ou changelog encontrado — o projeto começa com a aba Documentos vazia.',
+  'github.contributorsTitle': '{count} colaboradores podem ser convidados',
+  'github.contributorsHint':
+    'Só dá para reconhecer quem entra aqui pelo GitHub, e cada pessoa recebe um convite para aceitar ou recusar — ninguém entra na equipe direto.',
+  'github.willInvite': '{name} será convidado',
+  'github.noAccount': '{login} não tem conta do Task Studio ligada ao GitHub',
+  'github.useAssistant': 'Deixar o assistente ler o repositório',
+  'github.useAssistantOn':
+    'Ele lê o README, a árvore de arquivos e as issues abertas, e escreve o nome, a descrição e até três tarefas iniciais. Tudo o que ele escreve é seu para editar.',
+  'github.useAssistantOff':
+    'O projeto fica com o nome e a descrição do próprio repositório, as páginas vêm junto e ele começa sem tarefas.',
+  'github.import': 'Criar o projeto',
+  'github.importing': 'Importando…',
+  'github.importingHint':
+    'Lendo o repositório e escrevendo o projeto. Leva alguns segundos a mais que um projeto em branco.',
+  'github.importedSummary': '{tasks} tarefas · {documents} páginas · {invited} convidados',
+  'github.previewFailed': 'Não foi possível ler esse repositório.',
+  'github.importFailed': 'Não foi possível importar esse repositório.',
+
+  'project.filedUnderTitle': 'Arquivado em',
+  'project.unfileExplain':
+    'Tira o projeto desta empresa e deixa todo o resto no lugar — a equipe, as tarefas, as páginas e os times continuam. Dá para arquivá-lo de novo pela página da empresa quando quiser.',
+  'project.unfile': 'Remover da organização',
+  'project.unfileConfirm': 'Confirmar — remover',
   'project.dangerZone': 'Encerrando este projeto',
 
   'project.finishProject': 'Concluir projeto',
@@ -1802,11 +1922,11 @@ const ptBR: Record<TranslationKey, string> = {
   'doc.downloadAs': 'Baixar como',
   'doc.downloadFailed': 'Não foi possível baixar este documento.',
   'doc.format.pdf': 'PDF',
-  'doc.format.pdf.hint': 'Diagramado para imprimir e compartilhar',
+  'doc.format.pdf.hint': 'Diagramado para imprimir e compartilhar, com as imagens',
   'doc.format.txt': 'Texto simples',
   'doc.format.txt.hint': 'Só as palavras, sem formatação',
   'doc.format.html': 'Página web',
-  'doc.format.html.hint': 'Abre no navegador e mantém as imagens',
+  'doc.format.html.hint': 'Abre no navegador e mantém todos os links',
   'doc.convertedOnDownload': 'Convertido pelo assistente',
   'doc.originalFile': 'Arquivo original',
 
@@ -1823,6 +1943,9 @@ const ptBR: Record<TranslationKey, string> = {
   'doc.convertingHint':
     'O assistente está lendo o documento inteiro. Em um documento longo isso leva um instante.',
   'doc.converted': 'Convertido — agora você pode editar.',
+  'doc.figuresKept': '{count} figuras vieram junto com o texto.',
+  'doc.figuresPartly':
+    '{kept} figuras vieram; {skipped} não puderam ser lidas. O arquivo original continua inteiro em Baixar.',
   'doc.convertedTruncated':
     'Convertido, mas o documento era longo demais para caber em uma página. O final ficou de fora.',
   'doc.convertFailed': 'Não foi possível converter este documento.',
@@ -2496,7 +2619,7 @@ const ptBR: Record<TranslationKey, string> = {
   'notes.boardImage': 'Imagem do mural',
   'notes.useColour': 'Usar {color}',
   'notes.postIts': 'Post-its',
-  'notes.textBoardTab': 'Mural de texto',
+  'notes.textBoardTab': 'Documentos',
   'notes.yourPostItBoard': 'Seu mural de post-its',
   'notes.confirmClearPage': 'Limpar esta página? As notas vão para a lixeira.',
   'notes.confirmRemovePage': 'Remover "{name}"? As notas dela vão para a lixeira.',
@@ -2506,9 +2629,44 @@ const ptBR: Record<TranslationKey, string> = {
   'project.tabMetrics': 'Métricas',
   'project.tabRoster': 'Equipe',
   'project.tabWhiteboard': 'Mural',
-  'project.tabText': 'Mural de texto',
+  'project.tabText': 'Documentos',
   'project.tabMeetings': 'Reuniões',
   'project.tabAssistant': 'Assistente',
+  'project.tabChangelog': 'Histórico',
+
+  'activity.title': 'Histórico',
+  'activity.subtitle': 'Tudo o que aconteceu neste projeto, do mais recente ao mais antigo.',
+  'activity.entryCount': '{count} registros',
+  'activity.loadMore': 'Carregar registros antigos',
+  'activity.empty': 'Nada aconteceu ainda',
+  'activity.emptyHint':
+    'Tarefas, páginas, reuniões e mudanças na equipe deixam uma linha aqui. A primeira aparece assim que alguém fizer algo.',
+  'activity.failed': 'Não foi possível carregar o histórico',
+  'activity.failedHint': 'O resto do projeto não foi afetado — tente de novo em instantes.',
+  'activity.someone': 'Alguém',
+  'activity.somethingUnnamed': 'algo',
+
+  'activity.projectCreated': '{actor} criou este projeto',
+  'activity.projectImported': '{actor} importou este projeto do GitHub',
+  'activity.projectRenamed': '{actor} renomeou o projeto de “{from}” para “{subject}”',
+  'activity.projectCompleted': '{actor} encerrou o projeto',
+  'activity.projectReopened': '{actor} reabriu o projeto',
+  'activity.projectFiled': '{actor} arquivou o projeto em {target}',
+  'activity.projectUnfiled': '{actor} removeu o projeto de {target}',
+  'activity.memberInvited': '{actor} convidou {target}',
+  'activity.memberJoined': '{actor} agora é membro',
+  'activity.memberLeft': '{actor} saiu do projeto',
+  'activity.memberRemoved': '{actor} removeu {target} do projeto',
+  'activity.memberRoleChanged': '{actor} tornou {target} {role}',
+  'activity.taskCreated': '{actor} criou a tarefa “{subject}”',
+  'activity.taskCompleted': '{actor} concluiu “{subject}”',
+  'activity.taskReopened': '{actor} reabriu “{subject}”',
+  'activity.taskDeleted': '{actor} excluiu a tarefa “{subject}”',
+  'activity.documentCreated': '{actor} escreveu a página “{subject}”',
+  'activity.documentImported': '{actor} importou o arquivo “{subject}”',
+  'activity.documentConverted': '{actor} converteu “{subject}” em uma página editável',
+  'activity.documentDeleted': '{actor} excluiu a página “{subject}”',
+  'activity.meetingScheduled': '{actor} marcou a reunião “{subject}”',
   'project.newTask': 'Nova tarefa',
   'project.newTaskShort': 'Tarefa',
   'project.pinProject': 'Fixar projeto',

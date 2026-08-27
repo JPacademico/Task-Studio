@@ -76,13 +76,14 @@ export const AuthShell = ({ title, subtitle, children, footer }: AuthShellProps)
           <span className="text-sm font-bold tracking-tight">Task Studio</span>
         </span>
 
-        <div className="hidden max-w-sm space-y-2 lg:block">
+        {/* The headline only. The paragraph that used to sit under it was
+            flavour text on a screen whose entire job is two fields and a
+            button — it explained the desk to somebody who can already see it,
+            and pushed the sign-in card down on short laptops to do it. */}
+        <div className="hidden max-w-sm lg:block">
           <h2 className="text-balance text-3xl font-bold leading-[1.15] tracking-tight xl:text-4xl">
             {t('auth.hero.title')}
           </h2>
-          <p className="text-sm leading-relaxed text-content-muted">
-            {t('auth.hero.body')}
-          </p>
         </div>
 
         <p className="hidden text-[11px] uppercase tracking-[0.18em] text-content-faint sm:block">

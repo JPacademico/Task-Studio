@@ -37,6 +37,26 @@ const rethrowWithReadableBody = async (error: unknown): Promise<never> => {
   throw error;
 };
 
+/**
+ * What a conversion produces, beyond the page itself.
+ *
+ * The two counts are not statistics. A PDF's diagrams are lifted out of the
+ * original and carried into the converted page (see `extractPdfImages` on the
+ * API), and the ones that cannot be read are counted rather than dropped
+ * quietly — because a document that came back with two of its four figures is
+ * a document somebody has to know about, and the answer ("the original is
+ * still one click away in the download menu") is only useful if they are told.
+ */
+export interface ConvertedDocument {
+  document: ProjectDocument;
+  /** The source, the answer, or both had to be cut short. */
+  isTruncated: boolean;
+  /** Figures carried across into the page. */
+  figuresKept: number;
+  /** Figures found in the PDF that could not be read or stored. */
+  figuresSkipped: number;
+}
+
 export const documentApi = {
   /**
    * Table of contents. Rows carry an excerpt rather than a body.
@@ -103,10 +123,8 @@ export const documentApi = {
    * inside this so it is the server that decides and the server that gets to
    * say why — see `SLOW_ROUTE_TIMEOUT_MS`.
    */
-  async convert(
-    documentId: string,
-  ): Promise<{ document: ProjectDocument; isTruncated: boolean }> {
-    const { data } = await api.post<{ document: ProjectDocument; isTruncated: boolean }>(
+  async convert(documentId: string): Promise<ConvertedDocument> {
+    const { data } = await api.post<ConvertedDocument>(
       `/documents/${documentId}/convert`,
       undefined,
       { timeout: SLOW_ROUTE_TIMEOUT_MS },

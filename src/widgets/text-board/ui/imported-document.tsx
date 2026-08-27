@@ -111,28 +111,36 @@ export const ImportedDocument = ({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">
-      {/* --- The strip that says what this is, and what to do about it ----- */}
+      {/* --- The strip that says what this is, and what to do about it -----
+
+          One line, and deliberately *without* the file name on it.
+
+          The name was on screen three times over: in the table of contents
+          row, in the page heading above this, and here — and this was the
+          copy that said the least, because the heading is the same string
+          with the extension trimmed off. What this strip knows that neither
+          of the others does is the *format*, the size and the fact that
+          nothing has rewritten it, so that is all it says now. Everything it
+          gave up was vertical space taken from the document itself, which on
+          a PDF is the whole point of the pane. */}
       <div
         className={cn(
-          'ui-card flex flex-wrap items-center gap-2.5 rounded-2xl border border-edge',
-          'bg-surface-sunken/60 px-3 py-2.5',
+          'ui-card flex flex-wrap items-center gap-x-2.5 gap-y-1 rounded-xl border border-edge',
+          'bg-surface-sunken/60 px-2.5 py-1.5',
         )}
       >
         <span
           aria-hidden
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand/12 text-brand"
+          className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-brand/12 text-brand"
         >
-          <FileText className="h-4 w-4" />
+          <FileText className="h-3.5 w-3.5" />
         </span>
 
-        <span className="min-w-0 flex-1 leading-tight">
-          <span className="block truncate text-xs font-semibold" title={source.name}>
-            {source.name}
-          </span>
-          <span className="text-[10px] uppercase tracking-wide text-content-faint">
-            {formatBadge(source)} · {formatFileSize(source.size)} · {t('doc.asUploaded')}
-          </span>
+        <span className="text-[10px] uppercase tracking-wide text-content-faint">
+          {formatBadge(source)} · {formatFileSize(source.size)} · {t('doc.asUploaded')}
         </span>
+
+        <span className="ml-auto" />
 
         {/*
           A button, not a link — there is no URL to give it.
@@ -151,12 +159,13 @@ export const ImportedDocument = ({
             if (objectUrl) show(objectUrl);
             else void documentApi.sourceObjectUrl(documentId, mime).then(show);
           }}
+          title={t('doc.openOriginal')}
           className={cn(
-            'ui-btn ui-btn--secondary inline-flex h-8 shrink-0 items-center gap-1.5 rounded-xl',
-            'bg-surface-sunken px-3 text-xs text-content transition-colors hover:bg-edge/60',
+            'ui-btn ui-btn--secondary inline-flex h-6 shrink-0 items-center gap-1.5 rounded-lg',
+            'bg-surface-sunken px-2 text-[11px] text-content transition-colors hover:bg-edge/60',
           )}
         >
-          <ExternalLink className="h-3.5 w-3.5" />
+          <ExternalLink className="h-3 w-3" />
           <span className="hidden sm:inline">{t('doc.openOriginal')}</span>
         </button>
 
@@ -171,7 +180,7 @@ export const ImportedDocument = ({
           Edit does something unusual, so that is what it says.
         */}
         {canEdit && (
-          <span className="inline-flex items-center gap-1.5 text-[11px] leading-snug text-content-muted">
+          <span className="hidden items-center gap-1.5 text-[10px] leading-snug text-content-muted xl:inline-flex">
             <Sparkles className="h-3 w-3 shrink-0 text-brand" />
             {t('doc.pressEditToConvert')}
           </span>

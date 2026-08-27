@@ -1,7 +1,8 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { Toaster } from 'sonner';
 
+import { installApiWarmOnIntent } from '@/shared/api/warm-on-intent';
 import { useIsTouchDevice } from '@/shared/lib/hooks';
 import { QueryProvider } from './query-provider';
 import { RealtimeProvider } from './realtime-provider';
@@ -65,17 +66,30 @@ const AppToaster = () => {
  * Provider order matters: query cache → session (needs the cache to clear it)
  * → theme (reads the user) → realtime (needs an authenticated session).
  */
-export const AppProviders = ({ children }: { children: ReactNode }) => (
-  <BrowserRouter>
-    <QueryProvider>
-      <SessionProvider>
-        <ThemeProvider>
-          <RealtimeProvider>
-            {children}
-            <AppToaster />
-          </RealtimeProvider>
-        </ThemeProvider>
-      </SessionProvider>
-    </QueryProvider>
-  </BrowserRouter>
-);
+export const AppProviders = ({ children }: { children: ReactNode }) => {
+  /*
+   * Outside every provider on purpose.
+   *
+   * It needs no session, no cache and no theme — it is two passive document
+   * listeners that start the API booting when somebody begins typing, so that
+   * the cold start is paid for during the typing rather than after it. See
+   * `warm-on-intent` for why that is nearly free. Installed here because this
+   * is the one component guaranteed to be mounted for the life of the tab.
+   */
+  useEffect(installApiWarmOnIntent, []);
+
+  return (
+    <BrowserRouter>
+      <QueryProvider>
+        <SessionProvider>
+          <ThemeProvider>
+            <RealtimeProvider>
+              {children}
+              <AppToaster />
+            </RealtimeProvider>
+          </ThemeProvider>
+        </SessionProvider>
+      </QueryProvider>
+    </BrowserRouter>
+  );
+};
