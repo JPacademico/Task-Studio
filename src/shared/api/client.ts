@@ -138,16 +138,68 @@ api.interceptors.request.use((config) => {
  * request behind it will produce a real error message of its own.
  */
 export const wakeApi = (): void => {
-  if (apiIsWarm()) return;
+  void ensureApiAwake();
+};
+
+/** Whether the container has answered recently enough to be trusted awake. */
+export const isApiWarm = (): boolean => apiIsWarm();
+
+/**
+ * The same boot, but awaitable — and shared.
+ *
+ * `wakeApi` is fire-and-forget because nothing was ever waiting on it. One
+ * thing now is: the provider sign-in buttons hand the *browser* to the API
+ * (see `OAuthButtons`), and a full-page navigation to a sleeping container
+ * parks the user on the hosting platform's own loading page — outside the app,
+ * with no branding, no explanation and no indication anything is happening —
+ * for as long as the boot takes. The only way to avoid that is to not navigate
+ * until the container can answer.
+ *
+ * One promise is shared by every caller, so the auth shell's mount probe and a
+ * click on "Continue with Google" a second later are the same request rather
+ * than two competing ones.
+ *
+ * Resolves `true` when the API answered and `false` when it gave up. A `false`
+ * is not a reason to refuse to continue — the caller has better information
+ * about what to do next — it just means the wait bought nothing.
+ */
+let wakeInFlight: Promise<boolean> | null = null;
+
+export const ensureApiAwake = (): Promise<boolean> => {
+  if (apiIsWarm()) return Promise.resolve(true);
+  if (wakeInFlight) return wakeInFlight;
 
   const origin = env.apiUrl.replace(/\/api\/v\d+$/, '');
-  void axios
-    .get(`${origin}/health`, { timeout: COLD_TIMEOUT_MS })
-    .then(() => {
-      lastResponseAt = Date.now();
-      healthProbeSucceeded = true;
-    })
-    .catch(() => undefined);
+
+  /*
+   * Probes in sequence rather than one long request.
+   *
+   * A cold boot does not fail — the edge holds the connection open — so a
+   * single 60s GET usually is enough. But a container that is *starting* can
+   * also answer 502 or drop the connection outright before it is ready, and a
+   * single attempt reads that as "the server is down" when it means "not
+   * yet". Three attempts across the same overall budget covers both shapes,
+   * and every one of them is a plain unauthenticated GET on an endpoint that
+   * touches the database, so it wakes Neon too.
+   */
+  wakeInFlight = (async () => {
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      try {
+        await axios.get(`${origin}/health`, { timeout: COLD_TIMEOUT_MS });
+        lastResponseAt = Date.now();
+        healthProbeSucceeded = true;
+        return true;
+      } catch {
+        if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, 1_500));
+      }
+    }
+
+    return false;
+  })().finally(() => {
+    wakeInFlight = null;
+  });
+
+  return wakeInFlight;
 };
 
 /**
@@ -176,6 +228,20 @@ const SIGN_IN_PATHS = [
   '/auth/forgot-password',
   '/auth/reset-password',
   '/auth/oauth/',
+  /*
+   * And logging *out*, which belongs here for the mirror-image reason.
+   *
+   * Sign-out stops waiting on the revoke after a couple of seconds and clears
+   * the session locally — see `useSignOut` — so the request is still in flight
+   * when its own tokens are dropped. If it then answers 401 the retry path
+   * would try to refresh a token that no longer exists, fail, and announce
+   * "your session expired" to somebody who had just deliberately ended it.
+   *
+   * A 401 from this endpoint means the token was already gone, which is the
+   * outcome the call was asking for. There is nothing to refresh and nothing
+   * to report.
+   */
+  '/auth/logout',
 ];
 
 const isSignInCall = (url: string | undefined): boolean =>

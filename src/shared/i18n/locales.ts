@@ -95,6 +95,8 @@ const en = {
 
   // ---- Auth: signing in with a provider ---------------------------------
   'auth.oauth.divider': 'or',
+  'auth.oauth.waking':
+    'Waking the server before handing you over, so you are not left on a blank page. This only happens on the first visit in a while.',
   'auth.oauth.continueWith': 'Continue with {provider}',
   'auth.oauth.signUpWith': 'Sign up with {provider}',
   'auth.oauth.finishing': 'Signing you in…',
@@ -175,6 +177,7 @@ const en = {
   'nav.closeMenu': 'Close menu',
   'nav.account': 'Account',
   'nav.signOut': 'Sign out',
+  'nav.signingOut': 'Signing out…',
   'nav.notifications': 'Notifications',
   'nav.search': 'Search',
   'nav.newProject': 'New project',
@@ -188,6 +191,8 @@ const en = {
   'dash.allProjects': 'All projects',
   'dash.yourProjects': 'Your projects',
   'dash.newProject': 'New project',
+  'dash.greeting': 'Good to see you, {name}.',
+  'dash.greetingFallback': 'there',
   'agenda.nothingCompleted': 'Nothing completed yet',
   'agenda.nothingScheduled': 'Nothing scheduled',
   'agenda.noNotesBody': 'No one has attached a note to your tasks yet.',
@@ -232,6 +237,10 @@ const en = {
 
   // ---- Create project ----------------------------------------------------
   'project.newTitle': 'New project',
+  'project.pin': 'Pin project',
+  'project.unpin': 'Unpin project',
+  'project.doneCount': '{count} done',
+  'project.openCount': '{count} open',
   'project.newSubtitle': 'You become the owner and can invite your roster right after.',
   'project.create': 'Create project',
   'project.name': 'Name',
@@ -1275,7 +1284,7 @@ const en = {
   // ---- Theme gallery ------------------------------------------
   'skin.STUDIO.tagline': 'The quiet default',
   'skin.STUDIO.body':
-    'Soft surfaces, one indigo accent and nothing that asks for your attention — the look the rest of these are a departure from.',
+    'Soft surfaces, one petrol accent and nothing that asks for your attention — the look the rest of these are a departure from.',
   'skin.PAPER.tagline': 'Illustrated and loud',
   'skin.PAPER.body':
     'Thick ink outlines, chunky corners and shadows that read as cut paper lying on the page rather than as a blur.',
@@ -1455,6 +1464,8 @@ const ptBR: Record<TranslationKey, string> = {
 
   // ---- Auth: entrar com um provedor -------------------------------------
   'auth.oauth.divider': 'ou',
+  'auth.oauth.waking':
+    'Acordando o servidor antes de te encaminhar, para você não ficar numa página em branco. Isso só acontece na primeira visita depois de um tempo.',
   'auth.oauth.continueWith': 'Continuar com {provider}',
   'auth.oauth.signUpWith': 'Criar conta com {provider}',
   'auth.oauth.finishing': 'Entrando…',
@@ -1535,6 +1546,7 @@ const ptBR: Record<TranslationKey, string> = {
   'nav.closeMenu': 'Fechar menu',
   'nav.account': 'Conta',
   'nav.signOut': 'Sair',
+  'nav.signingOut': 'Saindo…',
   'nav.notifications': 'Notificações',
   'nav.search': 'Buscar',
   'nav.newProject': 'Novo projeto',
@@ -1548,6 +1560,8 @@ const ptBR: Record<TranslationKey, string> = {
   'dash.allProjects': 'Todos os projetos',
   'dash.yourProjects': 'Seus projetos',
   'dash.newProject': 'Novo projeto',
+  'dash.greeting': 'Que bom te ver, {name}.',
+  'dash.greetingFallback': 'por aqui',
   'agenda.nothingCompleted': 'Nada concluído ainda',
   'agenda.nothingScheduled': 'Nada agendado',
   'agenda.noNotesBody': 'Ninguém anexou uma nota às suas tarefas ainda.',
@@ -1592,6 +1606,10 @@ const ptBR: Record<TranslationKey, string> = {
   'roster.noMatchBody': 'Somente contas verificadas do Task Studio podem ser convidadas.',
 
   'project.newTitle': 'Novo projeto',
+  'project.pin': 'Fixar projeto',
+  'project.unpin': 'Desafixar projeto',
+  'project.doneCount': '{count} concluídas',
+  'project.openCount': '{count} em aberto',
   'project.newSubtitle': 'Você se torna o dono e pode convidar sua equipe logo em seguida.',
   'project.create': 'Criar projeto',
   'project.name': 'Nome',
@@ -2590,7 +2608,7 @@ const ptBR: Record<TranslationKey, string> = {
   // ---- Theme gallery ------------------------------------------
   'skin.STUDIO.tagline': 'O padrão discreto',
   'skin.STUDIO.body':
-    'Superfícies suaves, um único acento índigo e nada que peça sua atenção — o visual do qual todos os outros são um desvio.',
+    'Superfícies suaves, um único acento azul-petróleo e nada que peça sua atenção — o visual do qual todos os outros são um desvio.',
   'skin.PAPER.tagline': 'Ilustrado e barulhento',
   'skin.PAPER.body':
     'Contornos grossos de tinta, cantos robustos e sombras que parecem papel recortado pousado sobre a página, em vez de um borrão.',

@@ -1,8 +1,10 @@
-import type { ReactElement } from 'react';
+import { useState, type MouseEvent, type ReactElement } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { authApi, type OAuthProvider } from '@/features/auth/api/auth.api';
+import { ensureApiAwake, isApiWarm } from '@/shared/api/client';
 import { cn } from '@/shared/lib/cn';
+import { SkinLoader } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
 /**
@@ -75,9 +77,30 @@ interface OAuthButtonsProps {
  * provider's own origin, setting the provider's own cookies. There is nothing
  * an XHR could do with it. So the button hands the browser to the API, which
  * redirects onward — see `authApi.oauthStartUrl` and the callback screen.
+ *
+ * ## Why the navigation waits
+ *
+ * That handover is a *full page navigation*, and on a free-tier host the
+ * container it lands on is asleep. The browser leaves the app immediately and
+ * then sits on the hosting platform's own loading page — unbranded, silent,
+ * for the length of a Node boot plus a Neon connect — before Google is ever
+ * reached. From the user's side that is indistinguishable from having clicked
+ * a broken link into somebody else's website, which is exactly the moment a
+ * sign-in screen cannot afford to look untrustworthy.
+ *
+ * So the click waits for `/health` to answer before it navigates, and says so
+ * while it waits. The wait is usually zero: `AuthShell` starts the same boot
+ * on mount, `ensureApiAwake` shares that one promise, and by the time anybody
+ * has read the form and chosen a provider the container is normally up.
+ *
+ * `href` stays real. Middle-click, ⌘-click and "open in new tab" go straight
+ * through — a modified click is not intercepted — because taking those away
+ * to add a spinner would be a bad trade.
  */
 export const OAuthButtons = ({ intent, className }: OAuthButtonsProps) => {
   const t = useT();
+  /** The provider whose click is waiting on the container, if any. */
+  const [waking, setWaking] = useState<OAuthProvider | null>(null);
 
   const { data: providers } = useQuery({
     queryKey: ['auth', 'oauth-providers'],
@@ -93,6 +116,26 @@ export const OAuthButtons = ({ intent, className }: OAuthButtonsProps) => {
   );
 
   if (available.length === 0) return null;
+
+  const start = async (event: MouseEvent<HTMLAnchorElement>, provider: OAuthProvider) => {
+    // A modified click means "open this somewhere else" — leave it alone.
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+    event.preventDefault();
+    const url = authApi.oauthStartUrl(provider);
+
+    if (isApiWarm()) {
+      window.location.assign(url);
+      return;
+    }
+
+    setWaking(provider);
+    // Navigate either way. A boot that could not be confirmed is still far
+    // more likely to answer than not, and refusing to continue would strand
+    // somebody who has already decided how they want to sign in.
+    await ensureApiAwake();
+    window.location.assign(url);
+  };
 
   return (
     <div className={cn('space-y-3', className)}>
@@ -121,16 +164,23 @@ export const OAuthButtons = ({ intent, className }: OAuthButtonsProps) => {
             <a
               key={provider}
               href={authApi.oauthStartUrl(provider)}
+              onClick={(event) => void start(event, provider)}
+              aria-busy={waking === provider || undefined}
               className={cn(
                 'ui-btn inline-flex h-10 w-full select-none items-center justify-center gap-2.5 rounded-xl',
                 'border border-edge px-4 text-sm font-medium text-content',
                 'transition-[transform,background-color,border-color] duration-150 ease-studio',
                 'hover:border-brand/50 hover:bg-surface-sunken active:scale-[0.98]',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
+                // A second click during the wait would start a second
+                // navigation; the whole row goes inert rather than just the
+                // one that was pressed.
+                waking && 'pointer-events-none',
+                waking && waking !== provider && 'opacity-50',
               )}
             >
               <span className="shrink-0">
-                <Mark />
+                {waking === provider ? <SkinLoader size="sm" tone="inherit" /> : <Mark />}
               </span>
               <span className="whitespace-nowrap">
                 {t(intent === 'signUp' ? 'auth.oauth.signUpWith' : 'auth.oauth.continueWith', {
@@ -141,6 +191,24 @@ export const OAuthButtons = ({ intent, className }: OAuthButtonsProps) => {
           );
         })}
       </div>
+
+      {/*
+        Said only once the wait is real.
+
+        Rendering this permanently would be an apology for a delay that, on a
+        warm container, does not happen — and a sign-in screen that opens by
+        explaining that it might be slow is worse than one that is
+        occasionally slow. It appears when a boot is actually being waited on,
+        which is also the only moment it is true.
+      */}
+      {waking && (
+        <p
+          role="status"
+          className="text-center text-[11px] leading-relaxed text-content-muted"
+        >
+          {t('auth.oauth.waking')}
+        </p>
+      )}
     </div>
   );
 };

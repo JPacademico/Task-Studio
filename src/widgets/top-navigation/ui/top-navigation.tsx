@@ -14,7 +14,7 @@ import { cn } from '@/shared/lib/cn';
 import { useIsTouchDevice } from '@/shared/lib/hooks';
 import { useNavPreferences } from '@/shared/lib/nav-preferences.store';
 import { useEdgeReveal } from '@/shared/lib/use-edge-reveal';
-import { Avatar, Button, EdgeAffordance, NavPinButton, StudioMark } from '@/shared/ui';
+import { Avatar, Button, EdgeAffordance, NavPinButton, SkinLoader, StudioMark } from '@/shared/ui';
 
 interface TopNavigationProps {
   onOpenMobileMenu: () => void;
@@ -32,7 +32,7 @@ export const TopNavigation = ({ onOpenMobileMenu, onCreateProject }: TopNavigati
 
   const { isConnected } = useRealtime();
   const user = useSessionStore((state) => state.user);
-  const signOut = useSignOut();
+  const { signOut, isSigningOut } = useSignOut();
 
   const isPinned = useNavPreferences((state) => state.pinned.top);
   const togglePin = useNavPreferences((state) => state.togglePin);
@@ -157,13 +157,32 @@ export const TopNavigation = ({ onOpenMobileMenu, onCreateProject }: TopNavigati
                     {t('nav.profileSettings')}
                   </Link>
 
+                  {/*
+                    Says it is working, and cannot be pressed twice.
+
+                    The revoke is a network call against a container the host
+                    may have stopped, so this is not always instant — and a
+                    menu item that does nothing visible for half a minute is
+                    one people click again, which is how a single sign-out
+                    became two. See `useSignOut`.
+                  */}
                   <button
                     type="button"
                     onClick={() => void signOut()}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-danger transition-colors hover:bg-danger/10"
+                    disabled={isSigningOut}
+                    aria-busy={isSigningOut || undefined}
+                    className={cn(
+                      'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-danger',
+                      'transition-colors hover:bg-danger/10',
+                      'disabled:pointer-events-none disabled:opacity-70',
+                    )}
                   >
-                    <LogOut className="h-3.5 w-3.5" />
-                    {t('nav.signOut')}
+                    {isSigningOut ? (
+                      <SkinLoader size="sm" tone="inherit" />
+                    ) : (
+                      <LogOut className="h-3.5 w-3.5" />
+                    )}
+                    {t(isSigningOut ? 'nav.signingOut' : 'nav.signOut')}
                   </button>
                 </motion.div>
               </>

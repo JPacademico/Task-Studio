@@ -17,8 +17,8 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC_DIR = join(ROOT, 'public');
 const ICONS_DIR = join(PUBLIC_DIR, 'icons');
 
-const BRAND = [99, 102, 241]; // #6366f1
-const BRAND_DEEP = [79, 70, 229]; // #4f46e5
+const BRAND = [14, 116, 144]; // #0e7490
+const BRAND_DEEP = [21, 94, 117]; // #155e75
 
 // Post-it palette: a warm yellow sheet, a shaded fold, and ink for the lines.
 const PAPER_TOP = [253, 224, 138]; // #fde08a
@@ -169,8 +169,8 @@ const drawIcon = (size, { maskable = false } = {}) => {
 const FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
     <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#6366f1"/>
-      <stop offset="1" stop-color="#4f46e5"/>
+      <stop offset="0" stop-color="#0e7490"/>
+      <stop offset="1" stop-color="#155e75"/>
     </linearGradient>
     <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#fde08a"/>

@@ -48,8 +48,25 @@
     --content: 24 24 32;
     --content-muted: 92 92 110;
     --content-faint: 140 140 158;
-    --brand: 99 102 241;
-    --brand-soft: 224 225 255;
+    /*
+     * Petrol, not indigo.
+     *
+     * `#6366f1` is the colour every framework starter, every component library
+     * demo and every AI-assisted project ships with, and a product whose whole
+     * argument is that it feels hand-made cannot open on the most default
+     * accent in software. Deep teal is the complement of the amber sheet in the
+     * app's own mark, which is what makes the logo tile work — and it is far
+     * enough round the wheel from the three semantic colours to survive being
+     * shrunk to a 10px status chip: 192° against `--positive` at 160°,
+     * `--warning` at 38° and `--danger` at 0°.
+     *
+     * Dark takes a much lighter tint of the same hue rather than the same
+     * value. `#0e7490` on a `#0f0f12` surface is 2.1:1 — a brand colour nobody
+     * can find — and every skin in this file makes the same move for the same
+     * reason.
+     */
+    --brand: 14 116 144;
+    --brand-soft: 207 240 246;
     --brand-contrast: 255 255 255;
     --positive: 16 185 129;
     --warning: 245 158 11;
@@ -117,8 +134,8 @@
     --content: 245 245 247;
     --content-muted: 163 163 178;
     --content-faint: 110 110 126;
-    --brand: 129 132 255;
-    --brand-soft: 38 38 74;
+    --brand: 34 211 238;
+    --brand-soft: 12 54 68;
     --brand-contrast: 12 12 18;
     --positive: 52 211 153;
     --warning: 251 191 36;

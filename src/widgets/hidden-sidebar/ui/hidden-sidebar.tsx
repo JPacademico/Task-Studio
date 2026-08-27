@@ -37,6 +37,7 @@ import {
   NavGlyph,
   NavPinButton,
   RunicText,
+  SkinLoader,
   StudioMark,
 } from '@/shared/ui';
 import { useT, type TranslationKey } from '@/shared/i18n';
@@ -274,7 +275,7 @@ export const HiddenSidebar = ({ isMobileOpen, onMobileClose }: HiddenSidebarProp
   const t = useT();
   const isTouch = useIsTouchDevice();
   const user = useCurrentUser();
-  const signOut = useSignOut();
+  const { signOut, isSigningOut } = useSignOut();
 
   const isPinned = useNavPreferences((state) => state.pinned.left);
   const togglePin = useNavPreferences((state) => state.togglePin);
@@ -421,17 +422,24 @@ export const HiddenSidebar = ({ isMobileOpen, onMobileClose }: HiddenSidebarProp
           <button
             type="button"
             onClick={() => void signOut()}
+            disabled={isSigningOut}
+            aria-busy={isSigningOut || undefined}
             className={cn(
               'mt-3 flex w-full items-center gap-2.5 rounded-2xl border border-transparent px-3 py-2',
               'text-xs font-semibold text-content-muted transition-colors duration-150',
               'hover:border-danger/30 hover:bg-danger/10 hover:text-danger',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40',
+              'disabled:pointer-events-none disabled:opacity-70',
             )}
           >
             <span className="grid h-7 w-7 shrink-0 place-items-center rounded-xl bg-surface-sunken">
-              <LogOut className="h-3.5 w-3.5" />
+              {isSigningOut ? (
+                <SkinLoader size="sm" tone="inherit" />
+              ) : (
+                <LogOut className="h-3.5 w-3.5" />
+              )}
             </span>
-            {t('nav.signOut')}
+            {t(isSigningOut ? 'nav.signingOut' : 'nav.signOut')}
           </button>
 
           {!isTouch && (

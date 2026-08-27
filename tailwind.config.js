@@ -49,6 +49,28 @@ export default {
         danger: 'rgb(var(--danger) / <alpha-value>)',
       },
       /**
+       * 12%, which Tailwind's stock scale does not have.
+       *
+       * The opacity modifier on a colour (`bg-brand/12`) is looked up in this
+       * scale, and the stock one steps by 5 — so `/12` matches nothing and
+       * Tailwind emits **no rule at all**. Not a fallback, not a warning: the
+       * class lands in the markup, resolves to nothing, and the element paints
+       * transparent.
+       *
+       * That had happened twenty-six times: every tinted icon chip in the app
+       * (`bg-brand/12`) and the two status wells on a task card
+       * (`bg-danger/12`, `bg-warning/12`) were rendering with no background,
+       * which reads as a design choice rather than as a bug and so had never
+       * been reported.
+       *
+       * Adding the step is the fix rather than rewriting all twenty-six to
+       * `/15`: 12% is what the code asks for, and one scale entry cannot be
+       * fat-fingered the way twenty-six edits can.
+       */
+      opacity: {
+        12: '0.12',
+      },
+      /**
        * Radii are variables too: a skin is not just a palette, and the
        * difference between the illustrated look and the terminal one is mostly
        * how round the boxes are. `full` stays a literal pill on every skin.
