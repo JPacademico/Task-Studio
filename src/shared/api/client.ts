@@ -248,6 +248,18 @@ const isSignInCall = (url: string | undefined): boolean =>
   Boolean(url && SIGN_IN_PATHS.some((path) => url.includes(path)));
 
 /**
+ * The API's marker for "this account has been suspended".
+ *
+ * A code on the payload, not a substring of the message — the message is
+ * user-facing prose that will be reworded, and matching on it would be a
+ * sign-out that silently stops working the day somebody improves the sentence.
+ */
+const SUSPENDED_CODE = 'ACCOUNT_SUSPENDED';
+
+const isSuspended = (error: AxiosError): boolean =>
+  (error.response?.data as { code?: string } | undefined)?.code === SUSPENDED_CODE;
+
+/**
  * Single in-flight refresh shared by every waiting request: a burst of 401s
  * after a cold start must not fire N refreshes and invalidate the token family.
  */
@@ -298,6 +310,21 @@ api.interceptors.response.use(
 
     // A rejection that carries a response still proves the container answered.
     if (error.response) lastResponseAt = Date.now();
+
+    /*
+     * A suspended account is not a session to renew — it is one to end.
+     *
+     * The API marks this 403 with a code rather than leaving it to be told
+     * apart from every other refusal by its wording (see `banError` on the
+     * API). Without this, somebody suspended mid-session sits in an app where
+     * every single request fails with a toast and nothing explains why; with
+     * it, they land back on the sign-in screen, and the login attempt they make
+     * there returns the full reason and the end date.
+     */
+    if (status === 403 && isSuspended(error)) {
+      notifySessionExpired();
+      return Promise.reject(error);
+    }
 
     if (status !== 401 || !config || config._retried || isSignInCall(config.url)) {
       return Promise.reject(error);

@@ -155,10 +155,42 @@ interface SwitchProps {
   onChange: (checked: boolean) => void;
   label?: string;
   id?: string;
+  /** Applied to the row, so a compact surface can set its own type scale. */
+  className?: string;
 }
 
-export const Switch = ({ checked, onChange, label, id }: SwitchProps) => (
-  <label htmlFor={id} className="flex cursor-pointer items-center gap-2.5 text-sm">
+/**
+ * A two-state toggle.
+ *
+ * ## Why the knob is a flex child and not an absolute one
+ *
+ * It used to be `absolute top-0.5` inside a `relative` track, with no `left` —
+ * so its horizontal origin was its *static position*, which is a function of
+ * the button's own box model rather than of anything stated here. Under a skin
+ * that gives buttons padding, or a browser that resolves the static position of
+ * an out-of-flow first child differently, the knob drifts out of its track and
+ * lands on whatever is beside it. That is exactly what it did on the repository
+ * import panel: a white circle sitting on top of the label, over text nobody
+ * could then read.
+ *
+ * As a flex child with `items-center` there is no static position to resolve:
+ * the knob is laid out inside the track, centred vertically by the container,
+ * and the only thing left for `translate-x` to express is the travel. The
+ * geometry is then arithmetic anybody can check — 36px track, 16px knob, 2px of
+ * clearance at either end.
+ *
+ * ## Why the label does not set its own size
+ *
+ * It did, at `text-sm`, and every caller that put one of these on a compact
+ * surface got a control shouting one size larger than the panel around it.
+ * `className` on the row means the *surface* decides, which is where that
+ * decision belongs — the switch's job is the track and the knob.
+ */
+export const Switch = ({ checked, onChange, label, id, className }: SwitchProps) => (
+  <label
+    htmlFor={id}
+    className={cn('flex cursor-pointer items-center gap-2.5 text-sm', className)}
+  >
     <button
       id={id}
       type="button"
@@ -166,14 +198,16 @@ export const Switch = ({ checked, onChange, label, id }: SwitchProps) => (
       aria-checked={checked}
       onClick={() => onChange(!checked)}
       className={cn(
-        'relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200',
+        'inline-flex h-5 w-9 shrink-0 items-center rounded-full p-0 transition-colors duration-200',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
         checked ? 'bg-brand' : 'bg-edge',
       )}
     >
       <span
+        aria-hidden
         className={cn(
-          'absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ease-studio',
-          checked ? 'translate-x-[1.15rem]' : 'translate-x-0.5',
+          'h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ease-studio',
+          checked ? 'translate-x-[1.125rem]' : 'translate-x-[0.125rem]',
         )}
       />
     </button>

@@ -25,6 +25,13 @@ const RecycleBinPage = lazy(() => import('@/pages/recycle-bin/recycle-bin-page')
 const InvitationsPage = lazy(() => import('@/pages/invitations/invitations-page'));
 const SettingsPage = lazy(() => import('@/pages/settings/settings-page'));
 const ThemeGalleryPage = lazy(() => import('@/pages/themes/theme-gallery-page'));
+/*
+ * The moderation console, split off like the rest — and it is the one chunk
+ * essentially nobody ever downloads, which is exactly the argument for keeping
+ * it lazy: a page reachable by one person a month should not be in the bundle
+ * every visitor pays for.
+ */
+const AdminPage = lazy(() => import('@/pages/admin/admin-page'));
 
 export const AppRouter = () => (
   <Routes>
@@ -48,6 +55,21 @@ export const AppRouter = () => (
       before the code was ever spent.
     */}
     <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
+
+    {/*
+      Outside `ProtectedRoute`, outside `GuestRoute`, and outside `AppLayout`.
+
+      All three are deliberate. The administrator is not a *user* — there is no
+      account behind this and the API authenticates it with a password from the
+      deployment's environment (see `AdminAuthService`) — so wrapping it in a
+      guard that asks about a user session would be asking the wrong question,
+      in both directions: `ProtectedRoute` would bounce an admin who is not
+      signed in, and `GuestRoute` would bounce one who is.
+
+      No `AppLayout` either. The rail, the chat dock and the project rooms all
+      belong to somebody's workspace, and this page is not in one.
+    */}
+    <Route path="/admin" element={<AdminPage />} />
 
     <Route element={<ProtectedRoute />}>
       <Route element={<AppLayout />}>

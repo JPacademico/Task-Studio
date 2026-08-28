@@ -5,7 +5,9 @@ import { errorMessage } from '@/shared/api/client';
 import { queryKeys } from '@/shared/api/query-keys';
 import { translate } from '@/shared/i18n';
 import { organizationApi } from '../api/organization.api';
+import type { Project, ProjectListItem } from '@/entities/project/model/types';
 import type {
+  Organization,
   OrganizationInviteDraft,
   OrganizationMember,
   OrgRole,
@@ -267,17 +269,136 @@ export const useAttachProject = (organizationId: string) => {
   });
 };
 
+/**
+ * Take a project out of a company, without waiting to be told it worked.
+ *
+ * ## Why this one is optimistic and `useAttachProject` is not
+ *
+ * Because of what each can fail on. Filing a project is a *claim* — it needs
+ * admin rights on the company and ownership of the project, and the server is
+ * the only thing that knows whether the caller has both, so showing it as done
+ * before the answer arrives is showing something that may well be refused.
+ * Unfiling is a withdrawal: either party may do it, the caller is one of them
+ * by construction (they are looking at a control that is only drawn for
+ * somebody entitled to press it), and the API's own rule says as much. A
+ * refusal here means something has changed underneath the page, which is
+ * exactly the case a rollback is for.
+ *
+ * And the wait was the whole complaint. On a free-tier API that has gone to
+ * sleep, "remove from organization" sat on a spinner for the length of a cold
+ * boot before the card moved — for a change that is a single nullable column.
+ *
+ * ## What is rewritten, and why both halves
+ *
+ * Two caches show this fact from opposite directions and both have to move
+ * together, or the app contradicts itself for the length of a round trip:
+ *
+ *   - the **company**, which lists the project on its board, and
+ *   - the **project**, whose header draws a chip naming the company.
+ *
+ * Every cached copy of either is patched — the detail, the lists, the seeded
+ * placeholder copies — by walking the two key prefixes rather than guessing
+ * which queries happen to be mounted.
+ */
 export const useDetachProject = (organizationId: string) => {
+  const queryClient = useQueryClient();
   const refresh = useOrganizationRefresh();
 
   return useMutation({
     mutationFn: (projectId: string) =>
       organizationApi.detachProject(organizationId, projectId),
-    onSuccess: () => {
-      refresh();
+
+    onMutate: async (projectId: string) => {
+      /*
+       * In-flight reads are cancelled first, or one of them lands after this
+       * write and puts the project straight back on the board.
+       */
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: queryKeys.organizations.all }),
+        queryClient.cancelQueries({ queryKey: queryKeys.projects.all }),
+      ]);
+
+      const previous = [
+        ...queryClient.getQueriesData({ queryKey: queryKeys.organizations.all }),
+        ...queryClient.getQueriesData({ queryKey: queryKeys.projects.all }),
+      ];
+
+      // The company's copies: drop the project from whatever list holds it.
+      for (const [key, data] of queryClient.getQueriesData({
+        queryKey: queryKeys.organizations.all,
+      })) {
+        if (!data) continue;
+
+        if (Array.isArray(data)) {
+          queryClient.setQueryData(
+            key,
+            (data as Organization[]).map((organization) =>
+              organization.id === organizationId
+                ? {
+                    ...organization,
+                    projects: organization.projects?.filter(
+                      (project) => project.id !== projectId,
+                    ),
+                  }
+                : organization,
+            ),
+          );
+          continue;
+        }
+
+        const organization = data as Organization;
+        if (organization.id !== organizationId || !organization.projects) continue;
+
+        queryClient.setQueryData(key, {
+          ...organization,
+          projects: organization.projects.filter((project) => project.id !== projectId),
+        });
+      }
+
+      // The project's own copies: the header chip has to go with it.
+      for (const [key, data] of queryClient.getQueriesData({
+        queryKey: queryKeys.projects.all,
+      })) {
+        if (!data) continue;
+
+        if (Array.isArray(data)) {
+          const list = data as ProjectListItem[];
+          if (!list.some((project) => project.id === projectId)) continue;
+
+          queryClient.setQueryData(
+            key,
+            list.map((project) =>
+              project.id === projectId ? { ...project, organization: null } : project,
+            ),
+          );
+          continue;
+        }
+
+        const project = data as Project;
+        if (project?.id !== projectId) continue;
+        queryClient.setQueryData(key, { ...project, organization: null });
+      }
+
+      /*
+       * The toast fires here rather than in `onSuccess`, which is the point of
+       * the whole exercise: the user is told the thing they can already see has
+       * happened. `onError` corrects it if the server disagrees.
+       */
       toast.success(translate('org.projectUnfiled'));
+
+      return { previous };
     },
-    onError: (error) => toast.error(errorMessage(error)),
+
+    onError: (error, _projectId, context) => {
+      // Every snapshot put back exactly as it was, then the real message.
+      for (const [key, data] of context?.previous ?? []) {
+        queryClient.setQueryData(key, data);
+      }
+      toast.error(errorMessage(error));
+    },
+
+    // Success or failure, the server is now the authority again.
+    onSettled: () => refresh(),
   });
 };
 

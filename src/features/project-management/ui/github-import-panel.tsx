@@ -217,17 +217,23 @@ export const GithubImportPanel = ({
             </div>
           )}
 
-          {/* --- The one choice worth offering ---------------------------- */}
+          {/* --- The one choice worth offering ----------------------------
+
+              A row, and nothing under it. Both this and the contributor note
+              above used to carry a paragraph explaining themselves, and on a
+              panel that is already four stacked sections of 10px type they
+              read as a wall — the reader is trying to check a repository, not
+              study the feature. The label says what the switch does; what it
+              does in detail is discoverable by using it once. */}
           {repo.canUseAssistant && (
             <div className="border-t border-edge/70 pt-2.5">
               <Switch
                 checked={useAssistant}
                 onChange={setUseAssistant}
                 label={t('github.useAssistant')}
+                // The panel's own scale, not the control's default. See `Switch`.
+                className="text-[11px]"
               />
-              <p className="mt-1 text-[10px] leading-relaxed text-content-faint">
-                {t(useAssistant ? 'github.useAssistantOn' : 'github.useAssistantOff')}
-              </p>
             </div>
           )}
 

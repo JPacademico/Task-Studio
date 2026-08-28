@@ -267,15 +267,10 @@ const en = {
   'github.pagesTitle': 'Pages it would create',
   'github.noPages': 'No README or changelog found — the project starts with an empty Documents tab.',
   'github.contributorsTitle': '{count} contributors can be invited',
-  'github.contributorsHint':
-    'Only contributors who sign in here with GitHub can be matched, and each one gets an invitation to accept or decline — nobody is added to the roster outright.',
+  'github.contributorsHint': 'Only contributors who sign in here with GitHub can be matched.',
   'github.willInvite': '{name} will be invited',
   'github.noAccount': '{login} has no Task Studio account linked to GitHub',
   'github.useAssistant': 'Let the assistant read the repository',
-  'github.useAssistantOn':
-    'It reads the README, the file tree and the open issues, then writes the name, the description and up to three starting tasks. Everything it writes is yours to edit.',
-  'github.useAssistantOff':
-    'The project takes the repository’s own name and description, its pages still come across, and it starts with no tasks.',
   'github.import': 'Create the project',
   'github.importing': 'Importing…',
   'github.importingHint':
@@ -1719,15 +1714,10 @@ const ptBR: Record<TranslationKey, string> = {
   'github.pagesTitle': 'Páginas que seriam criadas',
   'github.noPages': 'Nenhum README ou changelog encontrado — o projeto começa com a aba Documentos vazia.',
   'github.contributorsTitle': '{count} colaboradores podem ser convidados',
-  'github.contributorsHint':
-    'Só dá para reconhecer quem entra aqui pelo GitHub, e cada pessoa recebe um convite para aceitar ou recusar — ninguém entra na equipe direto.',
+  'github.contributorsHint': 'Só dá para reconhecer quem entra aqui pelo GitHub.',
   'github.willInvite': '{name} será convidado',
   'github.noAccount': '{login} não tem conta do Task Studio ligada ao GitHub',
   'github.useAssistant': 'Deixar o assistente ler o repositório',
-  'github.useAssistantOn':
-    'Ele lê o README, a árvore de arquivos e as issues abertas, e escreve o nome, a descrição e até três tarefas iniciais. Tudo o que ele escreve é seu para editar.',
-  'github.useAssistantOff':
-    'O projeto fica com o nome e a descrição do próprio repositório, as páginas vêm junto e ele começa sem tarefas.',
   'github.import': 'Criar o projeto',
   'github.importing': 'Importando…',
   'github.importingHint':

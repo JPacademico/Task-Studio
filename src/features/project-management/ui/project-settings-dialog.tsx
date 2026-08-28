@@ -181,10 +181,21 @@ export const ProjectSettingsDialog = ({
    * label on top of them. Refiling it afterwards is one click on the company
    * page.
    */
-  const handleUnfile = async () => {
+  const handleUnfile = () => {
     if (!project.organization) return;
 
-    await detachProject.mutateAsync(project.id);
+    /*
+     * Fired, not awaited — and the dialog closes on the same tick.
+     *
+     * The mutation rewrites both caches before the request leaves (see
+     * `useDetachProject`), so by the time this sheet is gone the header behind
+     * it has already dropped the company chip. Awaiting bought nothing except
+     * a spinner for the length of a round trip, which on a cold API is most of
+     * a minute for a change to one nullable column. A refusal rolls the caches
+     * back and says so in a toast, which is the right shape for something the
+     * user has already been shown as done.
+     */
+    detachProject.mutate(project.id);
     setIsConfirmingUnfile(false);
     onClose();
   };
@@ -290,7 +301,7 @@ export const ProjectSettingsDialog = ({
               variant={isConfirmingUnfile ? 'danger' : 'secondary'}
               size="sm"
               onClick={() =>
-                isConfirmingUnfile ? void handleUnfile() : setIsConfirmingUnfile(true)
+                isConfirmingUnfile ? handleUnfile() : setIsConfirmingUnfile(true)
               }
               onBlur={() => setIsConfirmingUnfile(false)}
               isLoading={detachProject.isPending}

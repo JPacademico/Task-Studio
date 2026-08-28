@@ -265,6 +265,61 @@ const Greeting = ({ name }: { name: string }) => {
  * sort to the front of the one list, which is what pinning already means
  * everywhere else in the app, and the pin on the card says which they are.
  */
+/**
+ * How many of the reader's open tasks are pulled back to choose six from.
+ *
+ * Wide enough that the ordering below has something to order — the API's own
+ * `dueAt ASC` puts undated work last, so a narrow window is a window with no
+ * undated tasks in it — and small enough to stay a cheap request. Thirty rows
+ * is a few kilobytes and covers anybody who is not drowning.
+ */
+const UP_NEXT_FETCH = 30;
+
+/** How many actually get drawn. */
+const UP_NEXT_SHOWN = 6;
+
+/**
+ * The reader's open work, in the order somebody asking "what next" means.
+ *
+ * Three bands, and the order between them is the whole point:
+ *
+ *   1. **Overdue**, most overdue first. Nothing else competes with a deadline
+ *      that has already passed.
+ *   2. **Dated and still ahead**, soonest first.
+ *   3. **Undated**, newest first. This band is the fix: the API sorts these
+ *      last and a truncated list therefore never showed one, which made a task
+ *      created without a deadline invisible on the dashboard. Newest first
+ *      inside the band because a task somebody just wrote is the one they are
+ *      most likely to be looking for.
+ *
+ * Pinned work jumps to the front of whichever band it is in — pinning means
+ * "keep this in front of me" everywhere else in the app, and a pin that did
+ * nothing here would be the odd one out.
+ */
+const rankUpNext = (tasks: Task[]): Task[] => {
+  const now = Date.now();
+
+  const band = (task: Task): number => {
+    if (!task.dueAt) return 2;
+    return Date.parse(task.dueAt) < now ? 0 : 1;
+  };
+
+  return [...tasks]
+    .sort((left, right) => {
+      const bands = band(left) - band(right);
+      if (bands !== 0) return bands;
+
+      if (left.isPinned !== right.isPinned) return left.isPinned ? -1 : 1;
+
+      // Inside a dated band, by deadline. Inside the undated one, by age.
+      if (left.dueAt && right.dueAt) {
+        return Date.parse(left.dueAt) - Date.parse(right.dueAt);
+      }
+      return Date.parse(right.createdAt) - Date.parse(left.createdAt);
+    })
+    .slice(0, UP_NEXT_SHOWN);
+};
+
 const DashboardPage = () => {
   const t = useT();
   const user = useCurrentUser();
@@ -275,7 +330,36 @@ const DashboardPage = () => {
   const { data: overview, isLoading: overviewLoading } = useUserOverview();
   const { data: projects = [], isLoading: projectsLoading } = useProjects();
   const { data: organizations = [] } = useOrganizations();
-  const { data: myTasks = [] } = useTasks({ scope: 'mine', status: 'TODO', limit: 6 });
+  /*
+   * "Up next for you", and the two things that were wrong with how it asked.
+   *
+   * It used to fetch `{ scope: 'mine', status: 'TODO', limit: 6 }`, which had
+   * two separate ways of hiding work the reader had every reason to expect:
+   *
+   *  1. **`status: 'TODO'` excluded everything in progress.** Moving a card to
+   *     "In progress" — the exact moment it becomes the thing you are doing
+   *     next — took it out of the list called "up next for you". `hideCompleted`
+   *     says what was actually meant: everything still open.
+   *
+   *  2. **`limit: 6` truncated an ordering that exiles undated work.** The API
+   *     orders by `dueAt` ascending and Postgres sorts NULLs *last*, so a task
+   *     with no deadline sits behind every task that has one. Create a task
+   *     without setting a due date — which is the default in the composer — and
+   *     with six dated tasks already open, it never appears at all. That is the
+   *     "I made a task and it isn't there" case exactly.
+   *
+   * So the window is fetched wide and cut here instead. Ordering "up next" is a
+   * judgement this surface makes and no other one shares — the task menu buckets
+   * by day, the board groups by column — so it belongs to the surface rather
+   * than to a shared endpoint whose ordering every other caller depends on.
+   */
+  const { data: openTasks = [] } = useTasks({
+    scope: 'mine',
+    hideCompleted: true,
+    limit: UP_NEXT_FETCH,
+  });
+
+  const myTasks = useMemo(() => rankUpNext(openTasks), [openTasks]);
 
   /*
    * Opening a task from here means leaving here.
