@@ -34,6 +34,18 @@ export interface RepositoryPreview {
   canUseAssistant: boolean;
 }
 
+/** Starting a board import. The file is uploaded first; this is its key. */
+export interface BoardImportPayload {
+  source: BoardImportSource;
+  /** R2 object key from the presigned upload, scope `imports`. */
+  payloadKey: string;
+  payloadName?: string;
+  organizationId?: string;
+  color?: string;
+  startsAt?: string;
+  endsAt?: string;
+}
+
 export interface RepositoryImportPayload {
   url: string;
   organizationId?: string;
@@ -51,6 +63,19 @@ export interface RepositoryImportPayload {
  * as a bug in itself.
  */
 export type ImportStatus = 'QUEUED' | 'RUNNING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED';
+
+/**
+ * Where an import is reading from.
+ *
+ * Every value is a format that needs no credential — a public repository
+ * address, or a file the user already has. That is the property that makes an
+ * importer cheap to own, and it is why the list is likely to grow rather than
+ * be replaced.
+ */
+export type ImportSource = 'GITHUB' | 'TRELLO_JSON' | 'BOARD_CSV';
+
+/** The two a file picker offers. `GITHUB` takes a URL and has its own panel. */
+export type BoardImportSource = Exclude<ImportSource, 'GITHUB'>;
 
 /**
  * The named stages, mirroring the API's `IMPORT_STEPS`.
@@ -84,14 +109,25 @@ export type ImportStep =
  */
 export interface RepositoryImportJob {
   id: string;
+  /**
+   * Which reader ran.
+   *
+   * The client uses it for exactly one thing — whether the summary line says
+   * "pages" or "columns" — which is why `documentCount` below is reused for
+   * both rather than the API carrying a fifth counter that is null on every
+   * GitHub row.
+   */
+  source: ImportSource;
   status: ImportStatus;
   step: ImportStep;
   /** 0–100, coarse and monotonic. See the API's `IMPORT_PROGRESS`. */
   progress: number;
   /** What was pasted — a label for the toast before GitHub has answered. */
   sourceUrl: string;
-  /** The canonical `owner/name`, once it is known. */
+  /** The canonical `owner/name`, or the board's own name, once it is known. */
   fullName: string | null;
+  /** The uploaded file's name, which is the label for a board import. */
+  payloadName: string | null;
   error: string | null;
   /** The project it produced, once there is one. */
   projectId: string | null;
@@ -175,4 +211,110 @@ export interface RepositoryImportSummary {
   taskCount: number;
   documentCount: number;
   invited: number;
+}
+
+/**
+ * The subscribable calendar feed.
+ *
+ * `url` is present only in the response to *minting* one — the token behind it
+ * is stored as a hash and is genuinely unrecoverable afterwards, so a status
+ * read can say whether a feed exists and never what its address is. Somebody
+ * who has lost the URL rotates; there is nothing to look up.
+ */
+export interface CalendarFeedStatus {
+  exists: boolean;
+  createdAt: string | null;
+  /** Null until a calendar client has actually fetched it once. */
+  lastAccessedAt: string | null;
+}
+
+export interface CalendarFeedSecret {
+  url: string;
+}
+
+// ---------------------------------------------------------------------------
+// Webhooks
+// ---------------------------------------------------------------------------
+
+/** Which chat product a hook points at, recognised from its hostname. */
+export type WebhookFlavour = 'generic' | 'slack' | 'discord';
+
+/**
+ * The events a project can post.
+ *
+ * Mirrors the API's `WEBHOOK_EVENTS`. Deliberately short — see the note there
+ * on the test each one had to pass, which is "would somebody who is not
+ * looking at Task Studio want to be told this".
+ */
+export type WebhookEvent =
+  | 'task.created'
+  | 'task.completed'
+  | 'task.deleted'
+  | 'meeting.scheduled'
+  | 'member.joined'
+  | 'project.completed';
+
+export interface ProjectWebhook {
+  id: string;
+  url: string;
+  flavour: WebhookFlavour;
+  /** Empty means every event, which is the default. */
+  events: WebhookEvent[];
+  isEnabled: boolean;
+  /** The last HTTP status the endpoint answered with, or null. */
+  lastStatus: number | null;
+  lastAttemptAt: string | null;
+  lastError: string | null;
+  /** Consecutive failures. At ten the hook disables itself. */
+  failureCount: number;
+  createdAt: string;
+  createdBy: { id: string; displayName: string } | null;
+}
+
+/** Creating one answers with the signing secret, once and never again. */
+export interface CreatedWebhook extends ProjectWebhook {
+  secret: string;
+}
+
+export interface WebhookPayloadDraft {
+  url: string;
+  events?: WebhookEvent[];
+}
+
+/** What a test delivery reports. */
+export interface WebhookTestResult {
+  delivered: boolean;
+  status: number | null;
+  error: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Personal access tokens
+// ---------------------------------------------------------------------------
+
+export interface ApiToken {
+  id: string;
+  name: string;
+  /** The first few characters, so two tokens can be told apart. Not secret. */
+  prefix: string;
+  lastUsedAt: string | null;
+  expiresAt: string | null;
+  revokedAt: string | null;
+  createdAt: string;
+  /**
+   * Whether it still works — revoked and expired resolved into one answer by
+   * the API, so a client cannot disagree with the guard about it.
+   */
+  isActive: boolean;
+}
+
+/** Minting one answers with its value, once. */
+export interface CreatedApiToken {
+  id: string;
+  name: string;
+  prefix: string;
+  expiresAt: string | null;
+  createdAt: string;
+  /** Shown once. No endpoint will ever return this again. */
+  token: string;
 }

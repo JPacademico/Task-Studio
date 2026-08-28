@@ -48,7 +48,19 @@ export const userApi = {
  * Two-step upload: the API only signs the request, the bytes go straight from
  * the browser to Cloudflare R2. The API never proxies media.
  */
-export type UploadScope = 'avatars' | 'banners' | 'attachments' | 'notes' | 'files';
+export type UploadScope =
+  | 'avatars'
+  | 'banners'
+  | 'attachments'
+  | 'notes'
+  | 'files'
+  /**
+   * A board export waiting to be read by an importer.
+   *
+   * The one scope whose objects are temporary by contract: the importer
+   * deletes the file as soon as the job ends, whichever way it ends.
+   */
+  | 'imports';
 
 /** Signs one object and PUTs one blob. The primitive both uploads build on. */
 const putObject = async (
@@ -263,3 +275,60 @@ export const uploadImportFile = (file: File): Promise<UploadedFile> =>
     IMPORT_MIME_TYPES,
     'Only PDF, Word (.docx) and plain-text files can be imported.',
   );
+
+/**
+ * The MIME types a board export arrives as.
+ *
+ * Longer than it looks like it should be, and every entry is a real browser's
+ * real answer for a file a person picked. Windows with no Excel installed
+ * reports a `.csv` as `text/plain`; Windows *with* Excel reports it as
+ * `application/vnd.ms-excel`; Safari has its own opinion again. Refusing the
+ * odd ones would make the feature fail for exactly the people most likely to
+ * be migrating off a spreadsheet.
+ */
+const BOARD_EXPORT_MIME = [
+  'application/json',
+  'text/csv',
+  'application/csv',
+  'text/plain',
+  'application/vnd.ms-excel',
+];
+
+/** Board exports are text, and five megabytes of it is fifty thousand cards. */
+const MAX_BOARD_EXPORT_BYTES = 5 * 1024 * 1024;
+
+/**
+ * Uploads a board export, on its way to becoming a project.
+ *
+ * ## Why the type is resolved from the extension when the browser has no idea
+ *
+ * `putObject` signs the presign for `blob.type` and PUTs with that same
+ * `Content-Type`, so a file the OS reported as `''` would sign a request the
+ * API's allow-list rejects — with an error about MIME types, for somebody who
+ * picked a perfectly ordinary `.csv`. The extension is the only signal left at
+ * that point, and it is the one the user themselves can see.
+ */
+export const uploadBoardExport = async (file: File): Promise<UploadedFile> => {
+  if (file.size === 0) throw new Error('That file is empty.');
+  if (file.size > MAX_BOARD_EXPORT_BYTES) {
+    throw new Error('Board exports must be 5 MB or smaller.');
+  }
+
+  const mimeType =
+    file.type ||
+    (file.name.toLowerCase().endsWith('.json') ? 'application/json' : 'text/csv');
+
+  if (!BOARD_EXPORT_MIME.includes(mimeType)) {
+    throw new Error('Board imports take a .json or .csv export.');
+  }
+
+  const blob = file.type ? file : new Blob([file], { type: mimeType });
+  const uploaded = await putObject(blob, 'imports');
+
+  return {
+    key: uploaded.key,
+    publicUrl: uploaded.publicUrl,
+    name: file.name,
+    size: file.size,
+  };
+};

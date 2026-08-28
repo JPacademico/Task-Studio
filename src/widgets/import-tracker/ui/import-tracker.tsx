@@ -128,13 +128,18 @@ export const ImportTracker = () => {
 
       if (job.status === 'SUCCEEDED') {
         toast.success(
-          t('toast.projectReady', { name: job.fullName ?? t('importTracker.aRepository') }),
+          t('toast.projectReady', {
+            name: job.fullName ?? job.payloadName ?? t('importTracker.aRepository'),
+          }),
           {
-            description: t('github.importedSummary', {
-              tasks: String(job.taskCount),
-              documents: String(job.documentCount),
-              invited: String(job.invitedCount),
-            }),
+            description: t(
+              job.source === 'GITHUB' ? 'github.importedSummary' : 'boardImport.summary',
+              {
+                tasks: String(job.taskCount),
+                documents: String(job.documentCount),
+                invited: String(job.invitedCount),
+              },
+            ),
           },
         );
       } else if (job.status === 'FAILED') {
@@ -289,7 +294,18 @@ const ImportRow = ({ job, onCancel, onDismiss, onOpen }: ImportRowProps) => {
    * during them reads as broken. Showing the raw paste is honest and is
    * replaced by the real name the moment there is one.
    */
-  const label = job.fullName ?? job.sourceUrl;
+  const label = job.fullName ?? job.payloadName ?? job.sourceUrl;
+
+  /*
+   * A repository produces pages; a board produces columns.
+   *
+   * The API reuses one counter for both rather than carrying a fifth field
+   * that is null on every GitHub row — see `documentCount` on the job — so the
+   * *noun* is chosen here, from the source. It is the only thing this
+   * component does with `source`, and the reason the field exists at all.
+   */
+  const summaryKey =
+    job.source === 'GITHUB' ? 'github.importedSummary' : 'boardImport.summary';
 
   return (
     <div className="space-y-2 px-3 py-2.5">
@@ -392,7 +408,7 @@ const ImportRow = ({ job, onCancel, onDismiss, onOpen }: ImportRowProps) => {
 
         {done && (
           <span className="ml-auto text-[10px] tabular-nums text-content-faint">
-            {t('github.importedSummary', {
+            {t(summaryKey, {
               tasks: String(job.taskCount),
               documents: String(job.documentCount),
               invited: String(job.invitedCount),

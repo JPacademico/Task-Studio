@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Github, PenLine } from 'lucide-react';
+import { Github, PenLine, Upload } from 'lucide-react';
 
 import { useOrganizationMembers, useOrganizations } from '@/entities/organization/model/queries';
 import { useCreateProject } from '@/entities/project/model/queries';
 import { InvitePicker } from '@/features/invite-picker/ui/invite-picker';
+import { BoardImportPanel } from './board-import-panel';
 import { GithubImportPanel } from './github-import-panel';
 import { ProjectWindowFields } from './project-window-fields';
 import { TASK_COLORS, TEXT_LIMITS } from '@/shared/config/constants';
@@ -17,14 +18,17 @@ import { useT } from '@/shared/i18n';
 const UNFILED = '';
 
 /**
- * The two ways a project comes into existence.
+ * The three ways a project comes into existence.
  *
- * A segmented control rather than a second dialog, because everything below
- * the mode switch is shared: which company it is filed under, and what colour
- * it is. An import that opened its own window would either ask those questions
- * twice or not ask them at all.
+ * A segmented control rather than three dialogs, because everything below the
+ * mode switch is shared: which company it is filed under, what colour it is,
+ * and the window it runs for. An import that opened its own window would
+ * either ask those questions twice or not ask them at all.
+ *
+ * The third arrived without changing anything above it, which is the test a
+ * shared composer has to pass to be worth having.
  */
-type Mode = 'blank' | 'github';
+type Mode = 'blank' | 'github' | 'board';
 
 interface CreateProjectDialogProps {
   isOpen: boolean;
@@ -216,6 +220,11 @@ export const CreateProjectDialog = ({
               label: t('project.modeGithub'),
               icon: <Github className="h-3 w-3" />,
             },
+            {
+              value: 'board',
+              label: t('project.modeBoard'),
+              icon: <Upload className="h-3 w-3" />,
+            },
           ]}
         />
 
@@ -312,6 +321,22 @@ export const CreateProjectDialog = ({
              * shape of this callback; the tracker in the app shell carries the
              * job to completion and offers the link when there is one.
              */
+            onStarted={onClose}
+          />
+        )}
+
+        {mode === 'board' && (
+          <BoardImportPanel
+            organizationId={filedUnder || undefined}
+            color={color}
+            /*
+             * The dialog's own date fields, resolved to instants exactly as
+             * the blank path resolves them. A board's cards carry their own
+             * deadlines, and the importer clamps any that fall past this —
+             * see `clampDeadline` — rather than refusing the whole file.
+             */
+            startsAt={fromDateInput(startsAt, 'start')}
+            endsAt={fromDateInput(endsAt, 'end')}
             onStarted={onClose}
           />
         )}

@@ -1,14 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import {
-  AlertTriangle,
-  ArrowDownToLine,
-  ArrowUpFromLine,
-  CalendarCheck2,
-  CalendarX2,
-  RefreshCw,
-} from 'lucide-react';
+import { AlertTriangle, ArrowDownToLine, ArrowUpFromLine, RefreshCw } from 'lucide-react';
 
 import { calendarApi } from '@/entities/integration/api/calendar.api';
 import {
@@ -22,6 +15,7 @@ import { formatRelative } from '@/shared/lib/dates';
 import { cn } from '@/shared/lib/cn';
 import { Button, Skeleton, Switch } from '@/shared/ui';
 import { useT, type TranslationKey } from '@/shared/i18n';
+import { GoogleCalendarMark } from './google-calendar-mark';
 
 /**
  * What the consent redirect says on the way back, per outcome.
@@ -150,9 +144,9 @@ export const CalendarConnectionPanel = () => {
         <div className="flex items-start gap-3">
           <span
             aria-hidden
-            className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand/12 text-brand"
+            className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-edge bg-surface-sunken"
           >
-            <CalendarCheck2 className="h-4 w-4" />
+            <GoogleCalendarMark className="h-5 w-5" />
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold">{t('calendar.title')}</p>
@@ -162,7 +156,15 @@ export const CalendarConnectionPanel = () => {
           </div>
         </div>
 
-        <Button size="sm" onClick={() => void connect()} isLoading={isConnecting}>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => void connect()}
+          isLoading={isConnecting}
+        >
+          {/* The same mark the meetings tab offers, so the two read as one
+              control seen twice rather than two different features. */}
+          <GoogleCalendarMark className="h-4 w-4 shrink-0" />
           {t('calendar.connect')}
         </Button>
 
@@ -191,17 +193,19 @@ export const CalendarConnectionPanel = () => {
         <span
           aria-hidden
           className={cn(
-            'mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl',
+            'mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl border',
             connection.isEnabled
-              ? 'bg-positive/12 text-positive'
-              : 'bg-surface-sunken text-content-faint',
+              ? 'border-positive/30 bg-positive/[0.08]'
+              : 'border-edge bg-surface-sunken',
           )}
         >
-          {connection.isEnabled ? (
-            <CalendarCheck2 className="h-4 w-4" />
-          ) : (
-            <CalendarX2 className="h-4 w-4" />
-          )}
+          {/* The mark rather than a state glyph: which account is connected is
+              the thing somebody scans this row for, and `isEnabled` is already
+              said by the switch three lines below. A paused connection just
+              loses its colour. */}
+          <GoogleCalendarMark
+            className={cn('h-5 w-5', !connection.isEnabled && 'opacity-40 grayscale')}
+          />
         </span>
 
         <div className="min-w-0 flex-1 leading-tight">

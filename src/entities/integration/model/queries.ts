@@ -8,10 +8,15 @@ import { queryKeys } from '@/shared/api/query-keys';
 import { translate } from '@/shared/i18n';
 import { calendarApi } from '../api/calendar.api';
 import { githubApi } from '../api/github.api';
+import { importsApi } from '../api/imports.api';
+import { tokensApi } from '../api/tokens.api';
+import { webhooksApi } from '../api/webhooks.api';
 import type {
+  BoardImportPayload,
   CalendarSettingsPayload,
   RepositoryImportJob,
   RepositoryImportPayload,
+  WebhookPayloadDraft,
 } from './types';
 
 /**
@@ -50,7 +55,7 @@ export const useStartImport = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: RepositoryImportPayload) => githubApi.start(payload),
+    mutationFn: (payload: RepositoryImportPayload) => importsApi.startRepository(payload),
     onSuccess: (job) => {
       /*
        * Seed the tracker's cache with the job we were just handed.
@@ -69,11 +74,40 @@ export const useStartImport = () => {
   });
 };
 
+/**
+ * Starting a board import.
+ *
+ * Deliberately a sibling of `useStartImport` rather than a parameter on it.
+ * The two take different payloads — a URL against an uploaded object key — and
+ * the *caller* is a different panel in a different mode, so folding them
+ * together would produce one hook whose argument is a union nobody at either
+ * call site ever passes both halves of.
+ *
+ * Everything downstream is shared: the same cache key, the same tracker, the
+ * same cancel. Which is the part worth reusing.
+ */
+export const useStartBoardImport = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: BoardImportPayload) => importsApi.startBoard(payload),
+    onSuccess: (job) => {
+      // Seeded for the same reason the repository one is: pressing the button
+      // has to produce something immediately, even on a tab whose socket is
+      // still reconnecting.
+      queryClient.setQueryData<RepositoryImportJob[]>(queryKeys.integrations.imports, (current) =>
+        current ? [job, ...current.filter((entry) => entry.id !== job.id)] : [job],
+      );
+    },
+    onError: (error) => toast.error(errorMessage(error, translate('boardImport.failed'))),
+  });
+};
+
 export const useCancelImport = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (jobId: string) => githubApi.cancel(jobId),
+    mutationFn: (jobId: string) => importsApi.cancel(jobId),
     onSuccess: (result) => {
       queryClient.setQueryData<RepositoryImportJob[]>(queryKeys.integrations.imports, (current) =>
         (current ?? []).map((job) => (job.id === result.id ? result : job)),
@@ -109,7 +143,7 @@ export const useImportJobs = () => {
 
   const query = useQuery({
     queryKey: queryKeys.integrations.imports,
-    queryFn: githubApi.listJobs,
+    queryFn: importsApi.list,
     /*
      * No `enabled` gate on the session, and none is needed.
      *
@@ -240,5 +274,167 @@ export const useDisconnectCalendar = () => {
       toast.success(translate('calendar.disconnected'));
     },
     onError: (error) => toast.error(errorMessage(error, translate('calendar.disconnectFailed'))),
+  });
+};
+
+// ---------------------------------------------------------------------------
+// The subscribable calendar feed
+// ---------------------------------------------------------------------------
+
+export const useCalendarFeed = () =>
+  useQuery({
+    queryKey: queryKeys.integrations.calendarFeed,
+    queryFn: calendarApi.feedStatus,
+    staleTime: 5 * 60_000,
+  });
+
+/**
+ * Mint a feed URL, replacing any existing one.
+ *
+ * The URL is returned to the *caller* rather than written into the cache, and
+ * that is the whole contract: it is shown once, and the status query
+ * deliberately cannot answer what it was. Putting it in the cache would make
+ * it recoverable by anything that reads that key, which is precisely the
+ * property the API gave up in order to store only a hash.
+ */
+export const useIssueCalendarFeed = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: calendarApi.issueFeed,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.integrations.calendarFeed });
+    },
+    onError: (error) => toast.error(errorMessage(error, translate('feed.issueFailed'))),
+  });
+};
+
+export const useRevokeCalendarFeed = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: calendarApi.revokeFeed,
+    onSuccess: () => {
+      queryClient.setQueryData(queryKeys.integrations.calendarFeed, {
+        exists: false,
+        createdAt: null,
+        lastAccessedAt: null,
+      });
+      toast.success(translate('feed.revoked'));
+    },
+    onError: (error) => toast.error(errorMessage(error, translate('feed.revokeFailed'))),
+  });
+};
+
+// ---------------------------------------------------------------------------
+// Webhooks
+// ---------------------------------------------------------------------------
+
+export const useProjectWebhooks = (projectId: string, enabled = true) =>
+  useQuery({
+    queryKey: queryKeys.integrations.webhooks(projectId),
+    queryFn: () => webhooksApi.list(projectId),
+    enabled: Boolean(projectId) && enabled,
+    staleTime: 60_000,
+  });
+
+export const useCreateWebhook = (projectId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: WebhookPayloadDraft) => webhooksApi.create(projectId, payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.integrations.webhooks(projectId) });
+    },
+    onError: (error) => toast.error(errorMessage(error, translate('webhooks.saveFailed'))),
+  });
+};
+
+export const useUpdateWebhook = (projectId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, ...payload }: Partial<WebhookPayloadDraft> & { id: string; isEnabled?: boolean }) =>
+      webhooksApi.update(projectId, id, payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.integrations.webhooks(projectId) });
+    },
+    onError: (error) => toast.error(errorMessage(error, translate('webhooks.saveFailed'))),
+  });
+};
+
+export const useDeleteWebhook = (projectId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (webhookId: string) => webhooksApi.remove(projectId, webhookId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.integrations.webhooks(projectId) });
+    },
+    onError: (error) => toast.error(errorMessage(error, translate('webhooks.deleteFailed'))),
+  });
+};
+
+/**
+ * Send a sample delivery and say what came back.
+ *
+ * The only mutation here that reports its own outcome as a toast rather than
+ * letting a list refresh speak for it — because the whole point of the button
+ * is to answer "did that work", and an answer somebody has to go and look for
+ * is not one.
+ */
+export const useTestWebhook = (projectId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (webhookId: string) => webhooksApi.test(projectId, webhookId),
+    onSuccess: (result) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.integrations.webhooks(projectId) });
+
+      if (result.delivered) toast.success(translate('webhooks.testDelivered'));
+      else {
+        toast.error(
+          result.error ??
+            translate('webhooks.testFailedStatus', { status: String(result.status ?? '—') }),
+        );
+      }
+    },
+    onError: (error) => toast.error(errorMessage(error, translate('webhooks.testFailed'))),
+  });
+};
+
+// ---------------------------------------------------------------------------
+// Personal access tokens
+// ---------------------------------------------------------------------------
+
+export const useApiTokens = () =>
+  useQuery({
+    queryKey: queryKeys.integrations.apiTokens,
+    queryFn: tokensApi.list,
+    staleTime: 60_000,
+  });
+
+export const useCreateApiToken = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: { name: string; expiresInDays?: number }) => tokensApi.create(payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.integrations.apiTokens });
+    },
+    onError: (error) => toast.error(errorMessage(error, translate('tokens.createFailed'))),
+  });
+};
+
+export const useRevokeApiToken = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (tokenId: string) => tokensApi.revoke(tokenId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.integrations.apiTokens });
+      toast.success(translate('tokens.revoked'));
+    },
+    onError: (error) => toast.error(errorMessage(error, translate('tokens.revokeFailed'))),
   });
 };

@@ -194,5 +194,26 @@ export const queryKeys = {
     imports: ['integrations', 'imports'] as const,
     /** Their linked calendar, and whether the deployment offers one. */
     calendar: ['integrations', 'calendar'] as const,
+    /**
+     * The subscribable feed's *status* — never its URL.
+     *
+     * A separate key from `calendar` rather than a field on it, because the
+     * two change for completely unrelated reasons: a background sync writes an
+     * error onto the connection every quarter hour, and a feed changes only
+     * when somebody presses rotate. Sharing a key would refetch one on every
+     * write to the other.
+     */
+    calendarFeed: ['integrations', 'calendar', 'feed'] as const,
+    /**
+     * One project's outbound webhooks.
+     *
+     * Under `integrations` rather than under `projects`, even though the route
+     * hangs off a project — for the reason the changelog gives about itself:
+     * every write anywhere in the app invalidates `projects.all`, and a hook
+     * list nested there would refetch on every rename and every pin.
+     */
+    webhooks: (projectId: string) => ['integrations', 'webhooks', projectId] as const,
+    /** This person's personal access tokens. */
+    apiTokens: ['integrations', 'api-tokens'] as const,
   },
 } as const;

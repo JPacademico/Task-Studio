@@ -1,9 +1,11 @@
 import { api } from '@/shared/api/client';
 import type {
+  CalendarConnection,
+  CalendarFeedSecret,
+  CalendarFeedStatus,
   CalendarSettingsPayload,
   CalendarStatus,
   CalendarSyncResult,
-  CalendarConnection,
 } from '../model/types';
 
 export const calendarApi = {
@@ -64,6 +66,31 @@ export const calendarApi = {
       '/integrations/calendar/google',
       { params: keepRemote ? { keepRemote: true } : undefined },
     );
+    return data;
+  },
+
+  // --- The subscribable feed ------------------------------------------------
+
+  /** Whether a feed exists, and whether anything has ever fetched it. */
+  async feedStatus(): Promise<CalendarFeedStatus> {
+    const { data } = await api.get<CalendarFeedStatus>('/integrations/calendar/feed');
+    return data;
+  },
+
+  /**
+   * Mint a feed URL, replacing any existing one.
+   *
+   * The value comes back exactly once. There is no endpoint that returns it
+   * again — only its hash is stored — so a client that loses this response has
+   * to rotate, which is the same contract as an API token.
+   */
+  async issueFeed(): Promise<CalendarFeedSecret> {
+    const { data } = await api.post<CalendarFeedSecret>('/integrations/calendar/feed');
+    return data;
+  },
+
+  async revokeFeed(): Promise<{ revoked: boolean }> {
+    const { data } = await api.delete<{ revoked: boolean }>('/integrations/calendar/feed');
     return data;
   },
 };

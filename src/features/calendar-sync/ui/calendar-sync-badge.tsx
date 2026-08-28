@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
-import { CalendarCheck2, CalendarPlus } from 'lucide-react';
+import { Check } from 'lucide-react';
 
 import { useCalendarStatus } from '@/entities/integration/model/queries';
 import { cn } from '@/shared/lib/cn';
 import { useT } from '@/shared/i18n';
+import { GoogleCalendarMark } from './google-calendar-mark';
 
 /**
  * Whether this reader's meetings are reaching their own calendar, said on the
@@ -17,9 +18,21 @@ import { useT } from '@/shared/i18n';
  * a meeting and asking "is this in my calendar?", and sending them to a
  * settings page to find out is the wrong shape of answer.
  *
- * So the state is here and the controls are one click away. The badge is a
- * link rather than a toggle for exactly that reason: connecting is an OAuth
- * consent flow, which is not something a chip on a calendar tab should start.
+ * So the state is here and the controls are one click away. It is a link
+ * rather than a toggle for exactly that reason: connecting is an OAuth consent
+ * flow, which is not something a chip on a calendar tab should start.
+ *
+ * ## Why the two states are different sizes
+ *
+ * They are doing different jobs, and the first version got this wrong by
+ * drawing both as the same 10px chip. **Unconnected is an offer** — it has to
+ * compete for attention with a "New meeting" button beside it, and a whisper
+ * next to a solid button reads as decoration. **Connected is a status** — the
+ * job is done, nothing is being asked, and a control that keeps shouting after
+ * you have used it is the thing people learn to ignore.
+ *
+ * So the offer is button-sized with a brand mark on it, and the confirmation
+ * shrinks back to a quiet tick once it has been accepted.
  *
  * ## Why it says nothing when the deployment has no calendar
  *
@@ -36,23 +49,52 @@ export const CalendarSyncBadge = () => {
   const connection = data.connection;
   const live = Boolean(connection?.isEnabled);
 
+  /*
+   * Connected: a quiet confirmation.
+   *
+   * Deliberately the smaller of the two. It carries the mark so the *account*
+   * is still identifiable at a glance — somebody with a work and a personal
+   * Google needs to know which one is mirroring — and nothing else.
+   */
+  if (live) {
+    return (
+      <Link
+        to="/settings"
+        title={t('calendar.badgeOnHint')}
+        className={cn(
+          'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium',
+          'border-positive/40 bg-positive/[0.08] text-positive',
+          'transition-colors hover:border-positive/70',
+        )}
+      >
+        <GoogleCalendarMark className="h-3.5 w-3.5 shrink-0" />
+        <span className="hidden sm:inline">{t('calendar.badgeOn')}</span>
+        <Check aria-hidden className="h-3 w-3 shrink-0" />
+      </Link>
+    );
+  }
+
+  /*
+   * Unconnected: an offer, sized to be seen.
+   *
+   * Height matched to the `sm` button it sits beside so the toolbar reads as
+   * one row of controls rather than a button with a sticker next to it. The
+   * label collapses on a phone — where the toolbar is already wrapping — but
+   * the mark never does, because the mark is the part that says what this is.
+   */
   return (
     <Link
       to="/settings"
-      title={t(live ? 'calendar.badgeOnHint' : 'calendar.badgeOffHint')}
+      title={t('calendar.badgeOffHint')}
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] transition-colors',
-        live
-          ? 'border-positive/40 bg-positive/[0.08] text-positive'
-          : 'border-edge text-content-faint hover:border-brand hover:text-brand',
+        'inline-flex h-8 items-center gap-2 rounded-xl border px-2.5 text-xs font-medium',
+        'border-edge bg-surface-raised text-content',
+        'transition-colors hover:border-brand hover:text-brand',
+        'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
       )}
     >
-      {live ? (
-        <CalendarCheck2 className="h-2.5 w-2.5" />
-      ) : (
-        <CalendarPlus className="h-2.5 w-2.5" />
-      )}
-      {t(live ? 'calendar.badgeOn' : 'calendar.badgeOff')}
+      <GoogleCalendarMark className="h-4 w-4 shrink-0" />
+      <span className="whitespace-nowrap">{t('calendar.badgeOff')}</span>
     </Link>
   );
 };

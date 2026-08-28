@@ -8,7 +8,9 @@ import { uploadImage, userApi } from '@/entities/user/api/user.api';
 import type { ThemePreference } from '@/entities/user/model/types';
 import { authApi } from '@/features/auth/api/auth.api';
 import { useSessionStore } from '@/features/auth/model/session.store';
+import { ApiTokensPanel } from '@/features/api-tokens/ui/api-tokens-panel';
 import { CalendarConnectionPanel } from '@/features/calendar-sync/ui/calendar-connection-panel';
+import { CalendarFeedPanel } from '@/features/calendar-sync/ui/calendar-feed-panel';
 import { SkinPicker } from '@/features/theme-toggle/ui/skin-picker';
 import { errorMessage } from '@/shared/api/client';
 import { TEXT_LIMITS } from '@/shared/config/constants';
@@ -211,7 +213,21 @@ const SettingsPage = () => {
         title={t('settings.integrations')}
         description={t('settings.integrationsHint')}
       >
-        <CalendarConnectionPanel />
+        {/*
+          Three panels, in the order somebody would want them.
+
+          Google first because it is the one people come looking for. The feed
+          second because it is the cheaper answer to the same question and most
+          people should read it before deciding — it needs no account, works
+          with Outlook and Apple Calendar, and costs nothing to try. Tokens
+          last because they are for a different person entirely: whoever is
+          writing a script rather than reading a calendar.
+        */}
+        <div className="space-y-3">
+          <CalendarConnectionPanel />
+          <CalendarFeedPanel />
+          <ApiTokensPanel />
+        </div>
       </Section>
 
       <Section title={t('settings.password')}>

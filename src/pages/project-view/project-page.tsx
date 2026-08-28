@@ -16,6 +16,7 @@ import {
   Sparkles,
   Users,
   UsersRound,
+  Webhook,
 } from 'lucide-react';
 
 import { useProjectRoom } from '@/app/providers/realtime-provider';
@@ -62,6 +63,7 @@ import {
   useTaskLayout,
 } from '@/features/task-views';
 import { ProjectWindowChip } from '@/entities/project/ui/project-window-chip';
+import { WebhooksPanel } from '@/features/webhooks/ui/webhooks-panel';
 import { cn } from '@/shared/lib/cn';
 import { formatDateTime } from '@/shared/lib/dates';
 import { Avatar, Button, PageLoader, Segmented } from '@/shared/ui';
@@ -80,6 +82,7 @@ type Tab =
   | 'meetings'
   | 'whiteboard'
   | 'text'
+  | 'webhooks'
   | 'changelog'
   | 'ai';
 
@@ -112,6 +115,20 @@ const TABS: { value: Tab; label: TranslationKey; icon: ReactNode }[] = [
    * row keeps it a click away without ever competing with the board, and next
    * to the assistant because both are read rather than worked in.
    */
+  /*
+   * Beside the changelog, and that is the argument for it being here at all.
+   *
+   * A webhook posts this project's events somewhere else — it is the
+   * changelog, forwarded. Putting it next to the log makes that relationship
+   * readable, and keeps a piece of configuration off the settings dialog,
+   * which is a modal and has no room for a list with a composer in it.
+   *
+   * Admin-only, and the tab itself is hidden rather than the panel being
+   * shown empty: for most destinations the URL *is* the credential, and a
+   * tab that exists to refuse people is a tab that teaches them there is
+   * something here they cannot have.
+   */
+  { value: 'webhooks', label: 'project.tabWebhooks', icon: <Webhook className="h-3 w-3" /> },
   { value: 'changelog', label: 'project.tabChangelog', icon: <History className="h-3 w-3" /> },
   { value: 'ai', label: 'project.tabAssistant', icon: <Sparkles className="h-3 w-3" /> },
 ];
@@ -475,7 +492,15 @@ const ProjectPage = () => {
 
         <Segmented
           value={tab}
-          options={TABS.map((entry) => ({ ...entry, label: t(entry.label) }))}
+          options={TABS
+            /*
+             * The webhooks tab is not merely disabled for members, it is
+             * absent. Every destination this posts to treats its URL as the
+             * credential, so a tab that exists to say "ask an admin" is one
+             * that advertises a secret to the people who may not see it.
+             */
+            .filter((entry) => entry.value !== 'webhooks' || canManage)
+            .map((entry) => ({ ...entry, label: t(entry.label) }))}
           onChange={setTab}
           className="flex-wrap"
         />
@@ -592,6 +617,7 @@ const ProjectPage = () => {
           initialDocumentId={searchParams.get('doc') ?? undefined}
         />
       )}
+      {tab === 'webhooks' && <WebhooksPanel projectId={projectId} canManage={canManage} />}
       {tab === 'changelog' && <ProjectChangelog projectId={projectId} />}
       {tab === 'ai' && <AiPanel projectId={projectId} />}
 
