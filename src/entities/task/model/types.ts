@@ -74,7 +74,16 @@ export interface Task {
    * only on its owner's task menu. Every surface that links back to a board
    * has to check this before drawing the link.
    */
-  project: { id: string; name: string; color: string } | null;
+  /**
+   * The project this belongs to, or `null` for a personal task.
+   *
+   * `endsAt` rides along with the name and the colour, and earns its place: it
+   * is the ceiling every deadline on this task is checked against, so the
+   * composer can bound its own date picker instead of discovering the rule by
+   * being refused. Null when the project has no finish date, which is most of
+   * them.
+   */
+  project: { id: string; name: string; color: string; endsAt: string | null } | null;
   createdBy: UserSummary;
   assignees: TaskAssignee[];
   isMine: boolean;

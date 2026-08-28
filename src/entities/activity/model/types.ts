@@ -34,7 +34,16 @@ export type ActivityType =
   | 'DOCUMENT_IMPORTED'
   | 'DOCUMENT_CONVERTED'
   | 'DOCUMENT_DELETED'
-  | 'MEETING_SCHEDULED';
+  | 'MEETING_SCHEDULED'
+  /**
+   * Somebody undid one of the lines above.
+   *
+   * A *new* entry rather than the removal of the old one, because a
+   * changelog that can erase itself is not one. The reverted line stays
+   * where it was, struck through, and this sits above it naming who
+   * reversed what.
+   */
+  | 'ACTION_REVERTED';
 
 export interface ActivityEntry {
   id: string;
@@ -56,6 +65,23 @@ export interface ActivityEntry {
   targetName: string | null;
   /** Small structured extras — a role, a count, a date. */
   meta: Record<string, unknown> | null;
+  /**
+   * Whether *this reader* may undo this line — decided by the API, not guessed.
+   *
+   * Two things go into it and neither is knowable in the browser: whether the
+   * kind of entry can be reversed at all, and whether the person looking is the
+   * one who did it or an admin above them. Receiving it as a boolean is what
+   * lets the changelog draw a button that works, rather than one that discovers
+   * a 403 when pressed.
+   *
+   * It is a *hint*, not the enforcement — the API re-checks everything against
+   * live rows before touching anything, because the target may have been purged
+   * since this page was fetched.
+   */
+  canRevert: boolean;
+  /** Set once somebody has undone it. The line stays, struck through. */
+  revertedAt: string | null;
+  revertedBy: UserSummary | null;
 }
 
 export interface ActivityPage {
@@ -64,4 +90,19 @@ export interface ActivityPage {
   page: number;
   limit: number;
   hasMore: boolean;
+}
+
+/**
+ * What undoing a line answers with.
+ *
+ * `message` is written by the API and is deliberately specific — "Ship the
+ * billing page was restored", "Ana is an admin again" — because the reader
+ * pressed a button labelled "undo" and needs to know *what* was undone. A
+ * generic "done" would leave them to go and look.
+ */
+export interface RevertResult {
+  activityId: string;
+  reverted: boolean;
+  type: ActivityType;
+  message: string;
 }

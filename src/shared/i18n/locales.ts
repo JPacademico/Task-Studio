@@ -253,6 +253,19 @@ const en = {
   'project.settingsSubtitle': 'Rename it, re-colour it, or move it to the recycle bin.',
   'project.saveChanges': 'Save changes',
   'project.modeBlank': 'Blank project',
+
+  // ---- The planned window -------------------------------------------------
+  'project.window': 'Planned window',
+  'project.startsAt': 'Starts',
+  'project.endsAt': 'Finishes',
+  'project.windowHint':
+    'Both optional. A finish date is a ceiling: no task can be scheduled past it, and it cannot be pulled back over work that is already there.',
+  'project.endsBeforeTasks': 'Work is already scheduled after this date.',
+  'project.windowRange': '{from} – {to}',
+  'project.windowFrom': 'From {from}',
+  'project.windowUntil': 'Until {to}',
+  'project.windowDaysLeft': '{count} days left',
+  'project.windowOverrun': 'past its finish date',
   'project.modeGithub': 'From GitHub',
 
   // ---- Importing a project from a GitHub repository -----------------------
@@ -272,12 +285,29 @@ const en = {
   'github.noAccount': '{login} has no Task Studio account linked to GitHub',
   'github.useAssistant': 'Let the assistant read the repository',
   'github.import': 'Create the project',
-  'github.importing': 'Importing…',
-  'github.importingHint':
-    'Reading the repository and writing the project. This takes a few seconds longer than a blank one.',
+  'github.backgroundHint':
+    'This carries on in the background — close this and keep working. A card in the corner tracks it, and you can cancel at any point.',
   'github.importedSummary': '{tasks} tasks · {documents} pages · {invited} invited',
   'github.previewFailed': 'Could not read that repository.',
   'github.importFailed': 'Could not import that repository.',
+  'github.cancelFailed': 'Could not cancel that import.',
+
+  // ---- The import tracker: the card that watches a background import ------
+  'importTracker.title': 'Importing a repository',
+  'importTracker.aRepository': 'the repository',
+  'importTracker.dismiss': 'Hide this',
+  'importTracker.collapse': 'Roll up',
+  'importTracker.expand': 'Open',
+  'importTracker.openProject': 'Open project',
+  'importTracker.cancelling': 'Cancelling…',
+  'importTracker.cancelled': 'Cancelled. Nothing was created.',
+  'importTracker.step.queued': 'Waiting to start…',
+  'importTracker.step.resolving': 'Finding the repository…',
+  'importTracker.step.reading': 'Reading the repository…',
+  'importTracker.step.analysing': 'The assistant is reading it…',
+  'importTracker.step.writing': 'Writing the project…',
+  'importTracker.step.inviting': 'Inviting contributors…',
+  'importTracker.step.done': 'Done',
 
   'project.filedUnderTitle': 'Filed under',
   'project.unfileExplain':
@@ -331,6 +361,53 @@ const en = {
   'settings.dark': 'Dark',
   'settings.system': 'System',
   'settings.password': 'Password',
+  'settings.integrations': 'Connected services',
+  'settings.integrationsHint': 'Things Task Studio can reach on your behalf.',
+
+  // ---- Google Calendar ----------------------------------------------------
+  'calendar.title': 'Google Calendar',
+  'calendar.pitch':
+    'Mirror the meetings you are expected at into your own calendar, and let changes you make there come back here.',
+  'calendar.connect': 'Connect Google Calendar',
+  'calendar.connected': 'Your calendar is connected.',
+  'calendar.cancelled': 'No calendar was connected.',
+  'calendar.connectFailed': 'Could not connect that calendar.',
+  'calendar.noRefreshToken':
+    'Google did not grant offline access, so background syncing is not possible. Try connecting again and accept every step.',
+  'calendar.scopeNote':
+    'Task Studio asks only for access to a calendar it creates itself, called “Task Studio”. It cannot read or change anything else in your account.',
+  'calendar.unavailable':
+    'Calendar syncing is not configured on this deployment. Whoever runs it needs to set the Google credentials and an encryption key.',
+
+  'calendar.enabled': 'Keep this calendar in sync',
+  'calendar.push': 'Send my meetings to Google',
+  'calendar.pull': 'Apply changes made in Google',
+  'calendar.pushHint':
+    'Meetings you are expected at appear in your Task Studio calendar, and leave it when they are completed or cancelled.',
+  'calendar.pullHint':
+    'Moving or cancelling a mirrored event in Google updates the meeting here — if you are allowed to change it.',
+
+  'calendar.lastSynced': 'Last synced {when}',
+  'calendar.neverSynced': 'Not synced yet',
+  'calendar.syncNow': 'Sync now',
+  'calendar.syncNowHint': 'Pull changes from Google and push anything missing.',
+  'calendar.syncedChanges': '{count} meetings updated from your calendar.',
+  'calendar.syncedClean': 'Everything is already up to date.',
+  'calendar.syncFailed': 'Could not sync with Google.',
+  'calendar.updateFailed': 'Could not save that setting.',
+
+  'calendar.disconnect': 'Disconnect',
+  'calendar.disconnectExplain':
+    'Task Studio will stop syncing. The calendar it created in your Google account can go with it, or stay as a record.',
+  'calendar.disconnectAndRemove': 'Disconnect and delete the calendar',
+  'calendar.disconnectKeep': 'Disconnect and keep it',
+  'calendar.disconnected': 'Your calendar was disconnected.',
+  'calendar.disconnectFailed': 'Could not disconnect that calendar.',
+
+  'calendar.badgeOn': 'In your calendar',
+  'calendar.badgeOff': 'Sync to your calendar',
+  'calendar.badgeOnHint': 'These meetings are mirrored into your Google Calendar. Manage it in settings.',
+  'calendar.badgeOffHint': 'Connect your Google Calendar in settings to see these meetings there.',
   'settings.currentPassword': 'Current password',
   'settings.changePassword': 'Change password',
   'settings.signsOutEverywhere': 'Signs out every device, including this one.',
@@ -1224,6 +1301,8 @@ const en = {
   // property that survives translation: "Ana joined" and "Entrou Ana" put the
   // subject in different places, and a component that concatenated a name and
   // a verb would be a component that only works in English.
+  'task.afterProjectEnd': 'This project finishes on {date}. Pick an earlier deadline.',
+
   'activity.title': 'Changelog',
   'activity.subtitle': 'Everything that has happened in this project, newest first.',
   'activity.entryCount': '{count} entries',
@@ -1257,6 +1336,14 @@ const en = {
   'activity.documentConverted': '{actor} converted “{subject}” into an editable page',
   'activity.documentDeleted': '{actor} deleted the page “{subject}”',
   'activity.meetingScheduled': '{actor} scheduled the meeting “{subject}”',
+  'activity.actionReverted': '{actor} undid an action by {target}',
+
+  // ---- Undoing one line ---------------------------------------------------
+  'activity.revert': 'Undo',
+  'activity.revertConfirm': 'Undo it',
+  'activity.revertHint': 'Reverse this action. It stays on the log, struck through.',
+  'activity.revertedBy': 'undone by {actor}',
+  'activity.revertFailed': 'Could not undo that.',
   'project.newTask': 'New task',
   'project.newTaskShort': 'Task',
   'project.pinProject': 'Pin project',
@@ -1701,6 +1788,18 @@ const ptBR: Record<TranslationKey, string> = {
   'project.settingsSubtitle': 'Renomeie, mude a cor ou mova para a lixeira.',
   'project.saveChanges': 'Salvar alterações',
   'project.modeBlank': 'Projeto em branco',
+
+  'project.window': 'Período previsto',
+  'project.startsAt': 'Começa',
+  'project.endsAt': 'Termina',
+  'project.windowHint':
+    'Os dois são opcionais. A data de término é um teto: nenhuma tarefa pode ser marcada depois dela, e ela não pode ser puxada para antes de um trabalho que já está agendado.',
+  'project.endsBeforeTasks': 'Já existe trabalho agendado depois dessa data.',
+  'project.windowRange': '{from} – {to}',
+  'project.windowFrom': 'A partir de {from}',
+  'project.windowUntil': 'Até {to}',
+  'project.windowDaysLeft': 'faltam {count} dias',
+  'project.windowOverrun': 'passou da data de término',
   'project.modeGithub': 'Do GitHub',
 
   'github.repository': 'Repositório',
@@ -1719,12 +1818,28 @@ const ptBR: Record<TranslationKey, string> = {
   'github.noAccount': '{login} não tem conta do Task Studio ligada ao GitHub',
   'github.useAssistant': 'Deixar o assistente ler o repositório',
   'github.import': 'Criar o projeto',
-  'github.importing': 'Importando…',
-  'github.importingHint':
-    'Lendo o repositório e escrevendo o projeto. Leva alguns segundos a mais que um projeto em branco.',
+  'github.backgroundHint':
+    'Isso continua em segundo plano — pode fechar e seguir trabalhando. Um cartão no canto acompanha o progresso, e dá para cancelar a qualquer momento.',
   'github.importedSummary': '{tasks} tarefas · {documents} páginas · {invited} convidados',
   'github.previewFailed': 'Não foi possível ler esse repositório.',
   'github.importFailed': 'Não foi possível importar esse repositório.',
+  'github.cancelFailed': 'Não foi possível cancelar essa importação.',
+
+  'importTracker.title': 'Importando um repositório',
+  'importTracker.aRepository': 'o repositório',
+  'importTracker.dismiss': 'Esconder',
+  'importTracker.collapse': 'Recolher',
+  'importTracker.expand': 'Abrir',
+  'importTracker.openProject': 'Abrir projeto',
+  'importTracker.cancelling': 'Cancelando…',
+  'importTracker.cancelled': 'Cancelado. Nada foi criado.',
+  'importTracker.step.queued': 'Aguardando para começar…',
+  'importTracker.step.resolving': 'Localizando o repositório…',
+  'importTracker.step.reading': 'Lendo o repositório…',
+  'importTracker.step.analysing': 'O assistente está lendo…',
+  'importTracker.step.writing': 'Escrevendo o projeto…',
+  'importTracker.step.inviting': 'Convidando quem contribuiu…',
+  'importTracker.step.done': 'Pronto',
 
   'project.filedUnderTitle': 'Arquivado em',
   'project.unfileExplain':
@@ -1776,6 +1891,54 @@ const ptBR: Record<TranslationKey, string> = {
   'settings.dark': 'Escuro',
   'settings.system': 'Sistema',
   'settings.password': 'Senha',
+  'settings.integrations': 'Serviços conectados',
+  'settings.integrationsHint': 'O que o Task Studio pode acessar em seu nome.',
+
+  'calendar.title': 'Google Agenda',
+  'calendar.pitch':
+    'Espelhe na sua própria agenda as reuniões em que você é esperado, e deixe as alterações feitas lá voltarem para cá.',
+  'calendar.connect': 'Conectar o Google Agenda',
+  'calendar.connected': 'Sua agenda está conectada.',
+  'calendar.cancelled': 'Nenhuma agenda foi conectada.',
+  'calendar.connectFailed': 'Não foi possível conectar essa agenda.',
+  'calendar.noRefreshToken':
+    'O Google não concedeu acesso offline, então a sincronização em segundo plano não é possível. Tente conectar de novo e aceite todas as etapas.',
+  'calendar.scopeNote':
+    'O Task Studio pede acesso apenas a uma agenda que ele mesmo cria, chamada “Task Studio”. Ele não consegue ler nem alterar mais nada da sua conta.',
+  'calendar.unavailable':
+    'A sincronização de agenda não está configurada nesta instalação. Quem a administra precisa definir as credenciais do Google e uma chave de criptografia.',
+
+  'calendar.enabled': 'Manter esta agenda sincronizada',
+  'calendar.push': 'Enviar minhas reuniões para o Google',
+  'calendar.pull': 'Aplicar alterações feitas no Google',
+  'calendar.pushHint':
+    'As reuniões em que você é esperado aparecem na sua agenda do Task Studio, e saem dela quando são concluídas ou canceladas.',
+  'calendar.pullHint':
+    'Mover ou cancelar um evento espelhado no Google atualiza a reunião aqui — se você tiver permissão para alterá-la.',
+
+  'calendar.lastSynced': 'Sincronizado {when}',
+  'calendar.neverSynced': 'Ainda não sincronizado',
+  'calendar.syncNow': 'Sincronizar agora',
+  'calendar.syncNowHint': 'Traz as alterações do Google e envia o que estiver faltando.',
+  'calendar.syncedChanges': '{count} reuniões atualizadas a partir da sua agenda.',
+  'calendar.syncedClean': 'Está tudo em dia.',
+  'calendar.syncFailed': 'Não foi possível sincronizar com o Google.',
+  'calendar.updateFailed': 'Não foi possível salvar essa preferência.',
+
+  'calendar.disconnect': 'Desconectar',
+  'calendar.disconnectExplain':
+    'O Task Studio vai parar de sincronizar. A agenda que ele criou na sua conta do Google pode ir junto, ou ficar como registro.',
+  'calendar.disconnectAndRemove': 'Desconectar e apagar a agenda',
+  'calendar.disconnectKeep': 'Desconectar e manter',
+  'calendar.disconnected': 'Sua agenda foi desconectada.',
+  'calendar.disconnectFailed': 'Não foi possível desconectar essa agenda.',
+
+  'calendar.badgeOn': 'Na sua agenda',
+  'calendar.badgeOff': 'Sincronizar com sua agenda',
+  'calendar.badgeOnHint':
+    'Estas reuniões são espelhadas no seu Google Agenda. Gerencie em configurações.',
+  'calendar.badgeOffHint':
+    'Conecte seu Google Agenda em configurações para ver estas reuniões por lá.',
   'settings.currentPassword': 'Senha atual',
   'settings.changePassword': 'Alterar senha',
   'settings.signsOutEverywhere': 'Encerra a sessão em todos os dispositivos, inclusive este.',
@@ -2624,6 +2787,8 @@ const ptBR: Record<TranslationKey, string> = {
   'project.tabAssistant': 'Assistente',
   'project.tabChangelog': 'Histórico',
 
+  'task.afterProjectEnd': 'Este projeto termina em {date}. Escolha um prazo anterior.',
+
   'activity.title': 'Histórico',
   'activity.subtitle': 'Tudo o que aconteceu neste projeto, do mais recente ao mais antigo.',
   'activity.entryCount': '{count} registros',
@@ -2657,6 +2822,13 @@ const ptBR: Record<TranslationKey, string> = {
   'activity.documentConverted': '{actor} converteu “{subject}” em uma página editável',
   'activity.documentDeleted': '{actor} excluiu a página “{subject}”',
   'activity.meetingScheduled': '{actor} marcou a reunião “{subject}”',
+  'activity.actionReverted': '{actor} desfez uma ação de {target}',
+
+  'activity.revert': 'Desfazer',
+  'activity.revertConfirm': 'Desfazer',
+  'activity.revertHint': 'Reverte esta ação. A linha continua no registro, riscada.',
+  'activity.revertedBy': 'desfeito por {actor}',
+  'activity.revertFailed': 'Não foi possível desfazer.',
   'project.newTask': 'Nova tarefa',
   'project.newTaskShort': 'Tarefa',
   'project.pinProject': 'Fixar projeto',

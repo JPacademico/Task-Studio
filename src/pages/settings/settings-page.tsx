@@ -8,6 +8,7 @@ import { uploadImage, userApi } from '@/entities/user/api/user.api';
 import type { ThemePreference } from '@/entities/user/model/types';
 import { authApi } from '@/features/auth/api/auth.api';
 import { useSessionStore } from '@/features/auth/model/session.store';
+import { CalendarConnectionPanel } from '@/features/calendar-sync/ui/calendar-connection-panel';
 import { SkinPicker } from '@/features/theme-toggle/ui/skin-picker';
 import { errorMessage } from '@/shared/api/client';
 import { TEXT_LIMITS } from '@/shared/config/constants';
@@ -194,6 +195,23 @@ const SettingsPage = () => {
             </button>
           ))}
         </div>
+      </Section>
+
+      {/* --- Connected services --------------------------------------------
+
+          Above the password section rather than below it, and that ordering is
+          deliberate: everything under "password" is the account's *danger
+          zone* — changing a credential and signing every device out — and a
+          new section wedged underneath it reads as part of that. This is a
+          preference, so it sits with the preferences.
+
+          Renders nothing at all on a deployment with no calendar credentials
+          configured, so the heading is drawn by the panel rather than here. */}
+      <Section
+        title={t('settings.integrations')}
+        description={t('settings.integrationsHint')}
+      >
+        <CalendarConnectionPanel />
       </Section>
 
       <Section title={t('settings.password')}>

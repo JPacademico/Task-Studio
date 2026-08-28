@@ -10,9 +10,12 @@ import {
   useUpdateProject,
 } from '@/entities/project/model/queries';
 import type { Project } from '@/entities/project/model/types';
+import { useTasks } from '@/entities/task/model/queries';
 import { TASK_COLORS, TEXT_LIMITS } from '@/shared/config/constants';
+import { fromDateInput, toDateInput } from '@/shared/lib/dates';
 import { clampText } from '@/shared/lib/text';
 import { Button, ColorPicker, Input, Modal, Textarea } from '@/shared/ui';
+import { ProjectWindowFields } from './project-window-fields';
 import { useT } from '@/shared/i18n';
 
 interface ProjectSettingsDialogProps {
@@ -94,9 +97,31 @@ export const ProjectSettingsDialog = ({
    */
   const detachProject = useDetachProject(project.organization?.id ?? '');
 
+  /*
+   * The board's tasks, for one number: the latest deadline anybody has
+   * scheduled.
+   *
+   * It costs nothing extra in the ordinary case. This dialog is opened from
+   * the project page, which has already fetched exactly this list under
+   * exactly this key, so the query is a cache hit and the same `staleTime`
+   * every other reader of it gets. What it buys is the finish-date field
+   * saying "work is scheduled past that" while the form is still open, instead
+   * of the API saying it after a round trip.
+   */
+  const { data: tasks = [] } = useTasks({ projectId: project.id });
+
+  const latestTaskDue = tasks.reduce<string | null>((latest, task) => {
+    if (!task.dueAt) return latest;
+    const day = toDateInput(task.dueAt);
+    return !latest || day > latest ? day : latest;
+  }, null);
+
   const [name, setName] = useState(project.name);
   const [description, setDescription] = useState(project.description ?? '');
   const [color, setColor] = useState(project.color);
+  // `yyyy-mm-dd`, or empty. Both optional — see `ProjectWindowFields`.
+  const [startsAt, setStartsAt] = useState(toDateInput(project.startsAt));
+  const [endsAt, setEndsAt] = useState(toDateInput(project.endsAt));
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [confirmation, setConfirmation] = useState('');
   const [isConfirmingFinish, setIsConfirmingFinish] = useState(false);
@@ -123,18 +148,22 @@ export const ProjectSettingsDialog = ({
     setName(project.name);
     setDescription(project.description ?? '');
     setColor(project.color);
+    setStartsAt(toDateInput(project.startsAt));
+    setEndsAt(toDateInput(project.endsAt));
     setIsConfirmingDelete(false);
     setConfirmation('');
     setIsConfirmingFinish(false);
     setIsConfirmingUnfile(false);
     setPassword('');
-  }, [isOpen, project.color, project.description, project.name]);
+  }, [isOpen, project.color, project.description, project.endsAt, project.name, project.startsAt]);
 
   const trimmedName = name.trim();
   const isDirty =
     trimmedName !== project.name ||
     description.trim() !== (project.description ?? '') ||
-    color !== project.color;
+    color !== project.color ||
+    startsAt !== toDateInput(project.startsAt) ||
+    endsAt !== toDateInput(project.endsAt);
 
   const canSave = trimmedName.length >= 2 && isDirty;
   // Case-insensitive: this is a speed bump, not a spelling test.
@@ -149,6 +178,16 @@ export const ProjectSettingsDialog = ({
       // read as "leave it alone" and the field could never be emptied.
       description: description.trim(),
       color,
+      /*
+       * `null` on an emptied field, not `undefined`.
+       *
+       * The dates are on the API's three-state contract — an instant sets it,
+       * `null` clears it, absent leaves it alone — and `fromDateInput` answers
+       * `undefined` for an empty field, which would mean "leave it alone" and
+       * make a finish date impossible to take back off.
+       */
+      startsAt: fromDateInput(startsAt, 'start') ?? null,
+      endsAt: fromDateInput(endsAt, 'end') ?? null,
     });
 
     onClose();
@@ -267,6 +306,22 @@ export const ProjectSettingsDialog = ({
           value={color}
           onChange={setColor}
           options={TASK_COLORS}
+        />
+
+        {/*
+          The latest deadline on the board is passed in so the finish field can
+          object *before* the API does. The API refuses a finish date pulled
+          back over work that already exists — it has to, since nothing stops a
+          client posting one — and being told the same thing while the form is
+          still open, with the offending date named, is the difference between
+          a rule and an obstacle.
+        */}
+        <ProjectWindowFields
+          startsAt={startsAt}
+          endsAt={endsAt}
+          onStartChange={setStartsAt}
+          onEndChange={setEndsAt}
+          latestTaskDue={latestTaskDue}
         />
 
         {/* --- Where this project is filed ----------------------------------

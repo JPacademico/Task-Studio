@@ -63,6 +63,14 @@ interface GroupsBoardProps {
    * thing on this surface that needs it.
    */
   roster?: RosterMember[];
+  /**
+   * The project's finish date, for the composer's deadline ceiling.
+   *
+   * Passed down for the same reason the roster is: the page above already
+   * holds the project, and this board's only interest in it is handing it to
+   * the composer. See `TaskComposerProps.projectDeadline`.
+   */
+  projectDeadline?: string | null;
   /** Opens the ordinary task sheet — this board draws cards, it does not own them. */
   onOpenTask: (taskId: string) => void;
 }
@@ -156,7 +164,12 @@ type StatusFilter = 'open' | 'done';
  * is least recoverable. Two arrows in the column's own footer are unambiguous,
  * work from a keyboard, and cost one row nobody has to open.
  */
-export const GroupsBoard = ({ projectId, roster, onOpenTask }: GroupsBoardProps) => {
+export const GroupsBoard = ({
+  projectId,
+  roster,
+  projectDeadline,
+  onOpenTask,
+}: GroupsBoardProps) => {
   const t = useT();
 
   const { data: board, isLoading } = useTaskGroupBoard(projectId);
@@ -689,6 +702,7 @@ export const GroupsBoard = ({ projectId, roster, onOpenTask }: GroupsBoardProps)
           projectId={projectId}
           roster={roster}
           lockedGroupId={creatingIn?.id}
+          projectDeadline={projectDeadline}
         />
       </div>
     </DndContext>

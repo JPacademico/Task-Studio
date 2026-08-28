@@ -43,6 +43,7 @@ import type { Meeting, MeetingProjectRef } from '@/entities/meeting/model/types'
 import type { UserSummary } from '@/entities/user/model/types';
 import { TEXT_LIMITS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
+import { CalendarSyncBadge } from '@/features/calendar-sync/ui/calendar-sync-badge';
 import { clampText } from '@/shared/lib/text';
 import { formatDayLabel, formatTime } from '@/shared/lib/dates';
 import {
@@ -450,12 +451,28 @@ export const MeetingsPanel = ({
           ]}
         />
 
-        {canManage && (
-          <Button size="sm" className="ml-auto" onClick={() => openComposer(null)}>
-            <Plus className="h-3.5 w-3.5" strokeWidth={2.8} />
-            {t('meetings.new')}
-          </Button>
-        )}
+        {/*
+          Whether these meetings are reaching the reader's own calendar.
+
+          Here rather than in a menu, because this is the surface on which the
+          question occurs to somebody — looking at a meeting and wondering
+          whether it will be on their phone tomorrow. The *controls* are in
+          settings, one click away, because a calendar connection is a fact
+          about the account rather than about this project. See the badge.
+
+          `ml-auto` moves to the badge when there is no compose button, so the
+          right-hand group is anchored either way.
+        */}
+        <div className={canManage ? 'ml-auto flex items-center gap-2' : 'ml-auto'}>
+          <CalendarSyncBadge />
+
+          {canManage && (
+            <Button size="sm" onClick={() => openComposer(null)}>
+              <Plus className="h-3.5 w-3.5" strokeWidth={2.8} />
+              {t('meetings.new')}
+            </Button>
+          )}
+        </div>
       </div>
 
       {isPending && (

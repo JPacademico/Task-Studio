@@ -19,6 +19,7 @@ import {
   WanderingEye,
 } from '@/shared/ui';
 import { HiddenSidebar } from '@/widgets/hidden-sidebar/ui/hidden-sidebar';
+import { ImportTracker } from '@/widgets/import-tracker/ui/import-tracker';
 import { ProjectRail } from '@/widgets/project-rail/ui/project-rail';
 import { TopNavigation } from '@/widgets/top-navigation/ui/top-navigation';
 import { useShellPrefetch } from './use-shell-prefetch';
@@ -67,6 +68,14 @@ export const AppLayout = () => {
           project page, which is the whole reason a pinned chat can stay open
           while the user is somewhere else entirely. */}
       <ChatDock />
+
+      {/* A repository import in progress, tracked without holding anybody
+          still for it. Mounted here for the same reason the chat dock is: the
+          import outlives the dialog that started it, and the whole point of
+          having made it a background job is that you can walk away from the
+          page and it carries on. Renders nothing at all when there is no
+          import running. */}
+      <ImportTracker />
 
       {/* Something opens an eye somewhere on the page every twenty seconds.
           Inert on every skin but the eldritch one, and inert entirely under

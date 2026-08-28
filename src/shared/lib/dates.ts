@@ -239,6 +239,72 @@ export const isWithinDateWindow = (value: string): boolean => {
   );
 };
 
+// ---------------------------------------------------------------------------
+// Days, as opposed to moments
+// ---------------------------------------------------------------------------
+//
+// A project's window is the one thing in this app measured in *days* rather
+// than in instants. A task starts at 09:00 and is due at 17:00; a project runs
+// from March to June, and asking somebody to pick a minute for that is asking
+// them to invent a fact.
+//
+// So these are `type="date"` helpers rather than `datetime-local` ones, and the
+// two conversions below are where the difference is resolved: a day picked in
+// the browser becomes an instant on the wire, because the API stores instants
+// and a column that sometimes holds a date and sometimes a timestamp is a
+// column nobody can compare.
+
+/** `2026-09-01T00:00:00Z` → `2026-09-01`, in the reader's own timezone. */
+export const toDateInput = (value: string | Date | null): string => {
+  if (!value) return '';
+
+  const date = toDate(value);
+  if (Number.isNaN(date.getTime())) return '';
+
+  const offset = date.getTimezoneOffset() * 60_000;
+  const local = new Date(date.getTime() - offset);
+  if (Number.isNaN(local.getTime())) return '';
+
+  return local.toISOString().slice(0, 10);
+};
+
+/**
+ * `2026-09-01` → an ISO instant, or `undefined` for an empty field.
+ *
+ * ## Why a finish date lands at the *end* of its day
+ *
+ * Because `endsAt` is a ceiling that task deadlines are compared against, and
+ * a project finishing "on 30 June" that resolved to 00:00 on the 30th would
+ * refuse a task due at 17:00 that day — the last afternoon of the project,
+ * which is precisely when the last task is due. Reading the field as the whole
+ * day is what makes the constraint mean what a person reading the form thinks
+ * it means.
+ *
+ * A start date takes the opposite end for the same reason turned around, and
+ * matters less: nothing is constrained by it.
+ */
+export const fromDateInput = (value: string, edge: 'start' | 'end' = 'start'): string | undefined => {
+  if (!value) return undefined;
+
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return undefined;
+
+  // `new Date('2026-09-01')` is midnight *UTC*, which is the previous evening
+  // for anybody west of Greenwich. Rebuilding it from the parts pins it to the
+  // reader's own day, which is the day they typed.
+  const [year, month, day] = value.split('-').map(Number);
+  const local =
+    edge === 'end'
+      ? new Date(year, month - 1, day, 23, 59, 59, 999)
+      : new Date(year, month - 1, day, 0, 0, 0, 0);
+
+  return Number.isFinite(local.getTime()) ? local.toISOString() : undefined;
+};
+
+/** The window's edges as `date` input strings — the day-granular `dateInputMin`. */
+export const dayInputMin = (): string => toDateInput(new Date(dateInputMin()));
+export const dayInputMax = (): string => toDateInput(new Date(dateInputMax()));
+
 /**
  * The ISO instant behind a `datetime-local` value, or `undefined`.
  *

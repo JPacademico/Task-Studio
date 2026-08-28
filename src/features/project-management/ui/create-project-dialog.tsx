@@ -6,7 +6,9 @@ import { useOrganizationMembers, useOrganizations } from '@/entities/organizatio
 import { useCreateProject } from '@/entities/project/model/queries';
 import { InvitePicker } from '@/features/invite-picker/ui/invite-picker';
 import { GithubImportPanel } from './github-import-panel';
+import { ProjectWindowFields } from './project-window-fields';
 import { TASK_COLORS, TEXT_LIMITS } from '@/shared/config/constants';
+import { fromDateInput } from '@/shared/lib/dates';
 import { clampText } from '@/shared/lib/text';
 import { Button, ColorPicker, Input, Modal, Segmented, Select, Textarea } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
@@ -75,6 +77,9 @@ export const CreateProjectDialog = ({
   const [description, setDescription] = useState('');
   const [color, setColor] = useState<string>(TASK_COLORS[0]);
   const [filedUnder, setFiledUnder] = useState<string>(UNFILED);
+  // `yyyy-mm-dd`, or empty. Both optional — see `ProjectWindowFields`.
+  const [startsAt, setStartsAt] = useState('');
+  const [endsAt, setEndsAt] = useState('');
   const [teamIds, setTeamIds] = useState<string[]>([]);
   const [memberIds, setMemberIds] = useState<string[]>([]);
 
@@ -116,6 +121,8 @@ export const CreateProjectDialog = ({
     setDescription('');
     setColor(TASK_COLORS[0]);
     setFiledUnder(organizationId ?? UNFILED);
+    setStartsAt('');
+    setEndsAt('');
     setTeamIds([]);
     setMemberIds([]);
   }, [isOpen, organizationId]);
@@ -146,6 +153,15 @@ export const CreateProjectDialog = ({
       organizationId: filedUnder || undefined,
       teamIds: filedUnder && teamIds.length > 0 ? teamIds : undefined,
       memberIds: filedUnder && memberIds.length > 0 ? memberIds : undefined,
+      /*
+       * The chosen days become instants here, at opposite ends of themselves.
+       *
+       * A finish date read as midnight would refuse a task due at five in the
+       * afternoon on the project's own last day, which is exactly when a last
+       * task is due. See `fromDateInput`.
+       */
+      startsAt: fromDateInput(startsAt, 'start'),
+      endsAt: fromDateInput(endsAt, 'end'),
     });
 
     onClose();
@@ -239,6 +255,22 @@ export const CreateProjectDialog = ({
         />
 
         {/*
+          Offered for both modes, and that is deliberate rather than incidental.
+
+          An imported project is exactly as likely to have a deadline as a
+          typed one — more so, if the repository is a piece of client work —
+          and the two fields belong to the *project* rather than to how it came
+          into being, which is the same reason the accent and the company sit
+          above the mode split rather than inside it.
+        */}
+        <ProjectWindowFields
+          startsAt={startsAt}
+          endsAt={endsAt}
+          onStartChange={setStartsAt}
+          onEndChange={setEndsAt}
+        />
+
+        {/*
           Hidden entirely when the caller has already decided — see the prop.
           Also hidden when there is nothing to choose: somebody who runs no
           company should not be shown an empty dropdown explaining a feature
@@ -271,10 +303,16 @@ export const CreateProjectDialog = ({
           <GithubImportPanel
             organizationId={filedUnder || undefined}
             color={color}
-            onImported={(projectId) => {
-              onClose();
-              navigate(`/projects/${projectId}`);
-            }}
+            /*
+             * Closes, and deliberately does not navigate.
+             *
+             * There is nowhere to go yet: the import is a background job now,
+             * and the project it produces does not exist for another half a
+             * minute. Navigating to a project id we do not have was the old
+             * shape of this callback; the tracker in the app shell carries the
+             * job to completion and offers the link when there is one.
+             */
+            onStarted={onClose}
           />
         )}
 

@@ -10,10 +10,7 @@ import {
   UserCheck,
 } from 'lucide-react';
 
-import {
-  useImportRepository,
-  usePreviewRepository,
-} from '@/entities/integration/model/queries';
+import { usePreviewRepository, useStartImport } from '@/entities/integration/model/queries';
 import type { RepositoryPreview } from '@/entities/integration/model/types';
 import { cn } from '@/shared/lib/cn';
 import { Avatar, Button, Input, Switch } from '@/shared/ui';
@@ -24,8 +21,16 @@ interface GithubImportPanelProps {
   organizationId?: string;
   /** The accent the dialog's picker is on — overrides the assistant's choice. */
   color?: string;
-  /** Handed the new project's id once the import lands. */
-  onImported: (projectId: string) => void;
+  /**
+   * Called once the import has been *accepted*, not once it has finished.
+   *
+   * The distinction is the whole change: this used to hand over a project id
+   * because the request did not return until there was one. It now returns
+   * in milliseconds with a job, so there is no project to navigate to yet —
+   * and the dialog's job is simply to get out of the way. The tracker takes
+   * over from here, including the button that opens the finished project.
+   */
+  onStarted: () => void;
 }
 
 /**
@@ -46,6 +51,17 @@ interface GithubImportPanelProps {
  * quota — which is what makes it reasonable to run it every time somebody
  * corrects a typo.
  *
+ * ## And why pressing the second button ends the conversation
+ *
+ * It used to begin a wait. The import was the request, so the panel sat there
+ * with a spinner in it for as long as reading a repository through a model
+ * takes, and navigating away threw the whole thing in the bin.
+ *
+ * It now starts a background job and closes. Nothing here watches it — the
+ * import tracker does, from the app shell, so the reader can go and do
+ * something else while a project builds itself. What this panel is for ends at
+ * "yes, that is the right repository".
+ *
  * ## Why the contributor list says who will *not* be invited
  *
  * A contributor with no matched account is shown greyed rather than hidden.
@@ -56,14 +72,14 @@ interface GithubImportPanelProps {
 export const GithubImportPanel = ({
   organizationId,
   color,
-  onImported,
+  onStarted,
 }: GithubImportPanelProps) => {
   const t = useT();
   const [url, setUrl] = useState('');
   const [useAssistant, setUseAssistant] = useState(true);
 
   const preview = usePreviewRepository();
-  const runImport = useImportRepository();
+  const runImport = useStartImport();
 
   const repo: RepositoryPreview | undefined = preview.data;
   const invitable = repo?.contributors.filter((person) => person.matchedUser) ?? [];
@@ -77,7 +93,7 @@ export const GithubImportPanel = ({
   const create = async () => {
     if (!repo) return;
 
-    const result = await runImport.mutateAsync({
+    await runImport.mutateAsync({
       // The canonical address rather than what was typed: GitHub follows
       // renames, and the project should come from where the repository is.
       url: `${repo.owner}/${repo.repo}`,
@@ -86,7 +102,15 @@ export const GithubImportPanel = ({
       useAssistant,
     });
 
-    onImported(result.project.id);
+    /*
+     * Close, and go nowhere.
+     *
+     * There is nothing to navigate to — the project will not exist for another
+     * half a minute — and keeping the dialog open to watch a progress bar
+     * would put the app right back where it was before any of this changed.
+     * The tracker takes it from here, on whatever page the reader moves to.
+     */
+    onStarted();
   };
 
   return (
@@ -244,14 +268,20 @@ export const GithubImportPanel = ({
             isLoading={runImport.isPending}
           >
             <Sparkles className="h-3.5 w-3.5" />
-            {t(runImport.isPending ? 'github.importing' : 'github.import')}
+            {t('github.import')}
           </Button>
 
-          {runImport.isPending && (
-            <p className="text-center text-[10px] leading-relaxed text-content-faint">
-              {t('github.importingHint')}
-            </p>
-          )}
+          {/*
+            The hint no longer describes a wait, because there is not one.
+
+            It used to say "this takes a moment, stay on this screen" — which
+            was true and was also the problem. What the reader needs to know now
+            is the opposite: the work carries on somewhere else and they are
+            free to go, which is not obvious from a button that closes a dialog.
+          */}
+          <p className="text-center text-[10px] leading-relaxed text-content-faint">
+            {t('github.backgroundHint')}
+          </p>
         </div>
       )}
     </div>

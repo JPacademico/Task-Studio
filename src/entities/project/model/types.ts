@@ -24,6 +24,18 @@ export interface Project {
    * API's `ProjectsService.complete`.
    */
   completedAt: string | null;
+  /**
+   * The window the project is *aimed* at, as opposed to `completedAt`, which
+   * is when it actually ended. Both optional and independent.
+   *
+   * `startsAt` constrains nothing — a project whose start date is next month
+   * still takes work today, because people write a plan down before they
+   * follow it. `endsAt` is a ceiling: the API refuses a task deadline past it,
+   * and refuses to pull it back over work that already exists. That asymmetry
+   * is the point of having the second field at all.
+   */
+  startsAt: string | null;
+  endsAt: string | null;
   createdAt: string;
   updatedAt: string;
   owner: UserSummary;

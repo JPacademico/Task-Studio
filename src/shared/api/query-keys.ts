@@ -172,4 +172,27 @@ export const queryKeys = {
     status: ['ai', 'status'] as const,
     history: (projectId?: string) => ['ai', 'history', projectId ?? 'all'] as const,
   },
+
+  /**
+   * Things that reach outside this app on the user's behalf.
+   *
+   * A root of its own rather than branches of `projects` and `meetings`, and
+   * the reason is what invalidating each one is *for*. A finished import
+   * invalidates `projects.all` — it made a project — but the reverse must not
+   * hold: every rename, pin and roster change in the app invalidates
+   * `projects.all`, and an import tracker nested under it would refetch a
+   * live job list on each of them. The same argument the changelog makes.
+   *
+   * Neither key is per-user. Both are scoped to the session by the API, and
+   * `SessionProvider` clears the whole cache on sign-out — so a user id in the
+   * key would be a second mechanism guarding against something the first one
+   * already prevents.
+   */
+  integrations: {
+    all: ['integrations'] as const,
+    /** This person's live imports, plus a short tail of finished ones. */
+    imports: ['integrations', 'imports'] as const,
+    /** Their linked calendar, and whether the deployment offers one. */
+    calendar: ['integrations', 'calendar'] as const,
+  },
 } as const;

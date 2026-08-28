@@ -76,6 +76,15 @@ export const projectApi = {
      * stranger reached through `POST /projects/:id/invitations` does not.
      */
     memberIds?: string[];
+    /**
+     * The planned window, as ISO instants. Both optional and independent.
+     *
+     * `endsAt` is the one with teeth — the API refuses a task deadline past it
+     * — which is why `fromDateInput` resolves it to the *end* of the chosen
+     * day rather than midnight at the start of it. See that helper.
+     */
+    startsAt?: string;
+    endsAt?: string;
   }): Promise<Project> {
     const { data } = await api.post<Project>('/projects', payload);
     return data;
@@ -89,6 +98,16 @@ export const projectApi = {
       color?: string;
       isArchived?: boolean;
       bannerKey?: string;
+      /**
+       * The planned window, on a three-state contract: an instant sets it,
+       * `null` clears it, and an absent field leaves it alone.
+       *
+       * `null` has to be sendable, which is why this is not simply
+       * `string | undefined` — taking a finish date back off a project is a
+       * thing people do, and `undefined` on a PATCH means "no opinion".
+       */
+      startsAt?: string | null;
+      endsAt?: string | null;
     },
   ): Promise<Project> {
     const { data } = await api.patch<Project>(`/projects/${projectId}`, payload);

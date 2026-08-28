@@ -41,6 +41,15 @@ export const STORAGE_KEYS = {
    * already has the real one. See `hidden-columns.ts`.
    */
   hiddenGroups: 'task-studio:hidden-groups',
+  /**
+   * Where the reader parked the import tracker.
+   *
+   * Per device rather than per account, exactly like `chatPosition` and for
+   * the same reason: a corner that is out of the way on a 27-inch monitor is
+   * on top of the sidebar on a laptop, so a position synced across devices
+   * would be wrong on most of them.
+   */
+  importTrackerPosition: 'task-studio:import-tracker-position',
 } as const;
 
 /** Curated task palette — arbitrary hex is allowed, these are the one-click set. */

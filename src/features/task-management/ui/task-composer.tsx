@@ -26,6 +26,7 @@ import {
   dateInputBounds,
   fromDateTimeInput,
   isDateTimeInput,
+  formatDeadlineDate,
   isWithinDateWindow,
   toDateTimeInput,
 } from '@/shared/lib/dates';
@@ -69,6 +70,21 @@ interface TaskComposerProps {
    * picker, which is the right shape when the column is genuinely a choice.
    */
   lockedGroupId?: string;
+  /**
+   * The project's own finish date, when it has one.
+   *
+   * A prop rather than a lookup, and deliberately so: every surface that opens
+   * this composer already holds the project — the board fetched it, the
+   * grouping board was handed it — so asking for it again here would be a
+   * request to learn something the caller is looking at. It also keeps the
+   * composer usable for a personal task, which has no project to look up.
+   *
+   * Absent means no ceiling, which is both the personal-task case and the
+   * (common) case of a project with no deadline. When editing an existing
+   * task, `task.project.endsAt` is used in preference — it is the finish date
+   * of the project the task is actually *in*, which is the one that binds.
+   */
+  projectDeadline?: string | null;
 }
 
 const PRIORITIES: TaskPriority[] = ['LOW', 'NORMAL', 'HIGH', 'URGENT'];
@@ -90,6 +106,7 @@ export const TaskComposer = ({
   roster = EMPTY_ROSTER,
   task,
   lockedGroupId,
+  projectDeadline,
 }: TaskComposerProps) => {
   const t = useT();
   // No project means a personal task: one assignee, no roster, no fan-out.
@@ -240,13 +257,39 @@ export const TaskComposer = ({
     Boolean(startAt && dueAt) &&
     new Date(dueAt).getTime() <= new Date(startAt).getTime();
 
+  /*
+   * The project's own finish date, when it has one.
+   *
+   * Read from the task being edited, or from the project list for a task being
+   * created — both are already in the cache on every surface this composer
+   * opens from, so neither costs a request. `null` on a personal task and on a
+   * project with no deadline, which is the common case and means no ceiling.
+   */
+  const projectEndsAt = task?.project?.endsAt ?? projectDeadline ?? null;
+
+  /*
+   * A deadline past the end of its own project.
+   *
+   * Its own complaint rather than folded into `dueIsTooFar`, because it is a
+   * different fact with a different remedy: "too far away" means pick an
+   * earlier date, and this means pick an earlier date *or go and move the
+   * project's*. The API refuses the same thing in the same words — see
+   * `assertTaskWithinProject` — and this is that refusal arriving while the
+   * form is still open, which is the only moment it is cheap to act on.
+   */
+  const dueIsAfterProject =
+    !dueIsMalformed &&
+    Boolean(dueAt && projectEndsAt) &&
+    new Date(dueAt).getTime() > new Date(projectEndsAt as string).getTime();
+
   const canSubmit =
     title.trim().length >= 2 &&
     !windowIsInvalid &&
     !startIsMalformed &&
     !dueIsMalformed &&
     !startIsTooFar &&
-    !dueIsTooFar;
+    !dueIsTooFar &&
+    !dueIsAfterProject;
 
   /*
    * The bounds the two controls carry, widened to admit whatever the task
@@ -258,6 +301,28 @@ export const TaskComposer = ({
     toDateTimeInput(task?.startAt ?? null),
     toDateTimeInput(task?.dueAt ?? null),
   );
+
+  /*
+   * The deadline field's own ceiling: the tighter of the five-year window and
+   * the project's finish date.
+   *
+   * Only the *deadline* gets it. A task that begins before its project ends
+   * and has no deadline of its own has not overrun anything, so bounding the
+   * start field would refuse something legitimate — and it cannot help anyway,
+   * since a start later than the deadline is already caught by
+   * `windowIsInvalid`.
+   *
+   * Deliberately not applied when the task already holds a later date. That is
+   * the same reasoning `dateInputBounds` exists for: a project whose finish
+   * date was pulled in *after* a task was scheduled would otherwise make that
+   * task uneditable, and somebody fixing its title should not first have to
+   * fix a date they did not set.
+   */
+  const projectCeiling = toDateTimeInput(projectEndsAt);
+  const dueMax =
+    projectCeiling && projectCeiling < bounds.max && !(task?.dueAt && toDateTimeInput(task.dueAt) > projectCeiling)
+      ? projectCeiling
+      : bounds.max;
 
   /*
    * Two renditions go up, not one.
@@ -547,7 +612,7 @@ export const TaskComposer = ({
             name="dueAt"
             type="datetime-local"
             min={bounds.min}
-            max={bounds.max}
+            max={dueMax}
             value={dueAt}
             onChange={(event) => setDueAt(event.target.value)}
             error={
@@ -557,7 +622,11 @@ export const TaskComposer = ({
                   ? t('task.dateOutOfRange', { years: String(DATE_WINDOW_YEARS) })
                   : windowIsInvalid
                     ? t('task.windowInvalid')
-                    : undefined
+                    : dueIsAfterProject
+                      ? t('task.afterProjectEnd', {
+                          date: formatDeadlineDate(projectEndsAt as string),
+                        })
+                      : undefined
             }
           />
         </div>

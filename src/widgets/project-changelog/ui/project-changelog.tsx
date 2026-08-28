@@ -1,4 +1,4 @@
-import { Fragment, useMemo, type ReactNode } from 'react';
+import { Fragment, useMemo, useState, type ReactNode } from 'react';
 import {
   Building2,
   CalendarDays,
@@ -12,6 +12,7 @@ import {
   RotateCcw,
   Sparkles,
   Trash2,
+  Undo2,
   UserMinus,
   UserPlus,
   Users,
@@ -20,8 +21,10 @@ import {
 import {
   useProjectActivity,
   useProjectActivityRealtime,
+  useRevertActivity,
 } from '@/entities/activity/model/queries';
 import type { ActivityEntry, ActivityType } from '@/entities/activity/model/types';
+import { useCurrentUser } from '@/features/auth/model/session.store';
 import { formatDayLabel, formatDateTime, formatTime } from '@/shared/lib/dates';
 import { cn } from '@/shared/lib/cn';
 import { Avatar, Button, EmptyState, Skeleton } from '@/shared/ui';
@@ -65,6 +68,17 @@ const APPEARANCE: Record<ActivityType, { icon: ReactNode; tone: string }> = {
   DOCUMENT_DELETED: { icon: <Trash2 className="h-3 w-3" />, tone: 'text-danger' },
 
   MEETING_SCHEDULED: { icon: <CalendarDays className="h-3 w-3" />, tone: 'text-content-muted' },
+
+  /*
+   * The one entry that is *about* the log rather than about the project.
+   *
+   * Neutral tone on purpose, although it is tempting to make it a warning.
+   * An undo is a correction, not an incident — somebody noticed a mistake
+   * and fixed it, which is the system working. Colouring it as damage would
+   * make every corrected mistake look worse than the uncorrected ones
+   * sitting silently above it.
+   */
+  ACTION_REVERTED: { icon: <Undo2 className="h-3 w-3" />, tone: 'text-content-muted' },
 };
 
 /** The translation key that writes each type's sentence. */
@@ -90,6 +104,7 @@ const SENTENCE: Record<ActivityType, TranslationKey> = {
   DOCUMENT_CONVERTED: 'activity.documentConverted',
   DOCUMENT_DELETED: 'activity.documentDeleted',
   MEETING_SCHEDULED: 'activity.meetingScheduled',
+  ACTION_REVERTED: 'activity.actionReverted',
 };
 
 /** `2026-08-27T09:14:00Z` → `2026-08-27`, in the reader's own timezone. */
@@ -131,6 +146,24 @@ interface ProjectChangelogProps {
  */
 export const ProjectChangelog = ({ projectId }: ProjectChangelogProps) => {
   const t = useT();
+  const currentUser = useCurrentUser();
+
+  const revert = useRevertActivity(projectId);
+  /**
+   * Which line is asking "are you sure".
+   *
+   * A second press on the same row rather than a modal, and the choice is
+   * about proportion. A confirmation dialog for an undo would be a dialog
+   * about a dialog: the thing being undone was itself a small act, most of
+   * these are reversible again by hand, and the API refuses anything genuinely
+   * destructive outright. What is worth preventing is a *stray* press, which
+   * two deliberate presses on the same row prevents perfectly well.
+   *
+   * One id rather than a set, because arming a second row disarms the first —
+   * which is what somebody who changed their mind about which line they meant
+   * would expect.
+   */
+  const [armed, setArmed] = useState<string | null>(null);
 
   const {
     data,
@@ -142,8 +175,14 @@ export const ProjectChangelog = ({ projectId }: ProjectChangelogProps) => {
     refetch,
   } = useProjectActivity(projectId);
 
-  // New lines arrive by socket rather than by polling — see the hook.
-  useProjectActivityRealtime(projectId);
+  /*
+   * New lines arrive by socket rather than by polling — see the hook.
+   *
+   * The reader's own id goes with it so that a line *they* just wrote comes
+   * back carrying its undo button, rather than the `false` the API has to
+   * broadcast to a room of mixed permissions.
+   */
+  useProjectActivityRealtime(projectId, currentUser?.id);
 
   /*
    * Flattened once, then cut into days.
@@ -238,7 +277,17 @@ export const ProjectChangelog = ({ projectId }: ProjectChangelogProps) => {
 
               {day.entries.map((entry) => (
                 <Fragment key={entry.id}>
-                  <ChangelogRow entry={entry} />
+                  <ChangelogRow
+                    entry={entry}
+                    isArmed={armed === entry.id}
+                    isReverting={revert.isPending && revert.variables === entry.id}
+                    onArm={() => setArmed(entry.id)}
+                    onDisarm={() => setArmed(null)}
+                    onRevert={() => {
+                      setArmed(null);
+                      revert.mutate(entry.id);
+                    }}
+                  />
                 </Fragment>
               ))}
             </ol>
@@ -262,7 +311,24 @@ export const ProjectChangelog = ({ projectId }: ProjectChangelogProps) => {
   );
 };
 
-const ChangelogRow = ({ entry }: { entry: ActivityEntry }) => {
+interface ChangelogRowProps {
+  entry: ActivityEntry;
+  /** This row is showing "undo?" rather than the undo button. */
+  isArmed: boolean;
+  isReverting: boolean;
+  onArm: () => void;
+  onDisarm: () => void;
+  onRevert: () => void;
+}
+
+const ChangelogRow = ({
+  entry,
+  isArmed,
+  isReverting,
+  onArm,
+  onDisarm,
+  onRevert,
+}: ChangelogRowProps) => {
   const t = useT();
   const { icon, tone } = APPEARANCE[entry.type] ?? {
     icon: <History className="h-3 w-3" />,
@@ -287,8 +353,19 @@ const ChangelogRow = ({ entry }: { entry: ActivityEntry }) => {
     from: String((entry.meta?.from as string | undefined) ?? ''),
   };
 
+  const isReverted = Boolean(entry.revertedAt);
+
   return (
-    <li className="relative flex items-start gap-2.5 rounded-lg py-1.5 pl-0 pr-1 transition-colors hover:bg-surface-sunken/50">
+    <li
+      className={cn(
+        'group relative flex items-start gap-2.5 rounded-lg py-1.5 pl-0 pr-1 transition-colors hover:bg-surface-sunken/50',
+        // A reverted line stays in place and stops competing for attention.
+        // It is still *history* — it happened — so it is dimmed rather than
+        // hidden, which is the whole difference between a changelog and a
+        // list of things that are currently true.
+        isReverted && 'opacity-60',
+      )}
+    >
       {/* The glyph sits *on* the thread, with the surface behind it, so the
           line appears to pass through the row rather than under it. */}
       <span
@@ -303,8 +380,10 @@ const ChangelogRow = ({ entry }: { entry: ActivityEntry }) => {
       </span>
 
       <span className="min-w-0 flex-1 leading-snug">
-        <span className="text-xs text-content">{t(SENTENCE[entry.type], values)}</span>
-        <span className="mt-0.5 flex items-center gap-1.5 text-[10px] text-content-faint">
+        <span className={cn('text-xs text-content', isReverted && 'line-through')}>
+          {t(SENTENCE[entry.type], values)}
+        </span>
+        <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-content-faint">
           {entry.actor && (
             <Avatar
               name={entry.actor.displayName}
@@ -315,8 +394,75 @@ const ChangelogRow = ({ entry }: { entry: ActivityEntry }) => {
           <time dateTime={entry.createdAt} title={formatDateTime(entry.createdAt)}>
             {formatTime(entry.createdAt)}
           </time>
+
+          {/* Who undid it, on the line it happened to rather than only on the
+              new entry above. A reader scanning for "what happened to that
+              task" lands here first, and "undone by Ana" is the answer. */}
+          {isReverted && (
+            <span className="text-content-faint">
+              ·{' '}
+              {t('activity.revertedBy', {
+                actor: entry.revertedBy?.displayName ?? t('activity.someone'),
+              })}
+            </span>
+          )}
         </span>
       </span>
+
+      {/* --- Undo ---------------------------------------------------------
+
+          Only where the API said this reader may. `canRevert` folds in both
+          halves of the rule — the kind of entry, and whether the person
+          looking is its author or an admin above them — so there is no second
+          opinion about it here, and no button that exists to be refused.
+
+          Kept out of the flow until it is wanted: invisible until the row is
+          hovered or the button itself has focus, which keeps a changelog of
+          two hundred lines from reading as two hundred buttons. `focus-within`
+          is what makes it reachable by keyboard, where there is no hover. */}
+      {entry.canRevert && (
+        <span
+          className={cn(
+            'shrink-0 self-center transition-opacity',
+            isArmed
+              ? 'opacity-100'
+              : 'opacity-0 focus-within:opacity-100 group-hover:opacity-100',
+          )}
+        >
+          {isArmed ? (
+            <span className="flex items-center gap-1">
+              <Button
+                size="sm"
+                variant="danger"
+                onClick={onRevert}
+                isLoading={isReverting}
+                className="h-6 px-2 text-[10px]"
+              >
+                {t('activity.revertConfirm')}
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onDisarm}
+                className="h-6 px-2 text-[10px]"
+              >
+                {t('common.cancel')}
+              </Button>
+            </span>
+          ) : (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={onArm}
+              title={t('activity.revertHint')}
+              className="h-6 gap-1 px-2 text-[10px]"
+            >
+              <Undo2 className="h-3 w-3" />
+              {t('activity.revert')}
+            </Button>
+          )}
+        </span>
+      )}
     </li>
   );
 };

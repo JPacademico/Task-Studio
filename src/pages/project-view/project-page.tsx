@@ -61,6 +61,7 @@ import {
   TaskSprintView,
   useTaskLayout,
 } from '@/features/task-views';
+import { ProjectWindowChip } from '@/entities/project/ui/project-window-chip';
 import { cn } from '@/shared/lib/cn';
 import { formatDateTime } from '@/shared/lib/dates';
 import { Avatar, Button, PageLoader, Segmented } from '@/shared/ui';
@@ -346,6 +347,21 @@ const ProjectPage = () => {
                     </span>
                   </Link>
                 )}
+
+                {/* When the project is meant to run from and to.
+
+                    On the same line as the role and the company because it is
+                    the same kind of fact — context about the project rather
+                    than about the work in it — and because the alternative was
+                    a fourth line on a header that is already four deep on a
+                    phone. Renders nothing at all when no window is set, which
+                    is most projects. */}
+                <ProjectWindowChip
+                  startsAt={project.startsAt}
+                  endsAt={project.endsAt}
+                  isFinished={isFinished}
+                  className="normal-case tracking-normal"
+                />
               </p>
               <h1 className="truncate text-xl font-semibold tracking-tight sm:text-2xl">
                 {project.name}
@@ -547,6 +563,7 @@ const ProjectPage = () => {
           // For the composer the board's own "+" opens, with the column
           // already locked in — see `lockedGroupId` on `TaskComposer`.
           roster={project.roster}
+          projectDeadline={project.endsAt}
           onOpenTask={setDetailTaskId}
         />
       )}
@@ -587,6 +604,7 @@ const ProjectPage = () => {
         projectId={projectId}
         roster={project.roster}
         task={composerTask}
+        projectDeadline={project.endsAt}
       />
 
       {canManage && (
