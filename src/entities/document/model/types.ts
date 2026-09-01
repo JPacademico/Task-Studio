@@ -13,24 +13,19 @@ export interface DocumentSource {
   mime: string;
   size: number;
   /**
-   * Whether the page's body is a conversion of that file.
+   * Whether the page has a body of its own, or *is* still the file.
    *
-   * False means the page **is** the upload: there is no body yet, the board
-   * shows the file itself, and pressing Edit is what runs the conversion.
+   * False means there is nothing to edit and nothing to render: the board
+   * shows the upload itself and offers it back for download. A PDF and a
+   * `.docx` are always false and stay that way — nothing on the API reads one.
+   * True for a `.txt`, whose paragraphs the browser writes at upload time, and
+   * for the pages that were converted while that feature existed: they keep
+   * their text and are ordinary editable documents.
+   *
    * Answered by the API rather than inferred from an empty `content`, which
-   * would misread a converted page somebody has since emptied.
+   * would misread a page somebody has since emptied.
    */
-  isConverted: boolean;
-  convertedAt: string | null;
-  /**
-   * Whether Edit has to go through the assistant first.
-   *
-   * False for `.txt`, which the browser converts at upload — turning plain
-   * text into paragraphs is a `split`, not a judgement, so it costs no model
-   * call and the page is editable from the first moment. True for PDF and
-   * `.docx`.
-   */
-  needsConversion: boolean;
+  hasBody: boolean;
 }
 
 /** The three things a page can be downloaded as. */
@@ -152,8 +147,9 @@ export interface ImportDocumentPayload {
   /**
    * The page body, when the browser could produce it without a model.
    *
-   * Only ever set for `text/plain` — see `DocumentSource.needsConversion`. The
-   * API refuses to honour it for any other format.
+   * Only ever set for `text/plain` — turning plain text into paragraphs is a
+   * `split`, so the browser does it at upload. The API refuses to honour it
+   * for any other format.
    */
   content?: string;
 }

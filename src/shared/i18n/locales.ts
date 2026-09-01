@@ -364,6 +364,45 @@ const en = {
   'settings.integrations': 'Connected services',
   'settings.integrationsHint': 'Things Task Studio can reach on your behalf.',
 
+  // ---- The command line ---------------------------------------------------
+  'cli.title': 'Task Studio CLI',
+  'cli.body':
+    'Create projects, generate tasks and close them with a commit, from the repository you are already in.',
+  'cli.projectBody':
+    'Create tasks from this repository, switch to a task’s branch, and close one with a commit — without leaving your editor.',
+  'cli.install': 'Install and sign in',
+  'cli.thenInAnyRepo': 'Then, in any repository',
+  'cli.inThisRepo': 'Then, in this repository',
+  'cli.accountHint':
+    'Your password is used once and never stored. What the machine keeps is a token you can revoke below.',
+  'cli.projectHint':
+    '“init” links the checkout you are in to this project. “ide install” adds /taskstudio commands to Claude Code, Cursor and Copilot.',
+  'cli.showCommands': 'Commands',
+  'cli.hideCommands': 'Hide',
+  'cli.docs': 'Read the docs',
+  'cli.machines': 'Signed-in machines',
+  'cli.machinesHint': 'Every machine the Task Studio CLI is signed in on. Revoking one signs it out.',
+  'cli.lastUsed': 'last used {when}',
+  'cli.neverUsed': 'never used',
+  'cli.expires': 'expires {when}',
+  'cli.neverExpires': 'no expiry',
+  'cli.noMachines': 'No machine is signed in',
+  'cli.noMachinesBody': 'Nothing outside your browser can reach your account right now.',
+  'cli.machinesError': 'Could not load your signed-in machines',
+  'cli.machinesErrorBody': 'This list is the only place you can see what can reach your account, so it is worth another try.',
+  'cli.revoke': 'Revoke',
+  'cli.revokeNamed': 'Revoke {name}',
+  'cli.revokeTitle': 'Revoke “{name}”?',
+  'cli.revokeBody': 'This cannot be undone.',
+  'cli.revokeDetail':
+    '{name} will stop reaching your account immediately. Anyone using it will have to run “taskstudio login” again to get a new token.',
+  'cli.revoked': 'That machine is signed out.',
+  'cli.copy': 'Copy',
+  'cli.copied': 'Copied',
+  'cli.copyFailed': 'Could not copy. Select the line and copy it by hand.',
+  'cli.commandsRegion': 'Task Studio CLI commands',
+  'cli.commandScrollable': 'Command — scroll sideways to see the rest',
+
   // ---- Google Calendar ----------------------------------------------------
   'calendar.title': 'Google Calendar',
   'calendar.pitch':
@@ -404,10 +443,243 @@ const en = {
   'calendar.disconnected': 'Your calendar was disconnected.',
   'calendar.disconnectFailed': 'Could not disconnect that calendar.',
 
-  'calendar.badgeOn': 'In your calendar',
-  'calendar.badgeOff': 'Add to Google Calendar',
-  'calendar.badgeOnHint': 'These meetings are mirrored into your Google Calendar. Manage it in settings.',
-  'calendar.badgeOffHint': 'Connect your Google Calendar in settings to see these meetings there.',
+  'calendar.badgeOn': 'Synced',
+  'calendar.badgeOff': 'Sync Google Calendar',
+  'calendar.badgeOnHint':
+    'Your meetings and your Google Calendar are kept in step, both ways. Turn it off in settings.',
+  'calendar.badgeOffHint': 'Keep these meetings and your Google Calendar in step, both ways.',
+
+  // ---- The landing page ---------------------------------------------------
+  //
+  // The only surface in the app written for somebody who is not a user yet.
+  // Every claim on it is checkable in the product; nothing here describes a
+  // feature that does not exist, which is why there is no pricing section and
+  // no testimonials.
+
+  // ---- The repository a project stands for -------------------------------
+  'repo.open': 'Open the repository',
+  'repo.connect': 'Connect a repository',
+  'repo.connectTitle': 'Connect this project to GitHub',
+  'repo.connectBody':
+    'Paste a public repository. It becomes a link beside the project name, and tasks here can name the branch their work happens on.',
+  'repo.placeholder': 'github.com/owner/name',
+  'repo.connectAction': 'Connect',
+  'repo.connected': 'Repository connected.',
+  'repo.connectFailed': 'Could not connect that repository.',
+  'repo.disconnect': 'Disconnect',
+  'repo.disconnected': 'Repository disconnected.',
+  'repo.disconnectFailed': 'Could not disconnect that repository.',
+  'repo.disconnectHint': 'Branches already written on tasks are kept.',
+  'repo.adminOnly': 'Only an owner or admin can connect a repository.',
+
+  // ---- The branch a task's work happens on -------------------------------
+  'task.branch': 'Branch',
+  'task.branchHint': 'The branch this work happens on. It does not have to exist yet.',
+  'task.branchPlaceholder': 'feature/billing-webhook',
+  'task.openBranch': 'Open this branch on GitHub',
+  'task.commitTitle': 'Finished on {branch}',
+  'task.commitBody':
+    'This task named a branch. Open it on GitHub to commit, open a pull request, or merge it.',
+  'task.commitOpen': 'Open the branch',
+  'task.commitLater': 'Not now',
+
+  // ---- Connections hub ----------------------------------------------------
+  'connections.title': 'Connections',
+  'connections.body': 'What this project talks to. Each one is a setting you turn on yourself.',
+  'connections.broadcast': 'Broadcast',
+  'connections.broadcastHint': 'Post this project’s events somewhere your team already reads.',
+  'connections.sync': 'Sync',
+  'connections.syncHint': 'Keep this project’s dates in step with a calendar you already use.',
+  'connections.editor': 'Your editor',
+  'connections.editorHint':
+    'Work on this project from the terminal you already have open. Nothing to connect here — these are commands you run yourself.',
+  'connections.features': 'Features',
+  'connections.featuresHint':
+    'Connections that change what the project can do, not just where it is announced.',
+  'connections.connect': 'Connect',
+  'connections.connected': 'Connected',
+  'connections.manage': 'Manage',
+  'connections.adminOnly': 'Connections are managed by the project’s owner and admins.',
+  'connections.adminOnlyBody':
+    'Everything here sends this project’s work somewhere outside it, so it sits at the same level as managing the roster.',
+  'connections.personal': 'Personal',
+  'connections.personalHint': 'Connected to your account, not to this project.',
+  'connections.soon': 'Not yet',
+  'connections.svc.discord': 'Discord',
+  'connections.svc.discordWhat': 'Post to a channel when work lands',
+  'connections.svc.slack': 'Slack',
+  'connections.svc.slackWhat': 'The same, in your workspace',
+  'connections.svc.webhook': 'Custom endpoint',
+  'connections.svc.webhookWhat': 'Signed JSON to any HTTPS URL you own',
+  'connections.svc.googleCalendar': 'Google Calendar',
+  'connections.svc.googleCalendarWhat': 'Two-way sync for the meetings you are at',
+  'connections.svc.github': 'GitHub',
+  'connections.svc.githubWhat': 'Link the repository, and name branches on tasks',
+  'connections.svc.trello': 'Trello',
+  'connections.svc.trelloWhat': 'Import a board with its lists — when creating a project',
+  'connections.svc.figma': 'Figma',
+  'connections.svc.figmaWhat': 'Not connected yet',
+
+  // ---- Reporting somebody -------------------------------------------------
+  'report.action': 'Report this person',
+  'report.title': 'Report {name}',
+  'report.body':
+    'This goes to whoever runs this deployment. They see what you write and your name; {name} is never told a report exists.',
+  'report.reasonLabel': 'What happened',
+  'report.placeholder': 'Describe what they did, and where.',
+  'report.submit': 'Send report',
+  'report.sent': 'Report sent. Thank you.',
+  'report.failed': 'Could not send that report.',
+  'report.already': 'Reported',
+  'report.alreadyHint': 'You have reported this person. Reporting again replaces what you wrote.',
+  'report.tooShort': 'Say a little more — one line is enough.',
+
+  // ---- Steering the import assistant --------------------------------------
+  'github.guidanceLabel': 'What should it focus on?',
+  'github.guidanceHint':
+    'Optional. Point it at a folder, or say what this project is for. It steers what the assistant reads — it cannot change what it produces.',
+  'github.guidancePlaceholder': 'Focus on packages/api — this is the billing rewrite.',
+  'github.overviewTitle': 'What would be imported',
+  'github.overviewBack': 'Look up another',
+
+  'landing.nav.how': 'How it works',
+  'landing.nav.connects': 'Connections',
+  'landing.nav.inside': 'What’s inside',
+  'landing.nav.signIn': 'Sign in',
+  'landing.nav.getStarted': 'Get started',
+
+  'landing.word.tasks': 'tasks',
+  'landing.word.meetings': 'meetings',
+  'landing.word.notes': 'notes',
+  'landing.word.projects': 'projects',
+  'landing.word.work': 'work',
+
+  /*
+   * The possessive that goes with each noun above.
+   *
+   * One "your" five times over in English, which looks like duplication and is
+   * not: Portuguese needs three different words here, because the possessive
+   * agrees with the gender and number of the noun it sits in front of. See
+   * `RotatingWord`.
+   */
+  'landing.det.tasks': 'your',
+  'landing.det.meetings': 'your',
+  'landing.det.notes': 'your',
+  'landing.det.projects': 'your',
+  'landing.det.work': 'your',
+
+  'landing.hero.badge': 'Boards, notes, meetings and docs — in one place',
+  'landing.hero.titleLead': 'Manage',
+  'landing.hero.titleTail': 'the way you would on paper.',
+  'landing.hero.body':
+    'Task Studio is a project studio that behaves like a desk. Drag work between columns, stick notes on a wall, book the room, and let it talk to the tools you already use.',
+  'landing.hero.primary': 'Start for free',
+  'landing.hero.secondary': 'See it working',
+  'landing.hero.reassurance': 'No card. Bring a GitHub repository or a board export and start with real work in it.',
+
+  'landing.how.eyebrow': 'How it works',
+  'landing.how.title': 'Three things, actually working',
+  'landing.how.body':
+    'Not screenshots. These are the real interfaces, running — the same components, the same steps, in whichever theme you have chosen.',
+
+  'landing.demo.boardTab': 'Board',
+  'landing.demo.boardEyebrow': 'Move work',
+  'landing.demo.boardTitle': 'Pick a task up and put it where it belongs',
+  'landing.demo.boardBody':
+    'Columns you name yourself, cards that carry their deadline and their people. Drag one across and everything that counts it — the dashboard, the deadlines, your teammate’s screen — updates at once.',
+
+  'landing.demo.importTab': 'New project',
+  'landing.demo.importEyebrow': 'Start with something',
+  'landing.demo.importTitle': 'Turn a repository into a project, in the background',
+  'landing.demo.importBody':
+    'Paste a public GitHub repository and close the dialog. It reads the README, the file tree and the open issues, writes a project with starting tasks and pages, and invites the contributors who already work here. A card in the corner tracks it, and you can cancel at any point.',
+
+  'landing.demo.chatTab': 'Project chat',
+  'landing.demo.chatEyebrow': 'Decide together',
+  'landing.demo.chatTitle': 'Talk about the work, next to the work',
+  'landing.demo.chatBody':
+    'Every project has its own conversation, and it follows you around the app — pin it and it stays open while you are on someone else’s board. Decisions end up beside the tasks they are about instead of three tools away.',
+
+  'landing.board.todo': 'To do',
+  'landing.board.doing': 'Doing',
+  'landing.board.done': 'Done',
+  'landing.board.mover': 'Ship the billing page',
+  'landing.board.due': 'Due Friday',
+  'landing.board.cardA': 'Draft the pricing copy',
+  'landing.board.cardB': 'Review the API contract',
+  'landing.board.cardC': 'Pick a payment provider',
+
+  'landing.import.resolving': 'Finding the repository…',
+  'landing.import.reading': 'Reading the repository…',
+  'landing.import.analysing': 'The assistant is reading it…',
+  'landing.import.writing': 'Writing the project…',
+  'landing.import.done': 'Project ready',
+  'landing.import.tasks': '3 tasks',
+  'landing.import.pages': '4 pages',
+  'landing.import.invited': '2 invited',
+
+  'landing.chat.project': 'Billing rewrite',
+  'landing.chat.online': '3 online',
+  'landing.chat.typing': 'Typing',
+  'landing.chat.placeholder': 'Write a message…',
+  'landing.chat.one': 'The provider docs changed — do we still ship Friday?',
+  'landing.chat.two': 'Only the webhook part. Half a day at most.',
+  'landing.chat.three': 'Then Friday holds. Moving it to Doing.',
+
+  'landing.connects.eyebrow': 'Connections',
+  'landing.connects.title': 'It plugs into what you already use',
+  'landing.connects.body':
+    'Everything below works today, and every one of them is a setting you can turn on yourself. Nothing here needs an account manager.',
+
+  'landing.svc.github': 'GitHub',
+  'landing.svc.githubWhat': 'Turn a public repository into a project',
+  'landing.svc.googleCalendar': 'Google Calendar',
+  'landing.svc.googleCalendarWhat': 'Two-way sync for your meetings',
+  'landing.svc.feed': 'Calendar feed',
+  'landing.svc.feedWhat': 'Subscribe from Apple, Outlook or anywhere',
+  'landing.svc.discord': 'Discord',
+  'landing.svc.discordWhat': 'Post to a channel when work lands',
+  'landing.svc.slack': 'Slack',
+  'landing.svc.slackWhat': 'The same, in your workspace',
+  'landing.svc.trello': 'Trello',
+  'landing.svc.trelloWhat': 'Import a whole board with its lists',
+  'landing.svc.exports': 'Jira, Asana & CSV',
+  'landing.svc.exportsWhat': 'Bring a board over from an export',
+  'landing.svc.webhooks': 'Webhooks & API',
+  'landing.svc.webhooksWhat': 'Signed events, and tokens for your scripts',
+
+  'landing.inside.eyebrow': 'What’s inside',
+  'landing.inside.title': 'A studio, not a spreadsheet',
+  'landing.inside.body':
+    'Six things worth knowing before you sign up. All of them are in the free tier, because there is only one tier.',
+
+  'landing.note.boards': 'Two boards, one set of tasks',
+  'landing.note.boardsBody':
+    'Sort by status, or by columns you invent. The same work, seen the way you need it that afternoon.',
+  'landing.note.notes': 'A wall of Post-its',
+  'landing.note.notesBody':
+    'Stick notes anywhere, link them with string, draw on the whiteboard beside them.',
+  'landing.note.meetings': 'Meetings that reach your calendar',
+  'landing.note.meetingsBody':
+    'Book the room here, see it on your phone. Move it on your phone, see it here.',
+  'landing.note.docs': 'Pages that live with the project',
+  'landing.note.docsBody':
+    'Write them here, or bring a PDF or Word file in and keep it exactly as it is — readable by the project, one click from a download.',
+  'landing.note.undo': 'A changelog you can undo',
+  'landing.note.undoBody':
+    'Every action is recorded, and most of them can be reversed — your own always, anybody’s if you run the project.',
+  'landing.note.skins': 'Thirteen ways to look',
+  'landing.note.skinsBody':
+    'Paper, terminal, newsprint, deep space. Same app, and the one you pick follows you everywhere.',
+
+  'landing.cta.title': 'Put your work on the desk',
+  'landing.cta.body':
+    'Make an account, import a repository or a board, and see what it looks like with your own work in it.',
+  'landing.cta.primary': 'Create an account',
+  'landing.cta.secondary': 'I already have one',
+
+  'landing.footer.tagline': 'Work that behaves like paper.',
+  'landing.footer.source': 'Source',
 
   // ---- Importing a board exported from another tool -----------------------
   'project.modeBoard': 'From a board',
@@ -479,7 +751,7 @@ const en = {
   'tokens.revokeFailed': 'Could not revoke that token.',
 
   // ---- Outbound webhooks ---------------------------------------------------
-  'project.tabWebhooks': 'Webhooks',
+  'project.tabConnections': 'Connections',
   'webhooks.title': 'Webhooks',
   'webhooks.subtitle': 'Post this project’s events to Discord, Slack or anywhere else.',
   'webhooks.none': 'Nothing is listening yet',
@@ -672,7 +944,6 @@ const en = {
   'doc.format.txt.hint': 'The words only, no formatting',
   'doc.format.html': 'Web page',
   'doc.format.html.hint': 'Opens in a browser, keeps every link',
-  'doc.convertedOnDownload': 'Converted by the assistant',
   'doc.originalFile': 'Original file',
 
   // ---- Importing an existing document ------------------------------------
@@ -681,27 +952,16 @@ const en = {
   'doc.importHint': 'Bring in a PDF, a Word document (.docx) or a plain-text file',
   'doc.imported': 'Document imported.',
   'doc.importFailed': 'Could not import that document.',
-  'doc.convertToEdit': 'Convert & edit',
-  'doc.convertHint':
-    'The assistant will rewrite this file as a page you can edit. The original stays downloadable.',
-  'doc.converting': 'Converting…',
-  'doc.convertingHint':
-    'The assistant is reading the whole document. On a long one this takes a moment.',
-  'doc.converted': 'Converted — you can edit it now.',
-  'doc.figuresKept': '{count} figures came across with the text.',
-  'doc.figuresPartly':
-    '{kept} figures came across; {skipped} could not be read. The original file is still whole under Download.',
-  'doc.convertedTruncated':
-    'Converted, but the document was too long to fit on one page. The end is missing.',
-  'doc.convertFailed': 'Could not convert that document.',
-  'doc.pressEditToConvert': 'Press Convert & edit to turn this into a page you can rewrite.',
+  'doc.keptAsUploaded': 'Kept exactly as uploaded',
+  'doc.keptAsUploadedHint':
+    'An imported PDF or Word file is kept as it was uploaded and is not edited here. Download it, or write a new page beside it.',
   'doc.asUploaded': 'as uploaded',
-  'doc.uploadedFile': 'Uploaded file — not converted yet',
+  'doc.uploadedFile': 'Uploaded file',
   'doc.openOriginal': 'Open original',
   'doc.loadingPreview': 'Loading the document…',
   'doc.noPreview': 'No preview for {format} files',
   'doc.noPreviewHint':
-    'Open it in whatever reads it on your machine, or convert it into a page you can edit here.',
+    'Open it in whatever reads it on your machine, or download it from the menu above.',
   'doc.previewFailed': 'Could not load the file',
   'doc.previewFailedHint': 'It is still in storage — try downloading the original instead.',
   'doc.confirm': 'Confirm',
@@ -2010,6 +2270,46 @@ const ptBR: Record<TranslationKey, string> = {
   'settings.integrations': 'Serviços conectados',
   'settings.integrationsHint': 'O que o Task Studio pode acessar em seu nome.',
 
+  'cli.title': 'Task Studio CLI',
+  'cli.body':
+    'Crie projetos, gere tarefas e conclua-as com um commit, direto do repositório em que você já está.',
+  'cli.projectBody':
+    'Crie tarefas a partir deste repositório, mude para a branch de uma tarefa e conclua-a com um commit — sem sair do editor.',
+  'cli.install': 'Instalar e entrar',
+  'cli.thenInAnyRepo': 'Depois, em qualquer repositório',
+  'cli.inThisRepo': 'Depois, neste repositório',
+  'cli.accountHint':
+    'Sua senha é usada uma vez e nunca armazenada. O que fica na máquina é um token que você pode revogar abaixo.',
+  'cli.projectHint':
+    'O “init” liga o repositório em que você está a este projeto. O “ide install” adiciona os comandos /taskstudio ao Claude Code, ao Cursor e ao Copilot.',
+  'cli.showCommands': 'Comandos',
+  'cli.hideCommands': 'Ocultar',
+  'cli.docs': 'Ver a documentação',
+  'cli.machines': 'Máquinas conectadas',
+  'cli.machinesHint':
+    'Todas as máquinas em que o Task Studio CLI está conectado. Revogar uma a desconecta.',
+  'cli.lastUsed': 'usado {when}',
+  'cli.neverUsed': 'nunca usado',
+  'cli.expires': 'expira {when}',
+  'cli.neverExpires': 'sem expiração',
+  'cli.noMachines': 'Nenhuma máquina conectada',
+  'cli.noMachinesBody': 'Nada fora do seu navegador consegue acessar sua conta agora.',
+  'cli.machinesError': 'Não foi possível carregar suas máquinas conectadas',
+  'cli.machinesErrorBody':
+    'Esta lista é o único lugar onde você vê o que consegue acessar sua conta, então vale tentar de novo.',
+  'cli.revoke': 'Revogar',
+  'cli.revokeNamed': 'Revogar {name}',
+  'cli.revokeTitle': 'Revogar “{name}”?',
+  'cli.revokeBody': 'Isso não pode ser desfeito.',
+  'cli.revokeDetail':
+    '{name} deixará de acessar sua conta imediatamente. Quem estiver usando essa máquina terá de rodar “taskstudio login” de novo para obter um novo token.',
+  'cli.revoked': 'Essa máquina foi desconectada.',
+  'cli.copy': 'Copiar',
+  'cli.copied': 'Copiado',
+  'cli.copyFailed': 'Não foi possível copiar. Selecione a linha e copie manualmente.',
+  'cli.commandsRegion': 'Comandos do Task Studio CLI',
+  'cli.commandScrollable': 'Comando — role para o lado para ver o resto',
+
   'calendar.title': 'Google Agenda',
   'calendar.pitch':
     'Espelhe na sua própria agenda as reuniões em que você é esperado, e deixe as alterações feitas lá voltarem para cá.',
@@ -2049,12 +2349,234 @@ const ptBR: Record<TranslationKey, string> = {
   'calendar.disconnected': 'Sua agenda foi desconectada.',
   'calendar.disconnectFailed': 'Não foi possível desconectar essa agenda.',
 
-  'calendar.badgeOn': 'Na sua agenda',
-  'calendar.badgeOff': 'Adicionar ao Google Agenda',
+  'calendar.badgeOn': 'Sincronizado',
+  'calendar.badgeOff': 'Sincronizar Google Agenda',
   'calendar.badgeOnHint':
-    'Estas reuniões são espelhadas no seu Google Agenda. Gerencie em configurações.',
+    'Suas reuniões e o seu Google Agenda ficam em dia nos dois sentidos. Desative em configurações.',
   'calendar.badgeOffHint':
-    'Conecte seu Google Agenda em configurações para ver estas reuniões por lá.',
+    'Mantenha estas reuniões e o seu Google Agenda em dia, nos dois sentidos.',
+
+
+  // ---- O repositório que o projeto representa -----------------------------
+  'repo.open': 'Abrir o repositório',
+  'repo.connect': 'Conectar um repositório',
+  'repo.connectTitle': 'Conectar este projeto ao GitHub',
+  'repo.connectBody':
+    'Cole um repositório público. Ele vira um link ao lado do nome do projeto, e as tarefas daqui podem indicar a branch em que o trabalho acontece.',
+  'repo.placeholder': 'github.com/dono/nome',
+  'repo.connectAction': 'Conectar',
+  'repo.connected': 'Repositório conectado.',
+  'repo.connectFailed': 'Não foi possível conectar esse repositório.',
+  'repo.disconnect': 'Desconectar',
+  'repo.disconnected': 'Repositório desconectado.',
+  'repo.disconnectFailed': 'Não foi possível desconectar esse repositório.',
+  'repo.disconnectHint': 'As branches já escritas nas tarefas são mantidas.',
+  'repo.adminOnly': 'Só o dono ou um admin pode conectar um repositório.',
+
+  // ---- A branch em que a tarefa acontece ----------------------------------
+  'task.branch': 'Branch',
+  'task.branchHint': 'A branch em que este trabalho acontece. Ela ainda não precisa existir.',
+  'task.branchPlaceholder': 'feature/webhook-cobranca',
+  'task.openBranch': 'Abrir esta branch no GitHub',
+  'task.commitTitle': 'Concluída em {branch}',
+  'task.commitBody':
+    'Esta tarefa indicava uma branch. Abra no GitHub para commitar, abrir um pull request ou fazer o merge.',
+  'task.commitOpen': 'Abrir a branch',
+  'task.commitLater': 'Agora não',
+
+  // ---- Central de conexões -------------------------------------------------
+  'connections.title': 'Conexões',
+  'connections.body':
+    'Com o que este projeto conversa. Cada uma é uma configuração que você mesmo liga.',
+  'connections.broadcast': 'Transmissão',
+  'connections.broadcastHint': 'Publique os eventos deste projeto onde seu time já lê.',
+  'connections.sync': 'Sincronização',
+  'connections.syncHint': 'Mantenha as datas deste projeto em dia com uma agenda que você já usa.',
+  'connections.editor': 'Seu editor',
+  'connections.editorHint':
+    'Trabalhe neste projeto pelo terminal que você já tem aberto. Não há nada para conectar aqui — são comandos que você mesmo executa.',
+  'connections.features': 'Recursos',
+  'connections.featuresHint':
+    'Conexões que mudam o que o projeto consegue fazer, não só onde ele é anunciado.',
+  'connections.connect': 'Conectar',
+  'connections.connected': 'Conectado',
+  'connections.manage': 'Gerenciar',
+  'connections.adminOnly': 'As conexões são gerenciadas pelo dono e pelos admins do projeto.',
+  'connections.adminOnlyBody':
+    'Tudo aqui envia o trabalho deste projeto para fora dele, então fica no mesmo nível de gerenciar a equipe.',
+  'connections.personal': 'Pessoal',
+  'connections.personalHint': 'Conectado à sua conta, não a este projeto.',
+  'connections.soon': 'Ainda não',
+  'connections.svc.discord': 'Discord',
+  'connections.svc.discordWhat': 'Avise um canal quando algo for concluído',
+  'connections.svc.slack': 'Slack',
+  'connections.svc.slackWhat': 'O mesmo, no seu workspace',
+  'connections.svc.webhook': 'Endpoint próprio',
+  'connections.svc.webhookWhat': 'JSON assinado para qualquer URL HTTPS sua',
+  'connections.svc.googleCalendar': 'Google Agenda',
+  'connections.svc.googleCalendarWhat': 'Sincronização nos dois sentidos das suas reuniões',
+  'connections.svc.github': 'GitHub',
+  'connections.svc.githubWhat': 'Conecte o repositório e indique branches nas tarefas',
+  'connections.svc.trello': 'Trello',
+  'connections.svc.trelloWhat': 'Importe um quadro com suas listas — ao criar um projeto',
+  'connections.svc.figma': 'Figma',
+  'connections.svc.figmaWhat': 'Ainda não conectável',
+
+  // ---- Denunciar alguém ----------------------------------------------------
+  'report.action': 'Denunciar esta pessoa',
+  'report.title': 'Denunciar {name}',
+  'report.body':
+    'Isto vai para quem administra esta instalação. Eles veem o que você escrever e o seu nome; {name} nunca é avisado de que existe uma denúncia.',
+  'report.reasonLabel': 'O que aconteceu',
+  'report.placeholder': 'Descreva o que a pessoa fez, e onde.',
+  'report.submit': 'Enviar denúncia',
+  'report.sent': 'Denúncia enviada. Obrigado.',
+  'report.failed': 'Não foi possível enviar a denúncia.',
+  'report.already': 'Denunciado',
+  'report.alreadyHint':
+    'Você já denunciou esta pessoa. Denunciar de novo substitui o que você escreveu.',
+  'report.tooShort': 'Escreva um pouco mais — uma linha basta.',
+
+  // ---- Orientando o assistente da importação ------------------------------
+  'github.guidanceLabel': 'No que ele deve focar?',
+  'github.guidanceHint':
+    'Opcional. Aponte uma pasta, ou diga para que serve este projeto. Isso orienta o que o assistente lê — não muda o que ele produz.',
+  'github.guidancePlaceholder': 'Foque em packages/api — esta é a reescrita da cobrança.',
+  'github.overviewTitle': 'O que seria importado',
+  'github.overviewBack': 'Buscar outro',
+
+  'landing.nav.how': 'Como funciona',
+  'landing.nav.connects': 'Conexões',
+  'landing.nav.inside': 'O que tem dentro',
+  'landing.nav.signIn': 'Entrar',
+  'landing.nav.getStarted': 'Começar',
+
+  'landing.word.tasks': 'tarefas',
+  'landing.word.meetings': 'reuniões',
+  'landing.word.notes': 'anotações',
+  'landing.word.projects': 'projetos',
+  'landing.word.work': 'trabalho',
+
+  // Concorda com o substantivo que vem depois: femininas no plural levam
+  // "suas", masculino plural leva "seus", masculino singular leva "seu".
+  'landing.det.tasks': 'suas',
+  'landing.det.meetings': 'suas',
+  'landing.det.notes': 'suas',
+  'landing.det.projects': 'seus',
+  'landing.det.work': 'seu',
+
+  'landing.hero.badge': 'Quadros, notas, reuniões e documentos — em um lugar só',
+  'landing.hero.titleLead': 'Organize',
+  'landing.hero.titleTail': 'como você faria no papel.',
+  'landing.hero.body':
+    'O Task Studio é um estúdio de projetos que se comporta como uma mesa. Arraste o trabalho entre colunas, cole notas na parede, marque a sala e deixe tudo conversar com as ferramentas que você já usa.',
+  'landing.hero.primary': 'Começar de graça',
+  'landing.hero.secondary': 'Ver funcionando',
+  'landing.hero.reassurance': 'Sem cartão. Traga um repositório do GitHub ou a exportação de um quadro e já comece com trabalho de verdade.',
+
+  'landing.how.eyebrow': 'Como funciona',
+  'landing.how.title': 'Três coisas, funcionando de verdade',
+  'landing.how.body':
+    'Não são capturas de tela. São as interfaces reais, rodando — os mesmos componentes, as mesmas etapas, no tema que você escolheu.',
+
+  'landing.demo.boardTab': 'Quadro',
+  'landing.demo.boardEyebrow': 'Mover o trabalho',
+  'landing.demo.boardTitle': 'Pegue uma tarefa e ponha onde ela pertence',
+  'landing.demo.boardBody':
+    'Colunas que você mesmo nomeia, cartões que carregam o prazo e as pessoas. Arraste um e tudo que conta com ele — o painel, os prazos, a tela do seu colega — se atualiza na hora.',
+
+  'landing.demo.importTab': 'Novo projeto',
+  'landing.demo.importEyebrow': 'Comece com algo',
+  'landing.demo.importTitle': 'Transforme um repositório em projeto, em segundo plano',
+  'landing.demo.importBody':
+    'Cole um repositório público do GitHub e feche a janela. Ele lê o README, a árvore de arquivos e as issues abertas, escreve um projeto com tarefas e páginas iniciais, e convida quem contribuiu e já usa o app. Um cartão no canto acompanha, e dá para cancelar a qualquer momento.',
+
+  'landing.demo.chatTab': 'Chat do projeto',
+  'landing.demo.chatEyebrow': 'Decidir junto',
+  'landing.demo.chatTitle': 'Converse sobre o trabalho, do lado do trabalho',
+  'landing.demo.chatBody':
+    'Cada projeto tem sua própria conversa, e ela te acompanha pelo app — fixe e ela continua aberta enquanto você está no quadro de outra pessoa. As decisões ficam ao lado das tarefas em vez de três ferramentas de distância.',
+
+  'landing.board.todo': 'A fazer',
+  'landing.board.doing': 'Fazendo',
+  'landing.board.done': 'Feito',
+  'landing.board.mover': 'Publicar a página de cobrança',
+  'landing.board.due': 'Prazo sexta',
+  'landing.board.cardA': 'Escrever o texto de preços',
+  'landing.board.cardB': 'Revisar o contrato da API',
+  'landing.board.cardC': 'Escolher o meio de pagamento',
+
+  'landing.import.resolving': 'Localizando o repositório…',
+  'landing.import.reading': 'Lendo o repositório…',
+  'landing.import.analysing': 'O assistente está lendo…',
+  'landing.import.writing': 'Escrevendo o projeto…',
+  'landing.import.done': 'Projeto pronto',
+  'landing.import.tasks': '3 tarefas',
+  'landing.import.pages': '4 páginas',
+  'landing.import.invited': '2 convidados',
+
+  'landing.chat.project': 'Reescrita da cobrança',
+  'landing.chat.online': '3 online',
+  'landing.chat.typing': 'Digitando',
+  'landing.chat.placeholder': 'Escreva uma mensagem…',
+  'landing.chat.one': 'A doc do provedor mudou — a gente ainda entrega sexta?',
+  'landing.chat.two': 'Só a parte do webhook. Meio dia, no máximo.',
+  'landing.chat.three': 'Então sexta está de pé. Movendo para Fazendo.',
+
+  'landing.connects.eyebrow': 'Conexões',
+  'landing.connects.title': 'Conecta com o que você já usa',
+  'landing.connects.body':
+    'Tudo abaixo já funciona, e cada um é uma configuração que você mesmo liga. Nada aqui precisa de vendedor.',
+
+  'landing.svc.github': 'GitHub',
+  'landing.svc.githubWhat': 'Vire um repositório público em projeto',
+  'landing.svc.googleCalendar': 'Google Agenda',
+  'landing.svc.googleCalendarWhat': 'Sincronização nos dois sentidos',
+  'landing.svc.feed': 'Link de agenda',
+  'landing.svc.feedWhat': 'Assine pelo Apple, Outlook ou qualquer outro',
+  'landing.svc.discord': 'Discord',
+  'landing.svc.discordWhat': 'Avise um canal quando algo for concluído',
+  'landing.svc.slack': 'Slack',
+  'landing.svc.slackWhat': 'O mesmo, no seu workspace',
+  'landing.svc.trello': 'Trello',
+  'landing.svc.trelloWhat': 'Importe um quadro inteiro com suas listas',
+  'landing.svc.exports': 'Jira, Asana e CSV',
+  'landing.svc.exportsWhat': 'Traga um quadro por exportação',
+  'landing.svc.webhooks': 'Webhooks e API',
+  'landing.svc.webhooksWhat': 'Eventos assinados e tokens para seus scripts',
+
+  'landing.inside.eyebrow': 'O que tem dentro',
+  'landing.inside.title': 'Um estúdio, não uma planilha',
+  'landing.inside.body':
+    'Seis coisas que vale saber antes de criar conta. Todas estão no plano gratuito, porque só existe um plano.',
+
+  'landing.note.boards': 'Dois quadros, um só conjunto de tarefas',
+  'landing.note.boardsBody':
+    'Organize por status, ou por colunas que você inventa. O mesmo trabalho, visto do jeito que você precisa naquela tarde.',
+  'landing.note.notes': 'Uma parede de post-its',
+  'landing.note.notesBody':
+    'Cole notas onde quiser, ligue-as com barbante, desenhe no quadro branco ao lado.',
+  'landing.note.meetings': 'Reuniões que chegam na sua agenda',
+  'landing.note.meetingsBody':
+    'Marque a sala aqui, veja no celular. Mova no celular, veja aqui.',
+  'landing.note.docs': 'Páginas que vivem com o projeto',
+  'landing.note.docsBody':
+    'Escreva aqui, ou traga um PDF ou documento do Word e ele fica exatamente como está — visível para o projeto, a um clique do download.',
+  'landing.note.undo': 'Um histórico que dá para desfazer',
+  'landing.note.undoBody':
+    'Toda ação fica registrada, e a maioria pode ser revertida — as suas sempre, as de qualquer um se você gerencia o projeto.',
+  'landing.note.skins': 'Treze jeitos de aparecer',
+  'landing.note.skinsBody':
+    'Papel, terminal, jornal, espaço profundo. O mesmo app, e o que você escolher te acompanha em tudo.',
+
+  'landing.cta.title': 'Ponha seu trabalho na mesa',
+  'landing.cta.body':
+    'Crie uma conta, importe um repositório ou um quadro, e veja como fica com o seu próprio trabalho dentro.',
+  'landing.cta.primary': 'Criar uma conta',
+  'landing.cta.secondary': 'Já tenho conta',
+
+  'landing.footer.tagline': 'Trabalho que se comporta como papel.',
+  'landing.footer.source': 'Código',
 
   'project.modeBoard': 'De um quadro',
   'boardImport.drop': 'Solte aqui a exportação de um quadro',
@@ -2122,7 +2644,7 @@ const ptBR: Record<TranslationKey, string> = {
   'tokens.createFailed': 'Não foi possível criar esse token.',
   'tokens.revokeFailed': 'Não foi possível revogar esse token.',
 
-  'project.tabWebhooks': 'Webhooks',
+  'project.tabConnections': 'Conexões',
   'webhooks.title': 'Webhooks',
   'webhooks.subtitle': 'Publique os eventos deste projeto no Discord, no Slack ou onde quiser.',
   'webhooks.none': 'Ninguém está ouvindo ainda',
@@ -2308,7 +2830,6 @@ const ptBR: Record<TranslationKey, string> = {
   'doc.format.txt.hint': 'Só as palavras, sem formatação',
   'doc.format.html': 'Página web',
   'doc.format.html.hint': 'Abre no navegador e mantém todos os links',
-  'doc.convertedOnDownload': 'Convertido pelo assistente',
   'doc.originalFile': 'Arquivo original',
 
   // ---- Importando um documento existente ---------------------------------
@@ -2317,27 +2838,16 @@ const ptBR: Record<TranslationKey, string> = {
   'doc.importHint': 'Traga um PDF, um documento do Word (.docx) ou um arquivo de texto',
   'doc.imported': 'Documento importado.',
   'doc.importFailed': 'Não foi possível importar este documento.',
-  'doc.convertToEdit': 'Converter e editar',
-  'doc.convertHint':
-    'O assistente vai reescrever este arquivo como uma página editável. O original continua disponível para download.',
-  'doc.converting': 'Convertendo…',
-  'doc.convertingHint':
-    'O assistente está lendo o documento inteiro. Em um documento longo isso leva um instante.',
-  'doc.converted': 'Convertido — agora você pode editar.',
-  'doc.figuresKept': '{count} figuras vieram junto com o texto.',
-  'doc.figuresPartly':
-    '{kept} figuras vieram; {skipped} não puderam ser lidas. O arquivo original continua inteiro em Baixar.',
-  'doc.convertedTruncated':
-    'Convertido, mas o documento era longo demais para caber em uma página. O final ficou de fora.',
-  'doc.convertFailed': 'Não foi possível converter este documento.',
-  'doc.pressEditToConvert': 'Toque em Converter e editar para transformar isto em uma página editável.',
+  'doc.keptAsUploaded': 'Mantido exatamente como enviado',
+  'doc.keptAsUploadedHint':
+    'Um PDF ou documento do Word importado é mantido como foi enviado e não é editado aqui. Baixe o arquivo, ou escreva uma página nova ao lado dele.',
   'doc.asUploaded': 'como enviado',
-  'doc.uploadedFile': 'Arquivo enviado — ainda não convertido',
+  'doc.uploadedFile': 'Arquivo enviado',
   'doc.openOriginal': 'Abrir original',
   'doc.loadingPreview': 'Carregando o documento…',
   'doc.noPreview': 'Sem pré-visualização para arquivos {format}',
   'doc.noPreviewHint':
-    'Abra no programa que lê esse formato no seu computador, ou converta em uma página editável aqui.',
+    'Abra no programa que lê esse formato no seu computador, ou baixe pelo menu acima.',
   'doc.previewFailed': 'Não foi possível carregar o arquivo',
   'doc.previewFailedHint': 'Ele continua no armazenamento — tente baixar o original.',
   'doc.confirm': 'Confirmar',

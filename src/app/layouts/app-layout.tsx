@@ -19,6 +19,7 @@ import {
   WanderingEye,
 } from '@/shared/ui';
 import { HiddenSidebar } from '@/widgets/hidden-sidebar/ui/hidden-sidebar';
+import { BranchCommitPrompt } from '@/features/task-management/ui/branch-commit-prompt';
 import { ImportTracker } from '@/widgets/import-tracker/ui/import-tracker';
 import { ProjectRail } from '@/widgets/project-rail/ui/project-rail';
 import { TopNavigation } from '@/widgets/top-navigation/ui/top-navigation';
@@ -76,6 +77,14 @@ export const AppLayout = () => {
           page and it carries on. Renders nothing at all when there is no
           import running. */}
       <ImportTracker />
+
+      {/*
+        Mounted once, for the same reason the tracker is: a task can be
+        completed from five surfaces and every one of them goes through one
+        mutation, so one dialog listening beats five mounting their own. See
+        `useCommitPrompt`.
+      */}
+      <BranchCommitPrompt />
 
       {/* Something opens an eye somewhere on the page every twenty seconds.
           Inert on every skin but the eldritch one, and inert entirely under

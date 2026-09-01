@@ -15,6 +15,25 @@ export const userApi = {
     return data;
   },
 
+  /**
+   * Report somebody to whoever runs this deployment.
+   *
+   * Nothing about the subject comes back — not a count, not whether anybody
+   * else has reported them — because every such field is a fact about somebody
+   * else that a stranger could enumerate by reporting people one at a time.
+   * Reporting the same person twice replaces the reason rather than adding a
+   * second report; see `UserReport` on the API.
+   */
+  async report(userId: string, payload: { reason: string; projectId?: string }): Promise<void> {
+    await api.post(`/users/${userId}/report`, payload);
+  },
+
+  /** Whether *this* reader has a standing report against that person. */
+  async reportStatus(userId: string): Promise<boolean> {
+    const { data } = await api.get<{ reported: boolean }>(`/users/${userId}/report`);
+    return data.reported;
+  },
+
   async updateProfile(payload: {
     displayName?: string;
     bio?: string;

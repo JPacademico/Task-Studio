@@ -52,7 +52,20 @@ export interface RepositoryImportPayload {
   color?: string;
   /** False to skip the assistant and take the repository's own name and blurb. */
   useAssistant?: boolean;
+  /**
+   * A short note steering what the assistant reads.
+   *
+   * Only meaningful alongside `useAssistant` — there is nothing to steer
+   * otherwise — and capped at 400 characters by the API, which is the most
+   * load-bearing part of how it is kept safe. It changes *emphasis*, never
+   * what the import produces: the answer is bound to a fixed schema either
+   * way. See `sanitiseGuidance` on the API.
+   */
+  guidance?: string;
 }
+
+/** The API's own ceiling, mirrored so the field can count down against it. */
+export const MAX_IMPORT_GUIDANCE = 400;
 
 /**
  * Where an import has got to.

@@ -84,6 +84,22 @@ export interface Task {
    * them.
    */
   project: { id: string; name: string; color: string; endsAt: string | null } | null;
+  /**
+   * The git branch this task's work happens on, when the project has a
+   * repository linked and somebody named one.
+   *
+   * Free text: the branch is routinely created *after* the task that names it,
+   * so nothing checks it against what exists today.
+   */
+  branch: string | null;
+  /**
+   * Where that branch lives, or null.
+   *
+   * Built by the API rather than here, because it needs the project's
+   * repository — which a task only carries half of — and because a branch name
+   * containing a slash has to be percent-encoded before it is a path.
+   */
+  branchUrl: string | null;
   createdBy: UserSummary;
   assignees: TaskAssignee[];
   isMine: boolean;
@@ -149,6 +165,14 @@ export interface CreateTaskPayload {
   description?: string;
   color?: string;
   priority?: TaskPriority;
+  /**
+   * The git branch this work happens on.
+   *
+   * Only accepted on a project with a repository linked — the API refuses it
+   * otherwise rather than dropping it silently, so a field that is offered is
+   * a field that saves. An empty string clears it.
+   */
+  branch?: string;
   startAt?: string;
   dueAt?: string;
   assigneeIds?: string[];
@@ -181,6 +205,14 @@ export interface UpdateTaskPayload {
   description?: string;
   color?: string;
   priority?: TaskPriority;
+  /**
+   * The git branch this work happens on.
+   *
+   * Only accepted on a project with a repository linked — the API refuses it
+   * otherwise rather than dropping it silently, so a field that is offered is
+   * a field that saves. An empty string clears it.
+   */
+  branch?: string;
   status?: TaskStatus;
   startAt?: string | null;
   dueAt?: string | null;

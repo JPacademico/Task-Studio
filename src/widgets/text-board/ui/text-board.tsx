@@ -7,7 +7,6 @@ import {
   Pencil,
   Plus,
   Save,
-  Sparkles,
   Trash2,
   Upload,
   UserPlus,
@@ -18,7 +17,6 @@ import { toast } from 'sonner';
 import { MAX_PLAIN_TEXT_CHARS, plainTextToHtml } from '@/entities/document/lib/plain-text';
 import {
   useAdoptDocument,
-  useConvertDocument,
   useCreateDocument,
   useDeleteDocument,
   useImportDocument,
@@ -179,11 +177,11 @@ export const TextBoard = ({
   /**
    * "Open the editor as soon as this page arrives."
    *
-   * Two actions mean it — creating a blank page, and converting an imported
-   * one — and both were losing the race against the effect below, which resets
-   * `isEditing` every time `open` changes identity. Creating a page therefore
-   * dropped the user on a read-only blank sheet: `setIsEditing(true)` ran, the
-   * fetched document then landed, and the effect turned it straight back off.
+   * Creating a blank page means it, and it was losing the race against the
+   * effect below, which resets `isEditing` every time `open` changes identity.
+   * Creating a page therefore dropped the user on a read-only blank sheet:
+   * `setIsEditing(true)` ran, the fetched document then landed, and the effect
+   * turned it straight back off.
    *
    * A ref rather than more state because it must survive that render without
    * causing one, and because the effect has to be able to *consume* it — the
@@ -203,7 +201,6 @@ export const TextBoard = ({
 
   const createDocument = useCreateDocument();
   const importDocument = useImportDocument();
-  const convertDocument = useConvertDocument();
   const updateDocument = useUpdateDocument();
   const deleteDocument = useDeleteDocument();
 
@@ -226,13 +223,11 @@ export const TextBoard = ({
        * Your own save, coming back off the socket.
        *
        * The API emits into the whole project room, the writer included, so
-       * every save and every conversion returns to the person who made it. The
-       * cache already holds that exact revision by then — the mutation wrote
-       * it from the response — so an event carrying the same `updatedAt` says
-       * nothing new, and treating it as a teammate's edit raised the
-       * "somebody saved this page while you were editing" notice against
-       * yourself. Conversion made that constant rather than a race: it opens
-       * the editor, so the flag it is tested against is always set.
+       * every save returns to the person who made it. The cache already holds
+       * that exact revision by then — the mutation wrote it from the response
+       * — so an event carrying the same `updatedAt` says nothing new, and
+       * treating it as a teammate's edit raised the "somebody saved this page
+       * while you were editing" notice against yourself.
        */
       if (document.updatedAt === openRevisionRef.current) return;
 
@@ -415,10 +410,10 @@ export const TextBoard = ({
    * attachment — and only then is the row registered against the object key.
    *
    * A `.txt` is turned into paragraphs here and arrives as an ordinary
-   * editable page: there is no judgement in that conversion, so there is no
-   * reason to spend a model call or a round trip on it. A PDF or a `.docx`
-   * arrives with no body at all and *is* the uploaded file until somebody
-   * presses Edit — see `handleEdit`.
+   * editable page: there is no judgement in that split, so there is no reason
+   * to spend a round trip on it. A PDF or a `.docx` arrives with no body at
+   * all and simply *is* the uploaded file — this board shows it, hands it back
+   * and never rewrites it.
    */
   const handleImport = async (file: File) => {
     setIsImporting(true);
@@ -445,7 +440,8 @@ export const TextBoard = ({
       });
 
       // Deliberately *not* `openForEditingRef`: an import opens as the file
-      // that was uploaded. Converting it is the next, separate decision.
+      // that was uploaded, which for a PDF or a `.docx` is all it will ever
+      // be. A `.txt` arrives with a body and can be opened for reading first.
       setSelectedId(created.id);
       setAttachTo('');
       toast.success(t('doc.imported'));
@@ -462,65 +458,6 @@ export const TextBoard = ({
       toast.error(errorMessage(error, t('doc.importFailed')));
     } finally {
       setIsImporting(false);
-    }
-  };
-
-  /**
-   * What the Edit button does.
-   *
-   * On an ordinary page: opens the editor. On an imported PDF or Word file
-   * that nobody has converted yet: runs the conversion first, and *then* opens
-   * the editor — which is the whole rule this feature is built around. Nothing
-   * converts at upload, because a conversion is a model's reading of somebody
-   * else's document and replacing the original with one is a decision, not a
-   * side effect of choosing a file.
-   */
-  const handleEdit = async () => {
-    if (!open) return;
-
-    if (!open.source || open.source.isConverted) {
-      setIsEditing(true);
-      return;
-    }
-
-    // Set before the call, not after it: the converted page is written into
-    // the cache by the mutation's own `onSuccess`, so the effect that resets
-    // `isEditing` can run before this function is resumed.
-    openForEditingRef.current = true;
-
-    try {
-      const { isTruncated, figuresKept, figuresSkipped } = await convertDocument.mutateAsync(
-        open.id,
-      );
-      setIsEditing(true);
-
-      /*
-       * One line about the text, one about the pictures.
-       *
-       * The pictures are the half people used to lose without being told: a
-       * PDF's diagrams are lifted out of the original and placed in the page,
-       * and the ones the extractor cannot read are counted rather than dropped
-       * quietly. `figuresSkipped` is the only warning anybody gets that a
-       * figure did not make it, and it comes with the thing to do about it —
-       * the original file is still in the download menu, whole.
-       */
-      toast.success(isTruncated ? t('doc.convertedTruncated') : t('doc.converted'), {
-        description:
-          figuresSkipped > 0
-            ? t('doc.figuresPartly', {
-                kept: String(figuresKept),
-                skipped: String(figuresSkipped),
-              })
-            : figuresKept > 0
-              ? t('doc.figuresKept', { count: String(figuresKept) })
-              : undefined,
-      });
-    } catch (error) {
-      openForEditingRef.current = false;
-      // The API tells three failures apart — unconfigured, out of quota, slow
-      // — and each one is different advice. Passing its words through is worth
-      // more than a house message about conversion.
-      toast.error(errorMessage(error, t('doc.convertFailed')));
     }
   };
 
@@ -564,22 +501,21 @@ export const TextBoard = ({
         )}
       </span>
       {/*
-        An imported page's row says what it is instead of showing an excerpt.
+        An imported file's row says what it is instead of showing an excerpt.
 
-        There is no excerpt to show: the body is empty until the file has been
-        converted, so every import would otherwise read "Empty page" — which is
-        both wrong and the exact opposite of what those rows are. The badge
-        answers the question the row actually raises, which is why this one
-        does not open in the editor.
+        There is no excerpt to show — the page has no body — so every import
+        would otherwise read "Empty page", which is both wrong and the exact
+        opposite of what those rows are. The badge answers the question the row
+        actually raises, which is why this one does not open in the editor.
       */}
       <span className="mt-0.5 flex items-center gap-1.5 text-[10px] text-content-faint">
-        {entry.source && !entry.source.isConverted && (
+        {entry.source && !entry.source.hasBody && (
           <span className="shrink-0 rounded bg-brand/12 px-1 py-px font-semibold uppercase tracking-wide text-brand">
             {formatBadge(entry.source)}
           </span>
         )}
         <span className="truncate">
-          {entry.source && !entry.source.isConverted
+          {entry.source && !entry.source.hasBody
             ? t('doc.uploadedFile')
             : entry.excerpt || t('doc.emptyPage')}
         </span>
@@ -684,40 +620,30 @@ export const TextBoard = ({
                     {t('common.cancel')}
                   </Button>
                 </>
-              ) : open.canEdit ? (
+              ) : open.source && !open.source.hasBody ? (
                 /*
-                  One button, two jobs — and the label says which one it is
-                  about to do.
+                  An uploaded file, not a page — so no Edit button at all.
 
-                  On an imported PDF or Word file this is what runs the
-                  conversion, so it stops saying "Edit" and says so: the click
-                  takes tens of seconds, spends assistant quota, and replaces
-                  what is on screen with a machine's reading of it. A control
-                  that does all that under a label reading "Edit" would be a
-                  surprise the first time and a distrusted button after that.
+                  This used to be the control that handed the file to a
+                  language model and replaced the page with its reading of it.
+                  Removing that leaves a real question on screen ("why can I
+                  not edit this one?"), and a missing button answers it worse
+                  than a chip that says what the page is. Shown to everybody,
+                  including a reader who could not have edited it anyway: the
+                  reason is a fact about the document rather than about them,
+                  and it is the more useful of the two answers.
                 */
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => void handleEdit()}
-                  isLoading={convertDocument.isPending}
-                  title={
-                    open.source && !open.source.isConverted
-                      ? t('doc.convertHint')
-                      : undefined
-                  }
+                <span
+                  title={t('doc.keptAsUploadedHint')}
+                  className="ui-chip inline-flex items-center gap-1.5 rounded-full border border-edge px-2.5 py-1 text-[10px] text-content-muted"
                 >
-                  {open.source && !open.source.isConverted ? (
-                    <>
-                      <Sparkles className="h-3.5 w-3.5" />
-                      {t('doc.convertToEdit')}
-                    </>
-                  ) : (
-                    <>
-                      <Pencil className="h-3.5 w-3.5" />
-                      {t('common.edit')}
-                    </>
-                  )}
+                  <FileText className="h-3 w-3 shrink-0" />
+                  {t('doc.uploadedFile')}
+                </span>
+              ) : open.canEdit ? (
+                <Button size="sm" variant="secondary" onClick={() => setIsEditing(true)}>
+                  <Pencil className="h-3.5 w-3.5" />
+                  {t('common.edit')}
                 </Button>
               ) : (
                 /*
@@ -997,7 +923,7 @@ export const TextBoard = ({
                   </div>
                 )}
 
-                {open.source && !open.source.isConverted ? (
+                {open.source && !open.source.hasBody ? (
                   /*
                     The page is still the file that was uploaded.
 
@@ -1007,12 +933,7 @@ export const TextBoard = ({
                     viewer. Nothing has read it, nothing has rewritten it, and
                     nothing will until somebody presses the button above.
                   */
-                  <ImportedDocument
-                    documentId={open.id}
-                    source={open.source}
-                    canEdit={open.canEdit}
-                    isConverting={convertDocument.isPending}
-                  />
+                  <ImportedDocument documentId={open.id} source={open.source} />
                 ) : (
                 <RichTextEditor
                   /*

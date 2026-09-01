@@ -33,8 +33,40 @@ const ThemeGalleryPage = lazy(() => import('@/pages/themes/theme-gallery-page'))
  */
 const AdminPage = lazy(() => import('@/pages/admin/admin-page'));
 
+/**
+ * The landing page, and the one chunk a returning user must never pay for.
+ *
+ * Lazy like the app surface, and for a sharper reason than the rest: this is
+ * the only screen in the router that exists for people who are *not* users
+ * yet. Somebody signing in every morning would otherwise download a marketing
+ * page, its animations and its copy, every time the service worker revalidated
+ * — for a screen nothing routes them to.
+ *
+ * "Nothing routes them to" is the current state of it and is deliberate: the
+ * page is off the front door until it is finished, and lives only at
+ * `/welcome`. Being lazy is what makes that free — an unfinished screen nobody
+ * visits costs nobody a byte.
+ */
+const LandingPage = lazy(() => import('@/pages/landing/landing-page'));
+
 export const AppRouter = () => (
   <Routes>
+    {/*
+      The landing page, at an address and nothing else.
+
+      Outside `GuestRoute`, unlike the sign-in screens below it. The page is
+      unfinished and is deliberately not the first screen any more — `/`
+      resolves to the dashboard or to `/login`, never to here — so what is left
+      of it is a URL somebody types on purpose to look at the work in progress.
+      A guard that bounced signed-in visitors would make it unopenable by the
+      only people who currently need it.
+
+      When the page is ready this moves back inside `GuestRoute` and
+      `ProtectedRoute` sends a guest at `/` here again. Both halves of that are
+      one line each; see the notes in `protected-route.tsx`.
+    */}
+    <Route path="/welcome" element={<LandingPage />} />
+
     <Route element={<GuestRoute />}>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />

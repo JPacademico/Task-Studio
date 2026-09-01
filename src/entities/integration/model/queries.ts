@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { useRealtime } from '@/app/providers/realtime-provider';
+import type { Project } from '@/entities/project/model/types';
 import { errorMessage } from '@/shared/api/client';
 import { queryKeys } from '@/shared/api/query-keys';
 import { translate } from '@/shared/i18n';
@@ -29,6 +30,49 @@ import type {
  * previous repository while the new one loads. `useMutation` is React Query's
  * name for "an imperative request with a result", which is exactly this.
  */
+/**
+ * Connecting a project to a repository, and disconnecting it.
+ *
+ * Both write the *project* cache rather than invalidating it: the API answers
+ * with the link, the project is already held by whichever page called this,
+ * and a refetch would fetch a roster and a description to learn one field.
+ *
+ * `project:repository` also arrives on the socket for everybody else in the
+ * room — see `RepositoryLinkService` — so the two paths agree by writing the
+ * same shape into the same key.
+ */
+export const useLinkRepository = (projectId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (url: string) => githubApi.link(projectId, url),
+    onSuccess: (repository) => {
+      queryClient.setQueryData<Project>(queryKeys.projects.detail(projectId), (current) =>
+        current ? { ...current, repository } : current,
+      );
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      toast.success(translate('repo.connected'));
+    },
+    onError: (error) => toast.error(errorMessage(error, translate('repo.connectFailed'))),
+  });
+};
+
+export const useUnlinkRepository = (projectId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => githubApi.unlink(projectId),
+    onSuccess: () => {
+      queryClient.setQueryData<Project>(queryKeys.projects.detail(projectId), (current) =>
+        current ? { ...current, repository: null } : current,
+      );
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      toast.success(translate('repo.disconnected'));
+    },
+    onError: (error) => toast.error(errorMessage(error, translate('repo.disconnectFailed'))),
+  });
+};
+
 export const usePreviewRepository = () =>
   useMutation({
     mutationFn: githubApi.preview,
@@ -426,6 +470,23 @@ export const useCreateApiToken = () => {
   });
 };
 
+/**
+ * Revoking a token, and the one sentence the app says about it.
+ *
+ * ## Why the wording moved here
+ *
+ * The only surface that calls this — `CliMachinesPanel` — talks about
+ * *machines*, deliberately and throughout: "signed-in machines", "that machine
+ * is signed out". It used to add its own success toast at the call site while
+ * this mutation fired `tokens.revoked` ("That token no longer works") of its
+ * own accord, so one click produced two stacked toasts, and the second one
+ * leaked the exact vocabulary the panel exists to keep away from the reader —
+ * at the highest-stakes moment it has.
+ *
+ * One toast, said once, in the words the surface uses. A future caller that
+ * genuinely is about tokens rather than machines should pass its own message
+ * rather than reinstating a second one.
+ */
 export const useRevokeApiToken = () => {
   const queryClient = useQueryClient();
 
@@ -433,7 +494,7 @@ export const useRevokeApiToken = () => {
     mutationFn: (tokenId: string) => tokensApi.revoke(tokenId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.integrations.apiTokens });
-      toast.success(translate('tokens.revoked'));
+      toast.success(translate('cli.revoked'));
     },
     onError: (error) => toast.error(errorMessage(error, translate('tokens.revokeFailed'))),
   });

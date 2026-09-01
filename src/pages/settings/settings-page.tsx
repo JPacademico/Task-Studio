@@ -8,9 +8,9 @@ import { uploadImage, userApi } from '@/entities/user/api/user.api';
 import type { ThemePreference } from '@/entities/user/model/types';
 import { authApi } from '@/features/auth/api/auth.api';
 import { useSessionStore } from '@/features/auth/model/session.store';
-import { ApiTokensPanel } from '@/features/api-tokens/ui/api-tokens-panel';
 import { CalendarConnectionPanel } from '@/features/calendar-sync/ui/calendar-connection-panel';
-import { CalendarFeedPanel } from '@/features/calendar-sync/ui/calendar-feed-panel';
+import { CliMachinesPanel } from '@/features/cli/ui/cli-machines-panel';
+import { CliPanel } from '@/features/cli/ui/cli-panel';
 import { SkinPicker } from '@/features/theme-toggle/ui/skin-picker';
 import { errorMessage } from '@/shared/api/client';
 import { TEXT_LIMITS } from '@/shared/config/constants';
@@ -214,20 +214,43 @@ const SettingsPage = () => {
         description={t('settings.integrationsHint')}
       >
         {/*
-          Three panels, in the order somebody would want them.
+          Two panels, where there were three and then one.
 
-          Google first because it is the one people come looking for. The feed
-          second because it is the cheaper answer to the same question and most
-          people should read it before deciding — it needs no account, works
-          with Outlook and Apple Calendar, and costs nothing to try. Tokens
-          last because they are for a different person entirely: whoever is
-          writing a script rather than reading a calendar.
+          The generic "personal access tokens" panel that used to sit here was
+          taken out on a good argument: a bearer token offered to everybody, in
+          a page most people open to change their name, for a script nobody was
+          writing. The note left behind said it was worth building properly
+          against a real use somebody has.
+
+          `CliPanel` is that. The tokens in it are not an abstraction waiting
+          for a purpose — they are the machines somebody has run `taskstudio
+          login` on, created by the command rather than by this page, and all
+          the panel offers is the two operations that belong to a person rather
+          than to a terminal: seeing them, and killing one.
+
+          The subscribable calendar feed is still gone, and stays gone, for the
+          reason that has not changed about it.
         */}
         <div className="space-y-3">
+          <CliPanel />
           <CalendarConnectionPanel />
-          <CalendarFeedPanel />
-          <ApiTokensPanel />
         </div>
+      </Section>
+
+      {/* --- Signed-in machines ---------------------------------------------
+
+          Its own section, and not a block inside the CLI panel above.
+
+          The two were one panel and the fusion made it argue with itself: the
+          install offer wants to fold away for the majority who will never open
+          a terminal, and a list of credentials that can currently reach this
+          account must not fold at all. One border could obey one of those.
+
+          Placed directly under Connected services because that is what it is a
+          consequence of, and still above the password section, which is the
+          account's danger zone and should stay the last thing on the page. */}
+      <Section title={t('cli.machines')} description={t('cli.machinesHint')}>
+        <CliMachinesPanel />
       </Section>
 
       <Section title={t('settings.password')}>

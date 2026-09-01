@@ -47,9 +47,29 @@ export interface Project {
    * grouping, not a permission. See `entities/organization/model/types`.
    */
   organization: OrganizationRef | null;
+  /**
+   * The GitHub repository this project stands for, if one is linked.
+   *
+   * Set by an import at creation time, and settable afterwards by an owner or
+   * admin. Both halves come from the API: `fullName` is what every GitHub path
+   * is built from, `url` is where a browser goes, and deriving the second from
+   * the first here would be a second place that knows what a GitHub address
+   * looks like.
+   *
+   * `defaultBranch` is a *suggestion* for a task's branch field, cached when
+   * the link was made. Stale is harmless — nothing validates against it.
+   */
+  repository: ProjectRepository | null;
   myRole: ProjectRole;
   isPinned: boolean;
   roster: RosterMember[];
+}
+
+export interface ProjectRepository {
+  /** `owner/name`, canonical — GitHub follows renames and this is where it landed. */
+  fullName: string;
+  url: string;
+  defaultBranch: string | null;
 }
 
 export interface ProjectListItem extends Project {

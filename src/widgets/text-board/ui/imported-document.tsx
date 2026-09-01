@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle, ExternalLink, FileText, Sparkles } from 'lucide-react';
+import { AlertTriangle, ExternalLink, FileText, Lock } from 'lucide-react';
 
 import { documentApi } from '@/entities/document/api/document.api';
 import type { DocumentSource } from '@/entities/document/model/types';
@@ -24,26 +24,18 @@ const isPreviewable = (source: DocumentSource): boolean => source.mime === 'appl
 interface ImportedDocumentProps {
   documentId: string;
   source: DocumentSource;
-  /**
-   * Whether to point at the toolbar's Edit button.
-   *
-   * False for a reader who may not rewrite the page: telling them to press a
-   * control that is not drawn for them is worse than saying nothing.
-   */
-  canEdit: boolean;
-  /** The conversion is running — the toolbar's Edit button started it. */
-  isConverting: boolean;
 }
 
 /**
- * A page that is still the file somebody uploaded.
+ * A page that is the file somebody uploaded.
  *
- * This is the whole point of importing rather than pasting: until somebody
- * presses **Convert**, the page *is* the document — the original bytes, shown
- * as they are — and nothing has rewritten a word of it. A conversion is a
- * language model's reading of somebody's work, which is exactly the sort of
- * thing that should happen because a person asked for it and not because a
- * file finished uploading.
+ * This is the whole point of importing rather than pasting: the page *is* the
+ * document — the original bytes, shown as they are — and nothing has rewritten
+ * a word of it. There used to be a **Convert & edit** button on this card that
+ * handed the file to a language model and replaced the page with its reading
+ * of it. It is gone, and what is left is the honest version of what this
+ * surface was always best at: keeping somebody's document exactly as they
+ * wrote it, behind the project's own access rules, one click from a download.
  *
  * ## Why the PDF is fetched rather than framed from storage
  *
@@ -55,15 +47,10 @@ interface ImportedDocumentProps {
  * leaving it behind pins the whole file in memory for the life of the tab.
  *
  * A `.docx` gets no frame, because no browser renders one. It gets the same
- * card with the honest version of the situation and the two things that
- * actually help: open it in whatever opens Word files, or convert it.
+ * card with the honest version of the situation and the thing that actually
+ * helps: open it in whatever opens Word files.
  */
-export const ImportedDocument = ({
-  documentId,
-  source,
-  canEdit,
-  isConverting,
-}: ImportedDocumentProps) => {
+export const ImportedDocument = ({ documentId, source }: ImportedDocumentProps) => {
   const t = useT();
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
@@ -170,44 +157,22 @@ export const ImportedDocument = ({
         </button>
 
         {/*
-          A sentence, not a second button.
+          A sentence, not a control.
 
-          The conversion is started from the toolbar's Edit button — that is
-          the control somebody reaches for when they want to change a document,
-          and putting a second copy of it down here would be two ways to do one
-          thing on a surface that already has plenty. What is missing without
-          this line is not a control, it is the explanation of *why* pressing
-          Edit does something unusual, so that is what it says.
+          The question this card raises is "why can I not edit this?", and the
+          answer is a fact about the page rather than a button somebody is
+          missing: an imported file is kept as it was uploaded. Saying so here
+          costs one line and stops a reader hunting the toolbar for a pencil
+          that is deliberately not drawn.
         */}
-        {canEdit && (
-          <span className="hidden items-center gap-1.5 text-[10px] leading-snug text-content-muted xl:inline-flex">
-            <Sparkles className="h-3 w-3 shrink-0 text-brand" />
-            {t('doc.pressEditToConvert')}
-          </span>
-        )}
+        <span className="hidden items-center gap-1.5 text-[10px] leading-snug text-content-muted xl:inline-flex">
+          <Lock className="h-3 w-3 shrink-0 text-content-faint" />
+          {t('doc.keptAsUploaded')}
+        </span>
       </div>
 
       {/* --- The document itself ------------------------------------------ */}
       <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border border-edge bg-surface-raised">
-        {/*
-          The conversion covers the document rather than replacing it.
-
-          It takes tens of seconds — a model is reading the whole thing — and
-          swapping the page for a spinner in the meantime would take away the
-          document somebody is looking at to tell them it is being read.
-        */}
-        {isConverting && (
-          <div className="absolute inset-0 z-10 grid place-items-center bg-surface/80 backdrop-blur-sm">
-            <div className="flex flex-col items-center gap-2 px-6 text-center">
-              <SkinLoader label={t('doc.converting')} />
-              <p className="text-xs font-semibold">{t('doc.converting')}</p>
-              <p className="max-w-xs text-[11px] leading-relaxed text-content-muted">
-                {t('doc.convertingHint')}
-              </p>
-            </div>
-          </div>
-        )}
-
         {canPreview && !failure && !objectUrl && (
           <div className="grid h-full place-items-center gap-2">
             <SkinLoader label={t('doc.loadingPreview')} />

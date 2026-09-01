@@ -4,6 +4,7 @@ import { format, isBefore, parseISO, startOfDay } from 'date-fns';
 import { CalendarRange, Clock, MapPin, Search, Users } from 'lucide-react';
 
 import { useMyAgenda } from '@/entities/meeting/model/queries';
+import { CalendarSyncBadge } from '@/features/calendar-sync/ui/calendar-sync-badge';
 import type { Meeting } from '@/entities/meeting/model/types';
 import { useProjects } from '@/entities/project/model/queries';
 import { TEXT_LIMITS } from '@/shared/config/constants';
@@ -244,6 +245,22 @@ const MeetingsPage = () => {
             onChange={setProjectId}
             options={projectOptions}
           />
+
+          {/*
+            The same offer the project's meetings tab makes, on the page that
+            is *entirely* meetings.
+
+            It belonged here more than there, and was missing. A project's tab
+            shows one project's meetings; this page is every meeting this
+            person is expected at, across every project — which is exactly the
+            list somebody means when they say "I want this on my phone". Asking
+            the question on the narrower surface and not on the wider one had
+            it backwards.
+
+            One component, so the two surfaces cannot drift into saying
+            different things about the same connection. See `CalendarSyncBadge`.
+          */}
+          <CalendarSyncBadge />
         </div>
       </header>
 

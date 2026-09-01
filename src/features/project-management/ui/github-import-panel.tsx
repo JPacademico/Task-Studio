@@ -11,9 +11,12 @@ import {
 } from 'lucide-react';
 
 import { usePreviewRepository, useStartImport } from '@/entities/integration/model/queries';
-import type { RepositoryPreview } from '@/entities/integration/model/types';
+import {
+  MAX_IMPORT_GUIDANCE,
+  type RepositoryPreview,
+} from '@/entities/integration/model/types';
 import { cn } from '@/shared/lib/cn';
-import { Avatar, Button, Input, Switch } from '@/shared/ui';
+import { Avatar, Button, Input, Modal, Switch, Textarea } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
 interface GithubImportPanelProps {
@@ -77,6 +80,22 @@ export const GithubImportPanel = ({
   const t = useT();
   const [url, setUrl] = useState('');
   const [useAssistant, setUseAssistant] = useState(true);
+  const [guidance, setGuidance] = useState('');
+  /*
+   * The overview is a dialog now, not a block under the field.
+   *
+   * It was six stacked sections of 10px type wedged into the create-project
+   * dialog under the URL input — the repository, a warning, the pages, the
+   * contributors, a switch and a button — and the panel it sat in already had
+   * a name field, a colour picker and an organization select above it. The
+   * most important screen in the whole flow, the one where somebody decides
+   * whether this is the right repository and who is about to be emailed, was
+   * the most cramped.
+   *
+   * Its own dialog gives it the room to be read. The lookup stays where it was,
+   * because that is a field somebody types in rather than a thing to look at.
+   */
+  const [isOverviewOpen, setIsOverviewOpen] = useState(false);
 
   const preview = usePreviewRepository();
   const runImport = useStartImport();
@@ -87,7 +106,7 @@ export const GithubImportPanel = ({
   const look = () => {
     const trimmed = url.trim();
     if (!trimmed) return;
-    preview.mutate(trimmed);
+    preview.mutate(trimmed, { onSuccess: () => setIsOverviewOpen(true) });
   };
 
   const create = async () => {
@@ -100,6 +119,10 @@ export const GithubImportPanel = ({
       organizationId,
       color,
       useAssistant,
+      // Only when there is something to steer. An empty note and no note are
+      // the same thing, and sending `''` would put an empty fenced block in
+      // the prompt for nothing.
+      ...(useAssistant && guidance.trim() ? { guidance: guidance.trim() } : {}),
     });
 
     /*
@@ -110,6 +133,7 @@ export const GithubImportPanel = ({
      * would put the app right back where it was before any of this changed.
      * The tracker takes it from here, on whatever page the reader moves to.
      */
+    setIsOverviewOpen(false);
     onStarted();
   };
 
@@ -148,8 +172,47 @@ export const GithubImportPanel = ({
         <p className="text-[11px] leading-relaxed text-content-faint">{t('github.hint')}</p>
       )}
 
-      {repo && (
-        <div className="space-y-3 rounded-xl border border-edge bg-surface-sunken/50 p-3">
+      {/*
+        What was found, once the dialog has been dismissed.
+
+        Without this, closing the overview leaves the panel looking exactly as
+        it did before the lookup — the repository is still held, the import is
+        still one click away, and nothing on screen says so. One row that names
+        it and reopens the dialog is the whole fix.
+      */}
+      {repo && !isOverviewOpen && (
+        <button
+          type="button"
+          onClick={() => setIsOverviewOpen(true)}
+          className={cn(
+            'flex w-full items-center gap-2 rounded-xl border border-edge bg-surface-sunken/50',
+            'px-2.5 py-2 text-left transition-colors hover:border-brand/50',
+          )}
+        >
+          <Github aria-hidden className="h-3.5 w-3.5 shrink-0 text-content-faint" />
+          <span className="min-w-0 flex-1 truncate text-[11px] font-medium">
+            {repo.fullName}
+          </span>
+          <span className="shrink-0 text-[10px] text-brand">{t('github.overviewTitle')}</span>
+        </button>
+      )}
+
+      {/*
+        The overview, in a dialog of its own.
+
+        Opened by a successful lookup rather than by a second click: the reader
+        pressed "look it up" and this *is* the answer, so making them press
+        again to see it would be a step that exists only because the layout
+        used to be different.
+      */}
+      <Modal
+        isOpen={isOverviewOpen && Boolean(repo)}
+        onClose={() => setIsOverviewOpen(false)}
+        title={t('github.overviewTitle')}
+        className="max-w-lg"
+      >
+        {repo && (
+          <div className="space-y-3.5">
           {/* --- What was found ------------------------------------------- */}
           <div className="flex items-start gap-2.5">
             <span
@@ -250,7 +313,7 @@ export const GithubImportPanel = ({
               study the feature. The label says what the switch does; what it
               does in detail is discoverable by using it once. */}
           {repo.canUseAssistant && (
-            <div className="border-t border-edge/70 pt-2.5">
+            <div className="space-y-2.5 border-t border-edge/70 pt-2.5">
               <Switch
                 checked={useAssistant}
                 onChange={setUseAssistant}
@@ -258,18 +321,77 @@ export const GithubImportPanel = ({
                 // The panel's own scale, not the control's default. See `Switch`.
                 className="text-[11px]"
               />
+
+              {/*
+                A note steering what the assistant reads, and only when there
+                is an assistant to steer.
+
+                Collapsed with the switch rather than greyed out beside it: a
+                disabled field for a feature that is off is a control asking to
+                be understood before it can be ignored, and the switch above it
+                already says why it is not there.
+
+                What it *cannot* do is worth being plain about in the hint. It
+                changes which files get attention; it cannot change what the
+                import produces, because the answer is bound to a fixed schema
+                and written into a project, three tasks and some pages either
+                way. The API states the same boundary to the model and strips
+                the characters that could break out of the block it is quoted
+                in — see `sanitiseGuidance` there.
+              */}
+              {useAssistant && (
+                <div className="space-y-1">
+                  <Textarea
+                    label={t('github.guidanceLabel')}
+                    name="guidance"
+                    rows={2}
+                    value={guidance}
+                    onChange={(event) =>
+                      setGuidance(event.target.value.slice(0, MAX_IMPORT_GUIDANCE))
+                    }
+                    placeholder={t('github.guidancePlaceholder')}
+                    maxLength={MAX_IMPORT_GUIDANCE}
+                    className="text-[11px]"
+                  />
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="text-[10px] leading-relaxed text-content-faint">
+                      {t('github.guidanceHint')}
+                    </p>
+                    {/* Only once it is close enough to matter — a counter that
+                        is always on is a limit the reader is asked to think
+                        about before they have written anything. */}
+                    {guidance.length > MAX_IMPORT_GUIDANCE * 0.75 && (
+                      <span className="shrink-0 text-[10px] tabular-nums text-content-faint">
+                        {MAX_IMPORT_GUIDANCE - guidance.length}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
-          <Button
-            type="button"
-            className="w-full"
-            onClick={() => void create()}
-            isLoading={runImport.isPending}
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            {t('github.import')}
-          </Button>
+          <div className="flex flex-col-reverse gap-2 border-t border-edge/70 pt-3 sm:flex-row">
+            {/* Back to the field with what was typed still in it — the whole
+                reason somebody closes this is that it is the wrong repository. */}
+            <Button
+              type="button"
+              variant="ghost"
+              className="sm:w-auto"
+              onClick={() => setIsOverviewOpen(false)}
+            >
+              {t('github.overviewBack')}
+            </Button>
+            <Button
+              type="button"
+              className="flex-1"
+              onClick={() => void create()}
+              isLoading={runImport.isPending}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              {t('github.import')}
+            </Button>
+          </div>
 
           {/*
             The hint no longer describes a wait, because there is not one.
@@ -282,8 +404,9 @@ export const GithubImportPanel = ({
           <p className="text-center text-[10px] leading-relaxed text-content-faint">
             {t('github.backgroundHint')}
           </p>
-        </div>
-      )}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

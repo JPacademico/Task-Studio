@@ -28,7 +28,7 @@ import {
   Trash2,
 } from 'lucide-react';
 
-import type { RosterMember } from '@/entities/project/model/types';
+import type { ProjectRepository, RosterMember } from '@/entities/project/model/types';
 import {
   useCreateTaskGroup,
   useDeleteTaskGroup,
@@ -71,6 +71,8 @@ interface GroupsBoardProps {
    * the composer. See `TaskComposerProps.projectDeadline`.
    */
   projectDeadline?: string | null;
+  /** Passed straight through to the composer, so a task can name a branch. */
+  repository?: ProjectRepository | null;
   /** Opens the ordinary task sheet — this board draws cards, it does not own them. */
   onOpenTask: (taskId: string) => void;
 }
@@ -168,6 +170,7 @@ export const GroupsBoard = ({
   projectId,
   roster,
   projectDeadline,
+  repository,
   onOpenTask,
 }: GroupsBoardProps) => {
   const t = useT();
@@ -703,6 +706,7 @@ export const GroupsBoard = ({
           roster={roster}
           lockedGroupId={creatingIn?.id}
           projectDeadline={projectDeadline}
+          repository={repository}
         />
       </div>
     </DndContext>

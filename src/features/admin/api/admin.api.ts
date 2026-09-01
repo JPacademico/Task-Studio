@@ -2,7 +2,13 @@ import axios from 'axios';
 
 import { env } from '@/shared/config/env';
 import { SLOW_ROUTE_TIMEOUT_MS } from '@/shared/api/client';
-import type { AdminSession, AdminStats, AdminUserRow, BanPayload } from '../model/types';
+import type {
+  AdminReport,
+  AdminSession,
+  AdminStats,
+  AdminUserRow,
+  BanPayload,
+} from '../model/types';
 
 /**
  * Where the admin token lives, and why it is not in `localStorage`.
@@ -100,6 +106,23 @@ export const adminApi = {
   async ban(userId: string, payload: BanPayload): Promise<{ emailed: string }> {
     const { data } = await client.post<{ emailed: string }>(`/users/${userId}/ban`, payload);
     return data;
+  },
+
+  /** What people have said about this account, newest first. */
+  async reports(userId: string): Promise<AdminReport[]> {
+    const { data } = await client.get<AdminReport[]>(`/admin/users/${userId}/reports`);
+    return data;
+  },
+
+  /**
+   * Mark this account's reports as read.
+   *
+   * Not a delete — the reasons are the record of why somebody was, or
+   * deliberately was not, removed from the product. This moves an account out
+   * of the queue without destroying that.
+   */
+  async reviewReports(userId: string): Promise<void> {
+    await client.post(`/admin/users/${userId}/reports/review`);
   },
 
   async unban(userId: string): Promise<void> {

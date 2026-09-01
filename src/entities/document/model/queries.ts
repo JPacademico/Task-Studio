@@ -202,31 +202,6 @@ export const useImportDocument = () => {
   });
 };
 
-/**
- * Turns an imported PDF or Word file into an editable page.
- *
- * Writes both caches from the response, like every other document mutation
- * here: the API returns the converted page in full, so invalidating would
- * refetch what we are holding.
- *
- * The error toast is left to the caller. This is the one document mutation
- * whose failures are worth distinguishing — the assistant being unconfigured,
- * out of quota, or simply slow are three different pieces of advice, and the
- * API says which; a generic "could not convert" here would throw that away.
- */
-export const useConvertDocument = () => {
-  const queryClient = useQueryClient();
-  const { upsertRow } = useDocumentListCache();
-
-  return useMutation({
-    mutationFn: (documentId: string) => documentApi.convert(documentId),
-    onSuccess: ({ document }) => {
-      queryClient.setQueryData<ProjectDocument>(queryKeys.documents.detail(document.id), document);
-      upsertRow(document);
-    },
-  });
-};
-
 export const useDeleteDocument = () => {
   const { removeRow } = useDocumentListCache();
 

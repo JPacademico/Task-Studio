@@ -13,6 +13,7 @@ import { errorMessage } from '@/shared/api/client';
 import { queryKeys } from '@/shared/api/query-keys';
 import { taskApi } from '../api/task.api';
 import { overviewDeltaFor } from '../lib/overview-delta';
+import { useCommitPrompt } from './commit-prompt.store';
 import { taskSync } from './sync.store';
 import type {
   CreateTaskPayload,
@@ -584,7 +585,19 @@ export const useUpdateTaskStatus = () => {
     // The server's own copy, written straight in: the refetch below is then
     // reconciliation nobody is waiting on rather than the thing that finally
     // makes the card correct.
-    onSuccess: (task) => patchCachedTask(queryClient, task.id, () => task),
+    onSuccess: (task, variables) => {
+      patchCachedTask(queryClient, task.id, () => task);
+
+      /*
+       * A finished task that named a branch gets one offer to go and open it.
+       *
+       * Announced from here rather than from the five surfaces that complete a
+       * task, all of which come through this mutation — see
+       * `useCommitPrompt`. Gated on the *server's* task rather than the
+       * optimistic one, so a completion that was rejected never raises it.
+       */
+      if (variables.status === 'COMPLETED') useCommitPrompt.getState().present(task);
+    },
 
     // `onSettled`, not `onSuccess`: a failed write has just been rolled back
     // from a snapshot that may itself be stale, and that is exactly when the

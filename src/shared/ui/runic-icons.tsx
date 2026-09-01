@@ -1,181 +1,19 @@
 import { cn } from '@/shared/lib/cn';
-import { Glyph, type GlyphProps, type GlyphSet } from './glyph-kit';
+import { type GlyphProps } from './glyph-kit';
 
 /**
- * The carved set.
+ * This skin's product mark. Its navigation set is gone.
  *
- * Two rules hold these together, and both come from the material rather than
- * from taste:
+ * There used to be a full set of runic navigation glyphs here, exported as
+ * `RUNIC_GLYPHS` and swapped in by `NavGlyph`. Every skin's set has
+ * been withdrawn for the reason written up there: an icon is recognised by
+ * shape, and a rail whose shapes change with the theme charges every user that
+ * recognition again for a novelty that lands once.
  *
- * **Everything is a straight cut.** Runes are angular because they were made
- * with a blade against grain — a curve is hard to cut and harder to read once
- * weathered. So there is not one arc in this set. Every glyph is built from
- * strokes at multiples of about 45°, which is also what makes eight unrelated
- * destinations read as one alphabet.
- *
- * **Every glyph is drawn twice.** Once as the groove, in the current colour,
- * and once as the light sitting in it — a second copy of the significant
- * strokes, in the glow, carrying `.rune-pulse`. That is what makes the set
- * animated without making it hard to look at: the mark is always fully there
- * at full contrast, and only the light in it breathes. Hovering the row it
- * sits in stops the breath and holds it lit (see the rule in `index.css`).
+ * The mark is a different thing and stays. It is the *product's* signature
+ * drawn in this world — one object, seen once, on a settings card and a theme
+ * gallery tile — and nobody navigates by it.
  */
-
-/** The lit copy of a stroke. Never the only copy of anything. */
-const Lit = ({ d, late }: { d: string; late?: boolean }) => (
-  <path
-    d={d}
-    stroke="rgb(var(--rune-glow))"
-    strokeWidth="2.4"
-    className={cn('rune-pulse', late && 'rune-pulse--late')}
-  />
-);
-
-/** Workspace: the standing stone everything else is cut into. */
-const Monolith = ({ className }: GlyphProps) => (
-  <Glyph className={className}>
-    <path
-      d="M6.5 21.5V6l5.5-3.5L17.5 6v15.5Z"
-      fill="currentColor"
-      fillOpacity="0.14"
-      stroke="currentColor"
-      strokeWidth="1.9"
-      strokeLinejoin="round"
-    />
-    <path d="M12 6.5v11" stroke="currentColor" strokeWidth="1.7" />
-    <path d="m12 11-3.2-3M12 14l3.2-3" stroke="currentColor" strokeWidth="1.7" />
-    <Lit d="M12 6.5v11" />
-  </Glyph>
-);
-
-/** Your day, by hour: the sun's mark, cut as a wheel of eight spokes. */
-const SunWheel = ({ className }: GlyphProps) => (
-  <Glyph className={className}>
-    <path
-      d="M12 3.2 20.8 12 12 20.8 3.2 12Z"
-      fill="currentColor"
-      fillOpacity="0.12"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinejoin="round"
-    />
-    <g stroke="currentColor" strokeWidth="1.6">
-      <path d="M12 3.2v17.6M3.2 12h17.6" />
-    </g>
-    <Lit d="M12 6.4 17.6 12 12 17.6 6.4 12Z" />
-  </Glyph>
-);
-
-/** Your own desk: a tablet, cut with three marks and leaning against the wall. */
-const Tablet = ({ className }: GlyphProps) => (
-  <Glyph className={className}>
-    <path
-      d="M5 3.4h14v17.2H5Z"
-      fill="currentColor"
-      fillOpacity="0.14"
-      stroke="currentColor"
-      strokeWidth="1.9"
-      strokeLinejoin="round"
-    />
-    <g stroke="currentColor" strokeWidth="1.6">
-      <path d="M8.4 6.6v10.8M8.4 10l3.4-3.4M15.6 6.6v10.8M15.6 13.4l-3.4 3.4" />
-    </g>
-    <Lit d="M8.4 6.6v10.8" />
-    <Lit d="M15.6 6.6v10.8" late />
-  </Glyph>
-);
-
-/** Something arriving: a message cut into a slip and sealed with a bind rune. */
-const Dispatch = ({ className }: GlyphProps) => (
-  <Glyph className={className}>
-    <path
-      d="M2.8 6h18.4v12H2.8Z"
-      fill="currentColor"
-      fillOpacity="0.12"
-      stroke="currentColor"
-      strokeWidth="1.9"
-      strokeLinejoin="round"
-    />
-    <path d="m2.8 6.6 9.2 6.6 9.2-6.6" stroke="currentColor" strokeWidth="1.8" />
-    <Lit d="M12 10.6v6M12 13.6l-2.8-2.8M12 13.6l2.8-2.8" />
-  </Glyph>
-);
-
-/** The bin: a stone broken across the middle. */
-const BrokenStone = ({ className }: GlyphProps) => (
-  <Glyph className={className}>
-    <path
-      d="M6 10.4 12 3.2l6 7.2-2.4 2.2H8.4Z"
-      fill="currentColor"
-      fillOpacity="0.14"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M7 16.2h10l-1.4 4.6H8.4Z"
-      fill="currentColor"
-      fillOpacity="0.14"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinejoin="round"
-    />
-    {/* The break itself is the lit part — a fracture with light coming out. */}
-    <Lit d="M8.6 13.6h6.8" />
-  </Glyph>
-);
-
-/** Preferences: the chisel and the mark it leaves. */
-const Chisel = ({ className }: GlyphProps) => (
-  <Glyph className={className}>
-    <path
-      d="M14.6 2.6 21 9l-9.4 9.4-6.4-6.4Z"
-      fill="currentColor"
-      fillOpacity="0.12"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinejoin="round"
-    />
-    <path d="m8.6 15.4-4.4 4.4" stroke="currentColor" strokeWidth="1.8" />
-    <Lit d="m14.6 6.4 3 3" />
-  </Glyph>
-);
-
-/** The catalogue: three staves standing together, each lit differently. */
-const Staves = ({ className }: GlyphProps) => (
-  <Glyph className={className}>
-    <g stroke="currentColor" strokeWidth="1.9" strokeLinecap="square">
-      <path d="M5.4 3.6v16.8M12 3.6v16.8M18.6 3.6v16.8" />
-      <path d="M5.4 8.4 8.6 5.2M12 12.6l3.2-3.2M18.6 16.8l-3.2-3.2" />
-    </g>
-    <Lit d="M12 3.6v16.8" />
-    <Lit d="M18.6 3.6v16.8" late />
-  </Glyph>
-);
-
-/** A project: a cairn — separate stones, stacked into one thing. */
-const Cairn = ({ className }: GlyphProps) => (
-  <Glyph className={className}>
-    <g fill="currentColor" fillOpacity="0.16" stroke="currentColor" strokeWidth="1.8">
-      <path d="M8 3.6h8l-1.4 4.2H9.4Z" />
-      <path d="M5.6 9.4h12.8l-1.6 4.6H7.2Z" />
-      <path d="M4 15.6h16l-1.8 4.8H5.8Z" />
-    </g>
-    <Lit d="M12 3.6v16.8" />
-  </Glyph>
-);
-
-export const RUNIC_GLYPHS: GlyphSet = {
-  dashboard: Monolith,
-  tasks: SunWheel,
-  notes: Tablet,
-  invitations: Dispatch,
-  recycle: BrokenStone,
-  settings: Chisel,
-  themes: Staves,
-  project: Cairn,
-};
-
 /**
  * The product mark: the same Post-it, cut into a slab.
  *

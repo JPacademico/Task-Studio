@@ -12,11 +12,11 @@ import type {
 /**
  * Makes a failed `responseType: 'blob'` request explain itself.
  *
- * Asking axios for a blob applies to *every* response, including the 503 that
- * says the assistant is unavailable — so `error.response.data` arrives as a
- * `Blob` holding JSON rather than as the parsed object every other call in the
- * app gets. `errorMessage` then finds no `message` field and falls back to
- * "Request failed with status code 503", which is the least useful sentence
+ * Asking axios for a blob applies to *every* response, including the 400 that
+ * says this page is still the uploaded file — so `error.response.data` arrives
+ * as a `Blob` holding JSON rather than as the parsed object every other call in
+ * the app gets. `errorMessage` then finds no `message` field and falls back to
+ * "Request failed with status code 400", which is the least useful sentence
  * available for the one route where the server has something specific to say.
  *
  * Reading the blob and putting the parsed body back where it would have been
@@ -36,26 +36,6 @@ const rethrowWithReadableBody = async (error: unknown): Promise<never> => {
 
   throw error;
 };
-
-/**
- * What a conversion produces, beyond the page itself.
- *
- * The two counts are not statistics. A PDF's diagrams are lifted out of the
- * original and carried into the converted page (see `extractPdfImages` on the
- * API), and the ones that cannot be read are counted rather than dropped
- * quietly — because a document that came back with two of its four figures is
- * a document somebody has to know about, and the answer ("the original is
- * still one click away in the download menu") is only useful if they are told.
- */
-export interface ConvertedDocument {
-  document: ProjectDocument;
-  /** The source, the answer, or both had to be cut short. */
-  isTruncated: boolean;
-  /** Figures carried across into the page. */
-  figuresKept: number;
-  /** Figures found in the PDF that could not be read or stored. */
-  figuresSkipped: number;
-}
 
 export const documentApi = {
   /**
@@ -112,23 +92,6 @@ export const documentApi = {
   /** Registers a file that has already been PUT to storage as a page. */
   async import(payload: ImportDocumentPayload): Promise<ProjectDocument> {
     const { data } = await api.post<ProjectDocument>('/documents/import', payload);
-    return data;
-  },
-
-  /**
-   * Turns an imported PDF or Word file into an editable page.
-   *
-   * On the slow-route timeout, because behind it is a language model reading
-   * somebody's document end to end. The API bounds its own attempts well
-   * inside this so it is the server that decides and the server that gets to
-   * say why — see `SLOW_ROUTE_TIMEOUT_MS`.
-   */
-  async convert(documentId: string): Promise<ConvertedDocument> {
-    const { data } = await api.post<ConvertedDocument>(
-      `/documents/${documentId}/convert`,
-      undefined,
-      { timeout: SLOW_ROUTE_TIMEOUT_MS },
-    );
     return data;
   },
 

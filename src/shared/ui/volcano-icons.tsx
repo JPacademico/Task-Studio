@@ -1,189 +1,19 @@
 import { cn } from '@/shared/lib/cn';
-import { Glyph, type GlyphProps, type GlyphSet } from './glyph-kit';
+import { type GlyphProps } from './glyph-kit';
 
 /**
- * The basalt set.
+ * This skin's product mark. Its navigation set is gone.
  *
- * Two rules hold these together, and both come from the material:
+ * There used to be a full set of volcano navigation glyphs here, exported as
+ * `VOLCANO_GLYPHS` and swapped in by `NavGlyph`. Every skin's set has
+ * been withdrawn for the reason written up there: an icon is recognised by
+ * shape, and a rail whose shapes change with the theme charges every user that
+ * recognition again for a novelty that lands once.
  *
- * **Every silhouette is a fracture.** Rock does not curve when it fails, it
- * splits, so these are built from long straight runs meeting at hard angles —
- * and, unlike the runic set, those angles are deliberately *not* on a 45° grid.
- * A fracture that lands on regular angles reads as something cut on purpose;
- * these are meant to read as something that broke.
- *
- * **Every glyph has a hot core.** A second copy of one significant stroke in
- * `--lava-core`, carrying `.ember-pulse` — the melt showing through where the
- * crust is thinnest. The mark underneath is always fully drawn at full
- * contrast, so the heat is decoration and never legibility.
+ * The mark is a different thing and stays. It is the *product's* signature
+ * drawn in this world — one object, seen once, on a settings card and a theme
+ * gallery tile — and nobody navigates by it.
  */
-
-/** The hot copy of a stroke. Never the only copy of anything. */
-const Hot = ({ d, late }: { d: string; late?: boolean }) => (
-  <path
-    d={d}
-    stroke="rgb(var(--lava-core))"
-    strokeWidth="2"
-    strokeLinecap="round"
-    className={cn('ember-pulse', late && 'ember-pulse--late')}
-  />
-);
-
-/** Workspace: the mountain, with the throat lit. */
-const Cone = ({ className }: GlyphProps) => (
-  <Glyph className={className}>
-    <path
-      d="M2.4 20.8 9.6 5.2h1.8l2.2 4.2 2-2.4 3.9 13.8Z"
-      fill="currentColor"
-      fillOpacity="0.16"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinejoin="round"
-    />
-    <path d="M9.6 5.2 8 11.4l3 1.8-1.4 4.2" stroke="currentColor" strokeWidth="1.5" />
-    <Hot d="M10.4 5.6 8.9 11.2l2.9 1.8-1.3 4" />
-  </Glyph>
-);
-
-/** Your day, by hour: the crater from above, hottest in the middle. */
-const Crater = ({ className }: GlyphProps) => (
-  <Glyph className={className}>
-    <path
-      d="M12 2.8 20.4 8l-2 9.6L12 21.2 5.6 17.6 3.6 8Z"
-      fill="currentColor"
-      fillOpacity="0.12"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M12 7.6 16.6 10l-1.2 5-3.4 2-3.4-2-1.2-5Z"
-      fill="currentColor"
-      fillOpacity="0.3"
-      stroke="currentColor"
-      strokeWidth="1.4"
-      strokeLinejoin="round"
-    />
-    <Hot d="M12 10.4 14.4 12l-.8 3-1.6 1-1.6-1-.8-3Z" />
-  </Glyph>
-);
-
-/** Your own desk: a slab of crust with the melt showing along the split. */
-const Slab = ({ className }: GlyphProps) => (
-  <Glyph className={className}>
-    <path
-      d="M4.2 4.4 19.2 3.4l1 16.4-14.6.8Z"
-      fill="currentColor"
-      fillOpacity="0.16"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinejoin="round"
-    />
-    <g stroke="currentColor" strokeWidth="1.4">
-      <path d="M7.4 6.2 9 11l-1.2 4.4M15.6 5.6l-1.4 5.6 2 4.6" />
-    </g>
-    {/* The split down the middle is the lit part — the slab is failing. */}
-    <Hot d="M12.2 3.8 11 10.6l2 3-1.2 6.6" />
-  </Glyph>
-);
-
-/** Something arriving: a volcanic bomb, still burning, on its way down. */
-const Bomb = ({ className }: GlyphProps) => (
-  <Glyph className={className}>
-    <path
-      d="M13.2 10.4 18 12.6l1.6 5-4 3.4-5-1.2-1.4-4.8Z"
-      fill="currentColor"
-      fillOpacity="0.2"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinejoin="round"
-    />
-    {/* The trail it came in on. */}
-    <path
-      d="M11.4 9.2 7.6 5.4M9.6 11.4 4.4 8.6M11.8 13.8 5 12.6"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    />
-    <Hot d="M11.4 9.2 7.6 5.4" />
-    <Hot d="M9.6 11.4 4.4 8.6" late />
-  </Glyph>
-);
-
-/** The bin: the vent. Everything that goes in goes down. */
-const Vent = ({ className }: GlyphProps) => (
-  <Glyph className={className}>
-    <path
-      d="M3.4 8.6 12 5.2l8.6 3.4-3 2.6 2 3-3.4 2.2.8 3.4-5 1.4-4.6-1.6.6-3.4-3.2-2.2 2-3Z"
-      fill="currentColor"
-      fillOpacity="0.14"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinejoin="round"
-    />
-    {/* Straight down the middle, and it is lit all the way. */}
-    <Hot d="M12 7.6v11.4" />
-  </Glyph>
-);
-
-/** Preferences: the damper — a plate you slide over something hot. */
-const Damper = ({ className }: GlyphProps) => (
-  <Glyph className={className}>
-    <path
-      d="M3.6 15.4 12 12l8.4 3.4-8.4 3.6Z"
-      fill="currentColor"
-      fillOpacity="0.24"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M6 9.6 12 7l6 2.6"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-    />
-    {/* What is underneath, showing at the edge the plate does not reach. */}
-    <Hot d="M8.2 11.6 12 10l3.8 1.6" />
-  </Glyph>
-);
-
-/** The catalogue: three flows, at three temperatures. */
-const Flows = ({ className }: GlyphProps) => (
-  <Glyph className={className}>
-    <g stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-      <path d="M5.4 3.6 4 10l2.6 3-1.8 7.4" />
-      <path d="M12 3.6 10.4 9.4l3 3.4-1.8 7.6" />
-      <path d="M18.6 3.6 17.4 9l2.4 3.6-1.6 7.8" />
-    </g>
-    <Hot d="M12 3.6 10.4 9.4l3 3.4-1.8 7.6" />
-    <Hot d="M18.6 3.6 17.4 9l2.4 3.6-1.6 7.8" late />
-  </Glyph>
-);
-
-/** A project: strata — separate layers that became one mountain. */
-const Strata = ({ className }: GlyphProps) => (
-  <Glyph className={className}>
-    <g fill="currentColor" fillOpacity="0.16" stroke="currentColor" strokeWidth="1.6">
-      <path d="M9 3.8h6.4l-1 3.6-4.8.4Z" />
-      <path d="M6.6 9h11.2l-1.4 4-9 .4Z" />
-      <path d="M3.8 15.2h16.4l-1.8 5-13.4.4Z" />
-    </g>
-    <Hot d="M12.2 4.2 11.4 9.6l1.6 3.8-.8 6.6" />
-  </Glyph>
-);
-
-export const VOLCANO_GLYPHS: GlyphSet = {
-  dashboard: Cone,
-  tasks: Crater,
-  notes: Slab,
-  invitations: Bomb,
-  recycle: Vent,
-  settings: Damper,
-  themes: Flows,
-  project: Strata,
-};
-
 /**
  * The product mark: the same Post-it, as a flake of crust.
  *

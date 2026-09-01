@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   Ban,
   CheckCircle2,
+  Flag,
   Lock,
   Search,
   ShieldAlert,
@@ -13,7 +14,7 @@ import {
 import { toast } from 'sonner';
 
 import { adminApi, adminTokenStore } from '@/features/admin/api/admin.api';
-import type { AdminStats, AdminUserRow } from '@/features/admin/model/types';
+import type { AdminReport, AdminStats, AdminUserRow } from '@/features/admin/model/types';
 import { errorMessage } from '@/shared/api/client';
 import { formatDateTime, formatRelative } from '@/shared/lib/dates';
 import { cn } from '@/shared/lib/cn';
@@ -62,6 +63,106 @@ const MIN_REASON = 10;
  * same reason, so the requirement is visible before the request rather than
  * after.
  */
+/**
+ * What people have said about one account, on demand.
+ *
+ * ## Why the reasons are not on the row
+ *
+ * Because the search result is a list of *accounts* and a report is a
+ * paragraph. Inlining them would turn a scannable list into a wall the moment
+ * one account collected four, and the count on the row already does the job a
+ * list has to do — telling somebody which row to open.
+ *
+ * ## Why it fetches on expand rather than with the list
+ *
+ * A search returns twenty-five accounts and an administrator opens at most one
+ * or two. Loading every account's reports to render a number that is already on
+ * the row would be twenty-five queries for a list nobody has asked to read.
+ */
+const ReportSheet = ({ userId, count }: { userId: string; count: number }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [reports, setReports] = useState<AdminReport[] | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const open = async () => {
+    setIsOpen(true);
+    if (reports) return;
+
+    setIsLoading(true);
+    try {
+      setReports(await adminApi.reports(userId));
+    } catch (error) {
+      toast.error(errorMessage(error, 'Could not read those reports.'));
+      setIsOpen(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="mt-1.5">
+      <button
+        type="button"
+        onClick={() => (isOpen ? setIsOpen(false) : void open())}
+        className={cn(
+          'inline-flex items-center gap-1.5 rounded-lg border border-warning/40 bg-warning/10',
+          'px-2 py-1 text-[10px] font-semibold text-warning transition-colors hover:bg-warning/15',
+        )}
+      >
+        <Flag className="h-2.5 w-2.5" />
+        {count} report{count === 1 ? '' : 's'}
+      </button>
+
+      {isOpen && (
+        <div className="mt-1.5 space-y-1.5">
+          {isLoading && <Skeleton className="h-12 rounded-lg" />}
+
+          {reports?.map((report) => (
+            <div
+              key={report.id}
+              className="rounded-lg border border-edge bg-surface-sunken/60 p-2 text-[10px] leading-relaxed"
+            >
+              <p className="text-content-faint">
+                {report.reporter.displayName} ({report.reporter.email})
+                {report.project && ` · ${report.project.name}`}
+                {` · ${formatDateTime(report.createdAt)}`}
+                {report.reviewedAt && ' · reviewed'}
+              </p>
+              {/* The reporter's own words, unedited and un-truncated. Whatever
+                  made this worth filing is in the sentence, not in a summary. */}
+              <p className="mt-1 whitespace-pre-wrap text-content">{report.reason}</p>
+            </div>
+          ))}
+
+          {reports && reports.some((report) => !report.reviewedAt) && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={async () => {
+                try {
+                  await adminApi.reviewReports(userId);
+                  setReports((current) =>
+                    current?.map((report) => ({
+                      ...report,
+                      reviewedAt: report.reviewedAt ?? new Date().toISOString(),
+                    })) ?? null,
+                  );
+                  toast.success('Marked as read.');
+                } catch (error) {
+                  toast.error(errorMessage(error, 'Could not mark those as read.'));
+                }
+              }}
+            >
+              <CheckCircle2 className="h-3 w-3" />
+              Mark as read
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const AdminPage = () => {
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [token, setToken] = useState<string | null>(() => adminTokenStore.get());
@@ -277,7 +378,7 @@ const AdminPage = () => {
         </header>
 
         {stats && (
-          <div className="grid grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
             {[
               { label: 'Accounts', value: stats.users, icon: <Users className="h-3 w-3" /> },
               { label: 'Suspended', value: stats.banned, icon: <Ban className="h-3 w-3" /> },
@@ -286,6 +387,13 @@ const AdminPage = () => {
                 value: stats.unverified,
                 icon: <ShieldAlert className="h-3 w-3" />,
               },
+              /*
+                Accounts with something unread against them.
+                
+                Counting *people* rather than reports, because six colleagues
+                reporting one person is one thing to look at. See `AdminStats`.
+              */
+              { label: 'Reported', value: stats.reported, icon: <Flag className="h-3 w-3" /> },
             ].map((tile) => (
               <div key={tile.label} className="ui-card rounded-xl border border-edge bg-surface-raised p-3">
                 <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-content-faint">
@@ -372,6 +480,20 @@ const AdminPage = () => {
                   {user.lastLoginAt && ` · last seen ${formatRelative(user.lastLoginAt)}`}
                   {user.banCount > 0 && ` · ${user.banCount} suspension(s) on record`}
                 </p>
+
+                {/*
+                  Reports, and the reasons one click away.
+
+                  The count is what decides whether somebody opens an account
+                  at all; the *reasons* are what they decide on. Four reports
+                  that all describe the same incident are one incident seen by
+                  four people, and four that describe four different things are
+                  a pattern — no aggregate can tell those apart, so the sheet
+                  has to be able to show the words.
+                */}
+                {user.reportCount > 0 && (
+                  <ReportSheet userId={user.id} count={user.reportCount} />
+                )}
 
                 {user.ban && (
                   <p className="mt-1.5 rounded-lg bg-danger/10 px-2 py-1.5 text-[10px] leading-relaxed text-danger">

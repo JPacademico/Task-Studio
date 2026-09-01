@@ -22,7 +22,7 @@ import { GoogleCalendarMark } from './google-calendar-mark';
  * rather than a toggle for exactly that reason: connecting is an OAuth consent
  * flow, which is not something a chip on a calendar tab should start.
  *
- * ## Why the two states are different sizes
+ * ## Why the two states are different sizes, and why only one is a control
  *
  * They are doing different jobs, and the first version got this wrong by
  * drawing both as the same 10px chip. **Unconnected is an offer** — it has to
@@ -33,6 +33,21 @@ import { GoogleCalendarMark } from './google-calendar-mark';
  *
  * So the offer is button-sized with a brand mark on it, and the confirmation
  * shrinks back to a quiet tick once it has been accepted.
+ *
+ * The confirmation is also *inert*: it says "Synced" and does nothing when
+ * pressed. It used to be a link to settings, which made the one control on
+ * this row that looked finished behave like the one that was not — and the
+ * only thing on the other end was a switch nobody arrived wanting. Turning the
+ * sync off is a settings decision made in settings; this is the answer to "is
+ * it on", and an answer should not navigate.
+ *
+ * ## Why the offer says "sync" rather than "add"
+ *
+ * Because "add to Google Calendar" describes a one-way export, and this is not
+ * one. A meeting created here appears there; a meeting *moved* there moves
+ * here, for anybody who may edit it. Somebody who accepted an "add" and later
+ * found their board had changed under them would be right to feel misled about
+ * what they agreed to.
  *
  * ## Why it says nothing when the deployment has no calendar
  *
@@ -58,19 +73,17 @@ export const CalendarSyncBadge = () => {
    */
   if (live) {
     return (
-      <Link
-        to="/settings"
+      <span
         title={t('calendar.badgeOnHint')}
         className={cn(
           'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium',
           'border-positive/40 bg-positive/[0.08] text-positive',
-          'transition-colors hover:border-positive/70',
         )}
       >
         <GoogleCalendarMark className="h-3.5 w-3.5 shrink-0" />
         <span className="hidden sm:inline">{t('calendar.badgeOn')}</span>
         <Check aria-hidden className="h-3 w-3 shrink-0" />
-      </Link>
+      </span>
     );
   }
 

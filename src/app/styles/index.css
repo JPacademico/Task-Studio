@@ -2967,9 +2967,53 @@
   .ui-filter,
   .ui-segment,
   .ui-accordion,
+  .ui-code,
   .ui-card {
     transition-timing-function: var(--ease-ui);
     transition-duration: var(--speed-ui);
+  }
+
+  /*
+   * A line of shell, as a material each skin can answer.
+   *
+   * ## Why this needed a hook of its own
+   *
+   * Because the thing that marks a line as *pasteable* is the monospace/sans
+   * contrast against the prose around it — and `[data-skin='terminal']` sets
+   * `--font-sans: var(--font-mono)`, so on that one skin the contrast vanishes
+   * entirely. The skin literally named after a terminal was the skin where
+   * terminal commands stopped looking like commands, and no amount of Tailwind
+   * on the component could have noticed: the component is identical, the
+   * *page around it* moved.
+   *
+   * So the signal moves out of the font and into a material the skins own.
+   * The base rule below carries only what every skin agrees on, exactly as
+   * `.ui-card` does; the overrides in each skin's own section add the rest.
+   *
+   * `--code-prompt` is the one variable a skin sets to put a character in
+   * front of the line. It renders through `::before`, so it is not part of
+   * `textContent` and never reaches the clipboard or a hand-made selection —
+   * verified in the browser, because a prompt that copied itself would be
+   * worse than no prompt at all.
+   *
+   * The frame itself is declared by each skin rather than routed through a
+   * variable here: this base rule sits in `@layer components`, which Tailwind's
+   * utilities outrank, so a `box-shadow` written at this specificity loses to
+   * the ring composition Tailwind puts on the element and never paints.
+   */
+  .ui-code {
+    position: relative;
+    font-family: var(--font-mono);
+  }
+
+  .ui-code::before {
+    content: var(--code-prompt, '');
+    color: rgb(var(--brand));
+    font-weight: 600;
+    /* Collapses to nothing on every skin that sets no prompt, so the default
+       look is unchanged rather than carrying a stray gap. */
+    margin-right: var(--code-prompt-gap, 0);
+    user-select: none;
   }
 
   .ui-btn {
@@ -3173,6 +3217,19 @@
     box-shadow: var(--btn-shadow-active);
   }
 
+  /*
+   * A typed slip pinned to the page, not a code fence.
+   *
+   * The product's own principle asks what a thing would be on a real desk;
+   * on the paper skin a command is something you wrote down to carry to the
+   * machine, so it gets the postit radius and a pressed edge rather than the
+   * flat rectangle every README uses.
+   */
+  [data-skin='paper'] .ui-code {
+    border-radius: var(--postit-radius, 0.75rem);
+    box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.5), inset 0 -1px 0 0 rgb(var(--edge) / 0.6);
+  }
+
   [data-skin='paper'] .ui-card,
   [data-skin='paper'] .ui-accordion {
     border-width: 2px;
@@ -3210,6 +3267,19 @@
     margin-right: 0.25rem;
     color: rgb(var(--brand));
     font-weight: 700;
+  }
+
+  /*
+   * The one skin where a code block cannot be told apart by its font, because
+   * this skin already sets `--font-sans: var(--font-mono)` above. It gets the
+   * prompt and a lit frame instead — which is what a real terminal uses to say
+   * "this line is input" too.
+   */
+  [data-skin='terminal'] .ui-code {
+    --code-prompt: '$';
+    --code-prompt-gap: 0.5rem;
+    box-shadow: inset 0 0 0 1px rgb(var(--brand) / 0.4);
+    border-color: transparent;
   }
 
   /* VINTAGE — cast plates with a lit top edge; controls sink when pressed. */
@@ -3263,7 +3333,18 @@
   [data-skin='pixel'] .panel,
   [data-skin='pixel'] .ui-btn,
   [data-skin='pixel'] .ui-filter,
-  [data-skin='pixel'] .ui-chip,
+  [data-skin='pixel'] .ui-chip {
+    border-radius: 0;
+  }
+
+  /* Console text: a hard frame, square, and a prompt character. */
+  [data-skin='pixel'] .ui-code {
+    border-radius: 0;
+    box-shadow: 0 0 0 2px rgb(var(--edge));
+    --code-prompt: '>';
+    --code-prompt-gap: 0.5rem;
+  }
+
   [data-skin='pixel'] .ui-card,
   [data-skin='pixel'] .ui-accordion,
   [data-skin='pixel'] .ui-segment {
@@ -3755,6 +3836,12 @@
   }
 
   /* The spot plate: the one colour the press could run besides black. */
+  /* Set in the classifieds: a ruled box, squared off like everything else. */
+  [data-skin='newspaper'] .ui-code {
+    border-radius: 0;
+    box-shadow: inset 0 -1px 0 0 rgb(var(--edge));
+  }
+
   [data-skin='newspaper'] .ui-card::before {
     content: '';
     position: absolute;
@@ -7153,4 +7240,159 @@ html [data-sonner-toaster][data-theme] [data-sonner-toast] [data-cancel] {
 .ui-modal--flat,
 [data-skin] .ui-modal--flat {
   background-image: none;
+}
+
+/* ==========================================================================
+   Navigation glyphs: one set of icons, three skins that do something to them
+   ==========================================================================
+
+   Eight skins used to bring a *complete replacement* set of navigation icons —
+   space, hazard, newspaper, eldritch, autumn, runic, underwater and volcano —
+   and they have all been withdrawn. The reasoning is the one that applies to
+   any icon set: an icon is learned once and then recognised by shape, and a
+   rail whose shapes change with the theme costs every user that recognition
+   for a decoration they see for two seconds. Somebody who learned where the
+   notes board is on the studio skin was hunting for it again on newsprint.
+
+   What is worth keeping is the *material*. Three of those worlds were doing
+   something to their icons that reads as the world rather than as a different
+   alphabet, so those three survive as effects applied to the ordinary icon:
+
+     - hazard glows, the way a warning sign catches a light sweeping past;
+     - eldritch blinks, because something in that skin is looking at you;
+     - underwater fills and drains, like a vessel on a slow tide.
+
+   All three are long, slow and low-contrast on purpose. These sit in a
+   navigation rail that is on screen the entire time somebody uses the app —
+   an effect with a two-second period would be unbearable by lunchtime, and
+   the point is a room that is alive rather than an icon that is animated.
+
+   The global `prefers-reduced-motion` rule above already reduces every one of
+   these to a single 0.01ms pass, so they are absent rather than merely slower
+   for anybody who asked for that. */
+
+.nav-glyph {
+  display: inline-flex;
+}
+
+/* --- Hazard: a light passing over a warning sign ------------------------- */
+[data-skin='hazard'] .nav-glyph {
+  animation: nav-glyph-hazard 9s ease-in-out infinite;
+}
+
+@keyframes nav-glyph-hazard {
+  /* Dark for most of the cycle: the sweep is an event, not a pulse. */
+  0%,
+  82%,
+  100% {
+    filter: none;
+  }
+  88% {
+    filter: drop-shadow(0 0 3px rgb(var(--brand) / 0.85))
+      drop-shadow(0 0 8px rgb(var(--brand) / 0.45));
+  }
+  94% {
+    filter: drop-shadow(0 0 1px rgb(var(--brand) / 0.35));
+  }
+}
+
+/* --- Eldritch: something blinking ---------------------------------------- */
+[data-skin='eldritch'] .nav-glyph {
+  animation: nav-glyph-blink 11s steps(1, end) infinite;
+}
+
+/*
+   `steps(1, end)` rather than an eased scale, and that is the whole character
+   of it. A lid closes and opens — it does not ease — and a smooth squash reads
+   as a UI element pulsing rather than as an eye. Two frames of scaleY at 12%
+   of an eleven-second cycle is roughly one blink every eleven seconds, which
+   is a slow human blink and exactly unsettling enough.
+*/
+@keyframes nav-glyph-blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  94% {
+    transform: scaleY(0.08);
+  }
+  96% {
+    transform: scaleY(1);
+  }
+}
+
+/* --- Underwater: filling and draining ------------------------------------ */
+/*
+   A clipped overlay rather than a filter, because "filling with water" is a
+   *level* — a horizontal line that rises — and no amount of hue rotation says
+   that. The overlay is a copy of the icon's own box tinted in the skin's
+   caustic colour, revealed from the bottom by an inset clip that animates its
+   top edge.
+
+   `currentColor` at low alpha, so it works on an icon that is muted, active or
+   hovered without three rules. `mix-blend-mode: screen` keeps the fill reading
+   as light through water rather than as a sticker over the glyph.
+*/
+[data-skin='underwater'] .nav-glyph {
+  position: relative;
+  isolation: isolate;
+}
+
+[data-skin='underwater'] .nav-glyph::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: 2px;
+  background: linear-gradient(
+    to top,
+    rgb(var(--brand) / 0.55),
+    rgb(var(--brand) / 0.15)
+  );
+  mix-blend-mode: screen;
+  animation: nav-glyph-tide 14s ease-in-out infinite;
+}
+
+@keyframes nav-glyph-tide {
+  /* Empty, and staying empty: the tide is most of the cycle away. */
+  0%,
+  100% {
+    clip-path: inset(100% 0 0 0);
+  }
+  35% {
+    clip-path: inset(35% 0 0 0);
+  }
+  55% {
+    clip-path: inset(20% 0 0 0);
+  }
+  80% {
+    clip-path: inset(100% 0 0 0);
+  }
+}
+
+/* ==========================================================================
+   Underwater: the labels on a task card come out from behind the water
+   ==========================================================================
+
+   `[data-skin='underwater'] .ui-chip` gives every chip in the app the button
+   overlay — the caustic sheen that makes a control look submerged — and on a
+   standalone chip that is exactly right. On the row of labels *inside a task
+   card* it is one layer too many, and the reason is stacking rather than
+   taste: the card already carries `--panel-texture` (the caustic net and the
+   godray), so a chip sitting on it renders water in front of water, and the
+   11px label inside is read through both.
+
+   These are the smallest type on the densest surface in the app — a board
+   column at 280px wide, six or seven cards deep — and they are the labels that
+   say whether something is late. Legibility outranks the material there.
+
+   Scoped to `.ui-card` rather than turned off globally: a filter chip in a
+   toolbar has nothing behind it and keeps its sheen. The palette, the border
+   and the rounding are untouched, so the chip still belongs to the skin; only
+   the second sheet of water is gone. Written unlayered so it outranks the
+   layered per-skin rule above without a specificity contest. */
+[data-skin='underwater'] .ui-card .ui-chip {
+  background-image: none;
+  box-shadow: none;
 }

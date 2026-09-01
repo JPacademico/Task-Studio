@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ImagePlus, Lock, Minus, Plus, Sparkles, X } from 'lucide-react';
 import { toast } from 'sonner';
 
-import type { RosterMember } from '@/entities/project/model/types';
+import type { ProjectRepository, RosterMember } from '@/entities/project/model/types';
 import { previewTaskType } from '@/entities/task/lib/task-type';
 import { useCreateTask, useUpdateTask } from '@/entities/task/model/queries';
 import type { Task, TaskPriority } from '@/entities/task/model/types';
@@ -85,6 +85,19 @@ interface TaskComposerProps {
    * of the project the task is actually *in*, which is the one that binds.
    */
   projectDeadline?: string | null;
+  /**
+   * The repository this project is linked to, when there is one.
+   *
+   * A prop for the same reason `projectDeadline` is one: every surface that
+   * opens this composer is already holding the project. It decides whether the
+   * branch field exists at all — the API refuses a branch on a project with no
+   * repository, so offering the field there would be a control that saves
+   * nothing.
+   *
+   * `defaultBranch` fills the placeholder, so the field suggests the shape of
+   * an answer rather than sitting empty.
+   */
+  repository?: ProjectRepository | null;
 }
 
 const PRIORITIES: TaskPriority[] = ['LOW', 'NORMAL', 'HIGH', 'URGENT'];
@@ -107,6 +120,7 @@ export const TaskComposer = ({
   task,
   lockedGroupId,
   projectDeadline,
+  repository,
 }: TaskComposerProps) => {
   const t = useT();
   // No project means a personal task: one assignee, no roster, no fan-out.
@@ -132,6 +146,7 @@ export const TaskComposer = ({
   const [description, setDescription] = useState('');
   const [color, setColor] = useState<string>(TASK_COLORS[0]);
   const [priority, setPriority] = useState<TaskPriority>('NORMAL');
+  const [branch, setBranch] = useState('');
   const [startAt, setStartAt] = useState('');
   const [dueAt, setDueAt] = useState('');
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
@@ -188,6 +203,7 @@ export const TaskComposer = ({
     setDescription(task?.description ?? '');
     setColor(task?.color ?? TASK_COLORS[0]);
     setPriority(task?.priority ?? 'NORMAL');
+    setBranch(task?.branch ?? '');
     setStartAt(toDateTimeInput(task?.startAt ?? null));
     setDueAt(toDateTimeInput(task?.dueAt ?? null));
     setAssigneeIds(task?.assignees.map((assignee) => assignee.id) ?? []);
@@ -359,6 +375,16 @@ export const TaskComposer = ({
       description: description.trim() || undefined,
       color,
       priority,
+      /*
+       * Sent only where it can be stored, and always sent when it can.
+       *
+       * The API refuses a branch on a project with no repository, so omitting
+       * it there is not tidiness — it is the difference between a save and a
+       * 400. Where the field *is* offered it goes on every write including an
+       * empty string, because an empty string is how the branch comes back off
+       * and an omitted field would read as "leave it alone".
+       */
+      ...(repository ? { branch: branch.trim() } : {}),
       startAt: fromDateTimeInput(startAt),
       dueAt: fromDateTimeInput(dueAt),
       // A personal task has no roster to pick from; the server assigns it to
@@ -707,6 +733,33 @@ export const TaskComposer = ({
             </div>
           </div>
         </div>
+
+        {/*
+          The branch this work happens on.
+
+          Drawn only on a project with a repository linked, because the API
+          refuses a branch anywhere else — a field that cannot save is worse
+          than a field that is not there, and the button that *would* make it
+          appear is beside the project's own name, which is where somebody
+          looking for it will get to.
+
+          Free text with the repository's default branch as the placeholder.
+          Not a dropdown of real branches, and that is deliberate: the branch is
+          routinely cut *after* the task that names it, so a list of what exists
+          today would refuse the ordinary case — a task written on Monday for a
+          branch made on Tuesday.
+        */}
+        {repository && (
+          <Input
+            label={t('task.branch')}
+            name="branch"
+            value={branch}
+            onChange={(event) => setBranch(event.target.value.slice(0, 200))}
+            placeholder={repository.defaultBranch ?? t('task.branchPlaceholder')}
+            maxLength={200}
+            hint={t('task.branchHint')}
+          />
+        )}
 
         {/*
           The grouping-board tag.

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Crown, Mail, Shield, UserMinus, UserPlus } from 'lucide-react';
+import { Crown, Flag, Mail, Shield, UserMinus, UserPlus } from 'lucide-react';
 
 import {
   useInviteMember,
@@ -28,6 +28,7 @@ import {
   Skeleton,
   Spinner,
 } from '@/shared/ui';
+import { ReportUserDialog } from './report-user-dialog';
 import { useT } from '@/shared/i18n';
 
 interface RosterPanelProps {
@@ -93,6 +94,19 @@ export const RosterPanel = ({ projectId, canManage, isOwner = false }: RosterPan
   const [role, setRole] = useState<ProjectRole>('MEMBER');
 
   const { data: members = [], isPending: isRosterPending } = useRoster(projectId);
+
+  /*
+   * Who is being reported, and who already has been.
+   *
+   * `reported` is local to this mounted panel rather than fetched per row: a
+   * roster of twenty would be twenty requests to grey out a menu item, and the
+   * answer only changes because of something the reader did on this screen.
+   * Reopening the page loses it, which is correct — the API takes a second
+   * report as an edit of the first, so the worst case is offering an action
+   * that turns out to be a rewrite.
+   */
+  const [reporting, setReporting] = useState<{ id: string; displayName: string } | null>(null);
+  const [reported, setReported] = useState<Set<string>>(() => new Set());
   const { data: pending = [] } = usePendingInvitations(canManage ? projectId : undefined);
   const invite = useInviteMember(projectId);
   const removeMember = useRemoveMember(projectId);
@@ -198,6 +212,45 @@ export const RosterPanel = ({ projectId, canManage, isOwner = false }: RosterPan
                   ) : (
                     <Badge>{member.role.toLowerCase()}</Badge>
                   )}
+
+                  {/*
+                    Reporting is offered to *everybody* about everybody else,
+                    which is the point of having it.
+
+                    Removing somebody is a power; reporting them is a recourse,
+                    and it exists precisely for the person who has neither the
+                    role to remove somebody nor anywhere else to take it. So
+                    this is not behind `canManage` — the only row it is missing
+                    from is the reader's own.
+
+                    Once filed it stops being an action and becomes a state.
+                    Reporting again would work (the API replaces the reason),
+                    but a button that looks unused after being pressed is how
+                    somebody ends up filing four times wondering if it took.
+                  */}
+                  {member.id !== currentUser?.id &&
+                    (reported.has(member.id) ? (
+                      <span
+                        title={t('report.alreadyHint')}
+                        className="inline-flex h-8 w-8 items-center justify-center text-content-faint"
+                      >
+                        <Flag aria-hidden className="h-3.5 w-3.5" />
+                        <span className="sr-only">{t('report.already')}</span>
+                      </span>
+                    ) : (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label={t('report.action')}
+                        title={t('report.action')}
+                        onClick={() =>
+                          setReporting({ id: member.id, displayName: member.displayName })
+                        }
+                        className="text-content-faint hover:text-danger"
+                      >
+                        <Flag className="h-3.5 w-3.5" />
+                      </Button>
+                    ))}
 
                   {canManage && member.role !== 'OWNER' && member.id !== currentUser?.id && (
                     <Button
@@ -335,6 +388,24 @@ export const RosterPanel = ({ projectId, canManage, isOwner = false }: RosterPan
           )}
         </div>
       </Modal>
+
+      {/*
+        One dialog for the whole list, opened with whoever the row named.
+
+        A dialog per row would mount twenty of them to use at most one, and
+        every one of them would carry its own text field's state.
+      */}
+      {reporting && (
+        <ReportUserDialog
+          isOpen
+          onClose={() => setReporting(null)}
+          subject={reporting}
+          projectId={projectId}
+          onReported={() =>
+            setReported((current) => new Set(current).add(reporting.id))
+          }
+        />
+      )}
     </div>
   );
 };

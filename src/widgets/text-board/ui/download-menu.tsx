@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Download, FileCode2, FileText, FileType2, Sparkles } from 'lucide-react';
+import { Download, FileCode2, FileText, FileType2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { documentApi } from '@/entities/document/api/document.api';
@@ -81,12 +81,12 @@ const stem = (title: string): string =>
  * out of proportion to it — the same reasoning as the language picker, whose
  * dismissal pattern this borrows.
  *
- * ## The line about the assistant
+ * ## An imported file that is still itself
  *
- * On an imported page nobody has converted yet, there is no HTML to render
- * from — so the API reads the original through the model on the way out.
- * That is slow and it spends quota, and neither is something to discover from
- * a spinner, so the menu says so before the click rather than after.
+ * A page that *is* an uploaded PDF or Word file has no body to typeset, so
+ * the three formats are not offered for it at all — the menu is the original
+ * and nothing else. Drawing three options that the API would refuse would be
+ * three ways to reach an error message.
  */
 export const DocumentDownloadMenu = ({
   documentId,
@@ -110,17 +110,15 @@ export const DocumentDownloadMenu = ({
     return () => window.removeEventListener('keydown', handleKey);
   }, [isOpen]);
 
-  /** True when the API will have to read the original before it can re-render it. */
-  const needsAssistant = (format: DocumentExportFormat): boolean => {
-    if (!source || source.isConverted || draft) return false;
-
-    // The two cases where the file already *is* what was asked for: the API
-    // hands the original straight back, no model involved.
-    if (format === 'pdf' && source.mime === 'application/pdf') return false;
-    if (format === 'txt' && source.mime === 'text/plain') return false;
-
-    return true;
-  };
+  /*
+   * Whether there is a page here to render into a file at all.
+   *
+   * False only for an import that never got a body — a PDF or a `.docx`, which
+   * this board keeps exactly as it was uploaded. `draft` overrides it: if
+   * somebody has typed into the editor, what is on screen is a document
+   * whatever the row says.
+   */
+  const hasRenderableBody = !source || source.hasBody || Boolean(draft);
 
   const download = async (format: DocumentExportFormat) => {
     setPending(format);
@@ -189,43 +187,36 @@ export const DocumentDownloadMenu = ({
                 {t('doc.downloadAs')}
               </li>
 
-              {(['pdf', 'txt', 'html'] as const).map((format) => {
-                const Icon = ICONS[format];
-                const viaAssistant = needsAssistant(format);
+              {hasRenderableBody &&
+                (['pdf', 'txt', 'html'] as const).map((format) => {
+                  const Icon = ICONS[format];
 
-                return (
-                  <li key={format}>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => void download(format)}
-                      className={cn(
-                        'flex w-full items-start gap-2 rounded-lg px-2.5 py-2 text-left text-xs',
-                        'text-content transition-colors hover:bg-surface-sunken',
-                      )}
-                    >
-                      <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-content-faint" />
-                      <span className="min-w-0 flex-1">
-                        <span className="block font-semibold">{t(`doc.format.${format}`)}</span>
-                        <span className="block text-[10px] leading-snug text-content-faint">
-                          {viaAssistant ? (
-                            <span className="inline-flex items-center gap-1 text-brand">
-                              <Sparkles className="h-2.5 w-2.5" />
-                              {t('doc.convertedOnDownload')}
-                            </span>
-                          ) : (
-                            t(`doc.format.${format}.hint`)
-                          )}
+                  return (
+                    <li key={format}>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => void download(format)}
+                        className={cn(
+                          'flex w-full items-start gap-2 rounded-lg px-2.5 py-2 text-left text-xs',
+                          'text-content transition-colors hover:bg-surface-sunken',
+                        )}
+                      >
+                        <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-content-faint" />
+                        <span className="min-w-0 flex-1">
+                          <span className="block font-semibold">{t(`doc.format.${format}`)}</span>
+                          <span className="block text-[10px] leading-snug text-content-faint">
+                            {t(`doc.format.${format}.hint`)}
+                          </span>
                         </span>
-                      </span>
-                      {pending === format && <SkinLoader size="sm" />}
-                    </button>
-                  </li>
-                );
-              })}
+                        {pending === format && <SkinLoader size="sm" />}
+                      </button>
+                    </li>
+                  );
+                })}
 
               {source && (
-                <li className="mt-1 border-t border-edge/70 pt-1">
+                <li className={cn(hasRenderableBody && 'mt-1 border-t border-edge/70 pt-1')}>
                   <button
                     type="button"
                     role="menuitem"

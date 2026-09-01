@@ -50,6 +50,46 @@ const GAPS: Record<Size, string> = {
   icon: 'gap-1.5',
 };
 
+/**
+ * Everything that makes a button look like one, without being one.
+ *
+ * ## Why this is exported
+ *
+ * Because some buttons have to be links. A landing page's primary call to
+ * action navigates, and rendering that as a `<button onClick={navigate}>` costs
+ * a real anchor: no middle-click, no open-in-new-tab, no address on hover,
+ * nothing for a crawler to follow. Those are exactly the affordances a page
+ * aimed at people who have not signed up yet should not be throwing away.
+ *
+ * The alternative was an `asChild` prop, which needs a `Slot` implementation
+ * and turns one component into two code paths — for a handful of call sites
+ * that only ever want the *appearance*. Handing out the class list is the
+ * smaller thing, and it keeps `Button` a button.
+ *
+ * A `<Link>` wearing these gets the skin hooks and the variants; what it does
+ * not get is `isLoading`, and it should not — a navigation has nothing to wait
+ * for.
+ */
+export const buttonClasses = ({
+  variant = 'primary',
+  size = 'md',
+  className,
+}: { variant?: Variant; size?: Size; className?: string } = {}): string =>
+  cn(
+    // `ui-btn` is the skin hook: weight, tracking, casing, material and press
+    // travel all come from the active theme rather than from here.
+    // Deliberately no `font-medium` — a utility would outrank the skin's
+    // `--btn-weight` and every theme would end up with the same 500.
+    'ui-btn relative inline-flex select-none items-center justify-center rounded-xl',
+    // 150ms is the sweet spot: perceptible but never in the way.
+    'transition-[transform,background-color,color,box-shadow] duration-150 ease-studio',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
+    'active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50',
+    VARIANTS[variant],
+    SIZES[size],
+    className,
+  );
+
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
     { className, variant = 'primary', size = 'md', isLoading, children, disabled, ...props },
@@ -59,20 +99,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       ref={ref}
       disabled={disabled || isLoading}
       aria-busy={isLoading || undefined}
-      className={cn(
-        // `ui-btn` is the skin hook: weight, tracking, casing, material and
-        // press travel all come from the active theme rather than from here.
-        // Deliberately no `font-medium` — a utility would outrank the skin's
-        // `--btn-weight` and every theme would end up with the same 500.
-        'ui-btn relative inline-flex select-none items-center justify-center rounded-xl',
-        // 150ms is the sweet spot: perceptible but never in the way.
-        'transition-[transform,background-color,color,box-shadow] duration-150 ease-studio',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
-        'active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50',
-        VARIANTS[variant],
-        SIZES[size],
-        className,
-      )}
+      className={buttonClasses({ variant, size, className })}
       {...props}
     >
       {/*

@@ -1,4 +1,4 @@
-export { Button, type ButtonProps } from './button';
+export { Button, buttonClasses, type ButtonProps } from './button';
 export { Input, Textarea } from './input';
 export { Modal } from './modal';
 export { Avatar, AvatarStack } from './avatar';
