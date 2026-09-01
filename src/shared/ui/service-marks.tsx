@@ -116,3 +116,22 @@ export const WebhookMark = ({ className }: MarkProps) => (
     <circle cx="15.6" cy="15" r="1.7" fill="#ffffff" />
   </svg>
 );
+
+/**
+ * GitHub — the mark, drawn rather than taken from a line-icon set.
+ *
+ * The lucide glyph is a one-weight outline that disappears at 16px inside a
+ * tinted chip, which is exactly the complaint the Connections shelf had about
+ * every icon on it. This is the filled silhouette people actually recognise,
+ * and it keeps its own black-and-white identity across all thirteen skins for
+ * the same reason the four above do.
+ */
+export const GitHubMark = ({ className }: MarkProps) => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className={className}>
+    <circle cx="12" cy="12" r="11" fill="#181717" />
+    <path
+      fill="#ffffff"
+      d="M12 3.4a8.6 8.6 0 0 0-2.72 16.76c.43.08.59-.19.59-.41v-1.6c-2.4.52-2.9-1.03-2.9-1.03-.4-1-.96-1.27-.96-1.27-.79-.53.06-.52.06-.52.87.06 1.33.9 1.33.9.77 1.32 2.02.94 2.52.72.08-.56.3-.94.55-1.16-1.92-.22-3.93-.96-3.93-4.26 0-.94.33-1.71.88-2.31-.09-.22-.38-1.1.08-2.29 0 0 .72-.23 2.36.88a8.2 8.2 0 0 1 4.3 0c1.63-1.11 2.35-.88 2.35-.88.47 1.19.17 2.07.09 2.29.55.6.88 1.37.88 2.31 0 3.31-2.02 4.04-3.94 4.25.31.27.59.8.59 1.61v2.39c0 .23.15.5.59.41A8.6 8.6 0 0 0 12 3.4Z"
+    />
+  </svg>
+);

@@ -74,7 +74,6 @@ export const useDemoClock = (steps: number, intervalMs = 1_500): number => {
 interface DemoFrameProps {
   /** The one-word label on the tab, naming the surface being shown. */
   tab: string;
-  eyebrow: string;
   title: ReactNode;
   body: string;
   /** Which side the copy sits on. Alternated down the page. */
@@ -92,7 +91,6 @@ interface DemoFrameProps {
  */
 export const DemoFrame = ({
   tab,
-  eyebrow,
   title,
   body,
   side = 'left',
@@ -104,11 +102,17 @@ export const DemoFrame = ({
       side === 'right' && 'lg:[&>*:first-child]:order-2',
     )}
   >
-    {/* --- What it is ------------------------------------------------- */}
+    {/* --- What it is -------------------------------------------------
+
+        No kicker over the heading.
+
+        Each of these used to carry one — "Move work", "Start with something",
+        "Decide together" — three words in brand-coloured caps saying, less
+        precisely, what the heading underneath was about to say properly. A
+        label above a heading is a heading that was not trusted to carry
+        itself, and the three here were competing with the demo beside them for
+        the only glance this section gets. */}
     <div className="space-y-3">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand">
-        {eyebrow}
-      </p>
       <h3 className="text-balance text-2xl font-semibold tracking-tight sm:text-3xl">
         {title}
       </h3>

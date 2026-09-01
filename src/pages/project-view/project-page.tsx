@@ -522,7 +522,20 @@ const ProjectPage = () => {
             .filter((entry) => entry.value !== 'connections' || canManage)
             .map((entry) => ({ ...entry, label: t(entry.label) }))}
           onChange={setTab}
-          className="flex-wrap"
+          label={t('project.tabsLabel')}
+          /*
+           * A scrolling strip on a phone, a wrapping row above it.
+           *
+           * Twelve tabs wrapped is four or five stacked rows on a 390px screen
+           * — a third of the viewport spent on navigation before the board is
+           * reached, on the surface where vertical space is scarcest. Scrolled,
+           * it is one row, which is the same answer the task board already
+           * gives for its own columns one section below this.
+           */
+          className={cn(
+            'flex w-full flex-nowrap overflow-x-auto',
+            'sm:inline-flex sm:w-auto sm:flex-wrap sm:overflow-visible',
+          )}
         />
       </header>
 

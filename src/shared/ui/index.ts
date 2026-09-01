@@ -23,6 +23,16 @@ export { ExpandToggle, ExpandableStage } from './expandable-stage';
 export { ZoomableImage } from './zoomable-image';
 export { FileAttachmentField, FileAttachmentRow, formatFileSize } from './file-attachment';
 export { PageStack, PostItGlyph, PostItMark, PushPin, SendGlyph, StudioMark } from './studio-icons';
+export { GoogleCalendarMark } from './google-calendar-mark';
+export {
+  DiscordMark,
+  ExportMark,
+  FeedMark,
+  GitHubMark,
+  SlackMark,
+  TrelloMark,
+  WebhookMark,
+} from './service-marks';
 export { type NavGlyphKey } from './glyph-kit';
 export { NavGlyph } from './nav-glyph';
 export { SpaceMark } from './space-icons';

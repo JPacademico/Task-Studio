@@ -17,6 +17,15 @@ export interface Meeting {
   description: string | null;
   /** A room name, a floor, a video-call label — wherever it happens. */
   room: string;
+  /**
+   * The registered room behind that name, or `null` for one typed by hand.
+   *
+   * Both spellings are live and neither is going away: a company that has
+   * registered its floor books by id and gets the double-booking check, and a
+   * project that meets in a café types where it is. The id is what the composer
+   * re-selects when a meeting is opened for editing.
+   */
+  roomId: string | null;
   startAt: string;
   endAt: string;
   /**
@@ -95,7 +104,10 @@ export interface CreateMeetingPayload {
   projectId?: string;
   organizationId?: string;
   title: string;
-  room: string;
+  /** Where it happens, as text. Required unless `roomId` says which room. */
+  room?: string;
+  /** A registered room to book. Refused when that room is already taken. */
+  roomId?: string;
   startAt: string;
   endAt: string;
   description?: string;
@@ -115,6 +127,8 @@ export interface CreateMeetingPayload {
 export interface UpdateMeetingPayload {
   title?: string;
   room?: string;
+  /** An id books a room, `null` gives it back, absent changes nothing. */
+  roomId?: string | null;
   startAt?: string;
   endAt?: string;
   description?: string;
@@ -148,4 +162,51 @@ export interface AgendaParams {
   from?: string;
   to?: string;
   includeCompleted?: boolean;
+}
+
+/**
+ * A room somebody can actually book.
+ *
+ * ## Why `isInherited` is on the row rather than derived here
+ *
+ * Because it is not a fact about the room — the same row is "ours" to the
+ * company that registered it and "the building's" to a project filed under
+ * that company. The server knows which calendar was asked and answers for that
+ * calendar; a client working it out from `projectId` being null would be
+ * re-deriving a rule it does not own, and would get it wrong on the
+ * organization page where a company's own rooms are not inherited at all.
+ */
+export interface MeetingRoom {
+  id: string;
+  name: string;
+  /** "3rd floor, east wing", or a video-call link. Uninterpreted. */
+  location: string | null;
+  /** Advisory. Nothing refuses a booking for exceeding it. */
+  capacity: number | null;
+  /** Retired: off the picker, and out of the clash check. */
+  isArchived: boolean;
+  projectId: string | null;
+  organizationId: string | null;
+  scope: 'project' | 'organization';
+  /** Borrowed from the company this project is filed under, so read-only here. */
+  isInherited: boolean;
+  createdAt: string;
+}
+
+export interface RoomScope {
+  projectId?: string;
+  organizationId?: string;
+}
+
+export interface CreateMeetingRoomPayload extends RoomScope {
+  name: string;
+  location?: string;
+  capacity?: number;
+}
+
+export interface UpdateMeetingRoomPayload {
+  name?: string;
+  location?: string | null;
+  capacity?: number | null;
+  isArchived?: boolean;
 }

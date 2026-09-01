@@ -92,6 +92,7 @@ export const LoginPage = () => {
     >
       <form
         className="space-y-4"
+        aria-busy={login.isPending || undefined}
         onSubmit={(event) => {
           event.preventDefault();
           login.mutate({ email, password });
@@ -118,7 +119,6 @@ export const LoginPage = () => {
           value={password}
           onChange={(event) => setPassword(clampText(event.target.value, TEXT_LIMITS.password))}
           maxLength={TEXT_LIMITS.password}
-          placeholder="••••••••"
         />
 
         <div className="flex justify-end">
@@ -139,14 +139,24 @@ export const LoginPage = () => {
 
           A cold start is tens of seconds of a button that looks stuck. The
           spinner alone reads as "something is wrong with my password"; this
-          says which of the two waits this is, and it disappears the moment the
-          container answers — on a warm API it is never drawn at all.
+          says which of the two waits this is, and it goes quiet the moment the
+          container answers.
+
+          Always rendered, empty, rather than mounted when the wait begins.
+          Two reasons and both are real: a live region announces a *change* to
+          text that was already there, so one that appears at the same moment as
+          its content is frequently announced by nothing at all — and a
+          paragraph appearing under the button pushed the OAuth row down by a
+          line, mid-wait, on the one screen where nothing should move while
+          somebody is watching it. `min-h` holds the line either way.
         */}
-        {isWaking && (
-          <p className="text-center text-[11px] leading-relaxed text-content-faint">
-            {t('auth.signIn.wakingHint')}
-          </p>
-        )}
+        <p
+          role="status"
+          aria-live="polite"
+          className="min-h-[1rem] text-center text-[11px] leading-relaxed text-content-faint"
+        >
+          {isWaking ? t('auth.signIn.wakingHint') : ''}
+        </p>
       </form>
 
       {/* Renders nothing at all unless the API has provider keys — see

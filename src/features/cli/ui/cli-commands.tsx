@@ -46,9 +46,25 @@ const FOCUS_RING =
  * browser's value produces `…/api/v1/api/v1/cli/session` and a 404 that reads
  * as the server being broken.
  *
- * Stripped here rather than configured separately, so a deployment has one API
- * origin and both clients derive from it. `taskstudio doctor` checks for the
- * same mistake from the other end.
+ * ## Why nothing on this panel prints it any more
+ *
+ * The install instructions used to read `taskstudio login --api <this>`, and
+ * that line is gone. Not because the address is secret — it is in the bundle
+ * every visitor of this page has already downloaded, and in every request the
+ * page makes, so hiding it would be theatre — but because *asking people to
+ * retype it* teaches a habit worth attacking. It trains users that the normal
+ * way to sign in is to paste an API host read off a web page into the command
+ * that then receives their password, and a page publishing a lookalike host is
+ * the entire exploit.
+ *
+ * A published CLI knows which deployment it was published for, so it defaults
+ * to it, and `taskstudio login` takes no arguments. `--api` survives for
+ * self-hosters, who are exactly the people for whom typing an address is a
+ * deliberate act rather than a step in an instruction they are following.
+ *
+ * Kept exported because `taskstudio doctor` checks the same mistake from the
+ * other end, and because a self-hoster reading this file is the one audience
+ * that still needs the derivation written down.
  */
 export const cliApiUrl = (): string => env.apiUrl.replace(/\/api\/v\d+$/, '');
 
@@ -235,7 +251,8 @@ export const CliCommandList = ({ variant }: { variant: 'account' | 'project' }) 
       <div className="space-y-1.5">
         <GroupLabel>{t('cli.install')}</GroupLabel>
         <CommandLine>npm install -g @task-studio/cli</CommandLine>
-        <CommandLine>{`taskstudio login --api ${cliApiUrl()}`}</CommandLine>
+        {/* No `--api`, and no address to copy. See the note on `cliApiUrl`. */}
+        <CommandLine>taskstudio login</CommandLine>
       </div>
 
       <div className="space-y-1.5">
@@ -244,6 +261,13 @@ export const CliCommandList = ({ variant }: { variant: 'account' | 'project' }) 
           <>
             <CommandLine>taskstudio init</CommandLine>
             <CommandLine>taskstudio ide install</CommandLine>
+            {/*
+              Offered in the project variant and not the account one, because
+              it is a per-repository hook and the reader is provably standing in
+              a project. In Settings there is no repository in scope, so the
+              same line would be an instruction somebody cannot follow yet.
+            */}
+            <CommandLine>taskstudio hook install</CommandLine>
           </>
         ) : (
           <>

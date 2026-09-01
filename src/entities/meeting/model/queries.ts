@@ -6,12 +6,16 @@ import { useRealtime } from '@/app/providers/realtime-provider';
 import { errorMessage } from '@/shared/api/client';
 import { queryKeys } from '@/shared/api/query-keys';
 import { translate } from '@/shared/i18n';
-import { meetingApi } from '../api/meeting.api';
+import { meetingApi, meetingRoomApi } from '../api/meeting.api';
 import type {
   AgendaParams,
   CreateMeetingPayload,
+  CreateMeetingRoomPayload,
   Meeting,
+  MeetingRoom,
+  RoomScope,
   UpdateMeetingPayload,
+  UpdateMeetingRoomPayload,
 } from './types';
 
 /**
@@ -356,4 +360,156 @@ export const useCompleteMeeting = () => {
     },
     [mutate, queryClient],
   );
+};
+
+// ---------------------------------------------------------------------------
+// Rooms
+// ---------------------------------------------------------------------------
+
+/**
+ * How long a cached room list stays fresh.
+ *
+ * An hour, against the calendar's minute, and the gap is the point. A meeting
+ * is booked and moved several times a day by several people; a room is
+ * registered once and then exists. Sharing the calendar's staleness would mean
+ * a request for the room list every time somebody opened the composer, to
+ * re-learn a list that has not changed since April.
+ *
+ * Every write below patches the cache directly, so the only thing this window
+ * delays is a room registered by a colleague — which the person booking will
+ * see the moment they reload, and which is not a state anybody is blocked by.
+ */
+const ROOMS_STALE_TIME = 60 * 60_000;
+
+const roomsKey = (scope: RoomScope) =>
+  scope.projectId
+    ? queryKeys.meetings.rooms('project', scope.projectId)
+    : queryKeys.meetings.rooms('organization', scope.organizationId ?? '');
+
+/**
+ * The rooms this calendar can book, the project's own first.
+ *
+ * `enabled` follows the scope rather than a flag: exactly one of the two ids is
+ * set on any given surface, and a hook called with neither is a composer that
+ * has not been handed its scope yet.
+ */
+export const useMeetingRooms = (scope: RoomScope, enabled = true) =>
+  useQuery({
+    queryKey: roomsKey(scope),
+    queryFn: () => meetingRoomApi.list(scope),
+    enabled: enabled && Boolean(scope.projectId || scope.organizationId),
+    staleTime: ROOMS_STALE_TIME,
+  });
+
+/**
+ * Registering a room, edited into the cache rather than refetched.
+ *
+ * Safe here in a way it is not for meetings: a room's membership of a list is
+ * decided by the scope it was created in, which is the scope this hook was
+ * given — there is no server-side join to second-guess. Compare `upsertMeeting`
+ * above, where a company's calendar genuinely cannot be patched.
+ *
+ * One exception, and it is why the organization branch also invalidates: a room
+ * registered *at company level* appears on the list of every project filed under
+ * that company, and this client does not know which projects those are.
+ */
+export const useCreateMeetingRoom = (scope: RoomScope) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: Omit<CreateMeetingRoomPayload, 'projectId' | 'organizationId'>) =>
+      meetingRoomApi.create({ ...payload, ...scope }),
+
+    onSuccess: (room) => {
+      queryClient.setQueryData<MeetingRoom[]>(roomsKey(scope), (rooms) =>
+        Array.isArray(rooms) ? sortRooms([...rooms, room]) : rooms,
+      );
+      if (scope.organizationId) invalidateInheritedRooms(queryClient);
+      toast.success(translate('rooms.created'));
+    },
+
+    onError: (error) => toast.error(errorMessage(error, translate('rooms.saveFailed'))),
+  });
+};
+
+export const useUpdateMeetingRoom = (scope: RoomScope) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ roomId, payload }: { roomId: string; payload: UpdateMeetingRoomPayload }) =>
+      meetingRoomApi.update(roomId, payload),
+
+    onSuccess: (room) => {
+      queryClient.setQueryData<MeetingRoom[]>(roomsKey(scope), (rooms) =>
+        Array.isArray(rooms)
+          ? sortRooms(rooms.map((entry) => (entry.id === room.id ? room : entry)))
+          : rooms,
+      );
+      if (scope.organizationId) invalidateInheritedRooms(queryClient);
+      toast.success(translate('rooms.saved'));
+    },
+
+    onError: (error) => toast.error(errorMessage(error, translate('rooms.saveFailed'))),
+  });
+};
+
+/**
+ * Removing a room, felt on the click.
+ *
+ * The meetings booked into it are untouched — the API sets their link null and
+ * leaves the name they were booked under — so this is not a destructive action
+ * in the way deleting a meeting is, and there is nothing worth a spinner. It
+ * comes back if the server refuses.
+ */
+export const useDeleteMeetingRoom = (scope: RoomScope) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (roomId: string) => meetingRoomApi.remove(roomId),
+
+    onMutate: async (roomId) => {
+      const key = roomsKey(scope);
+      await queryClient.cancelQueries({ queryKey: key });
+
+      const previous = queryClient.getQueryData<MeetingRoom[]>(key);
+      queryClient.setQueryData<MeetingRoom[]>(key, (rooms) =>
+        Array.isArray(rooms) ? rooms.filter((room) => room.id !== roomId) : rooms,
+      );
+
+      return { key, previous };
+    },
+
+    onError: (error, _roomId, context) => {
+      if (context) queryClient.setQueryData(context.key, context.previous);
+      toast.error(errorMessage(error, translate('rooms.deleteFailed')));
+    },
+
+    onSuccess: () => {
+      if (scope.organizationId) invalidateInheritedRooms(queryClient);
+      toast.success(translate('rooms.deleted'));
+    },
+  });
+};
+
+/** The server's order: the calendar's own rooms first, then by name. */
+const sortRooms = (rooms: MeetingRoom[]): MeetingRoom[] =>
+  [...rooms].sort((a, b) => {
+    if (a.scope !== b.scope) return a.scope === 'project' ? -1 : 1;
+    return a.name.localeCompare(b.name);
+  });
+
+/**
+ * Every project room list, marked stale.
+ *
+ * A company's rooms are inherited by every project filed under it, and this
+ * client holds no map from a company to its projects — that join is the
+ * server's. So a write at company level invalidates the lot rather than
+ * guessing which of them changed. `refetchType: 'active'` keeps the cost to the
+ * one list somebody is actually looking at.
+ */
+const invalidateInheritedRooms = (queryClient: QueryClient): void => {
+  void queryClient.invalidateQueries({
+    queryKey: ['meetings', 'rooms', 'project'],
+    refetchType: 'active',
+  });
 };

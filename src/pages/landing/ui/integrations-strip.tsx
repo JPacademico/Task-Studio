@@ -2,16 +2,16 @@ import type { ComponentType } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Github } from 'lucide-react';
 
-import { GoogleCalendarMark } from '@/features/calendar-sync/ui/google-calendar-mark';
 import { useT, type TranslationKey } from '@/shared/i18n';
 import {
   DiscordMark,
   ExportMark,
   FeedMark,
+  GoogleCalendarMark,
   SlackMark,
   TrelloMark,
   WebhookMark,
-} from './service-marks';
+} from '@/shared/ui';
 
 /**
  * Everything this app actually connects to, and what each connection is *for*.

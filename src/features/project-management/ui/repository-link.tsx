@@ -1,10 +1,7 @@
 import { useState } from 'react';
 import { Github, Link2, Unlink } from 'lucide-react';
 
-import {
-  useLinkRepository,
-  useUnlinkRepository,
-} from '@/entities/integration/model/queries';
+import { useLinkRepository, useUnlinkRepository } from '@/entities/integration/model/queries';
 import type { ProjectRepository } from '@/entities/project/model/types';
 import { cn } from '@/shared/lib/cn';
 import { Button, Input, Modal } from '@/shared/ui';
@@ -16,6 +13,111 @@ interface RepositoryLinkProps {
   /** Owner or admin. The API refuses the write below that either way. */
   canManage: boolean;
 }
+
+interface RepositoryLinkDialogProps {
+  projectId: string;
+  repository: ProjectRepository | null;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+/**
+ * Connecting a repository, or letting go of one.
+ *
+ * ## Why this is its own component
+ *
+ * Because two surfaces need it and neither of them owns it. The control beside
+ * the project's name is where somebody goes when they are thinking about the
+ * code; the GitHub card on the Connections shelf is where they go when they are
+ * thinking about what this project talks to. Both are legitimate doors and both
+ * have to open the *same room* — a second copy of this form would be a second
+ * place for "which URLs are accepted" and "what disconnecting costs you" to
+ * drift apart, and the drift would not be visible from either side.
+ *
+ * Which of the two forms it draws is decided by state rather than by the
+ * caller: a project either has a repository or it does not, and asking two call
+ * sites to work that out is asking one of them to eventually get it wrong.
+ */
+export const RepositoryLinkDialog = ({
+  projectId,
+  repository,
+  isOpen,
+  onClose,
+}: RepositoryLinkDialogProps) => {
+  const t = useT();
+  const [url, setUrl] = useState('');
+
+  const link = useLinkRepository(projectId);
+  const unlink = useUnlinkRepository(projectId);
+
+  const submit = async () => {
+    if (!url.trim()) return;
+
+    try {
+      await link.mutateAsync(url.trim());
+      onClose();
+      setUrl('');
+    } catch {
+      // The hook's own `onError` has already said what went wrong. Staying
+      // open with the text still in the field is the whole handling: a typo is
+      // corrected in place rather than retyped.
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={t('repo.connectTitle')} className="max-w-md">
+      {repository ? (
+        <div className="space-y-4">
+          <p className="text-sm text-content-muted">{repository.fullName}</p>
+          <p className="text-xs leading-relaxed text-content-faint">{t('repo.disconnectHint')}</p>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={onClose}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant="danger"
+              isLoading={unlink.isPending}
+              onClick={() => {
+                unlink.mutate(undefined, { onSuccess: onClose });
+              }}
+            >
+              <Unlink className="h-3.5 w-3.5" />
+              {t('repo.disconnect')}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <form
+          className="space-y-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void submit();
+          }}
+        >
+          <p className="text-xs leading-relaxed text-content-muted">{t('repo.connectBody')}</p>
+
+          <Input
+            autoFocus
+            value={url}
+            onChange={(event) => setUrl(event.target.value)}
+            placeholder={t('repo.placeholder')}
+            maxLength={300}
+          />
+
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" onClick={onClose}>
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit" isLoading={link.isPending} disabled={!url.trim()}>
+              <Link2 className="h-3.5 w-3.5" />
+              {t('repo.connectAction')}
+            </Button>
+          </div>
+        </form>
+      )}
+    </Modal>
+  );
+};
 
 /**
  * The way from a project to its code, beside the project's own name.
@@ -43,24 +145,15 @@ interface RepositoryLinkProps {
 export const RepositoryLink = ({ projectId, repository, canManage }: RepositoryLinkProps) => {
   const t = useT();
   const [isOpen, setIsOpen] = useState(false);
-  const [url, setUrl] = useState('');
 
-  const link = useLinkRepository(projectId);
-  const unlink = useUnlinkRepository(projectId);
-
-  const submit = async () => {
-    if (!url.trim()) return;
-
-    try {
-      await link.mutateAsync(url.trim());
-      setIsOpen(false);
-      setUrl('');
-    } catch {
-      // The hook's own `onError` has already said what went wrong. Staying
-      // open with the text still in the field is the whole handling: a typo is
-      // corrected in place rather than retyped.
-    }
-  };
+  const dialog = (
+    <RepositoryLinkDialog
+      projectId={projectId}
+      repository={repository}
+      isOpen={isOpen}
+      onClose={() => setIsOpen(false)}
+    />
+  );
 
   // --- Linked: a way to the code -------------------------------------------
 
@@ -106,34 +199,7 @@ export const RepositoryLink = ({ projectId, repository, canManage }: RepositoryL
           </Button>
         )}
 
-        <Modal
-          isOpen={isOpen}
-          onClose={() => setIsOpen(false)}
-          title={t('repo.connectTitle')}
-          className="max-w-md"
-        >
-          <div className="space-y-4">
-            <p className="text-sm text-content-muted">{repository.fullName}</p>
-            <p className="text-xs leading-relaxed text-content-faint">
-              {t('repo.disconnectHint')}
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setIsOpen(false)}>
-                {t('common.cancel')}
-              </Button>
-              <Button
-                variant="danger"
-                isLoading={unlink.isPending}
-                onClick={() => {
-                  unlink.mutate(undefined, { onSuccess: () => setIsOpen(false) });
-                }}
-              >
-                <Unlink className="h-3.5 w-3.5" />
-                {t('repo.disconnect')}
-              </Button>
-            </div>
-          </div>
-        </Modal>
+        {dialog}
       </span>
     );
   }
@@ -155,40 +221,7 @@ export const RepositoryLink = ({ projectId, repository, canManage }: RepositoryL
         <Github className="h-4 w-4" />
       </Button>
 
-      <Modal
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        title={t('repo.connectTitle')}
-        className="max-w-md"
-      >
-        <form
-          className="space-y-4"
-          onSubmit={(event) => {
-            event.preventDefault();
-            void submit();
-          }}
-        >
-          <p className="text-xs leading-relaxed text-content-muted">{t('repo.connectBody')}</p>
-
-          <Input
-            autoFocus
-            value={url}
-            onChange={(event) => setUrl(event.target.value)}
-            placeholder={t('repo.placeholder')}
-            maxLength={300}
-          />
-
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>
-              {t('common.cancel')}
-            </Button>
-            <Button type="submit" isLoading={link.isPending} disabled={!url.trim()}>
-              <Link2 className="h-3.5 w-3.5" />
-              {t('repo.connectAction')}
-            </Button>
-          </div>
-        </form>
-      </Modal>
+      {dialog}
     </>
   );
 };

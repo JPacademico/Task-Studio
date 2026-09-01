@@ -356,12 +356,30 @@ export const Collapsible = ({
   );
 };
 
-/** Horizontal segmented control (My Tasks / Team / All, status filters…). */
+/**
+ * Horizontal segmented control (My Tasks / Team / All, status filters…).
+ *
+ * ## Why the buttons say `aria-pressed` and not `role="tab"`
+ *
+ * Because half the places this is used are not tabs. It is a view switcher on
+ * the meetings panel, a scope filter on the task list, and a genuine tab row on
+ * the project page — and `role="tab"` is a promise about the *rest* of the
+ * markup: a `tablist` container, a `tabpanel` with a matching id, and arrow-key
+ * navigation between the buttons. Declaring the role without those is worse
+ * than declaring nothing, because a screen reader then announces "tab 3 of 12"
+ * and the arrow keys it tells the user to press do nothing.
+ *
+ * `aria-pressed` is true of every use: this is a group of buttons, one of which
+ * is currently on. It is what makes the selected option audible at all — before
+ * it, the state was carried entirely by a background colour.
+ */
 interface SegmentedProps<T extends string> {
   value: T;
   options: { value: T; label: string; icon?: ReactNode }[];
   onChange: (value: T) => void;
   className?: string;
+  /** Names the group for assistive technology. "Filter", "View", "Section". */
+  label?: string;
 }
 
 export const Segmented = <T extends string>({
@@ -369,8 +387,11 @@ export const Segmented = <T extends string>({
   options,
   onChange,
   className,
+  label,
 }: SegmentedProps<T>) => (
   <div
+    role="group"
+    aria-label={label}
     className={cn(
       'ui-segment inline-flex items-center gap-1 rounded-xl border border-edge bg-surface-sunken p-1',
       className,
@@ -381,11 +402,26 @@ export const Segmented = <T extends string>({
         key={option.value}
         type="button"
         onClick={() => onChange(option.value)}
+        aria-pressed={value === option.value}
         className={cn(
-          'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium',
+          'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium',
           'transition-colors duration-150',
+          /*
+           * A focus ring, because there was none.
+           *
+           * These are bespoke `<button>`s rather than the shared `Button`, so
+           * they fell through to whatever the browser draws — which on `pixel`
+           * and `newspaper`, both of which square every corner in the product,
+           * is a rounded halo that reads as a rendering fault. Matched to
+           * `buttonClasses` so the whole app keeps one focus language.
+           */
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
+          'focus-visible:ring-offset-1 focus-visible:ring-offset-surface',
           value === option.value
-            ? 'bg-surface-raised text-content shadow-sm'
+            ? // The inset ring is what makes the selected segment legible on the
+              // skins whose `--surface-raised` and `--surface-sunken` are a few
+              // percent apart and whose `shadow-sm` resolves to nothing.
+              'bg-surface-raised text-content shadow-sm ring-1 ring-inset ring-edge'
             : 'text-content-muted hover:text-content',
         )}
       >

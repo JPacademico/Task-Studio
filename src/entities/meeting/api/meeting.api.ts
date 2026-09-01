@@ -2,9 +2,13 @@ import { api } from '@/shared/api/client';
 import type {
   AgendaParams,
   CreateMeetingPayload,
+  CreateMeetingRoomPayload,
   ListMeetingsParams,
   Meeting,
+  MeetingRoom,
+  RoomScope,
   UpdateMeetingPayload,
+  UpdateMeetingRoomPayload,
 } from '../model/types';
 
 export const meetingApi = {
@@ -50,5 +54,40 @@ export const meetingApi = {
 
   async remove(meetingId: string): Promise<void> {
     await api.delete(`/meetings/${meetingId}`);
+  },
+};
+
+/**
+ * The rooms a calendar can book.
+ *
+ * A separate object rather than four more methods on `meetingApi`, because
+ * they answer a different question with a different lifetime: the calendar is
+ * refetched constantly and rooms change a few times a year. Keeping them apart
+ * is what lets the picker hold a room list for an hour while the meetings under
+ * it stay a minute fresh.
+ *
+ * Asking for a *project's* rooms answers with the project's own **plus** every
+ * room its company holds — the inheritance is resolved by the server on read,
+ * so a project filed under a company gains the building immediately and loses
+ * it again if it is unfiled. See the API's `MeetingRoomsService`.
+ */
+export const meetingRoomApi = {
+  async list(scope: RoomScope): Promise<MeetingRoom[]> {
+    const { data } = await api.get<MeetingRoom[]>('/meetings/rooms', { params: scope });
+    return data;
+  },
+
+  async create(payload: CreateMeetingRoomPayload): Promise<MeetingRoom> {
+    const { data } = await api.post<MeetingRoom>('/meetings/rooms', payload);
+    return data;
+  },
+
+  async update(roomId: string, payload: UpdateMeetingRoomPayload): Promise<MeetingRoom> {
+    const { data } = await api.patch<MeetingRoom>(`/meetings/rooms/${roomId}`, payload);
+    return data;
+  },
+
+  async remove(roomId: string): Promise<void> {
+    await api.delete(`/meetings/rooms/${roomId}`);
   },
 };

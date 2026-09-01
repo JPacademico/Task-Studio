@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { AlertTriangle, Check, Copy, Plus, Send, Webhook } from 'lucide-react';
 
@@ -50,10 +50,39 @@ const FLAVOUR_LABEL: Record<WebhookFlavour, TranslationKey> = {
   generic: 'webhooks.flavour.generic',
 };
 
+/**
+ * A press on one of the destination cards beside this panel.
+ *
+ * `nonce` is what makes pressing the same card twice do something twice: the
+ * effect below keys off it rather than off the flavour, so a repeated press is
+ * a new request rather than an unchanged prop the effect ignores.
+ */
+export interface ComposeRequest {
+  flavour: WebhookFlavour;
+  nonce: number;
+}
+
+/** The example URL each destination is recognised by. */
+const FLAVOUR_PLACEHOLDER: Record<WebhookFlavour, string> = {
+  discord: 'https://discord.com/api/webhooks/…',
+  slack: 'https://hooks.slack.com/services/…',
+  generic: 'https://example.com/task-studio',
+};
+
 interface WebhooksPanelProps {
   projectId: string;
   /** Owner or admin. The API refuses everything here below that. */
   canManage: boolean;
+  /**
+   * Open the composer, aimed at one destination.
+   *
+   * The Connections shelf draws a card per destination and this is how a press
+   * on one arrives. It carries no behaviour of its own — a Discord hook and a
+   * Slack hook are the same row with a different hostname — so all it changes
+   * is the example URL in the field, which is the one thing somebody pressing
+   * "Discord" actually needs to see.
+   */
+  composeRequest?: ComposeRequest | null;
 }
 
 /**
@@ -81,7 +110,7 @@ interface WebhooksPanelProps {
  * hook switches itself off and says so here, rather than costing a request per
  * event forever.
  */
-export const WebhooksPanel = ({ projectId, canManage }: WebhooksPanelProps) => {
+export const WebhooksPanel = ({ projectId, canManage, composeRequest }: WebhooksPanelProps) => {
   const t = useT();
 
   const { data: hooks = [], isLoading } = useProjectWebhooks(projectId, canManage);
@@ -95,6 +124,35 @@ export const WebhooksPanel = ({ projectId, canManage }: WebhooksPanelProps) => {
   const [events, setEvents] = useState<WebhookEvent[]>([]);
   const [secret, setSecret] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [placeholder, setPlaceholder] = useState(FLAVOUR_PLACEHOLDER.discord);
+
+  /*
+   * A press on a destination card opens the composer.
+   *
+   * Guarded by the nonce rather than by the whole object, because the parent
+   * builds a fresh one on every render and an effect depending on that would
+   * re-open a composer the reader had just closed.
+   */
+  const handledNonce = useRef<number | null>(null);
+  const composerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!composeRequest || handledNonce.current === composeRequest.nonce) return;
+
+    handledNonce.current = composeRequest.nonce;
+    setPlaceholder(FLAVOUR_PLACEHOLDER[composeRequest.flavour]);
+    setIsComposing(true);
+
+    /*
+     * Brought into view, because the card that opened it is beside this panel
+     * rather than above it — on a narrow window the composer can appear a
+     * screen below the thing that was pressed, which reads as nothing having
+     * happened. Deferred a frame so the element exists to scroll to.
+     */
+    requestAnimationFrame(() =>
+      composerRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }),
+    );
+  }, [composeRequest]);
 
   /*
    * Reading a project's webhooks is admin-only, and so is this panel.
@@ -228,13 +286,16 @@ export const WebhooksPanel = ({ projectId, canManage }: WebhooksPanelProps) => {
 
       {/* --- The composer -------------------------------------------------- */}
       {isComposing ? (
-        <div className="space-y-3 rounded-2xl border border-edge bg-surface-raised p-4">
+        <div
+          ref={composerRef}
+          className="space-y-3 rounded-2xl border border-edge bg-surface-raised p-4"
+        >
           <Input
             label={t('webhooks.url')}
             name="webhookUrl"
             value={url}
             onChange={(event) => setUrl(event.target.value.slice(0, 2000))}
-            placeholder="https://discord.com/api/webhooks/…"
+            placeholder={placeholder}
             autoFocus
           />
 

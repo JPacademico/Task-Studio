@@ -1,8 +1,10 @@
+import { useMemo } from 'react';
 import { CalendarClock, Check } from 'lucide-react';
 
 import type { GroupedTask } from '@/entities/task-group/model/types';
 import { TASK_PRIORITY_META, TASK_STATUS_META } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
+import { useCardPress } from '@/shared/lib/use-card-press';
 import { withAlpha } from '@/shared/lib/colors';
 import { formatDateTime, formatDeadlineDate } from '@/shared/lib/dates';
 import { AvatarStack } from '@/shared/ui';
@@ -101,13 +103,26 @@ export const GroupTaskCard = ({
    */
   const isTicked = task.isMine ? task.isCompletedByMe : isDone;
 
+  /*
+   * The card opened on a bare `onClick`, which on a board whose whole point is
+   * dragging meant every drop landed the reader in a modal over the board they
+   * had just rearranged. `useCardPress` measures the press against the same
+   * thresholds the drag sensor uses, so a gesture is one thing or the other and
+   * never both.
+   */
+  const openTask = useMemo(
+    () => (onOpen ? () => onOpen(task.id) : undefined),
+    [onOpen, task.id],
+  );
+  const cardPress = useCardPress(openTask);
+
   return (
     <article
-      onClick={onOpen ? () => onOpen(task.id) : undefined}
+      {...cardPress}
       className={cn(
         'gpu group/gcard overflow-hidden rounded-xl border border-edge bg-surface-raised',
         'transition-colors duration-150',
-        onOpen && 'cursor-pointer hover:border-brand/50',
+        openTask && 'cursor-pointer hover:border-brand/50',
         isDragging && 'shadow-xl ring-1 ring-brand/40',
         isDone && 'opacity-75',
         className,

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 
 import { LanguageToggle } from '@/features/language-toggle/ui/language-toggle';
 import { ThemeToggle } from '@/features/theme-toggle/ui/theme-toggle';
+import { cn } from '@/shared/lib/cn';
 import { buttonClasses, StudioMark } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
@@ -30,6 +31,24 @@ export const LandingNav = () => {
 
   return (
     <header className="sticky top-0 z-40 border-b border-edge/70 bg-surface/80 backdrop-blur">
+      {/*
+        The first thing in the tab order, and invisible until it is reached.
+
+        A sticky bar with a logo, three anchors, two toggles and two buttons is
+        eight stops between the top of the page and its first word. For anybody
+        navigating by keyboard that is eight stops paid on every arrival; this
+        is one, and it goes straight to the content.
+      */}
+      <a
+        href="#content"
+        className={cn(
+          'sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50',
+          buttonClasses({ size: 'sm' }),
+        )}
+      >
+        {t('landing.nav.skip')}
+      </a>
+
       <nav className="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
         <Link
           to="/welcome"
@@ -58,7 +77,12 @@ export const LandingNav = () => {
             <li key={href}>
               <a
                 href={href}
-                className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-content-muted transition-colors hover:bg-surface-sunken hover:text-content"
+                className={cn(
+                  'rounded-lg px-2.5 py-1.5 text-xs font-medium text-content-muted',
+                  'transition-colors hover:bg-surface-sunken hover:text-content',
+                  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
+                  'focus-visible:outline-brand',
+                )}
               >
                 {t(label)}
               </a>

@@ -4,7 +4,7 @@ import { Check } from 'lucide-react';
 import { useCalendarStatus } from '@/entities/integration/model/queries';
 import { cn } from '@/shared/lib/cn';
 import { useT } from '@/shared/i18n';
-import { GoogleCalendarMark } from './google-calendar-mark';
+import { GoogleCalendarMark } from '@/shared/ui';
 
 /**
  * Whether this reader's meetings are reaching their own calendar, said on the

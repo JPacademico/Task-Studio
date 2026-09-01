@@ -374,14 +374,34 @@ const en = {
   'cli.thenInAnyRepo': 'Then, in any repository',
   'cli.inThisRepo': 'Then, in this repository',
   'cli.accountHint':
-    'Your password is used once and never stored. What the machine keeps is a token you can revoke below.',
+    'Signing in opens a browser to approve this machine — no password is typed into the terminal. What it keeps is a token you can revoke below.',
   'cli.projectHint':
-    '“init” links the checkout you are in to this project. “ide install” adds /taskstudio commands to Claude Code, Cursor and Copilot.',
+    '“init” links the checkout you are in to this project. “hook install” lets an ordinary commit close the task on its branch.',
   'cli.showCommands': 'Commands',
   'cli.hideCommands': 'Hide',
   'cli.docs': 'Read the docs',
+  // --- Approving a terminal ----------------------------------------------
+  //
+  // The device grant's browser half. Every string here is read by somebody
+  // deciding whether to hand a machine a credential, so none of them is
+  // reassuring: the warning says what is actually granted.
+  'cliAuth.heading': 'Sign a terminal in',
+  'cliAuth.subheading': 'Check the machine below is the one you are sitting at.',
+  'cliAuth.codeLabel': 'The code your terminal is showing',
+  'cliAuth.continue': 'Continue',
+  'cliAuth.unnamedDevice': 'An unnamed machine',
+  'cliAuth.grantWarning':
+    'Approving gives this machine a token that can do everything you can, until you revoke it in Settings.',
+  'cliAuth.approve': 'Approve',
+  'cliAuth.deny': 'Not me',
+  'cliAuth.approvedTitle': 'Signed in',
+  'cliAuth.approvedBody': 'Go back to your terminal — it has what it needs.',
+  'cliAuth.deniedTitle': 'Refused',
+  'cliAuth.deniedBody': 'Nothing was given to that machine.',
+  'cliAuth.expiredTitle': 'That code is no longer waiting',
+  'cliAuth.expiredBody': 'Codes last ten minutes. Run taskstudio login again for a new one.',
+  'cliAuth.tryAnother': 'Enter another code',
   'cli.machines': 'Signed-in machines',
-  'cli.machinesHint': 'Every machine the Task Studio CLI is signed in on. Revoking one signs it out.',
   'cli.lastUsed': 'last used {when}',
   'cli.neverUsed': 'never used',
   'cli.expires': 'expires {when}',
@@ -413,8 +433,6 @@ const en = {
   'calendar.connectFailed': 'Could not connect that calendar.',
   'calendar.noRefreshToken':
     'Google did not grant offline access, so background syncing is not possible. Try connecting again and accept every step.',
-  'calendar.scopeNote':
-    'Task Studio asks only for access to a calendar it creates itself, called “Task Studio”. It cannot read or change anything else in your account.',
   'calendar.unavailable':
     'Calendar syncing is not configured on this deployment. Whoever runs it needs to set the Google credentials and an encryption key.',
 
@@ -484,21 +502,12 @@ const en = {
   'task.commitLater': 'Not now',
 
   // ---- Connections hub ----------------------------------------------------
-  'connections.title': 'Connections',
-  'connections.body': 'What this project talks to. Each one is a setting you turn on yourself.',
   'connections.broadcast': 'Broadcast',
-  'connections.broadcastHint': 'Post this project’s events somewhere your team already reads.',
   'connections.sync': 'Sync',
-  'connections.syncHint': 'Keep this project’s dates in step with a calendar you already use.',
   'connections.editor': 'Your editor',
-  'connections.editorHint':
-    'Work on this project from the terminal you already have open. Nothing to connect here — these are commands you run yourself.',
   'connections.features': 'Features',
-  'connections.featuresHint':
-    'Connections that change what the project can do, not just where it is announced.',
   'connections.connect': 'Connect',
   'connections.connected': 'Connected',
-  'connections.manage': 'Manage',
   'connections.adminOnly': 'Connections are managed by the project’s owner and admins.',
   'connections.adminOnlyBody':
     'Everything here sends this project’s work somewhere outside it, so it sits at the same level as managing the roster.',
@@ -506,19 +515,11 @@ const en = {
   'connections.personalHint': 'Connected to your account, not to this project.',
   'connections.soon': 'Not yet',
   'connections.svc.discord': 'Discord',
-  'connections.svc.discordWhat': 'Post to a channel when work lands',
   'connections.svc.slack': 'Slack',
-  'connections.svc.slackWhat': 'The same, in your workspace',
   'connections.svc.webhook': 'Custom endpoint',
-  'connections.svc.webhookWhat': 'Signed JSON to any HTTPS URL you own',
   'connections.svc.googleCalendar': 'Google Calendar',
-  'connections.svc.googleCalendarWhat': 'Two-way sync for the meetings you are at',
   'connections.svc.github': 'GitHub',
-  'connections.svc.githubWhat': 'Link the repository, and name branches on tasks',
   'connections.svc.trello': 'Trello',
-  'connections.svc.trelloWhat': 'Import a board with its lists — when creating a project',
-  'connections.svc.figma': 'Figma',
-  'connections.svc.figmaWhat': 'Not connected yet',
 
   // ---- Reporting somebody -------------------------------------------------
   'report.action': 'Report this person',
@@ -542,6 +543,7 @@ const en = {
   'github.overviewTitle': 'What would be imported',
   'github.overviewBack': 'Look up another',
 
+  'landing.nav.skip': 'Skip to content',
   'landing.nav.how': 'How it works',
   'landing.nav.connects': 'Connections',
   'landing.nav.inside': 'What’s inside',
@@ -568,7 +570,6 @@ const en = {
   'landing.det.projects': 'your',
   'landing.det.work': 'your',
 
-  'landing.hero.badge': 'Boards, notes, meetings and docs — in one place',
   'landing.hero.titleLead': 'Manage',
   'landing.hero.titleTail': 'the way you would on paper.',
   'landing.hero.body':
@@ -577,25 +578,21 @@ const en = {
   'landing.hero.secondary': 'See it working',
   'landing.hero.reassurance': 'No card. Bring a GitHub repository or a board export and start with real work in it.',
 
-  'landing.how.eyebrow': 'How it works',
   'landing.how.title': 'Three things, actually working',
   'landing.how.body':
     'Not screenshots. These are the real interfaces, running — the same components, the same steps, in whichever theme you have chosen.',
 
   'landing.demo.boardTab': 'Board',
-  'landing.demo.boardEyebrow': 'Move work',
   'landing.demo.boardTitle': 'Pick a task up and put it where it belongs',
   'landing.demo.boardBody':
     'Columns you name yourself, cards that carry their deadline and their people. Drag one across and everything that counts it — the dashboard, the deadlines, your teammate’s screen — updates at once.',
 
   'landing.demo.importTab': 'New project',
-  'landing.demo.importEyebrow': 'Start with something',
   'landing.demo.importTitle': 'Turn a repository into a project, in the background',
   'landing.demo.importBody':
     'Paste a public GitHub repository and close the dialog. It reads the README, the file tree and the open issues, writes a project with starting tasks and pages, and invites the contributors who already work here. A card in the corner tracks it, and you can cancel at any point.',
 
   'landing.demo.chatTab': 'Project chat',
-  'landing.demo.chatEyebrow': 'Decide together',
   'landing.demo.chatTitle': 'Talk about the work, next to the work',
   'landing.demo.chatBody':
     'Every project has its own conversation, and it follows you around the app — pin it and it stays open while you are on someone else’s board. Decisions end up beside the tasks they are about instead of three tools away.',
@@ -626,7 +623,6 @@ const en = {
   'landing.chat.two': 'Only the webhook part. Half a day at most.',
   'landing.chat.three': 'Then Friday holds. Moving it to Doing.',
 
-  'landing.connects.eyebrow': 'Connections',
   'landing.connects.title': 'It plugs into what you already use',
   'landing.connects.body':
     'Everything below works today, and every one of them is a setting you can turn on yourself. Nothing here needs an account manager.',
@@ -648,7 +644,6 @@ const en = {
   'landing.svc.webhooks': 'Webhooks & API',
   'landing.svc.webhooksWhat': 'Signed events, and tokens for your scripts',
 
-  'landing.inside.eyebrow': 'What’s inside',
   'landing.inside.title': 'A studio, not a spreadsheet',
   'landing.inside.body':
     'Six things worth knowing before you sign up. All of them are in the free tier, because there is only one tier.',
@@ -1661,6 +1656,7 @@ const en = {
 
   // ---- Project workspace -------------------------------------------------
   'project.tabChat': 'Chat',
+  'project.tabsLabel': 'Project section',
   'project.tabBoard': 'Board',
   'project.tabMetrics': 'Metrics',
   'project.tabRoster': 'Roster',
@@ -1890,6 +1886,33 @@ const en = {
   'meetings.namePlaceholder': 'Sprint review',
   'meetings.roomLabel': 'Room',
   'meetings.roomPlaceholder': 'Meeting room 2',
+  'meetings.roomElsewhere': 'Somewhere else',
+
+  // --- Rooms -------------------------------------------------------------
+  //
+  // A room is registered once and booked many times, which is why the strings
+  // here are short: the picker shows a name, and everything else about a room
+  // is context under it.
+  'rooms.title': 'Rooms',
+  'rooms.manage': 'Rooms',
+  'rooms.manageHint': 'Register the rooms this calendar can book',
+  'rooms.add': 'Add room',
+  'rooms.nameLabel': 'Name',
+  'rooms.namePlaceholder': 'Meeting room 2',
+  'rooms.locationLabel': 'Where it is',
+  'rooms.locationPlaceholder': '3rd floor, east wing',
+  'rooms.capacityLabel': 'Seats',
+  'rooms.capacityInvalid': 'Between 1 and 10000.',
+  'rooms.none': 'No rooms registered',
+  'rooms.noneBody': 'Add one and it becomes bookable — two meetings can never share it.',
+  'rooms.inherited': 'From the organization',
+  'rooms.remove': 'Remove room',
+  'rooms.removeHint': 'Meetings already booked in it keep the name.',
+  'rooms.created': 'Room added.',
+  'rooms.saved': 'Room saved.',
+  'rooms.saveFailed': 'Could not save that room.',
+  'rooms.deleted': 'Room removed.',
+  'rooms.deleteFailed': 'Could not remove that room.',
   'meetings.starts': 'Starts',
   'meetings.ends': 'Ends',
   'meetings.windowInvalid': 'A meeting has to end after it starts.',
@@ -2279,15 +2302,30 @@ const ptBR: Record<TranslationKey, string> = {
   'cli.thenInAnyRepo': 'Depois, em qualquer repositório',
   'cli.inThisRepo': 'Depois, neste repositório',
   'cli.accountHint':
-    'Sua senha é usada uma vez e nunca armazenada. O que fica na máquina é um token que você pode revogar abaixo.',
+    'Entrar abre o navegador para aprovar esta máquina — nenhuma senha é digitada no terminal. O que fica é um token que você pode revogar abaixo.',
   'cli.projectHint':
-    'O “init” liga o repositório em que você está a este projeto. O “ide install” adiciona os comandos /taskstudio ao Claude Code, ao Cursor e ao Copilot.',
+    'O “init” liga o repositório em que você está a este projeto. O “hook install” faz um commit comum concluir a tarefa da branch.',
   'cli.showCommands': 'Comandos',
   'cli.hideCommands': 'Ocultar',
   'cli.docs': 'Ver a documentação',
+  'cliAuth.heading': 'Conectar um terminal',
+  'cliAuth.subheading': 'Confira se a máquina abaixo é a que você está usando.',
+  'cliAuth.codeLabel': 'O código que o terminal está mostrando',
+  'cliAuth.continue': 'Continuar',
+  'cliAuth.unnamedDevice': 'Uma máquina sem nome',
+  'cliAuth.grantWarning':
+    'Ao aprovar, esta máquina recebe um token que faz tudo o que você faz, até você revogá-lo nas Configurações.',
+  'cliAuth.approve': 'Aprovar',
+  'cliAuth.deny': 'Não fui eu',
+  'cliAuth.approvedTitle': 'Conectado',
+  'cliAuth.approvedBody': 'Volte ao terminal — ele já tem o que precisava.',
+  'cliAuth.deniedTitle': 'Recusado',
+  'cliAuth.deniedBody': 'Nada foi entregue àquela máquina.',
+  'cliAuth.expiredTitle': 'Esse código não está mais esperando',
+  'cliAuth.expiredBody':
+    'Os códigos duram dez minutos. Rode taskstudio login de novo para gerar outro.',
+  'cliAuth.tryAnother': 'Digitar outro código',
   'cli.machines': 'Máquinas conectadas',
-  'cli.machinesHint':
-    'Todas as máquinas em que o Task Studio CLI está conectado. Revogar uma a desconecta.',
   'cli.lastUsed': 'usado {when}',
   'cli.neverUsed': 'nunca usado',
   'cli.expires': 'expira {when}',
@@ -2319,8 +2357,6 @@ const ptBR: Record<TranslationKey, string> = {
   'calendar.connectFailed': 'Não foi possível conectar essa agenda.',
   'calendar.noRefreshToken':
     'O Google não concedeu acesso offline, então a sincronização em segundo plano não é possível. Tente conectar de novo e aceite todas as etapas.',
-  'calendar.scopeNote':
-    'O Task Studio pede acesso apenas a uma agenda que ele mesmo cria, chamada “Task Studio”. Ele não consegue ler nem alterar mais nada da sua conta.',
   'calendar.unavailable':
     'A sincronização de agenda não está configurada nesta instalação. Quem a administra precisa definir as credenciais do Google e uma chave de criptografia.',
 
@@ -2385,22 +2421,12 @@ const ptBR: Record<TranslationKey, string> = {
   'task.commitLater': 'Agora não',
 
   // ---- Central de conexões -------------------------------------------------
-  'connections.title': 'Conexões',
-  'connections.body':
-    'Com o que este projeto conversa. Cada uma é uma configuração que você mesmo liga.',
   'connections.broadcast': 'Transmissão',
-  'connections.broadcastHint': 'Publique os eventos deste projeto onde seu time já lê.',
   'connections.sync': 'Sincronização',
-  'connections.syncHint': 'Mantenha as datas deste projeto em dia com uma agenda que você já usa.',
   'connections.editor': 'Seu editor',
-  'connections.editorHint':
-    'Trabalhe neste projeto pelo terminal que você já tem aberto. Não há nada para conectar aqui — são comandos que você mesmo executa.',
   'connections.features': 'Recursos',
-  'connections.featuresHint':
-    'Conexões que mudam o que o projeto consegue fazer, não só onde ele é anunciado.',
   'connections.connect': 'Conectar',
   'connections.connected': 'Conectado',
-  'connections.manage': 'Gerenciar',
   'connections.adminOnly': 'As conexões são gerenciadas pelo dono e pelos admins do projeto.',
   'connections.adminOnlyBody':
     'Tudo aqui envia o trabalho deste projeto para fora dele, então fica no mesmo nível de gerenciar a equipe.',
@@ -2408,19 +2434,11 @@ const ptBR: Record<TranslationKey, string> = {
   'connections.personalHint': 'Conectado à sua conta, não a este projeto.',
   'connections.soon': 'Ainda não',
   'connections.svc.discord': 'Discord',
-  'connections.svc.discordWhat': 'Avise um canal quando algo for concluído',
   'connections.svc.slack': 'Slack',
-  'connections.svc.slackWhat': 'O mesmo, no seu workspace',
   'connections.svc.webhook': 'Endpoint próprio',
-  'connections.svc.webhookWhat': 'JSON assinado para qualquer URL HTTPS sua',
   'connections.svc.googleCalendar': 'Google Agenda',
-  'connections.svc.googleCalendarWhat': 'Sincronização nos dois sentidos das suas reuniões',
   'connections.svc.github': 'GitHub',
-  'connections.svc.githubWhat': 'Conecte o repositório e indique branches nas tarefas',
   'connections.svc.trello': 'Trello',
-  'connections.svc.trelloWhat': 'Importe um quadro com suas listas — ao criar um projeto',
-  'connections.svc.figma': 'Figma',
-  'connections.svc.figmaWhat': 'Ainda não conectável',
 
   // ---- Denunciar alguém ----------------------------------------------------
   'report.action': 'Denunciar esta pessoa',
@@ -2445,6 +2463,7 @@ const ptBR: Record<TranslationKey, string> = {
   'github.overviewTitle': 'O que seria importado',
   'github.overviewBack': 'Buscar outro',
 
+  'landing.nav.skip': 'Pular para o conteúdo',
   'landing.nav.how': 'Como funciona',
   'landing.nav.connects': 'Conexões',
   'landing.nav.inside': 'O que tem dentro',
@@ -2465,7 +2484,6 @@ const ptBR: Record<TranslationKey, string> = {
   'landing.det.projects': 'seus',
   'landing.det.work': 'seu',
 
-  'landing.hero.badge': 'Quadros, notas, reuniões e documentos — em um lugar só',
   'landing.hero.titleLead': 'Organize',
   'landing.hero.titleTail': 'como você faria no papel.',
   'landing.hero.body':
@@ -2474,25 +2492,21 @@ const ptBR: Record<TranslationKey, string> = {
   'landing.hero.secondary': 'Ver funcionando',
   'landing.hero.reassurance': 'Sem cartão. Traga um repositório do GitHub ou a exportação de um quadro e já comece com trabalho de verdade.',
 
-  'landing.how.eyebrow': 'Como funciona',
   'landing.how.title': 'Três coisas, funcionando de verdade',
   'landing.how.body':
     'Não são capturas de tela. São as interfaces reais, rodando — os mesmos componentes, as mesmas etapas, no tema que você escolheu.',
 
   'landing.demo.boardTab': 'Quadro',
-  'landing.demo.boardEyebrow': 'Mover o trabalho',
   'landing.demo.boardTitle': 'Pegue uma tarefa e ponha onde ela pertence',
   'landing.demo.boardBody':
     'Colunas que você mesmo nomeia, cartões que carregam o prazo e as pessoas. Arraste um e tudo que conta com ele — o painel, os prazos, a tela do seu colega — se atualiza na hora.',
 
   'landing.demo.importTab': 'Novo projeto',
-  'landing.demo.importEyebrow': 'Comece com algo',
   'landing.demo.importTitle': 'Transforme um repositório em projeto, em segundo plano',
   'landing.demo.importBody':
     'Cole um repositório público do GitHub e feche a janela. Ele lê o README, a árvore de arquivos e as issues abertas, escreve um projeto com tarefas e páginas iniciais, e convida quem contribuiu e já usa o app. Um cartão no canto acompanha, e dá para cancelar a qualquer momento.',
 
   'landing.demo.chatTab': 'Chat do projeto',
-  'landing.demo.chatEyebrow': 'Decidir junto',
   'landing.demo.chatTitle': 'Converse sobre o trabalho, do lado do trabalho',
   'landing.demo.chatBody':
     'Cada projeto tem sua própria conversa, e ela te acompanha pelo app — fixe e ela continua aberta enquanto você está no quadro de outra pessoa. As decisões ficam ao lado das tarefas em vez de três ferramentas de distância.',
@@ -2523,7 +2537,6 @@ const ptBR: Record<TranslationKey, string> = {
   'landing.chat.two': 'Só a parte do webhook. Meio dia, no máximo.',
   'landing.chat.three': 'Então sexta está de pé. Movendo para Fazendo.',
 
-  'landing.connects.eyebrow': 'Conexões',
   'landing.connects.title': 'Conecta com o que você já usa',
   'landing.connects.body':
     'Tudo abaixo já funciona, e cada um é uma configuração que você mesmo liga. Nada aqui precisa de vendedor.',
@@ -2545,7 +2558,6 @@ const ptBR: Record<TranslationKey, string> = {
   'landing.svc.webhooks': 'Webhooks e API',
   'landing.svc.webhooksWhat': 'Eventos assinados e tokens para seus scripts',
 
-  'landing.inside.eyebrow': 'O que tem dentro',
   'landing.inside.title': 'Um estúdio, não uma planilha',
   'landing.inside.body':
     'Seis coisas que vale saber antes de criar conta. Todas estão no plano gratuito, porque só existe um plano.',
@@ -3516,6 +3528,7 @@ const ptBR: Record<TranslationKey, string> = {
   'notes.confirmRemovePage': 'Remover "{name}"? As notas dela vão para a lixeira.',
 
   'project.tabChat': 'Conversa',
+  'project.tabsLabel': 'Seção do projeto',
   'project.tabBoard': 'Quadro',
   'project.tabMetrics': 'Métricas',
   'project.tabRoster': 'Equipe',
@@ -3730,6 +3743,29 @@ const ptBR: Record<TranslationKey, string> = {
   'meetings.namePlaceholder': 'Revisão da sprint',
   'meetings.roomLabel': 'Sala',
   'meetings.roomPlaceholder': 'Sala de reunião 2',
+  'meetings.roomElsewhere': 'Em outro lugar',
+
+  'rooms.title': 'Salas',
+  'rooms.manage': 'Salas',
+  'rooms.manageHint': 'Cadastre as salas que esta agenda pode reservar',
+  'rooms.add': 'Adicionar sala',
+  'rooms.nameLabel': 'Nome',
+  'rooms.namePlaceholder': 'Sala de reunião 2',
+  'rooms.locationLabel': 'Onde fica',
+  'rooms.locationPlaceholder': '3º andar, ala leste',
+  'rooms.capacityLabel': 'Lugares',
+  'rooms.capacityInvalid': 'Entre 1 e 10000.',
+  'rooms.none': 'Nenhuma sala cadastrada',
+  'rooms.noneBody':
+    'Cadastre uma e ela passa a ser reservável — duas reuniões nunca dividem a mesma.',
+  'rooms.inherited': 'Da organização',
+  'rooms.remove': 'Remover sala',
+  'rooms.removeHint': 'As reuniões já marcadas nela mantêm o nome.',
+  'rooms.created': 'Sala adicionada.',
+  'rooms.saved': 'Sala salva.',
+  'rooms.saveFailed': 'Não foi possível salvar a sala.',
+  'rooms.deleted': 'Sala removida.',
+  'rooms.deleteFailed': 'Não foi possível remover a sala.',
   'meetings.starts': 'Começa',
   'meetings.ends': 'Termina',
   'meetings.windowInvalid': 'A reunião precisa terminar depois de começar.',

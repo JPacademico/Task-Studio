@@ -24,6 +24,13 @@ const OrganizationPage = lazy(() => import('@/pages/organizations/organization-p
 const RecycleBinPage = lazy(() => import('@/pages/recycle-bin/recycle-bin-page'));
 const InvitationsPage = lazy(() => import('@/pages/invitations/invitations-page'));
 const SettingsPage = lazy(() => import('@/pages/settings/settings-page'));
+/*
+ * Where a terminal is approved.
+ *
+ * Lazy like the rest, and it is the clearest case for it in the router: this
+ * page is opened once by anybody who ever installs the CLI and never again.
+ */
+const CliAuthorizePage = lazy(() => import('@/pages/cli/cli-authorize-page'));
 const ThemeGalleryPage = lazy(() => import('@/pages/themes/theme-gallery-page'));
 /*
  * The moderation console, split off like the rest — and it is the one chunk
@@ -116,6 +123,14 @@ export const AppRouter = () => (
         <Route path="/invitations" element={<InvitationsPage />} />
         <Route path="/themes" element={<ThemeGalleryPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        {/*
+          Inside `ProtectedRoute`, which is the whole security property.
+
+          Approving a terminal is an act performed *as* a signed-in account, so
+          a guest arriving here is redirected to sign in and comes back — which
+          is exactly the flow that makes the device grant safe. See the page.
+        */}
+        <Route path="/cli" element={<CliAuthorizePage />} />
       </Route>
     </Route>
 

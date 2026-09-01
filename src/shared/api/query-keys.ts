@@ -115,6 +115,17 @@ export const queryKeys = {
      * capped, so it is not guaranteed to contain the filtered one.
      */
     agenda: (projectId?: string) => ['meetings', 'agenda', projectId ?? 'all'] as const,
+    /**
+     * The bookable rooms of one calendar.
+     *
+     * Keyed by scope for the same reason the list above is, and with one extra
+     * consequence worth naming: a project's answer *includes* its company's
+     * rooms, so the two entries genuinely overlap. Keying them apart is what
+     * stops a project's inherited copy from overwriting the company's own list
+     * when somebody opens both pages.
+     */
+    rooms: (scope: 'project' | 'organization', id: string) =>
+      ['meetings', 'rooms', scope, id] as const,
   },
 
   notifications: {

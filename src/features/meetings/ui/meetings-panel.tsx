@@ -24,6 +24,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  DoorOpen,
   ListOrdered,
   MapPin,
   Pencil,
@@ -59,6 +60,7 @@ import {
 } from '@/shared/ui';
 import { useT, type Translate } from '@/shared/i18n';
 import { MeetingComposer } from './meeting-composer';
+import { RoomsManager } from './rooms-manager';
 
 type MeetingView = 'upcoming' | 'day' | 'calendar';
 
@@ -326,6 +328,7 @@ export const MeetingsPanel = ({
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [editing, setEditing] = useState<Meeting | null>(null);
   const [isComposerOpen, setIsComposerOpen] = useState(false);
+  const [isRoomsOpen, setIsRoomsOpen] = useState(false);
 
   /*
    * The filter runs behind the keystroke rather than in front of it.
@@ -465,6 +468,25 @@ export const MeetingsPanel = ({
         */}
         <div className={canManage ? 'ml-auto flex items-center gap-2' : 'ml-auto'}>
           <CalendarSyncBadge />
+
+          {/*
+            The room registry, one press from the calendar it feeds.
+
+            Not in project settings, because a room is only ever thought about
+            while booking one — the moment somebody notices the picker does not
+            offer the room they are standing in. See `RoomsManager`.
+          */}
+          {canManage && (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setIsRoomsOpen(true)}
+              title={t('rooms.manageHint')}
+            >
+              <DoorOpen className="h-3.5 w-3.5" />
+              {t('rooms.manage')}
+            </Button>
+          )}
 
           {canManage && (
             <Button size="sm" onClick={() => openComposer(null)}>
@@ -757,6 +779,14 @@ export const MeetingsPanel = ({
           // A new meeting posted from the calendar lands on the day being read,
           // not on today — which is almost never the day being looked at.
           defaultDay={view === 'upcoming' ? null : day}
+        />
+      )}
+
+      {canManage && (
+        <RoomsManager
+          isOpen={isRoomsOpen}
+          onClose={() => setIsRoomsOpen(false)}
+          scope={{ projectId, organizationId }}
         />
       )}
     </div>

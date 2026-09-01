@@ -4844,6 +4844,98 @@
     text-transform: uppercase;
   }
 
+  /* ------------------------------------------------------------------
+   * A connected service, ringed in its own light.
+   *
+   * ## Why a rotating square and not an animated conic gradient
+   *
+   * The obvious spelling is `background: conic-gradient(from var(--angle), …)`
+   * with `@property --angle` animating the angle. It is one element and it
+   * reads beautifully — and it silently does nothing on any engine without
+   * registered custom properties, where an unregistered `--angle` is not an
+   * interpolable type and the animation is simply dropped. That is a card that
+   * looks connected on one machine and inert on the next, with no error
+   * anywhere.
+   *
+   * So the light is a *shape*: an over-sized square carrying a fixed conic
+   * gradient, spun with `transform`, clipped by the card's own rounded
+   * `overflow: hidden`. Transform animation is universal, runs on the
+   * compositor, and costs the main thread nothing — which matters because
+   * several of these can be on screen at once and they never stop.
+   *
+   * `::after` is the card's own surface, inset by the ring's width, so the
+   * gradient is only ever visible as a border. Both pseudo-elements sit at
+   * negative z-index inside the card's own stacking context (`isolation`),
+   * which puts them behind the content and in front of nothing else on the
+   * page — a card that painted over its neighbours while animating would be a
+   * worse bug than the one this fixes.
+   * ------------------------------------------------------------------ */
+  .neon-ring {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    /* The card's own background is drawn by `::after`; anything painted here
+       would cover the ring. */
+    background-color: transparent;
+    box-shadow:
+      0 0 0 1px rgb(var(--positive) / 0.35),
+      0 6px 22px -10px rgb(var(--positive) / 0.55);
+  }
+
+  .neon-ring::before {
+    content: '';
+    position: absolute;
+    z-index: -2;
+    left: 50%;
+    top: 50%;
+    width: 220%;
+    aspect-ratio: 1;
+    /* Two opposed arcs, so the light reads as a single sweep going round
+       rather than as a wheel of colour. */
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg 24deg,
+      rgb(var(--positive) / 0.95) 60deg,
+      transparent 96deg 204deg,
+      rgb(var(--positive) / 0.55) 240deg,
+      transparent 276deg 360deg
+    );
+    animation: neon-ring-spin 4.2s linear infinite;
+    will-change: transform;
+  }
+
+  .neon-ring::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: 1.5px;
+    border-radius: inherit;
+    background-color: rgb(var(--surface-raised));
+  }
+
+  @keyframes neon-ring-spin {
+    from {
+      transform: translate3d(-50%, -50%, 0) rotate(0deg);
+    }
+    to {
+      transform: translate3d(-50%, -50%, 0) rotate(360deg);
+    }
+  }
+
+  /*
+   * Reduced motion keeps the ring and loses the sweep.
+   *
+   * The global rule clamps every animation to one 0.01ms pass, which would
+   * freeze the gradient at whatever angle it happened to start on — a lopsided
+   * smear rather than a border. A steady tint says "connected" just as well and
+   * says it without moving.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    .neon-ring::before {
+      background: rgb(var(--positive) / 0.7);
+    }
+  }
+
   /* Marching dashes: the connect-mode target highlight. */
   .marching {
     background-image: repeating-linear-gradient(

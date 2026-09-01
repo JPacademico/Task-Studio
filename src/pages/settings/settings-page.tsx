@@ -231,9 +231,19 @@ const SettingsPage = () => {
           The subscribable calendar feed is still gone, and stays gone, for the
           reason that has not changed about it.
         */}
+        {/*
+          The calendar first, the terminal second.
+
+          They were the other way round, which put four lines of shell above the
+          one connection most readers of this page will ever make — and left the
+          CLI row a whole section away from the list of machines it produces.
+          Ordered like this, the two halves of the same subject are adjacent:
+          the offer to install a CLI sits directly on top of the inventory of
+          every machine that has accepted it.
+        */}
         <div className="space-y-3">
-          <CliPanel />
           <CalendarConnectionPanel />
+          <CliPanel />
         </div>
       </Section>
 
@@ -249,7 +259,7 @@ const SettingsPage = () => {
           Placed directly under Connected services because that is what it is a
           consequence of, and still above the password section, which is the
           account's danger zone and should stay the last thing on the page. */}
-      <Section title={t('cli.machines')} description={t('cli.machinesHint')}>
+      <Section title={t('cli.machines')}>
         <CliMachinesPanel />
       </Section>
 

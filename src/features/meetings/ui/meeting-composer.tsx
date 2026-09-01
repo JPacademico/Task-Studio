@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 
-import { useCreateMeeting, useUpdateMeeting } from '@/entities/meeting/model/queries';
+import {
+  useCreateMeeting,
+  useMeetingRooms,
+  useUpdateMeeting,
+} from '@/entities/meeting/model/queries';
 import type { Meeting, MeetingProjectRef } from '@/entities/meeting/model/types';
 import type { AttachedFileDraft, UserSummary } from '@/entities/user/model/types';
 import { TEXT_LIMITS } from '@/shared/config/constants';
@@ -96,8 +100,24 @@ export const MeetingComposer = ({
   const createMeeting = useCreateMeeting({ projectId, organizationId });
   const updateMeeting = useUpdateMeeting();
 
+  /*
+   * The rooms this calendar can book, fetched only while the dialog is open.
+   *
+   * A project's answer includes every room its company holds — the inheritance
+   * is the server's join, not something assembled here. See `useMeetingRooms`.
+   */
+  const { data: rooms = [] } = useMeetingRooms({ projectId, organizationId }, isOpen);
+
   const [title, setTitle] = useState('');
   const [room, setRoom] = useState('');
+  /**
+   * The registered room, or `''` for "somewhere else".
+   *
+   * `''` rather than `undefined` because it is bound to a `Select`, and a
+   * controlled select with an undefined value is an uncontrolled one — the
+   * same reason `linkedProjectId` below is spelled this way.
+   */
+  const [roomId, setRoomId] = useState('');
   const [description, setDescription] = useState('');
   const [startAt, setStartAt] = useState('');
   const [endAt, setEndAt] = useState('');
@@ -135,6 +155,7 @@ export const MeetingComposer = ({
 
     setTitle(meeting?.title ?? '');
     setRoom(meeting?.room ?? '');
+    setRoomId(meeting?.roomId ?? '');
     setDescription(meeting?.description ?? '');
     setStartAt(toDateTimeInput(start));
     setEndAt(toDateTimeInput(end));
@@ -199,9 +220,19 @@ export const MeetingComposer = ({
     Boolean(startAt && endAt) &&
     new Date(endAt).getTime() <= new Date(startAt).getTime();
 
+  /*
+   * A room is named one way or the other, and one of them is enough.
+   *
+   * The picker is only drawn when there is something in it, so a deployment
+   * that has registered no rooms sees exactly the field it always had.
+   */
+  const hasRooms = rooms.length > 0;
+  const isCustomRoom = !roomId;
+  const roomIsNamed = Boolean(roomId) || room.trim().length >= 1;
+
   const canSubmit =
     title.trim().length >= 2 &&
-    room.trim().length >= 1 &&
+    roomIsNamed &&
     Boolean(startAt) &&
     Boolean(endAt) &&
     !windowIsInvalid &&
@@ -215,7 +246,14 @@ export const MeetingComposer = ({
 
     const payload = {
       title: title.trim(),
-      room: room.trim(),
+      /*
+       * One or the other, never both.
+       *
+       * The API takes the name from the registry when an id is sent — a room
+       * cannot be booked under a label that is not what it is called — so
+       * sending the text alongside would be sending something that is ignored.
+       */
+      ...(roomId ? { roomId } : { room: room.trim() }),
       description: description.trim() || undefined,
       // `canSubmit` has already proved both parse; the cast documents that.
       startAt: fromDateTimeInput(startAt) as string,
@@ -246,7 +284,17 @@ export const MeetingComposer = ({
        */
       await updateMeeting.mutateAsync({
         meetingId: meeting.id,
-        payload: { ...payload, ...filePatch },
+        payload: {
+          ...payload,
+          ...filePatch,
+          /*
+           * Explicitly null when the room was typed, which is the only way to
+           * *give a registered room back*. Omitting it would mean "leave the
+           * room alone", so a meeting moved out of Sala 2 and into a café would
+           * keep holding Sala 2 in the clash check.
+           */
+          roomId: roomId || null,
+        },
       });
     } else {
       await createMeeting.mutateAsync({
@@ -296,14 +344,61 @@ export const MeetingComposer = ({
           autoFocus
         />
 
-        <Input
-          label={t('meetings.roomLabel')}
-          name="room"
-          value={room}
-          onChange={(event) => setRoom(clampText(event.target.value, TEXT_LIMITS.meetingLocation))}
-          placeholder={t('meetings.roomPlaceholder')}
-          maxLength={TEXT_LIMITS.meetingLocation}
-        />
+        {/*
+          The room: picked from the registry, or typed.
+
+          Both, rather than one replacing the other, because both are real. A
+          company that has registered its floor wants the list — and the
+          double-booking check that comes with picking from it — while a project
+          that meets in a café needs to be able to say so. The picker appears
+          only when there is something in it, so nothing changes for a
+          deployment that has never registered a room.
+        */}
+        {hasRooms ? (
+          <div className="space-y-2">
+            <Select
+              size="md"
+              className="w-full"
+              label={t('meetings.roomLabel')}
+              value={roomId}
+              onChange={setRoomId}
+              options={[
+                ...rooms.map((entry) => ({
+                  value: entry.id,
+                  label: entry.name,
+                  hint:
+                    [entry.location, entry.capacity ? `${entry.capacity}` : null]
+                      .filter(Boolean)
+                      .join(' · ') || undefined,
+                })),
+                { value: '', label: t('meetings.roomElsewhere') },
+              ]}
+            />
+
+            {isCustomRoom && (
+              <Input
+                name="room"
+                value={room}
+                onChange={(event) =>
+                  setRoom(clampText(event.target.value, TEXT_LIMITS.meetingLocation))
+                }
+                placeholder={t('meetings.roomPlaceholder')}
+                maxLength={TEXT_LIMITS.meetingLocation}
+              />
+            )}
+          </div>
+        ) : (
+          <Input
+            label={t('meetings.roomLabel')}
+            name="room"
+            value={room}
+            onChange={(event) =>
+              setRoom(clampText(event.target.value, TEXT_LIMITS.meetingLocation))
+            }
+            placeholder={t('meetings.roomPlaceholder')}
+            maxLength={TEXT_LIMITS.meetingLocation}
+          />
+        )}
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Input

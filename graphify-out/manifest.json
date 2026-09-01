@@ -285,9 +285,9 @@
     "semantic_hash": "4f72ed6a443a211c23989429d6389067"
   },
   "src/pages/settings/settings-page.tsx": {
-    "mtime": 1788210426.9054668,
-    "ast_hash": "66d4842834c33faa6ee1c68525ca19b4",
-    "semantic_hash": "66d4842834c33faa6ee1c68525ca19b4"
+    "mtime": 1788282392.7064948,
+    "ast_hash": "2b25a1ac69461156ba4b48f6379665bb",
+    "semantic_hash": "2b25a1ac69461156ba4b48f6379665bb"
   },
   "src/pages/task-menu/task-menu-page.tsx": {
     "mtime": 1787688868.0277848,
@@ -830,9 +830,9 @@
     "semantic_hash": "4f928b5341c4c89e0951aee0838023ca"
   },
   "src/shared/i18n/locales.ts": {
-    "mtime": 1788210413.3593788,
-    "ast_hash": "0e7a72827515953d200e0d2d08bda36b",
-    "semantic_hash": "0e7a72827515953d200e0d2d08bda36b"
+    "mtime": 1788282419.2636247,
+    "ast_hash": "11aff9a068a29b5d069d6f07c70f980c",
+    "semantic_hash": "11aff9a068a29b5d069d6f07c70f980c"
   },
   "src/app/layouts/use-shell-prefetch.ts": {
     "mtime": 1787234862.9057229,
@@ -1140,9 +1140,9 @@
     "semantic_hash": "71a1cb7993652165a141aa3331c7846f"
   },
   "src/entities/integration/model/queries.ts": {
-    "mtime": 1788189286.905501,
-    "ast_hash": "19bb70e2bb95fa759434cf9bd9696401",
-    "semantic_hash": "19bb70e2bb95fa759434cf9bd9696401"
+    "mtime": 1788282392.7025688,
+    "ast_hash": "37f39911d376009fd28f74b2bb9625e5",
+    "semantic_hash": "37f39911d376009fd28f74b2bb9625e5"
   },
   "src/entities/integration/model/types.ts": {
     "mtime": 1788189517.6997406,
@@ -1310,9 +1310,9 @@
     "semantic_hash": "2771ae9ee0f1e1bd9ed7d28c22913a35"
   },
   "src/features/connections/ui/connections-panel.tsx": {
-    "mtime": 1788190066.4178345,
-    "ast_hash": "801850eeef901612a7491cfdab4edbed",
-    "semantic_hash": "801850eeef901612a7491cfdab4edbed"
+    "mtime": 1788275003.407482,
+    "ast_hash": "832156a96192d6372196c6eeb53976be",
+    "semantic_hash": "832156a96192d6372196c6eeb53976be"
   },
   "src/features/project-management/ui/repository-link.tsx": {
     "mtime": 1788189461.445451,
@@ -1330,8 +1330,23 @@
     "semantic_hash": "400c0e7f7b37ad7688764c9117f97985"
   },
   "src/features/cli/ui/cli-panel.tsx": {
-    "mtime": 1788210381.0899694,
-    "ast_hash": "ac6721b8fa5bb10d610ec8c6fa05e7fe",
-    "semantic_hash": "ac6721b8fa5bb10d610ec8c6fa05e7fe"
+    "mtime": 1788282305.3370557,
+    "ast_hash": "e49581474a65be645e6045b10efc7906",
+    "semantic_hash": "e49581474a65be645e6045b10efc7906"
+  },
+  "src/features/cli/ui/cli-commands.tsx": {
+    "mtime": 1788282281.833198,
+    "ast_hash": "7e64052e7f09afec3e14539f5a6c2f0c",
+    "semantic_hash": "7e64052e7f09afec3e14539f5a6c2f0c"
+  },
+  "src/features/cli/ui/cli-connection-card.tsx": {
+    "mtime": 1788282392.704477,
+    "ast_hash": "9e0ee68c67b3383c8739fd860e441cd8",
+    "semantic_hash": "9e0ee68c67b3383c8739fd860e441cd8"
+  },
+  "src/features/cli/ui/cli-machines-panel.tsx": {
+    "mtime": 1788282350.8698523,
+    "ast_hash": "4984c7ea6d29d5f9595d5d39569e5b07",
+    "semantic_hash": "4984c7ea6d29d5f9595d5d39569e5b07"
   }
 }

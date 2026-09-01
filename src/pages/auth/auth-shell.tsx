@@ -58,12 +58,24 @@ export const AuthShell = ({ title, subtitle, children, footer }: AuthShellProps)
   return (
     <div
       ref={deskRef}
-      className={cn(
-        'relative min-h-dvh bg-surface',
-        // Only clamp the desk where things are actually thrown around. On touch
-        // the card is planted and a tall form has to be able to scroll.
-        isDraggable ? 'overflow-hidden' : 'overflow-x-hidden',
-      )}
+      /*
+       * Horizontally clipped, vertically not — in every case.
+       *
+       * The desk used to be `overflow-hidden` outright whenever the card could
+       * be dragged, on the reasoning that a desk you throw objects around on
+       * must not grow scrollbars. The reasoning was right and the rule was too
+       * wide: at 1280×620 — a laptop, or any window with devtools docked — the
+       * sign-in card is 100px taller than the viewport, and `hidden` made that
+       * 100px *unreachable*. The footer link to sign-up and the whole OAuth row
+       * were simply gone, with no scrollbar to suggest otherwise.
+       *
+       * Vertical scrolling is safe because the thing that would have abused it
+       * cannot: `AuthScene` draws every desk object inside its own
+       * `absolute inset-0 overflow-hidden` layer, so no amount of throwing them
+       * around extends the page. The only element that can overflow this box is
+       * the card column, which is exactly the thing that has to be reachable.
+       */
+      className="relative min-h-dvh overflow-x-hidden overflow-y-auto bg-surface"
     >
       {/* Everything on the desk sits under the card. */}
       <AuthScene bounds={deskRef} />

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
-import { ArrowRight, Github, Sparkles } from 'lucide-react';
+import { ArrowRight, Github } from 'lucide-react';
 
 import { wakeApi } from '@/shared/api/client';
 import { buttonClasses, StudioMark } from '@/shared/ui';
@@ -66,6 +66,16 @@ const LandingPage = () => {
     <div className="min-h-dvh bg-surface">
       <LandingNav />
 
+      {/*
+        A `main` landmark, which the page did not have.
+
+        It is what the skip link above lands in, and it is what a screen
+        reader's "jump to main content" offers — on a page that is otherwise
+        eleven sections with no boundary between the navigation and the
+        argument. `tabIndex={-1}` makes it a valid focus target for the anchor
+        without putting it in the tab order.
+      */}
+      <main id="content" tabIndex={-1} className="focus:outline-none">
       {/* ================= HERO ================= */}
       <section className="relative overflow-hidden">
         {/*
@@ -83,16 +93,13 @@ const LandingPage = () => {
         />
 
         <div className="relative mx-auto w-full max-w-6xl px-4 pb-16 pt-14 sm:px-6 sm:pb-24 sm:pt-20">
-          <motion.p
-            initial={reduceMotion ? false : { opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="mb-5 inline-flex items-center gap-2 rounded-full border border-edge bg-surface-raised px-3 py-1 text-[11px] font-medium text-content-muted"
-          >
-            <Sparkles aria-hidden className="h-3 w-3 text-brand" />
-            {t('landing.hero.badge')}
-          </motion.p>
+          {/*
+            No pill above the headline.
 
+            It read "Boards, notes, meetings and docs — in one place", which is
+            the sentence under the headline said first, worse, and in 11px. The
+            first thing on the page is now the thing the page is about.
+          */}
           <motion.h1
             initial={reduceMotion ? false : { opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
@@ -146,10 +153,7 @@ const LandingPage = () => {
       <section id="how" className="scroll-mt-20 border-t border-edge/70 bg-surface-sunken/30">
         <div className="mx-auto w-full max-w-6xl space-y-16 px-4 py-16 sm:space-y-24 sm:px-6 sm:py-24">
           <header className="max-w-2xl">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand">
-              {t('landing.how.eyebrow')}
-            </p>
-            <h2 className="mt-2 text-balance text-3xl font-bold tracking-tight sm:text-4xl">
+            <h2 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl">
               {t('landing.how.title')}
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-content-muted">
@@ -159,7 +163,6 @@ const LandingPage = () => {
 
           <DemoFrame
             tab={t('landing.demo.boardTab')}
-            eyebrow={t('landing.demo.boardEyebrow')}
             title={t('landing.demo.boardTitle')}
             body={t('landing.demo.boardBody')}
           >
@@ -169,7 +172,6 @@ const LandingPage = () => {
           <DemoFrame
             side="right"
             tab={t('landing.demo.importTab')}
-            eyebrow={t('landing.demo.importEyebrow')}
             title={t('landing.demo.importTitle')}
             body={t('landing.demo.importBody')}
           >
@@ -178,7 +180,6 @@ const LandingPage = () => {
 
           <DemoFrame
             tab={t('landing.demo.chatTab')}
-            eyebrow={t('landing.demo.chatEyebrow')}
             title={t('landing.demo.chatTitle')}
             body={t('landing.demo.chatBody')}
           >
@@ -191,10 +192,7 @@ const LandingPage = () => {
       <section id="connects" className="scroll-mt-20 border-t border-edge/70">
         <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
           <header className="max-w-2xl">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand">
-              {t('landing.connects.eyebrow')}
-            </p>
-            <h2 className="mt-2 text-balance text-3xl font-bold tracking-tight sm:text-4xl">
+            <h2 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl">
               {t('landing.connects.title')}
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-content-muted">
@@ -215,10 +213,7 @@ const LandingPage = () => {
       >
         <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
           <header className="max-w-2xl">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand">
-              {t('landing.inside.eyebrow')}
-            </p>
-            <h2 className="mt-2 text-balance text-3xl font-bold tracking-tight sm:text-4xl">
+            <h2 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl">
               {t('landing.inside.title')}
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-content-muted">
@@ -261,6 +256,8 @@ const LandingPage = () => {
         </div>
       </section>
 
+      </main>
+
       {/* ================= FOOTER ================= */}
       <footer className="border-t border-edge/70 bg-surface-sunken/40">
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-8 sm:px-6">
@@ -272,7 +269,15 @@ const LandingPage = () => {
           <p className="text-[11px] text-content-faint">{t('landing.footer.tagline')}</p>
 
           <a
-            href="https://github.com"
+            /*
+             * The repository, not github.com.
+             *
+             * This said "Source" and went to GitHub's own homepage — a link
+             * that looks like proof the project is open and, followed, proves
+             * only that GitHub exists. It is the same repository the CLI's
+             * documentation link points into.
+             */
+            href="https://github.com/JPacademico/Task-Studio"
             target="_blank"
             // `noopener` is the one that matters — without it the opened page
             // gets a handle on this one through `window.opener`.

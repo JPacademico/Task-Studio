@@ -13,9 +13,8 @@ import {
 import { errorMessage } from '@/shared/api/client';
 import { formatRelative } from '@/shared/lib/dates';
 import { cn } from '@/shared/lib/cn';
-import { Button, Skeleton, Switch } from '@/shared/ui';
+import { Button, GoogleCalendarMark, Skeleton, Spinner, Switch } from '@/shared/ui';
 import { useT, type TranslationKey } from '@/shared/i18n';
-import { GoogleCalendarMark } from './google-calendar-mark';
 
 /**
  * What the consent redirect says on the way back, per outcome.
@@ -140,60 +139,80 @@ export const CalendarConnectionPanel = () => {
 
   if (!connection) {
     return (
-      <div className="space-y-3 rounded-2xl border border-edge bg-surface-raised p-4">
-        <div className="flex items-start gap-3">
-          <span
-            aria-hidden
-            className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-edge bg-surface-sunken"
-          >
-            <GoogleCalendarMark className="h-5 w-5" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold">{t('calendar.title')}</p>
-            <p className="mt-1 text-[11px] leading-relaxed text-content-muted">
-              {t('calendar.pitch')}
-            </p>
-          </div>
-        </div>
-
-        <Button
-          size="sm"
-          variant="secondary"
-          onClick={() => void connect()}
-          isLoading={isConnecting}
+      /*
+       * The card is the control.
+       *
+       * It used to be a card *containing* a control: an icon, two lines, and a
+       * "Connect" button underneath them — three quarters of a clickable-looking
+       * surface that did nothing, with the live pixels in the bottom-left
+       * corner. There is exactly one thing to do with an unconnected calendar,
+       * so there is nothing for a button to disambiguate, and the word it
+       * carried now sits on the right as the status it always was.
+       */
+      <button
+        type="button"
+        onClick={() => void connect()}
+        disabled={isConnecting}
+        aria-busy={isConnecting || undefined}
+        className={cn(
+          'ui-card group flex w-full items-center gap-3 rounded-2xl border border-edge',
+          'bg-surface-raised p-4 text-left transition-colors',
+          'hover:border-brand/50 hover:bg-surface-sunken/40',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
+          'focus-visible:ring-offset-1 focus-visible:ring-offset-surface',
+          isConnecting && 'cursor-progress opacity-80',
+        )}
+      >
+        {/* 28px inside a 44px chip. At the 20px it was drawn at, a mark made of
+            four coloured edges and a date block is a smudge — and *which*
+            calendar is the entire information this row carries. */}
+        <span
+          aria-hidden
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-edge bg-surface-sunken"
         >
-          {/* The same mark the meetings tab offers, so the two read as one
-              control seen twice rather than two different features. */}
-          <GoogleCalendarMark className="h-4 w-4 shrink-0" />
-          {t('calendar.connect')}
-        </Button>
+          <GoogleCalendarMark className="h-7 w-7" />
+        </span>
 
-        {/*
-          What the grant actually covers, said before it is asked for.
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-semibold tracking-tight">{t('calendar.title')}</span>
+          <span className="mt-0.5 block text-[11px] leading-relaxed text-content-muted">
+            {t('calendar.pitch')}
+          </span>
+        </span>
 
-          Worth the two lines: the scope this app requests is the narrow one
-          (`calendar.app.created`), which cannot read anybody's existing
-          appointments and can only write to the calendar it makes itself.
-          That is unusual enough that not saying it would leave people
-          assuming the worst, which is the reasonable assumption about a
-          calendar integration.
-        */}
-        <p className="text-[10px] leading-relaxed text-content-faint">
-          {t('calendar.scopeNote')}
-        </p>
-      </div>
+        <span
+          title={t('calendar.connect')}
+          className={cn(
+            'shrink-0 rounded-full border border-edge px-2 py-0.5',
+            'text-[10px] font-medium uppercase tracking-wide text-content-muted',
+            'transition-colors group-hover:border-brand/50 group-hover:text-content',
+          )}
+        >
+          {isConnecting ? <Spinner /> : t('connections.connect')}
+        </span>
+      </button>
     );
   }
 
   // --- Connected -----------------------------------------------------------
 
   return (
-    <div className="space-y-3 rounded-2xl border border-edge bg-surface-raised p-4">
+    <div
+      className={cn(
+        'space-y-3 rounded-2xl border p-4',
+        // Live, and saying so the same way a connected service says it on the
+        // project's Connections shelf — see `.neon-ring`. A paused connection
+        // is a plain card, which is the honest difference between the two.
+        connection.isEnabled
+          ? 'neon-ring border-transparent'
+          : 'border-edge bg-surface-raised',
+      )}
+    >
       <div className="flex items-start gap-3">
         <span
           aria-hidden
           className={cn(
-            'mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl border',
+            'mt-0.5 grid h-11 w-11 shrink-0 place-items-center rounded-xl border',
             connection.isEnabled
               ? 'border-positive/30 bg-positive/[0.08]'
               : 'border-edge bg-surface-sunken',
@@ -204,7 +223,7 @@ export const CalendarConnectionPanel = () => {
               said by the switch three lines below. A paused connection just
               loses its colour. */}
           <GoogleCalendarMark
-            className={cn('h-5 w-5', !connection.isEnabled && 'opacity-40 grayscale')}
+            className={cn('h-7 w-7', !connection.isEnabled && 'opacity-40 grayscale')}
           />
         </span>
 

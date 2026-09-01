@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   CalendarClock,
@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 
 import { cn } from '@/shared/lib/cn';
+import { useCardPress } from '@/shared/lib/use-card-press';
 import { withAlpha } from '@/shared/lib/colors';
 import {
   formatDateTime,
@@ -131,8 +132,24 @@ const TaskCardBase = ({
   const isShared = isSharedTask(task);
   const signOff = completionProgress(task);
 
+  /*
+   * The whole card opens the task, not just the title.
+   *
+   * `useCardPress` is what makes that safe on a board where the same card is
+   * also a drag handle — it measures the press and refuses one that travelled
+   * or was held. The title below stays a real `<button>`: it is what a keyboard
+   * tabs to and what a screen reader announces, and the press hook steps aside
+   * for it rather than firing twice.
+   */
+  const openTask = useMemo(
+    () => (onOpen ? () => onOpen(task) : undefined),
+    [onOpen, task],
+  );
+  const cardPress = useCardPress(openTask);
+
   return (
     <motion.article
+      {...cardPress}
       layout="position"
       /*
        * No entrance animation, deliberately.
@@ -154,6 +171,7 @@ const TaskCardBase = ({
         'ui-card gpu group relative flex flex-col gap-3 overflow-hidden rounded-2xl border border-edge',
         'bg-surface-raised p-4 text-left transition-shadow duration-200',
         isDragging ? 'shadow-glow' : 'hover:shadow-panel',
+        openTask && 'cursor-pointer',
         isDone && 'opacity-70',
         className,
       )}
