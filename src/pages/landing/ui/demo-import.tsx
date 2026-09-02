@@ -62,7 +62,7 @@ export const DemoImport = () => {
       {/* --- What was pasted -------------------------------------------- */}
       <div className="flex items-center gap-2 rounded-lg border border-edge bg-surface-sunken/60 px-2.5 py-2">
         <Github aria-hidden className="h-3.5 w-3.5 shrink-0 text-content-muted" />
-        <span className="truncate font-mono text-[11px] text-content-muted">
+        <span className="truncate font-mono text-2xs text-content-muted">
           github.com/acme/billing-service
         </span>
       </div>
@@ -85,14 +85,14 @@ export const DemoImport = () => {
           </span>
 
           <div className="min-w-0 flex-1 leading-tight">
-            <p className="truncate text-[11px] font-semibold">acme/billing-service</p>
+            <p className="truncate text-2xs font-semibold">acme/billing-service</p>
 
             {/*
               The stage line is keyed on its own text, so each one animates in
               as a replacement rather than the string mutating in place — which
               at this size reads as a flicker rather than as progress.
             */}
-            <div className="mt-0.5 h-[14px] overflow-hidden">
+            <div className="mt-0.5 h-[0.875rem] overflow-hidden">
               <AnimatePresence mode="wait" initial={false}>
                 <motion.p
                   key={isDone ? 'done' : stage.key}
@@ -101,7 +101,7 @@ export const DemoImport = () => {
                   exit={reduceMotion ? undefined : { y: -8, opacity: 0 }}
                   transition={{ duration: 0.22 }}
                   className={cn(
-                    'text-[10px]',
+                    'text-3xs',
                     isDone ? 'text-positive' : 'text-content-muted',
                   )}
                 >
@@ -146,7 +146,7 @@ export const DemoImport = () => {
                   className="rounded-lg border border-edge bg-surface-sunken/50 p-2 text-center"
                 >
                   <Icon aria-hidden className="mx-auto h-3.5 w-3.5 text-content-faint" />
-                  <p className="mt-1 text-[10px] font-medium leading-tight">{t(key)}</p>
+                  <p className="mt-1 text-3xs font-medium leading-tight">{t(key)}</p>
                 </li>
               ))}
             </motion.ul>

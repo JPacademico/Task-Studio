@@ -46,6 +46,38 @@ const HOLD_MS = 2_200;
 const TRANSITION = { duration: 0.42, ease: [0.22, 1, 0.36, 1] } as const;
 
 /**
+ * How a word leaves and how the next one arrives.
+ *
+ * ## Why this is a straight vertical move and nothing else
+ *
+ * It used to carry a `rotateX` as well, and to run under
+ * `AnimatePresence mode="popLayout"`. Both had to go, and the second was the
+ * actual defect.
+ *
+ * `popLayout` takes the *exiting* child out of layout flow by giving it
+ * `position: absolute`. Inside a grid cell that is fatal to the arrangement
+ * this component is built on: an absolutely-positioned grid item is no longer
+ * placed by `justify-self`, so the leaving word snapped from its right-aligned
+ * position to the cell's start and rose *diagonally* rather than straight up —
+ * which is precisely the "going upwards to the left" that was reported. In
+ * Portuguese it also removed the leaving possessive from the cell's width
+ * calculation for a frame, so the gap between "Organize" and the noun jumped on
+ * exactly the two turnovers where the word changes width — `suas` → `seu`.
+ *
+ * Sync mode keeps both words in the same grid cell, in flow, stacked. The cell
+ * is already as wide as its widest entry (the invisible measuring layer below),
+ * so two words sharing it for 420ms changes no geometry at all. Nothing moves
+ * except the type.
+ *
+ * `rotateX` went with it: without a `perspective` on the parent it was a
+ * vertical squash rather than a rotation, and squashing letterforms mid-cycle
+ * is the kind of effect that reads as a rendering fault at a glance.
+ */
+const ENTER = { y: '0.62em', opacity: 0 } as const;
+const EXIT = { y: '-0.62em', opacity: 0 } as const;
+const REST = { y: 0, opacity: 1 } as const;
+
+/**
  * One word in the headline, replaced on a loop.
  *
  * ## Why the width is reserved rather than animated
@@ -103,6 +135,14 @@ export const RotatingWord = ({ className }: { className?: string }) => {
     <span
       className={cn(
         'relative inline-grid grid-cols-[auto_auto] gap-x-[0.25em] align-bottom',
+        /*
+         * Clipped, so a word travelling out of the cell is not briefly readable
+         * over the line above. `overflow-hidden` on an inline-grid needs the
+         * baseline pinned or the whole headline shifts — `align-bottom` above
+         * does that, and the padding gives descenders somewhere to go rather
+         * than being sliced off.
+         */
+        'overflow-hidden pb-[0.12em]',
         className,
       )}
     >
@@ -133,32 +173,35 @@ export const RotatingWord = ({ className }: { className?: string }) => {
         </span>
       ))}
 
-      <AnimatePresence mode="popLayout" initial={false}>
+      {/* Sync mode, deliberately — see the note on `ENTER`. Both words share the
+          grid cell while one leaves and the other arrives, which is what keeps
+          the movement vertical and the geometry still. */}
+      <AnimatePresence initial={false}>
         <motion.span
           key={t(current.determiner)}
-          initial={reduceMotion ? false : { y: '0.5em', opacity: 0, rotateX: -40 }}
-          animate={{ y: 0, opacity: 1, rotateX: 0 }}
-          exit={reduceMotion ? undefined : { y: '-0.5em', opacity: 0, rotateX: 40 }}
+          initial={reduceMotion ? false : ENTER}
+          animate={REST}
+          exit={reduceMotion ? undefined : EXIT}
           transition={TRANSITION}
-          className="col-start-1 row-start-1 justify-self-end whitespace-nowrap"
+          className="gpu col-start-1 row-start-1 justify-self-end whitespace-nowrap"
         >
           {t(current.determiner)}
         </motion.span>
       </AnimatePresence>
 
-      <AnimatePresence mode="popLayout" initial={false}>
+      <AnimatePresence initial={false}>
         <motion.span
           key={current.noun}
-          initial={reduceMotion ? false : { y: '0.5em', opacity: 0, rotateX: -40 }}
-          animate={{ y: 0, opacity: 1, rotateX: 0 }}
-          exit={reduceMotion ? undefined : { y: '-0.5em', opacity: 0, rotateX: 40 }}
+          initial={reduceMotion ? false : ENTER}
+          animate={REST}
+          exit={reduceMotion ? undefined : EXIT}
           transition={TRANSITION}
           /*
            * `col-start-2 row-start-1` puts it in the same cell as its own
            * measuring layer rather than after it, and `whitespace-nowrap`
            * stops a two-word noun breaking mid-rotation.
            */
-          className="col-start-2 row-start-1 whitespace-nowrap text-brand"
+          className="gpu col-start-2 row-start-1 whitespace-nowrap text-brand"
         >
           {t(current.noun)}
         </motion.span>

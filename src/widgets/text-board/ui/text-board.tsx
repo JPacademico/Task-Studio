@@ -508,7 +508,7 @@ export const TextBoard = ({
         opposite of what those rows are. The badge answers the question the row
         actually raises, which is why this one does not open in the editor.
       */}
-      <span className="mt-0.5 flex items-center gap-1.5 text-[10px] text-content-faint">
+      <span className="mt-0.5 flex items-center gap-1.5 text-3xs text-content-faint">
         {entry.source && !entry.source.hasBody && (
           <span className="shrink-0 rounded bg-brand/12 px-1 py-px font-semibold uppercase tracking-wide text-brand">
             {formatBadge(entry.source)}
@@ -635,7 +635,7 @@ export const TextBoard = ({
                 */
                 <span
                   title={t('doc.keptAsUploadedHint')}
-                  className="ui-chip inline-flex items-center gap-1.5 rounded-full border border-edge px-2.5 py-1 text-[10px] text-content-muted"
+                  className="ui-chip inline-flex items-center gap-1.5 rounded-full border border-edge px-2.5 py-1 text-3xs text-content-muted"
                 >
                   <FileText className="h-3 w-3 shrink-0" />
                   {t('doc.uploadedFile')}
@@ -656,7 +656,7 @@ export const TextBoard = ({
                 */
                 <span
                   title={t('doc.readOnlyHint', { author: open.createdBy.displayName })}
-                  className="ui-chip inline-flex items-center gap-1.5 rounded-full border border-edge px-2.5 py-1 text-[10px] text-content-muted"
+                  className="ui-chip inline-flex items-center gap-1.5 rounded-full border border-edge px-2.5 py-1 text-3xs text-content-muted"
                 >
                   <Eye className="h-3 w-3 shrink-0" />
                   {t('doc.readOnly')}
@@ -764,7 +764,7 @@ export const TextBoard = ({
 
           {grouped.general.length > 0 && (
             <div className="space-y-1">
-              <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-content-faint">
+              <p className="px-2 text-3xs font-semibold uppercase tracking-[0.16em] text-content-faint">
                 {t(isPersonal ? 'doc.pages' : 'doc.project')}
               </p>
               {grouped.general.map((entry) => (
@@ -775,7 +775,7 @@ export const TextBoard = ({
 
           {grouped.perTask.length > 0 && (
             <div className="space-y-1">
-              <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-content-faint">
+              <p className="px-2 text-3xs font-semibold uppercase tracking-[0.16em] text-content-faint">
                 {t('doc.tasks')}
               </p>
               {grouped.perTask.map((entry) => (
@@ -786,7 +786,7 @@ export const TextBoard = ({
 
           {grouped.perMeeting.length > 0 && (
             <div className="space-y-1">
-              <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-content-faint">
+              <p className="px-2 text-3xs font-semibold uppercase tracking-[0.16em] text-content-faint">
                 {t('doc.meetings')}
               </p>
               {grouped.perMeeting.map((entry) => (
@@ -841,7 +841,7 @@ export const TextBoard = ({
 
                   {open.task && (
                     <span
-                      className="ui-chip inline-flex items-center gap-1.5 rounded-full border border-edge px-2 py-0.5 text-[10px] text-content-muted"
+                      className="ui-chip inline-flex items-center gap-1.5 rounded-full border border-edge px-2 py-0.5 text-3xs text-content-muted"
                       title={t('common.attachedTo', { title: open.task.title })}
                     >
                       <span
@@ -858,7 +858,7 @@ export const TextBoard = ({
                       six weeks later. */}
                   {open.meeting && (
                     <span
-                      className="ui-chip inline-flex items-center gap-1.5 rounded-full border border-edge px-2 py-0.5 text-[10px] text-content-muted"
+                      className="ui-chip inline-flex items-center gap-1.5 rounded-full border border-edge px-2 py-0.5 text-3xs text-content-muted"
                       title={`${open.meeting.title} · ${formatDateTime(open.meeting.startAt)}`}
                     >
                       <CalendarDays className="h-2.5 w-2.5 shrink-0 text-content-faint" />
@@ -870,7 +870,7 @@ export const TextBoard = ({
                       desk the answer to "who wrote this" is never in doubt,
                       so the line becomes just the last time you touched it. */}
                   {isPersonal ? (
-                    <span className="text-[10px] text-content-faint">
+                    <span className="text-3xs text-content-faint">
                       Edited {formatRelative(open.updatedAt)}
                     </span>
                   ) : (
@@ -884,7 +884,7 @@ export const TextBoard = ({
                   )}
 
                   {isDirty && (
-                    <span className="text-[10px] font-medium text-warning">unsaved</span>
+                    <span className="text-3xs font-medium text-warning">unsaved</span>
                   )}
                 </div>
 
@@ -899,7 +899,7 @@ export const TextBoard = ({
                 */}
                 {remoteEdit && (
                   <div className="mb-2 flex flex-wrap items-center gap-2 rounded-xl border border-warning/40 bg-warning/10 px-3 py-2">
-                    <span className="text-[11px] text-content-muted">
+                    <span className="text-2xs text-content-muted">
                       {remoteEdit.updatedBy?.displayName ?? t('doc.someone')} saved this page while you
                       were editing. Your changes are still here.
                     </span>

@@ -57,7 +57,7 @@ export const SkinPicker = () => {
                 <p className="flex min-w-0 flex-1 items-center gap-1.5 text-sm font-semibold">
                   <span className="truncate">{option.name}</span>
                   {option.value === 'STUDIO' && (
-                    <span className="shrink-0 rounded-full bg-surface-sunken px-1.5 py-px text-[9px] font-medium uppercase tracking-wide text-content-faint">
+                    <span className="shrink-0 rounded-full bg-surface-sunken px-1.5 py-px text-4xs font-medium uppercase tracking-wide text-content-faint">
                       {t('themes.defaultSkin')}
                     </span>
                   )}
@@ -105,7 +105,7 @@ export const SkinPicker = () => {
 
         <span className="relative min-w-0 flex-1 leading-tight">
           <span className="block text-sm font-bold tracking-tight">{t('themes.browse')}</span>
-          <span className="block truncate text-[11px] text-content-muted">
+          <span className="block truncate text-2xs text-content-muted">
             {remaining > 0
               ? t('themes.moreInGallery', { count: String(remaining) })
               : t('themes.previewFirst')}

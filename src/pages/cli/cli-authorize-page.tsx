@@ -43,7 +43,7 @@ const RequestCard = ({ request }: { request: CliDeviceRequest }) => {
           <p className="truncate text-sm font-semibold">
             {request.deviceName || t('cliAuth.unnamedDevice')}
           </p>
-          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-content-muted">
+          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-2xs text-content-muted">
             {request.ipAddress && (
               <span className="inline-flex items-center gap-1">
                 <Globe className="h-3 w-3 shrink-0" />
@@ -67,7 +67,7 @@ const RequestCard = ({ request }: { request: CliDeviceRequest }) => {
         the only defence that works is the reader knowing what they are about to
         hand over. It is a full-access token, so it says so.
       */}
-      <p className="flex items-start gap-2 rounded-xl bg-warning/10 px-3 py-2 text-[11px] leading-relaxed text-warning">
+      <p className="flex items-start gap-2 rounded-xl bg-warning/10 px-3 py-2 text-2xs leading-relaxed text-warning">
         <AlertTriangle aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0" />
         {t('cliAuth.grantWarning')}
       </p>
@@ -258,7 +258,7 @@ const CliAuthorizePage = () => {
         </div>
 
         {answer.isError && (
-          <p className="text-[11px] text-danger">{errorMessage(answer.error)}</p>
+          <p className="text-2xs text-danger">{errorMessage(answer.error)}</p>
         )}
       </div>
     </Shell>

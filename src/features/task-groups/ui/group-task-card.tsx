@@ -205,7 +205,7 @@ export const GroupTaskCard = ({
 
         <p
           className={cn(
-            'pointer-events-none min-w-0 flex-1 truncate text-center text-[10px] font-semibold',
+            'pointer-events-none min-w-0 flex-1 truncate text-center text-3xs font-semibold',
             'uppercase tracking-[0.14em]',
             // Keeps the label on the card's centre line rather than on the
             // centre of whatever is left after the box. Mirrored on the right
@@ -230,7 +230,7 @@ export const GroupTaskCard = ({
               done: String(task.signOff.done),
               total: String(task.signOff.total),
             })}
-            className="shrink-0 pl-1 text-[9px] font-semibold tabular-nums opacity-70"
+            className="shrink-0 pl-1 text-4xs font-semibold tabular-nums opacity-70"
           >
             {task.signOff.done}/{task.signOff.total}
           </span>
@@ -243,14 +243,14 @@ export const GroupTaskCard = ({
       <div className="space-y-2 p-2.5">
         <h4
           className={cn(
-            'line-clamp-2 break-words text-[13px] font-semibold leading-snug',
+            'line-clamp-2 break-words text-[0.8125rem] font-semibold leading-snug',
             isDone && 'text-content-muted line-through',
           )}
         >
           {task.title}
         </h4>
 
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-content-faint">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-3xs text-content-faint">
           {/*
             Finished work says when it *was* finished; open work says when it is
             due. Same rule as `TaskCard`, for the same reason: on something

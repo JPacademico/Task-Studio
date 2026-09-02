@@ -55,7 +55,7 @@ export const BoardSkeleton = ({ className }: { className?: string }) => {
       <div className="absolute inset-x-0 bottom-6 flex justify-center">
         <span className="inline-flex items-center gap-2 rounded-full border border-edge bg-surface-raised/90 px-3 py-1.5 shadow-sm backdrop-blur">
           <SkinLoader size="sm" />
-          <span className="text-[11px] uppercase tracking-[0.16em] text-content-faint">
+          <span className="text-2xs uppercase tracking-[0.16em] text-content-faint">
             {t('notes.opening')}
           </span>
         </span>

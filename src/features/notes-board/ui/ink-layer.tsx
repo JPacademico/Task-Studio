@@ -43,11 +43,37 @@ export const InkLayer = ({ strokes, isDrawing, color, width, onCommit }: InkLaye
   const pointsRef = useRef<[number, number][]>([]);
   const frameRef = useRef(0);
   const [livePath, setLivePath] = useState('');
+
+  /*
+   * The surface's size, in a ref as well as in state.
+   *
+   * ## The bug this fixes, which looked like "straight lines"
+   *
+   * The in-progress stroke used to be rendered from the `box` *state*, read
+   * inside a `requestAnimationFrame` callback. That callback closes over
+   * whichever `box` existed when the handler was created — and between the
+   * first `pointerdown` and React's next commit, that is still the initial
+   * `{ width: 1, height: 1 }`. Every point in that window was therefore scaled
+   * against a one-pixel canvas and collapsed into the top-left corner, so the
+   * live path jumped from the corner to the pointer as a hard diagonal and then
+   * carried on normally.
+   *
+   * How visible that is depends entirely on how quickly the browser gets round
+   * to the commit and the ResizeObserver, which is why it reproduced on some
+   * engines and not others rather than everywhere.
+   *
+   * A ref has no such window: it is written synchronously by `measure()` and
+   * read at its current value by every frame after. The state copy stays,
+   * because the *committed* strokes are rendered during render and need a value
+   * that triggers one.
+   */
+  const boxRef = useRef({ width: 1, height: 1 });
   const [box, setBox] = useState({ width: 1, height: 1 });
 
   const measure = (): { width: number; height: number } => {
     const rect = surfaceRef.current?.getBoundingClientRect();
     const next = { width: rect?.width ?? 1, height: rect?.height ?? 1 };
+    boxRef.current = next;
     setBox(next);
     return next;
   };
@@ -65,15 +91,35 @@ export const InkLayer = ({ strokes, isDrawing, color, width, onCommit }: InkLaye
 
   useEffect(() => () => cancelAnimationFrame(frameRef.current), []);
 
-  const pointFrom = (event: React.PointerEvent): [number, number] => {
+  /** Client coordinates to the normalised space a stroke is stored in. */
+  const pointFromClient = (point: { clientX: number; clientY: number }): [number, number] => {
     const rect = surfaceRef.current?.getBoundingClientRect();
-    if (!rect) return [0, 0];
-    return [(event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height];
+    if (!rect || rect.width === 0 || rect.height === 0) return [0, 0];
+    return [(point.clientX - rect.left) / rect.width, (point.clientY - rect.top) / rect.height];
   };
+
+  const pointFrom = (event: React.PointerEvent): [number, number] => pointFromClient(event);
 
   const handlePointerDown = (event: React.PointerEvent<SVGSVGElement>) => {
     if (!isDrawing) return;
-    event.currentTarget.setPointerCapture(event.pointerId);
+    // A right-click or a middle-click is not a stroke, and a secondary pointer
+    // in a two-finger gesture is a scroll the browser is about to claim.
+    if (event.button !== 0 || !event.isPrimary) return;
+
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      /*
+       * Capture is an optimisation, not a requirement.
+       *
+       * It keeps the stroke alive when the pointer leaves the SVG mid-draw. It
+       * also throws `NotFoundError` for a pointer the browser considers gone —
+       * which happens on a pen that reports out of range, and on the synthetic
+       * pointers some browser extensions inject. Letting that propagate aborted
+       * the handler *before the first point was recorded*, so the whole stroke
+       * was lost rather than merely being uncaptured.
+       */
+    }
 
     const size = measure();
     pointsRef.current = [pointFrom(event)];
@@ -83,13 +129,41 @@ export const InkLayer = ({ strokes, isDrawing, color, width, onCommit }: InkLaye
   const handlePointerMove = (event: React.PointerEvent<SVGSVGElement>) => {
     if (!isDrawing || pointsRef.current.length === 0) return;
 
-    pointsRef.current.push(pointFrom(event));
+    /*
+     * Every sample the browser took, not just the one it chose to deliver.
+     *
+     * A pointer reports at up to 240Hz; the browser batches those into one
+     * `pointermove` per frame and hands over the *last* one, throwing the rest
+     * away unless they are asked for. On a fast stroke that is one sample every
+     * 16ms with the pointer travelling several hundred pixels a second — so the
+     * curve between two samples is a straight line, and a quick flick draws a
+     * polygon instead of an arc.
+     *
+     * `getCoalescedEvents()` returns the discarded samples, which is exactly
+     * what this is for. How aggressively an engine coalesces is its own
+     * business, which is why the same flick looked fine on one browser and
+     * angular on another.
+     *
+     * Guarded because it is absent on older Safari, where the single event is
+     * all there is and the behaviour is what it always was.
+     */
+    const samples =
+      typeof event.nativeEvent.getCoalescedEvents === 'function'
+        ? event.nativeEvent.getCoalescedEvents()
+        : [];
+
+    if (samples.length > 0) {
+      for (const sample of samples) pointsRef.current.push(pointFromClient(sample));
+    } else {
+      pointsRef.current.push(pointFrom(event));
+    }
 
     // One repaint per frame no matter how fast the pointer reports.
     if (frameRef.current) return;
     frameRef.current = requestAnimationFrame(() => {
       frameRef.current = 0;
-      setLivePath(toPath(pointsRef.current, box));
+      // `boxRef`, never the `box` state — see the note where it is declared.
+      setLivePath(toPath(pointsRef.current, boxRef.current));
     });
   };
 

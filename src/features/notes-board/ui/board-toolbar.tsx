@@ -12,7 +12,15 @@ import {
 
 import { BOARD_INK_COLORS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
-import { Button, ColorPicker, ExpandToggle, PostItGlyph, Spinner, Stepper } from '@/shared/ui';
+import {
+  Button,
+  ColorPicker,
+  ExpandToggle,
+  NibPreview,
+  PostItGlyph,
+  Spinner,
+  Stepper,
+} from '@/shared/ui';
 import { useT, type TranslationKey } from '@/shared/i18n';
 
 export type BoardTool = 'select' | 'connect' | 'draw';
@@ -119,7 +127,7 @@ export const BoardToolbar = ({
         className="px-2.5"
       >
         <Plus className="h-3.5 w-3.5" strokeWidth={2.8} />
-        <PostItGlyph className="h-[18px] w-[18px]" />
+        <PostItGlyph className="h-[1.125rem] w-[1.125rem]" />
       </Button>
 
       <Button
@@ -179,9 +187,12 @@ export const BoardToolbar = ({
             onChange={onInkWidthChange}
             min={1}
             max={18}
-            label={t('board.eraserNib')}
+            label={t('board.inkSize')}
             suffix="px"
           />
+          {/* The number, drawn. A stepper reading "8px" tells nobody how big a
+              mark that is until they have made one. */}
+          <NibPreview size={inkWidth} color={inkColor} />
           {onClearInk && (
             <Button size="sm" variant="ghost" onClick={onClearInk}>
               <Eraser className="h-3.5 w-3.5" />

@@ -106,7 +106,7 @@ const ReportSheet = ({ userId, count }: { userId: string; count: number }) => {
         onClick={() => (isOpen ? setIsOpen(false) : void open())}
         className={cn(
           'inline-flex items-center gap-1.5 rounded-lg border border-warning/40 bg-warning/10',
-          'px-2 py-1 text-[10px] font-semibold text-warning transition-colors hover:bg-warning/15',
+          'px-2 py-1 text-3xs font-semibold text-warning transition-colors hover:bg-warning/15',
         )}
       >
         <Flag className="h-2.5 w-2.5" />
@@ -120,7 +120,7 @@ const ReportSheet = ({ userId, count }: { userId: string; count: number }) => {
           {reports?.map((report) => (
             <div
               key={report.id}
-              className="rounded-lg border border-edge bg-surface-sunken/60 p-2 text-[10px] leading-relaxed"
+              className="rounded-lg border border-edge bg-surface-sunken/60 p-2 text-3xs leading-relaxed"
             >
               <p className="text-content-faint">
                 {report.reporter.displayName} ({report.reporter.email})
@@ -334,7 +334,7 @@ const AdminPage = () => {
             Unlock
           </Button>
 
-          <p className="text-center text-[10px] leading-relaxed text-content-faint">
+          <p className="text-center text-3xs leading-relaxed text-content-faint">
             Five wrong answers locks this console for fifteen minutes.
           </p>
         </form>
@@ -348,7 +348,7 @@ const AdminPage = () => {
       <div className="mx-auto max-w-3xl space-y-5">
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-danger">
+            <p className="flex items-center gap-1.5 text-3xs uppercase tracking-[0.18em] text-danger">
               <ShieldCheck className="h-3 w-3" />
               Admin console
             </p>
@@ -396,7 +396,7 @@ const AdminPage = () => {
               { label: 'Reported', value: stats.reported, icon: <Flag className="h-3 w-3" /> },
             ].map((tile) => (
               <div key={tile.label} className="ui-card rounded-xl border border-edge bg-surface-raised p-3">
-                <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-content-faint">
+                <p className="flex items-center gap-1.5 text-3xs uppercase tracking-[0.14em] text-content-faint">
                   {tile.icon}
                   {tile.label}
                 </p>
@@ -469,13 +469,13 @@ const AdminPage = () => {
                   {user.isVerified ? (
                     <CheckCircle2 className="h-3 w-3 shrink-0 text-positive" aria-label="Confirmed" />
                   ) : (
-                    <span className="shrink-0 rounded bg-warning/15 px-1 py-px text-[9px] font-semibold uppercase text-warning">
+                    <span className="shrink-0 rounded bg-warning/15 px-1 py-px text-4xs font-semibold uppercase text-warning">
                       unconfirmed
                     </span>
                   )}
                 </p>
-                <p className="truncate text-[11px] text-content-muted">{user.email}</p>
-                <p className="mt-0.5 text-[10px] text-content-faint">
+                <p className="truncate text-2xs text-content-muted">{user.email}</p>
+                <p className="mt-0.5 text-3xs text-content-faint">
                   Joined {formatDateTime(user.createdAt)}
                   {user.lastLoginAt && ` · last seen ${formatRelative(user.lastLoginAt)}`}
                   {user.banCount > 0 && ` · ${user.banCount} suspension(s) on record`}
@@ -496,7 +496,7 @@ const AdminPage = () => {
                 )}
 
                 {user.ban && (
-                  <p className="mt-1.5 rounded-lg bg-danger/10 px-2 py-1.5 text-[10px] leading-relaxed text-danger">
+                  <p className="mt-1.5 rounded-lg bg-danger/10 px-2 py-1.5 text-3xs leading-relaxed text-danger">
                     <strong>
                       Suspended
                       {user.ban.expiresAt
@@ -582,7 +582,7 @@ const AdminPage = () => {
             maxLength={1000}
           />
 
-          <p className="text-[11px] leading-relaxed text-content-faint">
+          <p className="text-2xs leading-relaxed text-content-faint">
             Nothing is deleted. Their projects, tasks and documents stay exactly as they
             are, and their colleagues keep everything they contributed — a suspension
             takes away access, not work.

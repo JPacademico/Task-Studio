@@ -78,7 +78,7 @@ export const ProjectWindowFields = ({
 
   return (
     <div className="space-y-1.5">
-      <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+      <p className="flex items-center gap-1.5 text-3xs font-semibold uppercase tracking-[0.14em] text-content-faint">
         <CalendarRange className="h-3 w-3" />
         {t('project.window')}
       </p>
@@ -105,7 +105,7 @@ export const ProjectWindowFields = ({
         />
       </div>
 
-      <p className="text-[11px] leading-relaxed text-content-faint">
+      <p className="text-2xs leading-relaxed text-content-faint">
         {t('project.windowHint')}
       </p>
     </div>

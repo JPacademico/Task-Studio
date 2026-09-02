@@ -153,7 +153,7 @@ export const LoginPage = () => {
         <p
           role="status"
           aria-live="polite"
-          className="min-h-[1rem] text-center text-[11px] leading-relaxed text-content-faint"
+          className="min-h-[1rem] text-center text-2xs leading-relaxed text-content-faint"
         >
           {isWaking ? t('auth.signIn.wakingHint') : ''}
         </p>

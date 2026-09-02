@@ -85,7 +85,7 @@ export const DemoBoard = () => {
         return (
           <div key={columnKey} className="space-y-2">
             <div className="flex items-baseline justify-between gap-1 px-0.5">
-              <p className="truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-content-faint">
+              <p className="truncate text-3xs font-semibold uppercase tracking-[0.12em] text-content-faint">
                 {t(columnKey)}
               </p>
               {/*
@@ -93,7 +93,7 @@ export const DemoBoard = () => {
                 card arrive is decorative; watching a number go up is the
                 board doing arithmetic about your work.
               */}
-              <span className="text-[10px] tabular-nums text-content-faint">
+              <span className="text-3xs tabular-nums text-content-faint">
                 {residents.length + (hasMover ? 1 : 0)}
               </span>
             </div>
@@ -176,8 +176,8 @@ const MoverCard = () => {
         className="mb-1.5 block h-1 w-6 rounded-full"
         style={{ backgroundColor: '#fbbf24' }}
       />
-      <p className="text-[10px] font-medium leading-tight">{t('landing.board.mover')}</p>
-      <p className="mt-1 text-[9px] text-content-faint">{t('landing.board.due')}</p>
+      <p className="text-3xs font-medium leading-tight">{t('landing.board.mover')}</p>
+      <p className="mt-1 text-4xs text-content-faint">{t('landing.board.due')}</p>
     </>
   );
 };
@@ -190,6 +190,6 @@ const StaticCard = ({ label, colour }: { label: string; colour: string }) => (
       className="mb-1.5 block h-1 w-6 rounded-full"
       style={{ backgroundColor: colour }}
     />
-    <p className="text-[10px] font-medium leading-tight text-content-muted">{label}</p>
+    <p className="text-3xs font-medium leading-tight text-content-muted">{label}</p>
   </div>
 );

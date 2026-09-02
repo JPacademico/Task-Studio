@@ -188,7 +188,7 @@ export const ConnectorLayer = ({
                 x={control.x}
                 y={control.y - 6}
                 textAnchor="middle"
-                className="fill-current text-[10px] font-semibold"
+                className="fill-current text-3xs font-semibold"
                 style={{ fill: link.color }}
               >
                 {link.label}

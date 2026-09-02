@@ -302,7 +302,7 @@ export const CreateProjectDialog = ({
                 })),
               ]}
             />
-            <p className="text-[11px] leading-relaxed text-content-faint">
+            <p className="text-2xs leading-relaxed text-content-faint">
               {t('project.organizationHint')}
             </p>
           </div>

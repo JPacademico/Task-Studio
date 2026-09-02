@@ -3,6 +3,30 @@ export default {
   darkMode: 'class',
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
+    /**
+     * A height-based variant, beside the width-based ones.
+     *
+     * Every breakpoint Tailwind ships is a *width*, and vertical overflow is
+     * not a width problem. A 1366x768 laptop has about 640px of viewport height
+     * once the browser's own chrome is taken out, and the sign-in card wants
+     * 619 of them — so it overflowed, and no amount of shrinking the type by
+     * viewport *width* was ever going to fix it, because the width was fine.
+     *
+     * `short` is the escape hatch for exactly that: the handful of surfaces
+     * whose vertical padding is generous on a desktop monitor and is the
+     * difference between fitting and scrolling on a laptop.
+     *
+     * `raw` because this is a media query rather than a container width —
+     * Tailwind's `screens` entries otherwise compile to `min-width`.
+     */
+    screens: {
+      sm: '640px',
+      md: '768px',
+      lg: '1024px',
+      xl: '1280px',
+      '2xl': '1536px',
+      short: { raw: '(max-height: 820px)' },
+    },
     extend: {
       /**
        * Every colour resolves through a CSS variable, so the light/dark toggle
@@ -47,6 +71,33 @@ export default {
         positive: 'rgb(var(--positive) / <alpha-value>)',
         warning: 'rgb(var(--warning) / <alpha-value>)',
         danger: 'rgb(var(--danger) / <alpha-value>)',
+      },
+      /**
+       * The steps below `xs`, which Tailwind's stock scale stops at.
+       *
+       * ## Why these exist at all
+       *
+       * 364 places in this codebase asked for a font size in *pixels* —
+       * `text-[11px]` 176 times, `text-[10px]` 161 more — because the scale had
+       * nothing under `xs` (0.75rem) and a badge, a timestamp or a hint needed
+       * one. Every one of those was a size that could not scale: the root font
+       * size drives every `rem` in the app, so on a 2560px display everything
+       * grew except the labels, which is most of what "the content turns
+       * smaller" means on a large screen.
+       *
+       * Naming them continues Tailwind's own ladder downwards — `2xl`, `3xl`
+       * go up, so `2xs`, `3xs` go down — and each step is about one pixel at
+       * the 16px base, which is what the pixel values were reaching for.
+       *
+       * The line heights are set explicitly rather than inherited. At these
+       * sizes Tailwind's default ratio produces lines too tight to read, and
+       * every one of these call sites had already been overriding it by hand.
+       */
+      fontSize: {
+        '2xs': ['0.6875rem', { lineHeight: '1rem' }],
+        '3xs': ['0.625rem', { lineHeight: '0.875rem' }],
+        '4xs': ['0.5625rem', { lineHeight: '0.8125rem' }],
+        '5xs': ['0.5rem', { lineHeight: '0.75rem' }],
       },
       /**
        * 12%, which Tailwind's stock scale does not have.

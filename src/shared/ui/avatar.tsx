@@ -10,7 +10,7 @@ interface AvatarProps {
 }
 
 const SIZES = {
-  xs: 'h-6 w-6 text-[10px]',
+  xs: 'h-6 w-6 text-3xs',
   sm: 'h-8 w-8 text-xs',
   md: 'h-10 w-10 text-sm',
   lg: 'h-16 w-16 text-lg',
@@ -68,7 +68,7 @@ export const AvatarStack = ({ people, max = 4, size = 'xs' }: AvatarStackProps) 
         ))}
       </div>
       {overflow > 0 && (
-        <span className="ml-2 text-[11px] font-medium text-content-faint">+{overflow}</span>
+        <span className="ml-2 text-2xs font-medium text-content-faint">+{overflow}</span>
       )}
     </div>
   );

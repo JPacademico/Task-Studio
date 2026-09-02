@@ -11,6 +11,7 @@ import { patchUserOverview } from '@/entities/project/model/queries';
 import type { UserOverview } from '@/entities/project/model/types';
 import { errorMessage } from '@/shared/api/client';
 import { queryKeys } from '@/shared/api/query-keys';
+import { inWriteOrder, writeSequence } from '@/shared/lib/write-order';
 import { taskApi } from '../api/task.api';
 import { overviewDeltaFor } from '../lib/overview-delta';
 import { useCommitPrompt } from './commit-prompt.store';
@@ -556,14 +557,33 @@ export const useUpdateTaskStatus = () => {
   const invalidate = useInvalidateTasks();
 
   return useMutation({
+    /*
+     * The request waits its turn; the card does not.
+     *
+     * Two drags of the same card in quick succession used to produce a visible
+     * lie: the card landed where it was dropped, then flipped back to the
+     * previous column for a second or two, then forward again. Both causes are
+     * handled here and neither is fixed by the other — see `write-order.ts`.
+     *
+     * `inWriteOrder` is inside `mutationFn` rather than on the mutation's
+     * `scope` deliberately. `scope` would queue the *whole mutation*, including
+     * `onMutate`, so the second drag would apply no optimistic update until the
+     * first round trip finished — the card would snap back to its old column
+     * and sit there. Queueing only the request keeps every drag instant while
+     * still guaranteeing the server sees the moves in the order they were made.
+     */
     mutationFn: ({ taskId, status }: { taskId: string; status: TaskStatus }) =>
-      taskApi.updateStatus(taskId, status),
+      inWriteOrder(`task-status:${taskId}`, () => taskApi.updateStatus(taskId, status)),
 
-    onMutate: ({ taskId, status }) => {
+    onMutate: async ({ taskId, status }) => {
       const now = new Date().toISOString();
       const completed = status === 'COMPLETED';
 
-      return applyOptimisticTaskWrite(queryClient, taskId, (task) => ({
+      // Stamped before the optimistic write, so every handler below can ask
+      // whether it is still describing the move the user last made.
+      const token = writeSequence.claim(`task-status:${taskId}`);
+
+      const context = await applyOptimisticTaskWrite(queryClient, taskId, (task) => ({
         ...task,
         status,
         completedAt: completed ? now : null,
@@ -575,9 +595,23 @@ export const useUpdateTaskStatus = () => {
           completedAt: completed ? now : null,
         })),
       }));
+
+      return { ...context, token };
     },
 
-    onError: (error, _variables, context) => {
+    onError: (error, variables, context) => {
+      /*
+       * A superseded write does not roll anything back.
+       *
+       * Its snapshot is of a board two moves ago, and restoring it would undo
+       * the move the user has since made and is currently looking at. The write
+       * that is still current owns the rollback; if it also fails, it has its
+       * own snapshot and will say so.
+       */
+      if (context && !writeSequence.isCurrent(`task-status:${variables.taskId}`, context.token)) {
+        return;
+      }
+
       rollbackTaskWrite(queryClient, context);
       toast.error(errorMessage(error, translate('toast.statusFailed')));
     },
@@ -585,7 +619,20 @@ export const useUpdateTaskStatus = () => {
     // The server's own copy, written straight in: the refetch below is then
     // reconciliation nobody is waiting on rather than the thing that finally
     // makes the card correct.
-    onSuccess: (task, variables) => {
+    onSuccess: (task, variables, context) => {
+      /*
+       * …unless the answer is already out of date.
+       *
+       * This is the half of the bug people actually see. The first request
+       * answers `COMPLETED`, which is a correct answer to the question it was
+       * asked and the wrong thing to paint over a card the user has since
+       * dragged back to To do. A newer request is already on its way with the
+       * answer that matches the screen, so the honest thing is to drop this one.
+       */
+      if (context && !writeSequence.isCurrent(`task-status:${variables.taskId}`, context.token)) {
+        return;
+      }
+
       patchCachedTask(queryClient, task.id, () => task);
 
       /*
@@ -602,7 +649,18 @@ export const useUpdateTaskStatus = () => {
     // `onSettled`, not `onSuccess`: a failed write has just been rolled back
     // from a snapshot that may itself be stale, and that is exactly when the
     // caches most need to be told to go and look again.
-    onSettled: (task) => invalidate(task?.project?.id),
+    //
+    // Skipped entirely while a newer write for this row is outstanding: a
+    // refetch now would ask the server for a task it has not finished being
+    // told about, and paint that answer over an optimistic state that is
+    // already right. The last write out does the reconciling.
+    onSettled: (task, _error, variables, context) => {
+      const key = `task-status:${variables.taskId}`;
+      if (context && !writeSequence.isCurrent(key, context.token)) return;
+
+      if (context) writeSequence.release(key, context.token);
+      invalidate(task?.project?.id);
+    },
   });
 };
 
@@ -743,20 +801,33 @@ export const useToggleTaskPin = () => {
 
   return useMutation({
     mutationFn: ({ taskId, pinned }: { taskId: string; pinned: boolean }) =>
-      taskApi.setPinned(taskId, pinned),
+      inWriteOrder(`task-pin:${taskId}`, () => taskApi.setPinned(taskId, pinned)),
 
     onMutate: ({ taskId, pinned }) => {
+      const token = writeSequence.claim(`task-pin:${taskId}`);
       const snapshot = queryClient.getQueriesData({ queryKey: queryKeys.tasks.all });
       patchCachedTask(queryClient, taskId, (task) => ({ ...task, isPinned: pinned }));
-      return { snapshot };
+      return { snapshot, token };
     },
 
-    onError: (error, _variables, context) => {
+    onError: (error, variables, context) => {
+      // Superseded writes stay quiet — see the same guard on the status
+      // mutation above. A pin toggled twice quickly is the same race.
+      if (context && !writeSequence.isCurrent(`task-pin:${variables.taskId}`, context.token)) {
+        return;
+      }
+
       context?.snapshot.forEach(([key, value]) => queryClient.setQueryData(key, value));
       toast.error(errorMessage(error));
     },
 
-    onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all }),
+    onSettled: (_data, _error, variables, context) => {
+      const key = `task-pin:${variables.taskId}`;
+      if (context && !writeSequence.isCurrent(key, context.token)) return;
+
+      if (context) writeSequence.release(key, context.token);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all });
+    },
   });
 };
 

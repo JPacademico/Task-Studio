@@ -574,7 +574,7 @@ export const TaskComposer = ({
         <div className="flex items-center justify-between gap-3 rounded-xl border border-edge bg-surface-sunken px-3.5 py-3">
           <div className="min-w-0">
             <TaskTypeTag type={derivedType} variant="full" />
-            <p className="truncate text-[11px] text-content-muted">{t(typeMeta.hint)}</p>
+            <p className="truncate text-2xs text-content-muted">{t(typeMeta.hint)}</p>
           </div>
           <Badge className="shrink-0">{t('task.autoClassified')}</Badge>
         </div>
@@ -693,7 +693,7 @@ export const TaskComposer = ({
             />
 
             {assigneeIds.length > 1 && (
-              <p className="text-[11px] text-emerald-500">{t('task.multiTaskNote')}</p>
+              <p className="text-2xs text-emerald-500">{t('task.multiTaskNote')}</p>
             )}
           </div>
         )}
@@ -896,7 +896,7 @@ export const TaskComposer = ({
             {/* Says it out loud as well as in the tooltip: a disabled button
                 somebody cannot hover is a dead end on a touch screen. */}
             {aiStatus?.enabled && !canSuggestSteps && !checklistIsFull && (
-              <p className="text-[11px] text-content-faint">{t('ai.needsTitleAndBody')}</p>
+              <p className="text-2xs text-content-faint">{t('ai.needsTitleAndBody')}</p>
             )}
 
             <div className="flex gap-2">

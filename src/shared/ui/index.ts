@@ -17,6 +17,7 @@ export {
 } from './primitives';
 export { SkinLoader } from './skin-loader';
 export { Select, type SelectOption } from './select';
+export { NibCursor, NibPreview } from './nib-preview';
 export { RouteBoundary } from './route-boundary';
 export { EdgeAffordance, NavPinButton } from './edge-affordance';
 export { ExpandToggle, ExpandableStage } from './expandable-stage';

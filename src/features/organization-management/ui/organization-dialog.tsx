@@ -71,7 +71,7 @@ const InviteList = ({ invites, onAdd, onRemove, t }: InviteListProps) => {
     <section className="space-y-2.5">
       <div className="space-y-1">
         <p className="text-xs font-medium text-content-muted">{t('org.invitePeople')}</p>
-        <p className="text-[11px] leading-relaxed text-content-faint">
+        <p className="text-2xs leading-relaxed text-content-faint">
           {t('org.invitePeopleHint')}
         </p>
       </div>
@@ -130,7 +130,7 @@ const InviteList = ({ invites, onAdd, onRemove, t }: InviteListProps) => {
             >
               <UserPlus className="h-3.5 w-3.5 shrink-0 text-content-faint" />
               <span className="min-w-0 flex-1 truncate text-xs">{invite.email}</span>
-              <span className="shrink-0 text-[10px] uppercase tracking-wide text-content-faint">
+              <span className="shrink-0 text-3xs uppercase tracking-wide text-content-faint">
                 {t(invite.role === 'ADMIN' ? 'org.roleAdmin' : 'org.roleMember')}
               </span>
               <button
@@ -178,15 +178,15 @@ const ProjectPicker = ({ selected, onToggle, isOpen, t }: ProjectPickerProps) =>
             <span className="text-content-faint">({selected.length})</span>
           )}
         </p>
-        <p className="text-[11px] leading-relaxed text-content-faint">
+        <p className="text-2xs leading-relaxed text-content-faint">
           {t('org.linkProjectsHint')}
         </p>
       </div>
 
-      {isPending && <p className="text-[11px] text-content-faint">{t('common.loading')}</p>}
+      {isPending && <p className="text-2xs text-content-faint">{t('common.loading')}</p>}
 
       {!isPending && projects.length === 0 && (
-        <p className="rounded-xl border border-dashed border-edge px-3 py-3 text-[11px] text-content-faint">
+        <p className="rounded-xl border border-dashed border-edge px-3 py-3 text-2xs text-content-faint">
           {t('org.nothingToFile')}
         </p>
       )}
@@ -453,7 +453,7 @@ export const OrganizationDialog = ({
 
             {!isConfirmingDelete ? (
               <>
-                <p className="text-[11px] leading-relaxed text-content-muted">
+                <p className="text-2xs leading-relaxed text-content-muted">
                   {t('org.deleteExplain')}
                 </p>
                 <Button
@@ -468,7 +468,7 @@ export const OrganizationDialog = ({
               </>
             ) : (
               <div className="space-y-2.5">
-                <p className="text-[11px] leading-relaxed text-content-muted">
+                <p className="text-2xs leading-relaxed text-content-muted">
                   {t('project.deleteConfirmBody', { name: organization.name })}
                 </p>
 

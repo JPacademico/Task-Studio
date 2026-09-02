@@ -27,7 +27,7 @@ interface HighlightProps {
 /** One project singled out, with the number that singled it out. */
 const Highlight = ({ title, project, caption, tone }: HighlightProps) => (
   <div className="space-y-2 rounded-2xl border border-edge bg-surface-raised p-4">
-    <p className="text-[11px] uppercase tracking-wide text-content-faint">{title}</p>
+    <p className="text-2xs uppercase tracking-wide text-content-faint">{title}</p>
     <Link
       to={`/projects/${project.id}`}
       className="flex items-center gap-2.5 transition-colors hover:text-brand"
@@ -41,7 +41,7 @@ const Highlight = ({ title, project, caption, tone }: HighlightProps) => (
     </Link>
     <p
       className={cn(
-        'inline-flex items-center gap-1 text-[11px]',
+        'inline-flex items-center gap-1 text-2xs',
         tone === 'bad' ? 'text-danger' : 'text-positive',
       )}
     >
@@ -82,7 +82,7 @@ const ProjectMetricRow = ({ project, t }: ProjectRowProps) => (
           {project.overdue}
         </Badge>
       )}
-      <span className="shrink-0 tabular-nums text-[11px] text-content-faint">
+      <span className="shrink-0 tabular-nums text-2xs text-content-faint">
         {project.completed}/{project.tasks}
       </span>
     </div>
@@ -99,13 +99,13 @@ const ProjectMetricRow = ({ project, t }: ProjectRowProps) => (
           transition={{ duration: 0.5 }}
         />
       </div>
-      <span className="w-9 shrink-0 text-right tabular-nums text-[10px] text-content-faint">
+      <span className="w-9 shrink-0 text-right tabular-nums text-3xs text-content-faint">
         {project.completionRate}%
       </span>
     </div>
 
     {project.nextDueAt && (
-      <p className="text-[10px] text-content-faint">
+      <p className="text-3xs text-content-faint">
         {t('org.nextDeadline')} · {formatDeadline(project.nextDueAt)}
       </p>
     )}
@@ -184,11 +184,11 @@ export const OrganizationDashboard = ({ organizationId }: { organizationId: stri
             </span>
             <div className="min-w-0 leading-tight">
               <p className="text-lg font-semibold tabular-nums">{tile.value}</p>
-              <p className="truncate text-[11px] uppercase tracking-wide text-content-faint">
+              <p className="truncate text-2xs uppercase tracking-wide text-content-faint">
                 {tile.label}
               </p>
               {tile.hint && (
-                <p className="truncate text-[10px] text-content-faint">{tile.hint}</p>
+                <p className="truncate text-3xs text-content-faint">{tile.hint}</p>
               )}
             </div>
           </div>
@@ -235,14 +235,14 @@ export const OrganizationDashboard = ({ organizationId }: { organizationId: stri
                     })}
                     style={{ minHeight: 2 }}
                   />
-                  <span className="text-[9px] text-content-faint">
+                  <span className="text-4xs text-content-faint">
                     {point.date.slice(8, 10)}
                   </span>
                 </div>
               ))}
             </div>
 
-            <div className="flex flex-wrap gap-2 border-t border-edge pt-3 text-[11px] text-content-muted">
+            <div className="flex flex-wrap gap-2 border-t border-edge pt-3 text-2xs text-content-muted">
               <span className="inline-flex items-center gap-1">
                 <Activity className="h-3 w-3 text-content-faint" />
                 {t('org.dueThisWeek', { count: totals.dueThisWeek })}
@@ -261,7 +261,7 @@ export const OrganizationDashboard = ({ organizationId }: { organizationId: stri
             />
           ) : (
             <div className="space-y-1.5 rounded-2xl border border-edge bg-surface-raised p-4">
-              <p className="text-[11px] uppercase tracking-wide text-content-faint">
+              <p className="text-2xs uppercase tracking-wide text-content-faint">
                 {t('org.mostAtRisk')}
               </p>
               <p className="inline-flex items-center gap-1.5 text-sm font-medium text-positive">
@@ -311,7 +311,7 @@ export const OrganizationDashboard = ({ organizationId }: { organizationId: stri
                 />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{task.title}</p>
-                  <p className="flex items-center gap-1.5 text-[11px] text-content-faint">
+                  <p className="flex items-center gap-1.5 text-2xs text-content-faint">
                     <CalendarClock className="h-3 w-3 shrink-0" />
                     {task.dueAt ? formatDayLabel(task.dueAt) : t('projectDash.noDate')} ·{' '}
                     {formatDeadline(task.dueAt)}
@@ -322,7 +322,7 @@ export const OrganizationDashboard = ({ organizationId }: { organizationId: stri
                     worth reading at company level rather than at project level. */}
                 <Link
                   to={`/projects/${task.project.id}`}
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-edge px-2 py-0.5 text-[11px] text-content-muted transition-colors hover:border-brand/50 hover:text-content"
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-edge px-2 py-0.5 text-2xs text-content-muted transition-colors hover:border-brand/50 hover:text-content"
                 >
                   <span
                     aria-hidden

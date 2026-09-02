@@ -209,7 +209,7 @@ export const OAuthButtons = ({ intent, className }: OAuthButtonsProps) => {
     <div className={cn('space-y-3', className)}>
       <div className="flex items-center gap-3" aria-hidden>
         <span className="h-px flex-1 bg-edge" />
-        <span className="text-[10px] uppercase tracking-[0.18em] text-content-faint">
+        <span className="text-3xs uppercase tracking-[0.18em] text-content-faint">
           {t('auth.oauth.divider')}
         </span>
         <span className="h-px flex-1 bg-edge" />
@@ -272,7 +272,7 @@ export const OAuthButtons = ({ intent, className }: OAuthButtonsProps) => {
       {waking && (
         <p
           role="status"
-          className="text-center text-[11px] leading-relaxed text-content-muted"
+          className="text-center text-2xs leading-relaxed text-content-muted"
         >
           {t('auth.oauth.waking')}
         </p>

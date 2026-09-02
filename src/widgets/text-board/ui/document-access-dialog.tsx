@@ -87,7 +87,7 @@ export const DocumentAccessDialog = ({
       }
     >
       <div className="space-y-3">
-        <p className="text-[11px] leading-relaxed text-content-muted">
+        <p className="text-2xs leading-relaxed text-content-muted">
           {t('doc.whoCanEditHint')}
         </p>
 
@@ -101,14 +101,14 @@ export const DocumentAccessDialog = ({
           <span className="min-w-0 flex-1 truncate text-xs font-medium">
             {document.createdBy.displayName}
           </span>
-          <span className="inline-flex shrink-0 items-center gap-1 text-[10px] text-content-faint">
+          <span className="inline-flex shrink-0 items-center gap-1 text-3xs text-content-faint">
             <Lock className="h-3 w-3" />
             {t('doc.authorOnly')}
           </span>
         </div>
 
         {candidates.length === 0 ? (
-          <p className="py-4 text-center text-[11px] text-content-faint">
+          <p className="py-4 text-center text-2xs text-content-faint">
             {t('doc.noOneElse')}
           </p>
         ) : (
@@ -140,7 +140,7 @@ export const DocumentAccessDialog = ({
                       <span className="block truncate text-xs font-medium">
                         {member.displayName}
                       </span>
-                      <span className="block truncate text-[10px] text-content-faint">
+                      <span className="block truncate text-3xs text-content-faint">
                         {member.email}
                       </span>
                     </span>

@@ -76,7 +76,7 @@ export const CalendarSyncBadge = () => {
       <span
         title={t('calendar.badgeOnHint')}
         className={cn(
-          'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium',
+          'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-2xs font-medium',
           'border-positive/40 bg-positive/[0.08] text-positive',
         )}
       >

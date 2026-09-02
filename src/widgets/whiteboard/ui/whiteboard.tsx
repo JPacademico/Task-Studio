@@ -52,7 +52,16 @@ import { queryKeys } from '@/shared/api/query-keys';
 import { CONNECTOR_COLORS, NOTE_COLORS, TASK_COLORS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
 import { useDebouncedCallback, useIsTouchDevice } from '@/shared/lib/hooks';
-import { Button, ColorPicker, ExpandToggle, ExpandableStage, PostItGlyph, Spinner } from '@/shared/ui';
+import {
+  Button,
+  ColorPicker,
+  ExpandToggle,
+  ExpandableStage,
+  NibCursor,
+  NibPreview,
+  PostItGlyph,
+  Spinner,
+} from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
 interface WhiteboardProps {
@@ -279,15 +288,34 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
     };
   }, [projectId, redraw, socket]);
 
-  const pointFromEvent = (event: React.PointerEvent<HTMLCanvasElement>): [number, number] => {
-    const rect = event.currentTarget.getBoundingClientRect();
+  /** Client coordinates to the normalised 0..1 space a stroke is stored in. */
+  const pointFromClient = (
+    canvas: HTMLCanvasElement,
+    point: { clientX: number; clientY: number },
+  ): [number, number] => {
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return [0, 0];
     // Normalised 0..1 so the drawing survives different viewport sizes.
-    return [(event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height];
+    return [(point.clientX - rect.left) / rect.width, (point.clientY - rect.top) / rect.height];
   };
+
+  const pointFromEvent = (event: React.PointerEvent<HTMLCanvasElement>): [number, number] =>
+    pointFromClient(event.currentTarget, event);
 
   const handlePointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
     if (!isInking) return;
-    event.currentTarget.setPointerCapture(event.pointerId);
+    // A right-click is not a stroke, and a secondary pointer is a gesture the
+    // browser is about to claim.
+    if (event.button !== 0 || !event.isPrimary) return;
+
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // Capture is an optimisation, not a requirement — see the same guard and
+      // the same reasoning in `InkLayer`. Letting it throw here aborted the
+      // handler before the stroke had begun.
+    }
+
     isDrawingRef.current = true;
 
     const isErasing = tool === 'eraser';
@@ -302,7 +330,30 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
   const handlePointerMove = (event: React.PointerEvent<HTMLCanvasElement>) => {
     if (!isDrawingRef.current || !currentRef.current) return;
 
-    currentRef.current.points.push(pointFromEvent(event));
+    /*
+     * Every sample the browser took, not only the one it delivered.
+     *
+     * The same fix as `InkLayer`, for the same reason: a pointer reports far
+     * faster than a frame, the browser coalesces those samples into one event,
+     * and a stroke drawn from one sample per frame is a run of straight
+     * segments rather than a curve. How much is thrown away is per-engine,
+     * which is why a fast flick looked smooth in one browser and angular in
+     * another.
+     */
+    const canvas = event.currentTarget;
+    const samples =
+      typeof event.nativeEvent.getCoalescedEvents === 'function'
+        ? event.nativeEvent.getCoalescedEvents()
+        : [];
+
+    if (samples.length > 0) {
+      for (const sample of samples) {
+        currentRef.current.points.push(pointFromClient(canvas, sample));
+      }
+    } else {
+      currentRef.current.points.push(pointFromEvent(event));
+    }
+
     requestAnimationFrame(redraw);
   };
 
@@ -613,7 +664,7 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
           className="px-2.5"
         >
           <Plus className="h-3.5 w-3.5" strokeWidth={2.8} />
-          <PostItGlyph className="h-[18px] w-[18px]" />
+          <PostItGlyph className="h-[1.125rem] w-[1.125rem]" />
         </Button>
 
         <Button
@@ -675,6 +726,7 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
                 onChange={(event) => setWidth(Number(event.target.value))}
                 className="w-20 accent-brand"
               />
+              <NibPreview size={width} color={color} />
             </label>
           </>
         )}
@@ -695,14 +747,16 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
                 onChange={(event) => setEraserWidth(Number(event.target.value))}
                 className="w-20 accent-brand"
               />
-              <span className="tabular-nums text-content-faint">{eraserWidth}px</span>
+              {/* No colour: a rubber has none, and the ring says so by being
+                  drawn in the interface's own ink rather than in anybody's. */}
+              <NibPreview size={eraserWidth} />
             </label>
           </>
         )}
 
         <span
           className={cn(
-            'ml-auto text-[11px]',
+            'ml-auto text-2xs',
             isConnected ? 'text-positive' : 'text-content-faint',
           )}
         >
@@ -749,10 +803,19 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
             'absolute inset-0 h-full w-full',
             isInking ? 'z-20 touch-none' : 'pointer-events-none',
             // A rubber is not a nib: the pointer should say which one is in
-            // hand before the first stroke rather than after it.
+            // hand before the first stroke rather than after it. The ring below
+            // says how *big* it is; the cursor says which of the two it is.
             tool === 'pen' && 'cursor-crosshair',
             tool === 'eraser' && 'cursor-cell',
           )}
+        />
+
+        {/* The nib itself, at the size it will mark or rub at. */}
+        <NibCursor
+          surface={surfaceRef}
+          size={tool === 'eraser' ? eraserWidth : width}
+          color={tool === 'eraser' ? undefined : color}
+          isActive={isInking && !isTouch}
         />
 
         <ConnectorLayer

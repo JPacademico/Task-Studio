@@ -50,6 +50,12 @@ import { cn } from '@/shared/lib/cn';
 import { clampOnPaste, clampText } from '@/shared/lib/text';
 import { Button, ColorPicker, EmptyState, Input, Modal, Segmented, Skeleton } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
+import {
+  ColumnOverflow,
+  ColumnOverflowToggle,
+  byDeadline,
+  useColumnCapacity,
+} from '@/features/dnd-board/ui/column-overflow';
 import { useHiddenColumns } from '../model/hidden-columns';
 import { GroupTaskCard } from './group-task-card';
 
@@ -333,7 +339,7 @@ export const GroupsBoard = ({
     return (
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 3 }, (_, index) => (
-          <Skeleton key={index} className="h-[220px] rounded-2xl" />
+          <Skeleton key={index} className="h-[13.75rem] rounded-2xl" />
         ))}
       </div>
     );
@@ -469,7 +475,7 @@ export const GroupsBoard = ({
                   <ChevronLeft className="h-3.5 w-3.5" />
                 </Pager>
 
-                <span className="px-1 text-[11px] tabular-nums text-content-faint">
+                <span className="px-1 text-2xs tabular-nums text-content-faint">
                   {currentPage + 1}/{pageCount}
                 </span>
 
@@ -647,7 +653,7 @@ export const GroupsBoard = ({
 
         <DragOverlay dropAnimation={{ duration: 200, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' }}>
           {activeTask && (
-            <GroupTaskCard task={activeTask} isDragging className="w-[248px] rotate-1" />
+            <GroupTaskCard task={activeTask} isDragging className="w-[15.5rem] rotate-1" />
           )}
         </DragOverlay>
 
@@ -766,6 +772,20 @@ const Lane = ({
   const t = useT();
   const { setNodeRef, isOver } = useDroppable({ id });
 
+  /*
+   * The lane shows the work due soonest and offers the rest.
+   *
+   * Per-lane state rather than per-board: opening "Blocked" says nothing about
+   * wanting "Done" opened too, and on this board a column is a category the
+   * project invented, so how much of each one matters is entirely the reader's
+   * business. See `column-overflow.tsx` for why the cap is measured.
+   */
+  const capacity = useColumnCapacity();
+  const [isOpen, setIsOpen] = useState(false);
+
+  const ordered = useMemo(() => [...tasks].sort(byDeadline), [tasks]);
+  const visible = ordered.slice(0, capacity);
+
   return (
     <motion.section
       ref={setNodeRef}
@@ -787,9 +807,9 @@ const Lane = ({
       transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
       className={cn(
         'group/lane gpu flex w-[82vw] shrink-0 snap-start flex-col gap-2.5 rounded-2xl border p-2.5',
-        'sm:w-[300px]',
+        'sm:w-[18.75rem]',
         // Shares the width from `lg` up — see the container's note.
-        'lg:min-h-[220px] lg:w-auto lg:min-w-[170px] lg:shrink lg:flex-1 lg:basis-0 lg:p-3',
+        'lg:min-h-[13.75rem] lg:w-auto lg:min-w-[10.625rem] lg:shrink lg:flex-1 lg:basis-0 lg:p-3',
         'transition-colors duration-150',
         isOver ? 'border-brand bg-brand/[0.06]' : 'border-edge bg-surface-sunken/60',
         /*
@@ -901,7 +921,7 @@ const Lane = ({
       </header>
 
       <div className="flex flex-1 flex-col gap-2">
-        {tasks.map((task) => (
+        {visible.map((task) => (
           <DraggableCard
             key={task.id}
             task={task}
@@ -912,8 +932,32 @@ const Lane = ({
           />
         ))}
 
+        {/* The rest of the column, folded away. Still inside the droppable, so
+            a card can be dropped into a lane that is showing four of twenty —
+            see the same arrangement on the status board. */}
+        <ColumnOverflow isOpen={isOpen}>
+          {ordered.slice(capacity).map((task) => (
+            <DraggableCard
+              key={task.id}
+              task={task}
+              onOpen={onOpenTask}
+              canManage={canManage}
+              onToggleComplete={completionHandler(task)}
+              isSyncing={syncingTaskId === task.id}
+            />
+          ))}
+        </ColumnOverflow>
+
+        {ordered.length > capacity && (
+          <ColumnOverflowToggle
+            hidden={ordered.length - capacity}
+            isOpen={isOpen}
+            onToggle={() => setIsOpen((open) => !open)}
+          />
+        )}
+
         {tasks.length === 0 && (
-          <p className="flex flex-1 items-center justify-center rounded-xl border border-dashed border-edge/70 px-3 py-6 text-center text-[11px] text-content-faint">
+          <p className="flex flex-1 items-center justify-center rounded-xl border border-dashed border-edge/70 px-3 py-6 text-center text-2xs text-content-faint">
             {emptyLabel ?? t('groups.dropHere')}
           </p>
         )}

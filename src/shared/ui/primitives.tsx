@@ -17,7 +17,7 @@ export const PageLoader = ({ label = 'Loading' }: { label?: string }) => {
   const skin = useSkin();
 
   return (
-    <div className="flex h-full min-h-[240px] flex-col items-center justify-center gap-3">
+    <div className="flex h-full min-h-[15rem] flex-col items-center justify-center gap-3">
       <SkinLoader label={label} />
       {skinLoaderWantsCaption(skin) && (
         <p className="text-xs uppercase tracking-[0.18em] text-content-faint">{label}</p>
@@ -51,7 +51,7 @@ export const Badge = ({ children, className, dot, title }: BadgeProps) => (
     title={title}
     className={cn(
       'ui-chip inline-flex items-center gap-1.5 rounded-full border border-edge bg-surface-sunken',
-      'px-2 py-0.5 text-[11px] font-medium text-content-muted',
+      'px-2 py-0.5 text-2xs font-medium text-content-muted',
       className,
     )}
   >

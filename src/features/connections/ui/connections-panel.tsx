@@ -100,7 +100,7 @@ const ServiceCard = ({
         aria-hidden
         className={cn(
           'grid shrink-0 place-items-center rounded-xl border transition-colors',
-          compact ? 'h-10 w-10' : 'h-11 w-11',
+          compact ? 'h-10 w-10' : 'h-12 w-12',
           isConnected ? 'border-positive/30 bg-positive/[0.08]' : 'border-edge bg-surface-sunken',
           !isAvailable && 'opacity-50 grayscale',
         )}
@@ -113,7 +113,7 @@ const ServiceCard = ({
         {note && (
           <span
             title={t(note.hint)}
-            className="mt-0.5 inline-block text-[10px] uppercase tracking-wide text-content-faint"
+            className="mt-0.5 inline-block text-3xs uppercase tracking-wide text-content-faint"
           >
             {t(note.label)}
           </span>
@@ -124,7 +124,7 @@ const ServiceCard = ({
       <span
         title={status}
         className={cn(
-          'shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide',
+          'shrink-0 rounded-full border px-2 py-0.5 text-3xs font-medium uppercase tracking-wide',
           isConnected
             ? 'border-positive/40 text-positive'
             : 'border-edge text-content-muted group-hover:border-brand/50 group-hover:text-content',
@@ -340,21 +340,21 @@ export const ConnectionsPanel = ({ projectId, repository, canManage }: Connectio
             <ServiceCard
               compact
               name="connections.svc.discord"
-              mark={<DiscordMark className="h-6 w-6" />}
+              mark={<DiscordMark className="h-7 w-7" />}
               isConnected={connectedFlavours.has('discord')}
               onSelect={() => requestCompose('discord')}
             />
             <ServiceCard
               compact
               name="connections.svc.slack"
-              mark={<SlackMark className="h-6 w-6" />}
+              mark={<SlackMark className="h-7 w-7" />}
               isConnected={connectedFlavours.has('slack')}
               onSelect={() => requestCompose('slack')}
             />
             <ServiceCard
               compact
               name="connections.svc.webhook"
-              mark={<WebhookMark className="h-6 w-6" />}
+              mark={<WebhookMark className="h-7 w-7" />}
               isConnected={connectedFlavours.has('generic')}
               onSelect={() => requestCompose('generic')}
             />
@@ -367,7 +367,7 @@ export const ConnectionsPanel = ({ projectId, repository, canManage }: Connectio
         <ul className="grid gap-2 sm:grid-cols-2">
           <ServiceCard
             name="connections.svc.googleCalendar"
-            mark={<GoogleCalendarMark className="h-6 w-6" />}
+            mark={<GoogleCalendarMark className="h-8 w-8" />}
             isConnected={isCalendarLive}
             // Settings, not a dialog here: connecting is an OAuth consent
             // flow, and it is a fact about the account rather than about this
@@ -386,7 +386,7 @@ export const ConnectionsPanel = ({ projectId, repository, canManage }: Connectio
         <ul className="grid gap-2 sm:grid-cols-2">
           <ServiceCard
             name="connections.svc.github"
-            mark={<GitHubMark className="h-6 w-6" />}
+            mark={<GitHubMark className="h-8 w-8" />}
             isConnected={Boolean(repository)}
             /*
               The card opens the same dialog the control beside the project's
@@ -408,7 +408,7 @@ export const ConnectionsPanel = ({ projectId, repository, canManage }: Connectio
           />
           <ServiceCard
             name="connections.svc.trello"
-            mark={<TrelloMark className="h-6 w-6" />}
+            mark={<TrelloMark className="h-8 w-8" />}
             /*
               Listed, and honestly not connectable from here.
 

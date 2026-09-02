@@ -91,7 +91,7 @@ export const NotificationOptIn = () => {
           <Bell className="h-3.5 w-3.5 shrink-0 text-brand" />
           {t('notif.optInTitle')}
         </p>
-        <p className="text-[11px] leading-relaxed text-content-muted">
+        <p className="text-2xs leading-relaxed text-content-muted">
           {t('notif.optInBody')}
         </p>
 

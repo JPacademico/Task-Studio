@@ -12,6 +12,7 @@ import { useT } from '@/shared/i18n';
 import { emitWithAck } from '@/shared/api/socket';
 import { queryKeys } from '@/shared/api/query-keys';
 import { cn } from '@/shared/lib/cn';
+import { uid } from '@/shared/lib/uid';
 import { formatTime } from '@/shared/lib/dates';
 import { STORAGE_KEYS, TEXT_LIMITS } from '@/shared/config/constants';
 import { clampText } from '@/shared/lib/text';
@@ -220,7 +221,9 @@ export const ProjectChat = ({
     const content = draft.trim();
     if (!content || !socket || !isConnected || !user) return;
 
-    const clientId = crypto.randomUUID();
+    // See `shared/lib/uid`: `crypto.randomUUID` does not exist on an insecure
+    // origin, and this line ran on every message sent.
+    const clientId = uid();
 
     setLiveMessages((current) => [
       ...current,
@@ -316,7 +319,7 @@ export const ProjectChat = ({
           'panel flex flex-col overflow-hidden',
           isTouch
             ? 'h-[min(80dvh,32rem)] rounded-b-none safe-b'
-            : 'h-[440px] sm:h-[460px]',
+            : 'h-[27.5rem] sm:h-[28.75rem]',
           // While the tack is over the window, say so — a drop target you
           // cannot see is a gesture you have to guess at.
           isPinTargeted && 'ring-2 ring-brand ring-offset-2 ring-offset-surface',
@@ -335,7 +338,7 @@ export const ProjectChat = ({
           )}
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs font-semibold">{projectName}</p>
-            <p className="flex items-center gap-1 text-[10px] text-content-faint">
+            <p className="flex items-center gap-1 text-3xs text-content-faint">
               {isPinned && (
                 <>
                   <Pin className="h-2.5 w-2.5 fill-current text-brand" />
@@ -386,7 +389,7 @@ export const ProjectChat = ({
           {isLoadingHistory && messages.length === 0 && (
             <div className="flex flex-col items-center gap-2 py-10">
               <SkinLoader label={t('chat.loading')} />
-              <p className="text-[11px] text-content-faint">{t('chat.loading')}</p>
+              <p className="text-2xs text-content-faint">{t('chat.loading')}</p>
             </div>
           )}
 
@@ -418,12 +421,12 @@ export const ProjectChat = ({
                   )}
                 >
                   {!isMine && (
-                    <p className="mb-0.5 text-[10px] font-semibold opacity-70">
+                    <p className="mb-0.5 text-3xs font-semibold opacity-70">
                       {message.user.displayName}
                     </p>
                   )}
                   <p className="whitespace-pre-wrap break-words">{message.content}</p>
-                  <p className="mt-1 flex items-center gap-1 text-[9px] opacity-60">
+                  <p className="mt-1 flex items-center gap-1 text-4xs opacity-60">
                     {formatTime(message.createdAt)}
                     {/*
                       Only our own messages carry a delivery mark, and only

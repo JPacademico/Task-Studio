@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { BookText } from 'lucide-react';
 
 import { LanguageToggle } from '@/features/language-toggle/ui/language-toggle';
 import { ThemeToggle } from '@/features/theme-toggle/ui/theme-toggle';
@@ -41,9 +42,26 @@ export const LandingNav = () => {
       */}
       <a
         href="#content"
+        /*
+         * Parked above the viewport, not `sr-only`.
+         *
+         * `sr-only` + `buttonClasses` shipped a visible bug: `sr-only` collapses
+         * the box to 1×1 and sets `padding: 0`, and the button classes that
+         * follow it re-apply `px-3 py-1.5`, `bg-brand` and `rounded-xl`. Tailwind's
+         * merge does not treat those as conflicting — they are different
+         * property groups — so both survived and the result was a one-pixel
+         * brand-coloured rounded box, permanently visible in the top-left corner
+         * of the page, that did nothing when clicked.
+         *
+         * Translating a normally-sized button out of view has none of that
+         * fragility: nothing about the class list is load-bearing, the element
+         * keeps its real dimensions, and sliding it back in on focus is one
+         * transform on the compositor.
+         */
         className={cn(
-          'sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50',
           buttonClasses({ size: 'sm' }),
+          'absolute left-4 top-3 z-50 -translate-y-[calc(100%+1.5rem)]',
+          'transition-transform duration-150 ease-studio focus:translate-y-0',
         )}
       >
         {t('landing.nav.skip')}
@@ -91,6 +109,24 @@ export const LandingNav = () => {
         </ul>
 
         <div className="ml-auto flex items-center gap-1.5">
+          {/*
+            Docs sits with the toggles rather than in the list on the left, and
+            that is a distinction worth keeping: everything on the left is an
+            anchor to a section of *this* page, and this is a route to another
+            one. Mixing them would make one of the four behave differently from
+            the other three for no visible reason.
+
+            Visible at every width, unlike the anchors — on a phone the page is
+            its own navigation, but the documentation still has to be reachable.
+          */}
+          <Link
+            to="/docs"
+            className={buttonClasses({ variant: 'ghost', size: 'sm' })}
+          >
+            <BookText aria-hidden className="h-3.5 w-3.5" />
+            {t('landing.nav.docs')}
+          </Link>
+
           <LanguageToggle />
           <ThemeToggle />
 

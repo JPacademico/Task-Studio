@@ -36,6 +36,7 @@ import {
   SelectionBar,
 } from '@/features/notes-board/ui/board-overlays';
 import { BoardPager } from '@/features/notes-board/ui/board-pager';
+import { NibCursor } from '@/shared/ui';
 import { BoardToolbar, type BoardTool } from '@/features/notes-board/ui/board-toolbar';
 import { BoardSkeleton } from '@/features/notes-board/ui/board-skeleton';
 import { ConnectorLayer } from '@/features/notes-board/ui/connector-layer';
@@ -415,7 +416,7 @@ const NotesBoardPage = () => {
       {!isExpanded && (
         <header className="flex flex-wrap items-end justify-between gap-3">
           <div className="space-y-0.5">
-            <p className="text-[10px] uppercase tracking-[0.18em] text-content-faint sm:text-xs">
+            <p className="text-3xs uppercase tracking-[0.18em] text-content-faint sm:text-xs">
               <RunicText mode="always">{t('notes.title')}</RunicText>
             </p>
             <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
@@ -520,6 +521,15 @@ const NotesBoardPage = () => {
           color={inkColor}
           width={inkWidth}
           onCommit={(points) => addStroke.mutate({ points, color: inkColor, width: inkWidth })}
+        />
+
+        {/* The nib, at the size it will actually mark. Only with the pen out,
+            and never on touch — there is no pointer to follow. */}
+        <NibCursor
+          surface={boardRef}
+          size={inkWidth}
+          color={inkColor}
+          isActive={tool === 'draw' && !isTouch}
         />
 
         <ConnectorLayer

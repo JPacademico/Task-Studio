@@ -84,7 +84,7 @@ export const IntegrationsStrip = () => {
             <Mark className="h-5 w-5" />
           </span>
           <p className="mt-2.5 text-xs font-semibold">{t(key)}</p>
-          <p className="mt-0.5 text-[11px] leading-snug text-content-muted">{t(detail)}</p>
+          <p className="mt-0.5 text-2xs leading-snug text-content-muted">{t(detail)}</p>
         </motion.li>
       ))}
     </ul>

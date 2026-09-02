@@ -52,7 +52,7 @@ export const ProjectDashboard = ({ projectId }: { projectId: string }) => {
             </span>
             <div className="leading-tight">
               <p className="text-lg font-semibold tabular-nums">{tile.value}</p>
-              <p className="text-[11px] uppercase tracking-wide text-content-faint">
+              <p className="text-2xs uppercase tracking-wide text-content-faint">
                 {tile.label}
               </p>
             </div>
@@ -97,7 +97,7 @@ export const ProjectDashboard = ({ projectId }: { projectId: string }) => {
                     })}
                     style={{ minHeight: 2 }}
                   />
-                  <span className="text-[9px] text-content-faint">
+                  <span className="text-4xs text-content-faint">
                     {point.date.slice(8, 10)}
                   </span>
                 </div>
@@ -141,7 +141,7 @@ export const ProjectDashboard = ({ projectId }: { projectId: string }) => {
                 />
                 <div className="leading-tight">
                   <p className="text-sm font-semibold">{mostProductiveMember.displayName}</p>
-                  <p className="inline-flex items-center gap-1 text-[11px] text-content-muted">
+                  <p className="inline-flex items-center gap-1 text-2xs text-content-muted">
                     <Award className="h-3 w-3 text-warning" />
                     {t('projectDash.tasksCompleted', {
                       count: String(mostProductiveMember.completed),
@@ -153,7 +153,7 @@ export const ProjectDashboard = ({ projectId }: { projectId: string }) => {
               <ul className="space-y-2.5 border-t border-edge pt-3">
                 {members.map((member) => (
                   <li key={member.id} className="space-y-1">
-                    <div className="flex items-center justify-between text-[11px]">
+                    <div className="flex items-center justify-between text-2xs">
                       <span className="truncate text-content-muted">{member.displayName}</span>
                       <span className="tabular-nums text-content-faint">
                         {member.completed}/{member.assigned}
@@ -197,7 +197,7 @@ export const ProjectDashboard = ({ projectId }: { projectId: string }) => {
                 />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{task.title}</p>
-                  <p className="text-[11px] text-content-faint">
+                  <p className="text-2xs text-content-faint">
                     {task.dueAt ? formatDayLabel(task.dueAt) : t('projectDash.noDate')} ·{' '}
                     {formatDeadline(task.dueAt)}
                   </p>

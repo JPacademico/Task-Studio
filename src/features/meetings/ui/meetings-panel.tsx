@@ -126,7 +126,7 @@ const MeetingRowBase = ({
       {/* The clock, given its own column: a calendar is read down the times. */}
       <div className="flex shrink-0 items-center gap-2 sm:w-24 sm:flex-col sm:items-start sm:gap-0.5">
         <span className="text-sm font-semibold tabular-nums">{formatTime(start)}</span>
-        <span className="text-[11px] tabular-nums text-content-faint">
+        <span className="text-2xs tabular-nums text-content-faint">
           {t('meetings.until')} {formatTime(end)}
         </span>
       </div>
@@ -142,7 +142,7 @@ const MeetingRowBase = ({
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-content-muted">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-2xs text-content-muted">
           <span className="inline-flex items-center gap-1">
             <MapPin className="h-3 w-3 shrink-0 text-content-faint" />
             <span className="truncate">{meeting.room}</span>
@@ -180,7 +180,7 @@ const MeetingRowBase = ({
               title={t('agenda.openProject', { name: meeting.project.name })}
               className={cn(
                 'inline-flex items-center gap-1.5 rounded-full border border-edge px-2 py-0.5',
-                'text-[11px] text-content-muted transition-colors',
+                'text-2xs text-content-muted transition-colors',
                 'hover:border-brand/50 hover:text-content',
               )}
             >
@@ -192,7 +192,7 @@ const MeetingRowBase = ({
               <span className="max-w-[10rem] truncate">{meeting.project.name}</span>
             </Link>
           ) : (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-edge px-2 py-0.5 text-[11px] text-content-faint">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-edge px-2 py-0.5 text-2xs text-content-faint">
               {t('meetings.companyWide')}
             </span>
           ))}
@@ -593,7 +593,7 @@ export const MeetingsPanel = ({
               {formatDayLabel(day)}
             </span>
 
-            <span className="ml-auto text-[11px] text-content-faint">
+            <span className="ml-auto text-2xs text-content-faint">
               {t('meetings.count', { count: dayMeetings.length })}
             </span>
           </header>
@@ -666,7 +666,7 @@ export const MeetingsPanel = ({
               {WEEKDAYS.map((weekday) => (
                 <span
                   key={weekday}
-                  className="px-2 py-1.5 text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint"
+                  className="px-2 py-1.5 text-center text-3xs font-semibold uppercase tracking-[0.14em] text-content-faint"
                 >
                   <span className="hidden sm:inline">{weekday}</span>
                   <span className="sm:hidden">{weekday[0]}</span>
@@ -686,7 +686,7 @@ export const MeetingsPanel = ({
                     type="button"
                     onClick={() => setDay(startOfDay(cell))}
                     className={cn(
-                      'relative min-h-[76px] border-b border-r border-edge/60 p-1.5 text-left',
+                      'relative min-h-[4.75rem] border-b border-r border-edge/60 p-1.5 text-left',
                       'transition-colors duration-150 last:border-r-0 hover:bg-surface-sunken/60',
                       isOutside && 'bg-surface-sunken/25 text-content-faint',
                       isSelected && 'bg-brand/[0.09] ring-1 ring-inset ring-brand/40',
@@ -694,7 +694,7 @@ export const MeetingsPanel = ({
                   >
                     <span
                       className={cn(
-                        'inline-grid h-5 min-w-5 place-items-center rounded-full px-1 text-[11px] tabular-nums',
+                        'inline-grid h-5 min-w-5 place-items-center rounded-full px-1 text-2xs tabular-nums',
                         isToday(cell)
                           ? 'bg-brand font-bold text-brand-contrast'
                           : 'font-medium text-content-muted',
@@ -708,7 +708,7 @@ export const MeetingsPanel = ({
                         <li
                           key={meeting.id}
                           title={`${formatTime(meeting.startAt)} · ${meeting.title}`}
-                          className="flex items-center gap-1 truncate rounded bg-brand/[0.14] px-1 py-px text-[10px] leading-tight"
+                          className="flex items-center gap-1 truncate rounded bg-brand/[0.14] px-1 py-px text-3xs leading-tight"
                         >
                           <span className="shrink-0 tabular-nums opacity-70">
                             {formatTime(meeting.startAt)}
@@ -718,7 +718,7 @@ export const MeetingsPanel = ({
                       ))}
 
                       {items.length > 3 && (
-                        <li className="px-1 text-[10px] font-medium text-content-faint">
+                        <li className="px-1 text-3xs font-medium text-content-faint">
                           +{items.length - 3}
                         </li>
                       )}
@@ -738,7 +738,7 @@ export const MeetingsPanel = ({
             <header className="flex items-center gap-2">
               <CalendarDays className="h-3.5 w-3.5 text-brand" />
               <h4 className="text-sm font-semibold">{format(day, 'EEEE d MMMM')}</h4>
-              <span className="ml-auto text-[11px] text-content-faint">
+              <span className="ml-auto text-2xs text-content-faint">
                 {t('meetings.count', { count: dayMeetings.length })}
               </span>
               {canManage && (

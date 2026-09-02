@@ -340,7 +340,7 @@ const ProjectPage = () => {
               style={{ backgroundColor: project.color }}
             />
             <div className="min-w-0 space-y-0.5 sm:space-y-1">
-              <p className="flex flex-wrap items-center gap-x-1.5 text-[10px] uppercase tracking-[0.18em] text-content-faint sm:text-xs">
+              <p className="flex flex-wrap items-center gap-x-1.5 text-3xs uppercase tracking-[0.18em] text-content-faint sm:text-xs">
                 <span>
                   {project.myRole.toLowerCase()} · {project.roster.length} member(s)
                 </span>
@@ -439,7 +439,7 @@ const ProjectPage = () => {
               <MessageCircle className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Chat</span>
               {chatUnread > 0 && !isChatOpen && (
-                <span className="absolute -right-1.5 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-danger px-1 text-[9px] font-bold text-white">
+                <span className="absolute -right-1.5 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-danger px-1 text-4xs font-bold text-white">
                   {chatUnread > 9 ? '9+' : chatUnread}
                 </span>
               )}
@@ -499,11 +499,11 @@ const ProjectPage = () => {
         {isFinished && (
           <div className="flex flex-wrap items-center gap-2 rounded-xl border border-edge bg-surface-sunken px-3.5 py-2.5">
             <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-positive" />
-            <span className="text-[11px] leading-relaxed text-content-muted">
+            <span className="text-2xs leading-relaxed text-content-muted">
               {t('project.finishedBanner')}
             </span>
             {project.completedAt && (
-              <span className="text-[11px] text-content-faint">
+              <span className="text-2xs text-content-faint">
                 · {t('project.finishedOn', { date: formatDateTime(project.completedAt) })}
               </span>
             )}

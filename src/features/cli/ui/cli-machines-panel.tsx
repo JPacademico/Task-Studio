@@ -43,7 +43,7 @@ const MachineRow = ({ token, onRevoke }: { token: ApiToken; onRevoke: () => void
         <p className="truncate text-xs font-medium" title={token.name}>
           {token.name}
         </p>
-        <p className="text-[11px] text-content-muted">
+        <p className="text-2xs text-content-muted">
           <code>{token.prefix}…</code>
           {' · '}
           {token.lastUsedAt

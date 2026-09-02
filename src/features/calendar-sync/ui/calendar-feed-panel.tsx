@@ -98,7 +98,7 @@ export const CalendarFeedPanel = () => {
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold">{t('feed.title')}</p>
-          <p className="mt-1 text-[11px] leading-relaxed text-content-muted">
+          <p className="mt-1 text-2xs leading-relaxed text-content-muted">
             {t('feed.pitch')}
           </p>
         </div>
@@ -107,7 +107,7 @@ export const CalendarFeedPanel = () => {
       {/* --- The URL, once ------------------------------------------------ */}
       {revealed && (
         <div className="space-y-2 rounded-xl border border-brand/40 bg-brand/[0.06] p-3">
-          <p className="text-[11px] font-medium text-brand">{t('feed.copyNow')}</p>
+          <p className="text-2xs font-medium text-brand">{t('feed.copyNow')}</p>
 
           <div className="flex items-center gap-1.5">
             {/*
@@ -121,20 +121,20 @@ export const CalendarFeedPanel = () => {
               value={revealed}
               onFocus={(event) => event.currentTarget.select()}
               aria-label={t('feed.title')}
-              className="field h-8 flex-1 py-0 font-mono text-[10px]"
+              className="field h-8 flex-1 py-0 font-mono text-3xs"
             />
             <Button
               size="sm"
               variant={copied ? 'secondary' : 'primary'}
               onClick={() => void copy()}
-              className="h-8 shrink-0 gap-1.5 px-2.5 text-[11px]"
+              className="h-8 shrink-0 gap-1.5 px-2.5 text-2xs"
             >
               {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
               {t(copied ? 'feed.copied' : 'feed.copy')}
             </Button>
           </div>
 
-          <p className="text-[10px] leading-relaxed text-content-muted">
+          <p className="text-3xs leading-relaxed text-content-muted">
             {t('feed.howTo')}
           </p>
         </div>
@@ -148,7 +148,7 @@ export const CalendarFeedPanel = () => {
         </Button>
       ) : (
         <div className="space-y-2 border-t border-edge/70 pt-3">
-          <p className="text-[10px] text-content-faint">
+          <p className="text-3xs text-content-faint">
             {data.lastAccessedAt
               ? t('feed.lastFetched', { when: formatRelative(data.lastAccessedAt) })
               : t('feed.neverFetched')}
@@ -156,7 +156,7 @@ export const CalendarFeedPanel = () => {
 
           {isConfirmingRotate ? (
             <div className="space-y-2">
-              <p className="text-[11px] leading-relaxed text-content-muted">
+              <p className="text-2xs leading-relaxed text-content-muted">
                 {t('feed.rotateExplain')}
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -165,7 +165,7 @@ export const CalendarFeedPanel = () => {
                   variant="danger"
                   onClick={() => void mint()}
                   isLoading={issue.isPending}
-                  className="h-7 px-2.5 text-[10px]"
+                  className="h-7 px-2.5 text-3xs"
                 >
                   {t('feed.rotateConfirm')}
                 </Button>
@@ -173,7 +173,7 @@ export const CalendarFeedPanel = () => {
                   size="sm"
                   variant="ghost"
                   onClick={() => setIsConfirmingRotate(false)}
-                  className="h-7 px-2.5 text-[10px]"
+                  className="h-7 px-2.5 text-3xs"
                 >
                   {t('common.cancel')}
                 </Button>
@@ -185,7 +185,7 @@ export const CalendarFeedPanel = () => {
                 size="sm"
                 variant="secondary"
                 onClick={() => setIsConfirmingRotate(true)}
-                className="h-7 gap-1 px-2.5 text-[10px]"
+                className="h-7 gap-1 px-2.5 text-3xs"
               >
                 <RotateCcw className="h-3 w-3" />
                 {t('feed.rotate')}
@@ -198,7 +198,7 @@ export const CalendarFeedPanel = () => {
                   revoke.mutate();
                 }}
                 isLoading={revoke.isPending}
-                className={cn('h-7 px-2.5 text-[10px] text-danger hover:text-danger')}
+                className={cn('h-7 px-2.5 text-3xs text-danger hover:text-danger')}
               >
                 {t('feed.revoke')}
               </Button>

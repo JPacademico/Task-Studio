@@ -123,7 +123,7 @@ export const ImportedDocument = ({ documentId, source }: ImportedDocumentProps) 
           <FileText className="h-3.5 w-3.5" />
         </span>
 
-        <span className="text-[10px] uppercase tracking-wide text-content-faint">
+        <span className="text-3xs uppercase tracking-wide text-content-faint">
           {formatBadge(source)} · {formatFileSize(source.size)} · {t('doc.asUploaded')}
         </span>
 
@@ -149,7 +149,7 @@ export const ImportedDocument = ({ documentId, source }: ImportedDocumentProps) 
           title={t('doc.openOriginal')}
           className={cn(
             'ui-btn ui-btn--secondary inline-flex h-6 shrink-0 items-center gap-1.5 rounded-lg',
-            'bg-surface-sunken px-2 text-[11px] text-content transition-colors hover:bg-edge/60',
+            'bg-surface-sunken px-2 text-2xs text-content transition-colors hover:bg-edge/60',
           )}
         >
           <ExternalLink className="h-3 w-3" />
@@ -165,7 +165,7 @@ export const ImportedDocument = ({ documentId, source }: ImportedDocumentProps) 
           costs one line and stops a reader hunting the toolbar for a pencil
           that is deliberately not drawn.
         */}
-        <span className="hidden items-center gap-1.5 text-[10px] leading-snug text-content-muted xl:inline-flex">
+        <span className="hidden items-center gap-1.5 text-3xs leading-snug text-content-muted xl:inline-flex">
           <Lock className="h-3 w-3 shrink-0 text-content-faint" />
           {t('doc.keptAsUploaded')}
         </span>

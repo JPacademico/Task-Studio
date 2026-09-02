@@ -110,7 +110,7 @@ const StatTile = ({
         )}
       >
         <div className="flex min-w-0 items-center gap-1.5 overflow-hidden">
-          <span className="truncate pl-0.5 text-[10px] uppercase tracking-wide text-content-faint">
+          <span className="truncate pl-0.5 text-3xs uppercase tracking-wide text-content-faint">
             {label}
           </span>
           {/*
@@ -180,7 +180,7 @@ const OrganizationTile = ({ organization }: { organization: Organization }) => {
         <span className="block truncate text-sm font-semibold transition-colors group-hover:text-brand">
           {organization.name}
         </span>
-        <span className="flex items-center gap-1.5 text-[11px] text-content-faint">
+        <span className="flex items-center gap-1.5 text-2xs text-content-faint">
           <Users className="h-3 w-3 shrink-0" />
           <span className="tabular-nums">{organization.memberCount}</span>
           <span aria-hidden>·</span>
@@ -439,7 +439,7 @@ const DashboardPage = () => {
             {/* The eyebrow over the title. Carved on the runic skin — the
                 heading underneath says the same thing in Latin, so nothing
                 is lost. */}
-            <p className="text-[10px] uppercase tracking-[0.18em] text-content-faint sm:text-xs">
+            <p className="text-3xs uppercase tracking-[0.18em] text-content-faint sm:text-xs">
               <RunicText mode="always">{t('dash.title')}</RunicText>
             </p>
             <Greeting name={firstName} />
@@ -464,7 +464,7 @@ const DashboardPage = () => {
           <div className="flex shrink-0 flex-wrap justify-start gap-2 lg:justify-end">
             {overviewLoading || !overview ? (
               Array.from({ length: 3 }, (_, index) => (
-                <Skeleton key={index} className="h-[58px] w-[104px] rounded-xl" />
+                <Skeleton key={index} className="h-[3.625rem] w-[6.5rem] rounded-xl" />
               ))
             ) : (
               <>
@@ -522,7 +522,7 @@ const DashboardPage = () => {
           {projectsLoading ? (
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {Array.from({ length: 4 }, (_, index) => (
-                <Skeleton key={index} className="h-[104px]" />
+                <Skeleton key={index} className="h-[6.5rem]" />
               ))}
             </div>
           ) : ordered.length === 0 ? (

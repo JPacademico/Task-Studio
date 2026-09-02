@@ -15,9 +15,9 @@ interface EdgeAffordanceProps {
 
 /** The strip that hugs the edge itself. */
 const RAIL: Record<NavEdge, string> = {
-  left: 'left-0 top-1/2 h-40 w-[10px] rounded-r-full',
-  right: 'right-0 top-1/2 h-40 w-[10px] rounded-l-full',
-  top: 'top-0 left-1/2 h-[10px] w-40 rounded-b-full',
+  left: 'left-0 top-1/2 h-40 w-[0.625rem] rounded-r-full',
+  right: 'right-0 top-1/2 h-40 w-[0.625rem] rounded-l-full',
+  top: 'top-0 left-1/2 h-[0.625rem] w-40 rounded-b-full',
 };
 
 /**
@@ -32,9 +32,9 @@ const RAIL: Record<NavEdge, string> = {
  * peripheral vision and stops well short of anything the user is reading.
  */
 const SWELL: Record<NavEdge, string> = {
-  left: 'left-0 top-1/2 h-52 w-[38px] rounded-r-[100%] origin-left',
-  right: 'right-0 top-1/2 h-52 w-[38px] rounded-l-[100%] origin-right',
-  top: 'top-0 left-1/2 h-[38px] w-52 rounded-b-[100%] origin-top',
+  left: 'left-0 top-1/2 h-52 w-[2.375rem] rounded-r-[100%] origin-left',
+  right: 'right-0 top-1/2 h-52 w-[2.375rem] rounded-l-[100%] origin-right',
+  top: 'top-0 left-1/2 h-[2.375rem] w-52 rounded-b-[100%] origin-top',
 };
 
 /**

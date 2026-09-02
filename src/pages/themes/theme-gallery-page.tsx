@@ -91,12 +91,12 @@ const GalleryCard = ({ skin, isActive, isSelected, isDark, onSelect }: GalleryCa
             <span className="flex items-center gap-1.5">
               <span className="truncate text-sm font-bold tracking-tight">{skin.name}</span>
               {isActive && (
-                <span className="shrink-0 rounded-full bg-positive/15 px-1.5 py-px text-[9px] font-bold uppercase tracking-wide text-positive">
+                <span className="shrink-0 rounded-full bg-positive/15 px-1.5 py-px text-4xs font-bold uppercase tracking-wide text-positive">
                   {t('themes.inUse')}
                 </span>
               )}
             </span>
-            <span className="mt-0.5 block truncate text-[11px] text-content-faint">
+            <span className="mt-0.5 block truncate text-2xs text-content-faint">
               {t(skin.tagline)}
             </span>
           </span>
@@ -157,7 +157,7 @@ const ThemeGalleryPage = () => {
   return (
     <div className="space-y-5 sm:space-y-7">
       <header className="space-y-1">
-        <p className="text-[10px] uppercase tracking-[0.18em] text-content-faint sm:text-xs">
+        <p className="text-3xs uppercase tracking-[0.18em] text-content-faint sm:text-xs">
           <RunicText mode="always">{t('settings.appearance')}</RunicText>
         </p>
         <h1 className="flex items-center gap-2.5 text-xl font-semibold tracking-tight sm:text-2xl">
@@ -195,7 +195,7 @@ const ThemeGalleryPage = () => {
               )}
             </label>
 
-            <span className="shrink-0 text-[11px] tabular-nums text-content-faint">
+            <span className="shrink-0 text-2xs tabular-nums text-content-faint">
               {results.length} of {SKIN_CATALOG.length}
             </span>
           </div>
@@ -294,7 +294,7 @@ const ThemeGalleryPage = () => {
         <aside className="order-1 lg:sticky lg:top-20 lg:order-2">
           <div className="panel overflow-hidden">
             <div className="flex items-center gap-2 border-b border-edge px-3.5 py-2.5">
-              <p className="flex-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-content-faint">
+              <p className="flex-1 text-3xs font-semibold uppercase tracking-[0.18em] text-content-faint">
                 {t('themes.preview')}
               </p>
 
@@ -311,7 +311,7 @@ const ThemeGalleryPage = () => {
                     onClick={() => setPreviewDark(option.value)}
                     aria-pressed={previewDark === option.value}
                     className={cn(
-                      'inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium transition-colors duration-150',
+                      'inline-flex items-center gap-1 rounded-md px-2 py-1 text-3xs font-medium transition-colors duration-150',
                       previewDark === option.value
                         ? 'bg-surface-raised text-content shadow-sm'
                         : 'text-content-muted hover:text-content',
@@ -341,7 +341,7 @@ const ThemeGalleryPage = () => {
               <div className="space-y-2.5 pt-3.5">
                 <div className="flex items-baseline gap-2">
                   <h2 className="text-base font-bold tracking-tight">{detail.name}</h2>
-                  <span className="truncate text-[11px] text-content-faint">
+                  <span className="truncate text-2xs text-content-faint">
                     {t(detail.tagline)}
                   </span>
                 </div>
@@ -372,7 +372,7 @@ const ThemeGalleryPage = () => {
                   )}
                 </Button>
 
-                <p className="text-center text-[10px] leading-relaxed text-content-faint">
+                <p className="text-center text-3xs leading-relaxed text-content-faint">
                   {t('themes.bothModes')}
                 </p>
               </div>

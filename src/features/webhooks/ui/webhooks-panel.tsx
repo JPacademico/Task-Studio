@@ -213,13 +213,13 @@ export const WebhooksPanel = ({ projectId, canManage, composeRequest }: Webhooks
     <section className="space-y-4">
       <header className="flex flex-wrap items-baseline gap-x-2">
         <h2 className="text-sm font-semibold tracking-tight">{t('webhooks.title')}</h2>
-        <p className="text-[11px] text-content-faint">{t('webhooks.subtitle')}</p>
+        <p className="text-2xs text-content-faint">{t('webhooks.subtitle')}</p>
       </header>
 
       {/* --- The signing secret, once ------------------------------------- */}
       {secret && (
         <div className="space-y-2 rounded-xl border border-brand/40 bg-brand/[0.06] p-3">
-          <p className="text-[11px] font-medium text-brand">{t('webhooks.secretNow')}</p>
+          <p className="text-2xs font-medium text-brand">{t('webhooks.secretNow')}</p>
 
           <div className="flex items-center gap-1.5">
             <input
@@ -227,20 +227,20 @@ export const WebhooksPanel = ({ projectId, canManage, composeRequest }: Webhooks
               value={secret}
               onFocus={(event) => event.currentTarget.select()}
               aria-label={t('webhooks.secretLabel')}
-              className="field h-8 flex-1 py-0 font-mono text-[10px]"
+              className="field h-8 flex-1 py-0 font-mono text-3xs"
             />
             <Button
               size="sm"
               variant={copied ? 'secondary' : 'primary'}
               onClick={() => void copySecret()}
-              className="h-8 shrink-0 gap-1.5 px-2.5 text-[11px]"
+              className="h-8 shrink-0 gap-1.5 px-2.5 text-2xs"
             >
               {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
               {t(copied ? 'webhooks.copied' : 'webhooks.copy')}
             </Button>
           </div>
 
-          <p className="text-[10px] leading-relaxed text-content-muted">
+          <p className="text-3xs leading-relaxed text-content-muted">
             {t('webhooks.secretExplain')}
           </p>
 
@@ -248,7 +248,7 @@ export const WebhooksPanel = ({ projectId, canManage, composeRequest }: Webhooks
             size="sm"
             variant="ghost"
             onClick={() => setSecret(null)}
-            className="h-6 px-2 text-[10px]"
+            className="h-6 px-2 text-3xs"
           >
             {t('webhooks.dismissSecret')}
           </Button>
@@ -299,12 +299,12 @@ export const WebhooksPanel = ({ projectId, canManage, composeRequest }: Webhooks
             autoFocus
           />
 
-          <p className="text-[11px] leading-relaxed text-content-muted">
+          <p className="text-2xs leading-relaxed text-content-muted">
             {t('webhooks.urlHint')}
           </p>
 
           <div className="space-y-1.5">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+            <p className="text-3xs font-semibold uppercase tracking-[0.14em] text-content-faint">
               {t('webhooks.eventsTitle')}
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -317,7 +317,7 @@ export const WebhooksPanel = ({ projectId, canManage, composeRequest }: Webhooks
                     onClick={() => toggleEvent(event)}
                     aria-pressed={on}
                     className={cn(
-                      'rounded-full border px-2.5 py-1 text-[10px] transition-colors',
+                      'rounded-full border px-2.5 py-1 text-3xs transition-colors',
                       on
                         ? 'border-brand bg-brand/12 text-brand'
                         : 'border-edge text-content-muted hover:text-content',
@@ -331,7 +331,7 @@ export const WebhooksPanel = ({ projectId, canManage, composeRequest }: Webhooks
             {/* Empty means everything, which is the API's default and what
                 most people want from a notification hook. Said here so an
                 untouched selection does not read as "nothing selected". */}
-            <p className="text-[10px] text-content-faint">
+            <p className="text-3xs text-content-faint">
               {events.length === 0 ? t('webhooks.allEvents') : t('webhooks.someEvents')}
             </p>
           </div>
@@ -408,11 +408,11 @@ const WebhookRow = ({ hook, onToggle, onTest, isTesting, onRemove }: WebhookRowP
         <div className="min-w-0 flex-1 leading-tight">
           <p className="flex items-center gap-1.5 truncate text-xs font-semibold">
             <span className="truncate">{host}</span>
-            <span className="shrink-0 rounded-full border border-edge px-1.5 text-[9px] uppercase tracking-wider text-content-faint">
+            <span className="shrink-0 rounded-full border border-edge px-1.5 text-4xs uppercase tracking-wider text-content-faint">
               {t(FLAVOUR_LABEL[hook.flavour])}
             </span>
           </p>
-          <p className="mt-0.5 text-[10px] text-content-faint">
+          <p className="mt-0.5 text-3xs text-content-faint">
             {hook.events.length === 0
               ? t('webhooks.allEvents')
               : hook.events.map((event) => t(EVENT_LABEL[event])).join(' · ')}
@@ -432,7 +432,7 @@ const WebhookRow = ({ hook, onToggle, onTest, isTesting, onRemove }: WebhookRowP
       {(hook.lastAttemptAt || hook.lastError) && (
         <p
           className={cn(
-            'flex items-start gap-1.5 rounded-lg px-2.5 py-1.5 text-[10px] leading-snug',
+            'flex items-start gap-1.5 rounded-lg px-2.5 py-1.5 text-3xs leading-snug',
             failing ? 'bg-warning/10 text-warning' : 'bg-surface-sunken text-content-faint',
           )}
         >
@@ -453,7 +453,7 @@ const WebhookRow = ({ hook, onToggle, onTest, isTesting, onRemove }: WebhookRowP
           variant="ghost"
           onClick={onTest}
           isLoading={isTesting}
-          className="h-6 gap-1 px-2 text-[10px]"
+          className="h-6 gap-1 px-2 text-3xs"
         >
           <Send className="h-3 w-3" />
           {t('webhooks.test')}
@@ -465,7 +465,7 @@ const WebhookRow = ({ hook, onToggle, onTest, isTesting, onRemove }: WebhookRowP
               size="sm"
               variant="danger"
               onClick={onRemove}
-              className="h-6 px-2 text-[10px]"
+              className="h-6 px-2 text-3xs"
             >
               {t('webhooks.removeConfirm')}
             </Button>
@@ -473,7 +473,7 @@ const WebhookRow = ({ hook, onToggle, onTest, isTesting, onRemove }: WebhookRowP
               size="sm"
               variant="ghost"
               onClick={() => setIsConfirmingRemove(false)}
-              className="h-6 px-2 text-[10px]"
+              className="h-6 px-2 text-3xs"
             >
               {t('common.cancel')}
             </Button>
@@ -483,7 +483,7 @@ const WebhookRow = ({ hook, onToggle, onTest, isTesting, onRemove }: WebhookRowP
             size="sm"
             variant="ghost"
             onClick={() => setIsConfirmingRemove(true)}
-            className="ml-auto h-6 px-2 text-[10px] text-danger hover:text-danger"
+            className="ml-auto h-6 px-2 text-3xs text-danger hover:text-danger"
           >
             {t('webhooks.remove')}
           </Button>

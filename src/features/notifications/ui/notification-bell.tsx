@@ -68,7 +68,7 @@ export const NotificationBell = () => {
           <motion.span
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-danger px-1 text-[10px] font-bold text-white"
+            className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-danger px-1 text-3xs font-bold text-white"
           >
             {unread > 9 ? '9+' : unread}
           </motion.span>
@@ -84,7 +84,7 @@ export const NotificationBell = () => {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -6, scale: 0.98 }}
               transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-              className="gpu panel absolute right-0 top-11 z-50 w-[340px] overflow-hidden"
+              className="gpu panel absolute right-0 top-11 z-50 w-[21.25rem] overflow-hidden"
             >
               <header className="flex items-center justify-between border-b border-edge px-4 py-3">
                 <p className="text-sm font-semibold">{t('nav.notifications')}</p>
@@ -107,7 +107,7 @@ export const NotificationBell = () => {
                   Renders nothing at all once answered. See `NotificationOptIn`. */}
               <NotificationOptIn />
 
-              <div className="scrollbar-thin max-h-[380px] overflow-y-auto">
+              <div className="scrollbar-thin max-h-[23.75rem] overflow-y-auto">
                 {isLoading && (
                   <p className="px-4 py-6 text-center text-xs text-content-faint">{t('common.loading')}</p>
                 )}
@@ -172,16 +172,16 @@ export const NotificationBell = () => {
                           {notification.title}
                         </span>
                         {body && (
-                          <span className="block text-[11px] text-content-muted">
+                          <span className="block text-2xs text-content-muted">
                             {body}
                           </span>
                         )}
                         {deadline && (
-                          <span className="block text-[11px] font-medium text-warning">
+                          <span className="block text-2xs font-medium text-warning">
                             {deadline}
                           </span>
                         )}
-                        <span className="block text-[10px] uppercase tracking-wide text-content-faint">
+                        <span className="block text-3xs uppercase tracking-wide text-content-faint">
                           {formatRelative(notification.createdAt)}
                         </span>
                       </span>

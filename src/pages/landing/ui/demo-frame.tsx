@@ -128,7 +128,7 @@ export const DemoFrame = ({
     <div className="relative">
       <span
         aria-hidden
-        className="absolute -top-[26px] left-5 rounded-t-lg border border-b-0 border-edge bg-surface-raised px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint"
+        className="absolute -top-[26px] left-5 rounded-t-lg border border-b-0 border-edge bg-surface-raised px-3 py-1 text-3xs font-semibold uppercase tracking-[0.14em] text-content-faint"
       >
         {tab}
       </span>

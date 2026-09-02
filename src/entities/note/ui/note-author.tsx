@@ -61,7 +61,7 @@ export const NoteAuthorStamp = ({
           name={author.displayName}
           src={author.avatarUrl}
           size="xs"
-          className="h-[18px] w-[18px] text-[9px] opacity-70 ring-1 ring-black/20 transition-opacity duration-150 group-hover/stamp:opacity-100"
+          className="h-[1.125rem] w-[1.125rem] text-4xs opacity-70 ring-1 ring-black/20 transition-opacity duration-150 group-hover/stamp:opacity-100"
         />
       </button>
 
@@ -70,7 +70,7 @@ export const NoteAuthorStamp = ({
       <span
         aria-hidden
         className={cn(
-          'pointer-events-none absolute bottom-full right-0 mb-1.5 flex w-max max-w-[190px] translate-y-1 flex-col gap-0.5',
+          'pointer-events-none absolute bottom-full right-0 mb-1.5 flex w-max max-w-[11.875rem] translate-y-1 flex-col gap-0.5',
           'rounded-lg border border-edge bg-surface-raised px-2 py-1.5 text-left shadow-panel',
           'opacity-0 transition-[opacity,transform] duration-150 ease-studio',
           'group-hover/stamp:translate-y-0 group-hover/stamp:opacity-100',
@@ -82,13 +82,13 @@ export const NoteAuthorStamp = ({
             name={author.displayName}
             src={author.avatarUrl}
             size="xs"
-            className="h-4 w-4 text-[8px] ring-0"
+            className="h-4 w-4 text-5xs ring-0"
           />
-          <span className="truncate text-[11px] font-semibold text-content">{label}</span>
+          <span className="truncate text-2xs font-semibold text-content">{label}</span>
         </span>
-        <span className="truncate text-[10px] text-content-faint">{author.email}</span>
+        <span className="truncate text-3xs text-content-faint">{author.email}</span>
         {createdAt && (
-          <span className="text-[10px] text-content-muted">Added {formatRelative(createdAt)}</span>
+          <span className="text-3xs text-content-muted">Added {formatRelative(createdAt)}</span>
         )}
       </span>
     </span>

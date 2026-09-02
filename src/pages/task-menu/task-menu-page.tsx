@@ -122,7 +122,7 @@ const TaskMenuPage = () => {
       <header className="space-y-3">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="space-y-0.5 sm:space-y-1">
-            <p className="text-[10px] uppercase tracking-[0.18em] text-content-faint sm:text-xs">
+            <p className="text-3xs uppercase tracking-[0.18em] text-content-faint sm:text-xs">
               <RunicText mode="always">{t('agenda.title')}</RunicText>
             </p>
             <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
@@ -151,7 +151,7 @@ const TaskMenuPage = () => {
           {/* Refetching keeps the current rows on screen, so the only honest
               place to say a request is in flight is here. */}
           {isFetching && !isLoading && (
-            <span className="text-[11px] text-content-faint">{t('common.loading')}</span>
+            <span className="text-2xs text-content-faint">{t('common.loading')}</span>
           )}
           <LayoutSwitcher
             value={layout}
@@ -162,7 +162,7 @@ const TaskMenuPage = () => {
         </div>
 
         {showingCompleted && (
-          <p className="inline-flex items-center gap-1.5 rounded-lg bg-positive/10 px-2.5 py-1 text-[11px] text-positive">
+          <p className="inline-flex items-center gap-1.5 rounded-lg bg-positive/10 px-2.5 py-1 text-2xs text-positive">
             <CheckCircle2 className="h-3 w-3" />
             {t('agenda.showingCompleted')}
           </p>
@@ -256,7 +256,7 @@ const TaskMenuPage = () => {
                   {formatDayLabel(date)}
                 </h2>
                 <span className="h-px flex-1 bg-edge" />
-                <span className="text-[11px] text-content-faint">
+                <span className="text-2xs text-content-faint">
                   {t('views.taskCount', { count: tasks.length })}
                 </span>
               </header>
@@ -266,7 +266,7 @@ const TaskMenuPage = () => {
                   <li key={task.id} className="flex gap-2 sm:gap-3">
                     {/* Hour rail — the spine of the chronological view. */}
                     <div className="flex w-10 shrink-0 flex-col items-end pt-4 sm:w-14">
-                      <span className="inline-flex items-center gap-1 text-[10px] tabular-nums text-content-faint sm:text-[11px]">
+                      <span className="inline-flex items-center gap-1 text-3xs tabular-nums text-content-faint sm:text-2xs">
                         <Clock className="hidden h-3 w-3 sm:block" />
                         {task.dueAt ? formatTime(task.dueAt) : '--:--'}
                       </span>

@@ -87,7 +87,7 @@ export const TaskSprintView = ({
           <span className="shrink-0 text-xs font-semibold tabular-nums">{progress}%</span>
         </span>
 
-        <span className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-content-muted">
+        <span className="flex flex-wrap items-center gap-x-4 gap-y-1 text-2xs text-content-muted">
           <span className="inline-flex items-center gap-1.5">
             <CheckCircle2 className="h-3 w-3 text-positive" />
             {stats.done}/{stats.total} done
@@ -135,7 +135,7 @@ export const TaskSprintView = ({
                 {lane.priority === 'URGENT' && <Flame className="h-3.5 w-3.5" />}
                 {t(meta.label)}
               </span>
-              <span className="text-[11px] tabular-nums text-content-faint">
+              <span className="text-2xs tabular-nums text-content-faint">
                 {lane.total} task(s)
               </span>
             </header>
@@ -144,7 +144,7 @@ export const TaskSprintView = ({
               <div key={column.status} className="flex flex-col gap-2">
                 {/* The column name repeats per lane on narrow screens, where the
                     shared heading row above is not rendered. */}
-                <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-content-faint lg:hidden">
+                <span className="inline-flex items-center gap-1.5 text-3xs font-semibold uppercase tracking-wide text-content-faint lg:hidden">
                   <span
                     className={cn('h-1 w-1 rounded-full', TASK_STATUS_META[column.status].dot)}
                   />
@@ -167,7 +167,7 @@ export const TaskSprintView = ({
                 ))}
 
                 {column.items.length === 0 && (
-                  <span className="rounded-xl border border-dashed border-edge/70 px-2 py-3 text-center text-[10px] text-content-faint">
+                  <span className="rounded-xl border border-dashed border-edge/70 px-2 py-3 text-center text-3xs text-content-faint">
                     —
                   </span>
                 )}

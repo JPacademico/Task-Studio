@@ -58,7 +58,7 @@ export const BoardPager = ({
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      <span className="mr-1 inline-flex items-center gap-1.5 text-[11px] text-content-faint">
+      <span className="mr-1 inline-flex items-center gap-1.5 text-2xs text-content-faint">
         <PageStack className="h-3.5 w-3.5" />
         {pages.length}/{MAX_BOARD_PAGES}
       </span>

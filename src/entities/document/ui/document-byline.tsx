@@ -72,7 +72,7 @@ export const DocumentByline = ({
     Boolean(updatedBy) && Boolean(updatedAt) && updatedAt !== createdAt;
 
   return (
-    <span className={cn('inline-flex items-center gap-1.5 text-[10px]', className)}>
+    <span className={cn('inline-flex items-center gap-1.5 text-3xs', className)}>
       <span
         title={t('common.createdByWithEmail', {
           name: createdBy.displayName,
@@ -85,7 +85,7 @@ export const DocumentByline = ({
           name={createdBy.displayName}
           src={createdBy.avatarUrl}
           size="xs"
-          className="h-4 w-4 text-[8px]"
+          className="h-4 w-4 text-5xs"
         />
         <span className="max-w-[9rem] truncate font-medium text-content-muted">
           {nameFor(createdBy, currentUserId)}
@@ -143,7 +143,7 @@ export const DocumentCreatorStamp = ({
         name: createdBy.displayName,
         date: formatDateTime(createdAt),
       })}
-      className={cn('h-4 w-4 text-[8px] opacity-80', className)}
+      className={cn('h-4 w-4 text-5xs opacity-80', className)}
     />
   );
 };

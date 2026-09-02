@@ -201,12 +201,12 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
                         <span className="block truncate text-xs font-semibold">
                           {entry.title}
                         </span>
-                        <span className="block truncate text-[10px] text-content-faint">
+                        <span className="block truncate text-3xs text-content-faint">
                           {entry.excerpt || t('doc.emptyPage')}
                         </span>
                       </span>
 
-                      <span className="inline-flex shrink-0 items-center gap-1 text-[10px] font-semibold text-content-faint transition-colors group-hover/doc:text-brand">
+                      <span className="inline-flex shrink-0 items-center gap-1 text-3xs font-semibold text-content-faint transition-colors group-hover/doc:text-brand">
                         {t('doc.openOnTextBoard')}
                         <ArrowUpRight className="h-3 w-3" />
                       </span>
@@ -228,7 +228,7 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
             still carries the full, spelled-out timestamp as its tooltip, so
             nothing is actually lost.
           */}
-          <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+          <div className="flex flex-wrap items-center gap-1.5 text-2xs">
             <span
               title={t('common.createdBy', {
                 name: task.createdBy.displayName,
@@ -319,12 +319,12 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
                     </span>
 
                     {assignee.completedAt ? (
-                      <span className="inline-flex shrink-0 items-center gap-1 text-[10px] font-semibold text-positive">
+                      <span className="inline-flex shrink-0 items-center gap-1 text-3xs font-semibold text-positive">
                         <Check className="h-3 w-3" strokeWidth={3} />
                         Done
                       </span>
                     ) : (
-                      <span className="shrink-0 text-[10px] text-content-faint">{t('task.waiting')}</span>
+                      <span className="shrink-0 text-3xs text-content-faint">{t('task.waiting')}</span>
                     )}
                   </li>
                 ))}

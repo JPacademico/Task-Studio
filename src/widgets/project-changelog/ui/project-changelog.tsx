@@ -247,8 +247,8 @@ export const ProjectChangelog = ({ projectId }: ProjectChangelogProps) => {
     <section className="space-y-4">
       <header className="flex flex-wrap items-baseline gap-x-2">
         <h2 className="text-sm font-semibold tracking-tight">{t('activity.title')}</h2>
-        <p className="text-[11px] text-content-faint">{t('activity.subtitle')}</p>
-        <span className="ml-auto text-[11px] tabular-nums text-content-faint">
+        <p className="text-2xs text-content-faint">{t('activity.subtitle')}</p>
+        <span className="ml-auto text-2xs tabular-nums text-content-faint">
           {t('activity.entryCount', { count: String(total) })}
         </span>
       </header>
@@ -262,7 +262,7 @@ export const ProjectChangelog = ({ projectId }: ProjectChangelogProps) => {
               they came for. `z-10` clears the rail beneath it and nothing
               else on this tab is layered.
             */}
-            <p className="sticky top-0 z-10 -mx-1 mb-2 bg-surface/85 px-1 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-content-faint backdrop-blur">
+            <p className="sticky top-0 z-10 -mx-1 mb-2 bg-surface/85 px-1 py-1 text-3xs font-semibold uppercase tracking-[0.16em] text-content-faint backdrop-blur">
               {day.label}
             </p>
 
@@ -371,7 +371,7 @@ const ChangelogRow = ({
       <span
         aria-hidden
         className={cn(
-          'relative z-[1] mt-0.5 grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full',
+          'relative z-[1] mt-0.5 grid h-[1.875rem] w-[1.875rem] shrink-0 place-items-center rounded-full',
           'border border-edge bg-surface-raised',
           tone,
         )}
@@ -383,7 +383,7 @@ const ChangelogRow = ({
         <span className={cn('text-xs text-content', isReverted && 'line-through')}>
           {t(SENTENCE[entry.type], values)}
         </span>
-        <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-content-faint">
+        <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-3xs text-content-faint">
           {entry.actor && (
             <Avatar
               name={entry.actor.displayName}
@@ -436,7 +436,7 @@ const ChangelogRow = ({
                 variant="danger"
                 onClick={onRevert}
                 isLoading={isReverting}
-                className="h-6 px-2 text-[10px]"
+                className="h-6 px-2 text-3xs"
               >
                 {t('activity.revertConfirm')}
               </Button>
@@ -444,7 +444,7 @@ const ChangelogRow = ({
                 size="sm"
                 variant="ghost"
                 onClick={onDisarm}
-                className="h-6 px-2 text-[10px]"
+                className="h-6 px-2 text-3xs"
               >
                 {t('common.cancel')}
               </Button>
@@ -455,7 +455,7 @@ const ChangelogRow = ({
               variant="ghost"
               onClick={onArm}
               title={t('activity.revertHint')}
-              className="h-6 gap-1 px-2 text-[10px]"
+              className="h-6 gap-1 px-2 text-3xs"
             >
               <Undo2 className="h-3 w-3" />
               {t('activity.revert')}

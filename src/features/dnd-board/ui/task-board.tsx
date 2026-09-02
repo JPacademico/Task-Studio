@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -16,6 +16,12 @@ import { Lock } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { TaskCard } from '@/entities/task/ui/task-card';
+import {
+  ColumnOverflow,
+  ColumnOverflowToggle,
+  byDeadline,
+  useColumnCapacity,
+} from './column-overflow';
 import type { Task, TaskStatus } from '@/entities/task/model/types';
 import { TASK_STATUS_META } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
@@ -136,7 +142,7 @@ const Column = ({
         'flex flex-col gap-2.5 rounded-2xl border p-2.5 transition-colors duration-150',
         // On a phone the columns sit in a snapping horizontal strip, so all
         // three are one swipe apart instead of three screens of scrolling.
-        'w-[82vw] shrink-0 snap-start sm:w-auto sm:shrink lg:min-h-[220px] lg:p-3',
+        'w-[82vw] shrink-0 snap-start sm:w-auto sm:shrink lg:min-h-[13.75rem] lg:p-3',
         // A column that will refuse the card says so *before* the drop, rather
         // than accepting it and having the server take it back a moment later.
         isBlocked
@@ -209,16 +215,42 @@ export const TaskBoard = ({
     useSensor(TouchSensor, { activationConstraint: { delay: 160, tolerance: 8 } }),
   );
 
+  /*
+   * Grouped, and sorted by deadline within each column.
+   *
+   * The sort is not cosmetic now that columns are capped: it decides *which*
+   * cards survive the cap, and the four a reader sees have to be the four that
+   * matter. See `byDeadline`.
+   */
   const grouped = useMemo(
     () =>
       COLUMNS.reduce<Record<TaskStatus, Task[]>>(
         (accumulator, status) => {
-          accumulator[status] = tasks.filter((task) => task.status === status);
+          accumulator[status] = tasks
+            .filter((task) => task.status === status)
+            .sort(byDeadline);
           return accumulator;
         },
         { TODO: [], IN_PROGRESS: [], COMPLETED: [] },
       ),
     [tasks],
+  );
+
+  /*
+   * How many cards fit before a column starts scrolling, and which columns the
+   * reader has opened past that.
+   *
+   * Keyed by status rather than a single boolean, because opening To do says
+   * nothing about wanting Completed opened as well — and Completed is the
+   * column most likely to be long and least likely to be worth reading.
+   */
+  const capacity = useColumnCapacity();
+  const [opened, setOpened] = useState<Partial<Record<TaskStatus, boolean>>>({});
+
+  const toggleColumn = useCallback(
+    (status: TaskStatus) =>
+      setOpened((current) => ({ ...current, [status]: !current[status] })),
+    [],
   );
 
   const activeTask = tasks.find((task) => task.id === activeId) ?? null;
@@ -282,7 +314,31 @@ export const TaskBoard = ({
             {/* See `TaskCard`: no entrance, no exit, nothing to track — and
                 on a drag board the wrapper competed with dnd-kit's own
                 transforms for the card that was moving. */}
-            {grouped[status].map((task) => (
+            {grouped[status].slice(0, capacity).map((task) => (
+              <DraggableTask
+                key={task.id}
+                task={task}
+                isLocked={Boolean(canChangeStatus) && !canChangeStatus?.(task)}
+              >
+                <TaskCard
+                  task={task}
+                  onOpen={onOpen}
+                  onToggleComplete={onToggleComplete}
+                  onTogglePin={onTogglePin}
+                  onDelete={onDelete}
+                />
+              </DraggableTask>
+            ))}
+
+            {/*
+              Everything past the cap, folded away until it is asked for.
+
+              Rendered inside the same droppable column, so a card can still be
+              dropped into a collapsed To do — the column is capped for
+              *reading*, and closing it must not close it for arranging.
+            */}
+            <ColumnOverflow isOpen={Boolean(opened[status])}>
+              {grouped[status].slice(capacity).map((task) => (
                 <DraggableTask
                   key={task.id}
                   task={task}
@@ -296,7 +352,16 @@ export const TaskBoard = ({
                     onDelete={onDelete}
                   />
                 </DraggableTask>
-            ))}
+              ))}
+            </ColumnOverflow>
+
+            {grouped[status].length > capacity && (
+              <ColumnOverflowToggle
+                hidden={grouped[status].length - capacity}
+                isOpen={Boolean(opened[status])}
+                onToggle={() => toggleColumn(status)}
+              />
+            )}
 
             {/*
               Loading happens *in* the column, not under the board.
@@ -308,7 +373,7 @@ export const TaskBoard = ({
               column it will land in is the whole affordance.
             */}
             {Array.from({ length: pendingPerColumn }, (_, index) => (
-              <Skeleton key={`pending-${index}`} className="h-[104px] shrink-0 rounded-2xl" />
+              <Skeleton key={`pending-${index}`} className="h-[6.5rem] shrink-0 rounded-2xl" />
             ))}
 
             {/* "Nothing here" is a claim, and it cannot be made while cards
@@ -326,7 +391,7 @@ export const TaskBoard = ({
 
       {/* Overlay follows the pointer so the original card can stay in place. */}
       <DragOverlay dropAnimation={{ duration: 200, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' }}>
-        {activeTask && <TaskCard task={activeTask} isDragging className="w-[320px] rotate-1" />}
+        {activeTask && <TaskCard task={activeTask} isDragging className="w-[20rem] rotate-1" />}
       </DragOverlay>
     </DndContext>
   );

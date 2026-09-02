@@ -35,7 +35,7 @@ export const TearOffGhost = ({ point, label, icon: Icon, color }: TearOffGhostPr
         <span className="max-w-[9rem] truncate text-xs font-semibold">{label}</span>
       </div>
 
-      <p className="mt-1.5 flex items-center justify-center gap-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-brand">
+      <p className="mt-1.5 flex items-center justify-center gap-1 text-3xs font-semibold uppercase tracking-[0.14em] text-brand">
         <Pin className="h-2.5 w-2.5" />
         Drop to pin
       </p>

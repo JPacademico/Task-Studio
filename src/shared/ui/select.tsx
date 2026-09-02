@@ -314,7 +314,7 @@ export const Select = <T extends string>({
                             {option.label}
                           </span>
                           {option.hint && (
-                            <span className="block truncate text-[10px] text-content-faint">
+                            <span className="block truncate text-3xs text-content-faint">
                               {option.hint}
                             </span>
                           )}

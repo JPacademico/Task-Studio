@@ -158,7 +158,7 @@ const OrganizationPage = () => {
             </span>
 
             <div className="min-w-0 space-y-0.5 sm:space-y-1">
-              <p className="flex flex-wrap items-center gap-x-1.5 text-[10px] uppercase tracking-[0.18em] text-content-faint sm:text-xs">
+              <p className="flex flex-wrap items-center gap-x-1.5 text-3xs uppercase tracking-[0.18em] text-content-faint sm:text-xs">
                 <Link to="/organizations" className="transition-colors hover:text-content">
                   {t('org.title')}
                 </Link>

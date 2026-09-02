@@ -174,10 +174,10 @@ export const RosterPanel = ({ projectId, canManage, isOwner = false }: RosterPan
                       {member.displayName}
                       {ROLE_ICON[member.role]}
                       {member.id === currentUser?.id && (
-                        <span className="text-[10px] text-content-faint">{t('roster.you')}</span>
+                        <span className="text-3xs text-content-faint">{t('roster.you')}</span>
                       )}
                     </p>
-                    <p className="truncate text-[11px] text-content-faint">{member.email}</p>
+                    <p className="truncate text-2xs text-content-faint">{member.email}</p>
                   </div>
 
                   {/*
@@ -283,7 +283,7 @@ export const RosterPanel = ({ projectId, canManage, isOwner = false }: RosterPan
                 <Mail className="h-4 w-4 shrink-0 text-content-faint" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm">{invitation.recipient.displayName}</p>
-                  <p className="text-[11px] text-content-faint">
+                  <p className="text-2xs text-content-faint">
                     {t('roster.invitedRelative')} {formatRelative(invitation.createdAt)}
                   </p>
                 </div>
@@ -352,7 +352,7 @@ export const RosterPanel = ({ projectId, canManage, isOwner = false }: RosterPan
                   <Avatar name={candidate.displayName} src={candidate.avatarUrl} size="xs" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-xs font-medium">{candidate.displayName}</p>
-                    <p className="truncate text-[11px] text-content-faint">{candidate.email}</p>
+                    <p className="truncate text-2xs text-content-faint">{candidate.email}</p>
                   </div>
                   <Button
                     size="sm"

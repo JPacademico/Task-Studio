@@ -116,7 +116,7 @@ export const FileAttachmentField = ({
         </label>
       )}
 
-      <p className="text-[11px] leading-relaxed text-content-faint">{t('file.hint')}</p>
+      <p className="text-2xs leading-relaxed text-content-faint">{t('file.hint')}</p>
     </div>
   );
 };
@@ -153,7 +153,7 @@ export const FileAttachmentRow = ({ file, onRemove, removeLabel }: FileAttachmen
       <span className="block truncate text-xs font-semibold" title={file.name}>
         {file.name}
       </span>
-      <span className="text-[10px] uppercase tracking-wide text-content-faint">
+      <span className="text-3xs uppercase tracking-wide text-content-faint">
         {extensionOf(file.name)} · {formatFileSize(file.size)}
       </span>
     </span>

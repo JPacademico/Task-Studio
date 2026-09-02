@@ -125,7 +125,7 @@ export const AppLayout = () => {
         <main
           className={cn(
             // Tighter on phones so more of the page fits before the first scroll.
-            'mx-auto w-full max-w-[1400px] px-3 pb-16 sm:px-6 sm:pb-24 lg:px-10',
+            'mx-auto w-full max-w-[87.5rem] px-3 pb-16 sm:px-6 sm:pb-24 lg:px-10',
             // The bar is always on for touch, so the gutter is only needed there
             // — or when the user has pinned it open on desktop.
             // The bar is `3.5rem` plus whatever the notch takes, so the

@@ -97,7 +97,7 @@ export const TopNavigation = ({ onOpenMobileMenu, onCreateProject }: TopNavigati
         <span
           title={isConnected ? t('nav.realtimeConnected') : t('nav.realtimeOffline')}
           className={cn(
-            'ml-1 hidden items-center gap-1.5 rounded-full border border-edge px-2 py-1 text-[10px] sm:inline-flex',
+            'ml-1 hidden items-center gap-1.5 rounded-full border border-edge px-2 py-1 text-3xs sm:inline-flex',
             isConnected ? 'text-positive' : 'text-content-faint',
           )}
         >
@@ -146,7 +146,7 @@ export const TopNavigation = ({ onOpenMobileMenu, onCreateProject }: TopNavigati
                 >
                   <div className="border-b border-edge px-3 py-2.5">
                     <p className="truncate text-sm font-medium">{user?.displayName}</p>
-                    <p className="truncate text-[11px] text-content-faint">{user?.email}</p>
+                    <p className="truncate text-2xs text-content-faint">{user?.email}</p>
                   </div>
 
                   <Link

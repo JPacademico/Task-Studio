@@ -543,6 +543,9 @@ const en = {
   'github.overviewTitle': 'What would be imported',
   'github.overviewBack': 'Look up another',
 
+  'landing.nav.docs': 'Docs',
+  'docs.contents': 'Contents',
+  'docs.backHome': 'Back to the front page',
   'landing.nav.skip': 'Skip to content',
   'landing.nav.how': 'How it works',
   'landing.nav.connects': 'Connections',
@@ -578,10 +581,64 @@ const en = {
   'landing.hero.secondary': 'See it working',
   'landing.hero.reassurance': 'No card. Bring a GitHub repository or a board export and start with real work in it.',
 
-  'landing.how.title': 'Three things, actually working',
-  'landing.how.body':
-    'Not screenshots. These are the real interfaces, running — the same components, the same steps, in whichever theme you have chosen.',
 
+  // --- The feature carousel ----------------------------------------------
+  'landing.how.page': 'Page {page} of {total}',
+  'landing.how.goToPage': 'Go to page {page}',
+  'landing.how.previous': 'Previous features',
+  'landing.how.next': 'More features',
+
+  'landing.demo.notesTab': 'Notes wall',
+  'landing.demo.notesTitle': 'Stick it on the wall and tie it to the rest',
+  'landing.demo.notesBody':
+    'A canvas, not a column. Post-its go anywhere, get grouped, and connect to each other with string — because a thought about two things is not a row in a list.',
+  'landing.notes.one': 'Pricing needs a decision',
+  'landing.notes.two': 'Ask Bruno about the invoice',
+  'landing.notes.three': 'Blocked on the contract',
+
+  'landing.demo.meetTab': 'Meetings',
+  'landing.demo.meetTitle': 'Book the room here, see it on your phone',
+  'landing.demo.meetBody':
+    'Two-way sync with a calendar Task Studio creates itself. It cannot read your existing appointments and cannot touch them — the grant is that narrow on purpose.',
+  'landing.meet.here': 'Task Studio',
+  'landing.meet.there': 'Your calendar',
+  'landing.meet.title': 'Billing review',
+  'landing.meet.when': 'Thursday, 15:00',
+  'landing.meet.onPhone': 'On every device',
+
+  'landing.demo.pagesTab': 'Pages',
+  'landing.demo.pagesTitle': 'Write it down where the work is',
+  'landing.demo.pagesBody':
+    'A brief, a spec, minutes from the meeting it hangs off. Typed here, or brought in as a PDF or Word file and kept exactly as it was — never rewritten.',
+  'landing.pages.title': 'Billing rewrite — brief',
+  'landing.pages.saved': 'Saved',
+  'landing.pages.hint': 'Or drop in a PDF and it stays exactly as it is.',
+
+  'landing.demo.undoTab': 'Changelog',
+  'landing.demo.undoTitle': 'Every change, and a way back from it',
+  'landing.demo.undoBody':
+    'The log is not a receipt. Most lines in it can be pressed, and the thing that happened un-happens — for thirty days, on the surface where you noticed.',
+  'landing.undo.task': 'Ship the billing page',
+  'landing.undo.log': 'Changelog',
+  'landing.undo.deleted': 'Ana moved a task to the bin',
+  'landing.undo.restored': 'Ana moved a task to the bin',
+  'landing.undo.button': 'Undo',
+  'landing.undo.done': 'Undone',
+
+  'landing.demo.commitTab': 'Your editor',
+  'landing.demo.commitTitle': 'Commit as usual, and the board keeps up',
+  'landing.demo.commitBody':
+    'A hook reads the commit against the task on its branch and closes it when it plainly finishes the work. No diff leaves your machine — a message and the file names, nothing else.',
+  'landing.commit.checking': 'taskstudio: reading the commit…',
+  'landing.commit.task': 'Rate limit the import routes',
+  'landing.commit.branch': 'on fix/import-rate-limit',
+  'landing.commit.closed': 'Task closed.',
+
+  'landing.demo.drawTab': 'Whiteboard',
+  'landing.demo.drawTitle': 'Draw the thing you cannot describe',
+  'landing.demo.drawBody':
+    'A pen, a rubber and a nib you can see the size of, on the same surface as the notes — so the sketch and the sticky note about it live together.',
+  'landing.draw.hint': 'Pen, rubber, and notes on the same surface.',
   'landing.demo.boardTab': 'Board',
   'landing.demo.boardTitle': 'Pick a task up and put it where it belongs',
   'landing.demo.boardBody':
@@ -645,8 +702,6 @@ const en = {
   'landing.svc.webhooksWhat': 'Signed events, and tokens for your scripts',
 
   'landing.inside.title': 'A studio, not a spreadsheet',
-  'landing.inside.body':
-    'Six things worth knowing before you sign up. All of them are in the free tier, because there is only one tier.',
 
   'landing.note.boards': 'Two boards, one set of tasks',
   'landing.note.boardsBody':
@@ -858,8 +913,9 @@ const en = {
   'ai.taskIdeas': 'Task ideas',
   'ai.taskIdeasBody':
     "Gemini reads the project's description and board, then proposes what could come next.",
+  'ai.decideFirstHint':
+    'Accept or dismiss what is already proposed before asking for more.',
   'ai.suggestTasks': 'Suggest tasks',
-  'ai.suggestAgain': 'Suggest again',
   'ai.noIdeas': 'No suggestions yet',
   'ai.noIdeasBody': 'Ask for a few ideas and accept the ones that fit.',
   'ai.accept': 'Accept',
@@ -1122,6 +1178,8 @@ const en = {
   'notes.unpinNote': 'Unpin note',
   'notes.pinNote': 'Pin note',
 
+  'board.showAllCount': 'Show all · {count} more',
+  'board.showFewer': 'Show fewer',
   'board.nothingHere': 'Nothing here',
   'board.dropHere': 'Drop a task in this column.',
   'doc.createFailed': 'Could not create the document.',
@@ -2463,6 +2521,9 @@ const ptBR: Record<TranslationKey, string> = {
   'github.overviewTitle': 'O que seria importado',
   'github.overviewBack': 'Buscar outro',
 
+  'landing.nav.docs': 'Docs',
+  'docs.contents': 'Conteúdo',
+  'docs.backHome': 'Voltar para a página inicial',
   'landing.nav.skip': 'Pular para o conteúdo',
   'landing.nav.how': 'Como funciona',
   'landing.nav.connects': 'Conexões',
@@ -2492,10 +2553,63 @@ const ptBR: Record<TranslationKey, string> = {
   'landing.hero.secondary': 'Ver funcionando',
   'landing.hero.reassurance': 'Sem cartão. Traga um repositório do GitHub ou a exportação de um quadro e já comece com trabalho de verdade.',
 
-  'landing.how.title': 'Três coisas, funcionando de verdade',
-  'landing.how.body':
-    'Não são capturas de tela. São as interfaces reais, rodando — os mesmos componentes, as mesmas etapas, no tema que você escolheu.',
 
+  'landing.how.page': 'Página {page} de {total}',
+  'landing.how.goToPage': 'Ir para a página {page}',
+  'landing.how.previous': 'Recursos anteriores',
+  'landing.how.next': 'Mais recursos',
+
+  'landing.demo.notesTab': 'Mural de notas',
+  'landing.demo.notesTitle': 'Cole na parede e ligue ao resto',
+  'landing.demo.notesBody':
+    'Uma tela, não uma coluna. Os post-its vão para onde você quiser, se agrupam e se ligam por um barbante — porque um pensamento sobre duas coisas não é uma linha de lista.',
+  'landing.notes.one': 'Preço precisa de decisão',
+  'landing.notes.two': 'Falar com o Bruno sobre a nota',
+  'landing.notes.three': 'Parado no contrato',
+
+  'landing.demo.meetTab': 'Reuniões',
+  'landing.demo.meetTitle': 'Marque a sala aqui, veja no celular',
+  'landing.demo.meetBody':
+    'Sincronização nos dois sentidos com uma agenda que o Task Studio cria sozinho. Ele não lê nem mexe nos seus compromissos existentes — a permissão é estreita de propósito.',
+  'landing.meet.here': 'Task Studio',
+  'landing.meet.there': 'Sua agenda',
+  'landing.meet.title': 'Revisão de cobrança',
+  'landing.meet.when': 'Quinta, 15:00',
+  'landing.meet.onPhone': 'Em todos os aparelhos',
+
+  'landing.demo.pagesTab': 'Páginas',
+  'landing.demo.pagesTitle': 'Escreva onde o trabalho está',
+  'landing.demo.pagesBody':
+    'Um briefing, uma especificação, a ata da reunião a que ela pertence. Escrita aqui, ou trazida como PDF ou Word e mantida exatamente como estava — nunca reescrita.',
+  'landing.pages.title': 'Reescrita da cobrança — briefing',
+  'landing.pages.saved': 'Salvo',
+  'landing.pages.hint': 'Ou solte um PDF e ele fica exatamente como está.',
+
+  'landing.demo.undoTab': 'Histórico',
+  'landing.demo.undoTitle': 'Toda mudança, e um caminho de volta',
+  'landing.demo.undoBody':
+    'O histórico não é um recibo. Quase toda linha pode ser clicada, e o que aconteceu desacontece — por trinta dias, na tela em que você percebeu.',
+  'landing.undo.task': 'Publicar a página de cobrança',
+  'landing.undo.log': 'Histórico',
+  'landing.undo.deleted': 'Ana mandou uma tarefa para a lixeira',
+  'landing.undo.restored': 'Ana mandou uma tarefa para a lixeira',
+  'landing.undo.button': 'Desfazer',
+  'landing.undo.done': 'Desfeito',
+
+  'landing.demo.commitTab': 'Seu editor',
+  'landing.demo.commitTitle': 'Commite como sempre, e o quadro acompanha',
+  'landing.demo.commitBody':
+    'Um hook lê o commit contra a tarefa da branch e a conclui quando ele claramente termina o trabalho. Nenhum diff sai da sua máquina — só a mensagem e os nomes dos arquivos.',
+  'landing.commit.checking': 'taskstudio: lendo o commit…',
+  'landing.commit.task': 'Limitar a taxa nas rotas de importação',
+  'landing.commit.branch': 'na fix/import-rate-limit',
+  'landing.commit.closed': 'Tarefa concluída.',
+
+  'landing.demo.drawTab': 'Quadro branco',
+  'landing.demo.drawTitle': 'Desenhe o que não dá para descrever',
+  'landing.demo.drawBody':
+    'Caneta, borracha e uma ponta cujo tamanho dá para ver, na mesma superfície das notas — assim o rascunho e o post-it sobre ele vivem juntos.',
+  'landing.draw.hint': 'Caneta, borracha e notas na mesma superfície.',
   'landing.demo.boardTab': 'Quadro',
   'landing.demo.boardTitle': 'Pegue uma tarefa e ponha onde ela pertence',
   'landing.demo.boardBody':
@@ -2559,8 +2673,6 @@ const ptBR: Record<TranslationKey, string> = {
   'landing.svc.webhooksWhat': 'Eventos assinados e tokens para seus scripts',
 
   'landing.inside.title': 'Um estúdio, não uma planilha',
-  'landing.inside.body':
-    'Seis coisas que vale saber antes de criar conta. Todas estão no plano gratuito, porque só existe um plano.',
 
   'landing.note.boards': 'Dois quadros, um só conjunto de tarefas',
   'landing.note.boardsBody':
@@ -2764,8 +2876,9 @@ const ptBR: Record<TranslationKey, string> = {
   'ai.taskIdeas': 'Ideias de tarefas',
   'ai.taskIdeasBody':
     'O Gemini lê a descrição e o quadro do projeto e propõe o que pode vir a seguir.',
+  'ai.decideFirstHint':
+    'Aceite ou dispense o que já foi proposto antes de pedir mais.',
   'ai.suggestTasks': 'Sugerir tarefas',
-  'ai.suggestAgain': 'Sugerir de novo',
   'ai.noIdeas': 'Nenhuma sugestão ainda',
   'ai.noIdeasBody': 'Peça algumas ideias e aceite as que fizerem sentido.',
   'ai.accept': 'Aceitar',
@@ -3020,6 +3133,8 @@ const ptBR: Record<TranslationKey, string> = {
   'notes.unpinNote': 'Desafixar nota',
   'notes.pinNote': 'Fixar nota',
 
+  'board.showAllCount': 'Ver todas · mais {count}',
+  'board.showFewer': 'Ver menos',
   'board.nothingHere': 'Nada aqui',
   'board.dropHere': 'Solte uma tarefa nesta coluna.',
   'doc.createFailed': 'Não foi possível criar o documento.',

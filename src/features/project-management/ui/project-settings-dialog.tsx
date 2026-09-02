@@ -337,7 +337,7 @@ export const ProjectSettingsDialog = ({
             <header className="flex items-center gap-2">
               <Building2 className="h-3.5 w-3.5 shrink-0 text-content-faint" />
               <h3 className="text-xs font-semibold">{t('project.filedUnderTitle')}</h3>
-              <span className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-edge px-2 py-0.5 text-[10px] text-content-muted">
+              <span className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-edge px-2 py-0.5 text-3xs text-content-muted">
                 <span
                   aria-hidden
                   className="h-1.5 w-1.5 shrink-0 rounded-full"
@@ -347,7 +347,7 @@ export const ProjectSettingsDialog = ({
               </span>
             </header>
 
-            <p className="text-[11px] leading-relaxed text-content-muted">
+            <p className="text-2xs leading-relaxed text-content-muted">
               {t('project.unfileExplain')}
             </p>
 
@@ -387,7 +387,7 @@ export const ProjectSettingsDialog = ({
           */}
           {isFinished ? (
             <div className="space-y-2.5 border-b border-danger/20 pb-3">
-              <p className="text-[11px] leading-relaxed text-content-muted">
+              <p className="text-2xs leading-relaxed text-content-muted">
                 {t('project.reopenExplain')}
               </p>
               <Button
@@ -405,7 +405,7 @@ export const ProjectSettingsDialog = ({
             <div className="space-y-2.5 border-b border-danger/20 pb-3">
               {!isConfirmingFinish ? (
                 <>
-                  <p className="text-[11px] leading-relaxed text-content-muted">
+                  <p className="text-2xs leading-relaxed text-content-muted">
                     {t('project.finishExplain')}
                   </p>
                   <Button
@@ -420,7 +420,7 @@ export const ProjectSettingsDialog = ({
                 </>
               ) : (
                 <div className="space-y-2.5">
-                  <p className="text-[11px] leading-relaxed text-danger">
+                  <p className="text-2xs leading-relaxed text-danger">
                     {t('project.finishConfirmBody')}
                   </p>
 
@@ -468,7 +468,7 @@ export const ProjectSettingsDialog = ({
 
           {!isConfirmingDelete ? (
             <>
-              <p className="text-[11px] leading-relaxed text-content-muted">
+              <p className="text-2xs leading-relaxed text-content-muted">
                 {t('project.deleteExplain')}
               </p>
               <Button
@@ -483,7 +483,7 @@ export const ProjectSettingsDialog = ({
             </>
           ) : (
             <div className="space-y-2.5">
-              <p className="text-[11px] leading-relaxed text-content-muted">
+              <p className="text-2xs leading-relaxed text-content-muted">
                 {t('project.deleteConfirmBody', { name: project.name })}
               </p>
 

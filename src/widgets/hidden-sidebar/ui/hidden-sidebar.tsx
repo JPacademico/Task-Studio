@@ -228,7 +228,7 @@ const SidebarLink = ({ item, badge, isTouch, onNavigate, onTearingChange }: Side
                 <RunicText>{t(item.label)}</RunicText>
               </span>
               {item.hint && (
-                <span className="block truncate text-[10px] text-content-faint">
+                <span className="block truncate text-3xs text-content-faint">
                   <RunicText mode="always">{t(item.hint)}</RunicText>
                 </span>
               )}
@@ -244,7 +244,7 @@ const SidebarLink = ({ item, badge, isTouch, onNavigate, onTearingChange }: Side
             )}
 
             {badge !== undefined && badge > 0 && (
-              <span className="relative grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1.5 text-[10px] font-bold text-brand-contrast">
+              <span className="relative grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1.5 text-3xs font-bold text-brand-contrast">
                 {badge}
               </span>
             )}
@@ -333,7 +333,7 @@ export const HiddenSidebar = ({ isMobileOpen, onMobileClose }: HiddenSidebarProp
         animate={{ x: isOpen ? 0 : 'calc(-100% - 12px)' }}
         transition={{ type: 'spring', stiffness: 460, damping: 40, mass: 0.7 }}
         className={cn(
-          'nav-rail nav-rail--left ui-textured gpu fixed left-0 top-0 z-50 flex h-full w-[264px] flex-col',
+          'nav-rail nav-rail--left ui-textured gpu fixed left-0 top-0 z-50 flex h-full w-[16.5rem] flex-col',
           'safe-t safe-b safe-l',
           // `backdrop-blur-md`, not `-xl`: a full-height blurred panel makes
           // the browser resample everything behind it on every frame it moves,
@@ -369,7 +369,7 @@ export const HiddenSidebar = ({ isMobileOpen, onMobileClose }: HiddenSidebarProp
 
           <div className="min-w-0 flex-1 leading-tight">
             <p className="truncate text-sm font-bold tracking-tight">Task Studio</p>
-            <p className="text-[10px] uppercase tracking-[0.16em] text-content-faint">
+            <p className="text-3xs uppercase tracking-[0.16em] text-content-faint">
               {t('nav.studioWorkspace')}
             </p>
           </div>
@@ -380,7 +380,7 @@ export const HiddenSidebar = ({ isMobileOpen, onMobileClose }: HiddenSidebarProp
         <nav className="scrollbar-thin flex flex-1 flex-col gap-5 overflow-y-auto px-3 pb-3">
           {GROUPS.map((group) => (
             <div key={group.heading} className="space-y-1">
-              <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-content-faint">
+              <p className="px-3 pb-1 text-3xs font-semibold uppercase tracking-[0.18em] text-content-faint">
                 {/* A section heading names a shelf, not a destination — there
                     is nothing to click and therefore nothing to reveal, so it
                     stays carved. */}
@@ -406,7 +406,7 @@ export const HiddenSidebar = ({ isMobileOpen, onMobileClose }: HiddenSidebarProp
             <Avatar name={user?.displayName ?? '?'} src={user?.avatarUrl} size="sm" />
             <div className="min-w-0 flex-1 leading-tight">
               <p className="truncate text-xs font-semibold">{user?.displayName ?? 'Signed in'}</p>
-              <p className="truncate text-[10px] text-content-faint">{user?.email}</p>
+              <p className="truncate text-3xs text-content-faint">{user?.email}</p>
             </div>
           </div>
 
@@ -443,7 +443,7 @@ export const HiddenSidebar = ({ isMobileOpen, onMobileClose }: HiddenSidebarProp
           </button>
 
           {!isTouch && (
-            <p className="mt-2.5 text-[10px] leading-relaxed text-content-faint">
+            <p className="mt-2.5 text-3xs leading-relaxed text-content-faint">
               {isPinned
                 ? 'Pinned open. Tap the pin again to let it hide.'
                 : 'Nudge the screen edge to bring the menus back. Drag an entry out to keep it on screen.'}

@@ -70,7 +70,7 @@ export const CliConnectionCard = () => {
 
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-semibold">{t('cli.title')}</span>
-          <span className="mt-0.5 block text-[11px] leading-relaxed text-content-muted">
+          <span className="mt-0.5 block text-2xs leading-relaxed text-content-muted">
             {t('cli.projectBody')}
           </span>
         </span>
@@ -85,7 +85,7 @@ export const CliConnectionCard = () => {
         */}
         <span
           className={cn(
-            'w-[5.5rem] shrink-0 rounded-lg border px-2.5 py-1.5 text-center text-[11px] font-medium transition-colors',
+            'w-[5.5rem] shrink-0 rounded-lg border px-2.5 py-1.5 text-center text-2xs font-medium transition-colors',
             isOpen ? 'border-brand/50 text-brand' : 'border-edge text-content-muted',
           )}
         >

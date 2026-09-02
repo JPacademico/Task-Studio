@@ -56,7 +56,7 @@ const AgendaRow = ({ meeting, t }: AgendaRowProps) => {
       {/* The clock, given its own column: an agenda is read down the times. */}
       <div className="flex shrink-0 items-center gap-2 sm:w-24 sm:flex-col sm:items-start sm:gap-0.5">
         <span className="text-sm font-semibold tabular-nums">{formatTime(start)}</span>
-        <span className="text-[11px] tabular-nums text-content-faint">
+        <span className="text-2xs tabular-nums text-content-faint">
           {t('meetings.until')} {formatTime(end)}
         </span>
       </div>
@@ -72,7 +72,7 @@ const AgendaRow = ({ meeting, t }: AgendaRowProps) => {
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-content-muted">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-2xs text-content-muted">
           <span className="inline-flex items-center gap-1">
             <MapPin className="h-3 w-3 shrink-0 text-content-faint" />
             <span className="truncate">{meeting.room}</span>
@@ -119,7 +119,7 @@ const AgendaRow = ({ meeting, t }: AgendaRowProps) => {
           })}
           className={cn(
             'inline-flex shrink-0 items-center gap-1.5 self-start rounded-full border border-edge',
-            'px-2.5 py-1 text-[11px] text-content-muted transition-colors',
+            'px-2.5 py-1 text-2xs text-content-muted transition-colors',
             'hover:border-brand/50 hover:text-content',
           )}
         >
@@ -216,7 +216,7 @@ const MeetingsPage = () => {
     <div className="space-y-4 sm:space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="space-y-0.5">
-          <p className="text-[10px] uppercase tracking-[0.18em] text-content-faint sm:text-xs">
+          <p className="text-3xs uppercase tracking-[0.18em] text-content-faint sm:text-xs">
             <RunicText mode="always">{t('agenda.meetingsEyebrow')}</RunicText>
           </p>
           <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
@@ -267,7 +267,7 @@ const MeetingsPage = () => {
       {isPending && (
         <div className="space-y-2.5">
           {Array.from({ length: 4 }, (_, index) => (
-            <Skeleton key={index} className="h-[86px] rounded-2xl" />
+            <Skeleton key={index} className="h-[5.375rem] rounded-2xl" />
           ))}
         </div>
       )}
@@ -308,7 +308,7 @@ const MeetingsPage = () => {
                   {formatDayLabel(`${key}T12:00:00`)}
                 </h2>
                 <span className="h-px flex-1 bg-edge/70" />
-                <span className="text-[11px] tabular-nums text-content-faint">
+                <span className="text-2xs tabular-nums text-content-faint">
                   {entries.length}
                 </span>
               </header>

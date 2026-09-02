@@ -169,7 +169,7 @@ export const NoteChecklist = ({ task, isAiEnabled }: NoteChecklistProps) => {
       </h3>
 
       {task.notes.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-edge px-3 py-4 text-center text-[11px] leading-relaxed text-content-faint">
+        <p className="rounded-xl border border-dashed border-edge px-3 py-4 text-center text-2xs leading-relaxed text-content-faint">
           {t('task.noteChecklistEmpty')}
         </p>
       ) : (
@@ -227,7 +227,7 @@ export const NoteChecklist = ({ task, isAiEnabled }: NoteChecklistProps) => {
           {/* The real thing, at the size it will be read at — not a form field
               that becomes a Post-it somewhere else. */}
           <div
-            className="mx-auto w-full max-w-[280px] rounded-[3px] p-3.5 shadow-postit"
+            className="mx-auto w-full max-w-[17.5rem] rounded-[3px] p-3.5 shadow-postit"
             style={{ backgroundColor: draftColor, color: readableInk(draftColor) }}
           >
             <textarea
@@ -239,7 +239,7 @@ export const NoteChecklist = ({ task, isAiEnabled }: NoteChecklistProps) => {
               onPaste={(event) => clampOnPaste(event, TEXT_LIMITS.noteContent)}
               maxLength={TEXT_LIMITS.noteContent}
               placeholder={t('task.newNotePlaceholder')}
-              className="h-32 w-full resize-none bg-transparent font-hand text-[15px] leading-snug outline-none placeholder:opacity-50"
+              className="h-32 w-full resize-none bg-transparent font-hand text-[0.9375rem] leading-snug outline-none placeholder:opacity-50"
             />
           </div>
 
@@ -250,7 +250,7 @@ export const NoteChecklist = ({ task, isAiEnabled }: NoteChecklistProps) => {
             options={NOTE_COLORS}
           />
 
-          <p className="text-right text-[10px] tabular-nums text-content-faint">
+          <p className="text-right text-3xs tabular-nums text-content-faint">
             {draft.length}/{TEXT_LIMITS.noteContent}
           </p>
         </div>
@@ -289,7 +289,7 @@ export const NoteChecklist = ({ task, isAiEnabled }: NoteChecklistProps) => {
         {reading && (
           <div className="space-y-3.5">
             <div
-              className="mx-auto w-full max-w-[300px] rounded-[3px] p-4 shadow-postit"
+              className="mx-auto w-full max-w-[18.75rem] rounded-[3px] p-4 shadow-postit"
               style={{ backgroundColor: reading.color, color: readableInk(reading.color) }}
             >
               {/*
@@ -301,7 +301,7 @@ export const NoteChecklist = ({ task, isAiEnabled }: NoteChecklistProps) => {
               */}
               <p
                 className={cn(
-                  'max-h-[50vh] overflow-y-auto whitespace-pre-wrap break-words font-hand text-[15px] leading-relaxed',
+                  'max-h-[50vh] overflow-y-auto whitespace-pre-wrap break-words font-hand text-[0.9375rem] leading-relaxed',
                   reading.isCompleted && 'line-through opacity-60',
                 )}
               >
@@ -309,7 +309,7 @@ export const NoteChecklist = ({ task, isAiEnabled }: NoteChecklistProps) => {
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 text-[11px] text-content-muted">
+            <div className="flex flex-wrap items-center gap-2 text-2xs text-content-muted">
               <span className="inline-flex items-center gap-1.5">
                 <Avatar
                   name={reading.author.displayName}
@@ -385,7 +385,7 @@ const NoteCard = ({ note, isMine, onOpen, onToggle, onDelete }: NoteCardProps) =
         // wrote it, without spending a quarter of the note to do so.
         title={t('task.noteBy', { name: note.author.displayName })}
         className={cn(
-          'block h-[112px] w-[150px] rounded-[3px] p-2.5 pt-7 text-left shadow-postit',
+          'block h-[7rem] w-[9.375rem] rounded-[3px] p-2.5 pt-7 text-left shadow-postit',
           'transition-transform duration-150 hover:-translate-y-0.5 focus-visible:-translate-y-0.5',
           note.isCompleted && 'opacity-70',
         )}
@@ -395,7 +395,7 @@ const NoteCard = ({ note, isMine, onOpen, onToggle, onDelete }: NoteCardProps) =
             the author strip was costing. The note opens for the rest. */}
         <span
           className={cn(
-            'line-clamp-4 break-words font-hand text-[13px] leading-snug',
+            'line-clamp-4 break-words font-hand text-[0.8125rem] leading-snug',
             note.isCompleted && 'line-through',
           )}
         >

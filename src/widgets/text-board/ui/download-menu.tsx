@@ -183,7 +183,7 @@ export const DocumentDownloadMenu = ({
               transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
               className="panel absolute right-0 top-10 z-50 w-60 overflow-hidden p-1.5"
             >
-              <li className="px-2.5 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-content-faint">
+              <li className="px-2.5 pb-1 pt-1.5 text-3xs font-semibold uppercase tracking-[0.16em] text-content-faint">
                 {t('doc.downloadAs')}
               </li>
 
@@ -205,7 +205,7 @@ export const DocumentDownloadMenu = ({
                         <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-content-faint" />
                         <span className="min-w-0 flex-1">
                           <span className="block font-semibold">{t(`doc.format.${format}`)}</span>
-                          <span className="block text-[10px] leading-snug text-content-faint">
+                          <span className="block text-3xs leading-snug text-content-faint">
                             {t(`doc.format.${format}.hint`)}
                           </span>
                         </span>
@@ -229,7 +229,7 @@ export const DocumentDownloadMenu = ({
                     <Download className="mt-0.5 h-3.5 w-3.5 shrink-0 text-content-faint" />
                     <span className="min-w-0 flex-1">
                       <span className="block font-semibold">{t('doc.originalFile')}</span>
-                      <span className="block truncate text-[10px] text-content-faint">
+                      <span className="block truncate text-3xs text-content-faint">
                         {source.name}
                       </span>
                     </span>

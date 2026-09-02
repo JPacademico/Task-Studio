@@ -132,7 +132,7 @@ const InvitationsPage = () => {
                     size="md"
                   />
 
-                  <div className="min-w-[220px] flex-1 space-y-1">
+                  <div className="min-w-[13.75rem] flex-1 space-y-1">
                     <p className="flex items-center gap-1.5 text-sm font-semibold leading-snug">
                       {invitation.kind === 'organization' ? (
                         <Building2 className="h-3.5 w-3.5 shrink-0 text-content-faint" />
@@ -149,7 +149,7 @@ const InvitationsPage = () => {
                         a company: joining one does not put anybody on a project
                         inside it, and "why can't I see the work" is the
                         question that follows if nobody says so. */}
-                    <p className="text-[11px] text-content-faint">
+                    <p className="text-2xs text-content-faint">
                       {t(
                         invitation.kind === 'organization'
                           ? 'invites.orgExplain'

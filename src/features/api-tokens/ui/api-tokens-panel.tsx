@@ -108,7 +108,7 @@ export const ApiTokensPanel = () => {
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold">{t('tokens.title')}</p>
-          <p className="mt-1 text-[11px] leading-relaxed text-content-muted">
+          <p className="mt-1 text-2xs leading-relaxed text-content-muted">
             {t('tokens.pitch')}
           </p>
         </div>
@@ -117,7 +117,7 @@ export const ApiTokensPanel = () => {
       {/* --- The value, once --------------------------------------------- */}
       {revealed && (
         <div className="space-y-2 rounded-xl border border-brand/40 bg-brand/[0.06] p-3">
-          <p className="text-[11px] font-medium text-brand">
+          <p className="text-2xs font-medium text-brand">
             {t('tokens.copyNow', { name: revealed.name })}
           </p>
 
@@ -127,13 +127,13 @@ export const ApiTokensPanel = () => {
               value={revealed.token}
               onFocus={(event) => event.currentTarget.select()}
               aria-label={t('tokens.title')}
-              className="field h-8 flex-1 py-0 font-mono text-[10px]"
+              className="field h-8 flex-1 py-0 font-mono text-3xs"
             />
             <Button
               size="sm"
               variant={copied ? 'secondary' : 'primary'}
               onClick={() => void copy()}
-              className="h-8 shrink-0 gap-1.5 px-2.5 text-[11px]"
+              className="h-8 shrink-0 gap-1.5 px-2.5 text-2xs"
             >
               {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
               {t(copied ? 'tokens.copied' : 'tokens.copy')}
@@ -144,7 +144,7 @@ export const ApiTokensPanel = () => {
             size="sm"
             variant="ghost"
             onClick={() => setRevealed(null)}
-            className="h-6 px-2 text-[10px]"
+            className="h-6 px-2 text-3xs"
           >
             {t('tokens.dismiss')}
           </Button>
@@ -160,12 +160,12 @@ export const ApiTokensPanel = () => {
                 <p className="flex items-center gap-1.5 truncate text-xs font-medium">
                   <span className="truncate">{token.name}</span>
                   {!token.isActive && (
-                    <span className="shrink-0 rounded-full border border-edge px-1.5 text-[9px] uppercase tracking-wider text-content-faint">
+                    <span className="shrink-0 rounded-full border border-edge px-1.5 text-4xs uppercase tracking-wider text-content-faint">
                       {t(token.revokedAt ? 'tokens.revokedTag' : 'tokens.expiredTag')}
                     </span>
                   )}
                 </p>
-                <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[10px] text-content-faint">
+                <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-3xs text-content-faint">
                   <span className="font-mono">{token.prefix}…</span>
                   <span>
                     {token.lastUsedAt
@@ -185,7 +185,7 @@ export const ApiTokensPanel = () => {
                   size="sm"
                   variant="ghost"
                   onClick={() => revoke.mutate(token.id)}
-                  className="h-7 shrink-0 px-2 text-[10px] text-danger hover:text-danger"
+                  className="h-7 shrink-0 px-2 text-3xs text-danger hover:text-danger"
                 >
                   {t('tokens.revoke')}
                 </Button>
@@ -227,7 +227,7 @@ export const ApiTokensPanel = () => {
               onClick={() => void submit()}
               isLoading={create.isPending}
               disabled={name.trim().length === 0}
-              className="h-7 px-2.5 text-[10px]"
+              className="h-7 px-2.5 text-3xs"
             >
               {t('tokens.create')}
             </Button>
@@ -235,13 +235,13 @@ export const ApiTokensPanel = () => {
               size="sm"
               variant="ghost"
               onClick={() => setIsComposing(false)}
-              className="h-7 px-2.5 text-[10px]"
+              className="h-7 px-2.5 text-3xs"
             >
               {t('common.cancel')}
             </Button>
           </div>
 
-          <p className={cn('text-[10px] leading-relaxed text-warning')}>
+          <p className={cn('text-3xs leading-relaxed text-warning')}>
             {t('tokens.scopeWarning')}
           </p>
         </div>

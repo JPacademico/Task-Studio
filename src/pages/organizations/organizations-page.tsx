@@ -76,7 +76,7 @@ const OrganizationCard = ({ organization, onEdit, t }: OrganizationCardProps) =>
           </p>
         )}
 
-        <p className="flex flex-wrap items-center gap-1.5 pt-0.5 text-[11px] text-content-faint">
+        <p className="flex flex-wrap items-center gap-1.5 pt-0.5 text-2xs text-content-faint">
           <Avatar
             name={organization.owner.displayName}
             src={organization.owner.avatarUrl}
@@ -178,7 +178,7 @@ const OrganizationsPage = () => {
     <div className="space-y-4 sm:space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="space-y-0.5">
-          <p className="text-[10px] uppercase tracking-[0.18em] text-content-faint sm:text-xs">
+          <p className="text-3xs uppercase tracking-[0.18em] text-content-faint sm:text-xs">
             <RunicText mode="always">{t('org.eyebrow')}</RunicText>
           </p>
           <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{t('org.title')}</h1>
@@ -194,7 +194,7 @@ const OrganizationsPage = () => {
       {isPending && (
         <div className={cn('grid gap-3 md:grid-cols-2')}>
           {Array.from({ length: 4 }, (_, index) => (
-            <Skeleton key={index} className="h-[132px] rounded-2xl" />
+            <Skeleton key={index} className="h-[8.25rem] rounded-2xl" />
           ))}
         </div>
       )}

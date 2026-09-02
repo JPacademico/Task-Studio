@@ -111,7 +111,7 @@ export const ReportUserDialog = ({
             disabled, which is the moment it is useful.
           */}
           {reason.trim().length > 0 && !isLongEnough && (
-            <p className="text-[10px] text-content-faint">{t('report.tooShort')}</p>
+            <p className="text-3xs text-content-faint">{t('report.tooShort')}</p>
           )}
         </div>
 

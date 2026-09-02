@@ -45,7 +45,7 @@ export const TaskTypeTag = ({ type, variant = 'compact', className }: TaskTypeTa
       title={`${t(meta.label)} — ${t(meta.hint).toLowerCase()}`}
       className={cn(
         'type-tag shrink-0 font-semibold',
-        variant === 'compact' ? 'text-[11px]' : 'text-sm',
+        variant === 'compact' ? 'text-2xs' : 'text-sm',
         meta.accent,
         className,
       )}

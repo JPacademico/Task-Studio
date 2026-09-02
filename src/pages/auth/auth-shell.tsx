@@ -98,7 +98,7 @@ export const AuthShell = ({ title, subtitle, children, footer }: AuthShellProps)
           </h2>
         </div>
 
-        <p className="hidden text-[11px] uppercase tracking-[0.18em] text-content-faint sm:block">
+        <p className="hidden text-2xs uppercase tracking-[0.18em] text-content-faint sm:block">
           {t('auth.hero.tagline')}
         </p>
       </div>
@@ -113,7 +113,17 @@ export const AuthShell = ({ title, subtitle, children, footer }: AuthShellProps)
       {/* --- The card ---------------------------------------------------------
           A grid that centres its only child, so the drag offset starts from the
           middle of the screen at any viewport size without measuring anything. */}
-      <div className="pointer-events-none relative z-50 grid min-h-dvh place-items-center px-5 py-12 sm:px-8">
+      {/*
+        Vertical padding that gives way on a short screen.
+
+        96px of top-and-bottom air is right on a desktop monitor and is exactly
+        what pushed the card past the fold on a 1366x768 laptop, where the
+        viewport is about 640px tall once the browser's own chrome is gone. The
+        `short` variant is a *height* query — see `tailwind.config.js` — because
+        this was never a width problem: the card fits side to side at every size
+        it has ever been drawn at.
+      */}
+      <div className="pointer-events-none relative z-50 grid min-h-dvh place-items-center px-5 py-12 short:py-5 sm:px-8">
         <motion.div
           drag={isDraggable}
           dragListener={false}
@@ -127,7 +137,7 @@ export const AuthShell = ({ title, subtitle, children, footer }: AuthShellProps)
           transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
           whileDrag={{ scale: 1.02, rotate: -0.4 }}
           className={cn(
-            'panel gpu pointer-events-auto relative w-full max-w-[400px] overflow-hidden',
+            'panel gpu pointer-events-auto relative w-full max-w-[25rem] overflow-hidden',
             'shadow-[0_40px_90px_-40px_rgb(0_0_0/0.75)]',
           )}
         >
@@ -140,7 +150,7 @@ export const AuthShell = ({ title, subtitle, children, footer }: AuthShellProps)
             )}
           >
             <GripHorizontal className="h-3.5 w-3.5 text-content-faint" />
-            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-content-faint">
+            <span className="text-3xs font-semibold uppercase tracking-[0.16em] text-content-faint">
               {t(hasMoved ? 'auth.dragCard.signIn' : 'auth.dragCard.dragMe')}
             </span>
             <span className="ml-auto flex gap-1" aria-hidden>
@@ -150,8 +160,8 @@ export const AuthShell = ({ title, subtitle, children, footer }: AuthShellProps)
             </span>
           </div>
 
-          <div className="p-6 sm:p-7">
-            <div className="mb-6 space-y-2">
+          <div className="p-6 short:p-5 sm:p-7 sm:short:p-5">
+            <div className="mb-6 space-y-2 short:mb-4">
               <span className="inline-grid h-11 w-11 place-items-center rounded-2xl bg-brand/15 text-brand ring-1 ring-inset ring-brand/25 lg:hidden">
                 <StudioMark className="h-8 w-8" />
               </span>

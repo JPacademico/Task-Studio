@@ -553,7 +553,7 @@ const PostItBase = ({
         >
           <span className="flex flex-col items-center gap-1 rounded-lg bg-brand px-2 py-1.5 text-brand-contrast shadow-lg">
             <Link2 className="h-4 w-4" />
-            <span className="text-[10px] font-bold uppercase tracking-wide">{t('notes.linkHere')}</span>
+            <span className="text-3xs font-bold uppercase tracking-wide">{t('notes.linkHere')}</span>
           </span>
         </span>
       )}
@@ -561,7 +561,7 @@ const PostItBase = ({
       {isConnectSource && (
         <span
           aria-hidden
-          className="pointer-events-none absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-positive px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-lg"
+          className="pointer-events-none absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-positive px-2 py-0.5 text-3xs font-bold uppercase tracking-wide text-white shadow-lg"
         >
           <Zap className="mr-0.5 inline h-2.5 w-2.5" />
           {t('notes.fromHere')}
@@ -707,7 +707,7 @@ const PostItBase = ({
           onPaste={(event) => clampOnPaste(event, TEXT_LIMITS.noteContent)}
           placeholder={t('notes.writeSomething')}
           maxLength={TEXT_LIMITS.noteContent}
-          className="min-h-0 w-full flex-1 resize-none overflow-auto bg-transparent font-hand text-[15px] leading-relaxed outline-none placeholder:opacity-40"
+          className="min-h-0 w-full flex-1 resize-none overflow-auto bg-transparent font-hand text-[0.9375rem] leading-relaxed outline-none placeholder:opacity-40"
           style={{ color: ink }}
         />
       )}

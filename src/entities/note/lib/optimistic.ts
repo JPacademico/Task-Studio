@@ -1,3 +1,4 @@
+import { uid } from '@/shared/lib/uid';
 import { NOTE_COLORS } from '@/shared/config/constants';
 import type { CreateNotePayload, Note } from '../model/types';
 
@@ -20,8 +21,11 @@ const PENDING_PREFIX = 'pending-';
 
 export const isPendingNoteId = (id: string): boolean => id.startsWith(PENDING_PREFIX);
 
-export const pendingImageId = (): string => `${PENDING_PREFIX}image-${crypto.randomUUID()}`;
-export const pendingNoteId = (): string => `${PENDING_PREFIX}note-${crypto.randomUUID()}`;
+// `uid()` rather than `crypto.randomUUID()`: the latter is gated on a secure
+// context, so on a self-hosted deployment over plain HTTP it is `undefined` and
+// creating a note threw instead of creating one. See `shared/lib/uid`.
+export const pendingImageId = (): string => `${PENDING_PREFIX}image-${uid()}`;
+export const pendingNoteId = (): string => `${PENDING_PREFIX}note-${uid()}`;
 
 /**
  * A create request, plus the one thing only the caller can know.

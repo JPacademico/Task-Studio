@@ -147,7 +147,7 @@ const OrganizationProjectCard = ({
               />
             )}
           </span>
-          <span className="mt-0.5 block truncate text-[11px] text-content-faint">
+          <span className="mt-0.5 block truncate text-2xs text-content-faint">
             {project.description ?? t('org.noDescription')}
           </span>
         </div>
@@ -173,7 +173,7 @@ const OrganizationProjectCard = ({
 
         {metrics && metrics.tasks > 0 && (
           <div className="space-y-1">
-            <div className="flex items-center justify-between text-[10px] text-content-faint">
+            <div className="flex items-center justify-between text-3xs text-content-faint">
               <span>{t('org.completion')}</span>
               <span className="tabular-nums">
                 {metrics.completed}/{metrics.tasks} · {rate}%
@@ -386,7 +386,7 @@ export const OrganizationProjectsBoard = ({
                   {t('common.cancel')}
                 </Button>
                 {attachable.length === 0 && (
-                  <p className="text-[11px] text-content-faint">{t('org.nothingToFile')}</p>
+                  <p className="text-2xs text-content-faint">{t('org.nothingToFile')}</p>
                 )}
               </>
             ) : (
@@ -441,7 +441,7 @@ export const OrganizationProjectsBoard = ({
                 action={
                   <span
                     className={cn(
-                      'rounded-full bg-surface-sunken px-2 py-0.5 text-[11px] font-semibold tabular-nums',
+                      'rounded-full bg-surface-sunken px-2 py-0.5 text-2xs font-semibold tabular-nums',
                       projects.length > 0 && lane.accent,
                     )}
                   >
@@ -450,7 +450,7 @@ export const OrganizationProjectsBoard = ({
                 }
               >
                 {projects.length === 0 ? (
-                  <p className="rounded-2xl border border-dashed border-edge px-3 py-6 text-center text-[11px] text-content-faint">
+                  <p className="rounded-2xl border border-dashed border-edge px-3 py-6 text-center text-2xs text-content-faint">
                     {t('org.laneEmpty')}
                   </p>
                 ) : (

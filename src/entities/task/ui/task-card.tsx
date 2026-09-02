@@ -48,7 +48,7 @@ export const LateTag = ({ variant }: { variant: 'late' | 'completed-late' }) => 
       title={translate(isOpen ? 'task.lateOpen' : 'task.lateDone')}
       className={cn(
         'inline-flex items-center gap-1 rounded-[4px] border px-1.5 py-0.5',
-        'text-[10px] font-black uppercase tracking-[0.09em]',
+        'text-3xs font-black uppercase tracking-[0.09em]',
         isOpen
           ? 'border-danger/50 bg-danger/12 text-danger shadow-[0_2px_8px_-4px_rgb(var(--danger)/0.8)]'
           : 'border-warning/50 bg-warning/12 text-warning',
@@ -197,7 +197,7 @@ const TaskCardBase = ({
               aria-label={t('task.hasImage')}
               className="text-content-faint drop-shadow-[0_2px_3px_rgb(0_0_0/0.35)]"
             >
-              <ImageIcon className="h-[15px] w-[15px]" strokeWidth={2.2} />
+              <ImageIcon className="h-[0.9375rem] w-[0.9375rem]" strokeWidth={2.2} />
             </span>
           )}
 
@@ -209,7 +209,7 @@ const TaskCardBase = ({
               aria-label={t('task.hasDocument')}
               className="text-content-faint drop-shadow-[0_2px_3px_rgb(0_0_0/0.35)]"
             >
-              <Paperclip className="h-[15px] w-[15px]" strokeWidth={2.2} />
+              <Paperclip className="h-[0.9375rem] w-[0.9375rem]" strokeWidth={2.2} />
             </span>
           )}
 
@@ -225,7 +225,7 @@ const TaskCardBase = ({
               }
               className="text-amber-400 drop-shadow-[0_2px_3px_rgb(0_0_0/0.35)]"
             >
-              <PostItMark count={noteCount} className="h-[18px] w-[18px]" />
+              <PostItMark count={noteCount} className="h-[1.125rem] w-[1.125rem]" />
             </span>
           )}
         </span>
@@ -451,7 +451,7 @@ const TaskCardBase = ({
 
         <span className="ml-auto flex items-center gap-2">
           {!compact && formatWindow(task.startAt, task.dueAt) && (
-            <span className="hidden text-[11px] text-content-faint sm:inline">
+            <span className="hidden text-2xs text-content-faint sm:inline">
               {formatWindow(task.startAt, task.dueAt)}
             </span>
           )}

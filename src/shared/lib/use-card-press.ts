@@ -33,9 +33,39 @@ const HOLD_MS = 320;
  */
 const INTERACTIVE = 'a,button,input,select,textarea,label,[role="button"],[data-card-ignore]';
 
+/**
+ * Whether the press landed on a control *inside* the card.
+ *
+ * ## The bug this exists to prevent, which shipped
+ *
+ * `closest()` walks all the way to the document root, and it does not stop at
+ * the element the handler is bound to. On both boards the card is wrapped by
+ * dnd-kit's draggable node, and `useDraggable().attributes` sets
+ * **`role="button"`** on it (`defaultRole = 'button'` in `@dnd-kit/core`) —
+ * which the boards spread onto that wrapper.
+ *
+ * So `target.closest('[role="button"]')` matched the *wrapper* for every press
+ * anywhere on the card, the guard below concluded that a control owned it, and
+ * the card never opened. The one place that still worked was the title, which
+ * is a real `<button>` carrying its own `onClick` — which is exactly the
+ * symptom reported: "it only opens when you click next to the task name".
+ *
+ * The fix is to bound the search: a match only counts when it is a *descendant*
+ * of the element the handler is on. `contains()` returns true for the node
+ * itself, so the card is excluded explicitly — otherwise a card that happened
+ * to be rendered as a `<button>` would suppress its own handler.
+ */
+const isOwnedByInnerControl = (
+  target: EventTarget | null,
+  card: EventTarget & Element,
+): boolean => {
+  const hit = (target as Element | null)?.closest?.(INTERACTIVE);
+  return Boolean(hit && hit !== card && card.contains(hit));
+};
+
 interface CardPressHandlers {
   onPointerDown: (event: ReactPointerEvent<HTMLElement>) => void;
-  onClick: (event: ReactPointerEvent<HTMLElement> | React.MouseEvent<HTMLElement>) => void;
+  onClick: (event: React.MouseEvent<HTMLElement>) => void;
 }
 
 /**
@@ -80,11 +110,12 @@ export const useCardPress = (onOpen: (() => void) | undefined): CardPressHandler
   }, []);
 
   const onClick = useCallback(
-    (event: ReactPointerEvent<HTMLElement> | React.MouseEvent<HTMLElement>) => {
+    (event: React.MouseEvent<HTMLElement>) => {
       if (!onOpen) return;
 
-      // A control inside the card owns this press. See `INTERACTIVE`.
-      if ((event.target as HTMLElement | null)?.closest?.(INTERACTIVE)) return;
+      // A control inside the card owns this press. See `isOwnedByInnerControl`
+      // for why "inside" has to be checked and cannot be assumed.
+      if (isOwnedByInnerControl(event.target, event.currentTarget)) return;
 
       /*
        * Text somebody has just selected on the card.

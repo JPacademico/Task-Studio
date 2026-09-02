@@ -330,12 +330,12 @@ const ImportRow = ({ job, onCancel, onDismiss, onOpen }: ImportRowProps) => {
         </span>
 
         <div className="min-w-0 flex-1 leading-tight">
-          <p className="truncate text-[11px] font-semibold" title={label}>
+          <p className="truncate text-2xs font-semibold" title={label}>
             {label}
           </p>
           <p
             className={cn(
-              'mt-0.5 line-clamp-2 text-[10px]',
+              'mt-0.5 line-clamp-2 text-3xs',
               failed ? 'text-danger' : 'text-content-muted',
             )}
           >
@@ -394,20 +394,20 @@ const ImportRow = ({ job, onCancel, onDismiss, onOpen }: ImportRowProps) => {
             // notices it at the next step boundary and the button has nothing
             // left to say until then.
             disabled={job.isCancelling}
-            className="h-6 px-2 text-[10px]"
+            className="h-6 px-2 text-3xs"
           >
             {t(job.isCancelling ? 'importTracker.cancelling' : 'common.cancel')}
           </Button>
         )}
 
         {done && job.projectId && (
-          <Button size="sm" onClick={onOpen} className="h-6 px-2 text-[10px]">
+          <Button size="sm" onClick={onOpen} className="h-6 px-2 text-3xs">
             {t('importTracker.openProject')}
           </Button>
         )}
 
         {done && (
-          <span className="ml-auto text-[10px] tabular-nums text-content-faint">
+          <span className="ml-auto text-3xs tabular-nums text-content-faint">
             {t(summaryKey, {
               tasks: String(job.taskCount),
               documents: String(job.documentCount),

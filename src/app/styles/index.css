@@ -21,6 +21,68 @@
  * whole interface animates on.
  */
 @layer base {
+  /* ==========================================================================
+   * One ratio, every resolution.
+   *
+   * ## The problem
+   *
+   * The app was drawn at a fixed scale, so the only thing a bigger monitor
+   * bought was more empty space: at 2560px the same 14px labels sat in the
+   * middle of a field of nothing, which reads as the content having *shrunk*.
+   * At 1366px the opposite — the type and the padding were the size they always
+   * are, so there was simply less room for them and everything crowded.
+   *
+   * ## Why the root font size, and not a transform
+   *
+   * The obvious implementation is `transform: scale()` or `zoom` on a wrapper,
+   * and it is the wrong one. A scaled subtree breaks `position: fixed`, blurs
+   * text at every non-integer factor, mis-reports coordinates to hit-testing and
+   * to the drag sensors this app is built on, and fights the browser's own zoom
+   * — which is a genuine accessibility control, not a nuisance to be overridden.
+   *
+   * Scaling the root font size has none of those properties, because it is not
+   * a visual trick: it is real layout at a different size. Tailwind expresses
+   * essentially everything in `rem` — spacing, sizing, radii, the type scale,
+   * icon boxes (`h-4 w-4` is 1rem), and the `max-w-*` page containers — so one
+   * declaration moves all of them together and the ratio of content to
+   * whitespace is held constant by construction. Text stays crisp because it is
+   * genuinely being set larger. The user's own browser zoom still multiplies on
+   * top, and their preferred base size is still respected: on the root element
+   * `rem` resolves against the *initial* font size, which is that preference.
+   *
+   * ## The curve, and why it reads both axes
+   *
+   * Two straight lines, and the *tighter* of the two wins:
+   *
+   *   - width:  15px at 1024 -> 19px at 2560
+   *   - height: 14px at 640  -> 19px at 1440
+   *
+   * The height term is not an embellishment. A 1366x768 laptop has a viewport
+   * about 640px tall once the browser's chrome is taken out, and the sign-in
+   * card wanted 626 of them — so scaling by width alone still overflowed, at a
+   * width that was never the problem. `min()` of the two curves means a screen
+   * that is roomy across and short down is treated as the short screen it is,
+   * which is what "keep the ratio of content toempty space constant" actually
+   * means when the space is not square.
+   *
+   * The floor stops a netbook from squeezing the type below reading size; the
+   * ceiling stops a 4K panel from turning the app into a poster.
+   *
+   * ## Why it starts at `lg`
+   *
+   * Below 1024px the layout is a different design rather than the same one at a
+   * different size — single column, a bottom rail, tap targets sized for a
+   * thumb. Scaling type by viewport width there would shrink the text on the
+   * device that can least afford it. 1024px is where the desktop layout begins
+   * (`lg:` throughout the app), so the scale begins with it, and the step it
+   * makes at that boundary is one pixel.
+   * ========================================================================== */
+  @media (min-width: 1024px) {
+    html {
+      font-size: clamp(0.8125rem, min(0.7708rem + 0.26vw, 0.625rem + 0.625vh), 1.1875rem);
+    }
+  }
+
   :root {
     --surface: 246 246 248;
     --surface-raised: 255 255 255;

@@ -91,8 +91,27 @@ export const ChatPin = ({
   const y = useMotionValue(0);
   const selfRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  // A drag always ends in a click event too, and that click must not undo the
-  // decision the drop just made.
+  /*
+   * Whether the gesture in progress turned into a drag.
+   *
+   * ## The bug this shape fixes
+   *
+   * A drag *usually* ends in a click event too, and that click must not undo
+   * the decision the drop just made — so the flag is raised on drag start and
+   * the click handler stands down when it sees it.
+   *
+   * It used to be lowered **inside the click handler**, which assumes the click
+   * always arrives. It does not. Whether a pointer sequence that included a
+   * drag also synthesises a click is browser-dependent, and on the browsers
+   * where it does not, the flag stayed raised forever — so the *next* genuine
+   * click was swallowed as "that was a drag", and the one after that, and every
+   * one after that. The pin simply stopped working, which is exactly the report
+   * from Vivaldi.
+   *
+   * Lowering it on `pointerdown` instead makes it a property of the gesture
+   * rather than a message between two handlers that may never both run. Every
+   * new interaction starts from a known state, on every engine.
+   */
   const didDragRef = useRef(false);
 
   /** Is the pin's own point currently over the chat window? */
@@ -122,6 +141,10 @@ export const ChatPin = ({
       // against — which is the point.
       dragMomentum={false}
       style={{ x, y }}
+      // The start of every gesture, drag or click. See `didDragRef`.
+      onPointerDown={() => {
+        didDragRef.current = false;
+      }}
       onDragStart={() => {
         setIsDragging(true);
         didDragRef.current = true;
@@ -148,10 +171,9 @@ export const ChatPin = ({
         if (landed !== isPinned) onPinnedChange(landed);
       }}
       onClick={() => {
-        if (didDragRef.current) {
-          didDragRef.current = false;
-          return;
-        }
+        // Set by `onDragStart`, cleared by the next `onPointerDown` — never
+        // here, which is what used to leave it latched. See `didDragRef`.
+        if (didDragRef.current) return;
         // Clicking a tack that is in pulls it out. Clicking one that is loose
         // pushes it in — the same result as dragging it over, for anyone who
         // would rather not drag at all.

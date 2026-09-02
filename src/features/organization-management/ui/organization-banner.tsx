@@ -19,7 +19,7 @@ import { useT } from '@/shared/i18n';
  * that proportion on a phone instead of becoming a letterbox.
  */
 const BANNER_CLASSES =
-  'relative w-full overflow-hidden rounded-3xl border border-edge aspect-[5/1] min-h-[104px]';
+  'relative w-full overflow-hidden rounded-3xl border border-edge aspect-[5/1] min-h-[6.5rem]';
 
 interface BannerPreviewProps {
   /** An object URL for the picked file. Null while nothing is being reviewed. */
@@ -98,7 +98,7 @@ const BannerPreview = ({
             <p className="text-xs font-medium text-content-muted">
               {t('org.bannerWholeImage')}
             </p>
-            <p className="text-[11px] leading-relaxed text-content-faint">
+            <p className="text-2xs leading-relaxed text-content-faint">
               {t('org.bannerCropHint')}
             </p>
             {/* Capped so a tall photograph cannot push the buttons off the

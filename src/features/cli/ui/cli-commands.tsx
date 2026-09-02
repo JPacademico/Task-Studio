@@ -10,16 +10,24 @@ import { useT } from '@/shared/i18n';
  * Where the CLI is documented.
  *
  * A constant rather than a string typed into two panels, because it is the one
- * thing on either of them that leaves this application — and a link that is
- * right in Settings and stale in the project tab is worse than one that is
+ * link on either of them that used to leave this application — and a link that
+ * is right in Settings and stale in the project tab is worse than one that is
  * wrong in both, since nobody goes looking for the second copy.
  *
- * It points at the package's own README in the repository rather than at a docs
- * site, because that is where the documentation actually is. When there is a
- * hosted one, this line changes and both panels follow.
+ * ## Why it stopped pointing at the README
+ *
+ * It went to the package's README on GitHub, on the honest grounds that that
+ * was where the documentation was. Now there is a page in the product, and the
+ * README is the worse of the two for this reader in three ways: it arrives in a
+ * different typeface with none of their theme, it is written for somebody
+ * browsing source rather than somebody who has just been handed four commands,
+ * and it is the one link on these panels that could quietly rot — nothing here
+ * breaks when a repository is renamed.
+ *
+ * The README has not gone anywhere; it is still the right thing for somebody
+ * reading the package on npm. This is for somebody using it.
  */
-export const CLI_DOCS_URL =
-  'https://github.com/JPacademico/Task-Studio/tree/main/Task-Studio-CLI#readme';
+export const CLI_DOCS_URL = '/docs';
 
 /**
  * The focus ring every bespoke control in this feature wears.
@@ -143,7 +151,7 @@ export const CommandLine = ({ children }: { children: string }) => {
         role={isClipped ? 'region' : undefined}
         aria-label={isClipped ? t('cli.commandScrollable') : undefined}
         className={cn(
-          'min-w-0 flex-1 overflow-x-auto whitespace-pre py-1 text-[11px] leading-relaxed text-content',
+          'min-w-0 flex-1 overflow-x-auto whitespace-pre py-1 text-2xs leading-relaxed text-content',
           FOCUS_RING,
           // The fade is a mask so it works over every skin's surface colour;
           // a gradient overlay would need to know the background it sits on.
@@ -189,10 +197,19 @@ export const DocsLink = () => {
   return (
     <a
       href={CLI_DOCS_URL}
+      /*
+       * A new tab, still.
+       *
+       * It is an internal route now, so this could be a `<Link>` — and it
+       * should not be. Both panels are things somebody is in the middle of:
+       * copying a command, reading a token list. Navigating the tab away from a
+       * half-finished setup to read the reference, and having to find the way
+       * back, is exactly what a new tab exists to prevent.
+       */
       target="_blank"
       rel="noreferrer noopener"
       className={cn(
-        'inline-flex items-center gap-1 rounded-md py-1 text-[11px] font-medium text-brand',
+        'inline-flex items-center gap-1 rounded-md py-1 text-2xs font-medium text-brand',
         'transition-opacity hover:opacity-80',
         FOCUS_RING,
       )}
@@ -213,7 +230,7 @@ export const DocsLink = () => {
  * `Group` in the connections panel already uses this pairing for the same job.
  */
 const GroupLabel = ({ children }: { children: string }) => (
-  <p className="text-[11px] font-semibold uppercase tracking-wide text-content-muted">{children}</p>
+  <p className="text-2xs font-semibold uppercase tracking-wide text-content-muted">{children}</p>
 );
 
 /**
@@ -278,7 +295,7 @@ export const CliCommandList = ({ variant }: { variant: 'account' | 'project' }) 
         )}
       </div>
 
-      <p className="text-[11px] leading-relaxed text-content-muted">
+      <p className="text-2xs leading-relaxed text-content-muted">
         {variant === 'project' ? t('cli.projectHint') : t('cli.accountHint')}
       </p>
     </div>

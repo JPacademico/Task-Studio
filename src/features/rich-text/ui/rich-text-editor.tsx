@@ -262,13 +262,13 @@ export const RichTextEditor = ({
                 others; the bracket form is the one every current browser
                 accepts. */}
             <ToolButton onAction={() => exec('formatBlock', '<h1>')} title={t('editor.heading1')}>
-              <span className="text-[11px] font-bold">H1</span>
+              <span className="text-2xs font-bold">H1</span>
             </ToolButton>
             <ToolButton onAction={() => exec('formatBlock', '<h2>')} title={t('editor.heading2')}>
-              <span className="text-[11px] font-bold">H2</span>
+              <span className="text-2xs font-bold">H2</span>
             </ToolButton>
             <ToolButton onAction={() => exec('formatBlock', '<h3>')} title={t('editor.heading3')}>
-              <span className="text-[11px] font-bold">H3</span>
+              <span className="text-2xs font-bold">H3</span>
             </ToolButton>
             <ToolButton onAction={() => exec('formatBlock', '<p>')} title={t('editor.bodyText')}>
               <Type className="h-3.5 w-3.5" />

@@ -168,14 +168,14 @@ export const CalendarConnectionPanel = () => {
             calendar is the entire information this row carries. */}
         <span
           aria-hidden
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-edge bg-surface-sunken"
+          className="grid h-14 w-14 shrink-0 place-items-center rounded-xl border border-edge bg-surface-sunken"
         >
-          <GoogleCalendarMark className="h-7 w-7" />
+          <GoogleCalendarMark className="h-9 w-9" />
         </span>
 
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-semibold tracking-tight">{t('calendar.title')}</span>
-          <span className="mt-0.5 block text-[11px] leading-relaxed text-content-muted">
+          <span className="mt-0.5 block text-2xs leading-relaxed text-content-muted">
             {t('calendar.pitch')}
           </span>
         </span>
@@ -184,7 +184,7 @@ export const CalendarConnectionPanel = () => {
           title={t('calendar.connect')}
           className={cn(
             'shrink-0 rounded-full border border-edge px-2 py-0.5',
-            'text-[10px] font-medium uppercase tracking-wide text-content-muted',
+            'text-3xs font-medium uppercase tracking-wide text-content-muted',
             'transition-colors group-hover:border-brand/50 group-hover:text-content',
           )}
         >
@@ -212,7 +212,7 @@ export const CalendarConnectionPanel = () => {
         <span
           aria-hidden
           className={cn(
-            'mt-0.5 grid h-11 w-11 shrink-0 place-items-center rounded-xl border',
+            'mt-0.5 grid h-14 w-14 shrink-0 place-items-center rounded-xl border',
             connection.isEnabled
               ? 'border-positive/30 bg-positive/[0.08]'
               : 'border-edge bg-surface-sunken',
@@ -223,13 +223,13 @@ export const CalendarConnectionPanel = () => {
               said by the switch three lines below. A paused connection just
               loses its colour. */}
           <GoogleCalendarMark
-            className={cn('h-7 w-7', !connection.isEnabled && 'opacity-40 grayscale')}
+            className={cn('h-9 w-9', !connection.isEnabled && 'opacity-40 grayscale')}
           />
         </span>
 
         <div className="min-w-0 flex-1 leading-tight">
           <p className="truncate text-xs font-semibold">{connection.accountEmail}</p>
-          <p className="mt-0.5 text-[10px] text-content-faint">
+          <p className="mt-0.5 text-3xs text-content-faint">
             {connection.lastSyncedAt
               ? t('calendar.lastSynced', { when: formatRelative(connection.lastSyncedAt) })
               : t('calendar.neverSynced')}
@@ -242,7 +242,7 @@ export const CalendarConnectionPanel = () => {
           onClick={() => sync.mutate()}
           isLoading={sync.isPending}
           title={t('calendar.syncNowHint')}
-          className="h-7 gap-1 px-2 text-[10px]"
+          className="h-7 gap-1 px-2 text-3xs"
         >
           <RefreshCw className="h-3 w-3" />
           {t('calendar.syncNow')}
@@ -258,7 +258,7 @@ export const CalendarConnectionPanel = () => {
         than one that says why it did.
       */}
       {connection.lastError && (
-        <p className="flex items-start gap-1.5 rounded-lg bg-warning/10 px-2.5 py-2 text-[11px] leading-snug text-warning">
+        <p className="flex items-start gap-1.5 rounded-lg bg-warning/10 px-2.5 py-2 text-2xs leading-snug text-warning">
           <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
           {connection.lastError}
         </p>
@@ -269,7 +269,7 @@ export const CalendarConnectionPanel = () => {
           checked={connection.isEnabled}
           onChange={(isEnabled) => updateSettings.mutate({ isEnabled })}
           label={t('calendar.enabled')}
-          className="text-[11px]"
+          className="text-2xs"
         />
 
         {/* The two directions, disabled together when the whole thing is
@@ -280,21 +280,21 @@ export const CalendarConnectionPanel = () => {
             checked={connection.pushEnabled}
             onChange={(pushEnabled) => updateSettings.mutate({ pushEnabled })}
             label={t('calendar.push')}
-            className="text-[11px]"
+            className="text-2xs"
           />
           <Switch
             checked={connection.pullEnabled}
             onChange={(pullEnabled) => updateSettings.mutate({ pullEnabled })}
             label={t('calendar.pull')}
-            className="text-[11px]"
+            className="text-2xs"
           />
         </div>
 
-        <p className="flex items-start gap-1.5 text-[10px] leading-relaxed text-content-faint">
+        <p className="flex items-start gap-1.5 text-3xs leading-relaxed text-content-faint">
           <ArrowUpFromLine aria-hidden className="mt-0.5 h-2.5 w-2.5 shrink-0" />
           {t('calendar.pushHint')}
         </p>
-        <p className="flex items-start gap-1.5 text-[10px] leading-relaxed text-content-faint">
+        <p className="flex items-start gap-1.5 text-3xs leading-relaxed text-content-faint">
           <ArrowDownToLine aria-hidden className="mt-0.5 h-2.5 w-2.5 shrink-0" />
           {t('calendar.pullHint')}
         </p>
@@ -310,7 +310,7 @@ export const CalendarConnectionPanel = () => {
       <div className="border-t border-edge/70 pt-3">
         {isConfirmingDisconnect ? (
           <div className="space-y-2">
-            <p className="text-[11px] leading-relaxed text-content-muted">
+            <p className="text-2xs leading-relaxed text-content-muted">
               {t('calendar.disconnectExplain')}
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -322,7 +322,7 @@ export const CalendarConnectionPanel = () => {
                   setIsConfirmingDisconnect(false);
                 }}
                 isLoading={disconnect.isPending}
-                className="h-7 px-2.5 text-[10px]"
+                className="h-7 px-2.5 text-3xs"
               >
                 {t('calendar.disconnectAndRemove')}
               </Button>
@@ -333,7 +333,7 @@ export const CalendarConnectionPanel = () => {
                   disconnect.mutate(true);
                   setIsConfirmingDisconnect(false);
                 }}
-                className="h-7 px-2.5 text-[10px]"
+                className="h-7 px-2.5 text-3xs"
               >
                 {t('calendar.disconnectKeep')}
               </Button>
@@ -341,7 +341,7 @@ export const CalendarConnectionPanel = () => {
                 size="sm"
                 variant="ghost"
                 onClick={() => setIsConfirmingDisconnect(false)}
-                className="h-7 px-2.5 text-[10px]"
+                className="h-7 px-2.5 text-3xs"
               >
                 {t('common.cancel')}
               </Button>
@@ -352,7 +352,7 @@ export const CalendarConnectionPanel = () => {
             size="sm"
             variant="ghost"
             onClick={() => setIsConfirmingDisconnect(true)}
-            className="h-7 px-2 text-[10px] text-danger hover:text-danger"
+            className="h-7 px-2 text-3xs text-danger hover:text-danger"
           >
             {t('calendar.disconnect')}
           </Button>

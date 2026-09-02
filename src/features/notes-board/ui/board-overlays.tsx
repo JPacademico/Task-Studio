@@ -45,7 +45,7 @@ export const SelectionBar = ({
           'gap-2 px-2.5 py-2 shadow-panel',
         )}
       >
-        <span className="grid h-6 min-w-6 place-items-center rounded-full bg-brand px-1.5 text-[11px] font-bold text-brand-contrast">
+        <span className="grid h-6 min-w-6 place-items-center rounded-full bg-brand px-1.5 text-2xs font-bold text-brand-contrast">
           {count}
         </span>
         <span className="hidden text-xs text-content-muted sm:inline">
@@ -170,7 +170,7 @@ export const LassoHint = ({ show }: { show: boolean }) => {
   const t = useT();
 
   return show ? (
-    <p className="pointer-events-none absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-surface-raised/80 px-3 py-1 text-[11px] text-content-faint backdrop-blur">
+    <p className="pointer-events-none absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-surface-raised/80 px-3 py-1 text-2xs text-content-faint backdrop-blur">
       <MousePointerClick className="h-3 w-3" />
       {t('notes.lassoHint')}
     </p>

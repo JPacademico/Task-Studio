@@ -74,7 +74,7 @@ export const CliPanel = () => {
 
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold">{t('cli.title')}</p>
-          <p className="mt-0.5 text-[11px] leading-relaxed text-content-muted">{t('cli.body')}</p>
+          <p className="mt-0.5 text-2xs leading-relaxed text-content-muted">{t('cli.body')}</p>
           <div className="mt-1.5">
             <DocsLink />
           </div>
@@ -86,7 +86,7 @@ export const CliPanel = () => {
           aria-expanded={showCommands}
           aria-controls={panelId}
           className={cn(
-            'shrink-0 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors',
+            'shrink-0 rounded-lg border px-2.5 py-1.5 text-2xs font-medium transition-colors',
             FOCUS_RING,
             showCommands
               ? 'border-brand/50 text-brand'

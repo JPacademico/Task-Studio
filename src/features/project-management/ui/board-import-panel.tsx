@@ -148,7 +148,7 @@ export const BoardImportPanel = ({
         >
           <Upload aria-hidden className="mx-auto h-5 w-5 text-content-faint" />
           <p className="mt-2 text-xs font-medium">{t('boardImport.drop')}</p>
-          <p className="mt-0.5 text-[11px] text-content-muted">{t('boardImport.formats')}</p>
+          <p className="mt-0.5 text-2xs text-content-muted">{t('boardImport.formats')}</p>
 
           <Button
             type="button"
@@ -180,7 +180,7 @@ export const BoardImportPanel = ({
           </span>
           <div className="min-w-0 flex-1 leading-tight">
             <p className="truncate text-xs font-semibold">{file.name}</p>
-            <p className="mt-0.5 text-[10px] text-content-faint">
+            <p className="mt-0.5 text-3xs text-content-faint">
               {formatFileSize(file.size)} ·{' '}
               {t(isTrello ? 'boardImport.readsTrello' : 'boardImport.readsCsv')}
             </p>
@@ -204,13 +204,13 @@ export const BoardImportPanel = ({
           discovered — and they are stated as *where the data went* rather
           than as "unsupported", because it is not lost. */}
       <div className="space-y-1.5 rounded-xl border border-edge/70 bg-surface-sunken/30 p-3">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+        <p className="text-3xs font-semibold uppercase tracking-[0.14em] text-content-faint">
           {t('boardImport.whatComesTitle')}
         </p>
-        <p className="text-[11px] leading-relaxed text-content-muted">
+        <p className="text-2xs leading-relaxed text-content-muted">
           {t('boardImport.whatComes')}
         </p>
-        <p className="flex items-start gap-1.5 text-[11px] leading-relaxed text-content-faint">
+        <p className="flex items-start gap-1.5 text-2xs leading-relaxed text-content-faint">
           <AlertTriangle aria-hidden className="mt-0.5 h-3 w-3 shrink-0" />
           {t('boardImport.whatDoesNot')}
         </p>
@@ -226,7 +226,7 @@ export const BoardImportPanel = ({
         {t('boardImport.start')}
       </Button>
 
-      <p className="text-center text-[10px] leading-relaxed text-content-faint">
+      <p className="text-center text-3xs leading-relaxed text-content-faint">
         {t('github.backgroundHint')}
       </p>
     </div>

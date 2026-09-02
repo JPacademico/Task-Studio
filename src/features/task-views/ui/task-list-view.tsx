@@ -79,7 +79,7 @@ const TaskRowBase = ({
         aria-label={t(task.isCompletedByMe ? 'views.markNotDone' : 'task.markDone')}
         onClick={() => onToggleComplete(task)}
         className={cn(
-          'grid h-[18px] w-[18px] shrink-0 place-items-center rounded border transition-colors duration-150',
+          'grid h-[1.125rem] w-[1.125rem] shrink-0 place-items-center rounded border transition-colors duration-150',
           task.isCompletedByMe || isDone
             ? 'border-positive bg-positive text-white'
             : 'border-check bg-surface-sunken/40',
@@ -108,7 +108,7 @@ const TaskRowBase = ({
         {task.priority !== 'NORMAL' && (
           <span
             className={cn(
-              'text-[10px] font-bold uppercase tracking-wide',
+              'text-3xs font-bold uppercase tracking-wide',
               TASK_PRIORITY_META[task.priority].className,
             )}
           >
@@ -130,7 +130,7 @@ const TaskRowBase = ({
 
       <span
         className={cn(
-          'hidden w-[7.5rem] shrink-0 items-center justify-end gap-1 text-[11px] tabular-nums sm:flex',
+          'hidden w-[7.5rem] shrink-0 items-center justify-end gap-1 text-2xs tabular-nums sm:flex',
           task.isLate ? 'text-danger' : 'text-content-faint',
         )}
       >
@@ -216,7 +216,7 @@ export const TaskListView = ({
                 {t(meta.label)}
               </h3>
               <span className="h-px flex-1 bg-edge/70" />
-              <span className="text-[11px] tabular-nums text-content-faint">{items.length}</span>
+              <span className="text-2xs tabular-nums text-content-faint">{items.length}</span>
             </header>
 
             <ol className="overflow-hidden rounded-2xl border border-edge bg-surface-raised">

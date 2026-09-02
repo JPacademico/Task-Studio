@@ -50,7 +50,7 @@ const ProjectDetails = ({ project }: { project: ProjectListItem }) => {
             style={{ width: `${progress}%`, backgroundColor: project.color }}
           />
         </div>
-        <div className="flex items-center justify-between text-[11px] text-content-faint">
+        <div className="flex items-center justify-between text-2xs text-content-faint">
           <span className="inline-flex items-center gap-1">
             <CheckCircle2 className="h-3 w-3" />
             {t('project.doneCount', { count: done })}
@@ -63,7 +63,7 @@ const ProjectDetails = ({ project }: { project: ProjectListItem }) => {
       </div>
 
       <footer className="flex items-center justify-between border-t border-edge pt-3">
-        <span className="inline-flex items-center gap-1.5 text-[11px] text-content-faint">
+        <span className="inline-flex items-center gap-1.5 text-2xs text-content-faint">
           <Users className="h-3 w-3" />
           {project.roster.length}
         </span>

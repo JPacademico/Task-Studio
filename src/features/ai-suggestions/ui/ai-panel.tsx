@@ -81,6 +81,16 @@ export const AiPanel = ({ projectId }: { projectId: string }) => {
 
   const isWorking = streamStatus === 'working';
 
+  /**
+   * Whether there are proposals still waiting to be accepted or declined.
+   *
+   * Only once the stream has finished: mid-generation the list is filling up
+   * one card at a time, and treating a half-arrived batch as "pending" would
+   * disable the button the moment the first card landed — which reads as the
+   * generation having failed rather than as it having started.
+   */
+  const hasPending = !isWorking && pending.length > 0;
+
   const { data: status } = useQuery({
     queryKey: queryKeys.ai.status,
     queryFn: aiApi.status,
@@ -116,9 +126,32 @@ export const AiPanel = ({ projectId }: { projectId: string }) => {
       title={t('ai.taskIdeas')}
       description={t('ai.taskIdeasBody')}
       action={
-        <Button size="sm" onClick={() => void start()} isLoading={isWorking}>
+        /*
+         * Closed while a batch is still on the table.
+         *
+         * The button used to say "Suggest again" and generate a second set on
+         * top of the first, which is wrong three ways over. It spends a model
+         * call — the most expensive thing this application does, against a quota
+         * shared by everybody on the deployment — to answer a question nobody
+         * asked twice. It stacks proposals the reader has already been given and
+         * has not finished reading, so the list grows while they are working
+         * down it. And because the model is shown the *board* rather than the
+         * pending list, the second batch reliably contains the first batch's
+         * ideas again, so most of what it buys is duplicates.
+         *
+         * Accept them or decline them, and the button comes back. Both are one
+         * click on each card, and declining leaves no trace — see the note on
+         * the panel.
+         */
+        <Button
+          size="sm"
+          onClick={() => void start()}
+          isLoading={isWorking}
+          disabled={hasPending}
+          title={hasPending ? t('ai.decideFirstHint') : undefined}
+        >
           <Wand2 className="h-3.5 w-3.5" />
-          {t(pending.length > 0 ? 'ai.suggestAgain' : 'ai.suggestTasks')}
+          {t('ai.suggestTasks')}
         </Button>
       }
     >
@@ -160,6 +193,14 @@ export const AiPanel = ({ projectId }: { projectId: string }) => {
         />
       )}
 
+      {/* Said where the button used to work, so its absence is explained rather
+          than merely noticed. */}
+      {hasPending && (
+        <p className="text-2xs leading-relaxed text-content-faint">
+          {t('ai.decideFirstHint')}
+        </p>
+      )}
+
       <ul className="space-y-2.5">
         <AnimatePresence initial={false}>
           {pending.map((task) => (
@@ -186,7 +227,7 @@ export const AiPanel = ({ projectId }: { projectId: string }) => {
                     Shown here because a schedule the user cannot see before
                     accepting is a surprise rather than a suggestion. */}
                 {task.durationHours !== undefined && (
-                  <p className="inline-flex items-center gap-1.5 text-[11px] text-content-faint">
+                  <p className="inline-flex items-center gap-1.5 text-2xs text-content-faint">
                     <CalendarClock className="h-3 w-3 shrink-0" />
                     {describeSchedule(t, task)}
                   </p>
@@ -197,7 +238,7 @@ export const AiPanel = ({ projectId }: { projectId: string }) => {
                 {/* Why the model thinks this comes next — kept visually quieter
                     than the task itself, because it is the argument rather than
                     the thing being proposed. */}
-                <p className="border-l-2 border-brand/40 pl-2.5 text-[11px] italic leading-relaxed text-content-faint">
+                <p className="border-l-2 border-brand/40 pl-2.5 text-2xs italic leading-relaxed text-content-faint">
                   {task.rationale}
                 </p>
 
@@ -224,7 +265,7 @@ export const AiPanel = ({ projectId }: { projectId: string }) => {
           the schema caps this at three proposals, so the remaining count is
           small and known to be small. */}
       {isWorking && pending.length > 0 && (
-        <p className="flex items-center gap-2 px-1 pt-2 text-[11px] text-content-faint">
+        <p className="flex items-center gap-2 px-1 pt-2 text-2xs text-content-faint">
           <Spinner />
           {t('ai.stillWriting')}
         </p>

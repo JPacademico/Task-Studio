@@ -46,7 +46,7 @@ export const BranchCommitPrompt = () => {
 
           <p className="flex items-center gap-2 rounded-xl border border-edge bg-surface-sunken/60 px-2.5 py-2">
             <GitBranch aria-hidden className="h-3.5 w-3.5 shrink-0 text-content-faint" />
-            <span className="min-w-0 flex-1 truncate font-mono text-[11px]">{offer.branch}</span>
+            <span className="min-w-0 flex-1 truncate font-mono text-2xs">{offer.branch}</span>
           </p>
 
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

@@ -55,7 +55,23 @@ export const DemoChat = () => {
   const isTyping = step === MESSAGES.length - 1;
 
   return (
-    <div className="flex min-h-[13rem] flex-col">
+    /*
+     * A fixed height, not a minimum.
+     *
+     * The panel used to grow by a row for about a third of a second every time
+     * the last message landed, which shoved the whole section — and everything
+     * below it on the page — down and back. The cause is that the typing
+     * indicator's *exit* overlaps the third message's *enter*: `AnimatePresence`
+     * keeps the leaving row mounted until its animation finishes, so for that
+     * moment the list genuinely holds four rows instead of three.
+     *
+     * Two changes make that impossible rather than merely unlikely. The box no
+     * longer measures itself from its contents, so a transient fourth row
+     * cannot change its size; and the list below clips, so the overlap is
+     * absorbed instead of pushing. `popLayout` on the list handles the third
+     * cause — see there.
+     */
+    <div className="flex h-[15.5rem] flex-col">
       {/* --- Which project this belongs to -------------------------------
 
           The header is not decoration: a chat panel with a project name on it
@@ -64,14 +80,25 @@ export const DemoChat = () => {
           project tool rather than telling people to use Slack. */}
       <div className="flex items-center gap-2 border-b border-edge pb-2">
         <span aria-hidden className="h-2 w-2 shrink-0 rounded-full bg-positive" />
-        <p className="truncate text-[11px] font-semibold">{t('landing.chat.project')}</p>
-        <span className="ml-auto text-[10px] text-content-faint">
+        <p className="truncate text-2xs font-semibold">{t('landing.chat.project')}</p>
+        <span className="ml-auto text-3xs text-content-faint">
           {t('landing.chat.online')}
         </span>
       </div>
 
-      <ul className="flex flex-1 flex-col justify-end gap-2 pt-3">
-        <AnimatePresence initial={false}>
+      {/* `justify-end` stacks from the bottom, so what a clipped list loses is
+          the oldest message off the top — the same direction a real transcript
+          scrolls. */}
+      <ul className="flex flex-1 flex-col justify-end gap-2 overflow-hidden pt-3">
+        {/*
+          `popLayout`, so the typing indicator is lifted out of layout flow the
+          instant it starts leaving rather than holding a row open until it has
+          finished fading. This is the one place in the app where that mode is
+          the right answer: these rows are full-width and stacked, so there is no
+          horizontal alignment for absolute positioning to break — unlike the
+          headline's grid cells, where it caused a bug of its own.
+        */}
+        <AnimatePresence mode="popLayout" initial={false}>
           {MESSAGES.slice(0, visible).map((message) => (
             <motion.li
               key={message.key}
@@ -87,7 +114,7 @@ export const DemoChat = () => {
               <Avatar name={message.author} size="xs" />
               <div
                 className={cn(
-                  'max-w-[78%] rounded-2xl px-2.5 py-1.5 text-[11px] leading-snug',
+                  'max-w-[78%] rounded-2xl px-2.5 py-1.5 text-2xs leading-snug',
                   message.mine
                     ? 'rounded-br-sm bg-brand text-brand-contrast'
                     : 'rounded-bl-sm bg-surface-sunken text-content',
@@ -139,7 +166,7 @@ export const DemoChat = () => {
         aria-hidden
         className="mt-3 flex items-center gap-2 rounded-xl border border-edge bg-surface-sunken/60 px-3 py-2"
       >
-        <span className="text-[11px] text-content-faint">{t('landing.chat.placeholder')}</span>
+        <span className="text-2xs text-content-faint">{t('landing.chat.placeholder')}</span>
       </div>
     </div>
   );

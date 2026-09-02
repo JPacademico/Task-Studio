@@ -6,10 +6,7 @@ import { ArrowRight, Github } from 'lucide-react';
 import { wakeApi } from '@/shared/api/client';
 import { buttonClasses, StudioMark } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
-import { DemoBoard } from './ui/demo-board';
-import { DemoChat } from './ui/demo-chat';
-import { DemoFrame } from './ui/demo-frame';
-import { DemoImport } from './ui/demo-import';
+import { FeatureCarousel } from './ui/feature-carousel';
 import { FeatureNotes } from './ui/feature-notes';
 import { IntegrationsStrip } from './ui/integrations-strip';
 import { LandingNav } from './ui/landing-nav';
@@ -149,42 +146,24 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ================= THE DEMOS ================= */}
-      <section id="how" className="scroll-mt-20 border-t border-edge/70 bg-surface-sunken/30">
-        <div className="mx-auto w-full max-w-6xl space-y-16 px-4 py-16 sm:space-y-24 sm:px-6 sm:py-24">
-          <header className="max-w-2xl">
-            <h2 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl">
-              {t('landing.how.title')}
-            </h2>
-            <p className="mt-3 text-sm leading-relaxed text-content-muted">
-              {t('landing.how.body')}
-            </p>
-          </header>
+      {/* ================= THE DEMOS =================
 
-          <DemoFrame
-            tab={t('landing.demo.boardTab')}
-            title={t('landing.demo.boardTitle')}
-            body={t('landing.demo.boardBody')}
-          >
-            <DemoBoard />
-          </DemoFrame>
+          No heading over this one, deliberately.
 
-          <DemoFrame
-            side="right"
-            tab={t('landing.demo.importTab')}
-            title={t('landing.demo.importTitle')}
-            body={t('landing.demo.importBody')}
-          >
-            <DemoImport />
-          </DemoFrame>
-
-          <DemoFrame
-            tab={t('landing.demo.chatTab')}
-            title={t('landing.demo.chatTitle')}
-            body={t('landing.demo.chatBody')}
-          >
-            <DemoChat />
-          </DemoFrame>
+          It used to carry "Three things, actually working" and a sentence
+          explaining that the panels below were real interfaces rather than
+          screenshots. Both were redundant against the thing underneath them:
+          nine live, moving, themed interfaces are self-evidently not
+          screenshots, and a reader who needs to be told that has not looked at
+          them yet. The section is now the demos, which is what it was always
+          for. */}
+      <section
+        id="how"
+        aria-label={t('landing.nav.how')}
+        className="scroll-mt-20 border-t border-edge/70 bg-surface-sunken/30"
+      >
+        <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
+          <FeatureCarousel />
         </div>
       </section>
 
@@ -211,19 +190,12 @@ const LandingPage = () => {
         id="inside"
         className="scroll-mt-20 border-t border-edge/70 bg-surface-sunken/30"
       >
+        {/* The heading is inside the board now — pinned to the middle of it,
+            with the six notes arranged around it. A heading above a wall and a
+            heading *on* the wall are different claims, and this section is
+            making the second one. See `FeatureNotes`. */}
         <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
-          <header className="max-w-2xl">
-            <h2 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl">
-              {t('landing.inside.title')}
-            </h2>
-            <p className="mt-3 text-sm leading-relaxed text-content-muted">
-              {t('landing.inside.body')}
-            </p>
-          </header>
-
-          <div className="mt-12">
-            <FeatureNotes />
-          </div>
+          <FeatureNotes />
         </div>
       </section>
 
@@ -266,7 +238,7 @@ const LandingPage = () => {
             Task Studio
           </span>
 
-          <p className="text-[11px] text-content-faint">{t('landing.footer.tagline')}</p>
+          <p className="text-2xs text-content-faint">{t('landing.footer.tagline')}</p>
 
           <a
             /*
@@ -282,7 +254,7 @@ const LandingPage = () => {
             // `noopener` is the one that matters — without it the opened page
             // gets a handle on this one through `window.opener`.
             rel="noreferrer noopener"
-            className="ml-auto inline-flex items-center gap-1.5 text-[11px] text-content-muted transition-colors hover:text-content"
+            className="ml-auto inline-flex items-center gap-1.5 text-2xs text-content-muted transition-colors hover:text-content"
           >
             <Github aria-hidden className="h-3.5 w-3.5" />
             {t('landing.footer.source')}

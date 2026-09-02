@@ -175,7 +175,7 @@ export const InvitePicker = ({
           )}
 
           {visible.length === 0 ? (
-            <p className="py-3 text-center text-[11px] text-content-faint">
+            <p className="py-3 text-center text-2xs text-content-faint">
               {t('invite.noMatches')}
             </p>
           ) : (
@@ -220,7 +220,7 @@ export const InvitePicker = ({
 
           {pageCount > 1 && (
             <div className="flex items-center justify-between gap-2 pt-0.5">
-              <span className="text-[10px] tabular-nums text-content-faint">
+              <span className="text-3xs tabular-nums text-content-faint">
                 {t('invite.page', {
                   from: String(start + 1),
                   to: String(Math.min(start + PAGE_SIZE, matches.length)),
@@ -275,7 +275,7 @@ export const InvitePicker = ({
                   style={{ backgroundColor: team.color }}
                 />
                 <span className="max-w-[9rem] truncate">{team.name}</span>
-                <span className="shrink-0 tabular-nums text-[10px] text-content-faint">
+                <span className="shrink-0 tabular-nums text-3xs text-content-faint">
                   {team.memberCount}
                 </span>
                 {isSelected && <Check className="h-3 w-3" strokeWidth={3} />}

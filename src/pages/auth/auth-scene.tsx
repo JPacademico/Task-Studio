@@ -99,7 +99,7 @@ const HeroNote = ({ bounds }: { bounds: React.RefObject<HTMLElement | null> }) =
       tilt={-6}
       title={t('auth.desk.tickIt')}
     >
-      <div className="relative w-[190px] rounded-[4px] bg-[#fde68a] p-4 text-[#1a1a22] shadow-[0_20px_40px_-18px_rgb(0_0_0/0.65)]">
+      <div className="relative w-[11.875rem] rounded-[4px] bg-[#fde68a] p-4 text-[#1a1a22] shadow-[0_20px_40px_-18px_rgb(0_0_0/0.65)]">
         {/* Peeled corner. */}
         <span
           aria-hidden
@@ -111,7 +111,7 @@ const HeroNote = ({ bounds }: { bounds: React.RefObject<HTMLElement | null> }) =
           <PushPin isPinned className="h-6 w-6" />
         </span>
 
-        <p className="font-hand text-[13px] font-bold uppercase tracking-wide opacity-55">{t('auth.desk.today')}</p>
+        <p className="font-hand text-[0.8125rem] font-bold uppercase tracking-wide opacity-55">{t('auth.desk.today')}</p>
 
         <button
           type="button"
@@ -134,7 +134,7 @@ const HeroNote = ({ bounds }: { bounds: React.RefObject<HTMLElement | null> }) =
             </motion.span>
           </span>
 
-          <span className="relative font-hand text-[17px] leading-snug">
+          <span className="relative font-hand text-[1.0625rem] leading-snug">
             {t('auth.desk.designIt')}
             <motion.span
               aria-hidden
@@ -162,13 +162,13 @@ const SmallNote = ({ bounds }: { bounds: React.RefObject<HTMLElement | null> }) 
     tilt={7}
     title={t('auth.desk.dragMe')}
   >
-    <div className="w-[132px] rounded-[4px] bg-[#bfdbfe] p-3 text-[#1a1a22] shadow-[0_16px_32px_-16px_rgb(0_0_0/0.6)]">
+    <div className="w-[8.25rem] rounded-[4px] bg-[#bfdbfe] p-3 text-[#1a1a22] shadow-[0_16px_32px_-16px_rgb(0_0_0/0.6)]">
       <span
         aria-hidden
         className="float-right h-5 w-5 bg-black/10"
         style={{ clipPath: 'polygon(100% 0, 0 0, 100% 100%)' }}
       />
-      <p className="font-hand text-[15px] leading-tight">{t('auth.desk.shipFriday')}</p>
+      <p className="font-hand text-[0.9375rem] leading-tight">{t('auth.desk.shipFriday')}</p>
       <div className="mt-2 space-y-1">
         <span className="block h-[3px] w-full rounded-full bg-black/15" />
         <span className="block h-[3px] w-2/3 rounded-full bg-black/15" />
@@ -190,8 +190,8 @@ const ChecklistNote = ({ bounds }: { bounds: React.RefObject<HTMLElement | null>
     tilt={-5}
     title={t('auth.desk.halfDone')}
   >
-    <div className="w-[150px] rounded-[4px] bg-[#bbf7d0] p-3 text-[#1a1a22] shadow-[0_16px_32px_-16px_rgb(0_0_0/0.6)]">
-      <p className="flex items-center gap-1.5 font-hand text-[14px] font-bold leading-tight">
+    <div className="w-[9.375rem] rounded-[4px] bg-[#bbf7d0] p-3 text-[#1a1a22] shadow-[0_16px_32px_-16px_rgb(0_0_0/0.6)]">
+      <p className="flex items-center gap-1.5 font-hand text-sm font-bold leading-tight">
         <ListChecks className="h-3.5 w-3.5" />
         {t('auth.desk.thisWeek')}
       </p>
@@ -244,15 +244,15 @@ const TaskChip = ({ bounds }: { bounds: React.RefObject<HTMLElement | null> }) =
       Tokens give the same glass on the dark palette and an actual card on the
       light one, and the whole thing now follows a skin change for free.
     */}
-    <div className="relative w-[172px] overflow-hidden rounded-xl border border-edge bg-surface-raised/85 p-3 shadow-[0_16px_32px_-18px_rgb(0_0_0/0.45)] backdrop-blur-md">
+    <div className="relative w-[10.75rem] overflow-hidden rounded-xl border border-edge bg-surface-raised/85 p-3 shadow-[0_16px_32px_-18px_rgb(0_0_0/0.45)] backdrop-blur-md">
       <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-brand" />
-      <p className="text-[11px] font-semibold text-content">{t('auth.desk.rollOut')}</p>
+      <p className="text-2xs font-semibold text-content">{t('auth.desk.rollOut')}</p>
       <div className="mt-2 flex items-center gap-1.5">
-        <span className="inline-flex items-center gap-1 rounded-full bg-surface-sunken px-1.5 py-0.5 text-[9px] font-medium text-content-muted">
+        <span className="inline-flex items-center gap-1 rounded-full bg-surface-sunken px-1.5 py-0.5 text-4xs font-medium text-content-muted">
           <Clock3 className="h-2.5 w-2.5" />
           2d
         </span>
-        <span className="inline-flex items-center gap-1 rounded-full bg-positive/15 px-1.5 py-0.5 text-[9px] font-medium text-positive">
+        <span className="inline-flex items-center gap-1 rounded-full bg-positive/15 px-1.5 py-0.5 text-4xs font-medium text-positive">
           {t('auth.desk.onTime')}
         </span>
         <span className="ml-auto flex -space-x-1.5">
@@ -318,15 +318,15 @@ export const AuthScene = ({ bounds }: { bounds: React.RefObject<HTMLElement | nu
     {/* Depth: brand blooms and a soft grid, all pure CSS. */}
     <div
       aria-hidden
-      className="absolute -left-24 -top-24 h-[460px] w-[460px] rounded-full bg-brand/30 blur-[130px]"
+      className="absolute -left-24 -top-24 h-[28.75rem] w-[28.75rem] rounded-full bg-brand/30 blur-[130px]"
     />
     <div
       aria-hidden
-      className="absolute -bottom-32 right-[-10%] h-[420px] w-[420px] rounded-full bg-brand/20 blur-[130px]"
+      className="absolute -bottom-32 right-[-10%] h-[26.25rem] w-[26.25rem] rounded-full bg-brand/20 blur-[130px]"
     />
     <div
       aria-hidden
-      className="absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand/[0.12] blur-[150px]"
+      className="absolute left-1/2 top-1/2 h-[32.5rem] w-[32.5rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand/[0.12] blur-[150px]"
     />
     <div aria-hidden className="board-grid absolute inset-0 opacity-40" />
 

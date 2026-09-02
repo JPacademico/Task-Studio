@@ -261,7 +261,7 @@ export const ZoomableImage = ({ src, thumbSrc, alt, className }: ZoomableImagePr
                     <ZoomOut className="h-4 w-4" />
                   </button>
 
-                  <span className="min-w-[3.25rem] text-center text-[11px] font-semibold tabular-nums text-white">
+                  <span className="min-w-[3.25rem] text-center text-2xs font-semibold tabular-nums text-white">
                     {Math.round(zoom * 100)}%
                   </span>
 

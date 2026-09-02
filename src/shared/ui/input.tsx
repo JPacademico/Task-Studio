@@ -67,7 +67,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           id={fieldId}
           aria-invalid={Boolean(error)}
           className={cn(
-            'field min-h-[92px] resize-y leading-relaxed',
+            'field min-h-[5.75rem] resize-y leading-relaxed',
             error && 'border-danger focus:border-danger focus:ring-danger/30',
             className,
           )}

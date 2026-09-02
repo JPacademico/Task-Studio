@@ -200,11 +200,11 @@ const RecycleBinPage = () => {
                   style={{ backgroundColor: task.color }}
                 />
 
-                <div className="min-w-[200px] flex-1 space-y-0.5">
+                <div className="min-w-[12.5rem] flex-1 space-y-0.5">
                   <p className="text-sm font-medium leading-snug line-through decoration-content-faint">
                     {task.title}
                   </p>
-                  <p className="text-[11px] text-content-faint">
+                  <p className="text-2xs text-content-faint">
                     {task.project?.name ?? t('agenda.personal')} ·{' '}
                     {t('bin.deletedWhen', {
                       when: task.deletedAt
@@ -294,11 +294,11 @@ const RecycleBinPage = () => {
                     )}
                   </span>
 
-                  <div className="min-w-[200px] flex-1 space-y-0.5">
+                  <div className="min-w-[12.5rem] flex-1 space-y-0.5">
                     <p className="line-clamp-1 text-sm font-medium leading-snug">
                       {preview || <span className="italic text-content-faint">{t('bin.emptyNote')}</span>}
                     </p>
-                    <p className="text-[11px] text-content-faint">
+                    <p className="text-2xs text-content-faint">
                       {note.scope === 'PROJECT'
                         ? t('bin.projectWhiteboard')
                         : note.scope === 'TASK'
@@ -363,7 +363,7 @@ const RecycleBinPage = () => {
                     style={{ backgroundColor: project.color }}
                   />
 
-                  <div className="min-w-[220px] flex-1 space-y-1">
+                  <div className="min-w-[13.75rem] flex-1 space-y-1">
                     <p className="flex flex-wrap items-center gap-2 text-sm font-medium leading-snug">
                       {project.name}
                       {project.completedAt && (
@@ -381,7 +381,7 @@ const RecycleBinPage = () => {
                       question "may I destroy this" is really "how much is in
                       it", and this is the only screen that can answer it.
                     */}
-                    <p className="text-[11px] text-content-faint">
+                    <p className="text-2xs text-content-faint">
                       {t('bin.projectContents', {
                         tasks: String(project.counts.tasks),
                         notes: String(project.counts.notes),

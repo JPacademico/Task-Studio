@@ -169,7 +169,7 @@ export const GithubImportPanel = ({
       </div>
 
       {!repo && !preview.isPending && (
-        <p className="text-[11px] leading-relaxed text-content-faint">{t('github.hint')}</p>
+        <p className="text-2xs leading-relaxed text-content-faint">{t('github.hint')}</p>
       )}
 
       {/*
@@ -190,10 +190,10 @@ export const GithubImportPanel = ({
           )}
         >
           <Github aria-hidden className="h-3.5 w-3.5 shrink-0 text-content-faint" />
-          <span className="min-w-0 flex-1 truncate text-[11px] font-medium">
+          <span className="min-w-0 flex-1 truncate text-2xs font-medium">
             {repo.fullName}
           </span>
-          <span className="shrink-0 text-[10px] text-brand">{t('github.overviewTitle')}</span>
+          <span className="shrink-0 text-3xs text-brand">{t('github.overviewTitle')}</span>
         </button>
       )}
 
@@ -223,10 +223,10 @@ export const GithubImportPanel = ({
             </span>
             <div className="min-w-0 flex-1 leading-tight">
               <p className="truncate text-xs font-semibold">{repo.fullName}</p>
-              <p className="mt-0.5 line-clamp-2 text-[11px] text-content-muted">
+              <p className="mt-0.5 line-clamp-2 text-2xs text-content-muted">
                 {repo.description ?? t('github.noDescription')}
               </p>
-              <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-content-faint">
+              <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-3xs text-content-faint">
                 {repo.language && <span>{repo.language}</span>}
                 <span className="inline-flex items-center gap-0.5">
                   <Star className="h-2.5 w-2.5" />
@@ -240,7 +240,7 @@ export const GithubImportPanel = ({
           {/* An archived repository still imports — it is just worth knowing
               before the project it becomes looks abandoned a week later. */}
           {repo.isArchived && (
-            <p className="flex items-start gap-1.5 text-[11px] leading-snug text-warning">
+            <p className="flex items-start gap-1.5 text-2xs leading-snug text-warning">
               <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
               {t('github.archivedWarning')}
             </p>
@@ -248,11 +248,11 @@ export const GithubImportPanel = ({
 
           {/* --- What would come across ----------------------------------- */}
           <div className="space-y-1.5 border-t border-edge/70 pt-2.5">
-            <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+            <p className="flex items-center gap-1.5 text-3xs font-semibold uppercase tracking-[0.14em] text-content-faint">
               <FileText className="h-3 w-3" />
               {t('github.pagesTitle')}
             </p>
-            <p className="text-[11px] leading-relaxed text-content-muted">
+            <p className="text-2xs leading-relaxed text-content-muted">
               {repo.documents.length > 0
                 ? repo.documents.join(' · ')
                 : t('github.noPages')}
@@ -262,7 +262,7 @@ export const GithubImportPanel = ({
           {/* --- Who would be asked to join ------------------------------- */}
           {repo.contributors.length > 0 && (
             <div className="space-y-1.5 border-t border-edge/70 pt-2.5">
-              <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+              <p className="flex items-center gap-1.5 text-3xs font-semibold uppercase tracking-[0.14em] text-content-faint">
                 <UserCheck className="h-3 w-3" />
                 {t('github.contributorsTitle', { count: String(invitable.length) })}
               </p>
@@ -277,7 +277,7 @@ export const GithubImportPanel = ({
                         : t('github.noAccount', { login: person.login })
                     }
                     className={cn(
-                      'inline-flex items-center gap-1.5 rounded-full border px-1.5 py-0.5 text-[10px]',
+                      'inline-flex items-center gap-1.5 rounded-full border px-1.5 py-0.5 text-3xs',
                       person.matchedUser
                         ? 'border-brand/40 bg-brand/[0.07] text-content'
                         : 'border-edge text-content-faint',
@@ -298,7 +298,7 @@ export const GithubImportPanel = ({
                 ))}
               </ul>
 
-              <p className="text-[10px] leading-relaxed text-content-faint">
+              <p className="text-3xs leading-relaxed text-content-faint">
                 {t('github.contributorsHint')}
               </p>
             </div>
@@ -319,7 +319,7 @@ export const GithubImportPanel = ({
                 onChange={setUseAssistant}
                 label={t('github.useAssistant')}
                 // The panel's own scale, not the control's default. See `Switch`.
-                className="text-[11px]"
+                className="text-2xs"
               />
 
               {/*
@@ -351,17 +351,17 @@ export const GithubImportPanel = ({
                     }
                     placeholder={t('github.guidancePlaceholder')}
                     maxLength={MAX_IMPORT_GUIDANCE}
-                    className="text-[11px]"
+                    className="text-2xs"
                   />
                   <div className="flex items-start justify-between gap-3">
-                    <p className="text-[10px] leading-relaxed text-content-faint">
+                    <p className="text-3xs leading-relaxed text-content-faint">
                       {t('github.guidanceHint')}
                     </p>
                     {/* Only once it is close enough to matter — a counter that
                         is always on is a limit the reader is asked to think
                         about before they have written anything. */}
                     {guidance.length > MAX_IMPORT_GUIDANCE * 0.75 && (
-                      <span className="shrink-0 text-[10px] tabular-nums text-content-faint">
+                      <span className="shrink-0 text-3xs tabular-nums text-content-faint">
                         {MAX_IMPORT_GUIDANCE - guidance.length}
                       </span>
                     )}
@@ -401,7 +401,7 @@ export const GithubImportPanel = ({
             is the opposite: the work carries on somewhere else and they are
             free to go, which is not obvious from a button that closes a dialog.
           */}
-          <p className="text-center text-[10px] leading-relaxed text-content-faint">
+          <p className="text-center text-3xs leading-relaxed text-content-faint">
             {t('github.backgroundHint')}
           </p>
           </div>

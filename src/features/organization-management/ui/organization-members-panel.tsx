@@ -77,7 +77,7 @@ const MemberRow = ({
         <p className="flex items-center gap-1.5 truncate text-sm font-medium">
           {member.displayName}
           {isSelf && (
-            <span className="text-[10px] uppercase tracking-wide text-content-faint">
+            <span className="text-3xs uppercase tracking-wide text-content-faint">
               {t('org.you')}
             </span>
           )}
@@ -102,7 +102,7 @@ const MemberRow = ({
             className="mt-1 h-7 py-0 text-xs"
           />
         ) : (
-          <p className="truncate text-[11px] text-content-faint">
+          <p className="truncate text-2xs text-content-faint">
             {member.jobTitle || t('org.noJobTitle')} · {t('org.joined')}{' '}
             {formatRelative(member.joinedAt)}
           </p>
@@ -342,7 +342,7 @@ export const OrganizationMembersPanel = ({
                     <p className="truncate text-sm font-medium">
                       {invitation.recipient.displayName}
                     </p>
-                    <p className="truncate text-[11px] text-content-faint">
+                    <p className="truncate text-2xs text-content-faint">
                       {t('org.invitedRelative', {
                         when: formatRelative(invitation.createdAt),
                       })}

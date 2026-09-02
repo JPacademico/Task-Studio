@@ -105,7 +105,7 @@ export const SignupPage = () => {
           {t('auth.signUp.submit')}
         </Button>
 
-        <p className="text-center text-[11px] leading-relaxed text-content-faint">
+        <p className="text-center text-2xs leading-relaxed text-content-faint">
           {t('auth.signUp.confirmNote')}
         </p>
       </form>

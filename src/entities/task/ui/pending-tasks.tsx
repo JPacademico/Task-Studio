@@ -45,7 +45,7 @@ export const PendingTasks = ({ count = MAX_PLACEHOLDERS, compact, className }: P
       data-testid="pending-tasks"
     >
       {Array.from({ length: total }, (_, index) => (
-        <Skeleton key={index} className={cn('rounded-2xl', compact ? 'h-[64px]' : 'h-[104px]')} />
+        <Skeleton key={index} className={cn('rounded-2xl', compact ? 'h-[4rem]' : 'h-[6.5rem]')} />
       ))}
     </div>
   );

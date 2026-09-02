@@ -143,7 +143,7 @@ export const ExpandableStage = ({
           shrink toggle, and two buttons for one gesture is one too many. */}
       <header className="flex flex-wrap items-center gap-2 sm:gap-3">
         <div className="min-w-0">
-          <p className="text-[10px] uppercase tracking-[0.18em] text-content-faint">{t('common.fullScreen')}</p>
+          <p className="text-3xs uppercase tracking-[0.18em] text-content-faint">{t('common.fullScreen')}</p>
           <h2 className="truncate text-sm font-semibold tracking-tight sm:text-base">{title}</h2>
         </div>
 

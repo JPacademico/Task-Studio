@@ -56,6 +56,16 @@ const AdminPage = lazy(() => import('@/pages/admin/admin-page'));
  */
 const LandingPage = lazy(() => import('@/pages/landing/landing-page'));
 
+/**
+ * The CLI documentation.
+ *
+ * Public, and outside both guards, for the same reason `/welcome` is: it is
+ * read by people deciding whether to install something as often as by people
+ * who already have, and a documentation page that demands a session is one
+ * nobody can link to.
+ */
+const DocsPage = lazy(() => import('@/pages/docs/docs-page'));
+
 export const AppRouter = () => (
   <Routes>
     {/*
@@ -73,6 +83,7 @@ export const AppRouter = () => (
       one line each; see the notes in `protected-route.tsx`.
     */}
     <Route path="/welcome" element={<LandingPage />} />
+    <Route path="/docs" element={<DocsPage />} />
 
     <Route element={<GuestRoute />}>
       <Route path="/login" element={<LoginPage />} />

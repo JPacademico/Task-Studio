@@ -185,7 +185,7 @@ const TeamComposer = ({ isOpen, onClose, scope, roster, team }: TeamComposerProp
           </div>
 
           {roster.length === 0 && (
-            <p className="rounded-xl border border-dashed border-edge px-3 py-3 text-[11px] text-content-faint">
+            <p className="rounded-xl border border-dashed border-edge px-3 py-3 text-2xs text-content-faint">
               {t(scope.organizationId ? 'team.noStaffYet' : 'team.noRosterYet')}
             </p>
           )}
@@ -223,7 +223,7 @@ const TeamRow = ({ team, canManage, onEdit, onDelete, t }: TeamRowProps) => {
 
       <div className="min-w-0 flex-1 leading-tight">
         <p className="truncate text-sm font-semibold tracking-tight">{team.name}</p>
-        <p className="truncate text-[11px] text-content-faint">
+        <p className="truncate text-2xs text-content-faint">
           {team.description || t('team.headcount', { count: team.memberCount })}
         </p>
       </div>
@@ -321,7 +321,7 @@ export const TeamsPanel = ({ scope, roster, canManage }: TeamsPanelProps) => {
         <ul className="space-y-2">
           {Array.from({ length: 3 }, (_, index) => (
             <li key={index}>
-              <Skeleton className="h-[68px] rounded-2xl" />
+              <Skeleton className="h-[4.25rem] rounded-2xl" />
             </li>
           ))}
         </ul>

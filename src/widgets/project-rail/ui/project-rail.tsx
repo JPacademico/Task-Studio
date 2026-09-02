@@ -119,7 +119,7 @@ const RailProject = ({
           </span>
           <span
             className={cn(
-              'block truncate text-[10px]',
+              'block truncate text-3xs',
               isOverdue ? 'text-danger' : 'text-content-faint',
             )}
           >
@@ -227,7 +227,7 @@ const RailOrganization = ({
 
         <span className="min-w-0 flex-1 leading-tight">
           <span className="block truncate text-xs font-semibold">{organization.name}</span>
-          <span className="flex items-center gap-1.5 text-[10px] text-content-faint">
+          <span className="flex items-center gap-1.5 text-3xs text-content-faint">
             <Users className="h-2.5 w-2.5 shrink-0" />
             <span className="tabular-nums">{organization.memberCount}</span>
             <span aria-hidden>·</span>
@@ -331,7 +331,7 @@ export const ProjectRail = ({ onCreateProject }: ProjectRailProps) => {
         animate={{ x: isRevealed ? 0 : 'calc(100% + 12px)' }}
         transition={{ type: 'spring', stiffness: 460, damping: 40, mass: 0.7 }}
         className={cn(
-          'nav-rail nav-rail--right ui-textured gpu fixed right-0 top-0 z-50 flex h-full w-[260px] flex-col',
+          'nav-rail nav-rail--right ui-textured gpu fixed right-0 top-0 z-50 flex h-full w-[16.25rem] flex-col',
           'safe-t safe-b safe-r',
           // See the note on the left rail: a full-height blur that animates is
           // the most expensive thing on the page, and at 95% opacity nobody
@@ -362,7 +362,7 @@ export const ProjectRail = ({ onCreateProject }: ProjectRailProps) => {
               <p className="truncate text-sm font-bold tracking-tight">
                 {t(isProjects ? 'dash.projects' : 'org.title')}
               </p>
-              <p className="text-[10px] uppercase tracking-[0.16em] text-content-faint">
+              <p className="text-3xs uppercase tracking-[0.16em] text-content-faint">
                 {t(isProjects ? 'rail.soonestFirst' : 'rail.yourCompanies')}
               </p>
             </div>
@@ -403,7 +403,7 @@ export const ProjectRail = ({ onCreateProject }: ProjectRailProps) => {
         <div className="scrollbar-thin flex-1 space-y-1.5 overflow-y-auto px-3 pb-3">
           {isLoading &&
             Array.from({ length: 4 }, (_, index) => (
-              <Skeleton key={index} className="h-[58px] rounded-2xl" />
+              <Skeleton key={index} className="h-[3.625rem] rounded-2xl" />
             ))}
 
           {!isLoading && isEmpty && (

@@ -60,7 +60,7 @@ const RoomRow = ({
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{room.name}</p>
-        <p className="flex flex-wrap items-center gap-x-2 text-[11px] text-content-faint">
+        <p className="flex flex-wrap items-center gap-x-2 text-2xs text-content-faint">
           {room.location && <span className="truncate">{room.location}</span>}
           {room.capacity !== null && (
             <span className="inline-flex items-center gap-1">
