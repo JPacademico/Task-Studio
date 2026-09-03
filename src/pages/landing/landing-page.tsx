@@ -11,6 +11,7 @@ import { FeatureCarousel } from './ui/feature-carousel';
 import { FeatureNotes } from './ui/feature-notes';
 import { IntegrationsStrip } from './ui/integrations-strip';
 import { LandingNav } from './ui/landing-nav';
+import { Reveal } from './ui/reveal';
 import { RotatingWord } from './ui/rotating-word';
 import { ThemeShowcase } from './ui/theme-showcase';
 
@@ -151,44 +152,85 @@ const LandingPage = () => {
             <span className="text-content-muted">{t('landing.hero.titleTail')}</span>
           </motion.h1>
 
-          <motion.p
-            initial={reduceMotion ? false : { opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.12 }}
-            className="mt-6 max-w-xl text-base leading-relaxed text-content-muted sm:text-lg"
-          >
-            {t('landing.hero.body')}
-          </motion.p>
-
           {/*
-            Two buttons and nothing under them.
+            The paragraph and the buttons on one line, not stacked.
 
-            There used to be a line of reassurance here — "No card. Bring a
-            GitHub repository or a board export and start with real work in
-            it." Both halves of it were already said better elsewhere: there is
-            no pricing anywhere on this page for a card to be relevant to, and
-            the import demo two screens down *shows* a repository becoming a
-            project rather than promising it. A sentence that repeats the page
-            in smaller type is a sentence that makes the page longer.
+            Headline, then paragraph, then buttons is three full-width rows for
+            about forty words, and on a laptop it pushed the first demo entirely
+            below the fold — so the page's opening screen was type and nothing
+            else. Side by side, the same content ends a third of a screen
+            higher and the reader meets the product rather than a wall of
+            introduction.
+
+            `items-end` rather than `items-center`: the buttons align to the
+            paragraph's last line, so the two blocks share a baseline instead of
+            floating against each other. Stacked below `sm`, where there is no
+            width to put them side by side and the vertical order is the reading
+            order anyway.
+
+            There is nothing under them. A line of reassurance used to sit there
+            — "No card. Bring a GitHub repository…" — and both halves of it were
+            already said better elsewhere: there is no pricing on this page for
+            a card to be relevant to, and the import demo *shows* a repository
+            becoming a project rather than promising it.
           */}
           <motion.div
             initial={reduceMotion ? false : { opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.18 }}
-            className="mt-8 flex flex-wrap items-center gap-2.5"
+            transition={{ duration: 0.55, delay: 0.12 }}
+            className="mt-6 flex flex-col gap-6 sm:mt-8 sm:flex-row sm:items-end sm:justify-between sm:gap-10"
           >
-            <Link
-              to="/signup"
-              className={buttonClasses({ size: 'lg', className: 'gap-2' })}
-            >
-              {t('landing.hero.primary')}
-              <ArrowRight aria-hidden className="h-4 w-4" />
-            </Link>
-            <a href="#how" className={buttonClasses({ variant: 'secondary', size: 'lg' })}>
-              {t('landing.hero.secondary')}
-            </a>
+            <p className="max-w-xl text-base leading-relaxed text-content-muted sm:text-lg">
+              {t('landing.hero.body')}
+            </p>
+
+            <div className="flex shrink-0 flex-wrap items-center gap-2.5">
+              <Link
+                to="/signup"
+                className={buttonClasses({ size: 'lg', className: 'gap-2' })}
+              >
+                {t('landing.hero.primary')}
+                <ArrowRight aria-hidden className="h-4 w-4" />
+              </Link>
+              <a href="#how" className={buttonClasses({ variant: 'secondary', size: 'lg' })}>
+                {t('landing.hero.secondary')}
+              </a>
+            </div>
           </motion.div>
         </div>
+      </section>
+
+      {/* ================= CONNECTIONS =================
+
+          Second on the page now, and with neither a heading nor a paragraph.
+
+          Both were removed for the same reason and the move follows from it.
+          "It plugs into what you already use" is a sentence the belt underneath
+          says better and instantly — eight marks a reader recognises before
+          they have finished the heading — and the paragraph under it ("nothing
+          here needs an account manager") was answering an objection nobody has
+          yet formed two screens into a page with no pricing on it.
+
+          Stripped of the words, it stops being a section that has to be *read*
+          and becomes a band that is simply *seen*, which is the only thing it
+          was ever going to be at this speed. That is what makes it work
+          directly under the introduction, where it costs no vertical space
+          worth the name and answers the first question a stranger actually has
+          — "does this work with my stuff?" — before the product has to argue
+          anything.
+
+          Full-bleed, outside the page's column. A marquee that stops at the
+          same margin as the copy above it is a marquee in a box; edge to edge
+          it reads as something passing through. The fade at each end is on the
+          strip itself. */}
+      <section
+        id="connects"
+        aria-label={t('landing.nav.connects')}
+        className="scroll-mt-20 border-t border-edge/70 py-10 sm:py-14"
+      >
+        <Reveal>
+          <IntegrationsStrip />
+        </Reveal>
       </section>
 
       {/* ================= THE DEMOS =================
@@ -208,32 +250,9 @@ const LandingPage = () => {
         className="scroll-mt-20 border-t border-edge/70 bg-surface-sunken/30"
       >
         <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
-          <FeatureCarousel />
-        </div>
-      </section>
-
-      {/* ================= CONNECTIONS ================= */}
-      <section id="connects" className="scroll-mt-20 border-t border-edge/70">
-        <div className="mx-auto w-full max-w-6xl px-4 pt-16 sm:px-6 sm:pt-24">
-          <header className="max-w-2xl">
-            <h2 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl">
-              {t('landing.connects.title')}
-            </h2>
-            <p className="mt-3 text-sm leading-relaxed text-content-muted">
-              {t('landing.connects.body')}
-            </p>
-          </header>
-        </div>
-
-        {/*
-          The belt runs the full width of the viewport, outside the column the
-          heading sits in. A marquee that stops at the same margin as the
-          paragraph above it is a marquee in a box; running it edge to edge is
-          what makes it read as something passing through rather than as another
-          panel. The mask at each end is on the strip itself.
-        */}
-        <div className="pb-16 pt-8 sm:pb-24">
-          <IntegrationsStrip />
+          <Reveal>
+            <FeatureCarousel />
+          </Reveal>
         </div>
       </section>
 
@@ -252,7 +271,9 @@ const LandingPage = () => {
             board *is* the section, so every pixel of column it does not use is
             a pixel of empty wall around a wall. See `FeatureNotes`. */}
         <div className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
-          <FeatureNotes />
+          <Reveal>
+            <FeatureNotes />
+          </Reveal>
         </div>
       </section>
 
@@ -270,24 +291,34 @@ const LandingPage = () => {
         className="scroll-mt-20 border-t border-edge/70"
       >
         <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
-          <header className="max-w-2xl">
-            <h2 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl">
-              {t('landing.themes.title')}
-            </h2>
-            <p className="mt-3 text-sm leading-relaxed text-content-muted">
-              {t('landing.themes.body')}
-            </p>
-          </header>
+          {/*
+            A heading and nothing else.
 
-          <div className="mt-10">
+            The paragraph under this explained that a skin reinterprets the whole
+            app rather than recolouring it — which is precisely what the barrel,
+            the description panel and the light-against-dark box below
+            demonstrate, in the reader's own eyes, thirteen times over. A
+            sentence claiming what the thing under it is about to show is a
+            sentence that only delays the showing.
+          */}
+          <Reveal>
+            <header className="max-w-2xl">
+              <h2 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl">
+                {t('landing.themes.title')}
+              </h2>
+            </header>
+          </Reveal>
+
+          <Reveal className="mt-10" delay={80}>
             <ThemeShowcase />
-          </div>
+          </Reveal>
         </div>
       </section>
 
       {/* ================= CLOSING ================= */}
       <section className="border-t border-edge/70 bg-surface-sunken/30">
         <div className="mx-auto w-full max-w-3xl px-4 py-20 text-center sm:px-6 sm:py-28">
+          <Reveal>
           <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-brand/15 text-brand ring-1 ring-inset ring-brand/25">
             <StudioMark className="h-9 w-9" />
           </span>
@@ -311,6 +342,7 @@ const LandingPage = () => {
               {t('landing.cta.secondary')}
             </Link>
           </div>
+          </Reveal>
         </div>
       </section>
 

@@ -204,13 +204,49 @@
   }
 
   .dark {
-    --surface: 15 15 18;
-    --surface-raised: 23 23 28;
-    --surface-sunken: 10 10 13;
-    --edge: 38 38 46;
+    /*
+     * The three greys, pulled apart.
+     *
+     * They used to sit at 15 / 23 / 10 — a raised card exactly eight points
+     * above the page it sat on, which is about 3% of the scale and, on any
+     * screen that is not a calibrated panel in a dark room, invisible. The
+     * practical result was that every card, panel, modal and menu in the dark
+     * theme was legible only by its 1px border: the fills were the same colour,
+     * so the *outline* was doing all of the work of saying where one surface
+     * ended and the next began. Turn the borders off and the interface would
+     * have been one flat rectangle.
+     *
+     * That is what "it is not just the outline" is asking for, and the fix is
+     * tone rather than more border. The gap between the page and a raised
+     * surface is now nineteen points instead of eight, and sunken drops further
+     * below the page than it did — so the stack reads as three distinct planes
+     * with the border merely defining their edges, which is the job a border
+     * should have.
+     *
+     * The direction is deliberate and unchanged: raised is *lighter* than the
+     * page and sunken is darker. Light falls from above, so the surface nearer
+     * the viewer catches more of it; inverting that makes cards read as holes.
+     * Every one of the twelve other skins already follows the same rule, and
+     * this is the one that was not following it loudly enough.
+     *
+     * The page itself moves down two points rather than raised moving up
+     * nineteen. Pushing the cards brighter would have raised the average
+     * luminance of the whole interface, which is the thing a dark theme exists
+     * to avoid; dropping the ground instead buys the same separation and makes
+     * the screen slightly darker overall rather than lighter.
+     */
+    --surface: 13 13 16;
+    --surface-raised: 32 32 39;
+    --surface-sunken: 8 8 10;
+    /*
+     * The border gets a little more presence too — not to carry the separation
+     * any more, but because a divider that was tuned to be the only visible
+     * boundary reads as timid once the fills are doing their share.
+     */
+    --edge: 52 52 62;
     --content: 245 245 247;
-    --content-muted: 163 163 178;
-    --content-faint: 110 110 126;
+    --content-muted: 168 168 183;
+    --content-faint: 122 122 138;
     --brand: 34 211 238;
     --brand-soft: 12 54 68;
     --brand-contrast: 12 12 18;

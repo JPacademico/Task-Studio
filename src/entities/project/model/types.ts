@@ -173,6 +173,8 @@ export interface ProjectDashboard {
   members: MemberProductivity[];
   mostProductiveMember: MemberProductivity | null;
   completionTrend: { date: string; completed: number }[];
+  /** Completions per calendar month, oldest first, `YYYY-MM`, no gaps. */
+  completionByMonth: { month: string; completed: number }[];
   upcomingDeadlines: {
     id: string;
     title: string;

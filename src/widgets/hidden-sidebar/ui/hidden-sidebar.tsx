@@ -368,7 +368,7 @@ export const HiddenSidebar = ({ isMobileOpen, onMobileClose }: HiddenSidebarProp
           </span>
 
           <div className="min-w-0 flex-1 leading-tight">
-            <p className="truncate text-sm font-bold tracking-tight">Task Studio</p>
+            <p className="truncate font-hand text-base font-bold tracking-normal">Task Studio</p>
             <p className="text-3xs uppercase tracking-[0.16em] text-content-faint">
               {t('nav.studioWorkspace')}
             </p>

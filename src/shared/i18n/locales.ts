@@ -576,16 +576,12 @@ const en = {
 
   'landing.demo.notesTab': 'Notes wall',
   'landing.demo.notesTitle': 'Stick it on the wall and tie it to the rest',
-  'landing.demo.notesBody':
-    'A canvas, not a column. Post-its go anywhere, get grouped, and connect to each other with string — because a thought about two things is not a row in a list.',
   'landing.notes.one': 'Pricing needs a decision',
   'landing.notes.two': 'Ask Bruno about the invoice',
   'landing.notes.three': 'Blocked on the contract',
 
   'landing.demo.meetTab': 'Meetings',
   'landing.demo.meetTitle': 'Book the room here, see it on your phone',
-  'landing.demo.meetBody':
-    'Two-way sync with a calendar Task Studio creates itself. It cannot read your existing appointments and cannot touch them — the grant is that narrow on purpose.',
   'landing.meet.here': 'Task Studio',
   'landing.meet.there': 'Your calendar',
   'landing.meet.title': 'Billing review',
@@ -594,16 +590,12 @@ const en = {
 
   'landing.demo.pagesTab': 'Pages',
   'landing.demo.pagesTitle': 'Write it down where the work is',
-  'landing.demo.pagesBody':
-    'A brief, a spec, minutes from the meeting it hangs off. Typed here, or brought in as a PDF or Word file and kept exactly as it was — never rewritten.',
   'landing.pages.title': 'Billing rewrite — brief',
   'landing.pages.saved': 'Saved',
   'landing.pages.hint': 'Or drop in a PDF and it stays exactly as it is.',
 
   'landing.demo.undoTab': 'Changelog',
   'landing.demo.undoTitle': 'Every change, and a way back from it',
-  'landing.demo.undoBody':
-    'The log is not a receipt. Most lines in it can be pressed, and the thing that happened un-happens — for thirty days, on the surface where you noticed.',
   'landing.undo.task': 'Ship the billing page',
   'landing.undo.log': 'Changelog',
   'landing.undo.deleted': 'Ana moved a task to the bin',
@@ -613,8 +605,6 @@ const en = {
 
   'landing.demo.commitTab': 'Your editor',
   'landing.demo.commitTitle': 'Commit as usual, and the board keeps up',
-  'landing.demo.commitBody':
-    'A hook reads the commit against the task on its branch and closes it when it plainly finishes the work. No diff leaves your machine — a message and the file names, nothing else.',
   'landing.commit.checking': 'taskstudio: reading the commit…',
   'landing.commit.task': 'Rate limit the import routes',
   'landing.commit.branch': 'on fix/import-rate-limit',
@@ -622,23 +612,15 @@ const en = {
 
   'landing.demo.drawTab': 'Whiteboard',
   'landing.demo.drawTitle': 'Draw the thing you cannot describe',
-  'landing.demo.drawBody':
-    'A pen, a rubber and a nib you can see the size of, on the same surface as the notes — so the sketch and the sticky note about it live together.',
   'landing.draw.hint': 'Pen, rubber, and notes on the same surface.',
   'landing.demo.boardTab': 'Board',
   'landing.demo.boardTitle': 'Pick a task up and put it where it belongs',
-  'landing.demo.boardBody':
-    'Columns you name yourself, cards that carry their deadline and their people. Drag one across and everything that counts it — the dashboard, the deadlines, your teammate’s screen — updates at once.',
 
   'landing.demo.importTab': 'New project',
   'landing.demo.importTitle': 'Turn a repository into a project, in the background',
-  'landing.demo.importBody':
-    'Paste a public GitHub repository and close the dialog. It reads the README, the file tree and the open issues, writes a project with starting tasks and pages, and invites the contributors who already work here. A card in the corner tracks it, and you can cancel at any point.',
 
   'landing.demo.chatTab': 'Project chat',
   'landing.demo.chatTitle': 'Talk about the work, next to the work',
-  'landing.demo.chatBody':
-    'Every project has its own conversation, and it follows you around the app — pin it and it stays open while you are on someone else’s board. Decisions end up beside the tasks they are about instead of three tools away.',
 
   'landing.board.todo': 'To do',
   'landing.board.doing': 'Doing',
@@ -666,9 +648,6 @@ const en = {
   'landing.chat.two': 'Only the webhook part. Half a day at most.',
   'landing.chat.three': 'Then Friday holds. Moving it to Doing.',
 
-  'landing.connects.title': 'It plugs into what you already use',
-  'landing.connects.body':
-    'Everything below works today, and every one of them is a setting you can turn on yourself. Nothing here needs an account manager.',
 
   'landing.svc.github': 'GitHub',
   'landing.svc.githubWhat': 'Turn a public repository into a project',
@@ -688,13 +667,15 @@ const en = {
   'landing.svc.webhooksWhat': 'Signed events, and tokens for your scripts',
 
   // --- The themes shelf ---------------------------------------------------
-  'landing.themes.title': 'Thirteen ways to look at the same work',
-  'landing.themes.body':
-    'A skin is not an accent colour here. Each one reinterprets the whole app — its paper, its type, its corners, its light — and the one you pick follows you to every device you sign in on.',
+  'landing.themes.title': 'Multiple ways to look at the same work',
   'landing.themes.pick': 'Choose a theme to preview',
   'landing.themes.light': 'Light',
   'landing.themes.dark': 'Dark',
   'landing.themes.hint': 'Drag across to compare',
+  'landing.themes.apply': 'Try this theme',
+  'landing.themes.applied': 'Applied',
+  'landing.themes.applyHint': 'Applies it to this page — and to the app once you sign in.',
+  'theme.switchLabel': 'Colour scheme',
   'landing.themes.count': '{index} of {total}',
 
   'landing.inside.title': 'A studio, not a spreadsheet',
@@ -704,7 +685,7 @@ const en = {
   'landing.note.meetings': 'Meetings that reach your calendar',
   'landing.note.docs': 'Pages that live with the project',
   'landing.note.undo': 'A changelog you can undo',
-  'landing.note.skins': 'Thirteen ways to look',
+  'landing.note.skins': 'Many ways to look',
 
   'landing.cta.title': 'Put your work on the desk',
   'landing.cta.body':
@@ -1510,12 +1491,14 @@ const en = {
   'projectDash.crunching': 'Crunching metrics',
   'projectDash.completion': 'Completion',
   'projectDash.doneOfTotal': '{done} of {total} tasks done',
-  'projectDash.tasksCompleted': '{count} tasks completed',
   'projectDash.completedOnDay': '{count} completed on {date}',
-  'projectDash.mostProductive': 'Most productive',
-  'projectDash.noCompletions': 'No completions yet',
-  'projectDash.noCompletionsBody':
-    'Once the roster starts closing tasks, the leaderboard fills in.',
+  'projectDash.perMonth': 'Tasks completed per month',
+  'projectDash.lastMonths': 'Last {count} months',
+  'projectDash.completedInMonth': '{count} completed in {month}',
+  'projectDash.monthBest': 'Best month',
+  'projectDash.monthAverage': 'Monthly average',
+  'projectDash.monthTotal': 'Completed this year',
+  'projectDash.noMonthlyData': 'Nothing completed in the last year yet.',
   'projectDash.nextDeadlines': 'Next deadlines',
   'projectDash.nothingScheduled': 'Nothing scheduled',
   'projectDash.noDeadlines': 'No upcoming deadlines.',
@@ -2549,16 +2532,12 @@ const ptBR: Record<TranslationKey, string> = {
 
   'landing.demo.notesTab': 'Mural de notas',
   'landing.demo.notesTitle': 'Cole na parede e ligue ao resto',
-  'landing.demo.notesBody':
-    'Uma tela, não uma coluna. Os post-its vão para onde você quiser, se agrupam e se ligam por um barbante — porque um pensamento sobre duas coisas não é uma linha de lista.',
   'landing.notes.one': 'Preço precisa de decisão',
   'landing.notes.two': 'Falar com o Bruno sobre a nota',
   'landing.notes.three': 'Parado no contrato',
 
   'landing.demo.meetTab': 'Reuniões',
   'landing.demo.meetTitle': 'Marque a sala aqui, veja no celular',
-  'landing.demo.meetBody':
-    'Sincronização nos dois sentidos com uma agenda que o Task Studio cria sozinho. Ele não lê nem mexe nos seus compromissos existentes — a permissão é estreita de propósito.',
   'landing.meet.here': 'Task Studio',
   'landing.meet.there': 'Sua agenda',
   'landing.meet.title': 'Revisão de cobrança',
@@ -2567,16 +2546,12 @@ const ptBR: Record<TranslationKey, string> = {
 
   'landing.demo.pagesTab': 'Páginas',
   'landing.demo.pagesTitle': 'Escreva onde o trabalho está',
-  'landing.demo.pagesBody':
-    'Um briefing, uma especificação, a ata da reunião a que ela pertence. Escrita aqui, ou trazida como PDF ou Word e mantida exatamente como estava — nunca reescrita.',
   'landing.pages.title': 'Reescrita da cobrança — briefing',
   'landing.pages.saved': 'Salvo',
   'landing.pages.hint': 'Ou solte um PDF e ele fica exatamente como está.',
 
   'landing.demo.undoTab': 'Histórico',
   'landing.demo.undoTitle': 'Toda mudança, e um caminho de volta',
-  'landing.demo.undoBody':
-    'O histórico não é um recibo. Quase toda linha pode ser clicada, e o que aconteceu desacontece — por trinta dias, na tela em que você percebeu.',
   'landing.undo.task': 'Publicar a página de cobrança',
   'landing.undo.log': 'Histórico',
   'landing.undo.deleted': 'Ana mandou uma tarefa para a lixeira',
@@ -2586,8 +2561,6 @@ const ptBR: Record<TranslationKey, string> = {
 
   'landing.demo.commitTab': 'Seu editor',
   'landing.demo.commitTitle': 'Commite como sempre, e o quadro acompanha',
-  'landing.demo.commitBody':
-    'Um hook lê o commit contra a tarefa da branch e a conclui quando ele claramente termina o trabalho. Nenhum diff sai da sua máquina — só a mensagem e os nomes dos arquivos.',
   'landing.commit.checking': 'taskstudio: lendo o commit…',
   'landing.commit.task': 'Limitar a taxa nas rotas de importação',
   'landing.commit.branch': 'na fix/import-rate-limit',
@@ -2595,23 +2568,15 @@ const ptBR: Record<TranslationKey, string> = {
 
   'landing.demo.drawTab': 'Quadro branco',
   'landing.demo.drawTitle': 'Desenhe o que não dá para descrever',
-  'landing.demo.drawBody':
-    'Caneta, borracha e uma ponta cujo tamanho dá para ver, na mesma superfície das notas — assim o rascunho e o post-it sobre ele vivem juntos.',
   'landing.draw.hint': 'Caneta, borracha e notas na mesma superfície.',
   'landing.demo.boardTab': 'Quadro',
   'landing.demo.boardTitle': 'Pegue uma tarefa e ponha onde ela pertence',
-  'landing.demo.boardBody':
-    'Colunas que você mesmo nomeia, cartões que carregam o prazo e as pessoas. Arraste um e tudo que conta com ele — o painel, os prazos, a tela do seu colega — se atualiza na hora.',
 
   'landing.demo.importTab': 'Novo projeto',
   'landing.demo.importTitle': 'Transforme um repositório em projeto, em segundo plano',
-  'landing.demo.importBody':
-    'Cole um repositório público do GitHub e feche a janela. Ele lê o README, a árvore de arquivos e as issues abertas, escreve um projeto com tarefas e páginas iniciais, e convida quem contribuiu e já usa o app. Um cartão no canto acompanha, e dá para cancelar a qualquer momento.',
 
   'landing.demo.chatTab': 'Chat do projeto',
   'landing.demo.chatTitle': 'Converse sobre o trabalho, do lado do trabalho',
-  'landing.demo.chatBody':
-    'Cada projeto tem sua própria conversa, e ela te acompanha pelo app — fixe e ela continua aberta enquanto você está no quadro de outra pessoa. As decisões ficam ao lado das tarefas em vez de três ferramentas de distância.',
 
   'landing.board.todo': 'A fazer',
   'landing.board.doing': 'Fazendo',
@@ -2639,9 +2604,6 @@ const ptBR: Record<TranslationKey, string> = {
   'landing.chat.two': 'Só a parte do webhook. Meio dia, no máximo.',
   'landing.chat.three': 'Então sexta está de pé. Movendo para Fazendo.',
 
-  'landing.connects.title': 'Conecta com o que você já usa',
-  'landing.connects.body':
-    'Tudo abaixo já funciona, e cada um é uma configuração que você mesmo liga. Nada aqui precisa de vendedor.',
 
   'landing.svc.github': 'GitHub',
   'landing.svc.githubWhat': 'Vire um repositório público em projeto',
@@ -2660,13 +2622,15 @@ const ptBR: Record<TranslationKey, string> = {
   'landing.svc.webhooks': 'Webhooks e API',
   'landing.svc.webhooksWhat': 'Eventos assinados e tokens para seus scripts',
 
-  'landing.themes.title': 'Treze jeitos de olhar para o mesmo trabalho',
-  'landing.themes.body':
-    'Aqui um tema não é uma cor de destaque. Cada um reinterpreta o app inteiro — o papel, a tipografia, os cantos, a luz — e o que você escolher acompanha você em todo aparelho onde entrar.',
+  'landing.themes.title': 'Vários jeitos de olhar para o mesmo trabalho',
   'landing.themes.pick': 'Escolha um tema para ver',
   'landing.themes.light': 'Claro',
   'landing.themes.dark': 'Escuro',
   'landing.themes.hint': 'Arraste para comparar',
+  'landing.themes.apply': 'Testar este tema',
+  'landing.themes.applied': 'Aplicado',
+  'landing.themes.applyHint': 'Aplica nesta página — e no app quando você entrar.',
+  'theme.switchLabel': 'Esquema de cores',
   'landing.themes.count': '{index} de {total}',
 
   'landing.inside.title': 'Um estúdio, não uma planilha',
@@ -2676,7 +2640,7 @@ const ptBR: Record<TranslationKey, string> = {
   'landing.note.meetings': 'Reuniões que chegam na sua agenda',
   'landing.note.docs': 'Páginas que vivem com o projeto',
   'landing.note.undo': 'Um histórico que dá para desfazer',
-  'landing.note.skins': 'Treze jeitos de aparecer',
+  'landing.note.skins': 'Vários jeitos de aparecer',
 
   'landing.cta.title': 'Ponha seu trabalho na mesa',
   'landing.cta.body':
@@ -3454,12 +3418,14 @@ const ptBR: Record<TranslationKey, string> = {
   'projectDash.crunching': 'Calculando métricas',
   'projectDash.completion': 'Conclusão',
   'projectDash.doneOfTotal': '{done} de {total} tarefas concluídas',
-  'projectDash.tasksCompleted': '{count} tarefas concluídas',
   'projectDash.completedOnDay': '{count} concluída(s) em {date}',
-  'projectDash.mostProductive': 'Mais produtivo',
-  'projectDash.noCompletions': 'Nenhuma conclusão ainda',
-  'projectDash.noCompletionsBody':
-    'Assim que a equipe começar a fechar tarefas, o ranking se preenche.',
+  'projectDash.perMonth': 'Tarefas concluídas por mês',
+  'projectDash.lastMonths': 'Últimos {count} meses',
+  'projectDash.completedInMonth': '{count} concluída(s) em {month}',
+  'projectDash.monthBest': 'Melhor mês',
+  'projectDash.monthAverage': 'Média mensal',
+  'projectDash.monthTotal': 'Concluídas no ano',
+  'projectDash.noMonthlyData': 'Nada concluído no último ano ainda.',
   'projectDash.nextDeadlines': 'Próximos prazos',
   'projectDash.nothingScheduled': 'Nada agendado',
   'projectDash.noDeadlines': 'Nenhum prazo próximo.',

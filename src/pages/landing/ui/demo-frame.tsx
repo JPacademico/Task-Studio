@@ -75,7 +75,6 @@ interface DemoFrameProps {
   /** The one-word label on the tab, naming the surface being shown. */
   tab: string;
   title: ReactNode;
-  body: string;
   /** Which side the copy sits on. Alternated down the page. */
   side?: 'left' | 'right';
   children: ReactNode;
@@ -92,7 +91,6 @@ interface DemoFrameProps {
 export const DemoFrame = ({
   tab,
   title,
-  body,
   side = 'left',
   children,
 }: DemoFrameProps) => (
@@ -104,19 +102,26 @@ export const DemoFrame = ({
   >
     {/* --- What it is -------------------------------------------------
 
-        No kicker over the heading.
+        A single line, and nothing under it.
 
-        Each of these used to carry one — "Move work", "Start with something",
-        "Decide together" — three words in brand-coloured caps saying, less
-        precisely, what the heading underneath was about to say properly. A
-        label above a heading is a heading that was not trusted to carry
-        itself, and the three here were competing with the demo beside them for
-        the only glance this section gets. */}
-    <div className="space-y-3">
-      <h3 className="text-balance text-2xl font-semibold tracking-tight sm:text-3xl">
+        There used to be a kicker above the heading and a paragraph below it.
+        Both are gone, and for the same reason: the panel beside this is a
+        working interface, and every word next to it is a word competing with
+        the thing it is describing for the one glance this section gets. The
+        paragraph was the worse offender — three or four lines explaining a
+        mechanism that was, at that exact moment, playing on the right-hand
+        side of the screen. Somebody who reads it learns nothing the loop was
+        not about to show them; somebody who watches the loop never reaches the
+        end of it.
+
+        What is left is the claim itself. The heading says what the thing does
+        in one line, the demo proves it, and the reader spends their attention
+        on the proof. It also lets the type run larger, which is what makes a
+        one-line claim read as a statement rather than as a caption. */}
+    <div>
+      <h3 className="text-balance text-2xl font-semibold leading-tight tracking-tight sm:text-3xl lg:text-4xl">
         {title}
       </h3>
-      <p className="max-w-prose text-sm leading-relaxed text-content-muted">{body}</p>
     </div>
 
     {/* --- The loop ----------------------------------------------------

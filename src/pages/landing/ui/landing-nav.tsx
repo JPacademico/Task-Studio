@@ -1,4 +1,6 @@
+import type { MouseEvent } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useReducedMotion } from 'framer-motion';
 import { BookText } from 'lucide-react';
 
 import { LanguageToggle } from '@/features/language-toggle/ui/language-toggle';
@@ -30,6 +32,7 @@ import { useT } from '@/shared/i18n';
 export const LandingNav = () => {
   const t = useT();
   const { pathname } = useLocation();
+  const reduceMotion = useReducedMotion();
 
   /*
    * Whether the three section links can be plain anchors.
@@ -93,7 +96,24 @@ export const LandingNav = () => {
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand/15 text-brand ring-1 ring-inset ring-brand/25">
             <StudioMark className="h-6 w-6" />
           </span>
-          <span className="text-sm font-bold tracking-tight">Task Studio</span>
+          {/*
+            The name in the skin's own handwriting.
+
+            It was set in the interface typeface at 14px bold — which is to say
+            it was drawn exactly like every label, button and menu item beside
+            it, and read as one. A product whose whole argument is that it
+            behaves like paper had a wordmark that looked like a system font.
+
+            `font-hand` is the same variable the Post-its use, so the name is
+            written in whatever hand the active skin writes in: a marker on
+            Paper, a monospace on Terminal, a carved serif on Runic. It changes
+            with the theme rather than fighting it, which is what a wordmark
+            built out of design tokens buys that an image never could.
+
+            Slightly larger and with the tracking released, because a script
+            face set at a UI size with tight letter-spacing is a smudge.
+          */}
+          <span className="font-hand text-base font-bold tracking-normal">Task Studio</span>
         </Link>
 
         {/*
@@ -105,8 +125,11 @@ export const LandingNav = () => {
         <ul className="ml-4 hidden items-center gap-1 md:flex">
           {(
             [
-              ['#how', 'landing.nav.how'],
+              // Page order, so the bar is a map of the page rather than a
+              // menu with its own opinion about it. Connections sits directly
+              // under the introduction now.
               ['#connects', 'landing.nav.connects'],
+              ['#how', 'landing.nav.how'],
               ['#inside', 'landing.nav.inside'],
               ['#themes', 'landing.nav.themes'],
             ] as const
@@ -121,7 +144,11 @@ export const LandingNav = () => {
             return (
               <li key={href}>
                 {isOnLanding ? (
-                  <a href={href} className={linkClass}>
+                  <a
+                    href={href}
+                    onClick={(event) => scrollToSection(event, href, reduceMotion)}
+                    className={linkClass}
+                  >
                     {t(label)}
                   </a>
                 ) : (
@@ -177,4 +204,58 @@ export const LandingNav = () => {
       </nav>
     </header>
   );
+};
+
+
+/**
+ * Travel to a section instead of teleporting to it.
+ *
+ * ## Why this intercepts a link that already worked
+ *
+ * A bare `href="#how"` jumps: the page is one thing, then it is another, with
+ * nothing in between. On a document made of five full-height sections that is
+ * genuinely disorienting — the reader cannot tell whether they moved down two
+ * screens or eight, so they lose their place and scroll back up to check.
+ * Animating the trip is what turns "the page changed" into "I went somewhere",
+ * and it costs a smooth scroll the browser performs off the main thread.
+ *
+ * ## Why not `scroll-behavior: smooth` in the stylesheet
+ *
+ * Because that declaration is global to the document, and it would silently
+ * animate every *programmatic* scroll in the entire application as well — the
+ * chat dock jumping to its newest message, a modal restoring scroll position,
+ * the board scrolling a dragged card into view. Those are supposed to be
+ * instant; making them glide is how a fast app starts feeling laggy. This is
+ * the one place the animation is wanted, so this is the only place it is asked
+ * for.
+ *
+ * ## Why the URL is still updated
+ *
+ * `preventDefault` stops the browser from writing the hash, and a section link
+ * that leaves the address bar behind is one nobody can copy, bookmark or come
+ * back to. `replaceState` puts it back without adding a history entry, so the
+ * back button still leaves the page rather than walking the reader up through
+ * every section they visited on the way down.
+ *
+ * A missing target falls through to the browser's own behaviour rather than
+ * being swallowed: if the section is not on this page, the plain anchor is a
+ * better answer than nothing happening.
+ */
+const scrollToSection = (
+  event: MouseEvent<HTMLAnchorElement>,
+  href: string,
+  reduceMotion: boolean | null,
+): void => {
+  // Modified clicks are the reader asking for a new tab or window. Leave them
+  // entirely alone.
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
+    return;
+  }
+
+  const target = document.getElementById(href.slice(1));
+  if (!target) return;
+
+  event.preventDefault();
+  target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+  window.history.replaceState(null, '', href);
 };

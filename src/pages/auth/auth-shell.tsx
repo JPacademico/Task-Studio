@@ -85,7 +85,7 @@ export const AuthShell = ({ title, subtitle, children, footer }: AuthShellProps)
           <span className="grid h-11 w-11 place-items-center rounded-2xl bg-brand/15 text-brand ring-1 ring-inset ring-brand/25">
             <StudioMark className="h-8 w-8" interactive />
           </span>
-          <span className="text-sm font-bold tracking-tight">Task Studio</span>
+          <span className="font-hand text-base font-bold tracking-normal">Task Studio</span>
         </span>
 
         {/* The headline only. The paragraph that used to sit under it was

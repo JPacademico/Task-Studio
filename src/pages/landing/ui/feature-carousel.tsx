@@ -17,11 +17,16 @@ import {
   DemoWhiteboard,
 } from './demo-more';
 
-/** One demo: the tab it wears, the claim it makes, and the loop that shows it. */
+/**
+ * One demo: the tab it wears, the claim it makes, and the loop that shows it.
+ *
+ * No `body` any more. Each of these carried a paragraph explaining the
+ * mechanism the loop beside it was already playing — see the note on
+ * `DemoFrame` for why that is a paragraph nobody can afford to read.
+ */
 interface Feature {
   tab: TranslationKey;
   title: TranslationKey;
-  body: TranslationKey;
   render: () => ReactNode;
 }
 
@@ -42,55 +47,46 @@ const FEATURES: Feature[] = [
   {
     tab: 'landing.demo.boardTab',
     title: 'landing.demo.boardTitle',
-    body: 'landing.demo.boardBody',
     render: () => <DemoBoard />,
   },
   {
     tab: 'landing.demo.importTab',
     title: 'landing.demo.importTitle',
-    body: 'landing.demo.importBody',
     render: () => <DemoImport />,
   },
   {
     tab: 'landing.demo.chatTab',
     title: 'landing.demo.chatTitle',
-    body: 'landing.demo.chatBody',
     render: () => <DemoChat />,
   },
   {
     tab: 'landing.demo.notesTab',
     title: 'landing.demo.notesTitle',
-    body: 'landing.demo.notesBody',
     render: () => <DemoNotes />,
   },
   {
     tab: 'landing.demo.meetTab',
     title: 'landing.demo.meetTitle',
-    body: 'landing.demo.meetBody',
     render: () => <DemoMeetings />,
   },
   {
     tab: 'landing.demo.pagesTab',
     title: 'landing.demo.pagesTitle',
-    body: 'landing.demo.pagesBody',
     render: () => <DemoPages />,
   },
   {
     tab: 'landing.demo.undoTab',
     title: 'landing.demo.undoTitle',
-    body: 'landing.demo.undoBody',
     render: () => <DemoUndo />,
   },
   {
     tab: 'landing.demo.commitTab',
     title: 'landing.demo.commitTitle',
-    body: 'landing.demo.commitBody',
     render: () => <DemoCommit />,
   },
   {
     tab: 'landing.demo.drawTab',
     title: 'landing.demo.drawTitle',
-    body: 'landing.demo.drawBody',
     render: () => <DemoWhiteboard />,
   },
 ];
@@ -141,7 +137,12 @@ export const FeatureCarousel = () => {
   const shown = FEATURES.slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE);
 
   return (
-    <div className="relative space-y-8">
+    /*
+     * `md:px-28` is the arrows' lane: 96px of button plus a little air, on each
+     * side, at every width where the arrows are shown at all. Below `md` they
+     * are hidden and the padding goes with them, so a phone loses nothing.
+     */
+    <div className="relative space-y-8 md:px-28 xl:px-32">
       {/* --- The controls -------------------------------------------------
 
           Two halves, in two places, because they answer two different
@@ -235,7 +236,10 @@ export const FeatureCarousel = () => {
             className={cn(
               'gpu flex flex-col justify-between gap-14 sm:gap-20',
               // The tallest page at each width, measured. See the note above.
-              'min-h-[104rem] sm:min-h-[94rem] lg:min-h-[60rem]',
+              // Re-measured after the demo paragraphs were removed: a page lost
+              // roughly a quarter of its height, and floors left at the old
+              // numbers would have been pure dead space on every page.
+              'min-h-[82rem] sm:min-h-[80rem] lg:min-h-[61rem]',
             )}
           >
             {shown.map((feature, index) => (
@@ -247,7 +251,6 @@ export const FeatureCarousel = () => {
                 side={index % 2 === 1 ? 'right' : 'left'}
                 tab={t(feature.tab)}
                 title={t(feature.title)}
-                body={t(feature.body)}
               >
                 {feature.render()}
               </DemoFrame>
@@ -263,25 +266,31 @@ export const FeatureCarousel = () => {
           be sitting on top of the demo they exist to reveal, the dots above
           still work, and on a phone they are the better control anyway.
 
-          They sit *inside* the column until `xl` and step out into the page
-          margin above it. Straddling the edge at every width was the obvious
-          first attempt and it put four pixels of button past the left edge of
-          the document — which is a horizontal scrollbar on the whole page, for
-          a control nobody had touched. The margin only exists once the column
-          has stopped growing, so that is the width at which they can use it. */}
+          They sit at the section's own edges, and the *demos* are inset to
+          clear them — which is the only arrangement that actually works at
+          every width. Pushing a 96px button out into the page margin was the
+          obvious answer and it cannot be made to hold: `max-w-6xl` leaves 88px
+          of margin at 1280, so a button wide enough to be worth pressing either
+          lands on the demo or hangs off the document. Measured, the negative
+          offsets put 39px of button on top of the import panel and its heading.
+
+          Giving the columns their own lane costs the demos some width and buys
+          a guarantee: the controls never touch the content and never reach past
+          the viewport, at 768 or at 2560, with no per-breakpoint arithmetic to
+          get wrong. */}
       <ArrowButton
         label={t('landing.how.previous')}
         onClick={() => go(-1)}
-        className="left-0 xl:-translate-x-[calc(100%+0.5rem)]"
+        className="left-0 lg:left-1"
       >
-        <ChevronLeft className="h-6 w-6" />
+        <ChevronLeft className="h-9 w-9" />
       </ArrowButton>
       <ArrowButton
         label={t('landing.how.next')}
         onClick={() => go(1)}
-        className="right-0 xl:translate-x-[calc(100%+0.5rem)]"
+        className="right-0 lg:right-1"
       >
-        <ChevronRight className="h-6 w-6" />
+        <ChevronRight className="h-9 w-9" />
       </ArrowButton>
     </div>
   );
@@ -290,13 +299,13 @@ export const FeatureCarousel = () => {
 /**
  * One arrow. A square, not a disc, and big enough to be one.
  *
- * The pair used to be 32px circles in the corner of a header row, and two
- * things were wrong with that in a way that compounds: at that size a rounded
- * control reads as a decorative dot rather than something to press, and
- * something that small is a target somebody has to aim at. These are 56px
- * squares with the app's own card rounding - the shape the rest of the page is
- * made of - sitting at the vertical middle of the section on either side of it,
- * where a hand reaches without looking.
+ * The pair began as 32px circles in the corner of a header row, became 56px
+ * squares at the section's edges, and are now 96px. Every step answered the
+ * same complaint: at the smaller sizes they read as decoration sitting near the
+ * demos rather than as the control that moves them. At 96px, with the app's own
+ * card rounding — the shape the rest of the page is made of — they are
+ * unmistakably a pair of buttons, and they are pushed far enough out that
+ * nothing about them competes with the panel between them.
  *
  * `top-1/2` with `-translate-y-1/2` rather than a flex centre, because the
  * thing being centred on is the section's whole height and the button is out of
@@ -320,8 +329,8 @@ const ArrowButton = ({
     title={label}
     className={cn(
       'absolute top-1/2 z-20 hidden -translate-y-1/2 md:grid',
-      'h-14 w-14 place-items-center rounded-xl border border-edge bg-surface-raised/90',
-      'text-content-muted shadow-sm backdrop-blur',
+      'h-24 w-24 place-items-center rounded-2xl border border-edge bg-surface-raised/90',
+      'text-content-muted shadow-md backdrop-blur',
       'transition-colors duration-150 hover:border-brand/60 hover:text-content',
       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
       'focus-visible:ring-offset-2 focus-visible:ring-offset-surface',
