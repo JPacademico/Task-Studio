@@ -137,7 +137,15 @@ export const FeatureCarousel = () => {
   const shown = FEATURES.slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE);
 
   return (
-    <div className="relative space-y-8">
+    <div
+      /*
+       * Half the arrow's width, which is what centring it in the page margin
+       * needs — see `ArrowButton`. It lives here rather than on the button
+       * because the button's size is a breakpoint decision and an inline style
+       * cannot hold a media query.
+       */
+      className="relative space-y-8 [--arrow-half:2rem] xl:[--arrow-half:3rem]"
+    >
       {/* --- The controls -------------------------------------------------
 
           Two halves, in two places, because they answer two different
@@ -326,28 +334,43 @@ Two things, and they are worth stating plainly.
           computes to zero and the demos are exactly as wide as they were before
           the arrows moved anywhere.
 
-          `pointer-events-none` on the layer with `pointer-events-auto` on the
-          buttons: the layer spans the whole window and would otherwise swallow
-          every click that lands beside the column. */}
-      <div
-        aria-hidden={false}
-        className="pointer-events-none absolute inset-y-0 left-1/2 w-screen -translate-x-1/2"
+          ## Where in the margin they sit
+
+          Not flush to the window. A `w-screen` layer with the buttons pinned
+          20px inside it put them 13px from the glass on a 1440 screen, which
+          reads as "fell off the side of the page" rather than as a control
+          placed there — and it spent the whole 168px margin on one side of the
+          button, leaving 68px of air between the arrow and the demo it moves.
+
+          They are placed against the *column* now and offered two positions,
+          with `max()` choosing between them:
+
+            A  -(margin) + 1.75rem   — 20px from the window's edge
+            B  -(margin)/2 - half    — dead centre of the margin
+
+          `max` takes whichever is nearer the content. Where the margin is
+          generous B wins and the button sits midway between the glass and the
+          demo, with symmetric air on both sides; where the margin is thin B
+          would hang off the document, so A wins and the button hugs the edge as
+          it did before. The changeover needs no breakpoint — it happens exactly
+          when the margin is wide enough to hold the button twice.
+
+          Because A is what the cramped case falls back to, the demo inset above
+          is still computed against A and costs nothing extra for this. */}
+      <ArrowButton
+        side="left"
+        label={t('landing.how.previous')}
+        onClick={() => go(-1)}
       >
-        <ArrowButton
-          label={t('landing.how.previous')}
-          onClick={() => go(-1)}
-          className="pointer-events-auto left-5"
-        >
-          <ChevronLeft className="h-7 w-7 lg:h-8 lg:w-8 xl:h-9 xl:w-9" />
-        </ArrowButton>
-        <ArrowButton
-          label={t('landing.how.next')}
-          onClick={() => go(1)}
-          className="pointer-events-auto right-5"
-        >
-          <ChevronRight className="h-7 w-7 lg:h-8 lg:w-8 xl:h-9 xl:w-9" />
-        </ArrowButton>
-      </div>
+        <ChevronLeft className="h-7 w-7 xl:h-9 xl:w-9" />
+      </ArrowButton>
+      <ArrowButton
+        side="right"
+        label={t('landing.how.next')}
+        onClick={() => go(1)}
+      >
+        <ChevronRight className="h-7 w-7 xl:h-9 xl:w-9" />
+      </ArrowButton>
     </div>
   );
 };
@@ -369,14 +392,14 @@ Two things, and they are worth stating plainly.
  *
  */
 const ArrowButton = ({
+  side,
   label,
   onClick,
-  className,
   children,
 }: {
+  side: 'left' | 'right';
   label: string;
   onClick: () => void;
-  className?: string;
   children: ReactNode;
 }) => (
   <button
@@ -384,6 +407,24 @@ const ArrowButton = ({
     onClick={onClick}
     aria-label={label}
     title={label}
+    /*
+     * The offset as a value rather than a utility class.
+     *
+     * Tailwind can express this — `left-[max(calc(-1_*_(50vw_-_50%)...))]` — and
+     * the result is a sixty-character token with underscores standing in for
+     * the spaces `calc` requires around its operators, which nobody can read or
+     * safely edit. A style object costs one property and says what it means.
+     *
+     * `50%` here resolves against the containing block, which is the carousel
+     * wrapper, so `50vw - 50%` is exactly half the space outside the column:
+     * the page margin plus the section's gutter. `--arrow-half` is set on the
+     * wrapper per breakpoint below, because the button's own width changes and
+     * centring it in the margin needs to know half of it.
+     */
+    style={{
+      [side]:
+        'max(calc(-1 * (50vw - 50%) + 1.75rem), calc(-1 * (50vw - 50%) / 2 - var(--arrow-half)))',
+    }}
     className={cn(
       'absolute top-1/2 z-20 hidden -translate-y-1/2 lg:grid',
       /*
@@ -398,7 +439,6 @@ const ArrowButton = ({
       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
       'focus-visible:ring-offset-2 focus-visible:ring-offset-surface',
       'active:scale-95',
-      className,
     )}
   >
     {children}

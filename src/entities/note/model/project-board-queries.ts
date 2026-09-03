@@ -369,6 +369,29 @@ export const useDeleteProjectNote = (projectId: string) => {
 };
 
 /** Rewrites the wall's note list, cache-only. See the personal board's copy. */
+/**
+ * Putting a binned note back, with the id it had.
+ *
+ * See the personal board's copy for why this exists rather than a re-create:
+ * `remove` is a soft delete, so a restore returns the same primary key and the
+ * connectors that pointed at the note survive. On a shared wall that matters
+ * more than it does on a private one — a re-created note would break somebody
+ * else's link, not just your own.
+ */
+export const useRestoreProjectNote = (projectId: string) => {
+  const { patch } = useProjectBoardCache(projectId);
+
+  return useMutation({
+    mutationFn: (noteId: string) => noteApi.restore(noteId),
+    onSuccess: (note) =>
+      patch((snapshot) => ({
+        ...snapshot,
+        notes: [...snapshot.notes.filter((entry) => entry.id !== note.id), note],
+      })),
+    onError: (error) => toast.error(errorMessage(error)),
+  });
+};
+
 export const usePatchProjectNotes = (projectId: string) => {
   const { patch } = useProjectBoardCache(projectId);
 

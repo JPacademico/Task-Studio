@@ -1021,6 +1021,18 @@ const en = {
   // ---- Whiteboard --------------------------------------------------------
   'board.inkCleared': 'Ink cleared. Post-its are untouched.',
   'board.adminsOnlyClear': 'Only project admins can clear the canvas.',
+  // ---- Undo / redo on a board -------------------------------------------
+  'board.undo': 'Undo',
+  'board.redo': 'Redo',
+  'board.nothingToUndo': 'Nothing to undo',
+  'board.nothingToRedo': 'Nothing to redo',
+  'board.history.addNote': 'note added',
+  'board.history.delete': 'note deleted',
+  'board.history.edit': 'note edited',
+  'board.history.move': 'note moved',
+  'board.history.connect': 'notes connected',
+  'board.history.group': 'notes grouped',
+
   'board.arrange': 'Arrange',
   'board.arrangeHint': 'Drag notes, lasso to select',
   'board.connect': 'Connect',
@@ -3578,6 +3590,17 @@ const ptBR: Record<TranslationKey, string> = {
   'board.drawHint': 'Traço livre sobre o mural',
   'board.arrangeNotesHint': 'Arraste as notas, use o laço para selecionar',
   'board.connectNotesHint': 'Desenhe setas entre as notas',
+  'board.undo': 'Desfazer',
+  'board.redo': 'Refazer',
+  'board.nothingToUndo': 'Nada para desfazer',
+  'board.nothingToRedo': 'Nada para refazer',
+  'board.history.addNote': 'nota adicionada',
+  'board.history.delete': 'nota excluída',
+  'board.history.edit': 'nota editada',
+  'board.history.move': 'nota movida',
+  'board.history.connect': 'notas conectadas',
+  'board.history.group': 'notas agrupadas',
+
   'board.inkSize': 'Espessura',
   'board.eraserNib': 'Ponta',
   'board.sharedWallBody':

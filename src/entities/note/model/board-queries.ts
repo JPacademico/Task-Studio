@@ -291,6 +291,36 @@ export const useDeleteBoardNote = (pageIndex: number) => {
  * before the server has heard of it — see `useImageDrop` — and every existing
  * mutation here couples that to a request. This is the write on its own.
  */
+/**
+ * Putting a binned note back, with the id it had.
+ *
+ * The one mutation that exists purely for undo, and the reason a deleted note
+ * can be un-deleted properly rather than re-created. `noteApi.remove` is a soft
+ * delete — the row keeps its id and gains a `deletedAt` — so restoring it
+ * brings back the same primary key, and every connector that pointed at the
+ * note still points at it. Re-creating from the client's cached copy would mint
+ * a new id and silently orphan every link the note was part of, which is a
+ * quietly destructive "undo".
+ *
+ * The server scopes the lookup to the caller's own rows, which costs nothing
+ * here: a note can only be deleted by the person who wrote it, so the only
+ * deletion anybody can undo is one they are allowed to restore.
+ */
+export const useRestoreBoardNote = (pageIndex: number) => {
+  const { patch } = useBoardCache(pageIndex);
+
+  return useMutation({
+    mutationFn: (noteId: string) => noteApi.restore(noteId),
+    onSuccess: (note) =>
+      patch((snapshot) => ({
+        ...snapshot,
+        // Guarded against a double restore putting two of the same sheet up.
+        notes: [...snapshot.notes.filter((entry) => entry.id !== note.id), note],
+      })),
+    onError: (error) => toast.error(errorMessage(error)),
+  });
+};
+
 export const usePatchBoardNotes = (pageIndex: number) => {
   const { patch } = useBoardCache(pageIndex);
 

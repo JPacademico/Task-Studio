@@ -8,7 +8,9 @@ import {
   MousePointer2,
   Pencil,
   Plus,
+  Redo2,
   Trash2,
+  Undo2,
   Users,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -22,6 +24,7 @@ import {
   useDeleteProjectNote,
   useDeleteProjectNoteLink,
   useGroupProjectNotes,
+  useRestoreProjectNote,
   usePatchProjectNotes,
   usePatchProjectPositions,
   useProjectBoard,
@@ -34,6 +37,7 @@ import type { UpdateNotePayload } from '@/entities/note/model/types';
 import { PostIt, type NoteHandle } from '@/entities/note/ui/post-it';
 import { useCurrentUser } from '@/features/auth/model/session.store';
 import { createPositionBus } from '@/features/notes-board/lib/position-bus';
+import { useBoardHistory } from '@/features/notes-board/lib/use-board-history';
 import { useImageDrop } from '@/features/notes-board/lib/use-image-drop';
 import { groupTintFor, notesInsideRect } from '@/features/notes-board/lib/selection';
 import {
@@ -159,6 +163,19 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
   const isBoardPending = isBoardLoading || isSceneLoading;
 
   const notes = useMemo(() => board?.notes ?? [], [board?.notes]);
+
+  /*
+   * The notes, readable from a handler without being a dependency of it.
+   *
+   * This file's handlers are deliberately stable — the comment above them
+   * explains why: an identity that changes re-renders every Post-it on the
+   * wall, and some of this board's state ticks on the pointer. Undo needs to
+   * read a note's *previous* value, which would otherwise mean depending on
+   * `notes` and recreating the handler every time any note changed.
+   */
+  const notesRef = useRef(notes);
+  notesRef.current = notes;
+
   const links = board?.links ?? [];
 
   const createNote = useCreateProjectNote(projectId, currentUser?.id);
@@ -170,6 +187,27 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
   const createLink = useCreateProjectNoteLink(projectId);
   const deleteLink = useDeleteProjectNoteLink(projectId);
   const groupNotes = useGroupProjectNotes(projectId);
+  const restoreNote = useRestoreProjectNote(projectId);
+
+  /*
+   * Ctrl+Z and Ctrl+Y for the shared wall.
+   *
+   * Keyed on the project, so moving between boards starts a fresh history.
+   *
+   * The stack only ever holds *this* client's own actions, which is the right
+   * scope for a shared surface: undo reverses what you just did, never what a
+   * teammate did while you were looking away. A colleague's change arriving
+   * over the socket does not enter the stack and cannot be reversed by it — for
+   * that there is the project changelog, which is server-side, attributed, and
+   * lasts thirty days.
+   */
+  const history = useBoardHistory(projectId);
+  /*
+   * Destructured, because `history` is a new object on every render while the
+   * functions inside it are stable `useCallback`s. Depending on the object
+   * would undo the very stability the ref above exists to preserve.
+   */
+  const recordHistory = history.record;
 
   const persistPositions = useDebouncedCallback(
     (moves: { id: string; positionX: number; positionY: number }[]) =>
@@ -405,11 +443,23 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
   });
 
   const handleAddNote = () => {
-    createNote.mutate({
+    // Rolled once so a redo restores the same sheet rather than a differently
+    // coloured one — see the personal board for the longer note.
+    const request = {
       content: '',
       color: NOTE_COLORS[Math.floor(Math.random() * NOTE_COLORS.length)],
       rotation: Math.round((Math.random() * 8 - 4) * 10) / 10,
       ...dropPoint(),
+    };
+
+    createNote.mutate(request, {
+      // From `onSuccess`: until the POST answers there is no row id to delete.
+      onSuccess: (note) =>
+        history.record({
+          label: t('board.history.addNote'),
+          undo: () => deleteNote.mutate(note.id),
+          redo: () => restoreNote.mutate(note.id),
+        }),
     });
   };
 
@@ -421,11 +471,20 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
           return;
         }
         if (connectFrom !== id) {
-          createLink.mutate({
+          const payload = {
             sourceId: connectFrom,
             targetId: id,
-            style: 'ARROW',
+            style: 'ARROW' as const,
             color: CONNECTOR_COLORS[0],
+          };
+
+          createLink.mutate(payload, {
+            onSuccess: (link) =>
+              history.record({
+                label: t('board.history.connect'),
+                undo: () => deleteLink.mutate(link.id),
+                redo: () => createLink.mutate(payload),
+              }),
           });
         }
         setConnectFrom(null);
@@ -437,7 +496,7 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
         return current.includes(id) ? current.filter((entry) => entry !== id) : [...current, id];
       });
     },
-    [connectFrom, createLink.mutate, tool],
+    [connectFrom, createLink.mutate, deleteLink.mutate, history, t, tool],
   );
 
   const commitMarquee = useCallback(
@@ -533,8 +592,39 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
 
       const saveable = moves.filter((move) => !isPendingNoteId(move.id));
       if (saveable.length > 0) persistPositions(saveable);
+
+      /*
+       * Where the sheets came from, read off this render's `notes` — which
+       * still holds the pre-drag coordinates even though the cache no longer
+       * does. A drag that ended where it began records nothing.
+       */
+      const before = saveable
+        .map((move) => {
+          const original = notes.find((entry) => entry.id === move.id);
+          return original
+            ? { id: move.id, positionX: original.positionX, positionY: original.positionY }
+            : null;
+        })
+        .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
+
+      const moved = before.some((entry, index) => {
+        const after = saveable[index];
+        return entry.positionX !== after.positionX || entry.positionY !== after.positionY;
+      });
+      if (!moved) return;
+
+      const apply = (positions: typeof before) => {
+        patchPositions(positions);
+        persistPositions(positions);
+      };
+
+      history.record({
+        label: t('board.history.move'),
+        undo: () => apply(before),
+        redo: () => apply(saveable),
+      });
     },
-    [bus, notes, patchPositions, persistPositions],
+    [bus, history, notes, patchPositions, persistPositions, t],
   );
 
   /*
@@ -558,16 +648,39 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
     (id: string, payload: UpdateNotePayload) => {
       if (isPendingNoteId(id)) return;
       updateNote.mutate({ noteId: id, payload });
+
+      // The inverse is whatever keys the caller changed, read off the note as
+      // it was — so a colour change never restores an old title.
+      const previous = notesRef.current.find((entry) => entry.id === id);
+      if (!previous) return;
+
+      const inverse = Object.fromEntries(
+        Object.keys(payload).map((field) => [field, previous[field as keyof typeof previous]]),
+      ) as UpdateNotePayload;
+
+      recordHistory({
+        label: t('board.history.edit'),
+        undo: () => updateNote.mutate({ noteId: id, payload: inverse }),
+        redo: () => updateNote.mutate({ noteId: id, payload }),
+      });
     },
-    [updateNote.mutate],
+    [recordHistory, t, updateNote.mutate],
   );
 
   const handleDelete = useCallback(
     (id: string) => {
       if (isPendingNoteId(id)) return;
       deleteNote.mutate(id);
+
+      // A soft delete keeps the id, so restoring it keeps every connector a
+      // teammate had drawn to this note. See `useRestoreProjectNote`.
+      recordHistory({
+        label: t('board.history.delete'),
+        undo: () => restoreNote.mutate(id),
+        redo: () => deleteNote.mutate(id),
+      });
     },
-    [deleteNote.mutate],
+    [deleteNote.mutate, recordHistory, restoreNote.mutate, t],
   );
 
   const handleFocus = useCallback(
@@ -692,6 +805,41 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
             event.target.value = '';
           }}
         />
+
+        {/*
+          Undo and redo, next to the tools that create the things they reverse.
+
+          The keyboard is the real interface — Ctrl+Z is what a hand reaches for
+          without being told — but a shortcut nobody can see is one most people
+          never discover. These two are the signpost, and they cost a thumb's
+          width. Disabled rather than hidden when the stack is empty, so nothing
+          beside them shifts and the greyed state answers "is there anything to
+          undo?" on its own.
+        */}
+        <span className="flex items-center">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={history.undo}
+            disabled={!history.canUndo}
+            aria-label={t('board.undo')}
+            title={`${t('board.undo')} (Ctrl+Z)`}
+            className="px-2"
+          >
+            <Undo2 className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={history.redo}
+            disabled={!history.canRedo}
+            aria-label={t('board.redo')}
+            title={`${t('board.redo')} (Ctrl+Y)`}
+            className="px-2"
+          >
+            <Redo2 className="h-3.5 w-3.5" />
+          </Button>
+        </span>
 
         {tool === 'select' && (
           <button
@@ -891,10 +1039,42 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
           canGroup={selection.length > 1}
           canUngroup={selectedGroupIds.size > 0}
           onGroup={() => {
+            // Each note's own previous group, so undoing never dissolves a
+            // group the user did not touch. See the personal board.
+            const before = notes
+              .filter((note) => selection.includes(note.id))
+              .map((note) => ({ id: note.id, groupId: note.groupId }));
+
             groupNotes.mutate({ noteIds: selection });
             setIsPickingMultiple(false);
+
+            history.record({
+              label: t('board.history.group'),
+              undo: () => {
+                for (const entry of before) {
+                  groupNotes.mutate({ noteIds: [entry.id], groupId: entry.groupId });
+                }
+              },
+              redo: () => groupNotes.mutate({ noteIds: selection }),
+            });
           }}
-          onUngroup={() => groupNotes.mutate({ noteIds: selection, groupId: null })}
+          onUngroup={() => {
+            const before = notes
+              .filter((note) => selection.includes(note.id))
+              .map((note) => ({ id: note.id, groupId: note.groupId }));
+
+            groupNotes.mutate({ noteIds: selection, groupId: null });
+
+            history.record({
+              label: t('board.history.group'),
+              undo: () => {
+                for (const entry of before) {
+                  groupNotes.mutate({ noteIds: [entry.id], groupId: entry.groupId });
+                }
+              },
+              redo: () => groupNotes.mutate({ noteIds: selection, groupId: null }),
+            });
+          }}
           onClear={() => setSelection([])}
         />
 

@@ -7,7 +7,9 @@ import {
   MousePointer2,
   Pencil,
   Plus,
+  Redo2,
   Trash2,
+  Undo2,
 } from 'lucide-react';
 
 import { BOARD_INK_COLORS } from '@/shared/config/constants';
@@ -45,6 +47,19 @@ interface BoardToolbarProps {
   onClearInk?: () => void;
   onClearAll: () => void;
 
+  /*
+   * Undo and redo, as an optional pair.
+   *
+   * Optional because the toolbar is shared with surfaces that do not keep a
+   * history, and a disabled control for something that does not exist is worse
+   * than no control. Both arrive together or neither does — a board with an
+   * undo and no redo is a trap.
+   */
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
+
   /** The whiteboard has no ink layer of its own — it has the canvas below it. */
   showInkTools?: boolean;
 
@@ -79,6 +94,10 @@ export const BoardToolbar = ({
   isUploading,
   onClearInk,
   onClearAll,
+  onUndo,
+  onRedo,
+  canUndo = false,
+  canRedo = false,
   showInkTools = true,
   isExpanded = false,
   onToggleExpand,
@@ -203,6 +222,44 @@ export const BoardToolbar = ({
       )}
 
       <span className="ml-auto flex items-center gap-2">
+        {/*
+          The keyboard is the real interface here and this is its signpost.
+
+          Ctrl+Z is what people actually reach for, and a shortcut nobody can
+          see is a shortcut most people never learn they have. Two quiet icon
+          buttons carrying the shortcut in their tooltip cost almost no width
+          and are how somebody finds out the board has a history at all — the
+          same reason a text editor draws them even though nobody clicks them.
+
+          Disabled rather than hidden when there is nothing to reverse: a
+          control that vanishes moves everything beside it, and the greyed state
+          is itself the answer to "can I undo this?".
+        */}
+        {onUndo && onRedo && (
+          <span className="flex items-center">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={onUndo}
+              disabled={!canUndo}
+              aria-label={t('board.undo')}
+              title={`${t('board.undo')} (Ctrl+Z)`}
+            >
+              <Undo2 className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={onRedo}
+              disabled={!canRedo}
+              aria-label={t('board.redo')}
+              title={`${t('board.redo')} (Ctrl+Y)`}
+            >
+              <Redo2 className="h-3.5 w-3.5" />
+            </Button>
+          </span>
+        )}
+
         {onToggleExpand && (
           <ExpandToggle
             isExpanded={isExpanded}

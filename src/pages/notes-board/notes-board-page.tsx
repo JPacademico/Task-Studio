@@ -15,6 +15,7 @@ import {
   useGroupNotes,
   usePatchBoardNotes,
   usePatchBoardPositions,
+  useRestoreBoardNote,
   useSaveBoardPositions,
   useUpdateBoardNote,
 } from '@/entities/note/model/board-queries';
@@ -23,6 +24,7 @@ import type { UpdateNotePayload } from '@/entities/note/model/types';
 import { PostIt, type NoteHandle } from '@/entities/note/ui/post-it';
 import { useCurrentUser } from '@/features/auth/model/session.store';
 import { createPositionBus } from '@/features/notes-board/lib/position-bus';
+import { useBoardHistory } from '@/features/notes-board/lib/use-board-history';
 import { useImageDrop } from '@/features/notes-board/lib/use-image-drop';
 import { groupTintFor, notesInsideRect } from '@/features/notes-board/lib/selection';
 import {
@@ -120,9 +122,40 @@ const NotesBoardPage = () => {
   const clearInk = useClearBoardStrokes(pageIndex);
   const clearBoard = useClearBoard(pageIndex);
   const groupNotes = useGroupNotes(pageIndex);
+  const restoreNote = useRestoreBoardNote(pageIndex);
   const pages = useBoardPages(pageIndex);
 
+  /*
+   * Ctrl+Z and Ctrl+Y for the wall.
+   *
+   * Keyed on the page index, so turning to another sheet of the pad starts a
+   * fresh history rather than offering to undo a change on a board that is no
+   * longer on screen. Every handler below that writes something records the
+   * pair of thunks that reverses it; the hook owns the stacks and the
+   * keystrokes. See `useBoardHistory` for why the entries are closures.
+   */
+  const history = useBoardHistory(pageIndex);
+
   const notes = useMemo(() => board?.notes ?? [], [board?.notes]);
+
+  /*
+   * The notes, readable from a handler without being a dependency of it.
+   *
+   * This file's handlers are deliberately stable — the comment above them
+   * explains why: an identity that changes re-renders every Post-it on the
+   * wall, and some of this board's state ticks on the pointer. Undo needs to
+   * read a note's *previous* value, which would otherwise mean depending on
+   * `notes` and recreating the handler every time any note changed.
+   */
+  const notesRef = useRef(notes);
+  notesRef.current = notes;
+
+  /*
+   * Destructured, because `history` is a new object on every render while the
+   * functions inside it are stable `useCallback`s. Depending on the object
+   * would undo the very stability the ref above exists to preserve.
+   */
+  const recordHistory = history.record;
   const links = board?.links ?? [];
   const strokes = board?.strokes ?? [];
 
@@ -180,11 +213,35 @@ const NotesBoardPage = () => {
   });
 
   const handleCreateNote = () => {
-    createNote.mutate({
+    /*
+     * The colour and angle are rolled once, here, rather than inside the
+     * mutation — so a redo puts back the *same* sheet rather than a differently
+     * coloured one at a new angle. An undo that changes what it restores is not
+     * an undo.
+     */
+    const request = {
       content: '',
       color: NOTE_COLORS[Math.floor(Math.random() * NOTE_COLORS.length)],
       rotation: Math.round((Math.random() * 8 - 4) * 10) / 10,
       ...dropPoint(),
+    };
+
+    createNote.mutate(request, {
+      /*
+       * Recorded from `onSuccess`, not from the click.
+       *
+       * Undoing a creation means deleting a specific row, and until the POST
+       * comes back there is no row id to delete — the sheet on screen is
+       * carrying a `pending-…` placeholder. Waiting means the entry only exists
+       * once it can actually be reversed, which is better than an entry that
+       * silently fails if pressed too early.
+       */
+      onSuccess: (note) =>
+        history.record({
+          label: t('board.history.addNote'),
+          undo: () => deleteNote.mutate(note.id),
+          redo: () => restoreNote.mutate(note.id),
+        }),
     });
   };
 
@@ -198,11 +255,22 @@ const NotesBoardPage = () => {
           return;
         }
         if (connectFrom !== id) {
-          createLink.mutate({
+          const payload = {
             sourceId: connectFrom,
             targetId: id,
-            style: 'ARROW',
+            style: 'ARROW' as const,
             color: CONNECTOR_COLORS[0],
+          };
+
+          createLink.mutate(payload, {
+            // Same reasoning as a new note: the link has no id to remove until
+            // the server has given it one.
+            onSuccess: (link) =>
+              history.record({
+                label: t('board.history.connect'),
+                undo: () => deleteLink.mutate(link.id),
+                redo: () => createLink.mutate(payload),
+              }),
           });
         }
         setConnectFrom(null);
@@ -325,8 +393,43 @@ const NotesBoardPage = () => {
 
       const saveable = moves.filter((move) => !isPendingNoteId(move.id));
       if (saveable.length > 0) persistPositions(saveable);
+
+      /*
+       * Where everything that moved came *from*, read off the notes as they
+       * were before `patchPositions` rewrote them.
+       *
+       * `notes` is this render's snapshot, so it still holds the pre-drag
+       * coordinates even though the cache no longer does — which is what makes
+       * a one-line reversal possible without threading drag-start state through
+       * the gesture. A drag that ended where it began records nothing.
+       */
+      const before = saveable
+        .map((move) => {
+          const original = notes.find((entry) => entry.id === move.id);
+          return original
+            ? { id: move.id, positionX: original.positionX, positionY: original.positionY }
+            : null;
+        })
+        .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
+
+      const moved = before.some((entry, index) => {
+        const after = saveable[index];
+        return entry.positionX !== after.positionX || entry.positionY !== after.positionY;
+      });
+      if (!moved) return;
+
+      const apply = (positions: typeof before) => {
+        patchPositions(positions);
+        persistPositions(positions);
+      };
+
+      history.record({
+        label: t('board.history.move'),
+        undo: () => apply(before),
+        redo: () => apply(saveable),
+      });
     },
-    [bus, notes, patchPositions, persistPositions],
+    [bus, history, notes, patchPositions, persistPositions, t],
   );
 
   /*
@@ -350,16 +453,46 @@ const NotesBoardPage = () => {
     (id: string, payload: UpdateNotePayload) => {
       if (isPendingNoteId(id)) return;
       updateNote.mutate({ noteId: id, payload });
+
+      /*
+       * The inverse is the same keys read off the note as it was.
+       *
+       * Building it from `payload`'s own keys rather than from a fixed list
+       * means this keeps working when a field is added to `UpdateNotePayload`:
+       * whatever the caller changed is what gets put back, and nothing else is
+       * touched. A colour change does not quietly restore an old title.
+       */
+      const previous = notesRef.current.find((entry) => entry.id === id);
+      if (!previous) return;
+
+      const inverse = Object.fromEntries(
+        Object.keys(payload).map((field) => [field, previous[field as keyof typeof previous]]),
+      ) as UpdateNotePayload;
+
+      recordHistory({
+        label: t('board.history.edit'),
+        undo: () => updateNote.mutate({ noteId: id, payload: inverse }),
+        redo: () => updateNote.mutate({ noteId: id, payload }),
+      });
     },
-    [updateNote.mutate],
+    [recordHistory, t, updateNote.mutate],
   );
 
   const handleDelete = useCallback(
     (id: string) => {
       if (isPendingNoteId(id)) return;
       deleteNote.mutate(id);
+
+      // A soft delete keeps the id, so the reversal is a restore rather than a
+      // re-create — and every connector that pointed at this note survives it.
+      // See `useRestoreBoardNote`.
+      recordHistory({
+        label: t('board.history.delete'),
+        undo: () => restoreNote.mutate(id),
+        redo: () => deleteNote.mutate(id),
+      });
     },
-    [deleteNote.mutate],
+    [deleteNote.mutate, recordHistory, restoreNote.mutate, t],
   );
 
   const handleFocus = useCallback(
@@ -484,8 +617,20 @@ const NotesBoardPage = () => {
             if (window.confirm(t('notes.confirmClearPage'))) {
               clearBoard.mutate();
               setSelection([]);
+              /*
+               * Clearing the page is the one action that cannot be reversed —
+               * it deletes every row on the surface in one call and returns
+               * nothing to rebuild them from. So the stack goes with it, rather
+               * than leaving entries that would try to restore notes into a
+               * board that no longer has them. See `useBoardHistory`.
+               */
+              history.clear();
             }
           }}
+          onUndo={history.undo}
+          onRedo={history.redo}
+          canUndo={history.canUndo}
+          canRedo={history.canRedo}
         />
 
       <div
@@ -612,10 +757,48 @@ const NotesBoardPage = () => {
           canGroup={selection.length > 1}
           canUngroup={selectedGroupIds.size > 0}
           onGroup={() => {
+            /*
+             * Each note's *own* previous group, not one shared value.
+             *
+             * A selection can span several existing groups, so undoing a group
+             * has to put every sheet back where it came from individually —
+             * restoring them all to `null` would silently dissolve groups the
+             * user never touched.
+             */
+            const before = notes
+              .filter((note) => selection.includes(note.id))
+              .map((note) => ({ id: note.id, groupId: note.groupId }));
+
             groupNotes.mutate({ noteIds: selection });
             setIsPickingMultiple(false);
+
+            history.record({
+              label: t('board.history.group'),
+              undo: () => {
+                for (const entry of before) {
+                  groupNotes.mutate({ noteIds: [entry.id], groupId: entry.groupId });
+                }
+              },
+              redo: () => groupNotes.mutate({ noteIds: selection }),
+            });
           }}
-          onUngroup={() => groupNotes.mutate({ noteIds: selection, groupId: null })}
+          onUngroup={() => {
+            const before = notes
+              .filter((note) => selection.includes(note.id))
+              .map((note) => ({ id: note.id, groupId: note.groupId }));
+
+            groupNotes.mutate({ noteIds: selection, groupId: null });
+
+            history.record({
+              label: t('board.history.group'),
+              undo: () => {
+                for (const entry of before) {
+                  groupNotes.mutate({ noteIds: [entry.id], groupId: entry.groupId });
+                }
+              },
+              redo: () => groupNotes.mutate({ noteIds: selection, groupId: null }),
+            });
+          }}
           onClear={() => setSelection([])}
         />
 
