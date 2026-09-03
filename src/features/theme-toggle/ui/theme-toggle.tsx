@@ -57,8 +57,8 @@ export const ThemeToggle = ({ className }: { className?: string }) => {
       aria-label={t('theme.switchLabel')}
       title={isDark ? t('theme.toLight') : t('theme.toDark')}
       className={cn(
-        'relative inline-flex h-8 w-[3.75rem] shrink-0 items-center rounded-full',
-        'border border-edge bg-surface-sunken px-1',
+        'relative inline-block h-8 w-[3.75rem] shrink-0 rounded-full align-middle',
+        'border border-edge bg-surface-sunken',
         'transition-colors duration-200 hover:border-brand/40',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
         'focus-visible:ring-offset-2 focus-visible:ring-offset-surface',
@@ -66,44 +66,74 @@ export const ThemeToggle = ({ className }: { className?: string }) => {
       )}
     >
       {/*
-        The knob, under the icons rather than over them.
+        Two layers over the same box, so the knob and the icons cannot disagree.
 
-        `zIndex` is deliberately not set on it: the icons are later in the DOM,
-        so they paint on top, and the one the knob is sitting behind reads as
-        being *on* the knob. That is what makes the active side look picked up
-        rather than merely brighter.
+        ## What was wrong before
+
+        Two of them, and they compounded. The knob was placed with Tailwind's
+        `top-1/2 -translate-y-1/2` *and* animated with Framer's `x` — and Framer
+        writes `transform` as an inline style, which overrides the Tailwind
+        translate entirely. So the knob's top edge sat on the track's centre
+        line and it hung a full half-height low. The same collision is on record
+        against `FeatureNotes` and `ChatPin`; it catches everything that mixes a
+        transform utility with an animated transform.
+
+        The second was a hand-computed travel distance of 28px, derived from a
+        60px track that is really 58.6 — `3.75rem` against this app's 15.625px
+        root — and from ignoring the 1px border on each side. Measured, the knob
+        landed 2.7px right of the moon it was supposed to be under.
+
+        ## Why this cannot drift
+
+        Both layers are `inset-1`, so they are literally the same rectangle. The
+        icon row is `justify-between`; the knob row is `justify-start` or
+        `justify-end`. "The knob is on the moon" is therefore the same statement
+        as "the last flex item is at the end of the row" — true at any track
+        width, any root font size, any border, with no number written down
+        anywhere. `layout` lets Framer animate the change of alignment rather
+        than a distance nobody has to compute.
       */}
-      <motion.span
-        aria-hidden
-        className="absolute h-6 w-6 rounded-full bg-brand shadow-sm shadow-brand/40"
-        initial={false}
-        animate={{ x: isDark ? 27 : 1 }}
-        transition={
-          reduceMotion
-            ? { duration: 0 }
-            : { type: 'spring', stiffness: 520, damping: 34, mass: 0.6 }
-        }
-      />
-
-      {/* The two ends, fixed. See the note on the component for why they do not
-          travel with the knob. */}
       <span
         aria-hidden
         className={cn(
-          'relative z-10 grid h-6 w-6 place-items-center transition-colors duration-200',
-          isDark ? 'text-content-faint' : 'text-brand-contrast',
+          'pointer-events-none absolute inset-1 flex items-center',
+          isDark ? 'justify-end' : 'justify-start',
         )}
       >
-        <Sun className="h-3.5 w-3.5" />
+        <motion.span
+          layout
+          className="h-6 w-6 rounded-full bg-brand shadow-sm shadow-brand/40"
+          transition={
+            reduceMotion
+              ? { duration: 0 }
+              : { type: 'spring', stiffness: 520, damping: 34, mass: 0.6 }
+          }
+        />
       </span>
+
+      {/* The two ends, fixed, in the same box the knob travels along. They paint
+          over it, so the active one reads as sitting *on* the knob rather than
+          beside it. */}
       <span
         aria-hidden
-        className={cn(
-          'relative z-10 ml-auto grid h-6 w-6 place-items-center transition-colors duration-200',
-          isDark ? 'text-brand-contrast' : 'text-content-faint',
-        )}
+        className="pointer-events-none absolute inset-1 z-10 flex items-center justify-between"
       >
-        <Moon className="h-3.5 w-3.5" />
+        <span
+          className={cn(
+            'grid h-6 w-6 place-items-center transition-colors duration-200',
+            isDark ? 'text-content-faint' : 'text-brand-contrast',
+          )}
+        >
+          <Sun className="h-3.5 w-3.5" />
+        </span>
+        <span
+          className={cn(
+            'grid h-6 w-6 place-items-center transition-colors duration-200',
+            isDark ? 'text-brand-contrast' : 'text-content-faint',
+          )}
+        >
+          <Moon className="h-3.5 w-3.5" />
+        </span>
       </span>
     </button>
   );

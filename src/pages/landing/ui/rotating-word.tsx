@@ -122,15 +122,51 @@ export const RotatingWord = ({ className }: { className?: string }) => {
   return (
     <span
       className={cn(
-        'relative inline-grid align-bottom',
+        'relative inline-grid',
+        /*
+         * The hand, one size up.
+         *
+         * The noun is the only word in the headline that changes, and it now
+         * says so twice: it is written in the same hand as the wordmark — the
+         * skin's own `--font-hand` — and set slightly larger than the sentence
+         * around it. A script face at the same size as the roman beside it
+         * reads as an accident; a little bigger reads as emphasis.
+         *
+         * `em`, not a fixed size, so it scales with the headline's own
+         * responsive steps rather than needing a value per breakpoint.
+         */
+        'font-hand text-[1.15em] leading-[0.95]',
         /*
          * Clipped, so a word travelling out of the cell is not briefly readable
-         * over the line above. `overflow-hidden` on an inline-grid needs the
-         * baseline pinned or the whole headline shifts — `align-bottom` above
-         * does that, and the padding gives descenders somewhere to go rather
-         * than being sliced off.
+         * over the line above.
+         *
+         * ## Why there is no `vertical-align` here at all
+         *
+         * There was: `align-bottom`, and it is what made the noun sit visibly
+         * higher than the roman words beside it. It aligns the box's *bottom
+         * margin edge* with the bottom of the line box — the descender line —
+         * so the word floated up by however deep the headline's descenders go.
+         * Small enough to read as bad kerning rather than as a bug, which is
+         * why it survived several passes over this file.
+         *
+         * The reasoning behind it was that `overflow: hidden` destroys an
+         * inline box's baseline, so one has to be faked. That is true of an
+         * inline-*block*; it is not true here. This is an inline-**grid**, and
+         * a grid box takes its baseline from the items in its first row — which
+         * are the words themselves. The baseline was real the whole time.
+         *
+         * So the correct value is the default, and it was checked rather than
+         * assumed: a zero-height inline-block probe dropped into the headline
+         * and another inside the live word put the two baselines 12.94px apart
+         * under an explicit `-0.16em` shift, at a font-size of 80.86px — the
+         * shift and the error being the same number is what identifies the
+         * override, not the box, as the thing that was wrong. Removing it puts
+         * the delta at zero.
+         *
+         * The padding stays: it is what gives descenders somewhere to be drawn
+         * instead of being sliced off by the clip.
          */
-        'overflow-hidden pb-[0.12em]',
+        'overflow-hidden pb-[0.16em]',
         className,
       )}
     >

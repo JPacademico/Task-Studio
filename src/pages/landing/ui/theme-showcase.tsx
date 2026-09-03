@@ -31,6 +31,17 @@ const WINDOW_HEIGHT = 320;
 const REST_SPLIT = 50;
 
 /**
+ * How large the two mocks are drawn.
+ *
+ * `SkinMock` is 96px tall at scale 1, so this is a 380px-high window. It went
+ * to 4.5 when the box was made the evidence of the section and that overshot:
+ * at 432px it was taller than the barrel and the description put together and
+ * pulled the eye away from the control that drives it. This is still comfortably
+ * the largest thing in the section without being the only thing in it.
+ */
+const COMPARE_SCALE = 4;
+
+/**
  * How much wheel travel advances the barrel by one name.
  *
  * A mouse wheel notch is ~100px of `deltaY`; a trackpad emits a stream of
@@ -162,8 +173,12 @@ export const ThemeShowcase = () => {
      * *kinds* of thing — a control, a description, and a preview — and at the
      * page's usual 2rem they read as one panel with internal dividers. The air
      * is what tells the eye where one ends.
+     *
+     * 3.5rem stacked and up to 6rem across. The previous 2.5/4 was still close
+     * enough that the barrel looked like a label for the description rather
+     * than a control in its own right.
      */
-    <div className="grid gap-10 lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-14 xl:grid-cols-[12rem_16rem_minmax(0,1fr)] xl:gap-16">
+    <div className="grid gap-14 lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-20 xl:grid-cols-[12rem_17rem_minmax(0,1fr)] xl:gap-24">
       {/* ---------------------------------------------------------------
           The barrel
           --------------------------------------------------------------- */}
@@ -303,7 +318,7 @@ export const ThemeShowcase = () => {
       {/* ---------------------------------------------------------------
           What it is, and the button that puts it on
           --------------------------------------------------------------- */}
-      <div className="flex min-w-0 flex-col justify-center gap-4">
+      <div className="flex min-w-0 flex-col justify-center gap-5">
         <p className="text-2xs uppercase tracking-[0.16em] text-content-faint">
           {t('landing.themes.count', {
             index: String(index + 1),
@@ -347,7 +362,10 @@ export const ThemeShowcase = () => {
           the moment they have one. A preview that evaporated on navigation
           would teach them the feature does not stick.
         */}
-        <div className="pt-1">
+        {/* Set apart from the description above it: the paragraph is something
+            to read and this is something to press, and a button tucked directly
+            under a paragraph reads as part of it. */}
+        <div className="pt-3">
           <button
             type="button"
             onClick={() => setSkin(skin.value)}
@@ -465,9 +483,25 @@ const SkinCompare = ({
           'cursor-ew-resize select-none shadow-md',
         )}
       >
-        {/* The light half, whole, underneath. Scaled up from 3 — the box is the
-            evidence in this section and it was the smallest thing in it. */}
-        <SkinMock preview={light} scale={4.5} className="w-full" />
+        {/*
+          The light half, whole, underneath.
+
+          `!rounded-none` is doing real work. `SkinMock` writes its own
+          `border-radius` as an *inline style*, taken from the skin's radius
+          token — 18px on Space, 16 on Paper — because a mock has to look like
+          the interface it is imitating. Inside a frame with much squarer
+          corners than that, the mock's own rounding pulled away from the frame
+          and left four visible notches of page showing through at the corners.
+
+          Inline styles only lose to `!important`, which is what the arbitrary
+          property below compiles to. The frame is `overflow-hidden`, so it
+          still does the rounding — there is simply nothing fighting it now.
+        */}
+        <SkinMock
+          preview={light}
+          scale={COMPARE_SCALE}
+          className="w-full [border-radius:0!important]"
+        />
 
         {/*
           The dark half, laid exactly on top and painted from the seam
@@ -485,7 +519,11 @@ const SkinCompare = ({
             transition: isActive ? undefined : 'clip-path 320ms cubic-bezier(0.22, 1, 0.36, 1)',
           }}
         >
-          <SkinMock preview={dark} scale={4.5} className="h-full w-full" />
+          <SkinMock
+            preview={dark}
+            scale={COMPARE_SCALE}
+            className="h-full w-full [border-radius:0!important]"
+          />
         </div>
 
         {/* The seam itself, and the two labels that say which side is which. */}

@@ -235,6 +235,23 @@ const LandingPage = () => {
 
       {/* ================= THE DEMOS =================
 
+          The band is `surface-raised`, not `surface-sunken`, and that swap is
+          the whole of the dark-mode contrast fix.
+
+          Alternating sections were painted `bg-surface-sunken/30`. Composited
+          in dark mode that is rgba(8,8,10,0.3) over a rgb(13,13,16) page —
+          about one and a half points *darker* than the ground, which is both
+          invisible and the wrong direction: a section of a page is a plane
+          lying on it, not a hole cut into it. So the page read as one
+          undifferentiated black rectangle with occasional hairlines, and every
+          card inside it had to do the whole job of saying "something is here".
+
+          At `raised/40` the same band composites about eight points *above* the
+          page, so the stack finally has three legible steps — ground 13, band
+          21, card 32 — and the borders go back to describing edges rather than
+          carrying the entire layout. In light mode the change is barely
+          perceptible, because there the two tokens were never far apart.
+
           No heading over this one, deliberately.
 
           It used to carry "Three things, actually working" and a sentence
@@ -247,7 +264,7 @@ const LandingPage = () => {
       <section
         id="how"
         aria-label={t('landing.nav.how')}
-        className="scroll-mt-20 border-t border-edge/70 bg-surface-sunken/30"
+        className="scroll-mt-20 border-t border-edge/70 bg-surface-raised/40"
       >
         <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
           <Reveal>
@@ -259,7 +276,7 @@ const LandingPage = () => {
       {/* ================= WHAT IS INSIDE ================= */}
       <section
         id="inside"
-        className="scroll-mt-20 border-t border-edge/70 bg-surface-sunken/30"
+        className="scroll-mt-20 border-t border-edge/70 bg-surface-raised/40"
       >
         {/* The heading is inside the board now — pinned to the middle of it,
             with the six notes arranged around it. A heading above a wall and a
@@ -316,7 +333,7 @@ const LandingPage = () => {
       </section>
 
       {/* ================= CLOSING ================= */}
-      <section className="border-t border-edge/70 bg-surface-sunken/30">
+      <section className="border-t border-edge/70 bg-surface-raised/40">
         <div className="mx-auto w-full max-w-3xl px-4 py-20 text-center sm:px-6 sm:py-28">
           <Reveal>
           <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-brand/15 text-brand ring-1 ring-inset ring-brand/25">
@@ -349,9 +366,11 @@ const LandingPage = () => {
       </main>
 
       {/* ================= FOOTER ================= */}
-      <footer className="border-t border-edge/70 bg-surface-sunken/40">
+      <footer className="border-t border-edge/70 bg-surface-raised/50">
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-8 sm:px-6">
-          <span className="inline-flex items-center gap-2 text-xs font-semibold">
+          {/* The same hand the nav, the sign-in desk and the sidebar use. The
+              name is the name wherever it appears next to the mark. */}
+          <span className="inline-flex items-center gap-2 font-hand text-sm font-bold">
             <StudioMark className="h-5 w-5 text-brand" />
             Task Studio
           </span>

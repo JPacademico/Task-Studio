@@ -138,11 +138,21 @@ export const FeatureCarousel = () => {
 
   return (
     /*
-     * `md:px-28` is the arrows' lane: 96px of button plus a little air, on each
-     * side, at every width where the arrows are shown at all. Below `md` they
-     * are hidden and the padding goes with them, so a phone loses nothing.
+     * The arrows' lane. The button is 96px wide and sits flush to the edge, so
+     * the padding *minus* 96 is the clear space between a control and the demo
+     * it moves: 32px at `md`, 64 at `lg`, 112 at `xl`. The first pass used 112
+     * throughout, which left 16px at `md` and read as the arrows leaning on the
+     * panel.
+     *
+     * The cost is demo width, and it is worth naming: at `lg` the frames give
+     * up 160px. They are a two-column grid of a heading and a panel, both of
+     * which reflow, so what that buys — controls that are unambiguously
+     * *outside* the thing they operate — is worth more than the pixels.
+     *
+     * Below `md` the arrows are hidden and the padding goes with them, so a
+     * phone loses nothing at all.
      */
-    <div className="relative space-y-8 md:px-28 xl:px-32">
+    <div className="relative space-y-8 md:px-32 lg:px-40 xl:px-52">
       {/* --- The controls -------------------------------------------------
 
           Two halves, in two places, because they answer two different
@@ -236,10 +246,13 @@ export const FeatureCarousel = () => {
             className={cn(
               'gpu flex flex-col justify-between gap-14 sm:gap-20',
               // The tallest page at each width, measured. See the note above.
-              // Re-measured after the demo paragraphs were removed: a page lost
-              // roughly a quarter of its height, and floors left at the old
-              // numbers would have been pure dead space on every page.
-              'min-h-[82rem] sm:min-h-[80rem] lg:min-h-[61rem]',
+              // Re-measured twice: once after the demo paragraphs were removed
+              // (a page lost roughly a quarter of its height) and again after
+              // the arrows were given a wider lane, which narrows the frames
+              // and pushes their headings back up. Widening the lane is exactly
+              // the kind of change that quietly invalidates these numbers, so
+              // they are re-measured whenever the column width moves.
+              'min-h-[82rem] sm:min-h-[80rem] lg:min-h-[62rem]',
             )}
           >
             {shown.map((feature, index) => (
