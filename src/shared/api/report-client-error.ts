@@ -78,7 +78,23 @@ export const reportClientError = (input: {
       message: clip(message, LIMITS.message) ?? 'Unknown error',
       stack: clip(stack, LIMITS.stack),
       componentStack: clip(input.componentStack ?? undefined, LIMITS.componentStack),
-      url: clip(window.location.pathname + window.location.search, LIMITS.url),
+      /*
+       * The path, and deliberately not `window.location.search`.
+       *
+       * It used to send both, and the query string is where this app's
+       * single-use credentials live on their way in: `/verify-email?token=…`
+       * and `/reset-password?token=…` both carry one, and the OAuth callback
+       * carries an exchange code. The server writes this field straight into a
+       * log line (see `TelemetryController`), so a render crash on the
+       * verification screen filed a live token into the log — and that screen
+       * is reached *while signed in*, which is exactly when this reporter is
+       * enabled.
+       *
+       * Nothing is lost. The path alone says which screen broke, which is the
+       * whole reason the field exists; the values in the query string were
+       * never going to help debug a render failure.
+       */
+      url: clip(window.location.pathname, LIMITS.url),
     })
     .catch(() => {
       // See the note above: never make a crash worse by failing to report it.
