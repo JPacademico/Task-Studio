@@ -169,18 +169,27 @@ export const LandingNav = () => {
             one. Mixing them would make one of the four behave differently from
             the other three for no visible reason.
 
-            Visible at every width, unlike the anchors — on a phone the page is
-            its own navigation, but the documentation still has to be reachable.
+            Its label is hidden on the narrowest screens and the icon carries
+            it alone. Measured at 360px, the right-hand cluster — Docs, the two
+            toggles, and two buttons — ran 58px past the edge and gave the whole
+            document a horizontal scrollbar; the theme control had just grown
+            from a 36px square into a 60px switch, which is where the extra
+            width came from. Dropping one word is a cheaper answer than hiding
+            the link, and `aria-label` keeps it announced either way.
           */}
           <Link
             to="/docs"
-            className={buttonClasses({ variant: 'ghost', size: 'sm' })}
+            aria-label={t('landing.nav.docs')}
+            className={buttonClasses({ variant: 'ghost', size: 'sm', className: 'px-2 sm:px-3' })}
           >
             <BookText aria-hidden className="h-3.5 w-3.5" />
-            {t('landing.nav.docs')}
+            <span className="hidden sm:inline">{t('landing.nav.docs')}</span>
           </Link>
 
-          <LanguageToggle />
+          {/* Hidden on the narrowest screens for the same reason. The page has
+              already detected the reader's language; changing it is a deliberate
+              act they can perform on any wider screen, or on the sign-in page. */}
+          <LanguageToggle className="hidden min-[400px]:block" />
           <ThemeToggle />
 
           {/* Real anchors wearing the button's clothes — see `buttonClasses`.

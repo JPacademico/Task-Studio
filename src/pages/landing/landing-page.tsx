@@ -264,7 +264,20 @@ const LandingPage = () => {
       <section
         id="how"
         aria-label={t('landing.nav.how')}
-        className="scroll-mt-20 border-t border-edge/70 bg-surface-raised/40"
+        /*
+         * `overflow-x-clip` is the companion to the carousel's full-bleed arrow
+         * layer. That layer is `w-screen` — 100vw — and `vw` counts the
+         * scrollbar, so on any page tall enough to have one the layer is about
+         * 15px wider than the visible area and hangs a few pixels past each
+         * edge. Unclipped, that is a horizontal scrollbar on the whole
+         * document.
+         *
+         * `clip` rather than `hidden`: `hidden` makes the box a scroll
+         * container, which changes what `position: sticky` and anchor scrolling
+         * do inside it. `clip` just stops the paint at the edge, which is all
+         * that is wanted.
+         */
+        className="scroll-mt-20 overflow-x-clip border-t border-edge/70 bg-surface-raised/40"
       >
         <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
           <Reveal>
@@ -474,7 +487,19 @@ const AuthorCredit = () => {
          */
         aria-hidden
         className={cn(
+          /*
+             Hidden below `sm`, and nothing is lost by it.
+
+             This is a hover affordance, and a touch screen cannot hover — so on
+             the phones this breakpoint describes it could never have appeared.
+             It could still *overflow*, though: `whitespace-nowrap` on a sentence
+             anchored to a credit that sits at the end of a flex row pushed 58px
+             past the right edge at 360px and gave the whole document a
+             horizontal scrollbar. The link's `aria-label` carries the same
+             destination, so the information is not lost either.
+          */
           'pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 -translate-x-1/2',
+          'hidden sm:block',
           'whitespace-nowrap rounded-lg border border-edge bg-surface-raised px-2.5 py-1.5',
           'text-2xs font-medium text-content shadow-lg',
           'opacity-0 transition-all duration-150 ease-studio',
