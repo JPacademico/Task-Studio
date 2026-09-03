@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 
 import { errorMessage } from '@/shared/api/client';
 import { queryKeys } from '@/shared/api/query-keys';
+import { inWriteOrder, writeSequence } from '@/shared/lib/write-order';
 import { translate } from '@/shared/i18n';
 import { taskApi } from '@/entities/task/api/task.api';
 import { taskGroupApi } from '../api/task-group.api';
@@ -41,55 +42,38 @@ export const useTaskGroupBoard = (projectId: string | undefined, enabled = true)
   });
 
 /**
- * The scope every write to one project's grouping board shares.
+ * How writes to the grouping board are kept in order.
  *
- * React Query runs mutations that name the same `scope.id` one after another
- * instead of concurrently, and that is the half of the fast-drag fix the user
- * cannot see. Two writes to the same board can no longer be in the air at once,
- * so they cannot land out of order — which is what made a quick run of drags
- * settle, flash backwards and settle again.
+ * ## Why this stopped being a React Query `scope`
  *
- * Shared between tagging and ticking rather than one scope each, because the
- * thing being serialised is not the endpoint: it is the board they both rewrite.
- * A tick that overtook the tag of the same card would reintroduce the bug from
- * the other side.
+ * Every mutation in this file used to name `scope: { id: 'task-group-board:<id>' }`,
+ * which made React Query run them one after another — the right *guarantee*
+ * bought with the wrong instrument. `onMutate` runs when a mutation is
+ * dequeued, not when `mutate()` is called, so dragging a second card while the
+ * first drop was still in the air applied no optimistic update at all: the
+ * second card snapped back to the column it came from and sat there for a whole
+ * round trip before jumping forward again. That is the same rollback the status
+ * board was fixed for, arriving from the other side.
+ *
+ * The queue is now per *row* and lives inside `mutationFn`, so `onMutate` runs
+ * on the drop for every card while two writes to the same card still cannot
+ * land out of order. `writeSequence` supplies the other half: a response that
+ * has been overtaken is dropped rather than painted, and the refetch belongs to
+ * the last write out. The whole argument is on `shared/lib/write-order`.
+ *
+ * ## Why the keys are the ones the task hooks already use
+ *
+ * A card can be ticked on this board and dragged on the status board, and those
+ * are two writes to one row. Sharing `task-completion:<id>` and
+ * `task-status:<id>` with `entities/task` means the ordering holds across the
+ * two surfaces rather than only within each. Column order is its own row —
+ * there is one per board, and only this file writes it.
  */
-const boardScope = (projectId: string) => ({ id: `task-group-board:${projectId}` });
-
-/**
- * Whether some *other* write to this board is still queued behind this one.
- *
- * This is the visible half of the fast-drag fix. Refetching after every drop
- * asked the server for a board that had heard about drop three and not yet
- * about drop four, and painted that answer over an optimistic state that was
- * already right — the card the user had just moved jumped back to where it came
- * from and then forward again. Waiting for the queue to drain means exactly one
- * refetch happens, at the end, when the server and the screen finally agree.
- *
- * ## Why the threshold is one and not zero
- *
- * Because the mutation asking the question is still in the answer. It is
- * tempting to read `isMutating() > 0` as "somebody else is working", and it is
- * wrong: `isMutating` counts mutations whose status is `pending`, and React
- * Query does not dispatch `success` until *after* every `onSettled` callback
- * has resolved (see `Mutation.execute`). So a mutation asking this from inside
- * its own `onSettled` always counts itself, `> 0` is true even when the queue
- * is otherwise empty, and the refetch it guards would never run at all.
- *
- * `> 1` is the honest test: one is me, more than one is me and somebody behind
- * me — and that somebody will ask again, with a shorter queue, when they are
- * done. The last one out turns the lights off.
- */
-const isBoardBusy = (
-  queryClient: ReturnType<typeof useQueryClient>,
-  projectId: string,
-): boolean => {
-  const scopeId = boardScope(projectId).id;
-  return (
-    queryClient.isMutating({
-      predicate: (mutation) => mutation.options.scope?.id === scopeId,
-    }) > 1
-  );
+const orderKey = {
+  tag: (taskId: string) => `task-group:${taskId}`,
+  columns: (projectId: string) => `task-group-order:${projectId}`,
+  completion: (taskId: string, asAssignee: boolean) =>
+    asAssignee ? `task-completion:${taskId}` : `task-status:${taskId}`,
 };
 
 /**
@@ -164,13 +148,15 @@ export const useReorderTaskGroups = (projectId: string) => {
   const boardKey = queryKeys.taskGroups.board(projectId);
 
   return useMutation({
-    // The same queue the drags use: two arrow presses in quick succession are
-    // the column-level version of the same race. See `boardScope`.
-    scope: boardScope(projectId),
-
-    mutationFn: (orderedIds: string[]) => taskGroupApi.reorder(projectId, orderedIds),
+    // Two arrow presses in quick succession are the column-level version of the
+    // drag race, so the requests queue per board. See `orderKey`.
+    mutationFn: (orderedIds: string[]) =>
+      inWriteOrder(orderKey.columns(projectId), () =>
+        taskGroupApi.reorder(projectId, orderedIds),
+      ),
 
     onMutate: async (orderedIds) => {
+      const token = writeSequence.claim(orderKey.columns(projectId));
       await queryClient.cancelQueries({ queryKey: boardKey });
       const previous = queryClient.getQueryData<TaskGroupBoard>(boardKey);
 
@@ -190,16 +176,23 @@ export const useReorderTaskGroups = (projectId: string) => {
         return { ...board, groups: [...reordered, ...rest] };
       });
 
-      return { previous };
+      return { previous, token };
     },
 
     onError: (error, _ids, context) => {
+      // A superseded write's snapshot is of a board two presses ago; restoring
+      // it would undo the order the reader is currently looking at.
+      if (context && !writeSequence.isCurrent(orderKey.columns(projectId), context.token)) return;
+
       if (context?.previous) queryClient.setQueryData(boardKey, context.previous);
       toast.error(errorMessage(error));
     },
 
-    onSettled: () => {
-      if (isBoardBusy(queryClient, projectId)) return;
+    onSettled: (_data, _error, _ids, context) => {
+      const key = orderKey.columns(projectId);
+      if (context && !writeSequence.isCurrent(key, context.token)) return;
+
+      if (context) writeSequence.release(key, context.token);
       invalidateGroups(queryClient, projectId);
     },
   });
@@ -224,23 +217,23 @@ export const useReorderTaskGroups = (projectId: string) => {
  *
  * ## Dragging faster than the network
  *
- * Both halves of that are handled above rather than here: `boardScope` puts the
- * writes in a queue so they cannot land out of order, and `isBoardBusy` holds
- * the refetch until the queue is empty. Without them a run of quick drags
- * produced exactly the symptom optimism exists to prevent — cards snapping back
- * to where they came from a beat after being moved.
+ * Both halves of that are handled by `orderKey` and `writeSequence`: the
+ * requests for one card queue behind each other so they cannot land out of
+ * order, a response that has been overtaken is dropped rather than painted, and
+ * the reconciling refetch belongs to the last write out. Two *different* cards
+ * never wait for each other, which is the part the old board-wide queue got
+ * wrong — see the note on `orderKey`.
  */
 export const useTagTask = (projectId: string) => {
   const queryClient = useQueryClient();
   const boardKey = queryKeys.taskGroups.board(projectId);
 
   return useMutation({
-    scope: boardScope(projectId),
-
     mutationFn: ({ taskId, groupId }: { taskId: string; groupId: string | null }) =>
-      taskApi.update(taskId, { groupId }),
+      inWriteOrder(orderKey.tag(taskId), () => taskApi.update(taskId, { groupId })),
 
     onMutate: async ({ taskId, groupId }) => {
+      const token = writeSequence.claim(orderKey.tag(taskId));
       await queryClient.cancelQueries({ queryKey: boardKey });
       const previous = queryClient.getQueryData<TaskGroupBoard>(boardKey);
 
@@ -268,17 +261,28 @@ export const useTagTask = (projectId: string) => {
         };
       });
 
-      return { previous };
+      return { previous, token };
     },
 
-    onError: (error, _variables, context) => {
+    onError: (error, variables, context) => {
+      // Only the newest write for this card owns the rollback: an older one's
+      // snapshot predates the move the reader is currently looking at.
+      if (context && !writeSequence.isCurrent(orderKey.tag(variables.taskId), context.token)) {
+        return;
+      }
+
       if (context?.previous) queryClient.setQueryData(boardKey, context.previous);
       toast.error(errorMessage(error));
     },
 
-    onSettled: () => {
-      // Only the last write of a burst refetches. See `isBoardBusy`.
-      if (isBoardBusy(queryClient, projectId)) return;
+    onSettled: (_data, _error, variables, context) => {
+      // Only the last write for this card refetches — refetching while a newer
+      // drop is in flight asks the server about a move it has not been told
+      // about yet.
+      const key = orderKey.tag(variables.taskId);
+      if (context && !writeSequence.isCurrent(key, context.token)) return;
+
+      if (context) writeSequence.release(key, context.token);
 
       void queryClient.invalidateQueries({ queryKey: boardKey });
       // The chip on the card is part of a task's shape, so every other surface
@@ -326,8 +330,14 @@ export const useToggleGroupTaskCompletion = (projectId: string) => {
   const boardKey = queryKeys.taskGroups.board(projectId);
 
   return useMutation({
-    scope: boardScope(projectId),
-
+    /*
+     * Queued against the same key the task hooks use, not against this board.
+     *
+     * The two endpoints below are the two the status board writes as well, so
+     * keying on `task-completion:<id>` / `task-status:<id>` puts a tick made
+     * here and a drag made there into one order for that row — which is the
+     * ordering that actually matters. See `orderKey`.
+     */
     mutationFn: ({
       taskId,
       completed,
@@ -338,11 +348,14 @@ export const useToggleGroupTaskCompletion = (projectId: string) => {
       /** True when the reader is on the task; false when they are closing it as an admin. */
       asAssignee: boolean;
     }) =>
-      asAssignee
-        ? taskApi.setMyCompletion(taskId, completed)
-        : taskApi.updateStatus(taskId, completed ? 'COMPLETED' : 'TODO'),
+      inWriteOrder(orderKey.completion(taskId, asAssignee), () =>
+        asAssignee
+          ? taskApi.setMyCompletion(taskId, completed)
+          : taskApi.updateStatus(taskId, completed ? 'COMPLETED' : 'TODO'),
+      ),
 
     onMutate: async ({ taskId, completed, asAssignee }) => {
+      const token = writeSequence.claim(orderKey.completion(taskId, asAssignee));
       await queryClient.cancelQueries({ queryKey: boardKey });
       const previous = queryClient.getQueryData<TaskGroupBoard>(boardKey);
 
@@ -395,16 +408,22 @@ export const useToggleGroupTaskCompletion = (projectId: string) => {
           : board,
       );
 
-      return { previous };
+      return { previous, token };
     },
 
-    onError: (error, _variables, context) => {
+    onError: (error, variables, context) => {
+      const key = orderKey.completion(variables.taskId, variables.asAssignee);
+      if (context && !writeSequence.isCurrent(key, context.token)) return;
+
       if (context?.previous) queryClient.setQueryData(boardKey, context.previous);
       toast.error(errorMessage(error));
     },
 
-    onSettled: () => {
-      if (isBoardBusy(queryClient, projectId)) return;
+    onSettled: (_data, _error, variables, context) => {
+      const key = orderKey.completion(variables.taskId, variables.asAssignee);
+      if (context && !writeSequence.isCurrent(key, context.token)) return;
+
+      if (context) writeSequence.release(key, context.token);
 
       void queryClient.invalidateQueries({ queryKey: boardKey });
       // A completion changes the card on every other surface too.

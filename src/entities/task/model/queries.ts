@@ -686,35 +686,36 @@ export const useToggleMyCompletion = (currentUserId?: string) => {
 
   return useMutation({
     /*
-     * Serialised, which is the half of the fix the user cannot see.
+     * Ordered per row, not across the app.
      *
-     * React Query runs mutations sharing a `scope.id` one after another instead
-     * of concurrently. Two writes for the same row therefore cannot be in the
-     * air together, so they cannot land out of order — which is what made a
-     * quick tick-untick settle as "done", flash back, and settle again.
+     * This used to carry `scope: { id: 'task-completion' }` — one queue for
+     * every completion in the application — because `scope` is fixed when the
+     * hook is created and cannot read the variables it would need to be
+     * per-task. That bought the ordering guarantee at the price of a real bug:
+     * `onMutate` runs when a mutation is *dequeued*, so ticking your box on one
+     * card while another card's write was in the air left the second box empty
+     * under the finger until the first round trip finished.
      *
-     * The scope is a constant rather than one id per task, because `scope` is
-     * fixed when the hook is created and cannot read the variables. That is a
-     * blunter instrument than it needs to be — ticking two *different* tasks
-     * quickly now queues the second behind the first — and it costs nothing
-     * observable: both cards changed optimistically on the click, and all that
-     * is being ordered is the acknowledgement. Given the box is also disabled
-     * for the length of the round trip, a queue of more than one is already the
-     * rare case.
+     * `inWriteOrder` is keyed by the taskId the caller actually passed, so two
+     * writes to the same row still cannot land out of order and two writes to
+     * *different* rows never wait for each other. `onMutate` runs on the click
+     * either way. Same arrangement as `useUpdateTaskStatus`; see
+     * `write-order.ts`.
      */
-    scope: { id: 'task-completion' },
-
     mutationFn: ({ taskId, completed }: { taskId: string; completed: boolean }) =>
-      taskApi.setMyCompletion(taskId, completed),
+      inWriteOrder(`task-completion:${taskId}`, () =>
+        taskApi.setMyCompletion(taskId, completed),
+      ),
 
-    onMutate: ({ taskId, completed }) => {
+    onMutate: async ({ taskId, completed }) => {
       // Locks this task's checkbox for the length of the round trip. Released
       // in `onSettled`, which runs on both success and failure.
       taskSync.begin(taskId);
 
+      const token = writeSequence.claim(`task-completion:${taskId}`);
       const now = new Date().toISOString();
 
-      return applyOptimisticTaskWrite(queryClient, taskId, (task) => {
+      const context = await applyOptimisticTaskWrite(queryClient, taskId, (task) => {
         const assignees = task.assignees.map((assignee) =>
           assignee.id === currentUserId
             ? { ...assignee, completedAt: completed ? now : null }
@@ -736,50 +737,57 @@ export const useToggleMyCompletion = (currentUserId?: string) => {
           completedAt: everyoneDone ? now : null,
         };
       });
+
+      return { ...context, token };
     },
 
-    onError: (error, _variables, context) => {
+    onError: (error, variables, context) => {
+      // A superseded write's snapshot is of a card two clicks ago; restoring it
+      // would undo the state the user is currently looking at. See
+      // `useUpdateTaskStatus`, which makes the same call for the same reason.
+      if (context && !writeSequence.isCurrent(`task-completion:${variables.taskId}`, context.token)) {
+        return;
+      }
+
       rollbackTaskWrite(queryClient, context);
       toast.error(errorMessage(error));
     },
 
-    onSuccess: (task) => {
+    onSuccess: (task, variables, context) => {
+      // …and a superseded write's *answer* is equally out of date. A newer
+      // request is already on its way with the one that matches the screen.
+      if (context && !writeSequence.isCurrent(`task-completion:${variables.taskId}`, context.token)) {
+        return;
+      }
+
       patchCachedTask(queryClient, task.id, () => task);
       if (task.status === 'COMPLETED')
         toast.success(translate('toast.taskDone', { title: task.title }));
     },
 
-    onSettled: (task, _error, variables) => {
+    onSettled: (task, _error, variables, context) => {
       taskSync.end(variables.taskId);
 
       /*
-       * The refetch waits for this task's queue to drain.
+       * The refetch belongs to the last write out.
        *
-       * A second toggle for the same task may be sitting behind this one.
-       * Invalidating now would refetch a server that has heard about the first
-       * write and not the second, and paint that answer over an optimistic
-       * state that is already correct — the card would visibly flip back and
-       * then forward again, which is the exact symptom being fixed.
+       * A second toggle for the same task may still be in flight. Invalidating
+       * now would refetch a server that has heard about the first write and not
+       * the second, and paint that answer over an optimistic state that is
+       * already correct — the card would visibly flip back and then forward
+       * again, which is the exact symptom being fixed.
        *
-       * The threshold is one, not zero, and that matters: this mutation is
-       * still in the count. `isMutating` counts mutations whose status is
-       * `pending`, and React Query does not dispatch `success` until *after*
-       * every `onSettled` has resolved — see `Mutation.execute`. So a mutation
-       * asking this from inside its own `onSettled` always counts itself, and
-       * `> 0` was true even with an empty queue: the reconciling refetch this
-       * guard exists to defer was in fact never running at all.
-       *
-       * One is me. More than one is me and somebody behind me, who will ask the
-       * same question with a shorter queue when they are done. The last one out
-       * turns the lights off.
+       * This used to be asked of `queryClient.isMutating` with a predicate
+       * matching any pending mutation carrying the same `taskId`, which is both
+       * broader than the question (a status drag and a note tick on the same
+       * task are unrelated writes) and harder to reason about than it looks —
+       * the mutation asking always counts itself. The write sequence answers it
+       * exactly: am I still the newest write for this row?
        */
-      const queuedForThisTask = queryClient.isMutating({
-        predicate: (mutation) =>
-          (mutation.state.variables as { taskId?: string } | undefined)?.taskId ===
-          variables.taskId,
-      });
+      const key = `task-completion:${variables.taskId}`;
+      if (context && !writeSequence.isCurrent(key, context.token)) return;
 
-      if (queuedForThisTask > 1) return;
+      if (context) writeSequence.release(key, context.token);
       invalidate(task?.project?.id);
     },
   });
@@ -926,18 +934,33 @@ export const useTaskNoteMutations = (taskId: string) => {
      * behind it have both landed turns working down three steps into three
      * visible waits.
      *
-     * `scope` serialises the writes so that running down the list quickly
-     * cannot land them out of order — the same guarantee `useToggleMyCompletion`
-     * has, and for the same reason. Scoped to this task, because the hook
-     * already is.
+     * ## Why this stopped using `scope`
+     *
+     * It used to carry `scope: { id: 'task-notes:<taskId>' }`, which serialises
+     * every write on the sheet — and that is what made the boxes roll back.
+     * React Query runs `onMutate` when a mutation is *dequeued*, not when
+     * `mutate()` is called, so ticking a second step while the first was still
+     * in the air applied no optimistic update at all: the box stayed empty
+     * under the finger, the first write's `onSettled` then refetched a task
+     * that genuinely did not have that step ticked yet, and the tick appeared,
+     * vanished, and appeared again. Running down a three-item checklist made it
+     * happen twice.
+     *
+     * The scope was there for a real reason — two writes to *the same row* must
+     * not land out of order — and it was solving it with an instrument that
+     * ordered the whole sheet. `inWriteOrder` orders only the requests, and only
+     * per note, so every box still ticks on the click while no row can be
+     * written out of sequence. Exactly the arrangement `useUpdateTaskStatus`
+     * arrived at for the board; see `write-order.ts` for the full argument.
      */
     toggle: useMutation({
-      scope: { id: `task-notes:${taskId}` },
-
       mutationFn: ({ noteId, isCompleted }: { noteId: string; isCompleted: boolean }) =>
-        noteApi.setCompletion(noteId, isCompleted),
+        inWriteOrder(`task-note:${noteId}`, () => noteApi.setCompletion(noteId, isCompleted)),
 
       onMutate: ({ noteId, isCompleted }) => {
+        // Stamped before the write, so every handler below can ask whether it
+        // is still describing the tick the user last made.
+        const token = writeSequence.claim(`task-note:${noteId}`);
         const snapshot = queryClient.getQueriesData({ queryKey: queryKeys.tasks.all });
 
         patchCachedTask(queryClient, taskId, (task) => {
@@ -957,15 +980,40 @@ export const useTaskNoteMutations = (taskId: string) => {
           };
         });
 
-        return { snapshot };
+        return { snapshot, token };
       },
 
-      onError: (error, _variables, context) => {
+      onError: (error, variables, context) => {
+        /*
+         * A superseded write rolls nothing back.
+         *
+         * Its snapshot is of a sheet two ticks ago, and restoring it would undo
+         * the tick the user has since made and is currently looking at. The
+         * write that is still current owns the rollback.
+         */
+        if (context && !writeSequence.isCurrent(`task-note:${variables.noteId}`, context.token)) {
+          return;
+        }
+
         context?.snapshot.forEach(([key, value]) => queryClient.setQueryData(key, value));
         toast.error(errorMessage(error));
       },
 
-      onSettled: refresh,
+      /*
+       * The refetch belongs to the last write out.
+       *
+       * Refetching while a newer tick for the same box is still in flight asks
+       * the server for a note it has not finished being told about, and paints
+       * that answer over an optimistic state that is already right — which is
+       * the rollback this whole hook was rewritten to stop.
+       */
+      onSettled: (_data, _error, variables, context) => {
+        const key = `task-note:${variables.noteId}`;
+        if (context && !writeSequence.isCurrent(key, context.token)) return;
+
+        if (context) writeSequence.release(key, context.token);
+        refresh();
+      },
     }),
 
     remove: useMutation({

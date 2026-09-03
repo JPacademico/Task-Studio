@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { BookText } from 'lucide-react';
 
 import { LanguageToggle } from '@/features/language-toggle/ui/language-toggle';
@@ -29,6 +29,24 @@ import { useT } from '@/shared/i18n';
  */
 export const LandingNav = () => {
   const t = useT();
+  const { pathname } = useLocation();
+
+  /*
+   * Whether the three section links can be plain anchors.
+   *
+   * They could not before, and that was a broken control rather than a cosmetic
+   * one: this bar is shared with the documentation page, where `href="#how"`
+   * resolves to `/docs#how` — an anchor to a section that does not exist on
+   * that document. Pressing any of the three did nothing at all, silently,
+   * which is the worst way for a link to fail.
+   *
+   * On the landing page itself they stay native anchors, because the browser's
+   * own same-document scrolling is smoother than anything a router can do and
+   * it honours `scroll-behavior` and `prefers-reduced-motion` for free.
+   * Anywhere else they become router links carrying the hash, and `LandingPage`
+   * scrolls to it on arrival — see the effect there.
+   */
+  const isOnLanding = pathname === '/welcome';
 
   return (
     <header className="sticky top-0 z-40 border-b border-edge/70 bg-surface/80 backdrop-blur">
@@ -90,22 +108,30 @@ export const LandingNav = () => {
               ['#how', 'landing.nav.how'],
               ['#connects', 'landing.nav.connects'],
               ['#inside', 'landing.nav.inside'],
+              ['#themes', 'landing.nav.themes'],
             ] as const
-          ).map(([href, label]) => (
-            <li key={href}>
-              <a
-                href={href}
-                className={cn(
-                  'rounded-lg px-2.5 py-1.5 text-xs font-medium text-content-muted',
-                  'transition-colors hover:bg-surface-sunken hover:text-content',
-                  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
-                  'focus-visible:outline-brand',
+          ).map(([href, label]) => {
+            const linkClass = cn(
+              'rounded-lg px-2.5 py-1.5 text-xs font-medium text-content-muted',
+              'transition-colors hover:bg-surface-sunken hover:text-content',
+              'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
+              'focus-visible:outline-brand',
+            );
+
+            return (
+              <li key={href}>
+                {isOnLanding ? (
+                  <a href={href} className={linkClass}>
+                    {t(label)}
+                  </a>
+                ) : (
+                  <Link to={`/welcome${href}`} className={linkClass}>
+                    {t(label)}
+                  </Link>
                 )}
-              >
-                {t(label)}
-              </a>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
 
         <div className="ml-auto flex items-center gap-1.5">

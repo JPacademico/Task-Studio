@@ -549,6 +549,7 @@ const en = {
   'landing.nav.skip': 'Skip to content',
   'landing.nav.how': 'How it works',
   'landing.nav.connects': 'Connections',
+  'landing.nav.themes': 'Themes',
   'landing.nav.inside': 'What’s inside',
   'landing.nav.signIn': 'Sign in',
   'landing.nav.getStarted': 'Get started',
@@ -559,27 +560,12 @@ const en = {
   'landing.word.projects': 'projects',
   'landing.word.work': 'work',
 
-  /*
-   * The possessive that goes with each noun above.
-   *
-   * One "your" five times over in English, which looks like duplication and is
-   * not: Portuguese needs three different words here, because the possessive
-   * agrees with the gender and number of the noun it sits in front of. See
-   * `RotatingWord`.
-   */
-  'landing.det.tasks': 'your',
-  'landing.det.meetings': 'your',
-  'landing.det.notes': 'your',
-  'landing.det.projects': 'your',
-  'landing.det.work': 'your',
-
-  'landing.hero.titleLead': 'Manage',
+  'landing.hero.titleLead': 'Manage your',
   'landing.hero.titleTail': 'the way you would on paper.',
   'landing.hero.body':
     'Task Studio is a project studio that behaves like a desk. Drag work between columns, stick notes on a wall, book the room, and let it talk to the tools you already use.',
   'landing.hero.primary': 'Start for free',
   'landing.hero.secondary': 'See it working',
-  'landing.hero.reassurance': 'No card. Bring a GitHub repository or a board export and start with real work in it.',
 
 
   // --- The feature carousel ----------------------------------------------
@@ -701,26 +687,24 @@ const en = {
   'landing.svc.webhooks': 'Webhooks & API',
   'landing.svc.webhooksWhat': 'Signed events, and tokens for your scripts',
 
+  // --- The themes shelf ---------------------------------------------------
+  'landing.themes.title': 'Thirteen ways to look at the same work',
+  'landing.themes.body':
+    'A skin is not an accent colour here. Each one reinterprets the whole app — its paper, its type, its corners, its light — and the one you pick follows you to every device you sign in on.',
+  'landing.themes.pick': 'Choose a theme to preview',
+  'landing.themes.light': 'Light',
+  'landing.themes.dark': 'Dark',
+  'landing.themes.hint': 'Drag across to compare',
+  'landing.themes.count': '{index} of {total}',
+
   'landing.inside.title': 'A studio, not a spreadsheet',
 
   'landing.note.boards': 'Two boards, one set of tasks',
-  'landing.note.boardsBody':
-    'Sort by status, or by columns you invent. The same work, seen the way you need it that afternoon.',
   'landing.note.notes': 'A wall of Post-its',
-  'landing.note.notesBody':
-    'Stick notes anywhere, link them with string, draw on the whiteboard beside them.',
   'landing.note.meetings': 'Meetings that reach your calendar',
-  'landing.note.meetingsBody':
-    'Book the room here, see it on your phone. Move it on your phone, see it here.',
   'landing.note.docs': 'Pages that live with the project',
-  'landing.note.docsBody':
-    'Write them here, or bring a PDF or Word file in and keep it exactly as it is — readable by the project, one click from a download.',
   'landing.note.undo': 'A changelog you can undo',
-  'landing.note.undoBody':
-    'Every action is recorded, and most of them can be reversed — your own always, anybody’s if you run the project.',
   'landing.note.skins': 'Thirteen ways to look',
-  'landing.note.skinsBody':
-    'Paper, terminal, newsprint, deep space. Same app, and the one you pick follows you everywhere.',
 
   'landing.cta.title': 'Put your work on the desk',
   'landing.cta.body':
@@ -730,6 +714,8 @@ const en = {
 
   'landing.footer.tagline': 'Work that behaves like paper.',
   'landing.footer.source': 'Source',
+  'landing.footer.by': 'by',
+  'landing.footer.byWho': 'Instagram — opens in a new tab',
 
   // ---- Importing a board exported from another tool -----------------------
   'project.modeBoard': 'From a board',
@@ -2527,6 +2513,7 @@ const ptBR: Record<TranslationKey, string> = {
   'landing.nav.skip': 'Pular para o conteúdo',
   'landing.nav.how': 'Como funciona',
   'landing.nav.connects': 'Conexões',
+  'landing.nav.themes': 'Temas',
   'landing.nav.inside': 'O que tem dentro',
   'landing.nav.signIn': 'Entrar',
   'landing.nav.getStarted': 'Começar',
@@ -2537,21 +2524,22 @@ const ptBR: Record<TranslationKey, string> = {
   'landing.word.projects': 'projetos',
   'landing.word.work': 'trabalho',
 
-  // Concorda com o substantivo que vem depois: femininas no plural levam
-  // "suas", masculino plural leva "seus", masculino singular leva "seu".
-  'landing.det.tasks': 'suas',
-  'landing.det.meetings': 'suas',
-  'landing.det.notes': 'suas',
-  'landing.det.projects': 'seus',
-  'landing.det.work': 'seu',
-
+  /*
+   * Sem possessivo, de propósito.
+   *
+   * O inglês carrega o "your" aqui porque uma palavra serve para os cinco
+   * substantivos. O português precisaria de três — suas tarefas, seus projetos,
+   * seu trabalho — e trocar o determinante junto com o substantivo era
+   * exatamente o que quebrava a linha: duas colunas de largura variável girando
+   * ao mesmo tempo. O título fica com o substantivo sozinho, que é o que a
+   * frase estava dizendo de qualquer jeito.
+   */
   'landing.hero.titleLead': 'Organize',
   'landing.hero.titleTail': 'como você faria no papel.',
   'landing.hero.body':
     'O Task Studio é um estúdio de projetos que se comporta como uma mesa. Arraste o trabalho entre colunas, cole notas na parede, marque a sala e deixe tudo conversar com as ferramentas que você já usa.',
   'landing.hero.primary': 'Começar de graça',
   'landing.hero.secondary': 'Ver funcionando',
-  'landing.hero.reassurance': 'Sem cartão. Traga um repositório do GitHub ou a exportação de um quadro e já comece com trabalho de verdade.',
 
 
   'landing.how.page': 'Página {page} de {total}',
@@ -2672,26 +2660,23 @@ const ptBR: Record<TranslationKey, string> = {
   'landing.svc.webhooks': 'Webhooks e API',
   'landing.svc.webhooksWhat': 'Eventos assinados e tokens para seus scripts',
 
+  'landing.themes.title': 'Treze jeitos de olhar para o mesmo trabalho',
+  'landing.themes.body':
+    'Aqui um tema não é uma cor de destaque. Cada um reinterpreta o app inteiro — o papel, a tipografia, os cantos, a luz — e o que você escolher acompanha você em todo aparelho onde entrar.',
+  'landing.themes.pick': 'Escolha um tema para ver',
+  'landing.themes.light': 'Claro',
+  'landing.themes.dark': 'Escuro',
+  'landing.themes.hint': 'Arraste para comparar',
+  'landing.themes.count': '{index} de {total}',
+
   'landing.inside.title': 'Um estúdio, não uma planilha',
 
   'landing.note.boards': 'Dois quadros, um só conjunto de tarefas',
-  'landing.note.boardsBody':
-    'Organize por status, ou por colunas que você inventa. O mesmo trabalho, visto do jeito que você precisa naquela tarde.',
   'landing.note.notes': 'Uma parede de post-its',
-  'landing.note.notesBody':
-    'Cole notas onde quiser, ligue-as com barbante, desenhe no quadro branco ao lado.',
   'landing.note.meetings': 'Reuniões que chegam na sua agenda',
-  'landing.note.meetingsBody':
-    'Marque a sala aqui, veja no celular. Mova no celular, veja aqui.',
   'landing.note.docs': 'Páginas que vivem com o projeto',
-  'landing.note.docsBody':
-    'Escreva aqui, ou traga um PDF ou documento do Word e ele fica exatamente como está — visível para o projeto, a um clique do download.',
   'landing.note.undo': 'Um histórico que dá para desfazer',
-  'landing.note.undoBody':
-    'Toda ação fica registrada, e a maioria pode ser revertida — as suas sempre, as de qualquer um se você gerencia o projeto.',
   'landing.note.skins': 'Treze jeitos de aparecer',
-  'landing.note.skinsBody':
-    'Papel, terminal, jornal, espaço profundo. O mesmo app, e o que você escolher te acompanha em tudo.',
 
   'landing.cta.title': 'Ponha seu trabalho na mesa',
   'landing.cta.body':
@@ -2701,6 +2686,8 @@ const ptBR: Record<TranslationKey, string> = {
 
   'landing.footer.tagline': 'Trabalho que se comporta como papel.',
   'landing.footer.source': 'Código',
+  'landing.footer.by': 'por',
+  'landing.footer.byWho': 'Instagram — abre em uma nova aba',
 
   'project.modeBoard': 'De um quadro',
   'boardImport.drop': 'Solte aqui a exportação de um quadro',

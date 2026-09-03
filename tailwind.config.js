@@ -168,6 +168,25 @@ export default {
           '100%': { transform: 'translateX(100%)' },
         },
         /*
+         * The connections belt on the landing page.
+         *
+         * Exactly half the track, because the track holds the list twice: at
+         * the instant this wraps to zero the second copy is occupying the
+         * pixels the first one has just left, so the loop has no seam and
+         * nothing has to measure anything.
+         *
+         * CSS rather than Framer Motion, unlike most of this app's movement,
+         * and for once that is the right way round: this is an unconditional,
+         * linear, infinite loop with no state behind it, so it belongs on the
+         * compositor where it costs no main-thread work, cannot drift, and can
+         * be paused under the pointer with one declaration. It is also then
+         * covered by the global `prefers-reduced-motion` rule for free.
+         */
+        marquee: {
+          from: { transform: 'translate3d(0, 0, 0)' },
+          to: { transform: 'translate3d(-50%, 0, 0)' },
+        },
+        /*
          * The edge affordance's swell and the auth desk's floating objects are
          * deliberately *not* here — those are Framer Motion, so they can be
          * cancelled by `useReducedMotion` at the component level rather than
@@ -177,6 +196,13 @@ export default {
       animation: {
         'fade-up': 'fade-up 260ms cubic-bezier(0.22, 1, 0.36, 1) both',
         shimmer: 'shimmer 1.6s infinite',
+        /*
+         * Slow on purpose. Every card on the belt carries a sentence, and a
+         * belt that moves faster than somebody can finish reading one is a belt
+         * that punishes reading — which is the usual reason a marquee is the
+         * wrong shape for anything with words on it.
+         */
+        marquee: 'marquee 46s linear infinite',
       },
     },
   },

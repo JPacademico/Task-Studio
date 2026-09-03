@@ -1,4 +1,4 @@
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import {
   ArrowLeft,
   CalendarClock,
@@ -25,6 +25,23 @@ import { useDemoClock } from './demo-frame';
  * They live in one file rather than six because they are one thing — the
  * carousel's payload — and six twenty-line modules would be six imports and six
  * places to look for the same idiom.
+ *
+ * ## The rule every loop here now follows: nothing may change its own height
+ *
+ * Three of these used to, and it was the worst thing on the page. A loop built
+ * out of `AnimatePresence` around conditionally-rendered rows grows a line at a
+ * time as its clock advances and then collapses back to nothing when the clock
+ * wraps — four times a cycle, forever. Inside a panel that is one of three in a
+ * column, that is a panel that pumps; and because the carousel's page is only
+ * given a *minimum* height, a page whose demos are mid-cycle is taller than the
+ * same page a second later, so everything below the section slides up and down
+ * on its own. The terminal loop was the loudest: one line to four and back.
+ *
+ * So the elements are all mounted, all the time, and the clock changes their
+ * `opacity` and offset rather than their existence. The geometry of every panel
+ * is now decided once, by its markup, and nothing the clock does can move it.
+ * `AnimatePresence` is still the right tool for a list whose contents genuinely
+ * come and go; it is the wrong one for a timeline pretending to be one.
  */
 
 // ---------------------------------------------------------------------------
@@ -126,21 +143,20 @@ export const DemoMeetings = () => {
           {t('landing.meet.here')}
         </p>
 
-        <AnimatePresence initial={false}>
-          {isBooked && (
-            <motion.div
-              initial={reduceMotion ? false : { opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="rounded-lg border border-brand/40 bg-brand/[0.06] p-2"
-            >
-              <p className="truncate text-2xs font-semibold">{t('landing.meet.title')}</p>
-              <p className="mt-0.5 flex items-center gap-1 text-3xs text-content-muted">
-                <CalendarClock aria-hidden className="h-2.5 w-2.5" />
-                {t('landing.meet.when')}
-              </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Always in the layout, visible only once it is booked. See the note
+            at the top of the file: a row that appears and disappears is a
+            column that changes height four times a cycle. */}
+        <motion.div
+          animate={{ opacity: isBooked ? 1 : 0, y: isBooked || reduceMotion ? 0 : 8 }}
+          transition={{ duration: reduceMotion ? 0 : 0.3 }}
+          className="rounded-lg border border-brand/40 bg-brand/[0.06] p-2"
+        >
+          <p className="truncate text-2xs font-semibold">{t('landing.meet.title')}</p>
+          <p className="mt-0.5 flex items-center gap-1 text-3xs text-content-muted">
+            <CalendarClock aria-hidden className="h-2.5 w-2.5" />
+            {t('landing.meet.when')}
+          </p>
+        </motion.div>
 
         <div className="h-8 rounded-lg border border-dashed border-edge/70" />
       </div>
@@ -162,22 +178,17 @@ export const DemoMeetings = () => {
           {t('landing.meet.there')}
         </p>
 
-        <AnimatePresence initial={false}>
-          {isSynced && (
-            <motion.div
-              initial={reduceMotion ? false : { opacity: 0, scale: 0.94 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-              className="rounded-lg border border-positive/40 bg-positive/[0.07] p-2"
-            >
-              <p className="truncate text-2xs font-semibold">{t('landing.meet.title')}</p>
-              <p className="mt-0.5 flex items-center gap-1 text-3xs text-positive">
-                <Check aria-hidden className="h-2.5 w-2.5" strokeWidth={3} />
-                {t('landing.meet.onPhone')}
-              </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <motion.div
+          animate={{ opacity: isSynced ? 1 : 0, scale: isSynced || reduceMotion ? 1 : 0.94 }}
+          transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+          className="rounded-lg border border-positive/40 bg-positive/[0.07] p-2"
+        >
+          <p className="truncate text-2xs font-semibold">{t('landing.meet.title')}</p>
+          <p className="mt-0.5 flex items-center gap-1 text-3xs text-positive">
+            <Check aria-hidden className="h-2.5 w-2.5" strokeWidth={3} />
+            {t('landing.meet.onPhone')}
+          </p>
+        </motion.div>
 
         <div className="h-8 rounded-lg border border-dashed border-edge/70" />
       </div>
@@ -294,39 +305,38 @@ export const DemoUndo = () => {
           {t('landing.undo.log')}
         </p>
 
-        <AnimatePresence initial={false}>
-          {step >= 1 && (
-            <motion.div
-              initial={reduceMotion ? false : { opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-center gap-2 rounded-lg bg-surface-raised px-2 py-1.5"
-            >
-              <span className="truncate text-3xs text-content-muted">
-                {t(isRestored ? 'landing.undo.restored' : 'landing.undo.deleted')}
-              </span>
+        {/* Mounted throughout, faded in on beat one. The row is the tallest
+            thing in this panel, so letting it come and go was letting the panel
+            change height on a loop — see the note at the top of the file. */}
+        <motion.div
+          animate={{ opacity: step >= 1 ? 1 : 0, y: step >= 1 || reduceMotion ? 0 : -6 }}
+          transition={{ duration: reduceMotion ? 0 : 0.25 }}
+          className="flex items-center gap-2 rounded-lg bg-surface-raised px-2 py-1.5"
+        >
+          <span className="truncate text-3xs text-content-muted">
+            {t(isRestored ? 'landing.undo.restored' : 'landing.undo.deleted')}
+          </span>
 
-              {/* The control, pressed on beat three. `animate` on scale rather
-                  than a hover state: nobody is hovering a landing page. */}
-              <motion.span
-                className={cn(
-                  'ml-auto inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-4xs font-medium',
-                  isRestored
-                    ? 'border-positive/50 text-positive'
-                    : 'border-edge text-content-muted',
-                )}
-                animate={reduceMotion ? undefined : { scale: step === 3 ? [1, 0.9, 1] : 1 }}
-                transition={{ duration: 0.3 }}
-              >
-                {isRestored ? (
-                  <Check className="h-2.5 w-2.5" strokeWidth={3} />
-                ) : (
-                  <Undo2 className="h-2.5 w-2.5" />
-                )}
-                {t(isRestored ? 'landing.undo.done' : 'landing.undo.button')}
-              </motion.span>
-            </motion.div>
-          )}
-        </AnimatePresence>
+          {/* The control, pressed on beat three. `animate` on scale rather
+              than a hover state: nobody is hovering a landing page. */}
+          <motion.span
+            className={cn(
+              'ml-auto inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-4xs font-medium',
+              isRestored
+                ? 'border-positive/50 text-positive'
+                : 'border-edge text-content-muted',
+            )}
+            animate={reduceMotion ? undefined : { scale: step === 3 ? [1, 0.9, 1] : 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            {isRestored ? (
+              <Check className="h-2.5 w-2.5" strokeWidth={3} />
+            ) : (
+              <Undo2 className="h-2.5 w-2.5" />
+            )}
+            {t(isRestored ? 'landing.undo.done' : 'landing.undo.button')}
+          </motion.span>
+        </motion.div>
 
         <div className="h-5 rounded-md bg-surface-raised/60" />
       </div>
@@ -357,43 +367,42 @@ export const DemoCommit = () => {
         <span className="text-content">git commit -m &quot;fix: rate limit the import routes&quot;</span>
       </p>
 
-      <AnimatePresence initial={false}>
-        {step >= 1 && (
-          <motion.p
-            key="hook"
-            initial={reduceMotion ? false : { opacity: 0, x: -6 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="flex items-center gap-1.5 text-3xs text-content-faint"
-          >
-            <GitCommitHorizontal aria-hidden className="h-3 w-3 shrink-0" />
-            {t('landing.commit.checking')}
-          </motion.p>
-        )}
+      {/*
+        Three lines, always in the layout, revealed on their beat.
 
-        {step >= 2 && (
-          <motion.div
-            key="matched"
-            initial={reduceMotion ? false : { opacity: 0, x: -6 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="rounded-lg border border-edge bg-surface-raised p-2 font-sans"
-          >
-            <p className="truncate text-2xs font-semibold">{t('landing.commit.task')}</p>
-            <p className="mt-0.5 text-3xs text-content-muted">{t('landing.commit.branch')}</p>
-          </motion.div>
-        )}
+        This is the loop that made the whole section pump. Mounting each line as
+        its beat arrived took the terminal from one line to four and back to one
+        every five seconds, and because the carousel gives its page a *minimum*
+        height rather than a fixed one, everything below the section rose and
+        fell with it. The lines are printed by a terminal, and a terminal does
+        not reflow what is above the cursor.
+      */}
+      <motion.p
+        animate={{ opacity: step >= 1 ? 1 : 0, x: step >= 1 || reduceMotion ? 0 : -6 }}
+        transition={{ duration: reduceMotion ? 0 : 0.25 }}
+        className="flex items-center gap-1.5 text-3xs text-content-faint"
+      >
+        <GitCommitHorizontal aria-hidden className="h-3 w-3 shrink-0" />
+        {t('landing.commit.checking')}
+      </motion.p>
 
-        {step >= 3 && (
-          <motion.p
-            key="done"
-            initial={reduceMotion ? false : { opacity: 0, x: -6 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="flex items-center gap-1.5 text-3xs font-semibold text-positive"
-          >
-            <Check aria-hidden className="h-3 w-3 shrink-0" strokeWidth={3} />
-            {t('landing.commit.closed')}
-          </motion.p>
-        )}
-      </AnimatePresence>
+      <motion.div
+        animate={{ opacity: step >= 2 ? 1 : 0, x: step >= 2 || reduceMotion ? 0 : -6 }}
+        transition={{ duration: reduceMotion ? 0 : 0.25 }}
+        className="rounded-lg border border-edge bg-surface-raised p-2 font-sans"
+      >
+        <p className="truncate text-2xs font-semibold">{t('landing.commit.task')}</p>
+        <p className="mt-0.5 text-3xs text-content-muted">{t('landing.commit.branch')}</p>
+      </motion.div>
+
+      <motion.p
+        animate={{ opacity: step >= 3 ? 1 : 0, x: step >= 3 || reduceMotion ? 0 : -6 }}
+        transition={{ duration: reduceMotion ? 0 : 0.25 }}
+        className="flex items-center gap-1.5 text-3xs font-semibold text-positive"
+      >
+        <Check aria-hidden className="h-3 w-3 shrink-0" strokeWidth={3} />
+        {t('landing.commit.closed')}
+      </motion.p>
     </div>
   );
 };

@@ -6,6 +6,7 @@ import axios, {
 
 import { env } from '@/shared/config/env';
 import { translate } from '@/shared/i18n';
+import { CLIENT_ID, CLIENT_ID_HEADER } from './client-id';
 import { tokenStore } from './token-store';
 
 interface RetriableConfig extends InternalAxiosRequestConfig {
@@ -104,6 +105,20 @@ export const api: AxiosInstance = axios.create({
 api.interceptors.request.use((config) => {
   const token = tokenStore.getAccessToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
+
+  /*
+   * Who is asking, for the benefit of the answer nobody asked for.
+   *
+   * The API stamps this onto every realtime event a request causes, so this tab
+   * can recognise the echo of its own write and decline to refetch on top of an
+   * optimistic state that is already newer than the event. See `client-id.ts`
+   * for the bug this fixes and why it is per tab.
+   *
+   * Sent on every request, not only writes: it costs 36 bytes, and picking the
+   * methods that "count" is a rule somebody has to remember on every new
+   * endpoint.
+   */
+  config.headers[CLIENT_ID_HEADER] = CLIENT_ID;
 
   /*
    * The warm/cold ceiling is a *default*, not an override.

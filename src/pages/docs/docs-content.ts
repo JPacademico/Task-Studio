@@ -113,26 +113,6 @@ const en: DocsDocument = {
             },
           ],
         },
-        {
-          id: 'signing-in',
-          title: 'Signing in',
-          intro:
-            'taskstudio login takes no arguments. It prints a short code, opens the approval page, and waits while you confirm it in a browser you are already signed in to.',
-          notes: [
-            {
-              title: 'Why there is no API address to paste',
-              body: 'The old instruction was “taskstudio login --api https://…”. The address was never secret — the web app ships it in every bundle — but asking people to retype it taught a habit worth attacking: pasting an API host read off a page into the command that then receives your password. A lookalike domain is the whole exploit. The address is baked into the published CLI instead.',
-            },
-            {
-              title: 'The other two ways in',
-              body: '--password runs the old exchange, for a machine with no browser to open. For CI, mint a token in Settings and export TASKSTUDIO_TOKEN. Self-hosting? --api and TASKSTUDIO_API_URL both still work.',
-            },
-            {
-              title: 'What the machine keeps',
-              body: 'A personal access token named after the machine, expiring in 90 days by default, listed under Settings and revocable there at any time. taskstudio logout forgets it locally; it does not revoke it.',
-            },
-          ],
-        },
       ],
     },
     {
@@ -308,26 +288,6 @@ const ptBR: DocsDocument = {
             {
               command: 'taskstudio ide install',
               body: 'Adiciona os comandos /taskstudio ao Claude Code, ao Cursor e ao Copilot. São quatro arquivos Markdown no seu repositório; nada é instalado no editor.',
-            },
-          ],
-        },
-        {
-          id: 'signing-in',
-          title: 'Entrando',
-          intro:
-            'O taskstudio login não recebe argumentos. Ele mostra um código curto, abre a página de aprovação e espera você confirmar em um navegador onde já está logado.',
-          notes: [
-            {
-              title: 'Por que não há endereço de API para colar',
-              body: 'A instrução antiga era “taskstudio login --api https://…”. O endereço nunca foi segredo — o app web o entrega em todo bundle — mas pedir para as pessoas redigitarem ensinava um hábito perigoso: colar um host de API lido em alguma página no comando que recebe a sua senha. Um domínio parecido é o ataque inteiro. Agora o endereço vem embutido no CLI publicado.',
-            },
-            {
-              title: 'Os outros dois caminhos',
-              body: '--password usa a troca antiga, para uma máquina sem navegador. Para CI, gere um token nas Configurações e exporte TASKSTUDIO_TOKEN. Self-hosting? --api e TASKSTUDIO_API_URL continuam funcionando.',
-            },
-            {
-              title: 'O que fica na máquina',
-              body: 'Um token de acesso pessoal com o nome da máquina, válido por 90 dias por padrão, listado nas Configurações e revogável lá a qualquer momento. O taskstudio logout esquece o token localmente; ele não o revoga.',
             },
           ],
         },

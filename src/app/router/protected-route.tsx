@@ -20,24 +20,25 @@ export const ProtectedRoute = () => {
 
   if (status === 'unauthenticated') {
     /*
-     * Every unauthenticated visitor gets the sign-in screen, including the one
-     * who typed the bare address.
+     * Arriving at the front door is not the same as being turned away from one.
      *
-     * This used to send `/` to the landing page, on the argument that arriving
-     * at the front door is not the same as being turned away from one. The
-     * argument still holds — it is simply not the argument that decides this
-     * yet. The marketing page is unfinished, and a first screen that is not
-     * ready is worse than a plain sign-in form for *everybody*, including the
-     * newcomer it was written for. So the landing page is off the front door
-     * and stays reachable at `/welcome`, where it can be looked at
-     * deliberately rather than by default. Restoring the old behaviour is this
-     * one line.
+     * Somebody who types the bare address has not asked to sign in — they have
+     * asked what this is. Answering with a password field is the app assuming a
+     * relationship it has not got: no account, no reason to make one yet, and
+     * no way to find out what they would be signing up for. So `/` goes to the
+     * landing page, and only `/` does.
      *
-     * `from` is still carried for every path, `/` included, so signing in
-     * lands where the visitor meant to go rather than always on the dashboard.
-     * The redirect is `replace`, so the sign-in screen does not become a step
-     * in the back-button history of somebody who then signs in.
+     * Every *other* protected path still goes to sign-in, because a visitor at
+     * `/projects/abc` has asked for something specific that happens to need an
+     * account, and a marketing page is not an answer to that question. `from`
+     * carries the path they meant, so signing in lands there rather than always
+     * on the dashboard.
+     *
+     * Both redirects are `replace`, so neither becomes a step in the back-button
+     * history of somebody who then signs in.
      */
+    if (location.pathname === '/') return <Navigate to="/welcome" replace />;
+
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
@@ -51,13 +52,13 @@ export const ProtectedRoute = () => {
 /**
  * Keeps an authenticated user out of the login and sign-up screens.
  *
- * The landing page used to be behind this guard too, on the reasoning that
- * somebody already signed in has no use for being sold the product. It is not
- * any more, and the reason is the reason it is at `/welcome` at all: while the
- * page is unfinished, the people who most need to open it are the ones with an
- * account — and a guard that bounced every signed-in visitor to `/` made the
- * address useless to exactly them. It goes back behind this guard on the day
- * `/` is the landing page again.
+ * The landing page is deliberately *not* behind this guard, even though `/` now
+ * resolves to it for a guest. Two things point the same way: the documentation
+ * page links back to `/welcome`, and a guard there would bounce any signed-in
+ * reader following that link to the dashboard instead; and somebody with an
+ * account has perfectly ordinary reasons to open the page — to send it to a
+ * colleague, to look at what changed. Nothing is protected by hiding it, so
+ * nothing is.
  */
 export const GuestRoute = () => {
   const t = useT();

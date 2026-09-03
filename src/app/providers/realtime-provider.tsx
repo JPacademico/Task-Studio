@@ -9,6 +9,7 @@ import {
 } from '@/entities/notification/lib/notification-copy';
 import type { AppNotification } from '@/entities/notification/model/types';
 import { useSessionStore } from '@/features/auth/model/session.store';
+import { isOwnEvent } from '@/shared/api/client-id';
 import {
   connectSocket,
   disconnectSocket,
@@ -22,6 +23,19 @@ import { queryKeys } from '@/shared/api/query-keys';
 interface RealtimeContextValue {
   socket: Socket | null;
   isConnected: boolean;
+}
+
+/**
+ * The second argument the API sends beside every realtime payload.
+ *
+ * `origin` is the `X-Client-Id` of the request that caused the event, when
+ * there was one — see `shared/api/client-id`. It is optional in the type
+ * because it is optional on the wire: an event raised by a cron sweep, a
+ * webhook or a server that has not been deployed yet simply has none, and every
+ * handler here treats that as "somebody else did this".
+ */
+interface RealtimeMeta {
+  origin?: string;
 }
 
 const RealtimeContext = createContext<RealtimeContextValue>({ socket: null, isConnected: false });
@@ -215,7 +229,31 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
      * changes *my* numbers — and before this they simply sat there wrong until
      * something else happened to invalidate them.
      */
-    const handleTaskEvent = () => {
+    const handleTaskEvent = (_payload: unknown, meta?: RealtimeMeta) => {
+      /*
+       * Not for the tab that caused it.
+       *
+       * This is the fix for the rollback people actually saw. Drag a card to
+       * Completed and straight back to To do: the first write's `task:updated`
+       * comes back to *this* tab while the second write is still in flight, the
+       * refetch below asks a server that has only been told about the first
+       * one, and its perfectly correct `COMPLETED` is painted over the `TODO`
+       * the user is looking at. The card jumps back on its own, sits there for
+       * a round trip, and then corrects itself.
+       *
+       * The tab that made the change is the one tab that needs no telling: it
+       * applied the change optimistically before the request left, it holds the
+       * newest intent, and its own mutation handlers reconcile it — including
+       * rolling it back if the write actually failed. Everybody else (a
+       * teammate, a second tab, the same account on a phone) sees an origin
+       * that is not theirs and refetches exactly as before.
+       *
+       * An event with no origin at all — a scheduled sweep, an inbound webhook,
+       * a commit closing a task from the CLI — belongs to nobody and is
+       * therefore treated as somebody else's. See `isOwnEvent`.
+       */
+      if (isOwnEvent(meta)) return;
+
       if (taskRefreshTimer !== undefined) return;
 
       taskRefreshTimer = window.setTimeout(() => {
@@ -234,11 +272,18 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
      * whole board to learn a word changed. `taskGroups.all` is the prefix that
      * covers both the picker's list and the board's read.
      */
-    const handleTaskGroupEvent = () => {
+    const handleTaskGroupEvent = (_payload: unknown, meta?: RealtimeMeta) => {
+      // Same reasoning as `handleTaskEvent`: renaming or reordering a column is
+      // optimistic, and refetching on the echo of your own write is how a
+      // dragged column snaps back for a round trip.
+      if (isOwnEvent(meta)) return;
+
       void queryClient.invalidateQueries({ queryKey: queryKeys.taskGroups.all });
     };
 
-    const handleRosterEvent = () => {
+    const handleRosterEvent = (_payload: unknown, meta?: RealtimeMeta) => {
+      if (isOwnEvent(meta)) return;
+
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
     };
 
