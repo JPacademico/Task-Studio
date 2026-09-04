@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { Github, Link2, Unlink } from 'lucide-react';
+import { ExternalLink, Github, Link2, Unlink } from 'lucide-react';
 
 import { useLinkRepository, useUnlinkRepository } from '@/entities/integration/model/queries';
 import type { ProjectRepository } from '@/entities/project/model/types';
 import { cn } from '@/shared/lib/cn';
-import { Button, Input, Modal } from '@/shared/ui';
+import { Button, GitHubMark, Input, Modal } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
 interface RepositoryLinkProps {
@@ -65,12 +65,59 @@ export const RepositoryLinkDialog = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={t('repo.connectTitle')} className="max-w-md">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      align="center"
+      icon={<GitHubMark className="h-7 w-7" />}
+      title={t(repository ? 'repo.connectedTitle' : 'repo.connectTitle')}
+      description={repository ? undefined : t('repo.connectBody')}
+      className="max-w-md"
+    >
       {repository ? (
         <div className="space-y-4">
-          <p className="text-sm text-content-muted">{repository.fullName}</p>
-          <p className="text-xs leading-relaxed text-content-faint">{t('repo.disconnectHint')}</p>
-          <div className="flex justify-end gap-2">
+          {/*
+            The repository as an object, and as the way to it.
+
+            The same treatment the Figma dialog gives a connected file, for the
+            same reason: somebody opening this is checking what is linked or
+            undoing it, and a row that looks like the repository answers the
+            first question at a glance while being the answer to "take me
+            there" — which is what most people actually wanted.
+          */}
+          <a
+            href={repository.url}
+            target="_blank"
+            rel="noreferrer noopener"
+            className={cn(
+              'ui-card group flex items-center gap-3 rounded-2xl border border-edge',
+              'bg-surface-raised p-3 transition-colors hover:border-brand/50',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
+            )}
+          >
+            <span
+              aria-hidden
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-edge bg-surface-sunken"
+            >
+              <GitHubMark className="h-6 w-6" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-semibold">{repository.fullName}</span>
+              {repository.defaultBranch && (
+                <span className="block truncate font-mono text-2xs text-content-muted">
+                  {repository.defaultBranch}
+                </span>
+              )}
+            </span>
+            <ExternalLink
+              aria-hidden
+              className="h-3.5 w-3.5 shrink-0 text-content-faint transition-colors group-hover:text-brand"
+            />
+          </a>
+
+          <p className="text-2xs leading-relaxed text-content-muted">{t('repo.disconnectHint')}</p>
+
+          <div className="flex justify-end gap-2 border-t border-edge pt-3.5">
             <Button variant="ghost" onClick={onClose}>
               {t('common.cancel')}
             </Button>
@@ -94,17 +141,40 @@ export const RepositoryLinkDialog = ({
             void submit();
           }}
         >
-          <p className="text-xs leading-relaxed text-content-muted">{t('repo.connectBody')}</p>
+          <label className="block space-y-1.5">
+            <span className="text-2xs font-semibold uppercase tracking-wide text-content-faint">
+              {t('repo.urlLabel')}
+            </span>
+            <Input
+              autoFocus
+              value={url}
+              onChange={(event) => setUrl(event.target.value)}
+              placeholder={t('repo.placeholder')}
+              maxLength={300}
+            />
+          </label>
 
-          <Input
-            autoFocus
-            value={url}
-            onChange={(event) => setUrl(event.target.value)}
-            placeholder={t('repo.placeholder')}
-            maxLength={300}
-          />
+          {/*
+            The one rule that decides whether this will work, said before the
+            button rather than by the button's failure.
 
-          <div className="flex justify-end gap-2">
+            Only a public repository can be linked — the deployment's token
+            carries no scopes by design — and somebody pasting a private URL
+            currently learns that from a red toast. At the size of a field
+            label, on its own surface, it is a precondition instead of an
+            error.
+          */}
+          <p
+            className={cn(
+              'flex items-start gap-2 rounded-xl border border-edge bg-surface-sunken/60',
+              'px-3 py-2.5 text-xs leading-relaxed text-content-muted',
+            )}
+          >
+            <Github className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand" />
+            <span>{t('repo.publicOnly')}</span>
+          </p>
+
+          <div className="flex justify-end gap-2 border-t border-edge pt-3.5">
             <Button type="button" variant="ghost" onClick={onClose}>
               {t('common.cancel')}
             </Button>

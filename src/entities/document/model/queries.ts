@@ -229,6 +229,28 @@ export const useDocumentArchive = (documentId: string | undefined, isArchive: bo
     retry: false,
   });
 
+/**
+ * The pictures inside a written page.
+ *
+ * `enabled` is the whole design here: this is asked for by the download menu
+ * when it opens, not by the page when it loads. A table of contents holding
+ * thirty documents must not fire thirty requests for a section nobody has
+ * looked at, and the answer is only interesting at the moment somebody is
+ * deciding what to take out of the page.
+ *
+ * Keyed on the document alone rather than on its revision, and cached for a
+ * minute: editing a page's text does not change its pictures, and the one case
+ * that does — inserting an image — is a save the reader just made themselves.
+ */
+export const useDocumentAssets = (documentId: string | undefined, enabled: boolean) =>
+  useQuery({
+    queryKey: ['documents', documentId ?? '', 'assets'] as const,
+    queryFn: () => documentApi.assets(documentId as string),
+    enabled: Boolean(documentId) && enabled,
+    staleTime: 60_000,
+    retry: false,
+  });
+
 /** Puts a Figma file on a project's board as a page. */
 export const useCreateFigmaPage = () => {
   const { upsertRow } = useDocumentListCache();

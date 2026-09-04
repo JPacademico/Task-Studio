@@ -60,14 +60,12 @@ export interface DocsDocument {
   /** The three cards at the top. */
   start: { step: string; label: string; command: string; body: string }[];
   startTitle: string;
-  startBody: string;
   chooseTitle: string;
   groups: DocsGroup[];
 }
 
 const en: DocsDocument = {
   startTitle: 'Start with taskstudio',
-  startBody: 'Install it, sign the machine in, then point it at a repository.',
   chooseTitle: 'Every command',
   start: [
     {
@@ -245,7 +243,6 @@ const en: DocsDocument = {
 
 const ptBR: DocsDocument = {
   startTitle: 'Comece com taskstudio',
-  startBody: 'Instale, conecte a máquina e aponte para um repositório.',
   chooseTitle: 'Todos os comandos',
   start: [
     {

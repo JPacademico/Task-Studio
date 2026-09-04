@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { Link2, ShieldCheck, Unlink } from 'lucide-react';
+import { ExternalLink, Link2, ShieldCheck, Unlink } from 'lucide-react';
 
 import { useConnectFigma, useDisconnectFigma } from '@/entities/integration/model/queries';
 import type { ProjectFigma } from '@/entities/project/model/types';
 import { cn } from '@/shared/lib/cn';
-import { Button, FigmaMark, Input, Modal } from '@/shared/ui';
+import { Button, FigmaMark, HoverHint, Input, Modal } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
 interface FigmaLinkProps {
@@ -75,15 +75,59 @@ export const FigmaLinkDialog = ({ projectId, figma, isOpen, onClose }: FigmaLink
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={t('figma.connectTitle')} className="max-w-md">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      align="center"
+      icon={<FigmaMark className="h-7 w-5" />}
+      title={t(figma ? 'figma.connectedTitle' : 'figma.connectTitle')}
+      description={figma ? undefined : t('figma.connectBody')}
+      className="max-w-md"
+    >
       {figma ? (
         <div className="space-y-4">
-          <p className="text-sm text-content-muted">{figma.fileName}</p>
-          <p className="text-xs leading-relaxed text-content-faint">
-            {t('figma.connectedBy', { name: figma.connectedBy.displayName })}
+          {/*
+            The file itself, as an object rather than as a sentence.
+
+            Somebody opening this dialog on a connected project is here to
+            check what is connected or to undo it, and both questions are
+            answered faster by a row that looks like the file than by a
+            paragraph naming it. The row is also the way *to* the file, which
+            is the thing most people actually came for.
+          */}
+          <a
+            href={figma.url}
+            target="_blank"
+            rel="noreferrer noopener"
+            className={cn(
+              'ui-card group flex items-center gap-3 rounded-2xl border border-edge',
+              'bg-surface-raised p-3 transition-colors hover:border-brand/50',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
+            )}
+          >
+            <span
+              aria-hidden
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-edge bg-surface-sunken"
+            >
+              <FigmaMark className="h-6 w-4" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-semibold">{figma.fileName}</span>
+              <span className="block truncate text-2xs text-content-muted">
+                {t('figma.connectedBy', { name: figma.connectedBy.displayName })}
+              </span>
+            </span>
+            <ExternalLink
+              aria-hidden
+              className="h-3.5 w-3.5 shrink-0 text-content-faint transition-colors group-hover:text-brand"
+            />
+          </a>
+
+          <p className="text-2xs leading-relaxed text-content-muted">
+            {t('figma.disconnectHint')}
           </p>
-          <p className="text-xs leading-relaxed text-content-faint">{t('figma.disconnectHint')}</p>
-          <div className="flex justify-end gap-2">
+
+          <div className="flex justify-end gap-2 border-t border-edge pt-3.5">
             <Button variant="ghost" onClick={onClose}>
               {t('common.cancel')}
             </Button>
@@ -107,8 +151,6 @@ export const FigmaLinkDialog = ({ projectId, figma, isOpen, onClose }: FigmaLink
             void submit();
           }}
         >
-          <p className="text-xs leading-relaxed text-content-muted">{t('figma.connectBody')}</p>
-
           <label className="block space-y-1.5">
             <span className="text-2xs font-semibold uppercase tracking-wide text-content-faint">
               {t('figma.urlLabel')}
@@ -136,42 +178,57 @@ export const FigmaLinkDialog = ({ projectId, figma, isOpen, onClose }: FigmaLink
               autoComplete="off"
               spellCheck={false}
             />
-            <span className="block text-3xs leading-relaxed text-content-faint">
-              {t('figma.tokenHint')}
-            </span>
           </label>
 
           {/*
-            The one thing about this arrangement somebody has to know before
-            they press the button, rather than after.
+            Where to go and get one — as a step, not a footnote.
 
-            A shared credential is a real trade and it is stated as one: it is
-            this person's token, the roster reads through it, and it is
-            encrypted at rest. Burying that in documentation is how a team
-            finds out from an audit.
+            This was 10px `text-content-faint` under the field: the quietest
+            size in the app, in its quietest colour, carrying the one piece of
+            information without which nobody can finish the form. It is now the
+            size of the labels around it, on its own surface, because "I do not
+            have a token" is the state every first-time reader of this dialog
+            is in.
           */}
           <p
             className={cn(
               'flex items-start gap-2 rounded-xl border border-edge bg-surface-sunken/60',
-              'px-3 py-2 text-3xs leading-relaxed text-content-muted',
+              'px-3 py-2.5 text-xs leading-relaxed text-content-muted',
             )}
           >
-            <ShieldCheck className="mt-px h-3.5 w-3.5 shrink-0 text-content-faint" />
-            {t('figma.sharedCredential')}
+            <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand" />
+            <span>{t('figma.tokenHint')}</span>
           </p>
 
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={onClose}>
-              {t('common.cancel')}
-            </Button>
-            <Button
-              type="submit"
-              isLoading={connect.isPending}
-              disabled={!url.trim() || !token.trim()}
-            >
-              <Link2 className="h-3.5 w-3.5" />
-              {t('figma.connectAction')}
-            </Button>
+          <div className="flex items-center gap-2 border-t border-edge pt-3.5">
+            {/*
+              The shared-credential note, behind the mark it is about.
+
+              It used to be a permanent three-line block above the buttons.
+              That is the right weight the first time somebody reads it and the
+              wrong weight every time after, because it is a *property* of the
+              arrangement rather than a decision to make here — and it pushed
+              the actual buttons below the fold on a short window. Pointing at
+              the shield says it in full; see `HoverHint` for why this is the
+              one kind of sentence that may move behind a gesture.
+            */}
+            <HoverHint label={t('figma.securityLabel')} hint={t('figma.sharedCredential')}>
+              <ShieldCheck className="h-3.5 w-3.5" />
+            </HoverHint>
+
+            <span className="ml-auto flex gap-2">
+              <Button type="button" variant="ghost" onClick={onClose}>
+                {t('common.cancel')}
+              </Button>
+              <Button
+                type="submit"
+                isLoading={connect.isPending}
+                disabled={!url.trim() || !token.trim()}
+              >
+                <Link2 className="h-3.5 w-3.5" />
+                {t('figma.connectAction')}
+              </Button>
+            </span>
           </div>
         </form>
       )}

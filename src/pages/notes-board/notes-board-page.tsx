@@ -654,9 +654,18 @@ const NotesBoardPage = () => {
            * past the fold rather than being cut at the viewport edge.
            */
           isTouch ? 'overflow-auto touch-pan-x touch-pan-y' : 'overflow-hidden',
-          // `dvh`: the address bar is part of the viewport `vh` counts and the
-          // phone does not give back, so `58vh` ran under it.
-          isExpanded ? 'min-h-0 flex-1' : 'min-h-[58dvh] sm:min-h-[66dvh]',
+          /*
+           * `dvh`: the address bar is part of the viewport `vh` counts and the
+           * phone does not give back, so `58vh` ran under it.
+           *
+           * Raised from 58/66. A desk is the one surface here whose whole
+           * value is *room* — notes are placed by hand at absolute positions,
+           * and a short board means either scrolling to reach what somebody
+           * dropped or piling everything into the visible strip. The toolbar
+           * and the pager above it are fixed costs, so the board was getting
+           * barely half a screen on a laptop.
+           */
+          isExpanded ? 'min-h-0 flex-1' : 'min-h-[70dvh] sm:min-h-[78dvh]',
           tool === 'select' && !isTouch && 'cursor-crosshair',
         )}
       >
@@ -692,7 +701,7 @@ const NotesBoardPage = () => {
         {isLoading && <BoardSkeleton className="rounded-3xl" />}
 
         {isBlank ? (
-          <div className="grid h-full min-h-[52dvh] place-items-center p-6">
+          <div className="grid h-full min-h-[64dvh] place-items-center p-6">
             <EmptyState
               className="border-none"
               icon={<StickyNote className="h-6 w-6" />}

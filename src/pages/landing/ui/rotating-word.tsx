@@ -124,18 +124,25 @@ export const RotatingWord = ({ className }: { className?: string }) => {
       className={cn(
         'relative inline-grid',
         /*
-         * The hand, one size up.
+         * The hand, at the headline's own size.
          *
-         * The noun is the only word in the headline that changes, and it now
-         * says so twice: it is written in the same hand as the wordmark — the
-         * skin's own `--font-hand` — and set slightly larger than the sentence
-         * around it. A script face at the same size as the roman beside it
-         * reads as an accident; a little bigger reads as emphasis.
+         * The noun is the only word in the headline that changes, and it says
+         * so by being written in a different hand — the skin's own
+         * `--font-hand`, the same face as the wordmark. That is the whole of
+         * the emphasis, and it is enough.
          *
-         * `em`, not a fixed size, so it scales with the headline's own
-         * responsive steps rather than needing a value per breakpoint.
+         * It used to be set at `1.15em` as well, on the theory that a script
+         * face reads smaller than a roman at the same size and needs the
+         * difference made up. In this pairing it does not: the hand has a
+         * generous x-height, so the correction landed as a word visibly
+         * larger than the words around it — which reads as a mistake in the
+         * type rather than as emphasis, and is the one thing a headline
+         * cannot afford.
+         *
+         * `em`, not a fixed size, so it tracks the headline's own responsive
+         * steps rather than needing a value per breakpoint.
          */
-        'font-hand text-[1.15em] leading-[0.95]',
+        'font-hand text-[1em] leading-[0.95]',
         /*
          * Clipped, so a word travelling out of the cell is not briefly readable
          * over the line above.

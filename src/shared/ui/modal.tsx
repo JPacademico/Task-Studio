@@ -17,6 +17,29 @@ interface ModalProps {
   footer?: ReactNode;
   className?: string;
   /**
+   * How the header reads.
+   *
+   * `start` (the default) is the working shape: a title on the left, a close
+   * button on the right, tight enough that the form under it starts near the
+   * top. It is right for the dozens of dialogs that are a task somebody is in
+   * the middle of.
+   *
+   * `center` is for the handful that are an *arrival* rather than a step — the
+   * service connection dialogs, where the reader has just pressed a mark and
+   * the first question is "what am I connecting to". A mark above a centred
+   * title answers that before a word is read, and the close button moves into
+   * the corner so the title has the full width to be centred in.
+   */
+  align?: 'start' | 'center';
+  /**
+   * A mark to sit above the title. Only drawn by the centred header.
+   *
+   * Deliberately a node rather than a name: the service marks are SVGs with
+   * their own colours (see `service-marks.tsx`), and a dialog should not hold
+   * a table mapping strings to them.
+   */
+  icon?: ReactNode;
+  /**
    * Drops the skin's surface pattern for this dialog, keeping everything else.
    *
    * For the dense forms — the task composer above all — where the material
@@ -53,6 +76,8 @@ export const Modal = ({
   footer,
   className,
   flat = false,
+  align = 'start',
+  icon,
 }: ModalProps) => {
   const reduceMotion = useReducedMotion();
   const [isMounted, setIsMounted] = useState(isOpen);
@@ -118,7 +143,34 @@ export const Modal = ({
             }
           >
             {(title ?? description) && (
-              <header className="flex items-start justify-between gap-4 border-b border-edge px-4 py-3.5 sm:px-5 sm:py-4">
+              <header
+                className={cn(
+                  'relative border-b border-edge px-4 py-3.5 sm:px-5 sm:py-4',
+                  align === 'center'
+                    ? 'flex flex-col items-center gap-2.5 pt-5 text-center sm:pt-6'
+                    : 'flex items-start justify-between gap-4',
+                )}
+              >
+                {/*
+                  The mark, at a size that is recognisable rather than decorative.
+
+                  A 44px chip is the same treatment the Connections shelf gives
+                  a service, so pressing a card there and landing here is
+                  visibly the same object twice — which is most of what makes a
+                  dialog feel like it belongs to the thing that opened it.
+                */}
+                {align === 'center' && icon && (
+                  <span
+                    aria-hidden
+                    className={cn(
+                      'grid h-11 w-11 shrink-0 place-items-center rounded-2xl',
+                      'border border-edge bg-surface-sunken',
+                    )}
+                  >
+                    {icon}
+                  </span>
+                )}
+
                 {/*
                   `min-w-0` and `break-words`, because the title is user text.
 
@@ -130,19 +182,46 @@ export const Modal = ({
                   corner with it. The clamp bounds the other direction: a title
                   full of newlines is not allowed to become the whole sheet.
                 */}
-                <div className="min-w-0 space-y-1">
+                <div
+                  className={cn(
+                    'min-w-0 space-y-1',
+                    // Room for the corner button, so a long centred title is
+                    // centred against the dialog rather than against whatever
+                    // space the button left over.
+                    align === 'center' && 'w-full px-8',
+                  )}
+                >
                   {title && (
-                    <h2 className="line-clamp-2 break-words text-base font-semibold leading-tight">
+                    <h2
+                      className={cn(
+                        'line-clamp-2 break-words font-semibold leading-tight',
+                        align === 'center' ? 'text-lg tracking-tight' : 'text-base',
+                      )}
+                    >
                       {title}
                     </h2>
                   )}
                   {description && (
-                    <p className="line-clamp-2 break-words text-xs text-content-muted">
+                    <p
+                      className={cn(
+                        'break-words text-xs text-content-muted',
+                        align === 'center'
+                          ? 'mx-auto max-w-sm leading-relaxed'
+                          : 'line-clamp-2',
+                      )}
+                    >
                       {description}
                     </p>
                   )}
                 </div>
-                <Button variant="ghost" size="icon" onClick={onClose} aria-label={translate('common.close')}>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onClose}
+                  aria-label={translate('common.close')}
+                  className={cn(align === 'center' && 'absolute right-2.5 top-2.5')}
+                >
                   <X className="h-4 w-4" />
                 </Button>
               </header>

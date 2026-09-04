@@ -132,14 +132,21 @@ const DocsPage = () => {
 
         <main id="content" tabIndex={-1} className="min-w-0 flex-1 py-10 focus:outline-none">
           {/* --- The opening --------------------------------------------- */}
-          <header className="space-y-3">
+          {/*
+            The heading, and nothing under it.
+
+            There was a sentence here — "Install it, sign the machine in, then
+            point it at a repository" — and the three numbered cards below are
+            *literally* those three steps, each with the command that performs
+            it. Prose that paraphrases the thing immediately beneath it costs a
+            line of vertical space and teaches nothing; the reader's eye had to
+            cross it to reach the steps it was describing.
+          */}
+          <header>
             <h1 className="text-balance text-3xl font-bold tracking-tight sm:text-5xl">
               {doc.startTitle.split('taskstudio')[0]}
               <code className="font-mono text-brand">taskstudio</code>
             </h1>
-            <p className="max-w-prose text-sm leading-relaxed text-content-muted">
-              {doc.startBody}
-            </p>
           </header>
 
           {/* Three cards, numbered, because this is genuinely a sequence: you
@@ -157,7 +164,10 @@ const DocsPage = () => {
                   </span>
                 </p>
                 <CommandLine>{step.command}</CommandLine>
-                <p className="text-2xs leading-relaxed text-content-muted">{step.body}</p>
+                {/* 12px, not 11. These lines carry the preconditions — which
+                    Node, what a login actually opens — and they were set at
+                    the smallest size in the app. */}
+                <p className="text-xs leading-relaxed text-content-muted">{step.body}</p>
               </li>
             ))}
           </ol>
@@ -172,7 +182,7 @@ const DocsPage = () => {
                 key={section.id}
                 href={`#${section.id}`}
                 className={cn(
-                  'shrink-0 rounded-full border px-3 py-1.5 text-2xs transition-colors',
+                  'shrink-0 rounded-full border px-3 py-1.5 text-xs transition-colors',
                   active === section.id
                     ? 'border-brand/50 bg-brand/12 text-brand'
                     : 'border-edge text-content-muted',
@@ -229,7 +239,7 @@ const Section = ({ section }: { section: DocsSection }) => {
       </h3>
 
       {section.intro && (
-        <p className="mt-2 max-w-prose text-xs leading-relaxed text-content-muted">
+        <p className="mt-2 max-w-prose text-sm leading-relaxed text-content-muted">
           {section.intro}
         </p>
       )}
@@ -251,14 +261,19 @@ const Section = ({ section }: { section: DocsSection }) => {
                 row and the description gets a full measure to be read at.
               */}
               <CommandLine>{entry.command}</CommandLine>
-              <p className="mt-2 text-xs leading-relaxed text-content-muted">{entry.body}</p>
+              <p className="mt-2 text-sm leading-relaxed text-content-muted">{entry.body}</p>
 
               {entry.flags && (
                 <ul className="mt-2.5 space-y-1 border-t border-edge/70 pt-2.5">
                   {entry.flags.map((flag) => (
                     <li key={flag.flag} className="flex flex-wrap items-baseline gap-x-2">
-                      <code className="font-mono text-2xs text-brand">{flag.flag}</code>
-                      <span className="text-2xs text-content-faint">{flag.body}</span>
+                      {/* Was 11px faint-on-surface for both halves, which is
+                          the lowest-contrast, smallest text on the page and
+                          carries the flags people actually come looking for. */}
+                      <code className="font-mono text-xs text-brand">{flag.flag}</code>
+                      <span className="text-xs leading-relaxed text-content-muted">
+                        {flag.body}
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -278,8 +293,8 @@ const Section = ({ section }: { section: DocsSection }) => {
                  above, and drawing them as equals would flatten the section. */
               className="border-l-2 border-edge pl-3.5"
             >
-              <p className="text-xs font-semibold">{note.title}</p>
-              <p className="mt-1 max-w-prose text-xs leading-relaxed text-content-muted">
+              <p className="text-sm font-semibold">{note.title}</p>
+              <p className="mt-1 max-w-prose text-sm leading-relaxed text-content-muted">
                 {note.body}
               </p>
             </div>

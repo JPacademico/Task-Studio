@@ -934,7 +934,14 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
           // Scrollable on touch so notes dropped off a phone's edge stay
           // reachable — see the longer note on the notes board.
           isTouch ? 'overflow-auto touch-pan-x touch-pan-y' : 'overflow-hidden',
-          isExpanded ? 'min-h-0 flex-1' : 'h-[62dvh]',
+          /*
+           * Raised from 62dvh, matching the personal desk.
+           *
+           * A wall people pin things to is worth more the more of it there is,
+           * and the two boards should not disagree about how much room that
+           * deserves — the same gesture on the same kind of surface.
+           */
+          isExpanded ? 'min-h-0 flex-1' : 'h-[76dvh]',
           tool === 'select' && !isTouch && 'cursor-crosshair',
         )}
       >

@@ -261,12 +261,36 @@ const MonthlyCompletion = ({ months }: { months: { month: string; completed: num
       </dl>
 
       {/*
-        The plot. `relative` so the gridlines can be laid behind the columns
-        without either one having to know the other's height.
+        The plot, in a scroller of its own.
+
+        ## Why this is not simply twelve flex columns any more
+
+        It was, and on a narrow screen it took the whole page with it. Each
+        column is a flex item, so its `min-width` resolves to `auto` — meaning
+        it refuses to shrink below the widest thing inside it, which is the
+        value printed above the bar. A project closing three-figure months is
+        ordinary and four-figure months are not rare; at 360px that floor is
+        wider than the twelve columns have, the row overflows, and because
+        nothing between here and `<html>` establishes a scroll container the
+        overflow propagates all the way up. The result is a horizontal
+        scrollbar on the *document*: every other tab shifts, the header runs
+        off the edge, and it reads as the site being broken rather than as a
+        chart being cramped.
+
+        Two changes, and both are needed. The wrapper scrolls, so the chart is
+        now the thing that moves when it does not fit. And the track keeps a
+        floor of its own, so instead of squeezing twelve columns into slivers
+        it stays legible and offers itself sideways — which is the standard
+        treatment for wide content on a small screen, and the one that keeps
+        the page still.
+
+        `relative` moved onto the track rather than the scroller so the
+        gridlines span the whole plot rather than the visible slice of it.
       */}
-      <div className="relative pt-5">
+      <div className="scrollbar-thin overflow-x-auto pt-5">
+        <div className="relative min-w-[20rem]">
         {/* The peak, printed on the line it describes -- see the note above. */}
-        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-5 h-32">
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-32">
           <div className="absolute inset-x-0 top-0 border-t border-dashed border-edge/70" />
           <span className="absolute -top-4 right-0 text-3xs tabular-nums text-content-faint">
             {peak}
@@ -279,7 +303,14 @@ const MonthlyCompletion = ({ months }: { months: { month: string; completed: num
             const isLast = index === months.length - 1;
 
             return (
-              <li key={point.month} className="group flex h-full flex-1 flex-col justify-end">
+              <li
+                key={point.month}
+                /* `min-w-0` is what lets the column shrink at all: without it a
+                   flex item's automatic minimum size is its content's, and the
+                   number above the bar becomes a floor the row cannot go
+                   under. See the note on the plot. */
+                className="group flex h-full min-w-0 flex-1 flex-col justify-end"
+              >
                 {/*
                   The value above its own column rather than in a tooltip. It is
                   the number the chart exists to communicate; hiding it behind a
@@ -287,7 +318,9 @@ const MonthlyCompletion = ({ months }: { months: { month: string; completed: num
                 */}
                 <p
                   className={cn(
-                    'mb-1 text-center text-3xs tabular-nums',
+                    // `truncate` so a five-figure month clips instead of
+                    // widening its column — the belt to `min-w-0`'s braces.
+                    'mb-1 truncate text-center text-3xs tabular-nums',
                     point.completed === 0 ? 'text-transparent' : 'text-content-muted',
                   )}
                 >
@@ -324,7 +357,7 @@ const MonthlyCompletion = ({ months }: { months: { month: string; completed: num
             <li
               key={point.month}
               className={cn(
-                'flex-1 truncate text-center text-3xs',
+                'min-w-0 flex-1 truncate text-center text-3xs',
                 index === months.length - 1
                   ? 'font-semibold text-content-muted'
                   : 'text-content-faint',
@@ -334,6 +367,7 @@ const MonthlyCompletion = ({ months }: { months: { month: string; completed: num
             </li>
           ))}
         </ol>
+        </div>
       </div>
     </section>
   );

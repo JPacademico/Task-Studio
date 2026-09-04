@@ -4,6 +4,7 @@ import { api, SLOW_ROUTE_TIMEOUT_MS } from '@/shared/api/client';
 import type {
   ArchiveListing,
   CreateDocumentPayload,
+  DocumentAsset,
   CreateFigmaPagePayload,
   DocumentExportFormat,
   FigmaBrief,
@@ -109,6 +110,27 @@ export const documentApi = {
    */
   async archive(documentId: string): Promise<ArchiveListing> {
     const { data } = await api.get<ArchiveListing>(`/documents/${documentId}/archive`);
+    return data;
+  },
+
+  /** Every picture inside a written page, as a list to pick from. */
+  async assets(documentId: string): Promise<DocumentAsset[]> {
+    const { data } = await api.get<DocumentAsset[]>(`/documents/${documentId}/assets`);
+    return data;
+  },
+
+  /**
+   * One of those pictures, as bytes.
+   *
+   * Fetched rather than linked for the reason the route exists at all: the
+   * picture is on the bucket's origin, and a cross-origin `download` attribute
+   * is ignored — a direct link navigates the tab to the image. Returns the
+   * blob; turning one into a download is the caller's business.
+   */
+  async asset(documentId: string, index: number): Promise<Blob> {
+    const { data } = await api
+      .get<Blob>(`/documents/${documentId}/assets/${index}`, { responseType: 'blob' })
+      .catch(rethrowWithReadableBody);
     return data;
   },
 

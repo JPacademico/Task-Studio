@@ -476,6 +476,10 @@ const en = {
 
   // ---- The repository a project stands for -------------------------------
   'repo.open': 'Open the repository',
+  'repo.connectedTitle': 'The repository is connected',
+  'repo.urlLabel': 'Repository address',
+  'repo.publicOnly':
+    'Public repositories only — this deployment reads GitHub with no credentials of yours.',
   'repo.connect': 'Connect a repository',
   'repo.connectTitle': 'Connect this project to GitHub',
   'repo.connectBody':
@@ -956,6 +960,16 @@ const en = {
   'doc.noOpenTasks': 'Every task here is finished',
   'doc.noOpenMeetings': 'No meeting still open',
   'doc.download': 'Download',
+  'doc.format.docx': 'Word',
+  'doc.format.docx.hint': 'Keeps editing, pictures included',
+  'doc.formatUnavailable': 'Not available for this page',
+  'doc.originalOnly': 'An uploaded file is handed back exactly as it arrived.',
+  'doc.designOnly': 'A design is downloaded one object at a time, from the page itself.',
+  'doc.downloadImages': 'Pictures in this page',
+  'doc.downloadImagesHint': '{count} to save on their own',
+  'doc.imageDownloadFailed': 'Could not save that picture.',
+  'doc.imageDownloaded': 'Saved {name}.',
+  'doc.imageUntitled': 'Picture {index}',
   'doc.downloadAs': 'Download as',
   'doc.downloadFailed': 'Could not download that document.',
   'doc.format.pdf': 'PDF',
@@ -1040,6 +1054,8 @@ const en = {
 
   // ---- Figma -------------------------------------------------------------
   'figma.name': 'Figma',
+  'figma.connectedTitle': 'Figma is connected',
+  'figma.securityLabel': 'About this token',
   'figma.open': 'Open in Figma',
   'figma.connect': 'Connect Figma',
   'figma.connectTitle': 'Connect this project to Figma',
@@ -2543,6 +2559,10 @@ const ptBR: Record<TranslationKey, string> = {
 
   // ---- O repositório que o projeto representa -----------------------------
   'repo.open': 'Abrir o repositório',
+  'repo.connectedTitle': 'O repositório está conectado',
+  'repo.urlLabel': 'Endereço do repositório',
+  'repo.publicOnly':
+    'Só repositórios públicos — esta instalação lê o GitHub sem nenhuma credencial sua.',
   'repo.connect': 'Conectar um repositório',
   'repo.connectTitle': 'Conectar este projeto ao GitHub',
   'repo.connectBody':
@@ -3021,6 +3041,16 @@ const ptBR: Record<TranslationKey, string> = {
   'doc.noOpenTasks': 'Todas as tarefas aqui estão concluídas',
   'doc.noOpenMeetings': 'Nenhuma reunião em aberto',
   'doc.download': 'Baixar',
+  'doc.format.docx': 'Word',
+  'doc.format.docx.hint': 'Continua editável, com as imagens',
+  'doc.formatUnavailable': 'Indisponível para esta página',
+  'doc.originalOnly': 'Um arquivo enviado é devolvido exatamente como chegou.',
+  'doc.designOnly': 'Um design é baixado objeto a objeto, na própria página.',
+  'doc.downloadImages': 'Imagens desta página',
+  'doc.downloadImagesHint': '{count} para salvar separadamente',
+  'doc.imageDownloadFailed': 'Não foi possível salvar essa imagem.',
+  'doc.imageDownloaded': '{name} salva.',
+  'doc.imageUntitled': 'Imagem {index}',
   'doc.downloadAs': 'Baixar como',
   'doc.downloadFailed': 'Não foi possível baixar este documento.',
   'doc.format.pdf': 'PDF',
@@ -3101,6 +3131,8 @@ const ptBR: Record<TranslationKey, string> = {
   'doc.archiveFolder': 'Pasta',
 
   'figma.name': 'Figma',
+  'figma.connectedTitle': 'O Figma está conectado',
+  'figma.securityLabel': 'Sobre este token',
   'figma.open': 'Abrir no Figma',
   'figma.connect': 'Conectar o Figma',
   'figma.connectTitle': 'Conectar este projeto ao Figma',

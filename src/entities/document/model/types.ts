@@ -28,8 +28,32 @@ export interface DocumentSource {
   hasBody: boolean;
 }
 
-/** The three things a page can be downloaded as. */
-export type DocumentExportFormat = 'pdf' | 'txt' | 'html';
+/**
+ * The four things a page can be downloaded as.
+ *
+ * `docx` is the one somebody can carry on working in: a PDF is final and the
+ * other two are plain. All four are rendered from the same flattened blocks on
+ * the API, so they agree about what a heading is.
+ */
+export type DocumentExportFormat = 'pdf' | 'docx' | 'txt' | 'html';
+
+/**
+ * One picture inside a written page, offered on its own.
+ *
+ * A page's images were the one thing on a text board you could see and could
+ * not save: they live on the bucket's origin, where a cross-origin `download`
+ * attribute is ignored, so a link navigates the tab to the picture instead of
+ * saving a file. The API serves them back by position — see its `listAssets`.
+ */
+export interface DocumentAsset {
+  /** Position in the page, which is the only identifier a picture has. */
+  index: number;
+  /** Built from the page's title and that position: `Wireframes-2.webp`. */
+  name: string;
+  mime: string;
+  /** The alt text its author wrote, if any. */
+  alt: string;
+}
 
 /**
  * One record inside an imported `.zip`.
