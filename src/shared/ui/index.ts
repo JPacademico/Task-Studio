@@ -29,6 +29,7 @@ export {
   DiscordMark,
   ExportMark,
   FeedMark,
+  FigmaMark,
   GitHubMark,
   SlackMark,
   TrelloMark,

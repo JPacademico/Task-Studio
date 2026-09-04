@@ -8,6 +8,7 @@ import {
   DiscordMark,
   ExportMark,
   FeedMark,
+  FigmaMark,
   GoogleCalendarMark,
   SlackMark,
   TrelloMark,
@@ -42,6 +43,11 @@ interface Service {
  */
 const SERVICES: Service[] = [
   { key: 'landing.svc.github', detail: 'landing.svc.githubWhat', Mark: Github },
+  {
+    key: 'landing.svc.figma',
+    detail: 'landing.svc.figmaWhat',
+    Mark: FigmaMark,
+  },
   {
     key: 'landing.svc.googleCalendar',
     detail: 'landing.svc.googleCalendarWhat',

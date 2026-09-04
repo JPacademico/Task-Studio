@@ -7,6 +7,8 @@ import { useT } from '@/shared/i18n';
 import { errorMessage } from '@/shared/api/client';
 import { cn } from '@/shared/lib/cn';
 import { SkinLoader, formatFileSize } from '@/shared/ui';
+import { ArchiveDocument } from './archive-document';
+import { ImageDocument } from './image-document';
 
 /** `report.docx` → `DOCX`. The badge, so the format is legible at a glance. */
 export const formatBadge = (source: DocumentSource): string => {
@@ -18,12 +20,24 @@ export const formatBadge = (source: DocumentSource): string => {
   return 'DOC';
 };
 
-/** Only one of the three importable formats renders in a browser frame. */
+/**
+ * Only a PDF renders in a browser *frame*.
+ *
+ * Pictures and archives are previewable too, and much more directly — they
+ * have their own components below and never reach this one's frame. What is
+ * left here is the original pair: a PDF, which the browser's own viewer draws,
+ * and a `.docx`, which nothing draws.
+ */
 const isPreviewable = (source: DocumentSource): boolean => source.mime === 'application/pdf';
+
+const isImage = (source: DocumentSource): boolean => source.mime.startsWith('image/');
+const isArchive = (source: DocumentSource): boolean => source.mime === 'application/zip';
 
 interface ImportedDocumentProps {
   documentId: string;
   source: DocumentSource;
+  /** The page's title, which is a picture's alt text. */
+  title: string;
 }
 
 /**
@@ -50,7 +64,7 @@ interface ImportedDocumentProps {
  * card with the honest version of the situation and the thing that actually
  * helps: open it in whatever opens Word files.
  */
-export const ImportedDocument = ({ documentId, source }: ImportedDocumentProps) => {
+export const ImportedDocument = ({ documentId, source, title }: ImportedDocumentProps) => {
   const t = useT();
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
@@ -93,6 +107,28 @@ export const ImportedDocument = ({ documentId, source }: ImportedDocumentProps) 
       if (url) URL.revokeObjectURL(url);
     };
   }, [documentId, mime, t]);
+
+  /*
+   * The two kinds that have a surface of their own.
+   *
+   * Delegated rather than folded in as more branches, because neither is a
+   * variation on "a file in a frame": a picture is drawn at full size with a
+   * zoom, and an archive is a *listing* with no bytes rendered at all. Sharing
+   * this component's frame, its strip and its fetch would mean three layouts
+   * fighting inside one return statement — and the two effects above, which
+   * exist for the PDF, would be dead code on both paths.
+   *
+   * The routing lives here rather than at the call site so a text board still
+   * asks one question ("is this page an uploaded file?") and gets one
+   * component back.
+   */
+  if (isImage(source)) {
+    return <ImageDocument documentId={documentId} source={source} title={title} />;
+  }
+
+  if (isArchive(source)) {
+    return <ArchiveDocument documentId={documentId} source={source} />;
+  }
 
   const canPreview = isPreviewable(source);
 

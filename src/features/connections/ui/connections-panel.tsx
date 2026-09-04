@@ -2,16 +2,22 @@ import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Code2, Link2, Plug, Radio } from 'lucide-react';
 
-import { useCalendarStatus, useProjectWebhooks } from '@/entities/integration/model/queries';
+import {
+  useCalendarStatus,
+  useFigmaAvailability,
+  useProjectWebhooks,
+} from '@/entities/integration/model/queries';
 import type { WebhookFlavour } from '@/entities/integration/model/types';
-import type { ProjectRepository } from '@/entities/project/model/types';
+import type { ProjectFigma, ProjectRepository } from '@/entities/project/model/types';
 import { CliConnectionCard } from '@/features/cli/ui/cli-connection-card';
+import { FigmaLinkDialog } from '@/features/project-management/ui/figma-link';
 import { RepositoryLinkDialog } from '@/features/project-management/ui/repository-link';
 import { WebhooksPanel, type ComposeRequest } from '@/features/webhooks/ui/webhooks-panel';
 import { cn } from '@/shared/lib/cn';
 import {
   DiscordMark,
   EmptyState,
+  FigmaMark,
   GitHubMark,
   GoogleCalendarMark,
   SlackMark,
@@ -23,6 +29,8 @@ import { useT, type TranslationKey } from '@/shared/i18n';
 interface ConnectionsPanelProps {
   projectId: string;
   repository: ProjectRepository | null;
+  /** The design file this project works against, if one is connected. */
+  figma: ProjectFigma | null;
   /** Owner or admin. Everything here leaves the project, so everything here is theirs. */
   canManage: boolean;
 }
@@ -36,6 +44,18 @@ interface ServiceCardProps {
   onSelect?: () => void;
   /** Set for a service listed for completeness rather than offered. */
   isAvailable?: boolean;
+  /**
+   * What the badge says when the service is not available, and why it exists.
+   *
+   * The default is "Soon", which is right for Trello — a connection that does
+   * not exist yet — and wrong for one that exists and is simply *switched off
+   * here*. A reader told "Soon" about Figma will wait for a release; told
+   * "Not enabled here" they will go and ask whoever runs the deployment, which
+   * is the action that actually gets them the feature.
+   */
+  unavailableLabel?: TranslationKey;
+  /** A sentence for the badge's tooltip when the service is unavailable. */
+  unavailableHint?: TranslationKey;
   /** The narrow variant that sits beside the webhooks panel. */
   compact?: boolean;
   /** A word in the corner — used by the calendar to say whose connection it is. */
@@ -76,6 +96,8 @@ const ServiceCard = ({
   isConnected,
   onSelect,
   isAvailable = true,
+  unavailableLabel = 'connections.soon',
+  unavailableHint,
   compact = false,
   note,
 }: ServiceCardProps) => {
@@ -83,7 +105,7 @@ const ServiceCard = ({
 
   const status = isAvailable
     ? t(isConnected ? 'connections.connected' : 'connections.connect')
-    : t('connections.soon');
+    : t(unavailableLabel);
 
   const body = (
     <>
@@ -122,7 +144,7 @@ const ServiceCard = ({
 
       {/* Vertically centred by the row itself — see the note above. */}
       <span
-        title={status}
+        title={isAvailable || !unavailableHint ? status : t(unavailableHint)}
         className={cn(
           'shrink-0 rounded-full border px-2 py-0.5 text-3xs font-medium uppercase tracking-wide',
           isConnected
@@ -254,10 +276,16 @@ const Group = ({
  * does not sync to a calendar" is false); putting it on without the label would
  * make an admin think they had connected it for the team.
  */
-export const ConnectionsPanel = ({ projectId, repository, canManage }: ConnectionsPanelProps) => {
+export const ConnectionsPanel = ({
+  projectId,
+  repository,
+  figma,
+  canManage,
+}: ConnectionsPanelProps) => {
   const t = useT();
   const navigate = useNavigate();
   const calendar = useCalendarStatus();
+  const figmaAvailability = useFigmaAvailability();
 
   /*
    * The same query the webhooks panel below already runs, so this costs one
@@ -291,6 +319,7 @@ export const ConnectionsPanel = ({ projectId, repository, canManage }: Connectio
   );
 
   const [isRepositoryDialogOpen, setIsRepositoryDialogOpen] = useState(false);
+  const [isFigmaDialogOpen, setIsFigmaDialogOpen] = useState(false);
 
   /*
    * Everything here sends this project's work somewhere outside it, so the
@@ -406,6 +435,40 @@ export const ConnectionsPanel = ({ projectId, repository, canManage }: Connectio
                 : setIsRepositoryDialogOpen(true)
             }
           />
+          {/*
+            Beside GitHub, because they are the same kind of connection.
+
+            Both are *features* rather than broadcasts or syncs: linking one
+            changes what the project can do — a repository makes a task's
+            branch mean something, a design file makes a page on the Documents
+            tab a live reading of the real thing. Neither sends anything out
+            and neither changes anything here on its own.
+
+            Pressing it opens the same dialog the mark beside the project's
+            name opens, for the reason the GitHub card gives: one
+            implementation, two doors, which is the only arrangement that
+            cannot drift.
+          */}
+          <ServiceCard
+            name="figma.name"
+            mark={<FigmaMark className="h-9 w-6" />}
+            isConnected={Boolean(figma)}
+            /*
+              A deployment with no encryption key cannot keep a Figma
+              credential, and the card says so rather than offering a form
+              that fails on submit. `isAvailable` is what draws that state —
+              the same treatment the calendar card gets when the deployment
+              has no Google client.
+            */
+            isAvailable={Boolean(figmaAvailability.data?.available)}
+            unavailableLabel="figma.unavailable"
+            unavailableHint="figma.unavailableHint"
+            onSelect={() =>
+              figma
+                ? window.open(figma.url, '_blank', 'noopener,noreferrer')
+                : setIsFigmaDialogOpen(true)
+            }
+          />
           <ServiceCard
             name="connections.svc.trello"
             mark={<TrelloMark className="h-8 w-8" />}
@@ -447,6 +510,13 @@ export const ConnectionsPanel = ({ projectId, repository, canManage }: Connectio
         repository={repository}
         isOpen={isRepositoryDialogOpen}
         onClose={() => setIsRepositoryDialogOpen(false)}
+      />
+
+      <FigmaLinkDialog
+        projectId={projectId}
+        figma={figma}
+        isOpen={isFigmaDialogOpen}
+        onClose={() => setIsFigmaDialogOpen(false)}
       />
     </div>
   );

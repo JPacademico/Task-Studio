@@ -49,6 +49,11 @@ import {
 } from '@/features/project-chat-dock/ui/chat-dock';
 import { MeetingsPanel } from '@/features/meetings/ui/meetings-panel';
 import { ProjectSettingsDialog } from '@/features/project-management/ui/project-settings-dialog';
+import {
+  useFigmaAvailability,
+  useProjectMarksRealtime,
+} from '@/entities/integration/model/queries';
+import { FigmaLink } from '@/features/project-management/ui/figma-link';
 import { RepositoryLink } from '@/features/project-management/ui/repository-link';
 import { RosterPanel } from '@/features/roster/ui/roster-panel';
 import { TeamsPanel } from '@/features/teams/ui/teams-panel';
@@ -146,6 +151,22 @@ const ProjectPage = () => {
   const t = useT();
   const { projectId } = useParams<{ projectId: string }>();
   useProjectRoom(projectId);
+  /*
+   * Keeps the two marks beside the project's name honest for the whole room.
+   *
+   * Both link services have always announced themselves on the socket and
+   * nothing was listening, so a repository connected by an admin appeared for
+   * everybody else on their next reload. See `useProjectMarksRealtime`.
+   */
+  useProjectMarksRealtime(projectId);
+
+  /*
+   * Whether this deployment can offer Figma at all — an environment question,
+   * not a project one, and cached for an hour. Read here rather than inside
+   * `FigmaLink` so the header does not fire a request per render of a control
+   * that is usually not drawn.
+   */
+  const figmaAvailability = useFigmaAvailability();
 
   const currentUser = useCurrentUser();
 
@@ -402,6 +423,21 @@ const ProjectPage = () => {
                   repository={project.repository}
                   canManage={canManage}
                 />
+                {/*
+                  The design, beside the code.
+
+                  Two halves of the same question — where does this project's
+                  work actually live — so they sit together rather than one on
+                  the title and one two clicks into a tab. Draws nothing at
+                  all on a project with no design connected, unless the reader
+                  is somebody who could connect one.
+                */}
+                <FigmaLink
+                  projectId={projectId}
+                  figma={project.figma}
+                  canManage={canManage}
+                  isAvailable={Boolean(figmaAvailability.data?.available)}
+                />
               </div>
               {project.description && (
                 <p className="line-clamp-2 max-w-2xl text-sm leading-relaxed text-content-muted sm:line-clamp-none">
@@ -649,12 +685,14 @@ const ProjectPage = () => {
           meetings={meetings}
           roster={project.roster}
           initialDocumentId={searchParams.get('doc') ?? undefined}
+          figma={project.figma}
         />
       )}
       {tab === 'connections' && (
         <ConnectionsPanel
           projectId={projectId}
           repository={project.repository}
+          figma={project.figma}
           canManage={canManage}
         />
       )}

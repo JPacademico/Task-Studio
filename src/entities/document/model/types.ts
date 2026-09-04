@@ -32,6 +32,120 @@ export interface DocumentSource {
 export type DocumentExportFormat = 'pdf' | 'txt' | 'html';
 
 /**
+ * One record inside an imported `.zip`.
+ *
+ * Read from the archive's central directory on the API, which is names and
+ * numbers and no decompression anywhere — see `zip-directory.ts` there. It is
+ * deliberately not possible to fetch one of these out of the archive: the
+ * download button beside the listing is what gets the files.
+ */
+export interface ArchiveEntry {
+  /** Always `/`-separated, and normalised — see the reader's `readablePath`. */
+  path: string;
+  /** Bytes this entry takes up inside the archive. */
+  compressedSize: number;
+  /** Bytes it would take up on disk. Zero for a folder. */
+  size: number;
+  isDirectory: boolean;
+  modifiedAt: string | null;
+}
+
+export interface ArchiveListing {
+  entries: ArchiveEntry[];
+  /** How many records the archive declares, before any truncation. */
+  totalEntries: number;
+  /** True when `entries` stops short of `totalEntries`. */
+  isTruncated: boolean;
+  uncompressedSize: number;
+}
+
+/** One object on a Figma page — a frame, a component, a section. */
+export interface FigmaNodeSummary {
+  id: string;
+  name: string;
+  /** Figma's own node type: `FRAME`, `COMPONENT`, `SECTION`, and so on. */
+  type: string;
+}
+
+export interface FigmaPageSummary {
+  id: string;
+  name: string;
+  nodes: FigmaNodeSummary[];
+  isTruncated: boolean;
+}
+
+/**
+ * A Figma file's structure as of the last sync.
+ *
+ * The API's reduction of a node tree that is megabytes of vectors and fills —
+ * pages, and each page's top-level objects, which is the granularity somebody
+ * navigates and exports at.
+ */
+export interface FigmaSnapshot {
+  name: string;
+  version: string;
+  lastModified: string | null;
+  thumbnailUrl: string | null;
+  pages: FigmaPageSummary[];
+  isTruncated: boolean;
+}
+
+/**
+ * The Figma file a page mirrors, when the page *is* a design.
+ *
+ * The fourth kind of page and the only one holding no bytes anywhere: what is
+ * stored is an address plus the snapshot below, and the pixels come from
+ * Figma's renderer when somebody asks for them.
+ */
+export interface DocumentFigma {
+  fileKey: string;
+  /** One frame, when the page is scoped to one. Null means the whole file. */
+  nodeId: string | null;
+  /** The address a browser opens. Derived on the API. */
+  url: string;
+  /** Figma's own revision marker as of `syncedAt`. */
+  version: string | null;
+  syncedAt: string | null;
+  /**
+   * The cached tree. Absent on table-of-contents rows, where twenty designs
+   * would otherwise ship twenty node trees to render twenty titles.
+   */
+  snapshot?: FigmaSnapshot | null;
+}
+
+/** What a single object in a design can be pulled out as. */
+export type FigmaExportFormat = 'png' | 'jpg' | 'svg' | 'pdf';
+
+/**
+ * The assistant's reading of a design's *structure*.
+ *
+ * Written from page and frame names — never from artwork — and returned to
+ * whoever asked rather than written onto anything. See `figma-brief.prompt.ts`
+ * on the API for why that distinction is the whole of the safety argument.
+ */
+export interface FigmaBrief {
+  summary: string;
+  flows: { name: string; detail: string }[];
+  tasks: string[];
+  gaps: string[];
+}
+
+/** Putting a Figma file on a project's board as a page. */
+export interface CreateFigmaPagePayload {
+  /**
+   * Required, unlike on every sibling payload: the credential is a property of
+   * the project, so a personal design page would be a row that can never
+   * render.
+   */
+  projectId: string;
+  /** Omit for the file the project already designs against. */
+  url?: string;
+  taskId?: string;
+  meetingId?: string;
+  title?: string;
+}
+
+/**
  * A written page belonging to a project — or, when `taskId` is set, to one
  * task inside it, or — when `projectId` is null — to one person's own desk.
  */
@@ -73,6 +187,17 @@ export interface ProjectDocument {
    * can badge an import before anybody clicks it.
    */
   source: DocumentSource | null;
+  /**
+   * The Figma file this page mirrors, or null on every other kind of page.
+   *
+   * Mutually exclusive with `source` in practice — a page is either bytes in a
+   * bucket or an address in Figma — though nothing needs to enforce that,
+   * because the two are set by different routes and neither ever sets both.
+   *
+   * Present on table-of-contents rows so the list can mark a design before
+   * anybody clicks it, with `snapshot` omitted there. See `DocumentFigma`.
+   */
+  figma: DocumentFigma | null;
   /**
    * Everybody the author has handed the pen to.
    *

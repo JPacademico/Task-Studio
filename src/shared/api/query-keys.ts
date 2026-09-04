@@ -226,5 +226,15 @@ export const queryKeys = {
     webhooks: (projectId: string) => ['integrations', 'webhooks', projectId] as const,
     /** This person's personal access tokens. */
     apiTokens: ['integrations', 'api-tokens'] as const,
+    /**
+     * Whether this deployment offers Figma at all.
+     *
+     * One key with no project in it, because the answer has no project in it:
+     * the integration needs an encryption key on the server, and that is true
+     * or false for the whole instance. A project's *own* connection is not
+     * here — it is a field on the project, arriving with the roster and the
+     * description, because it is drawn beside the project's name.
+     */
+    figma: ['integrations', 'figma'] as const,
   },
 } as const;

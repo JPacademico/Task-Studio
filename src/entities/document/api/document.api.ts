@@ -2,8 +2,12 @@ import axios from 'axios';
 
 import { api, SLOW_ROUTE_TIMEOUT_MS } from '@/shared/api/client';
 import type {
+  ArchiveListing,
   CreateDocumentPayload,
+  CreateFigmaPagePayload,
   DocumentExportFormat,
+  FigmaBrief,
+  FigmaExportFormat,
   ImportDocumentPayload,
   ProjectDocument,
   UpdateDocumentPayload,
@@ -92,6 +96,102 @@ export const documentApi = {
   /** Registers a file that has already been PUT to storage as a page. */
   async import(payload: ImportDocumentPayload): Promise<ProjectDocument> {
     const { data } = await api.post<ProjectDocument>('/documents/import', payload);
+    return data;
+  },
+
+  /**
+   * What is inside an imported `.zip`.
+   *
+   * Names and sizes, read from the archive's central directory on the API —
+   * nothing is unpacked, here or there. There is deliberately no way to fetch
+   * one entry: the download of the whole archive is what gets the files, and
+   * it always was.
+   */
+  async archive(documentId: string): Promise<ArchiveListing> {
+    const { data } = await api.get<ArchiveListing>(`/documents/${documentId}/archive`);
+    return data;
+  },
+
+  /** Puts a Figma file on a project's board as a page. */
+  async createFigmaPage(payload: CreateFigmaPagePayload): Promise<ProjectDocument> {
+    const { data } = await api.post<ProjectDocument>('/documents/figma', payload);
+    return data;
+  },
+
+  /**
+   * Brings a design page back in step with the file it mirrors.
+   *
+   * `changed` is the interesting half of the answer. A sync reads Figma's own
+   * version marker first and stops there when it matches, so the usual outcome
+   * is "nothing moved" for the cost of one small request — which is what makes
+   * this a button anybody can press rather than a scheduled job.
+   */
+  async syncFigma(documentId: string): Promise<{ changed: boolean; document: ProjectDocument }> {
+    const { data } = await api.post<{ changed: boolean; document: ProjectDocument }>(
+      `/documents/${documentId}/figma/sync`,
+      {},
+      { timeout: SLOW_ROUTE_TIMEOUT_MS },
+    );
+    return data;
+  },
+
+  /**
+   * Rendered previews for some of a design's objects.
+   *
+   * Answers with Figma's own short-lived URLs, which the browser then loads
+   * directly — the bytes never come through the API. That is what keeps a grid
+   * of a dozen frames from putting a dozen megabytes of somebody else's PNGs
+   * through a small container to draw a sidebar.
+   */
+  async figmaImages(
+    documentId: string,
+    nodeIds: string[],
+    options: { format?: FigmaExportFormat; scale?: number } = {},
+  ): Promise<Record<string, string>> {
+    const { data } = await api.get<{ images: Record<string, string> }>(
+      `/documents/${documentId}/figma/images`,
+      { params: { ids: nodeIds.join(','), ...options } },
+    );
+    return data.images;
+  },
+
+  /**
+   * One object out of a design, as bytes to save.
+   *
+   * Fetched rather than linked, for the reason the API proxies it at all: a
+   * cross-origin `download` attribute is ignored, so a direct link to Figma's
+   * CDN navigates the tab to a PNG instead of saving a named file. Returns the
+   * blob; who turns one into a download is the caller's business.
+   */
+  async figmaExport(
+    documentId: string,
+    nodeId: string,
+    format: FigmaExportFormat,
+    scale?: number,
+  ): Promise<Blob> {
+    const { data } = await api
+      .get<Blob>(`/documents/${documentId}/figma/export`, {
+        params: { nodeId, format, ...(scale ? { scale } : {}) },
+        responseType: 'blob',
+        timeout: SLOW_ROUTE_TIMEOUT_MS,
+      })
+      .catch(rethrowWithReadableBody);
+    return data;
+  },
+
+  /**
+   * The assistant's reading of a design's structure.
+   *
+   * Slow-route timeout, like every other call that waits on a model: the
+   * client has to be the one that keeps waiting, because the API's own attempt
+   * ceiling is what produces the message worth showing.
+   */
+  async figmaBrief(documentId: string): Promise<FigmaBrief> {
+    const { data } = await api.post<FigmaBrief>(
+      `/documents/${documentId}/figma/brief`,
+      {},
+      { timeout: SLOW_ROUTE_TIMEOUT_MS },
+    );
     return data;
   },
 

@@ -32,6 +32,21 @@ interface ZoomableImageProps {
   alt: string;
   /** Applied to the inline thumbnail button. */
   className?: string;
+  /**
+   * How much room the inline rendition is entitled to.
+   *
+   * `thumb` (the default) caps it at 160px: right where a picture is *part* of
+   * something else — a task sheet, a card — and the click through to the
+   * viewer is the real way to look at it.
+   *
+   * `fill` lets it take the box it is given. That is for the case where the
+   * picture *is* the content and the container has already decided how much
+   * space that deserves — a text board's page, where an imported screenshot
+   * capped at 160px in a 70vh pane would be a stamp floating in an empty
+   * frame, and the zoom would stop being a convenience and become the only
+   * way to read the page at all.
+   */
+  variant?: 'thumb' | 'fill';
 }
 
 /**
@@ -69,7 +84,13 @@ interface ZoomableImageProps {
  * Zoom and pan are one `transform` on one element, so none of it costs a layout
  * pass no matter how large the image is.
  */
-export const ZoomableImage = ({ src, thumbSrc, alt, className }: ZoomableImageProps) => {
+export const ZoomableImage = ({
+  src,
+  thumbSrc,
+  alt,
+  className,
+  variant = 'thumb',
+}: ZoomableImageProps) => {
   const reduceMotion = useReducedMotion();
   const [isOpen, setIsOpen] = useState(false);
   const [zoom, setZoom] = useState(MIN_ZOOM);
@@ -199,6 +220,7 @@ export const ZoomableImage = ({ src, thumbSrc, alt, className }: ZoomableImagePr
           'group/image relative block w-full overflow-hidden rounded-xl border border-edge bg-surface-sunken',
           'transition-colors duration-150 hover:border-brand/50',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
+          variant === 'fill' && 'h-full',
           className,
         )}
       >
@@ -209,7 +231,10 @@ export const ZoomableImage = ({ src, thumbSrc, alt, className }: ZoomableImagePr
           alt={alt}
           loading="lazy"
           decoding="async"
-          className="mx-auto max-h-40 w-full object-contain"
+          className={cn(
+            'mx-auto w-full object-contain',
+            variant === 'fill' ? 'h-full' : 'max-h-40',
+          )}
         />
 
         <span

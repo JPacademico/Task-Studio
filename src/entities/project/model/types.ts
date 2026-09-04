@@ -60,9 +60,40 @@ export interface Project {
    * the link was made. Stale is harmless — nothing validates against it.
    */
   repository: ProjectRepository | null;
+  /**
+   * The Figma file this project designs against, if one is connected.
+   *
+   * Beside `repository` and shaped the same way, because they answer the same
+   * question about the two halves of a product project: where is the code,
+   * where is the design. Both are drawn as a mark beside the project's name
+   * for the whole roster.
+   *
+   * `connectedBy` is on the shape rather than being an implementation detail
+   * of the connections tab, because the credential behind this is one person's
+   * and everybody reads the design through it — so "whose is it" is a fact
+   * about the connection, and the person to ask when it stops working.
+   */
+  figma: ProjectFigma | null;
   myRole: ProjectRole;
   isPinned: boolean;
   roster: RosterMember[];
+}
+
+/**
+ * The Figma file a project designs against.
+ *
+ * Never carries the credential: the API's own shape has no field for it, and
+ * the query behind it does not select the column. See `ProjectFigmaConnection`
+ * there for why the token is a shared, per-project one at all.
+ */
+export interface ProjectFigma {
+  /** The key in a Figma URL. Every API path is built from it. */
+  fileKey: string;
+  /** What the file is called in Figma, as of the last sync. */
+  fileName: string;
+  url: string;
+  lastSyncedAt: string | null;
+  connectedBy: { id: string; displayName: string };
 }
 
 export interface ProjectRepository {

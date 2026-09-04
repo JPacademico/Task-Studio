@@ -8,6 +8,7 @@ import { queryKeys } from '@/shared/api/query-keys';
 import { documentApi } from '../api/document.api';
 import type {
   CreateDocumentPayload,
+  CreateFigmaPagePayload,
   DocumentBroadcast,
   ImportDocumentPayload,
   ProjectDocument,
@@ -201,6 +202,125 @@ export const useImportDocument = () => {
      */
   });
 };
+
+/**
+ * What is inside an imported `.zip`.
+ *
+ * Cached for the session and never refetched on its own, because the object it
+ * derives from is immutable: an archive's contents cannot change without
+ * somebody uploading a different archive, which is a different page. The API
+ * also serves it with a five-minute private cache, so flipping between pages
+ * costs nothing at either end.
+ */
+export const useDocumentArchive = (documentId: string | undefined, isArchive: boolean) =>
+  useQuery({
+    queryKey: ['documents', documentId ?? '', 'archive'] as const,
+    queryFn: () => documentApi.archive(documentId as string),
+    enabled: Boolean(documentId) && isArchive,
+    staleTime: Infinity,
+    /*
+     * Not retried.
+     *
+     * The one failure this route has is an archive the reader on the API could
+     * not follow, which is a 400 that will be a 400 next time as well —
+     * retrying it three times only delays the message that says to download
+     * the file instead.
+     */
+    retry: false,
+  });
+
+/** Puts a Figma file on a project's board as a page. */
+export const useCreateFigmaPage = () => {
+  const { upsertRow } = useDocumentListCache();
+
+  return useMutation({
+    mutationFn: (payload: CreateFigmaPagePayload) => documentApi.createFigmaPage(payload),
+    onSuccess: (document) => {
+      upsertRow(document);
+      toast.success(translate('figma.pageAdded'));
+    },
+    onError: (error) => toast.error(errorMessage(error, translate('figma.pageFailed'))),
+  });
+};
+
+/**
+ * Brings a design page back in step with Figma.
+ *
+ * Writes the answer into both caches rather than invalidating them: the API
+ * hands back the whole page, and a refetch would ask for a node tree the
+ * response is already carrying.
+ *
+ * The toast distinguishes the two outcomes, and that is the point of `changed`
+ * travelling at all. "Design updated" on a file nobody has touched is a
+ * message that teaches people the button lies; "already up to date" is the
+ * answer they actually wanted, and it is the common one.
+ */
+export const useSyncFigmaDocument = () => {
+  const queryClient = useQueryClient();
+  const { upsertRow } = useDocumentListCache();
+
+  return useMutation({
+    mutationFn: (documentId: string) => documentApi.syncFigma(documentId),
+    onSuccess: ({ changed, document }) => {
+      queryClient.setQueryData<ProjectDocument>(queryKeys.documents.detail(document.id), document);
+      upsertRow(document);
+      toast.success(translate(changed ? 'figma.synced' : 'figma.alreadyCurrent'));
+    },
+    onError: (error) => toast.error(errorMessage(error, translate('figma.syncFailed'))),
+  });
+};
+
+/**
+ * Rendered previews for one page of a design, as URLs the browser loads.
+ *
+ * ## Why the version is in the key
+ *
+ * Because it is what makes these safe to cache at all. Figma's render URLs
+ * point at an object that reflects the file *as it was when they were minted*,
+ * so a cache keyed on the node ids alone would keep showing yesterday's frames
+ * after a sync. Keying on the version means a sync that changed something
+ * invalidates every thumbnail on the page automatically, and a sync that
+ * changed nothing costs no renders at all.
+ *
+ * ## Why one request for the whole page
+ *
+ * Figma rate-limits per call rather than per node, so a grid of twelve frames
+ * fetched one at a time is twelve chances to be throttled for the same work.
+ * The ids travel together and the answer is a map.
+ */
+export const useFigmaImages = (
+  documentId: string | undefined,
+  nodeIds: string[],
+  version: string | null | undefined,
+) =>
+  useQuery({
+    queryKey: ['documents', documentId ?? '', 'figma-images', version ?? 'none', nodeIds] as const,
+    queryFn: () => documentApi.figmaImages(documentId as string, nodeIds),
+    enabled: Boolean(documentId) && nodeIds.length > 0,
+    /*
+     * Ten minutes, which is shorter than the URLs live and longer than anybody
+     * spends flipping between a design's pages. It is a ceiling on staleness
+     * that the version key has already made unnecessary in the normal case —
+     * this is here for the abnormal one, where somebody edits in Figma and
+     * never syncs.
+     */
+    staleTime: 10 * 60_000,
+    retry: false,
+  });
+
+/**
+ * The assistant's reading of a design's structure.
+ *
+ * A mutation rather than a query, the same call `usePreviewRepository` makes:
+ * it fires on a button press, the answer belongs to that press, and it must
+ * not be served from a cache when somebody asks again after a sync — the whole
+ * reason to ask twice is that the file changed.
+ */
+export const useFigmaBrief = () =>
+  useMutation({
+    mutationFn: (documentId: string) => documentApi.figmaBrief(documentId),
+    onError: (error) => toast.error(errorMessage(error, translate('figma.briefFailed'))),
+  });
 
 export const useDeleteDocument = () => {
   const { removeRow } = useDocumentListCache();

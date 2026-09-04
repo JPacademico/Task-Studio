@@ -8,6 +8,7 @@ import { errorMessage } from '@/shared/api/client';
 import { queryKeys } from '@/shared/api/query-keys';
 import { translate } from '@/shared/i18n';
 import { calendarApi } from '../api/calendar.api';
+import { figmaApi, type ConnectFigmaPayload } from '../api/figma.api';
 import { githubApi } from '../api/github.api';
 import { importsApi } from '../api/imports.api';
 import { tokensApi } from '../api/tokens.api';
@@ -71,6 +72,130 @@ export const useUnlinkRepository = (projectId: string) => {
     },
     onError: (error) => toast.error(errorMessage(error, translate('repo.disconnectFailed'))),
   });
+};
+
+/**
+ * Whether this deployment offers Figma at all.
+ *
+ * Effectively immutable for the life of a session — it is decided by an
+ * environment variable on the server — so it is cached for an hour rather than
+ * refetched on focus like the calendar's status, which genuinely changes when
+ * somebody comes back from a consent redirect.
+ */
+export const useFigmaAvailability = () =>
+  useQuery({
+    queryKey: queryKeys.integrations.figma,
+    queryFn: figmaApi.status,
+    staleTime: 60 * 60_000,
+  });
+
+/**
+ * Connecting a project to a design file, and disconnecting it.
+ *
+ * Both write the *project* cache rather than invalidating it, exactly as the
+ * repository pair does: the API answers with the connection, the project is
+ * already held by whichever page called this, and a refetch would pull a
+ * roster and a description to learn one field.
+ *
+ * `project:figma` also arrives on the socket for everybody else in the room —
+ * see `useProjectMarksRealtime` — so the two paths agree by writing the same
+ * shape into the same key.
+ */
+export const useConnectFigma = (projectId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: ConnectFigmaPayload) => figmaApi.connect(projectId, payload),
+    onSuccess: (figma) => {
+      queryClient.setQueryData<Project>(queryKeys.projects.detail(projectId), (current) =>
+        current ? { ...current, figma } : current,
+      );
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      toast.success(translate('figma.connected'));
+    },
+    onError: (error) => toast.error(errorMessage(error, translate('figma.connectFailed'))),
+  });
+};
+
+export const useDisconnectFigma = (projectId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => figmaApi.disconnect(projectId),
+    onSuccess: () => {
+      queryClient.setQueryData<Project>(queryKeys.projects.detail(projectId), (current) =>
+        current ? { ...current, figma: null } : current,
+      );
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      toast.success(translate('figma.disconnected'));
+    },
+    onError: (error) => toast.error(errorMessage(error, translate('figma.disconnectFailed'))),
+  });
+};
+
+/**
+ * Keeps the two marks beside a project's name honest for everybody in the room.
+ *
+ * ## Why this exists
+ *
+ * Both link services have always announced themselves — `RepositoryLinkService`
+ * emits `project:repository` and `FigmaService` emits `project:figma`, each
+ * with a note explaining that an admin connecting something changes what four
+ * other people are looking at. Nothing was listening. The repository mark
+ * appeared for the person who pressed the button, because that mutation writes
+ * the cache directly, and for everybody else on their next reload — which is
+ * exactly the staleness the emit was added to prevent.
+ *
+ * One hook for both because they are one fact in two halves: what this project
+ * connects to, drawn in the same place, changed by the same people, for the
+ * same reasons.
+ *
+ * ## Why it writes the cache rather than invalidating it
+ *
+ * The payload carries the whole connection shape — the API sends what it just
+ * stored — so there is nothing left to fetch. Invalidating would pull a
+ * project's roster, description and window back over the wire to learn one
+ * field that is already in hand, for every member of the room at once.
+ */
+export const useProjectMarksRealtime = (projectId: string | undefined): void => {
+  const { socket } = useRealtime();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!socket || !projectId) return;
+
+    const patch = (next: Partial<Project>) => {
+      queryClient.setQueryData<Project>(queryKeys.projects.detail(projectId), (current) =>
+        current ? { ...current, ...next } : current,
+      );
+      /*
+       * The lists get an invalidation rather than a write.
+       *
+       * A project appears in several of them — pinned, by organization, the
+       * dashboard's — under keys this hook has no business enumerating, and
+       * unlike the detail cache they are cheap to refetch and rarely open.
+       */
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+    };
+
+    const onRepository = (event: { projectId: string; repository: Project['repository'] }) => {
+      if (event.projectId !== projectId) return;
+      patch({ repository: event.repository });
+    };
+
+    const onFigma = (event: { projectId: string; figma: Project['figma'] }) => {
+      if (event.projectId !== projectId) return;
+      patch({ figma: event.figma });
+    };
+
+    socket.on('project:repository', onRepository);
+    socket.on('project:figma', onFigma);
+
+    return () => {
+      socket.off('project:repository', onRepository);
+      socket.off('project:figma', onFigma);
+    };
+  }, [projectId, queryClient, socket]);
 };
 
 export const usePreviewRepository = () =>

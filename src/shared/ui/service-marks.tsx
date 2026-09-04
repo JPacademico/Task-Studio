@@ -52,6 +52,26 @@ export const SlackMark = ({ className }: MarkProps) => (
   </svg>
 );
 
+/**
+ * Figma — the five shapes, in the five colours.
+ *
+ * Taller than it is wide, unlike every other mark here, and the `viewBox` says
+ * so rather than the geometry being squashed to fit a square: the logo's 2:3
+ * proportion is most of what makes it recognisable at 20px, and a Figma mark
+ * stretched into a circle reads as a generic cluster of dots. It letterboxes
+ * inside whatever box the caller sizes, which is what `preserveAspectRatio`
+ * does by default and is the right answer here.
+ */
+export const FigmaMark = ({ className }: MarkProps) => (
+  <svg viewBox="0 0 24 36" aria-hidden="true" focusable="false" className={className}>
+    <path fill="#1ABCFE" d="M12 18a6 6 0 1 1 12 0 6 6 0 0 1-12 0Z" />
+    <path fill="#0ACF83" d="M6 36a6 6 0 0 0 6-6v-6H6a6 6 0 0 0 0 12Z" />
+    <path fill="#FF7262" d="M12 0h6a6 6 0 0 1 0 12h-6V0Z" />
+    <path fill="#F24E1E" d="M6 0h6v12H6A6 6 0 0 1 6 0Z" />
+    <path fill="#A259FF" d="M6 12h6v12H6a6 6 0 0 1 0-12Z" />
+  </svg>
+);
+
 /** Trello — a board with two lists on it. */
 export const TrelloMark = ({ className }: MarkProps) => (
   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className={className}>
