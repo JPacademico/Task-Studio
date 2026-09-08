@@ -89,8 +89,35 @@ export const LandingNav = () => {
       </a>
 
       <nav className="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
+        {/*
+          The wordmark, which on this page is a "back to the top" control.
+
+          ## Why it needed a handler at all
+
+          It is a `Link` to `/welcome`, and on `/welcome` that is a navigation to
+          the address you are already at. React Router resolves it, sees the same
+          path, and does the correct thing for a router — nothing. So the one
+          element on the page every convention says returns you to the start was
+          the only one that did nothing when clicked, silently, from anywhere in
+          a five-section document.
+
+          It stays a real `Link` rather than becoming a button: on `/docs` this
+          same bar has to actually go somewhere, the destination has to be
+          visible in the status bar, and middle-click and ctrl-click have to open
+          it in a tab. Only the same-page case is intercepted.
+
+          ## Why the hash is cleared
+
+          Arriving from `/welcome#themes`, the address still says `#themes` while
+          the reader is looking at the top of the page — and a reload, or a
+          shared copy of that URL, would scroll them back down to a section they
+          deliberately left. `replaceState` drops it without adding a history
+          entry, which is the same treatment the section links give it.
+        */}
         <Link
           to="/welcome"
+          onClick={(event) => scrollToTop(event, isOnLanding, reduceMotion)}
+          aria-label={t('landing.nav.home')}
           className="inline-flex items-center gap-2.5 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
         >
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand/15 text-brand ring-1 ring-inset ring-brand/25">
@@ -217,38 +244,58 @@ export const LandingNav = () => {
 
 
 /**
+ * Back to the start of the page, rather than to the page you are on.
+ *
+ * ## Why the wordmark needs any code
+ *
+ * Because on `/welcome` its `Link` points at `/welcome`. The router resolves
+ * that, finds the location unchanged, and correctly does nothing — so the one
+ * control every reader expects to return them to the top was the only thing in
+ * the bar that answered a click with silence. Off the landing page the link is
+ * a real navigation and this returns immediately.
+ *
+ * ## Why the scroll is smooth here and nowhere else
+ *
+ * The same argument `scrollToSection` makes below: `scroll-behavior: smooth` in
+ * the stylesheet would animate every programmatic scroll in the application,
+ * including the ones that are supposed to be instant. This is one of the two
+ * places on the page where the animation is wanted, so it is asked for here.
+ */
+const scrollToTop = (
+  event: MouseEvent<HTMLAnchorElement>,
+  isOnLanding: boolean,
+  reduceMotion: boolean | null,
+): void => {
+  // Off the landing page the link is a genuine navigation. Leave it alone, and
+  // leave modified clicks alone everywhere — those are a request for a new tab.
+  if (!isOnLanding) return;
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
+    return;
+  }
+
+  event.preventDefault();
+  window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+
+  /*
+   * Focus follows the scroll, or only the pointer went anywhere.
+   *
+   * Without this the caret stays on the wordmark and the next Tab continues
+   * from the navigation bar — which is where the reader already was, so a
+   * keyboard user gets no feedback that the control did anything at all. Moving
+   * it to `main` is what makes "back to the top" mean the same thing for the
+   * keyboard as it does for the pointer, and it is the element the skip link
+   * targets for the same reason.
+   *
+   * `preventScroll` because the smooth scroll above is already under way, and
+   * focusing a `tabIndex={-1}` element would otherwise jump straight to it.
+   */
+  document.getElementById('content')?.focus({ preventScroll: true });
+
+  window.history.replaceState(null, '', window.location.pathname + window.location.search);
+};
+
+/**
  * Travel to a section instead of teleporting to it.
- *
- * ## Why this intercepts a link that already worked
- *
- * A bare `href="#how"` jumps: the page is one thing, then it is another, with
- * nothing in between. On a document made of five full-height sections that is
- * genuinely disorienting — the reader cannot tell whether they moved down two
- * screens or eight, so they lose their place and scroll back up to check.
- * Animating the trip is what turns "the page changed" into "I went somewhere",
- * and it costs a smooth scroll the browser performs off the main thread.
- *
- * ## Why not `scroll-behavior: smooth` in the stylesheet
- *
- * Because that declaration is global to the document, and it would silently
- * animate every *programmatic* scroll in the entire application as well — the
- * chat dock jumping to its newest message, a modal restoring scroll position,
- * the board scrolling a dragged card into view. Those are supposed to be
- * instant; making them glide is how a fast app starts feeling laggy. This is
- * the one place the animation is wanted, so this is the only place it is asked
- * for.
- *
- * ## Why the URL is still updated
- *
- * `preventDefault` stops the browser from writing the hash, and a section link
- * that leaves the address bar behind is one nobody can copy, bookmark or come
- * back to. `replaceState` puts it back without adding a history entry, so the
- * back button still leaves the page rather than walking the reader up through
- * every section they visited on the way down.
- *
- * A missing target falls through to the browser's own behaviour rather than
- * being swallowed: if the section is not on this page, the plain anchor is a
- * better answer than nothing happening.
  */
 const scrollToSection = (
   event: MouseEvent<HTMLAnchorElement>,

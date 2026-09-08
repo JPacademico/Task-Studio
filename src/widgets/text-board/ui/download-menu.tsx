@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Download,
+  FileArchive,
   FileCode2,
   FileText,
   FileType2,
@@ -124,7 +125,9 @@ export const DocumentDownloadMenu = ({
 }: DownloadMenuProps) => {
   const t = useT();
   const [isOpen, setIsOpen] = useState(false);
-  const [pending, setPending] = useState<DocumentExportFormat | 'source' | number | null>(null);
+  const [pending, setPending] = useState<
+    DocumentExportFormat | 'source' | 'assets' | number | null
+  >(null);
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -212,6 +215,34 @@ export const DocumentDownloadMenu = ({
       toast.success(t('doc.imageDownloaded', { name }));
     } catch (error) {
       toast.error(errorMessage(error, t('doc.imageDownloadFailed')));
+    } finally {
+      setPending(null);
+    }
+  };
+
+  /**
+   * Everything in the page, in one file.
+   *
+   * The saved count comes back from the API rather than being taken from the
+   * list on screen: a picture whose object has gone missing from the bucket is
+   * skipped there rather than failing the whole archive, so the two numbers can
+   * legitimately differ and only one of them is true. When the header is absent
+   * the message drops the number instead of guessing at one.
+   */
+  const downloadAllAssets = async () => {
+    setPending('assets');
+    setIsOpen(false);
+
+    try {
+      const { blob, count } = await documentApi.assetsArchive(documentId);
+      saveBlob(blob, `${stem(title)}-images.zip`);
+      toast.success(
+        count === null
+          ? t('doc.imagesDownloaded')
+          : t('doc.imagesDownloadedCount', { count: String(count) }),
+      );
+    } catch (error) {
+      toast.error(errorMessage(error, t('doc.imagesDownloadFailed')));
     } finally {
       setPending(null);
     }
@@ -344,6 +375,48 @@ export const DocumentDownloadMenu = ({
                   {assets.isPending && (
                     <li className="grid place-items-center py-3">
                       <SkinLoader size="sm" />
+                    </li>
+                  )}
+
+                  {/*
+                    Take the lot, offered only where it is worth offering.
+
+                    ## Why it is above the list rather than under it
+
+                    Because it is the answer to the question the section poses,
+                    and a list of a dozen filenames is a long way to scroll past
+                    to find out that it exists. Somebody who opened this heading
+                    wants the pictures; the first row should be "all of them".
+
+                    ## Why three, and not two
+
+                    The threshold is what the brief asked for — the row appears
+                    once a page has more than two pictures — and it is the right
+                    number for a reason worth writing down: at one picture the
+                    archive is strictly worse than the file (an extra step, a
+                    folder to open, the same bytes), and at two it saves a single
+                    click while costing an unzip. The chore this exists to end
+                    starts at the third.
+                  */}
+                  {(assets.data?.length ?? 0) > 2 && (
+                    <li>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => void downloadAllAssets()}
+                        className={cn(rowClasses(true), 'font-semibold')}
+                      >
+                        <FileArchive className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand" />
+                        <span className="min-w-0 flex-1">
+                          <span className="block">{t('doc.downloadAllImages')}</span>
+                          <span className="block text-3xs font-normal leading-snug text-content-faint">
+                            {t('doc.downloadAllImagesHint', {
+                              count: String(assets.data?.length ?? 0),
+                            })}
+                          </span>
+                        </span>
+                        {pending === 'assets' && <SkinLoader size="sm" />}
+                      </button>
                     </li>
                   )}
 

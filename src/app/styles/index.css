@@ -200,6 +200,36 @@
     --heading-transform: none;
     --heading-tracking: -0.01em;
 
+    /* --- Liquid glass ------------------------------------------------------
+     *
+     * The material described in the `.ui-liquid-glass` block down in
+     * `components`. Declared here, with the rest of the palette, because the
+     * whole point of it is that thirteen skins each get their own glass without
+     * any of them writing a rule: a skin that shifts `--surface-raised` two
+     * steps warmer has just shifted its glass two steps warmer, and one that
+     * squares every corner has just made its glass a hard-edged pane.
+     *
+     * `--glass-rim` is the colour of the *light*, not of the surface, which is
+     * why it stays near-white in both palettes and on every skin. A specular
+     * highlight tinted to match the material underneath it is not a highlight;
+     * it is a slightly lighter version of the material, and it reads as one.
+     */
+    --glass-blur: 16px;
+    --glass-saturate: 1.7;
+    --glass-tint: var(--surface-raised);
+    --glass-tint-alpha: 0.6;
+    --glass-rim: 255 255 255;
+    /* The lit edge. Strong in light mode, where the glass sits under a bright
+       page and the top bezel is genuinely catching most of it. */
+    --glass-rim-alpha: 0.72;
+    /* The edge in shadow, opposite the light. */
+    --glass-shade-alpha: 0.08;
+    /* The diagonal sweep across the face — the library's normal-based specular,
+       reduced to the one gradient a flat surface can carry honestly. */
+    --glass-sheen: 0.34;
+    --glass-bloom: 0 12px 34px -18px rgb(15 20 30 / 0.55);
+    --glass-edge: rgb(var(--edge) / 0.85);
+
     color-scheme: light;
   }
 
@@ -253,6 +283,24 @@
     --positive: 52 211 153;
     --warning: 251 191 36;
     --danger: 248 113 113;
+
+    /*
+     * Glass in the dark, which is a different material rather than the same one
+     * dimmed.
+     *
+     * Two moves, both required. The tint goes *more* opaque, not less: a dark
+     * translucent panel over dark content is a panel nobody can find the edges
+     * of, and the blur that would normally separate them has almost no
+     * luminance range left to work with. And the sheen goes up while the rim
+     * comes down — in a dark room the only thing that says "glass" is the light
+     * running along the surface, so the sweep does the work the bright top bezel
+     * does in daylight.
+     */
+    --glass-tint-alpha: 0.68;
+    --glass-rim-alpha: 0.24;
+    --glass-shade-alpha: 0.35;
+    --glass-sheen: 0.1;
+    --glass-bloom: 0 14px 38px -18px rgb(0 0 0 / 0.75);
 
     color-scheme: dark;
   }
@@ -2535,6 +2583,183 @@
   }
 
 
+  /* ======================================================================
+   * The scrollbar, which is part of the product.
+   *
+   * ## Why the browser's own was a problem
+   *
+   * Because it is the one piece of chrome the app draws that belongs to
+   * somebody else. On a page painted in newsprint, basalt, laid paper or a
+   * green CRT, Windows' pale grey trough with its 17px slab of a thumb is
+   * unmistakably a *Windows* control sitting inside the picture — and it is not
+   * a small one: on a desktop it is a full-height vertical rule down the right
+   * edge of every screen in the application. Thirteen skins spent a great deal
+   * of effort agreeing about the colour of a 1px divider, and this was 17px of
+   * disagreement running the length of the page.
+   *
+   * ## Why it is entirely derived, with no per-skin block
+   *
+   * Every value below resolves through tokens each skin already declares, so a
+   * skin gets its scrollbar the moment it declares its palette and nothing has
+   * to be added for it. The thumb is `--content-faint` — by definition the
+   * quietest colour a skin still considers legible, which is exactly the brief
+   * for a control that must be findable without being loud. The corner rounding
+   * is `--radius-sm`, so the arcade, the terminal and the newsprint skins get a
+   * hard square thumb for free rather than each needing an override, which is
+   * how `pixel` used to get one.
+   *
+   * ## Why both syntaxes, and in this order
+   *
+   * `scrollbar-width` / `scrollbar-color` is the standard and the only thing
+   * Firefox reads, but it takes two flat colours and nothing else — no radius,
+   * no border, no hover. `::-webkit-scrollbar-*` is the non-standard family
+   * Chromium and Safari still implement, and it takes real CSS. Declaring the
+   * standard first and the vendor family after means Firefox gets a correct,
+   * quiet, correctly-coloured bar, and everything else gets the drawn one;
+   * neither browser sees a rule it has to guess at.
+   *
+   * ## Why the thumb has a transparent border
+   *
+   * `background-clip: padding-box` behind a transparent border is the only way
+   * to inset a webkit thumb — there is no margin on a scrollbar part. It is
+   * what puts air between the thumb and the track so the bar reads as a control
+   * on a surface rather than as a filled channel, and it is what lets the
+   * hovered state grow the thumb without the layout of the page moving.
+   * ====================================================================== */
+  :root {
+    /*
+     * The width of the bar. Not a skin's business by default — a scrollbar
+     * narrower than about 10px is genuinely hard to grab with a mouse, and the
+     * app's own `.scrollbar-thin` already exists for the places (a notification
+     * list, a menu) that want the quieter one.
+     */
+    --scrollbar-size: 0.75rem;
+    --scrollbar-thin-size: 0.5rem;
+    /* How far the thumb is inset from the edges of the track. */
+    --scrollbar-inset: 3px;
+    --scrollbar-radius: var(--radius-sm);
+    --scrollbar-track: rgb(var(--surface-sunken) / 0.55);
+    --scrollbar-thumb: rgb(var(--content-faint) / 0.5);
+    --scrollbar-thumb-hover: rgb(var(--content-muted) / 0.75);
+    /* Grabbed, it takes the accent: the app says "you are holding this" in the
+       same colour it says it everywhere else. */
+    --scrollbar-thumb-active: rgb(var(--brand) / 0.85);
+  }
+
+  /*
+   * The document's own bar, and every scrolling box that has not asked for the
+   * thin one.
+   *
+   * `html` rather than `*`: the document scrollbar is drawn from the root
+   * element's computed value, and applying the vendor pseudo-elements to a
+   * universal selector makes the browser evaluate them against every element on
+   * the page. `body` is listed beside it because a browser resolves the
+   * viewport's scrollbar from `body` when `html` leaves it unset, which is a
+   * legacy path Safari still walks.
+   */
+  html,
+  body {
+    /*
+     * The standard half, and the only half Firefox reads. Unscoped: it takes
+     * two flat colours, it reserves no extra width, and it is correct on every
+     * device — a phone simply keeps its overlay bar and paints it in the app's
+     * ink instead of the platform's.
+     */
+    scrollbar-color: rgb(var(--content-faint) / 0.5) rgb(var(--surface-sunken) / 0.55);
+  }
+
+  /*
+   * The drawn bar, for pointers only.
+   *
+   * Scoped to a device with a real pointer, and that scope is load-bearing
+   * rather than tidy. `::-webkit-scrollbar` with a width *promotes* a phone's
+   * overlay scrollbar — which floats over the content and costs no layout — to
+   * a classic one that takes twelve pixels of gutter out of every scrolling box
+   * on the narrowest screens in the product. Nothing below is wanted anywhere a
+   * thumb cannot be hovered or grabbed, so nothing below is declared there.
+   */
+  @media (hover: hover) and (pointer: fine) {
+    html,
+    body {
+      scrollbar-width: auto;
+    }
+
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar,
+    .scrollbar-app::-webkit-scrollbar {
+      width: var(--scrollbar-size);
+      height: var(--scrollbar-size);
+      background: var(--scrollbar-track);
+    }
+
+    html::-webkit-scrollbar-track,
+    body::-webkit-scrollbar-track,
+    .scrollbar-app::-webkit-scrollbar-track {
+      background: var(--scrollbar-track);
+      /* A hairline where the bar meets the page, in the same colour every other
+         divider in the app uses. Without it the track floats. */
+      box-shadow: inset 1px 0 0 0 rgb(var(--edge) / 0.7);
+    }
+
+    html::-webkit-scrollbar-thumb,
+    body::-webkit-scrollbar-thumb,
+    .scrollbar-app::-webkit-scrollbar-thumb {
+      background-color: var(--scrollbar-thumb);
+      background-clip: padding-box;
+      border: var(--scrollbar-inset) solid transparent;
+      border-radius: var(--scrollbar-radius);
+      /*
+       * Colour only, and no geometry.
+       *
+       * A scrollbar thumb is repainted on every scroll frame. Transitioning its
+       * width, border or radius would put a layout pass on the scroll path,
+       * which is the one place in a document that cannot afford one.
+       */
+      transition: background-color 150ms var(--ease-ui, ease);
+    }
+
+    html::-webkit-scrollbar-thumb:hover,
+    body::-webkit-scrollbar-thumb:hover,
+    .scrollbar-app::-webkit-scrollbar-thumb:hover {
+      background-color: var(--scrollbar-thumb-hover);
+    }
+
+    html::-webkit-scrollbar-thumb:active,
+    body::-webkit-scrollbar-thumb:active,
+    .scrollbar-app::-webkit-scrollbar-thumb:active {
+      background-color: var(--scrollbar-thumb-active);
+    }
+
+    /*
+     * The square where a vertical and a horizontal bar meet.
+     *
+     * Left alone it is painted by the platform in the platform's grey — the
+     * same borrowed design language the rest of this block exists to remove,
+     * concentrated into one corner of the window.
+     */
+    html::-webkit-scrollbar-corner,
+    body::-webkit-scrollbar-corner,
+    .scrollbar-app::-webkit-scrollbar-corner {
+      background: var(--scrollbar-track);
+    }
+  }
+
+  /*
+   * Somebody who has asked their system for less contrast, or for no animation,
+   * still gets a scrollbar they can find.
+   *
+   * `prefers-reduced-transparency` is the one that matters here: the thumb is
+   * drawn at half alpha over whatever is behind it, and the setting exists for
+   * people who cannot reliably resolve that. Full opacity, no compositing.
+   */
+  @media (prefers-reduced-transparency: reduce) {
+    :root {
+      --scrollbar-track: rgb(var(--surface-sunken));
+      --scrollbar-thumb: rgb(var(--content-muted));
+      --scrollbar-thumb-hover: rgb(var(--content));
+    }
+  }
+
   /* The page-level wash a skin can paint behind everything. One fixed
      pseudo-element, no per-component cost, and `none` on skins that skip it. */
   body::before {
@@ -3034,6 +3259,329 @@
     background-size: var(--panel-texture-size);
   }
 
+  /* ======================================================================
+   * Liquid glass.
+   *
+   * ## What this is, and what it is not
+   *
+   * It is the surface used by the four controls that float over the rest of the
+   * application rather than sitting in it: the light/dark switch, a project's
+   * tab strip, the notification list, and a toast. Everything else in the
+   * product is paper on a desk — opaque, stacked, with an edge you can see. A
+   * thing that hovers should not be made of the same stuff as the thing it
+   * hovers over, and this is that difference said once.
+   *
+   * ## Why it is CSS and not either of the two libraries
+   *
+   * Both of the projects this was modelled on refract for real, and both refuse
+   * to run over live application chrome — for the same reason, arrived at
+   * independently:
+   *
+   *   - `dashersw/liquid-glass-js` samples the page with `html2canvas` and
+   *     feeds the raster to WebGL. That is a full rasterisation of the document
+   *     per glass element, from a CDN script, and it is stale the moment
+   *     anything underneath it moves. Under a toast that appears while a board
+   *     is being dragged, it is both wrong and expensive.
+   *   - `liquid-glass-js` on npm generates a real `feDisplacementMap` from a
+   *     rounded-rect SDF — the good technique — but applies it to a *clone* of
+   *     the background, because Safari and Firefox will not read an SVG filter
+   *     out of `backdrop-filter`. Its own README says in as many words that it
+   *     is not a drop-in over arbitrary live UI. Cloning the application under
+   *     every notification row is not a trade this app can make.
+   *
+   * What both of them draw decomposes into four things: a frosted,
+   * light-gathering backdrop; a bright bezel where the surface faces the light;
+   * a dark one where it faces away; and a specular sweep across the face. Three
+   * of those are `box-shadow` and one is a gradient, and none costs anything per
+   * frame. The one thing genuinely given up is refraction of the pixels behind
+   * the glass — a magnification measured in single pixels at these sizes, on
+   * four elements whose whole job is to be read through.
+   *
+   * ## Why every value is a token
+   *
+   * So that thirteen skins get thirteen glasses without a rule each. The tint is
+   * `--surface-raised`, the corner is the skin's own radius, the border weight
+   * is `--panel-border-width`: a skin drawn in hard ink outlines gets a
+   * hard-edged pane and one drawn in soft paper gets a soft one, because those
+   * are values they already declared.
+   * ====================================================================== */
+  .ui-liquid-glass {
+    /*
+     * `isolation` rather than `position: relative`.
+     *
+     * A backdrop filter samples everything painted beneath its *backdrop root*,
+     * and creating one here is what stops the glass sampling — and therefore
+     * blurring — its own children. Doing it with `isolation` rather than by
+     * forcing a stacking context through `position` and `z-index` leaves the
+     * element's own positioning alone, which matters because two of the four
+     * users of this class are already positioned by something else.
+     */
+    isolation: isolate;
+    background-color: rgb(var(--glass-tint) / var(--glass-tint-alpha));
+    /*
+     * The face of the glass.
+     *
+     * A single sweep from the lit corner to the shadowed one, transparent
+     * through the middle so the frost carries the centre. The skin's own grain
+     * stays underneath it — a glass panel on the newsprint skin is still printed
+     * on newsprint, and dropping the texture here is what would make these four
+     * surfaces the only ones in the app that are not.
+     */
+    background-image:
+      linear-gradient(
+        var(--glass-angle, 150deg),
+        rgb(var(--glass-rim) / var(--glass-sheen)) 0%,
+        rgb(var(--glass-rim) / 0) 34%,
+        rgb(var(--glass-rim) / 0) 66%,
+        rgb(var(--glass-rim) / calc(var(--glass-sheen) * 0.45)) 100%
+      ),
+      var(--panel-texture, none);
+    background-size:
+      auto,
+      var(--panel-texture-size, auto);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    border-width: var(--panel-border-width);
+    border-style: var(--panel-border-style, solid);
+    border-color: var(--glass-edge);
+    /*
+     * Four shadows, in the order light hits a real bezel.
+     *
+     *   1. the lit edge, along the top;
+     *   2. the edge in shadow, along the bottom;
+     *   3. a hairline of the same light all the way round, which is what stops
+     *      the two above reading as a top border and a bottom border rather than
+     *      as one curved surface;
+     *   4. the bloom the whole thing casts onto the page underneath.
+     */
+    box-shadow:
+      inset 0 1px 0 0 rgb(var(--glass-rim) / var(--glass-rim-alpha)),
+      inset 0 -1px 0 0 rgb(0 0 0 / var(--glass-shade-alpha)),
+      inset 0 0 0 1px rgb(var(--glass-rim) / calc(var(--glass-rim-alpha) * 0.22)),
+      var(--glass-bloom);
+  }
+
+  /*
+   * Glass at control size, where a panel's border is not a border but a frame.
+   *
+   * `.ui-liquid-glass` takes its border weight from `--panel-border-width`,
+   * which is right for the thing it is named after and wrong for a 32px switch:
+   * the arcade skin draws panels in a four-pixel ink outline, and four pixels
+   * off each edge of a 32px track leaves fifteen pixels of inside for a
+   * twenty-four pixel knob. Measured across the thirteen skins, the knob went
+   * from sitting comfortably in the track to touching the border.
+   *
+   * A hairline instead. It is not a loss of character — everything else that
+   * makes the skin (the corner radius, the tint, the sheen, whether there is
+   * any blur at all) still comes from that skin's own tokens; only the frame
+   * around a small control stops scaling with a surface it is not.
+   */
+  .ui-liquid-glass--control {
+    border-width: 1px;
+  }
+
+  /*
+   * A glass control that answers the pointer.
+   *
+   * Only the light changes: the rim brightens and the bloom lifts, as if the
+   * surface had tipped a degree towards the reader. Deliberately not the tint —
+   * changing the opacity of a translucent panel on hover makes the *content
+   * behind it* appear to move, which is the one thing a hover state must never
+   * do on a control sitting over a live application.
+   */
+  .ui-liquid-glass--interactive {
+    transition:
+      box-shadow var(--speed-ui) var(--ease-ui),
+      border-color var(--speed-ui) var(--ease-ui);
+  }
+
+  .ui-liquid-glass--interactive:hover {
+    border-color: rgb(var(--brand) / 0.45);
+    box-shadow:
+      inset 0 1px 0 0 rgb(var(--glass-rim) / calc(var(--glass-rim-alpha) + 0.15)),
+      inset 0 -1px 0 0 rgb(0 0 0 / var(--glass-shade-alpha)),
+      inset 0 0 0 1px rgb(var(--glass-rim) / calc(var(--glass-rim-alpha) * 0.3)),
+      0 16px 40px -18px rgb(var(--brand) / 0.4),
+      var(--glass-bloom);
+  }
+
+  /*
+   * A row inside a sheet of glass.
+   *
+   * The notification list is one pane with entries in it, not a stack of
+   * separate panes — so a row carries no backdrop filter of its own (a second
+   * one nested inside the first samples the already-blurred result and costs a
+   * second full-size backdrop root for no visible gain) and no bloom. What it
+   * carries is a hairline of light along its own top edge, which is what makes
+   * a list read as facets of one surface rather than as ruled lines on it, and
+   * a hover that raises the sheen instead of painting a block of fill.
+   */
+  .ui-liquid-glass-row {
+    position: relative;
+    background-image: linear-gradient(
+      var(--glass-angle, 150deg),
+      rgb(var(--glass-rim) / calc(var(--glass-sheen) * 0.4)) 0%,
+      rgb(var(--glass-rim) / 0) 46%
+    );
+    box-shadow: inset 0 1px 0 0 rgb(var(--glass-rim) / calc(var(--glass-rim-alpha) * 0.28));
+    transition: background-color var(--speed-ui) var(--ease-ui);
+  }
+
+  .ui-liquid-glass-row:first-child {
+    /* Nothing above it to be a facet against — the pane's own rim is there. */
+    box-shadow: none;
+  }
+
+  .ui-liquid-glass-row:hover {
+    background-color: rgb(var(--glass-rim) / 0.12);
+  }
+
+  /* ----------------------------------------------------------------------
+   * Glass, per skin.
+   *
+   * Nothing here is a new rule — every one of these is the same four tokens
+   * with different numbers in them, which is the whole reason the material was
+   * written as tokens. What each skin is answering is one question: *what is
+   * this world's glass made of?* On a desk lit by a window it is a clean pane.
+   * On a phosphor terminal there is no such thing as glass, only the screen, so
+   * the panel goes almost solid and the sheen becomes a scanline's worth of
+   * green. In an arcade cabinet, glass is four hard pixels of highlight.
+   *
+   * The skins not listed take the default, and that is deliberate rather than
+   * unfinished: paper, space, autumn, runic, underwater, volcano and eldritch
+   * are all worlds where a lit translucent pane is exactly right, and the
+   * default is already tinted, cornered and grained by each of them.
+   * -------------------------------------------------------------------- */
+
+  /*
+   * TERMINAL — there is no glass in a text-mode world.
+   *
+   * A frosted pane over a CRT is the one material this skin cannot contain: it
+   * is soft, it has depth, and it antialiases, and this skin has none of those
+   * things anywhere else. So the panel is nearly opaque, the blur is a single
+   * pixel of bleed rather than a frost, and the highlight is the phosphor's own
+   * colour instead of white — the only light in this world comes from the tube.
+   */
+  [data-skin='terminal'] {
+    --glass-blur: 2px;
+    --glass-saturate: 1.05;
+    --glass-tint-alpha: 0.94;
+    --glass-rim: var(--brand);
+    --glass-rim-alpha: 0.5;
+    --glass-sheen: 0.08;
+    --glass-shade-alpha: 0.4;
+    --glass-bloom: 0 0 22px -6px rgb(var(--brand) / 0.35);
+  }
+
+  /*
+   * PIXEL — glass as four hard pixels of highlight.
+   *
+   * Blur is the one thing a sprite cannot do: every edge in this skin is a
+   * pixel boundary, and a 16px gaussian across a panel edge is thirty-two rows
+   * of colours that are not in the palette. The frost goes, the panel goes
+   * solid enough to read as a drawn tile, and the bezel stays — a bright top
+   * row and a dark bottom row is exactly how a sprite has always said "this is
+   * raised", which makes it the one part of this material that was already
+   * native here.
+   */
+  [data-skin='pixel'] {
+    --glass-blur: 0px;
+    --glass-saturate: 1;
+    --glass-tint-alpha: 0.97;
+    --glass-rim-alpha: 0.6;
+    --glass-shade-alpha: 0.45;
+    --glass-sheen: 0;
+    --glass-bloom: 0 4px 0 0 rgb(var(--content) / 0.25);
+  }
+
+  /*
+   * NEWSPAPER — glass as a lighter grade of paper.
+   *
+   * Newsprint is opaque by definition and the skin's argument is that the whole
+   * app is printed, so a floating panel here is a second sheet laid over the
+   * first rather than a window through it. A little blur so the sheet beneath
+   * is present but unreadable, no saturation lift — there is no colour on this
+   * page to lift — and a grey bezel instead of a white one, because a highlight
+   * on paper is where the light catches the fold.
+   */
+  [data-skin='newspaper'] {
+    --glass-blur: 6px;
+    --glass-saturate: 1;
+    --glass-tint-alpha: 0.93;
+    --glass-rim-alpha: 0.5;
+    --glass-sheen: 0.06;
+    --glass-bloom: 0 10px 26px -18px rgb(var(--content) / 0.5);
+  }
+
+  /*
+   * VINTAGE — glass as it was actually made.
+   *
+   * The one skin where a warmer, less perfect pane is more accurate than a
+   * cleaner one: old glass is slightly green, slightly uneven, and it does not
+   * so much frost the thing behind it as soften and yellow it. Less blur, less
+   * saturation, and a sheen that is warm rather than white.
+   */
+  [data-skin='vintage'] {
+    --glass-blur: 10px;
+    --glass-saturate: 1.15;
+    --glass-tint-alpha: 0.78;
+    --glass-rim: 255 248 231;
+    --glass-sheen: 0.26;
+  }
+
+  /*
+   * HAZARD — glass with something behind it you are meant to see.
+   *
+   * This skin's whole language is a warning you cannot miss, and frosting it is
+   * exactly wrong. The pane is the clearest in the app, the sheen is the
+   * hardest, and the bloom takes the accent: it reads as inspection glass with
+   * a light behind it rather than as a soft floating card.
+   */
+  [data-skin='hazard'] {
+    --glass-blur: 12px;
+    --glass-saturate: 1.9;
+    --glass-tint-alpha: 0.5;
+    --glass-rim-alpha: 0.8;
+    --glass-sheen: 0.4;
+    --glass-bloom: 0 12px 32px -18px rgb(var(--warning) / 0.55);
+  }
+
+  /*
+   * Where there is no backdrop filter there is no glass, only a hole.
+   *
+   * Firefox before 103 paints the tint and nothing else, and a 60%-opaque panel
+   * over a live application is not a quiet surface — it is unreadable text over
+   * moving content. The fallback is an ordinary opaque panel, which is what
+   * every other surface in the app already is.
+   */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .ui-liquid-glass {
+      background-color: rgb(var(--surface-raised));
+    }
+  }
+
+  /*
+   * And where somebody has asked for less of it.
+   *
+   * `prefers-reduced-transparency` is a real setting on macOS, Windows and iOS,
+   * turned on by people for whom text over a blurred background is genuinely
+   * harder to read. It is answered the same way as the fallback above: the
+   * surface goes solid and the sheen goes, while the bezel stays — a lit edge is
+   * contrast, not decoration, and it is what still says the panel is floating.
+   */
+  @media (prefers-reduced-transparency: reduce) {
+    .ui-liquid-glass {
+      background-color: rgb(var(--surface-raised));
+      background-image: var(--panel-texture, none);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+
+    .ui-liquid-glass-row {
+      background-image: none;
+    }
+  }
+
   .field {
     @apply w-full rounded-xl border bg-surface px-3.5 py-2.5 text-sm outline-none
       transition placeholder:text-content-faint focus:border-brand focus:ring-2 focus:ring-brand/30;
@@ -3256,22 +3804,59 @@
     backface-visibility: hidden;
   }
 
+  /*
+   * The quiet bar, for a scrolling box inside a panel.
+   *
+   * Same materials as the document's — see the scrollbar block in `base` — at a
+   * smaller size and over a transparent track, because a menu, a notification
+   * list or a column of cards is already sitting on a surface and does not want
+   * a second one painted down its edge.
+   *
+   * It reads the same tokens rather than restating colours, which is what makes
+   * the skins agree: before this, the thin bar's thumb was `--edge` and the
+   * document's was the platform's grey, so the same gesture produced two
+   * different-coloured controls a few hundred pixels apart.
+   *
+   * Vendor rules scoped to a real pointer for the reason given there: on a
+   * phone they promote a free overlay bar into eight pixels of gutter.
+   */
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: rgb(var(--edge)) transparent;
+    scrollbar-color: rgb(var(--content-faint) / 0.45) transparent;
   }
 
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
+  @media (hover: hover) and (pointer: fine) {
+    .scrollbar-thin::-webkit-scrollbar {
+      width: var(--scrollbar-thin-size);
+      height: var(--scrollbar-thin-size);
+      background: transparent;
+    }
 
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    @apply rounded-full bg-edge;
-  }
+    .scrollbar-thin::-webkit-scrollbar-track {
+      background: transparent;
+    }
 
-  .scrollbar-thin::-webkit-scrollbar-track {
-    background: transparent;
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background-color: rgb(var(--content-faint) / 0.45);
+      background-clip: padding-box;
+      /* 2px rather than the document bar's 3: the whole control is a third
+         narrower, and the same inset would leave a two-pixel thumb. */
+      border: 2px solid transparent;
+      border-radius: var(--scrollbar-radius);
+      transition: background-color 150ms var(--ease-ui, ease);
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+      background-color: rgb(var(--content-muted) / 0.7);
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-thumb:active {
+      background-color: rgb(var(--brand) / 0.8);
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-corner {
+      background: transparent;
+    }
   }
 
   /* ---------------------------------------------------------------------
@@ -3486,20 +4071,33 @@
     text-shadow: var(--pixel-text-shadow);
   }
 
-  /* A chunky square thumb — a rounded scrollbar gave the arcade away. */
-  [data-skin='pixel'] .scrollbar-thin {
-    scrollbar-width: auto;
+  /*
+   * A chunky bar — a thin scrollbar gave the arcade away.
+   *
+   * The square corners it used to spell out are now free: the shared rules take
+   * their radius from `--radius-sm`, which this skin already declares as `0px`,
+   * so every scrollbar in the product is hard-cornered here without this block
+   * mentioning it. What is left is the two things that really are this skin's
+   * own opinion — a bar wide enough to read as a sprite, and a thumb in the
+   * accent rather than in the quiet ink, because nothing on an arcade cabinet
+   * is understated.
+   */
+  [data-skin='pixel'] {
+    --scrollbar-size: 1rem;
+    --scrollbar-thin-size: 0.75rem;
+    --scrollbar-inset: 2px;
+    --scrollbar-thumb: rgb(var(--brand) / 0.9);
+    --scrollbar-thumb-hover: rgb(var(--brand));
+    --scrollbar-thumb-active: rgb(var(--content));
   }
 
-  [data-skin='pixel'] .scrollbar-thin::-webkit-scrollbar {
-    width: 12px;
-    height: 12px;
+  [data-skin='pixel'] .scrollbar-thin {
+    scrollbar-width: auto;
+    scrollbar-color: rgb(var(--brand) / 0.9) transparent;
   }
 
   [data-skin='pixel'] .scrollbar-thin::-webkit-scrollbar-thumb {
-    border-radius: 0;
-    border: 2px solid rgb(var(--surface));
-    background: rgb(var(--brand));
+    background-color: rgb(var(--brand) / 0.9);
   }
 
   /*
@@ -7324,32 +7922,154 @@ html [data-sonner-toaster][data-theme] {
  * grain off the tinted toasts only.
  */
 html [data-sonner-toaster][data-theme] [data-sonner-toast] {
-  background-image: var(--panel-texture);
-  background-size: var(--panel-texture-size);
+  /*
+   * A toast is glass, and it is the clearest case in the product.
+   *
+   * It is summoned, it is temporary, it covers work in progress, and it is
+   * frequently *about* the thing it is covering — "Task moved", over the board
+   * the task moved on. An opaque card hides the outcome at exactly the moment
+   * somebody wants to see it. A frosted one keeps the board present underneath
+   * while the sentence is read and then gets out of the way.
+   *
+   * The material is `.ui-liquid-glass`, restated here rather than added as a
+   * class because Sonner owns the class list on this element — it composes
+   * `[data-sonner-toast]` from its own state and there is no seam to inject
+   * one through. Every value is the same token, so a change to the glass moves
+   * the toasts with everything else; only the declarations are duplicated.
+   *
+   * The tint is stronger than the shared default. A toast carries a whole
+   * sentence over content that may be a photograph, a chart or a board full of
+   * coloured cards, and the shared 0.6 is tuned for a panel over the app's own
+   * surfaces. Legibility of the message is the only thing this element exists
+   * for; it wins over the material every time.
+   */
+  isolation: isolate;
+  background-image:
+    linear-gradient(
+      var(--glass-angle, 150deg),
+      rgb(var(--glass-rim) / var(--glass-sheen)) 0%,
+      rgb(var(--glass-rim) / 0) 34%,
+      rgb(var(--glass-rim) / 0) 66%,
+      rgb(var(--glass-rim) / calc(var(--glass-sheen) * 0.45)) 100%
+    ),
+    var(--panel-texture);
+  background-size:
+    auto,
+    var(--panel-texture-size);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   border-width: var(--panel-border-width);
   border-style: var(--panel-border-style);
-  box-shadow: var(--shadow-panel);
+  border-color: var(--glass-edge);
+  box-shadow:
+    inset 0 1px 0 0 rgb(var(--glass-rim) / var(--glass-rim-alpha)),
+    inset 0 -1px 0 0 rgb(0 0 0 / var(--glass-shade-alpha)),
+    inset 0 0 0 1px rgb(var(--glass-rim) / calc(var(--glass-rim-alpha) * 0.22)),
+    var(--shadow-panel),
+    var(--glass-bloom);
+}
+
+/*
+ * The fill, and the one thing that is *not* shared with the panel glass.
+ *
+ * Sonner writes `background` — the shorthand — from `--normal-bg` and the
+ * per-type variables above, which resets `background-image` to none. So the
+ * colour has to be re-declared after the shorthand rather than before it, and
+ * it is re-declared at a higher opacity than `--glass-tint-alpha` for the
+ * legibility reason given above. `color-mix` second, after a flat fallback, in
+ * the same shape as the tints further up this file.
+ */
+html [data-sonner-toaster][data-theme] [data-sonner-toast] {
+  background-color: rgb(var(--surface-raised) / 0.82);
+}
+
+html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='success'] {
+  background-color: color-mix(
+    in srgb,
+    rgb(var(--positive)) 14%,
+    rgb(var(--surface-raised) / 0.82)
+  );
+}
+
+html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='error'] {
+  background-color: color-mix(in srgb, rgb(var(--danger)) 14%, rgb(var(--surface-raised) / 0.82));
+}
+
+html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='warning'] {
+  background-color: color-mix(in srgb, rgb(var(--warning)) 14%, rgb(var(--surface-raised) / 0.82));
+}
+
+html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='info'] {
+  background-color: color-mix(in srgb, rgb(var(--brand)) 14%, rgb(var(--surface-raised) / 0.82));
+}
+
+/*
+ * Opaque where the glass cannot be drawn, or is not wanted.
+ *
+ * Same two conditions the shared material answers, and the same answer: a
+ * translucent panel with nothing frosting what is behind it is unreadable text
+ * over a moving application, and somebody who has asked their system for less
+ * transparency has asked for exactly this.
+ */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  html [data-sonner-toaster][data-theme] [data-sonner-toast] {
+    background-color: rgb(var(--surface-raised));
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  html [data-sonner-toaster][data-theme] [data-sonner-toast] {
+    background-color: rgb(var(--surface-raised));
+    background-image: var(--panel-texture);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
 }
 
 /*
  * A rule of colour down the leading edge, so the kind of message is readable
- * before the words are. This is the tint's job on skins whose surfaces are
- * dark or busy enough to swallow a 14% mix.
+ * before the words are. This is the tint's job on skins whose surfaces are dark
+ * or busy enough to swallow a 14% mix — and on glass, where the mix is composited
+ * over whatever happens to be behind the toast and can land on anything.
+ *
+ * The bezel is repeated in each of these because `box-shadow` is one property:
+ * setting the coloured rule here without restating the lit and shadowed edges
+ * would take the glass off precisely the four toasts that are hardest to read.
  */
 html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='success'] {
-  box-shadow: var(--shadow-panel), inset 3px 0 0 0 rgb(var(--positive));
+  box-shadow:
+    inset 3px 0 0 0 rgb(var(--positive)),
+    inset 0 1px 0 0 rgb(var(--glass-rim) / var(--glass-rim-alpha)),
+    inset 0 -1px 0 0 rgb(0 0 0 / var(--glass-shade-alpha)),
+    var(--shadow-panel),
+    var(--glass-bloom);
 }
 
 html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='error'] {
-  box-shadow: var(--shadow-panel), inset 3px 0 0 0 rgb(var(--danger));
+  box-shadow:
+    inset 3px 0 0 0 rgb(var(--danger)),
+    inset 0 1px 0 0 rgb(var(--glass-rim) / var(--glass-rim-alpha)),
+    inset 0 -1px 0 0 rgb(0 0 0 / var(--glass-shade-alpha)),
+    var(--shadow-panel),
+    var(--glass-bloom);
 }
 
 html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='warning'] {
-  box-shadow: var(--shadow-panel), inset 3px 0 0 0 rgb(var(--warning));
+  box-shadow:
+    inset 3px 0 0 0 rgb(var(--warning)),
+    inset 0 1px 0 0 rgb(var(--glass-rim) / var(--glass-rim-alpha)),
+    inset 0 -1px 0 0 rgb(0 0 0 / var(--glass-shade-alpha)),
+    var(--shadow-panel),
+    var(--glass-bloom);
 }
 
 html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='info'] {
-  box-shadow: var(--shadow-panel), inset 3px 0 0 0 rgb(var(--brand));
+  box-shadow:
+    inset 3px 0 0 0 rgb(var(--brand)),
+    inset 0 1px 0 0 rgb(var(--glass-rim) / var(--glass-rim-alpha)),
+    inset 0 -1px 0 0 rgb(0 0 0 / var(--glass-shade-alpha)),
+    var(--shadow-panel),
+    var(--glass-bloom);
 }
 
 /* The icon keeps the accent even where the tint is nearly invisible. */

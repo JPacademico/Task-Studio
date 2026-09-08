@@ -60,7 +60,11 @@ export const NotificationBell = () => {
         className={cn(
           'relative grid h-9 w-9 place-items-center rounded-xl transition-colors',
           'text-content-muted hover:bg-surface-sunken hover:text-content',
-          isOpen && 'bg-surface-sunken text-content',
+          /* Open, the button becomes the top edge of the pane hanging off it —
+             so it takes the pane's material rather than a sunken fill, and the
+             two read as one object instead of a lit card under a pressed
+             button. */
+          isOpen && 'ui-liquid-glass text-content hover:bg-transparent',
         )}
       >
         <Bell className="h-4 w-4" />
@@ -84,9 +88,36 @@ export const NotificationBell = () => {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -6, scale: 0.98 }}
               transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-              className="gpu panel absolute right-0 top-11 z-50 w-[21.25rem] overflow-hidden"
+              /*
+                Glass rather than `panel`, and the distinction is not decorative.
+
+                A notification pane is the clearest case in the product for the
+                material: it is summoned, it covers a working screen, and the
+                thing it covers is usually the thing the notification is *about*
+                — a board with the task on it, a project page, an organisation's
+                roster. An opaque card hides that; a frosted one keeps it present
+                underneath while the pane is read, which is what a temporary
+                overlay is supposed to do.
+
+                `rounded-2xl` and the border weight come across from `.panel` so
+                the pane keeps the skin's own geometry; the material replaces the
+                fill, the texture and the shadow. See `.ui-liquid-glass`.
+              */
+              className={cn(
+                'gpu ui-liquid-glass absolute right-0 top-11 z-50 w-[21.25rem] overflow-hidden',
+                'rounded-2xl',
+              )}
             >
-              <header className="flex items-center justify-between border-b border-edge px-4 py-3">
+              {/* The rule under the header is the light on a facet edge, not a
+                  drawn border: on glass a hard `border-edge` line reads as a
+                  seam between two panes rather than as one pane with a heading
+                  on it. Same treatment as the rows below. */}
+              <header
+                className={cn(
+                  'flex items-center justify-between px-4 py-3',
+                  'shadow-[inset_0_-1px_0_0_rgb(var(--glass-rim)/calc(var(--glass-rim-alpha)*0.35))]',
+                )}
+              >
                 <p className="text-sm font-semibold">{t('nav.notifications')}</p>
                 {unread > 0 && (
                   <Button
@@ -155,10 +186,25 @@ export const NotificationBell = () => {
                           setIsOpen(false);
                         }
                       }}
+                      /*
+                        A facet of the pane, not a card in a list.
+
+                        The rows were separated by a drawn `border-edge` rule and
+                        hovered to an opaque `surface-sunken` fill. Neither
+                        survives contact with glass: the rule reads as a crack
+                        across the pane, and a solid hover fill punches an opaque
+                        rectangle through the one surface the reader is looking
+                        at, which makes the pane appear to flicker as the pointer
+                        travels down it.
+
+                        `.ui-liquid-glass-row` does both jobs with light instead:
+                        a hairline of the pane's own specular along the top edge
+                        in place of the border, and a hover that raises the sheen
+                        rather than replacing the material. See `index.css`.
+                      */
                       className={cn(
-                        'flex w-full gap-3 border-b border-edge px-4 py-3 text-left transition-colors last:border-0',
-                        'hover:bg-surface-sunken',
-                        !notification.readAt && 'bg-brand/[0.06]',
+                        'ui-liquid-glass-row flex w-full gap-3 px-4 py-3 text-left',
+                        !notification.readAt && 'bg-brand/[0.08]',
                       )}
                     >
                       <span

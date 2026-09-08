@@ -557,6 +557,27 @@ const en = {
   'landing.nav.inside': 'What’s inside',
   'landing.nav.signIn': 'Sign in',
   'landing.nav.getStarted': 'Get started',
+  'landing.nav.home': 'Task Studio — back to the top',
+  /*
+   * The maker's mark at the foot of the page.
+   *
+   * Split into `before` and `after` rather than being one string with a
+   * placeholder, because the name does not sit in the same place in both
+   * languages: English puts it before the noun ("A Pitico. solution") and
+   * Portuguese after it ("Uma solução Pitico."). A `{name}` token would have
+   * forced one word order onto both.
+   *
+   * `after` carries the full stop. It cannot live in the metal — the mask is
+   * clipped from the right to reveal the word, so a stop inside it would have to
+   * travel from behind the P to behind the o. See `PiticoMark`.
+   */
+  'landing.pitico.before': 'A',
+  'landing.pitico.after': '. solution',
+  'landing.pitico.letter': 'P',
+  'landing.pitico.word': 'Pitico',
+  'landing.pitico.aria': 'Pitico — the studio behind Task Studio',
+  'landing.pitico.body':
+    'Task Studio is built by a small studio that makes software the way it wants to use it.',
 
   'landing.word.tasks': 'tasks',
   'landing.word.meetings': 'meetings',
@@ -693,9 +714,6 @@ const en = {
   'landing.note.undo': 'A changelog you can undo',
   'landing.note.skins': 'Many ways to look',
 
-  'landing.cta.title': 'Put your work on the desk',
-  'landing.cta.body':
-    'Make an account, import a repository or a board, and see what it looks like with your own work in it.',
   'landing.cta.primary': 'Create an account',
   'landing.cta.secondary': 'I already have one',
 
@@ -970,6 +988,11 @@ const en = {
   'doc.imageDownloadFailed': 'Could not save that picture.',
   'doc.imageDownloaded': 'Saved {name}.',
   'doc.imageUntitled': 'Picture {index}',
+  'doc.downloadAllImages': 'Save all pictures',
+  'doc.downloadAllImagesHint': 'One .zip with all {count}',
+  'doc.imagesDownloaded': 'Saved the pictures.',
+  'doc.imagesDownloadedCount': 'Saved {count} pictures.',
+  'doc.imagesDownloadFailed': 'Could not save the pictures.',
   'doc.downloadAs': 'Download as',
   'doc.downloadFailed': 'Could not download that document.',
   'doc.format.pdf': 'PDF',
@@ -2641,6 +2664,14 @@ const ptBR: Record<TranslationKey, string> = {
   'landing.nav.inside': 'O que tem dentro',
   'landing.nav.signIn': 'Entrar',
   'landing.nav.getStarted': 'Começar',
+  'landing.nav.home': 'Task Studio — voltar ao topo',
+  'landing.pitico.before': 'Uma solução',
+  'landing.pitico.after': '.',
+  'landing.pitico.letter': 'P',
+  'landing.pitico.word': 'Pitico',
+  'landing.pitico.aria': 'Pitico — o estúdio por trás do Task Studio',
+  'landing.pitico.body':
+    'O Task Studio é feito por um estúdio pequeno, que faz software do jeito que quer usar.',
 
   'landing.word.tasks': 'tarefas',
   'landing.word.meetings': 'reuniões',
@@ -2785,9 +2816,6 @@ const ptBR: Record<TranslationKey, string> = {
   'landing.note.undo': 'Um histórico que dá para desfazer',
   'landing.note.skins': 'Vários jeitos de aparecer',
 
-  'landing.cta.title': 'Ponha seu trabalho na mesa',
-  'landing.cta.body':
-    'Crie uma conta, importe um repositório ou um quadro, e veja como fica com o seu próprio trabalho dentro.',
   'landing.cta.primary': 'Criar uma conta',
   'landing.cta.secondary': 'Já tenho conta',
 
@@ -3051,6 +3079,11 @@ const ptBR: Record<TranslationKey, string> = {
   'doc.imageDownloadFailed': 'Não foi possível salvar essa imagem.',
   'doc.imageDownloaded': '{name} salva.',
   'doc.imageUntitled': 'Imagem {index}',
+  'doc.downloadAllImages': 'Salvar todas as imagens',
+  'doc.downloadAllImagesHint': 'Um .zip com todas as {count}',
+  'doc.imagesDownloaded': 'Imagens salvas.',
+  'doc.imagesDownloadedCount': '{count} imagens salvas.',
+  'doc.imagesDownloadFailed': 'Não foi possível salvar as imagens.',
   'doc.downloadAs': 'Baixar como',
   'doc.downloadFailed': 'Não foi possível baixar este documento.',
   'doc.format.pdf': 'PDF',

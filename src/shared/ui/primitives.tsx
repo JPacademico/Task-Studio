@@ -380,6 +380,27 @@ interface SegmentedProps<T extends string> {
   className?: string;
   /** Names the group for assistive technology. "Filter", "View", "Section". */
   label?: string;
+  /**
+   * The material the strip is made of.
+   *
+   * ## Why this is opt-in rather than the new default
+   *
+   * Because most of the places this control appears are *in* a page rather than
+   * over one: the scope filter above a task list, the view switcher on the
+   * meetings panel, the range picker on a chart. Those sit on a surface, they
+   * scroll with it, and the sunken well is the honest material for them — it is
+   * a groove cut into the thing they belong to.
+   *
+   * A project's tab strip is the exception, and it is the one this exists for.
+   * It is the primary navigation of the busiest screen in the product, twelve
+   * options wide, and it floats above a board that is constantly moving
+   * underneath it. Glass is what a floating control is made of here — see
+   * `.ui-liquid-glass` in `index.css` — and it is the same material the theme
+   * switch, the notification pane and a toast are made of, which is what makes
+   * "this is above the page" one idea in the interface rather than four
+   * unrelated treatments.
+   */
+  variant?: 'sunken' | 'glass';
 }
 
 export const Segmented = <T extends string>({
@@ -388,12 +409,16 @@ export const Segmented = <T extends string>({
   onChange,
   className,
   label,
+  variant = 'sunken',
 }: SegmentedProps<T>) => (
   <div
     role="group"
     aria-label={label}
     className={cn(
-      'ui-segment inline-flex items-center gap-1 rounded-xl border border-edge bg-surface-sunken p-1',
+      'ui-segment inline-flex items-center gap-1 rounded-xl p-1',
+      variant === 'glass'
+        ? 'ui-liquid-glass ui-liquid-glass--interactive'
+        : 'border border-edge bg-surface-sunken',
       className,
     )}
   >
@@ -418,10 +443,28 @@ export const Segmented = <T extends string>({
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
           'focus-visible:ring-offset-1 focus-visible:ring-offset-surface',
           value === option.value
-            ? // The inset ring is what makes the selected segment legible on the
-              // skins whose `--surface-raised` and `--surface-sunken` are a few
-              // percent apart and whose `shadow-sm` resolves to nothing.
-              'bg-surface-raised text-content shadow-sm ring-1 ring-inset ring-edge'
+            ? /*
+                 The selected segment, in the material of the strip around it.
+
+                 On the sunken variant it is a raised card in a groove, and the
+                 inset ring is what makes it legible on the skins whose
+                 `--surface-raised` and `--surface-sunken` are a few percent
+                 apart and whose `shadow-sm` resolves to nothing.
+
+                 On glass it cannot be: a solid card inside a translucent pane
+                 is a hole in the pane, and the one place the reader is looking
+                 is then the only place the material stops. So the selected tab
+                 is a *brighter piece of the same glass* — the accent carried at
+                 low opacity with the pane's own lit bezel on it, which is how a
+                 physical surface says one facet is angled towards you.
+               */
+              variant === 'glass'
+              ? cn(
+                  'text-content',
+                  'bg-[rgb(var(--brand)/0.16)]',
+                  'shadow-[inset_0_1px_0_0_rgb(var(--glass-rim)/calc(var(--glass-rim-alpha)*0.9)),inset_0_0_0_1px_rgb(var(--brand)/0.35)]',
+                )
+              : 'bg-surface-raised text-content shadow-sm ring-1 ring-inset ring-edge'
             : 'text-content-muted hover:text-content',
         )}
       >

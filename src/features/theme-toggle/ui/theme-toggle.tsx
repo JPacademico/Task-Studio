@@ -58,8 +58,23 @@ export const ThemeToggle = ({ className }: { className?: string }) => {
       title={isDark ? t('theme.toLight') : t('theme.toDark')}
       className={cn(
         'relative inline-block h-8 w-[3.75rem] shrink-0 rounded-full align-middle',
-        'border border-edge bg-surface-sunken',
-        'transition-colors duration-200 hover:border-brand/40',
+        /*
+          Glass, rather than a sunken well.
+
+          It was `bg-surface-sunken` with a hairline border — a groove cut into
+          the bar it sits in, which is the right material for a control that is
+          *part of* the bar. This one is not: it is in the navigation on the
+          landing page, in the top bar of the application, and on the sign-in
+          desk, and in all three it is a small floating object over whatever is
+          behind it. The glass says that, and it says it in whichever of the
+          thirteen skins is on, because every value in the material resolves
+          through that skin's own tokens. See `.ui-liquid-glass` in `index.css`.
+
+          `--interactive` is on because this is a control rather than a surface:
+          the rim brightens and the bloom lifts under the pointer, which is the
+          hover state the border colour used to carry alone.
+        */
+        'ui-liquid-glass ui-liquid-glass--control ui-liquid-glass--interactive',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
         'focus-visible:ring-offset-2 focus-visible:ring-offset-surface',
         className,
@@ -102,7 +117,21 @@ export const ThemeToggle = ({ className }: { className?: string }) => {
       >
         <motion.span
           layout
-          className="h-6 w-6 rounded-full bg-brand shadow-sm shadow-brand/40"
+          /*
+            The knob is a bead of the same glass, not a flat disc.
+
+            It keeps the brand fill — the knob is the one part of this control
+            that has to be found at a glance — and gains the bezel: a lit top
+            edge and a shadowed bottom one, which is what makes a 24px circle
+            read as a physical thing sliding along a track rather than as a
+            coloured dot being repositioned. The ring is `--glass-rim`, so it is
+            the light in the room rather than a lighter blue, and it stays
+            correct on the skins whose accent is nearly white.
+          */
+          className={cn(
+            'h-6 w-6 rounded-full bg-brand',
+            'shadow-[inset_0_1px_0_0_rgb(var(--glass-rim)/0.55),inset_0_-1px_0_0_rgb(0_0_0/0.25),0_2px_6px_-1px_rgb(var(--brand)/0.5)]',
+          )}
           transition={
             reduceMotion
               ? { duration: 0 }

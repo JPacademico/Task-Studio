@@ -83,6 +83,17 @@ const isStroke = (element: WhiteboardElement): element is WhiteboardElement & {
 const ERASER_WIDTH = 26;
 
 /**
+ * The ends of the rubber's size slider.
+ *
+ * Named because three places have to agree on them: the input's own `min`/`max`
+ * and the nib preview, which needs the range to know it cannot draw this tool
+ * life-size. Left as literals, a widened slider would silently go back to
+ * growing its ring out of the toolbar.
+ */
+const ERASER_MIN = 10;
+const ERASER_MAX = 70;
+
+/**
  * Reads a stroke saved before the eraser had a flag of its own.
  *
  * Those were written as an opaque black line at exactly the eraser's width,
@@ -888,16 +899,23 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
               {t('board.eraserNib')}
               <input
                 type="range"
-                min={10}
-                max={70}
+                min={ERASER_MIN}
+                max={ERASER_MAX}
                 step={2}
                 value={eraserWidth}
                 onChange={(event) => setEraserWidth(Number(event.target.value))}
                 className="w-20 accent-brand"
               />
               {/* No colour: a rubber has none, and the ring says so by being
-                  drawn in the interface's own ink rather than in anybody's. */}
-              <NibPreview size={eraserWidth} />
+                  drawn in the interface's own ink rather than in anybody's.
+
+                  The slider's ends are handed over because this is the one
+                  control in the app whose range is wider than the preview box:
+                  a 70px ring drawn life-size grew straight out of the toolbar.
+                  Given the range, the ring is scaled to fit it instead — see
+                  `ringDiameter`. The rubber's true size is still shown, on the
+                  canvas, by `NibCursor`. */}
+              <NibPreview size={eraserWidth} min={ERASER_MIN} max={ERASER_MAX} />
             </label>
           </>
         )}

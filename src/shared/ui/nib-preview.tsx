@@ -12,6 +12,58 @@ import { cn } from '@/shared/lib/cn';
 const MIN_DIAMETER = 6;
 
 /**
+ * The widest the ring is ever drawn in the toolbar, in CSS pixels.
+ *
+ * The preview box is a fixed `1.75rem` square so the toolbar row cannot jump a
+ * pixel taller every time somebody nudges the size; this is that box's inner
+ * diameter, one pixel clear of its edge on each side.
+ */
+const BOX_DIAMETER = 24;
+
+/**
+ * The ring's diameter for a nib of `size`, given the range the control offers.
+ *
+ * ## Why a range and not just the size
+ *
+ * Because the rubber goes to seventy. Drawing the ring at its true size worked
+ * only for as long as every tool that used this was a pen: the ink width tops
+ * out at 12 and 18 on the two boards, both comfortably inside the 24px box. The
+ * eraser's slider runs 10–70, so at anything past a third of the way along, the
+ * ring was drawn larger than the box that was supposed to contain it — and
+ * since the box is a `grid` with no clipping, the circle simply grew straight
+ * out of it, over the divider, over the toolbar's own bottom edge, and pushed
+ * the row's baseline down as it went. A size control that visibly breaks the
+ * bar it lives in reads as a rendering fault, not as a preview.
+ *
+ * ## Why it scales rather than clamps
+ *
+ * Clamping at 24 would stop the overflow and cost the control its only piece of
+ * feedback: every eraser from 24 to 70 would draw an identical ring, so two
+ * thirds of the slider's travel would do nothing visible. Mapping the slider's
+ * whole range onto the box keeps every step of it legible.
+ *
+ * ## Why true size is kept where it fits
+ *
+ * A ring the size of the mark is strictly better information than a ring
+ * proportional to it, so the scaling only starts when the range demands it. A
+ * control whose maximum already fits the box is drawn life-size exactly as
+ * before — which is every pen in the app, so nothing about the ink preview
+ * changes.
+ *
+ * The true size is never lost for the rubber either: `NibCursor` draws the same
+ * ring on the canvas at its real diameter, which is where the question "how big
+ * a mark will this leave" is actually asked.
+ */
+const ringDiameter = (size: number, min: number, max: number): number => {
+  if (max <= BOX_DIAMETER) return Math.max(MIN_DIAMETER, size);
+
+  const span = Math.max(1, max - min);
+  const along = Math.min(1, Math.max(0, (size - min) / span));
+
+  return MIN_DIAMETER + along * (BOX_DIAMETER - MIN_DIAMETER);
+};
+
+/**
  * The size a pen or a rubber is about to draw at, as a dotted circle.
  *
  * ## Why a ring and not a number
@@ -34,22 +86,36 @@ const MIN_DIAMETER = 6;
 export const NibPreview = ({
   size,
   color,
+  min = 1,
+  max = BOX_DIAMETER,
   className,
 }: {
   /** The stroke width the tool will draw at, in CSS pixels. */
   size: number;
   /** The ink. Omitted for a rubber, which has no colour to preview. */
   color?: string;
+  /**
+   * The ends of the slider this is previewing.
+   *
+   * Only consulted when `max` is wider than the box — see `ringDiameter`. The
+   * defaults describe a control that fits life-size, which is what every caller
+   * that passes neither is.
+   */
+  min?: number;
+  max?: number;
   className?: string;
 }) => {
-  const diameter = Math.max(MIN_DIAMETER, size);
+  const diameter = ringDiameter(size, min, max);
 
   return (
     <span
       aria-hidden
-      className={cn('grid shrink-0 place-items-center', className)}
+      className={cn('grid shrink-0 place-items-center overflow-hidden', className)}
       /* A fixed box, so a stepper's row does not jump a pixel taller every time
-         somebody nudges the size up. The ring grows inside it. */
+         somebody nudges the size up. The ring grows inside it — `ringDiameter`
+         is what guarantees it stays there, and `overflow-hidden` is the belt to
+         its braces: a future caller with a wider range than anyone anticipated
+         gets a clipped ring rather than a broken toolbar. */
       style={{ width: '1.75rem', height: '1.75rem' }}
     >
       <span

@@ -560,6 +560,16 @@ const ProjectPage = () => {
           onChange={setTab}
           label={t('project.tabsLabel')}
           /*
+           * The one segmented control in the app made of glass.
+           *
+           * It is the primary navigation of the busiest screen in the product
+           * and it sits directly over a board that moves under it — so it is
+           * the case the material was written for. Everything else that uses
+           * this control is a filter sitting *in* a page and keeps the sunken
+           * well. See `Segmented`'s `variant`.
+           */
+          variant="glass"
+          /*
            * A scrolling strip on a phone, a wrapping row above it.
            *
            * Twelve tabs wrapped is four or five stacked rows on a 390px screen

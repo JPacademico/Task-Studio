@@ -134,6 +134,33 @@ export const documentApi = {
     return data;
   },
 
+  /**
+   * Every picture in a page, as one `.zip`.
+   *
+   * Built on the API rather than here, and the reasoning lives with the route
+   * that does it (`DocumentsService.readAssetsArchive`). The short version is
+   * that the alternative costs a request per picture through a throttled
+   * byte-serving endpoint, plus a zip writer in every visitor's first load.
+   *
+   * The header carries how many pictures actually made it in, which can be
+   * fewer than the page shows if an object has gone missing from the bucket
+   * underneath it. Absent — an old API, or a proxy that dropped it — the caller
+   * falls back to not claiming a number.
+   */
+  async assetsArchive(documentId: string): Promise<{ blob: Blob; count: number | null }> {
+    const response = await api
+      .get<Blob>(`/documents/${documentId}/assets.zip`, { responseType: 'blob' })
+      .catch(rethrowWithReadableBody);
+
+    const header = response.headers['x-asset-count'];
+    const count = Number(header);
+
+    return {
+      blob: response.data,
+      count: header !== undefined && Number.isFinite(count) ? count : null,
+    };
+  },
+
   /** Puts a Figma file on a project's board as a page. */
   async createFigmaPage(payload: CreateFigmaPagePayload): Promise<ProjectDocument> {
     const { data } = await api.post<ProjectDocument>('/documents/figma', payload);

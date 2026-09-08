@@ -146,6 +146,22 @@ export default defineConfig(({ mode }) => {
         },
         workbox: {
           globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+          /*
+           * The WebGL chunks are cached on demand, never precached.
+           *
+           * Precaching downloads every listed file on the first visit, before
+           * anything is asked for — which for these would mean handing three
+           * megabytes to a visitor whose phone, connection or motion preference
+           * means they will never render a single frame of it. That is the
+           * exact cost `useCanvasBudget` and the `lazy` boundaries exist to
+           * avoid, and a precache manifest quietly undoes all of it: the
+           * install step fetches the chunks whatever the application decides.
+           *
+           * Excluded here and picked up by the runtime rule below, so a reader
+           * who *does* see the effects still gets them from the cache on their
+           * second visit.
+           */
+          globIgnores: ['**/webgl-*.js', '**/shaders-*.js'],
           // SPA fallback so a deep link opens offline from the app shell.
           navigateFallback: '/index.html',
           navigateFallbackDenylist: [/^\/api/],
@@ -189,6 +205,26 @@ export default defineConfig(({ mode }) => {
                 cacheName: 'task-studio-api',
                 networkTimeoutSeconds: 6,
                 expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 },
+                cacheableResponse: { statuses: [200] },
+              },
+            },
+            {
+              /*
+               * The 3D and shader chunks, cached the first time they are
+               * actually wanted.
+               *
+               * `CacheFirst` because a hashed asset is immutable by
+               * construction — a new build produces a new filename, so there is
+               * never a reason to revalidate one. A small `maxEntries` keeps a
+               * few builds' worth and evicts the rest; these are megabytes
+               * each, and a reader who has been through six deploys does not
+               * need six copies of `three`.
+               */
+              urlPattern: ({ url }) => /\/(webgl|shaders)-[\w-]+\.js$/.test(url.pathname),
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'task-studio-webgl',
+                expiration: { maxEntries: 6, maxAgeSeconds: 60 * 60 * 24 * 30 },
                 cacheableResponse: { statuses: [200] },
               },
             },
@@ -238,12 +274,65 @@ export default defineConfig(({ mode }) => {
       sourcemap: false,
       rollupOptions: {
         output: {
-          // Keeps the heavy animation/DnD layer out of the first paint chunk.
-          manualChunks: {
-            react: ['react', 'react-dom', 'react-router-dom'],
-            motion: ['framer-motion'],
-            dnd: ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/modifiers'],
-            data: ['@tanstack/react-query', 'axios', 'socket.io-client'],
+          /*
+           * Chunking by path, not by package name.
+           *
+           * ## Why the object form had to go
+           *
+           * `manualChunks: { webgl: ['three', '@react-three/fiber'], … }` reads
+           * as "put these packages in this chunk", and that is not what it
+           * does: Rollup assigns every module *reachable* from those entry
+           * points, which includes their shared transitive dependencies. Both
+           * `scheduler` and `zustand` are dependencies of `@react-three/fiber`
+           * and of this application, so both were resolved into `webgl` — and
+           * the entry chunk then carried a static
+           * `import { … } from "./webgl-….js"` to get them back.
+           *
+           * A static import in the entry is not a lazy chunk. Vite wrote a
+           * `modulepreload` for it into `index.html`, so every visitor to every
+           * page fetched 870 kB of three.js before the first paint, for three
+           * decorative surfaces on one marketing page that most of them never
+           * trigger. Every `lazy()` boundary and device check in the landing
+           * page was being undone by four lines of build configuration.
+           *
+           * ## What the function form guarantees
+           *
+           * A module goes to `webgl` or `shaders` only if it *is* one of those
+           * packages. Anything shared falls through to the branches below or to
+           * Rollup's own defaults, so a dependency that both halves of the
+           * application use can never be trapped behind the 3D chunk. Adding a
+           * package to `webgl` or `shaders` is now a local statement rather
+           * than a claim over its whole dependency tree.
+           *
+           * The 3D and shader branches are tested first for the same reason:
+           * `@react-three/fiber` contains the substring `react`, and an
+           * unordered test would put it in the entry's own React chunk.
+           *
+           * The check to run after touching any of this: build, then
+           * `grep 'from"./webgl-' dist/assets/index-*.js`. It must find nothing.
+           */
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return undefined;
+
+            // Windows and POSIX separators both, because this runs on both.
+            const inPackage = (...names: string[]): boolean =>
+              names.some((name) =>
+                new RegExp(`[\\\\/]node_modules[\\\\/]${name}[\\\\/]`).test(id),
+              );
+
+            // The 3D stack. Only ever loaded by the landing page, and only
+            // after `useCanvasBudget` has agreed to it.
+            if (inPackage('three', '@react-three')) return 'webgl';
+            if (inPackage('@shadergradient', '@paper-design')) return 'shaders';
+
+            if (inPackage('react', 'react-dom', 'react-router', 'react-router-dom', 'scheduler')) {
+              return 'react';
+            }
+            if (inPackage('framer-motion', 'motion-dom', 'motion-utils')) return 'motion';
+            if (inPackage('@dnd-kit')) return 'dnd';
+            if (inPackage('@tanstack', 'axios', 'socket\\.io-client', 'zustand')) return 'data';
+
+            return undefined;
           },
         },
       },

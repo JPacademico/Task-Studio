@@ -1,19 +1,35 @@
-import { useEffect } from 'react';
+import { Suspense, lazy, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight, Github, Instagram } from 'lucide-react';
 
 import { wakeApi } from '@/shared/api/client';
 import { cn } from '@/shared/lib/cn';
+import { useCanvasBudget, useCanvasPixelRatio } from '@/shared/lib/use-canvas-budget';
 import { buttonClasses, StudioMark } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 import { FeatureCarousel } from './ui/feature-carousel';
 import { FeatureNotes } from './ui/feature-notes';
 import { IntegrationsStrip } from './ui/integrations-strip';
 import { LandingNav } from './ui/landing-nav';
+import { PiticoMark } from './ui/pitico-mark';
 import { Reveal } from './ui/reveal';
 import { RotatingWord } from './ui/rotating-word';
+import { ShaderWash } from './ui/shader-wash';
 import { ThemeShowcase } from './ui/theme-showcase';
+
+/*
+ * The two WebGL surfaces on this page, split out of its chunk.
+ *
+ * `three`, `@react-three/fiber` and the shader library together outweigh
+ * everything else in the repository, and the landing page is the only screen
+ * that uses any of them. Behind `lazy` they are a separate request that is only
+ * made once a reader has actually scrolled a decorative section into view on a
+ * machine that passed `useCanvasBudget` — so a phone, a metered connection, or
+ * anybody who has asked for reduced motion downloads none of it and sees the
+ * CSS design that shipped before it.
+ */
+const HeroField = lazy(() => import('./ui/hero-field'));
 
 /** Where the author's link goes. */
 const AUTHOR_URL = 'https://www.instagram.com/pitic0_';
@@ -53,6 +69,17 @@ const LandingPage = () => {
   const t = useT();
   const reduceMotion = useReducedMotion();
   const { hash } = useLocation();
+
+  /*
+   * The introduction's 3D field, and the three questions it has to answer
+   * before it is allowed to exist: is this machine up to it, has the reader
+   * asked for less motion, and is the section even on screen. All three live in
+   * `useCanvasBudget`; what is left here is a ref for it to observe and a pixel
+   * ratio for the canvas to render at.
+   */
+  const heroScene = useRef<HTMLDivElement>(null);
+  const canRenderHero = useCanvasBudget(heroScene);
+  const heroPixelRatio = useCanvasPixelRatio(1.75);
 
   /*
    * Start the API waking up the moment somebody lands.
@@ -117,8 +144,24 @@ const LandingPage = () => {
         without putting it in the tab order.
       */}
       <main id="content" tabIndex={-1} className="focus:outline-none">
-      {/* ================= HERO ================= */}
-      <section className="relative overflow-hidden">
+      {/* ================= HERO =================
+
+          Taller than it was, and the extra height is the point rather than a
+          side effect.
+
+          It used to be sized to its contents — a headline, a paragraph and two
+          buttons, which on a laptop is about half a screen. That was the right
+          call while the background was a flat radial tint: there was nothing to
+          give more room *to*. A field with depth in it needs depth on screen to
+          read as one, so the section now takes at least three quarters of the
+          viewport and centres its argument in that rather than pinning it to
+          the top — the space is around the copy, not above the fold.
+
+          `svh` rather than `vh`: on a phone `vh` is measured against a viewport
+          without the browser's own chrome in it, so a `vh` hero overflows by the
+          height of the address bar on the one device where that is most of the
+          screen. */}
+      <section className="relative flex min-h-[76svh] items-center overflow-hidden">
         {/*
           A wash behind the headline rather than a hard band.
 
@@ -127,10 +170,49 @@ const LandingPage = () => {
           website. This is a soft radial tint in the brand accent — present
           enough to lift the type off the surface, faint enough that the
           thirteen skins each get their own version of it for free.
+
+          It is still here, and it is now the *floor* rather than the whole
+          background: it is what is on screen before the 3D field is fetched,
+          what stays on a phone or a metered connection, and what somebody who
+          has asked for reduced motion sees instead. The section has never had a
+          frame in which it had no background, which is the only reason the field
+          is allowed to arrive late.
         */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_0%,rgb(var(--brand)/0.14),transparent_70%)]"
+        />
+
+        {/*
+          The room the introduction stands in.
+
+          `pointer-events-none` on the host as well as on the canvas: everything
+          in front of this is a link or a button, and a full-bleed canvas that
+          took clicks would make the whole introduction inert. It is also why
+          `HeroField` reads the pointer off the window rather than off itself.
+        */}
+        <div ref={heroScene} aria-hidden className="pointer-events-none absolute inset-0">
+          {canRenderHero && (
+            <Suspense fallback={null}>
+              <HeroField pixelRatio={heroPixelRatio} />
+            </Suspense>
+          )}
+        </div>
+
+        {/*
+          The type sits on a scrim, and the scrim is not decoration.
+
+          The field behind it is translucent paper in the accent colour, and on
+          the lighter skins a card drifting behind the paragraph lifts the
+          background by four or five percent — invisible in a screenshot, and
+          exactly enough to take a `text-content-muted` paragraph below the
+          contrast ratio it was checked at. A vertical fade in the page's own
+          surface colour guarantees that ratio whatever the scene does behind it,
+          and costs one composited gradient.
+        */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-surface/70 via-surface/40 to-surface/80"
         />
 
         <div className="relative mx-auto w-full max-w-6xl px-4 pb-16 pt-14 sm:px-6 sm:pb-24 sm:pt-20">
@@ -345,19 +427,93 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ================= CLOSING ================= */}
-      <section className="border-t border-edge/70 bg-surface-raised/40">
-        <div className="mx-auto w-full max-w-3xl px-4 py-20 text-center sm:px-6 sm:py-28">
+      {/* ================= CLOSING =================
+
+          The last thing on the page is who made it, not a second sign-up form.
+
+          ## What was here
+
+          A repeat of the introduction: the app's mark, a heading, a line of
+          copy, and the same two buttons the navigation bar has been carrying at
+          the top of the screen for the whole scroll. It is the default ending
+          for a landing page and it is almost content-free — a reader who has
+          got this far has passed a "Get started" button four times and has
+          either decided or not.
+
+          ## What replaced it
+
+          One short section that says the product came from somewhere. `A P.
+          solution`, where the `P.` opens into `Pitico.` when it is touched — a
+          maker's mark, in metal, at the foot of the page, in the same place and
+          the same spirit as a signature on the back of a chair.
+
+          The buttons stay. They are the one thing on the old section that was
+          doing work, they are now the *second* thing in a section rather than
+          its whole reason for existing, and somebody who has just found out
+          there is a studio behind this is exactly the person who might sign up
+          because of it. */}
+      <section className="relative overflow-hidden border-t border-edge/70 bg-surface-raised/40">
+        {/*
+          The shader wash, and the CSS gradient it sits on.
+
+          The gradient underneath is not a leftover: it is the first paint, the
+          fallback on a device that refuses the canvas, and what somebody who
+          asked for reduced motion sees. The wash deepens it into something that
+          moves. See `ShaderWash` for why exactly two surfaces on this page get
+          one and the other fifty gradients in the product do not.
+        */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(70%_60%_at_50%_100%,rgb(var(--brand)/0.12),transparent_72%)]"
+        />
+        <ShaderWash mood="swell" opacity={0.4} />
+
+        {/* Same argument as the introduction's scrim: everything in front of
+            this is type, and a wash that drifts through a light patch behind a
+            paragraph is a paragraph that becomes unreadable once every eight
+            seconds. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-surface-raised/70 via-surface-raised/45 to-surface-raised/75"
+        />
+
+        <div className="relative mx-auto w-full max-w-3xl px-4 py-20 text-center sm:px-6 sm:py-28">
           <Reveal>
           <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-brand/15 text-brand ring-1 ring-inset ring-brand/25">
             <StudioMark className="h-9 w-9" />
           </span>
 
-          <h2 className="mt-6 text-balance text-3xl font-bold tracking-tight sm:text-4xl">
-            {t('landing.cta.title')}
+          {/*
+            The mark is set in the heading rather than beside it.
+
+            `items-baseline` and a `em`-sized box are what let a canvas sit in a
+            line of type at all: the metal is a picture, and a picture in a
+            sentence either sits on the baseline with the letters or it is an
+            image with words around it. The stop after it is ordinary heading
+            text — see `PiticoMark` for why it cannot be part of the mask.
+          */}
+          <h2 className="mt-6 flex flex-wrap items-baseline justify-center gap-x-2 text-balance text-3xl font-bold tracking-tight sm:text-4xl">
+            <span>{t('landing.pitico.before')}</span>
+            {/*
+              The mark and the stop after it are one word, and the row gap must
+              not get between them.
+
+              `gap-x-2` is what separates "A" from the name and, in Portuguese,
+              "Uma solução" from it. Left to apply to all three children it also
+              separated the name from its own full stop — "A P ." — which is not
+              a typographic quibble but a different sentence. Wrapping the pair
+              in one nowrap group means the gap falls where the space belongs
+              and nowhere else, and the stop can never be pushed onto a line of
+              its own on a narrow screen.
+            */}
+            <span className="inline-flex items-baseline whitespace-nowrap">
+              <PiticoMark />
+              <span>{t('landing.pitico.after')}</span>
+            </span>
           </h2>
+
           <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-content-muted">
-            {t('landing.cta.body')}
+            {t('landing.pitico.body')}
           </p>
 
           <div className="mt-8 flex flex-wrap justify-center gap-2.5">
