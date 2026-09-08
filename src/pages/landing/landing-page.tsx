@@ -15,7 +15,6 @@ import { LandingNav } from './ui/landing-nav';
 import { PiticoMark } from './ui/pitico-mark';
 import { Reveal } from './ui/reveal';
 import { RotatingWord } from './ui/rotating-word';
-import { ShaderWash } from './ui/shader-wash';
 import { ThemeShowcase } from './ui/theme-showcase';
 
 /*
@@ -453,29 +452,6 @@ const LandingPage = () => {
           there is a studio behind this is exactly the person who might sign up
           because of it. */}
       <section className="relative overflow-hidden border-t border-edge/70 bg-surface-raised/40">
-        {/*
-          The shader wash, and the CSS gradient it sits on.
-
-          The gradient underneath is not a leftover: it is the first paint, the
-          fallback on a device that refuses the canvas, and what somebody who
-          asked for reduced motion sees. The wash deepens it into something that
-          moves. See `ShaderWash` for why exactly two surfaces on this page get
-          one and the other fifty gradients in the product do not.
-        */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(70%_60%_at_50%_100%,rgb(var(--brand)/0.12),transparent_72%)]"
-        />
-        <ShaderWash mood="swell" opacity={0.4} />
-
-        {/* Same argument as the introduction's scrim: everything in front of
-            this is type, and a wash that drifts through a light patch behind a
-            paragraph is a paragraph that becomes unreadable once every eight
-            seconds. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-surface-raised/70 via-surface-raised/45 to-surface-raised/75"
-        />
 
         <div className="relative mx-auto w-full max-w-3xl px-4 py-20 text-center sm:px-6 sm:py-28">
           <Reveal>
@@ -486,30 +462,15 @@ const LandingPage = () => {
           {/*
             The mark is set in the heading rather than beside it.
 
-            `items-baseline` and a `em`-sized box are what let a canvas sit in a
-            line of type at all: the metal is a picture, and a picture in a
-            sentence either sits on the baseline with the letters or it is an
-            image with words around it. The stop after it is ordinary heading
-            text — see `PiticoMark` for why it cannot be part of the mask.
+            `items-baseline` and an inline layout let the text align cleanly 
+            regardless of internal font size differences. 
           */}
           <h2 className="mt-6 flex flex-wrap items-baseline justify-center gap-x-2 text-balance text-3xl font-bold tracking-tight sm:text-4xl">
             <span>{t('landing.pitico.before')}</span>
-            {/*
-              The mark and the stop after it are one word, and the row gap must
-              not get between them.
-
-              `gap-x-2` is what separates "A" from the name and, in Portuguese,
-              "Uma solução" from it. Left to apply to all three children it also
-              separated the name from its own full stop — "A P ." — which is not
-              a typographic quibble but a different sentence. Wrapping the pair
-              in one nowrap group means the gap falls where the space belongs
-              and nowhere else, and the stop can never be pushed onto a line of
-              its own on a narrow screen.
-            */}
-            <span className="inline-flex items-baseline whitespace-nowrap">
-              <PiticoMark />
+            <PiticoMark />
+            {t('landing.pitico.after') && (
               <span>{t('landing.pitico.after')}</span>
-            </span>
+            )}
           </h2>
 
           <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-content-muted">

@@ -572,9 +572,9 @@ const en = {
    * travel from behind the P to behind the o. See `PiticoMark`.
    */
   'landing.pitico.before': 'A',
-  'landing.pitico.after': '. solution',
-  'landing.pitico.letter': 'P',
-  'landing.pitico.word': 'Pitico',
+  'landing.pitico.after': ' solution',
+  'landing.pitico.letter': 'P.',
+  'landing.pitico.word': 'Pitico.',
   'landing.pitico.aria': 'Pitico — the studio behind Task Studio',
   'landing.pitico.body':
     'Task Studio is built by a small studio that makes software the way it wants to use it.',
@@ -2666,9 +2666,9 @@ const ptBR: Record<TranslationKey, string> = {
   'landing.nav.getStarted': 'Começar',
   'landing.nav.home': 'Task Studio — voltar ao topo',
   'landing.pitico.before': 'Uma solução',
-  'landing.pitico.after': '.',
-  'landing.pitico.letter': 'P',
-  'landing.pitico.word': 'Pitico',
+  'landing.pitico.after': '',
+  'landing.pitico.letter': 'P.',
+  'landing.pitico.word': 'Pitico.',
   'landing.pitico.aria': 'Pitico — o estúdio por trás do Task Studio',
   'landing.pitico.body':
     'O Task Studio é feito por um estúdio pequeno, que faz software do jeito que quer usar.',

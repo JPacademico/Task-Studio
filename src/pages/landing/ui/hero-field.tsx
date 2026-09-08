@@ -86,21 +86,21 @@ const buildField = (): CardSpec[] => {
   return Array.from({ length: CARD_COUNT }, (): CardSpec => {
     // Depth first: everything else is derived from it, which is what keeps the
     // near cards big and mobile and the far ones small and still.
-    const z = -9 + random() * 8;
-    const nearness = (z + 9) / 8;
+    const z = -12 + random() * 11;
+    const nearness = (z + 12) / 11;
 
     return {
-      position: [(random() - 0.5) * 13, (random() - 0.5) * 8, z],
+      position: [(random() - 0.5) * 22, (random() - 0.5) * 12, z],
       rotation: [
         (random() - 0.5) * 0.5,
         (random() - 0.5) * 0.7,
         // Paper on a desk is never square to the desk.
         (random() - 0.5) * 0.9,
       ],
-      scale: [0.9 + nearness * 1.5, 0.7 + nearness * 1.1],
+      scale: [1.1 + nearness * 1.8, 0.85 + nearness * 1.3],
       tone: Math.floor(random() * 3),
       phase: random() * Math.PI * 2,
-      drift: 0.1 + nearness * 0.35,
+      drift: 0.12 + nearness * 0.4,
     };
   });
 };
@@ -240,7 +240,7 @@ const Field = ({ tones }: { tones: string[] }) => {
    * same composition at every width, which is what "dynamic resolution
    * adaptation" means for a scene rather than for a texture.
    */
-  const fit = Math.min(1, Math.max(0.55, size.width / 1280));
+  const fit = Math.min(1, Math.max(0.45, size.width / 1280));
 
   return (
     <group ref={group} scale={fit}>
