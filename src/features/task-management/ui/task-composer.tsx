@@ -10,7 +10,11 @@ import { TaskTypeTag } from '@/entities/task/ui/task-type-tag';
 import { useTaskGroups } from '@/entities/task-group/model/queries';
 import { uploadImage } from '@/entities/user/api/user.api';
 import type { AttachedFileDraft } from '@/entities/user/model/types';
-import { useAiStatus, useSuggestDraftSubtasks } from '@/features/ai-suggestions/model/queries';
+import {
+  hasAiCreditsLeft,
+  useAiStatus,
+  useSuggestDraftSubtasks,
+} from '@/features/ai-suggestions/model/queries';
 import { InvitePicker } from '@/features/invite-picker/ui/invite-picker';
 import {
   MAX_TASK_NOTES,
@@ -24,6 +28,7 @@ import { clampOnPaste, clampText } from '@/shared/lib/text';
 import {
   DATE_WINDOW_YEARS,
   dateInputBounds,
+  formatCalendarDate,
   fromDateTimeInput,
   isDateTimeInput,
   formatDeadlineDate,
@@ -140,6 +145,15 @@ export const TaskComposer = ({
 
   // Cached across every surface that asks — see `useAiStatus`.
   const { data: aiStatus } = useAiStatus();
+  /*
+   * Whether there is a call left to spend this month.
+   *
+   * A third reason the button can be unavailable, alongside "the checklist is
+   * full" and "you have not typed enough yet" — and the only one the reader
+   * cannot fix by typing. Optimistic while the status loads; see
+   * `hasAiCreditsLeft`.
+   */
+  const hasAiCredits = hasAiCreditsLeft(aiStatus);
   const suggestSteps = useSuggestDraftSubtasks();
 
   const [title, setTitle] = useState('');
@@ -878,14 +892,26 @@ export const TaskComposer = ({
                   className="ml-auto"
                   onClick={() => void handleSuggestSteps()}
                   isLoading={suggestSteps.isPending}
-                  disabled={!canSuggestSteps || checklistIsFull}
-                  title={t(
-                    checklistIsFull
-                      ? 'task.stepsFull'
-                      : canSuggestSteps
-                        ? 'task.suggestStepsHint'
-                        : 'ai.needsTitleAndBody',
-                  )}
+                  disabled={!canSuggestSteps || checklistIsFull || !hasAiCredits}
+                  /*
+                    Ordered by which reason the reader should act on first.
+
+                    A spent allowance outranks the other two because it is the
+                    only one they cannot resolve on this screen — telling
+                    somebody to type more when the real answer is "not until the
+                    1st" sends them round a loop.
+                  */
+                  title={
+                    !hasAiCredits
+                      ? t('ai.noCreditsLeft')
+                      : t(
+                          checklistIsFull
+                            ? 'task.stepsFull'
+                            : canSuggestSteps
+                              ? 'task.suggestStepsHint'
+                              : 'ai.needsTitleAndBody',
+                        )
+                  }
                 >
                   <Sparkles className="h-3.5 w-3.5" />
                   {t('task.suggestSteps')}
@@ -894,8 +920,20 @@ export const TaskComposer = ({
             </div>
 
             {/* Says it out loud as well as in the tooltip: a disabled button
-                somebody cannot hover is a dead end on a touch screen. */}
-            {aiStatus?.enabled && !canSuggestSteps && !checklistIsFull && (
+                somebody cannot hover is a dead end on a touch screen.
+
+                The allowance line comes first and says what to do about it,
+                because unlike the other reason it is not fixed by typing. */}
+            {aiStatus?.enabled && !hasAiCredits && aiStatus.allowance && (
+              <p className="text-2xs text-content-faint">
+                {t('ai.noCreditsLeftBody', {
+                  limit: aiStatus.allowance.limit ?? 0,
+                  date: formatCalendarDate(aiStatus.allowance.resetsAt),
+                })}
+              </p>
+            )}
+
+            {aiStatus?.enabled && hasAiCredits && !canSuggestSteps && !checklistIsFull && (
               <p className="text-2xs text-content-faint">{t('ai.needsTitleAndBody')}</p>
             )}
 

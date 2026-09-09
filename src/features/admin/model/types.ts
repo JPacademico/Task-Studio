@@ -1,3 +1,5 @@
+import type { Plan, PlanSource, SubscriptionStatus } from '@/entities/billing/model/types';
+
 /** One account, as the moderation console sees it. */
 export interface AdminUserRow {
   id: string;
@@ -25,6 +27,37 @@ export interface AdminUserRow {
   } | null;
   /** How many suspensions this account has collected, lifted ones included. */
   banCount: number;
+  /**
+   * What this account is entitled to, and who decided.
+   *
+   * On the row rather than behind a second request, for the same reason
+   * `reportCount` is: it is what decides whether an administrator opens an
+   * account at all, and a directory that could not show it would make "find
+   * everybody on Baron" a matter of clicking twenty-five rows one at a time.
+   *
+   * `planSource` is what separates a paying customer from a comped one, and the
+   * console draws them differently — moving somebody who is being billed is a
+   * different act, with a different consequence, from moving somebody who is
+   * not.
+   */
+  plan: Plan;
+  planSource: PlanSource;
+  planSince: string | null;
+  /** Why it was granted, in the administrator's words. Null unless `ADMIN`. */
+  planNote: string | null;
+  /**
+   * The live subscription behind the plan, when there is one.
+   *
+   * Null for a free account and for a comped one — which this plus `planSource`
+   * tell apart: `ADMIN` with no subscription is a grant, `STRIPE` with no
+   * subscription is a plan whose payment has ended and whose row the
+   * reconciler has not caught up with yet.
+   */
+  subscription: {
+    status: SubscriptionStatus;
+    currentPeriodEnd: string | null;
+    cancelAtPeriodEnd: boolean;
+  } | null;
   /**
    * How many *distinct people* have a standing report against this account.
    *
@@ -65,6 +98,16 @@ export interface AdminStats {
    * that read "6" would be counting the wrong noun.
    */
   reported: number;
+  /**
+   * Accounts on something other than Free, comped ones included.
+   *
+   * Deliberately not "paying customers": that is a question Stripe answers, and
+   * answering it here would mean deciding what to do about the account whose
+   * card failed yesterday. This is what the console is for — how many accounts
+   * are working inside raised ceilings, whoever is footing the bill. The plan
+   * filter beside it is how somebody splits that apart.
+   */
+  paid: number;
 }
 
 export interface AdminSession {
@@ -76,4 +119,19 @@ export interface BanPayload {
   reason: string;
   /** Omitted or null for a permanent suspension. */
   days?: number | null;
+}
+
+/** The administrator's manual plan change. */
+export interface SetPlanPayload {
+  plan: Plan;
+  /**
+   * Why, optionally.
+   *
+   * Optional where `BanPayload.reason` is mandatory, and the contrast is
+   * deliberate: a suspension is emailed verbatim to the person and has to be
+   * justifiable, while a plan grant is a business decision recorded for
+   * whoever reads the console next. Requiring a paragraph for the second would
+   * train administrators to type "." into a box.
+   */
+  note?: string;
 }

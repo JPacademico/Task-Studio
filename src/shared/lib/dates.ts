@@ -50,6 +50,23 @@ export const formatTime = (value: string | Date): string => format(toDate(value)
 export const formatDateTime = (value: string | Date): string =>
   format(toDate(value), 'd MMM yyyy · HH:mm', { locale: dateLocale() });
 
+/**
+ * A day, with no time on it. "14 Oct 2026".
+ *
+ * The one formatter for dates whose *hour is not a fact the reader should
+ * read anything into*. A subscription renews at whatever moment Stripe
+ * happens to bill it and an allowance resets at midnight UTC — rendering
+ * either as "· 21:37" or "· 00:00" in the reader's own zone invites them to
+ * plan around a minute that means nothing, and in the second case is simply
+ * wrong for anybody east or west of it.
+ *
+ * The year is always shown, unlike `formatDeadlineDate`, because these dates
+ * are frequently a year out — which is exactly when dropping it would be
+ * ambiguous.
+ */
+export const formatCalendarDate = (value: string | Date): string =>
+  format(toDate(value), 'd MMM yyyy', { locale: dateLocale() });
+
 export const formatRelative = (value: string | Date): string =>
   formatDistanceToNowStrict(toDate(value), { addSuffix: true, locale: dateLocale() });
 

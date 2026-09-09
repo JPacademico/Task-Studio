@@ -7,6 +7,7 @@ import { useTheme } from '@/app/providers/theme-provider';
 import { uploadImage, userApi } from '@/entities/user/api/user.api';
 import type { ThemePreference } from '@/entities/user/model/types';
 import { authApi } from '@/features/auth/api/auth.api';
+import { PlanPanel } from '@/features/billing/ui/plan-panel';
 import { useSessionStore } from '@/features/auth/model/session.store';
 import { CalendarConnectionPanel } from '@/features/calendar-sync/ui/calendar-connection-panel';
 import { CliMachinesPanel } from '@/features/cli/ui/cli-machines-panel';
@@ -168,6 +169,24 @@ const SettingsPage = () => {
             </Button>
           </div>
         </form>
+      </Section>
+
+      {/* --- Plan -----------------------------------------------------------
+
+          Directly under the profile and above every preference, and the
+          position is the argument.
+
+          Below the appearance controls it would read as another preference,
+          which is what a plan is least like: it is the only thing on this page
+          that changes what the account can *do*, it is the only thing on it
+          that costs money, and it is the thing somebody who has just been
+          refused a sixteenth task came here to find. A reader hunting for it
+          should not have to scroll past thirteen skins.
+
+          Above identity would be worse in the other direction — the first thing
+          on a settings page should be who you are, not what you are paying. */}
+      <Section title={t('billing.section')} description={t('billing.sectionHint')}>
+        <PlanPanel />
       </Section>
 
       {/* Three, then a door. The full catalogue is a gallery, not a setting —

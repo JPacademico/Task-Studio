@@ -2,12 +2,14 @@ import axios from 'axios';
 
 import { env } from '@/shared/config/env';
 import { SLOW_ROUTE_TIMEOUT_MS } from '@/shared/api/client';
+import type { Plan, PlanLimits } from '@/entities/billing/model/types';
 import type {
   AdminReport,
   AdminSession,
   AdminStats,
   AdminUserRow,
   BanPayload,
+  SetPlanPayload,
 } from '../model/types';
 
 /**
@@ -96,10 +98,42 @@ export const adminApi = {
     return data;
   },
 
-  async users(query: string, bannedOnly: boolean): Promise<AdminUserRow[]> {
+  async users(query: string, bannedOnly: boolean, plan?: Plan): Promise<AdminUserRow[]> {
     const { data } = await client.get<AdminUserRow[]>('/users', {
-      params: { ...(query ? { q: query } : {}), ...(bannedOnly ? { bannedOnly: true } : {}) },
+      params: {
+        ...(query ? { q: query } : {}),
+        ...(bannedOnly ? { bannedOnly: true } : {}),
+        // Composes with both of the above on the API rather than replacing
+        // them, which is what makes it useful for "the paying accounts among
+        // the reported ones".
+        ...(plan ? { plan } : {}),
+      },
     });
+    return data;
+  },
+
+  /**
+   * The plans and their ceilings, for the console's own picker.
+   *
+   * Deliberately not the public `/billing/plans`. That one is about what can be
+   * *bought* and carries prices; this is about what can be *granted*, which
+   * includes plans this deployment sells in no currency at all.
+   */
+  async plans(): Promise<{ plans: { plan: Plan; limits: PlanLimits }[] }> {
+    const { data } = await client.get<{ plans: { plan: Plan; limits: PlanLimits }[] }>('/plans');
+    return data;
+  },
+
+  /**
+   * Put an account on a plan by hand.
+   *
+   * Writes the entitlement and nothing else: no subscription is created, no
+   * card is charged, and a live subscription is not cancelled. Where both are
+   * wanted, both are done — this, and the matching action in the Stripe
+   * dashboard.
+   */
+  async setPlan(userId: string, payload: SetPlanPayload): Promise<{ plan: Plan }> {
+    const { data } = await client.post<{ plan: Plan }>(`/users/${userId}/plan`, payload);
     return data;
   },
 
@@ -110,7 +144,10 @@ export const adminApi = {
 
   /** What people have said about this account, newest first. */
   async reports(userId: string): Promise<AdminReport[]> {
-    const { data } = await client.get<AdminReport[]>(`/admin/users/${userId}/reports`);
+    // Not `/admin/users/...`: `baseURL` already ends in `/admin`, so the prefix
+    // written out here produced `/admin/admin/users/...` and a 404 on every
+    // attempt to read a report.
+    const { data } = await client.get<AdminReport[]>(`/users/${userId}/reports`);
     return data;
   },
 
@@ -122,7 +159,8 @@ export const adminApi = {
    * of the queue without destroying that.
    */
   async reviewReports(userId: string): Promise<void> {
-    await client.post(`/admin/users/${userId}/reports/review`);
+    // Same double prefix as `reports` above, and the same fix.
+    await client.post(`/users/${userId}/reports/review`);
   },
 
   async unban(userId: string): Promise<void> {

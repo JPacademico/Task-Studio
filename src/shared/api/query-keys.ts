@@ -7,6 +7,21 @@ import type { ListTasksParams } from '@/entities/task/model/types';
 export const queryKeys = {
   session: ['session'] as const,
 
+  /**
+   * The plan, and what it costs.
+   *
+   * Two keys rather than one, because they have opposite lifetimes. The
+   * catalogue is the same table for everybody and changes when the deployment
+   * is redeployed — so it is cached hard and never invalidated by anything a
+   * user does. The summary is the reader's own plan and usage, and it changes
+   * the moment a checkout completes, a webhook lands, or anything is created
+   * against a ceiling.
+   */
+  billing: {
+    catalogue: ['billing', 'plans'] as const,
+    summary: ['billing', 'me'] as const,
+  },
+
   projects: {
     all: ['projects'] as const,
     list: (params?: object) => ['projects', 'list', params ?? {}] as const,

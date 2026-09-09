@@ -40,9 +40,38 @@ export interface AiSuggestion {
   taskId: string | null;
 }
 
+/**
+ * What is left of this month's assistant allowance.
+ *
+ * Null when the deployment has no model at all — there is nothing to meter, and
+ * reporting a limit against a feature that cannot run would be inventing a
+ * ceiling nobody is up against.
+ */
+export interface AiAllowance {
+  used: number;
+  /** Null is unmetered. */
+  limit: number | null;
+  remaining: number | null;
+  /** ISO. Midnight UTC on the first of next month. */
+  resetsAt: string;
+}
+
+export interface AiStatus {
+  enabled: boolean;
+  allowance: AiAllowance | null;
+}
+
 export const aiApi = {
-  async status(): Promise<{ enabled: boolean }> {
-    const { data } = await api.get<{ enabled: boolean }>('/ai/status');
+  /**
+   * Whether the assistant works here, and how much of it this reader has left.
+   *
+   * The allowance rides on the status call rather than a route of its own,
+   * because every surface that asks "is the assistant available" needs both
+   * answers to be useful: a button drawn from `enabled` alone offers a feature
+   * that will refuse on press for somebody who has spent their five calls.
+   */
+  async status(): Promise<AiStatus> {
+    const { data } = await api.get<AiStatus>('/ai/status');
     return data;
   },
 

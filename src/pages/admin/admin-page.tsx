@@ -4,15 +4,18 @@ import {
   ArrowLeft,
   Ban,
   CheckCircle2,
+  CreditCard,
   Flag,
   Lock,
   Search,
   ShieldAlert,
   ShieldCheck,
+  Sparkles,
   Users,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import type { Plan } from '@/entities/billing/model/types';
 import { adminApi, adminTokenStore } from '@/features/admin/api/admin.api';
 import type { AdminReport, AdminStats, AdminUserRow } from '@/features/admin/model/types';
 import { errorMessage } from '@/shared/api/client';
@@ -37,6 +40,28 @@ const DURATIONS: { days: number | null; label: string }[] = [
 ];
 
 const MIN_REASON = 10;
+
+/**
+ * The plans, in the order the filter and the picker draw them.
+ *
+ * Spelled out here rather than fetched from `GET /admin/plans` for the *labels*
+ * — that endpoint carries the ceilings, which the dialog shows, and this array
+ * is what has to exist before any request has come back so the filter can be
+ * drawn on an empty console.
+ *
+ * Untranslated, like the rest of this page. The console is deliberately not
+ * dressed in the product's furniture and is read by one person who runs the
+ * deployment; putting it through the dictionary would mean every plan rename
+ * touching two locales to change a word only the operator sees.
+ */
+const PLANS: { value: Plan; label: string; tone: string }[] = [
+  { value: 'FREE', label: 'Free', tone: 'border-edge text-content-muted' },
+  { value: 'STARTUP', label: 'Startup', tone: 'border-brand/40 bg-brand/10 text-brand' },
+  { value: 'BARON', label: 'Baron', tone: 'border-positive/40 bg-positive/10 text-positive' },
+];
+
+const planLabel = (plan: Plan): string =>
+  PLANS.find((entry) => entry.value === plan)?.label ?? plan;
 
 /**
  * The moderation console.
@@ -171,6 +196,8 @@ const AdminPage = () => {
 
   const [query, setQuery] = useState('');
   const [bannedOnly, setBannedOnly] = useState(false);
+  /** Null is "every plan", which is what the console opens on. */
+  const [planFilter, setPlanFilter] = useState<Plan | null>(null);
   const [rows, setRows] = useState<AdminUserRow[] | null>(null);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -179,6 +206,20 @@ const AdminPage = () => {
   const [reason, setReason] = useState('');
   const [days, setDays] = useState<number | null>(7);
   const [isBanning, setIsBanning] = useState(false);
+
+  /*
+   * The plan sheet, kept entirely separate from the suspension sheet above.
+   *
+   * They are two dialogs on the same list and there was a real temptation to
+   * share one `target`. They must not: closing one would close the other, and
+   * more to the point they are opposite kinds of act — one takes a product away
+   * from somebody and the other gives them more of it. A shared piece of state
+   * is how a mis-click ends up on the wrong sheet.
+   */
+  const [planTarget, setPlanTarget] = useState<AdminUserRow | null>(null);
+  const [nextPlan, setNextPlan] = useState<Plan>('STARTUP');
+  const [planNote, setPlanNote] = useState('');
+  const [isSavingPlan, setIsSavingPlan] = useState(false);
 
   // Whether the deployment has a console at all, asked once and unauthenticated.
   useEffect(() => {
@@ -199,7 +240,7 @@ const AdminPage = () => {
     setIsLoading(true);
     try {
       const [users, counts] = await Promise.all([
-        adminApi.users(query.trim(), bannedOnly),
+        adminApi.users(query.trim(), bannedOnly, planFilter ?? undefined),
         adminApi.stats(),
       ]);
       setRows(users);
@@ -216,12 +257,21 @@ const AdminPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [bannedOnly, query]);
+  }, [bannedOnly, planFilter, query]);
 
+  /*
+   * Re-runs when a *toggle* changes, and not when the search box is typed in.
+   *
+   * `refresh` is rebuilt whenever `query` changes, so listing it here would
+   * fire a request per keystroke against a console that returns twenty-five
+   * accounts. The two filters are pressed rather than typed, so they search
+   * immediately; the text field waits for the button or for Enter.
+   */
   useEffect(() => {
     if (!token) return;
     void refresh();
-  }, [token, bannedOnly, refresh]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, bannedOnly, planFilter]);
 
   const handleSignIn = async () => {
     setIsSigningIn(true);
@@ -252,6 +302,41 @@ const AdminPage = () => {
       toast.error(errorMessage(error, 'Could not suspend that account.'));
     } finally {
       setIsBanning(false);
+    }
+  };
+
+  /**
+   * Put an account on a plan by hand.
+   *
+   * The toast says what did *not* happen as well as what did, and that is the
+   * important half: this writes an entitlement and never touches Stripe, so an
+   * administrator moving a paying customer to Free has stopped their ceilings
+   * and not their billing. Saying so at the moment of the change is the only
+   * place that fact reliably lands.
+   */
+  const handleSetPlan = async () => {
+    if (!planTarget) return;
+
+    setIsSavingPlan(true);
+    try {
+      await adminApi.setPlan(planTarget.id, {
+        plan: nextPlan,
+        note: planNote.trim() || undefined,
+      });
+
+      toast.success(`${planTarget.displayName} is now on ${planLabel(nextPlan)}`, {
+        description: planTarget.subscription
+          ? 'Their Stripe subscription was NOT changed — do that in the Stripe dashboard if you meant to.'
+          : 'They were emailed about the change.',
+      });
+
+      setPlanTarget(null);
+      setPlanNote('');
+      await refresh();
+    } catch (error) {
+      toast.error(errorMessage(error, 'Could not change that plan.'));
+    } finally {
+      setIsSavingPlan(false);
     }
   };
 
@@ -378,7 +463,7 @@ const AdminPage = () => {
         </header>
 
         {stats && (
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-5">
             {[
               { label: 'Accounts', value: stats.users, icon: <Users className="h-3 w-3" /> },
               { label: 'Suspended', value: stats.banned, icon: <Ban className="h-3 w-3" /> },
@@ -394,6 +479,19 @@ const AdminPage = () => {
                 reporting one person is one thing to look at. See `AdminStats`.
               */
               { label: 'Reported', value: stats.reported, icon: <Flag className="h-3 w-3" /> },
+              /*
+                Accounts on a paid plan, comped ones included.
+
+                Not "revenue" and not "subscribers" — both are questions Stripe
+                answers better, and this console has no business guessing at
+                either. What it counts is what it can enforce: how many accounts
+                are working inside raised ceilings. See `AdminStats.paid`.
+              */
+              {
+                label: 'On a paid plan',
+                value: stats.paid,
+                icon: <Sparkles className="h-3 w-3" />,
+              },
             ].map((tile) => (
               <div key={tile.label} className="ui-card rounded-xl border border-edge bg-surface-raised p-3">
                 <p className="flex items-center gap-1.5 text-3xs uppercase tracking-[0.14em] text-content-faint">
@@ -436,6 +534,41 @@ const AdminPage = () => {
           </Button>
         </form>
 
+        {/* --- The plan filter ------------------------------------------------
+
+            A row of its own under the search rather than a fourth control in
+            it. Four buttons plus a text field plus two toggles on one line
+            wraps into an unreadable block on anything narrower than a laptop,
+            and these three are a *set* — exactly one is active — which is a
+            different shape from the two independent toggles above.
+
+            "All" is a real option rather than "none selected", because a filter
+            you can only turn on is one somebody has to reload the page to
+            escape. */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="mr-1 text-3xs uppercase tracking-[0.14em] text-content-faint">
+            Plan
+          </span>
+          {[{ value: null, label: 'All', tone: 'border-edge text-content-muted' }, ...PLANS].map(
+            (option) => (
+              <button
+                key={option.label}
+                type="button"
+                onClick={() => setPlanFilter(option.value as Plan | null)}
+                aria-pressed={planFilter === option.value}
+                className={cn(
+                  'rounded-lg border px-2.5 py-1 text-2xs font-medium transition-colors',
+                  planFilter === option.value
+                    ? option.tone
+                    : 'border-edge text-content-faint hover:text-content-muted',
+                )}
+              >
+                {option.label}
+              </button>
+            ),
+          )}
+        </div>
+
         {isLoading && !rows && (
           <div className="space-y-2">
             {Array.from({ length: 5 }, (_, index) => (
@@ -464,13 +597,49 @@ const AdminPage = () => {
               <Avatar name={user.displayName} src={user.avatarUrl} size="md" />
 
               <div className="min-w-0 flex-1 leading-tight">
-                <p className="flex items-center gap-1.5">
+                <p className="flex flex-wrap items-center gap-1.5">
                   <span className="truncate text-sm font-semibold">{user.displayName}</span>
                   {user.isVerified ? (
                     <CheckCircle2 className="h-3 w-3 shrink-0 text-positive" aria-label="Confirmed" />
                   ) : (
                     <span className="shrink-0 rounded bg-warning/15 px-1 py-px text-4xs font-semibold uppercase text-warning">
                       unconfirmed
+                    </span>
+                  )}
+
+                  {/*
+                    The plan, and — when it is not the default — who decided.
+
+                    Free draws no badge at all. It is the majority of every
+                    directory and a chip on every row would be noise that makes
+                    the two that matter harder to see.
+
+                    `granted` and `paid` are drawn apart because they are
+                    genuinely different situations: one is a decision somebody
+                    here made and can undo, the other is a card being charged
+                    that this console cannot stop. An administrator about to
+                    change a plan needs to know which one they are looking at
+                    before they open the sheet, not after.
+                  */}
+                  {user.plan !== 'FREE' && (
+                    <span
+                      title={
+                        user.planNote ??
+                        (user.planSource === 'ADMIN' ? 'Granted by an administrator' : undefined)
+                      }
+                      className={cn(
+                        'shrink-0 rounded border px-1.5 py-px text-4xs font-semibold uppercase',
+                        PLANS.find((entry) => entry.value === user.plan)?.tone,
+                      )}
+                    >
+                      {planLabel(user.plan)}
+                      {user.planSource === 'ADMIN' && ' · granted'}
+                    </span>
+                  )}
+
+                  {user.subscription?.status === 'PAST_DUE' && (
+                    <span className="shrink-0 rounded bg-warning/15 px-1 py-px text-4xs font-semibold uppercase text-warning">
+                      payment failed
                     </span>
                   )}
                 </p>
@@ -509,25 +678,51 @@ const AdminPage = () => {
                 )}
               </div>
 
-              {user.ban ? (
-                <Button size="sm" variant="secondary" onClick={() => void handleUnban(user)}>
-                  <ShieldCheck className="h-3.5 w-3.5" />
-                  Restore
-                </Button>
-              ) : (
+              <div className="flex shrink-0 items-center gap-1.5">
+                {/*
+                  Plan first, suspension second, and the order is not arbitrary.
+
+                  The destructive control belongs at the end of the row — it is
+                  the one a slipped click must not land on, and putting the
+                  benign action between it and the rest of the row is a cheap
+                  way to buy that distance.
+                */}
                 <Button
                   size="sm"
-                  variant="danger"
+                  variant="ghost"
+                  title="Change this account's plan"
                   onClick={() => {
-                    setTarget(user);
-                    setReason('');
-                    setDays(7);
+                    setPlanTarget(user);
+                    // Opens on what they already have, so the sheet describes
+                    // the current state before it describes a change.
+                    setNextPlan(user.plan);
+                    setPlanNote(user.planNote ?? '');
                   }}
                 >
-                  <Ban className="h-3.5 w-3.5" />
-                  Suspend
+                  <CreditCard className="h-3.5 w-3.5" />
+                  Plan
                 </Button>
-              )}
+
+                {user.ban ? (
+                  <Button size="sm" variant="secondary" onClick={() => void handleUnban(user)}>
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    Restore
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    onClick={() => {
+                      setTarget(user);
+                      setReason('');
+                      setDays(7);
+                    }}
+                  >
+                    <Ban className="h-3.5 w-3.5" />
+                    Suspend
+                  </Button>
+                )}
+              </div>
             </li>
           ))}
         </ul>
@@ -587,6 +782,109 @@ const AdminPage = () => {
             are, and their colleagues keep everything they contributed — a suspension
             takes away access, not work.
           </p>
+        </div>
+      </Modal>
+
+      {/* --- The plan sheet ---------------------------------------------------
+
+          Its own dialog rather than a dropdown on the row, and the reason is
+          what a plan change actually is: it raises or lowers every ceiling on
+          every project that account owns, for everybody working in them. That
+          is not a one-click act, and a menu that changed it on selection would
+          make it one.
+
+          What it deliberately does not do is touch Stripe. The paragraph at the
+          bottom says so, because the failure it prevents is an administrator
+          moving a paying customer to Free, assuming the card stopped, and
+          finding out a month later that it did not. */}
+      <Modal
+        isOpen={planTarget !== null}
+        onClose={() => setPlanTarget(null)}
+        title={`Change ${planTarget?.displayName ?? ''}'s plan`}
+        description="This changes what their account is allowed to hold. It does not charge, refund or cancel anything."
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setPlanTarget(null)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => void handleSetPlan()}
+              isLoading={isSavingPlan}
+              disabled={planTarget?.plan === nextPlan}
+            >
+              <CreditCard className="h-3.5 w-3.5" />
+              {planTarget?.plan === nextPlan
+                ? `Already on ${planLabel(nextPlan)}`
+                : `Move to ${planLabel(nextPlan)}`}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium">Plan</p>
+            <div className="flex flex-wrap gap-1.5">
+              {PLANS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setNextPlan(option.value)}
+                  className={cn(
+                    'rounded-lg border px-2.5 py-1.5 text-xs transition-colors',
+                    nextPlan === option.value
+                      ? option.tone
+                      : 'border-edge text-content-muted hover:border-brand/40',
+                  )}
+                >
+                  {option.label}
+                  {planTarget?.plan === option.value && ' · current'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/*
+            The note is for anything but Free, because Free is not a grant.
+
+            Moving somebody to Free releases the account back to Stripe — there
+            is no standing decision left to explain, and a note attached to one
+            would outlive the thing it described.
+          */}
+          {nextPlan !== 'FREE' && (
+            <Textarea
+              label="Why (optional)"
+              name="planNote"
+              value={planNote}
+              onChange={(event) => setPlanNote(event.target.value.slice(0, 280))}
+              placeholder="Partner account, support gesture, migrated from the old pricing…"
+              maxLength={280}
+              hint="Kept on the account so whoever reads this console next knows why."
+            />
+          )}
+
+          <div className="space-y-2 text-2xs leading-relaxed text-content-faint">
+            {nextPlan === 'FREE' ? (
+              <p>
+                Setting an account back to <strong>Free</strong> hands it back to Stripe:
+                the next webhook about a live subscription will grant whatever is
+                actually being paid for. That is what makes a grant reversible.
+              </p>
+            ) : (
+              <p>
+                A granted plan is pinned to the account and <strong>survives Stripe</strong>
+                {' '}— no webhook can demote it, and the person cannot buy a plan over the
+                top of it while it stands.
+              </p>
+            )}
+
+            {planTarget?.subscription && (
+              <p className="rounded-lg bg-warning/10 px-2 py-1.5 text-warning">
+                <strong>This account has a Stripe subscription.</strong> Changing the plan
+                here does not cancel it, and does not issue a refund. If you meant to stop
+                the billing as well, do that in the Stripe dashboard.
+              </p>
+            )}
+          </div>
         </div>
       </Modal>
     </div>
