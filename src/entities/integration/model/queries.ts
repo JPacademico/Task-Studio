@@ -6,6 +6,7 @@ import { useRealtime } from '@/app/providers/realtime-provider';
 import type { Project } from '@/entities/project/model/types';
 import { errorMessage } from '@/shared/api/client';
 import { queryKeys } from '@/shared/api/query-keys';
+import { STORAGE_KEYS } from '@/shared/config/constants';
 import { translate } from '@/shared/i18n';
 import { calendarApi } from '../api/calendar.api';
 import { figmaApi, type ConnectFigmaPayload } from '../api/figma.api';
@@ -75,19 +76,83 @@ export const useUnlinkRepository = (projectId: string) => {
 };
 
 /**
+ * What this deployment last said about Figma, remembered across reloads.
+ *
+ * ## Why `localStorage` and not just React Query's cache
+ *
+ * Because the cache is empty on the first render of every page load, and this
+ * answer gates a *control*. `FigmaLink` draws nothing while the answer is
+ * unknown, so on every fresh load of a project page the "connect a design"
+ * button was absent for one request and then appeared — the header visibly
+ * reflowing a beat after it had settled.
+ *
+ * A remembered answer removes the beat entirely: the control is drawn on the
+ * first frame, correctly, and the request behind it confirms what was already
+ * on screen. The failure mode is a deployment that has *just* had its
+ * encryption key removed showing a button that then disappears — the same
+ * disruption as today, once, for a configuration change that happens roughly
+ * never.
+ *
+ * Wrapped in try/catch because Safari's private mode throws on both halves,
+ * and a decorative optimisation must never be able to break the page it is on.
+ */
+const rememberedFigmaAvailability = (): { available: boolean } | undefined => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEYS.figmaAvailable);
+    return stored === null ? undefined : { available: stored === 'true' };
+  } catch {
+    return undefined;
+  }
+};
+
+const rememberFigmaAvailability = (available: boolean): void => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.figmaAvailable, String(available));
+  } catch {
+    /* private mode — the answer is simply not remembered for next time */
+  }
+};
+
+/**
  * Whether this deployment offers Figma at all.
  *
  * Effectively immutable for the life of a session — it is decided by an
  * environment variable on the server — so it is cached for an hour rather than
  * refetched on focus like the calendar's status, which genuinely changes when
  * somebody comes back from a consent redirect.
+ *
+ * `placeholderData` rather than `initialData`, and the distinction is the whole
+ * point: `initialData` would be written into the cache *as if it had been
+ * fetched*, so a stale remembered value would sit there unrefetched for the
+ * full hour of `staleTime`. `placeholderData` is only what to render while the
+ * real request is in flight — the fetch still happens immediately, and the
+ * answer is corrected the moment it lands.
  */
-export const useFigmaAvailability = () =>
-  useQuery({
+export const useFigmaAvailability = () => {
+  const query = useQuery({
     queryKey: queryKeys.integrations.figma,
     queryFn: figmaApi.status,
     staleTime: 60 * 60_000,
+    placeholderData: rememberedFigmaAvailability,
   });
+
+  /*
+   * Remembered on the way past, in an effect rather than in `queryFn`.
+   *
+   * Writing it inside the fetcher would put a synchronous `localStorage` write
+   * on the response path of a request three components await. Here it is a
+   * cheap write that happens after paint, and only when the answer actually
+   * changed.
+   */
+  const available = query.data?.available;
+
+  useEffect(() => {
+    if (query.isPlaceholderData || available === undefined) return;
+    rememberFigmaAvailability(available);
+  }, [available, query.isPlaceholderData]);
+
+  return query;
+};
 
 /**
  * Connecting a project to a design file, and disconnecting it.

@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CalendarClock, Check, Sparkles, Wand2, X } from 'lucide-react';
+import { CalendarClock, Check, MessageSquareText, Sparkles, Wand2, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useAddCreatedTasks } from '@/entities/task/model/queries';
@@ -8,7 +9,7 @@ import { errorMessage } from '@/shared/api/client';
 import { queryKeys } from '@/shared/api/query-keys';
 import { useT } from '@/shared/i18n';
 import { cn } from '@/shared/lib/cn';
-import { Badge, Button, EmptyState, Section, Spinner } from '@/shared/ui';
+import { Badge, Button, EmptyState, Section, Spinner, Textarea } from '@/shared/ui';
 import { aiApi, type ProjectTaskSuggestion } from '../api/ai.api';
 import { useSuggestionStream } from '../model/use-suggestion-stream';
 
@@ -37,6 +38,20 @@ const describeSchedule = (
 
   return `${start} · ${length}`;
 };
+
+/**
+ * The ceiling on the note, in characters.
+ *
+ * The same 400 the API enforces (`MAX_GUIDANCE_CHARS`), restated here rather
+ * than fetched because it is a `maxLength` on a field — the browser has to know
+ * it before anything is sent, and a client that let somebody type six hundred
+ * characters only to have the server refuse them would be a worse form than one
+ * that simply stops at four hundred.
+ *
+ * It is a courtesy, not the boundary. The server enforces the same number, and
+ * would still be the thing that mattered if this were removed.
+ */
+const MAX_NOTE = 400;
 
 const PRIORITY_STYLE: Record<string, string> = {
   LOW: 'border-edge text-content-faint',
@@ -80,6 +95,23 @@ export const AiPanel = ({ projectId }: { projectId: string }) => {
   } = useSuggestionStream(projectId);
 
   const isWorking = streamStatus === 'working';
+
+  /*
+   * The note, and whether the field is showing.
+   *
+   * Folded away by default, and that is the important half of the design. The
+   * overwhelmingly common use of this panel is pressing one button and reading
+   * three cards; a textarea sitting open above it would turn a one-click
+   * feature into a form, and a form is a thing people feel they have to fill
+   * in. Somebody who *has* something to say goes looking for the field, which
+   * is the population it is for.
+   *
+   * Local state rather than persisted: a note is about the batch somebody is
+   * asking for now, and a sentence typed a fortnight ago silently steering
+   * today's suggestions is the opposite of what the field is for.
+   */
+  const [isNoteOpen, setIsNoteOpen] = useState(false);
+  const [note, setNote] = useState('');
 
   /**
    * Whether there are proposals still waiting to be accepted or declined.
@@ -143,18 +175,68 @@ export const AiPanel = ({ projectId }: { projectId: string }) => {
          * click on each card, and declining leaves no trace — see the note on
          * the panel.
          */
-        <Button
-          size="sm"
-          onClick={() => void start()}
-          isLoading={isWorking}
-          disabled={hasPending}
-          title={hasPending ? t('ai.decideFirstHint') : undefined}
-        >
-          <Wand2 className="h-3.5 w-3.5" />
-          {t('ai.suggestTasks')}
-        </Button>
+        <div className="flex items-center gap-1.5">
+          {/*
+            The way in to the note, as a toggle rather than a second action.
+
+            `aria-expanded` and `aria-controls` because this is a disclosure and
+            not a button that does something — a screen reader announcing
+            "Steer it, button" with no state would give no way to tell whether
+            pressing it had worked.
+          */}
+          <Button
+            size="sm"
+            variant="ghost"
+            aria-expanded={isNoteOpen}
+            aria-controls="ai-note"
+            onClick={() => setIsNoteOpen((open) => !open)}
+            title={t('ai.steerHint')}
+          >
+            <MessageSquareText className="h-3.5 w-3.5" />
+            {t('ai.steer')}
+          </Button>
+
+          <Button
+            size="sm"
+            onClick={() => void start(note.trim() || undefined)}
+            isLoading={isWorking}
+            disabled={hasPending}
+            title={hasPending ? t('ai.decideFirstHint') : undefined}
+          >
+            <Wand2 className="h-3.5 w-3.5" />
+            {t('ai.suggestTasks')}
+          </Button>
+        </div>
       }
     >
+      {/*
+        The note, when it has been asked for.
+
+        Above the results and below the button that produces them, which is the
+        one position that reads correctly: it is an input to the next press, not
+        a caption on the last one.
+
+        Deliberately plain about what it does. "It steers the subject, not how
+        the assistant works" is the honest description of a field whose contents
+        are quoted into a prompt as evidence — see `prepareGuidance` on the API
+        for what that containment actually is, and what it does not claim to be.
+        A field that implied more would invite somebody to try more.
+      */}
+      {isNoteOpen && (
+        <div id="ai-note" className="rounded-2xl border border-edge bg-surface-raised p-3.5">
+          <Textarea
+            label={t('ai.steerOptional')}
+            name="ai-note"
+            rows={2}
+            value={note}
+            onChange={(event) => setNote(event.target.value.slice(0, MAX_NOTE))}
+            maxLength={MAX_NOTE}
+            placeholder={t('ai.steerPlaceholder')}
+            hint={t('ai.steerHint')}
+          />
+        </div>
+      )}
+
       {/* Only until the first proposal lands. After that the list itself is
           the progress indicator, and a banner above it would be saying
           "working" next to visible evidence of the work. */}
@@ -178,7 +260,14 @@ export const AiPanel = ({ projectId }: { projectId: string }) => {
           <p className="text-xs leading-relaxed text-content-muted">
             {errorText ?? t('ai.unavailable')}
           </p>
-          <Button size="sm" variant="secondary" onClick={() => void start()}>
+          {/* Retried with the same note. A retry that silently dropped it
+              would produce a different answer to the one that failed, which is
+              not what "try again" means. */}
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => void start(note.trim() || undefined)}
+          >
             <Wand2 className="h-3.5 w-3.5" />
             {t('common.retry')}
           </Button>

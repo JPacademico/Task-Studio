@@ -159,6 +159,9 @@ export const LandingNav = () => {
               ['#how', 'landing.nav.how'],
               ['#inside', 'landing.nav.inside'],
               ['#themes', 'landing.nav.themes'],
+              // Last, because the section is: a price is only a question once
+              // somebody wants the thing. See the note on the section itself.
+              ['#pricing', 'landing.nav.pricing'],
             ] as const
           ).map(([href, label]) => {
             const linkClass = cn(

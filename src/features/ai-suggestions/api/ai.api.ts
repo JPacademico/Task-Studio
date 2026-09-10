@@ -162,18 +162,31 @@ export const aiApi = {
    * `alreadyRunning` means a job for this project was in flight and this call
    * joined it rather than starting a second paid generation.
    */
-  async startProjectTasks(projectId: string): Promise<{ jobId: string; alreadyRunning: boolean }> {
+  /**
+   * `guidance` is an optional note steering *what* is proposed.
+   *
+   * Sent as typed and cleaned on the API — see `prepareGuidance` there. It is
+   * deliberately not sanitised here as well: a second, slightly different
+   * opinion about what counts as a fence is exactly how the two end up
+   * disagreeing, and only the server's opinion is the one that protects
+   * anything. The client's job is the character ceiling, which is on the field.
+   */
+  async startProjectTasks(
+    projectId: string,
+    guidance?: string,
+  ): Promise<{ jobId: string; alreadyRunning: boolean }> {
     const { data } = await api.post<{ jobId: string; alreadyRunning: boolean }>(
       `/ai/projects/${projectId}/tasks/stream`,
+      { ...(guidance ? { guidance } : {}) },
     );
     return data;
   },
 
   /** 1-3 candidate tasks for a project, from its description and board. */
-  async suggestProjectTasks(projectId: string): Promise<AiSuggestion> {
+  async suggestProjectTasks(projectId: string, guidance?: string): Promise<AiSuggestion> {
     const { data } = await api.post<AiSuggestion>(
       `/ai/projects/${projectId}/tasks`,
-      undefined,
+      { ...(guidance ? { guidance } : {}) },
       { timeout: SLOW_ROUTE_TIMEOUT_MS },
     );
     return data;

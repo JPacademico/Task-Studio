@@ -1,4 +1,15 @@
 export { Button, buttonClasses, type ButtonProps } from './button';
+/**
+ * The two "make a new thing" buttons, with a moving gradient for a fill.
+ *
+ * Deliberately not a `variant` on `Button`. That component is used a couple
+ * of hundred times and is the thing every other control is measured against;
+ * giving it a variant that mounts a WebGL context would put a lazy three.js
+ * import one prop away from every button in the product. A separate export
+ * makes the cost visible at the call site, which is where the decision to pay
+ * it is actually made.
+ */
+export { ShaderButton, type ShaderButtonProps } from './shader-button';
 export { Input, Textarea } from './input';
 export { Modal } from './modal';
 export { Avatar, AvatarStack } from './avatar';

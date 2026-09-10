@@ -14,7 +14,7 @@ import { cn } from '@/shared/lib/cn';
 import { useIsTouchDevice } from '@/shared/lib/hooks';
 import { useNavPreferences } from '@/shared/lib/nav-preferences.store';
 import { useEdgeReveal } from '@/shared/lib/use-edge-reveal';
-import { Avatar, Button, EdgeAffordance, NavPinButton, SkinLoader, StudioMark } from '@/shared/ui';
+import { Avatar, Button, EdgeAffordance, NavPinButton, ShaderButton, SkinLoader, StudioMark } from '@/shared/ui';
 
 interface TopNavigationProps {
   onOpenMobileMenu: () => void;
@@ -108,19 +108,34 @@ export const TopNavigation = ({ onOpenMobileMenu, onCreateProject }: TopNavigati
         <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
           {!isTouch && <NavPinButton isPinned={isPinned} onToggle={() => togglePin('top')} />}
 
-          <Button size="sm" onClick={onCreateProject} className="hidden sm:inline-flex">
+          {/*
+            The one control on this bar that is not navigation.
+
+            It carries a moving gradient rather than the flat brand fill every
+            other primary button has — see `ShaderButton` for why exactly two
+            buttons in the product get that, and why the flat fill is still
+            painted underneath for everybody the effect is not drawn for.
+          */}
+          <ShaderButton size="sm" onClick={onCreateProject} className="hidden sm:inline-flex">
             <Plus className="h-3.5 w-3.5" strokeWidth={2.6} />
             {t('nav.newProject')}
-          </Button>
-          {/* Phones get the same action as a single glyph rather than losing it. */}
-          <Button
+          </ShaderButton>
+          {/*
+            Phones get the same action as a single glyph rather than losing it.
+
+            Both twins are in the DOM at all times and only one is displayed, so
+            the hidden one would be a WebGL context nobody can see. It never
+            mounts a scene: `display: none` reads as off-screen to the
+            `IntersectionObserver` behind `useCanvasBudget`.
+          */}
+          <ShaderButton
             size="icon"
             onClick={onCreateProject}
             aria-label={t('nav.newProject')}
             className="sm:hidden"
           >
             <Plus className="h-4 w-4" strokeWidth={2.6} />
-          </Button>
+          </ShaderButton>
 
           <NotificationBell />
           <LanguageToggle />

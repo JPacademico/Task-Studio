@@ -183,7 +183,7 @@ export const useSuggestionStream = (projectId: string) => {
     };
   }, [fail, projectId, settle, socket]);
 
-  const start = useCallback(async () => {
+  const start = useCallback(async (guidance?: string) => {
     setStatus('working');
     setErrorText(null);
     setSuggestions([]);
@@ -194,7 +194,7 @@ export const useSuggestionStream = (projectId: string) => {
     // request open, but it is the only one that can answer at all here.
     if (!socket || !isConnected) {
       try {
-        settle(await aiApi.suggestProjectTasks(projectId));
+        settle(await aiApi.suggestProjectTasks(projectId, guidance));
       } catch (error) {
         fail(errorMessage(error, translate('ai.unavailable')));
       }
@@ -202,7 +202,7 @@ export const useSuggestionStream = (projectId: string) => {
     }
 
     try {
-      const { jobId: id } = await aiApi.startProjectTasks(projectId);
+      const { jobId: id } = await aiApi.startProjectTasks(projectId, guidance);
       jobId.current = id;
       armWatchdog();
     } catch (error) {

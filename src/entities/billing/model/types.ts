@@ -40,9 +40,26 @@ export interface PlanLimits {
   /** Bytes. Rendered with `formatFileSize`. */
   documentBoardBytes: Limit;
   aiCallsPerMonth: Limit;
-  broadcastConnections: boolean;
+  /**
+   * Which destinations a plan may post its events to. `null` is all of them.
+   *
+   * A list rather than the boolean it used to be, because the free tier sells
+   * Discord and not the other two — see `PlanLimits.broadcastFlavours` on the
+   * API. The comparison table renders it per destination rather than as one
+   * row, so a free reader can see what they already have.
+   */
+  broadcastFlavours: readonly BroadcastFlavour[] | null;
   figmaConnections: boolean;
 }
+
+/** The destinations a project can broadcast to. Mirrors the API's own union. */
+export type BroadcastFlavour = 'discord' | 'slack' | 'generic';
+
+/** Whether a plan may post to one destination. Mirrors `allowsFlavour`. */
+export const allowsFlavour = (
+  allowance: readonly BroadcastFlavour[] | null | undefined,
+  flavour: BroadcastFlavour,
+): boolean => !allowance || allowance.includes(flavour);
 
 /** One buyable combination, as the pricing table draws it. */
 export interface PlanPrice {

@@ -66,6 +66,47 @@ const daysUntil = (iso: string): number =>
  * row carries what is still inside it and when the server will destroy it, and
  * the destroy button asks for a password rather than a confirmation click.
  */
+/**
+ * How long is left before something in the bin is destroyed.
+ *
+ * ## Why it is a component now rather than eight lines on the projects tab
+ *
+ * Because all three bins expire on the same window since `BinPurgeScheduler`
+ * arrived, and the tasks tab needs exactly the same badge. Two copies of "when
+ * does amber start" is two places for the threshold to drift, on a control
+ * whose entire job is to be believed.
+ *
+ * ## Why amber at two days rather than at seven
+ *
+ * The window used to be thirty days and seven was the point where "I'll deal
+ * with it later" stopped being true. The window is a week now, so seven would
+ * mean every row in the bin is amber from the moment it arrives — a warning
+ * that is always on is not a warning, it is a colour scheme.
+ *
+ * Two days is the same *idea* re-derived for the shorter window: the last
+ * stretch in which somebody can still act without hurrying.
+ */
+const ExpiryBadge = ({ purgeAt }: { purgeAt: string | null | undefined }) => {
+  const t = useT();
+
+  if (!purgeAt) return null;
+
+  const days = daysUntil(purgeAt);
+
+  return (
+    <Badge
+      className={cn(
+        'border-transparent bg-transparent',
+        days <= 2 ? 'text-warning' : 'text-content-faint',
+      )}
+      title={formatDeadlineDate(purgeAt)}
+    >
+      <Trash2 className="h-3 w-3" />
+      {days === 0 ? t('bin.expiresToday') : t('bin.expiresInDays', { days: String(days) })}
+    </Badge>
+  );
+};
+
 const RecycleBinPage = () => {
   const t = useT();
   const [bin, setBin] = useState<Bin>('tasks');
@@ -225,6 +266,17 @@ const RecycleBinPage = () => {
                   </Badge>
                 )}
 
+                {/*
+                  The clock, on this tab as well as on projects.
+
+                  It could not be here before, because tasks did not expire —
+                  a binned task sat with `deletedAt` set for ever. Now that
+                  `BinPurgeScheduler` drains all three bins on the same window,
+                  a tab that said nothing about it would be the one screen in
+                  the product that hides a deletion it is about to perform.
+                */}
+                <ExpiryBadge purgeAt={task.purgeAt ?? null} />
+
                 {/* The type's name, not its key. `TASK_TYPE_META` holds a
                     `TranslationKey`; printing it raw is how this row came to
                     read "type.MEGA" in every language. */}
@@ -346,8 +398,6 @@ const RecycleBinPage = () => {
         <ul className="space-y-2.5">
           <AnimatePresence initial={false}>
             {projects.map((project) => {
-              const days = project.purgeAt ? daysUntil(project.purgeAt) : null;
-
               return (
                 <motion.li
                   key={project.id}
@@ -392,25 +442,7 @@ const RecycleBinPage = () => {
                     </p>
                   </div>
 
-                  {/*
-                    The clock. Amber inside a week, because that is the point at
-                    which "I'll deal with it later" stops being true.
-                  */}
-                  {days !== null && project.purgeAt && (
-                    <Badge
-                      className={cn(
-                        'border-transparent bg-transparent',
-                        days <= 7 ? 'text-warning' : 'text-content-faint',
-                      )}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                      {days === 0
-                        ? t('bin.expiresToday')
-                        : days <= 7
-                          ? t('bin.expiresInDays', { days: String(days) })
-                          : t('bin.expiresOn', { date: formatDeadlineDate(project.purgeAt) })}
-                    </Badge>
-                  )}
+                  <ExpiryBadge purgeAt={project.purgeAt} />
 
                   <div className="ml-auto flex items-center gap-2">
                     <Button

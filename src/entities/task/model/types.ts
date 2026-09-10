@@ -37,6 +37,19 @@ export interface TaskAssignee extends UserSummary {
 }
 
 export interface Task {
+  /**
+   * When this task is destroyed for good. Only ever set on a recycle-bin row.
+   *
+   * Absent everywhere else, because a task on a board has no expiry — see the
+   * note in `TasksService.recycleBin` for why the field is added there rather
+   * than carried as a null through every task list in the application.
+   *
+   * Computed on the server: a client with its own copy of the retention window
+   * is a client that will eventually disagree with the sweeper about when
+   * something disappears.
+   */
+  purgeAt?: string | null;
+
   id: string;
   title: string;
   description: string | null;

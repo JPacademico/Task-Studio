@@ -12,6 +12,14 @@ export const STORAGE_KEYS = {
   /** Whether the right rail is listing projects or organizations. */
   railScope: 'task-studio:rail-scope',
   boardPage: 'task-studio:board-page',
+  /**
+   * The last answer this deployment gave about Figma.
+   *
+   * Not a preference and not a cache of user data — a remembered fact about
+   * the *server*, kept only so the control it gates can be drawn on the first
+   * frame instead of appearing a moment later. See `useFigmaAvailability`.
+   */
+  figmaAvailable: 'task-studio:figma-available',
   shortcuts: 'task-studio:floating-shortcuts',
   taskLayout: 'task-studio:task-layout',
   locale: 'task-studio:locale',

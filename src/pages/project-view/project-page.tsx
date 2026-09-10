@@ -72,7 +72,7 @@ import { ProjectWindowChip } from '@/entities/project/ui/project-window-chip';
 import { ConnectionsPanel } from '@/features/connections/ui/connections-panel';
 import { cn } from '@/shared/lib/cn';
 import { formatDateTime } from '@/shared/lib/dates';
-import { Avatar, Button, PageLoader, Segmented } from '@/shared/ui';
+import { Avatar, Button, PageLoader, Segmented, ShaderButton } from '@/shared/ui';
 import { ProjectChangelog } from '@/widgets/project-changelog/ui/project-changelog';
 import { ProjectDashboard } from '@/widgets/project-dashboard/ui/project-dashboard';
 import { TextBoard } from '@/widgets/text-board/ui/text-board';
@@ -509,7 +509,9 @@ const ProjectPage = () => {
                 write either way, so the button is absent rather than present
                 and rejected. See `ProjectsService.complete`. */}
             {canManage && !isFinished && (
-              <Button
+              /* The one action this whole screen exists to support, so it is
+                 the other button that carries the gradient. See `ShaderButton`. */
+              <ShaderButton
                 onClick={() => {
                   setComposerTask(null);
                   setIsComposerOpen(true);
@@ -518,7 +520,7 @@ const ProjectPage = () => {
                 <Plus className="h-4 w-4" strokeWidth={2.6} />
                 <span className="hidden sm:inline">{t('project.newTask')}</span>
                 <span className="sm:hidden">{t('project.newTaskShort')}</span>
-              </Button>
+              </ShaderButton>
             )}
           </div>
         </div>

@@ -13,6 +13,7 @@ import { FeatureNotes } from './ui/feature-notes';
 import { IntegrationsStrip } from './ui/integrations-strip';
 import { LandingNav } from './ui/landing-nav';
 import { PiticoMark } from './ui/pitico-mark';
+import { PricingTable } from './ui/pricing-table';
 import { Reveal } from './ui/reveal';
 import { RotatingWord } from './ui/rotating-word';
 import { ThemeShowcase } from './ui/theme-showcase';
@@ -54,14 +55,17 @@ const AUTHOR_URL = 'https://www.instagram.com/pitic0_';
  * version is that a video would be several megabytes off a free tier, frozen in
  * one of thirteen skins, and stale the day a button moved.
  *
- * ## Why there is no pricing, no testimonials and no logo wall
+ * ## Why there are no testimonials and no logo wall
  *
- * There is no pricing to state, nobody has said anything quotable yet, and the
- * only logos that could honestly appear are of things the product *connects
- * to* — which is what the connections belt is. Every one of those sections
- * exists on the pages this was modelled on and every one of them would be
- * furniture here. The page says what the thing is, shows it working, lists
- * what it plugs into, shows what it can look like, and asks. That is the whole
+ * Nobody has said anything quotable yet, and the only logos that could honestly
+ * appear are of things the product *connects to* — which is what the
+ * connections belt is. Both sections exist on the pages this was modelled on
+ * and both would be furniture here.
+ *
+ * Pricing used to be on that list, on the grounds that there was none to state.
+ * There is now, so it has a section — placed last, for the reason given there.
+ * The page says what the thing is, shows it working, lists what it plugs into,
+ * shows what it can look like, says what it costs, and asks. That is the whole
  * of it.
  */
 const LandingPage = () => {
@@ -422,6 +426,50 @@ const LandingPage = () => {
 
           <Reveal className="mt-10" delay={80}>
             <ThemeShowcase />
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ================= PRICING =================
+
+          Last of the content sections, and directly before the closing.
+
+          ## Why it is here rather than near the top
+
+          Because a price is only a question once somebody wants the thing. A
+          visitor who has just arrived has no way to judge whether five dollars
+          is cheap or expensive — they do not yet know what it buys. By this
+          point they have watched the boards work, seen what it plugs into, read
+          what is inside it and seen what it can look like; the price is the
+          answer to the question all four of those produce.
+
+          It is also the last thing before the maker's mark, which means the two
+          buttons in the closing section are now the *second* invitation rather
+          than the first, and the reader arrives at them having already seen
+          what each plan costs.
+
+          ## Why the section note that used to be on this page is gone
+
+          The introduction's comment said "there is no pricing, no testimonials
+          and no logo wall" and gave the honest reason: there was no pricing to
+          state. There is now. The other two are still absent and still for the
+          reasons given there.
+      */}
+      <section id="pricing" className="scroll-mt-20 border-t border-edge/70">
+        <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
+          <Reveal>
+            <header className="mx-auto max-w-2xl text-center">
+              <h2 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl">
+                {t('landing.pricing.title')}
+              </h2>
+              <p className="mt-3 text-balance text-base leading-relaxed text-content-muted">
+                {t('landing.pricing.subtitle')}
+              </p>
+            </header>
+          </Reveal>
+
+          <Reveal className="mt-10" delay={80}>
+            <PricingTable />
           </Reveal>
         </div>
       </section>

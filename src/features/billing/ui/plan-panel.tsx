@@ -10,13 +10,14 @@ import {
   useRefreshPlanAfterCheckout,
   useStartCheckout,
 } from '@/entities/billing/model/queries';
-import type {
-  BillingInterval,
-  Currency,
-  Limit,
-  Plan,
-  PlanLimits,
-  PlanOffer,
+import {
+  allowsFlavour,
+  type BillingInterval,
+  type Currency,
+  type Limit,
+  type Plan,
+  type PlanLimits,
+  type PlanOffer,
 } from '@/entities/billing/model/types';
 import { formatCalendarDate } from '@/shared/lib/dates';
 import { cn } from '@/shared/lib/cn';
@@ -94,7 +95,23 @@ const FEATURES: FeatureRow[] = [
         : formatBytesCeiling(l.documentBoardBytes),
   },
   { key: 'billing.feature.ai', render: (l, t) => count(l.aiCallsPerMonth, t) },
-  { key: 'billing.feature.broadcast', render: (l) => l.broadcastConnections },
+  /*
+   * Two rows for broadcasting, not one.
+   *
+   * A single "Discord, Slack & custom endpoints" row would have to render a
+   * tick on the free tier (it has Discord) or a dash (it lacks the other two),
+   * and both are lies. Splitting it is the only honest rendering, and it also
+   * happens to be the better sales table: a free reader sees a tick they
+   * already have next to a dash they could buy, which is a far more legible
+   * offer than one ambiguous row.
+   */
+  { key: 'billing.feature.discord', render: (l) => allowsFlavour(l.broadcastFlavours, 'discord') },
+  {
+    key: 'billing.feature.broadcast',
+    render: (l) =>
+      allowsFlavour(l.broadcastFlavours, 'slack') &&
+      allowsFlavour(l.broadcastFlavours, 'generic'),
+  },
   { key: 'billing.feature.figma', render: (l) => l.figmaConnections },
 ];
 
