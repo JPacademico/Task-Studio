@@ -39,11 +39,18 @@ const VARIANTS: Record<Variant, string> = {
    * the product is a *confirmation* of something already decided. A shimmering
    * Save button is noise attached to a decision that has already been made.
    *
-   * No `bg-*` utility, deliberately: `.ui-lava` sets `background-color` and
-   * `background-image` in `@layer components`, and any Tailwind background
-   * utility here would outrank both and paint a flat colour over the lamp.
+   * No `bg-*` or `shadow-*` utility, deliberately. `.ui-lava` sets both in
+   * `@layer components` and a utility would outrank it — a background would
+   * paint a flat colour over the lamp, and a shadow would drop the inset
+   * hairline that is the only thing giving the tube a visible edge against a
+   * page of a similar darkness.
+   *
+   * On its own this is a still lamp: the tube, the edge and the hover fill. The
+   * wax is seven elements and a class cannot put children in an anchor, so a
+   * call site that wants the motion renders `LavaSurface` inside — see
+   * `LavaLink`.
    */
-  lava: 'ui-lava shadow-sm shadow-brand/30',
+  lava: 'ui-lava',
   /*
    * `ui-btn--secondary` is a skin hook, not a look — nothing in this file
    * reads it. The studio palette keeps `--edge` within a couple of steps of

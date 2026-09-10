@@ -8,6 +8,7 @@ import { ThemeToggle } from '@/features/theme-toggle/ui/theme-toggle';
 import { cn } from '@/shared/lib/cn';
 import { buttonClasses, StudioMark } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
+import { LavaLink } from './lava-link';
 
 /**
  * The bar across the top.
@@ -258,9 +259,9 @@ export const LandingNav = () => {
           >
             {t('landing.nav.signIn')}
           </Link>
-          <Link to="/signup" className={buttonClasses({ variant: 'lava', size: 'sm' })}>
+          <LavaLink to="/signup" size="sm">
             {t('landing.nav.getStarted')}
-          </Link>
+          </LavaLink>
         </div>
       </nav>
     </header>

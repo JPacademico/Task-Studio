@@ -15,6 +15,7 @@ import { formatBytesCeiling, formatPrice } from '@/features/billing/lib/format';
 import { cn } from '@/shared/lib/cn';
 import { Badge, Skeleton, buttonClasses } from '@/shared/ui';
 import { useLocale, useT, type Translate } from '@/shared/i18n';
+import { LavaLink } from './lava-link';
 
 /**
  * Which currency a visitor is offered first.
@@ -384,20 +385,33 @@ export const PricingTable = () => {
 
               {/*
                 The focused card's button carries the lamp, the other two do
-                not — the same fill the navigation bar and both calls to action
-                use, so the emphasis moving across the row moves the *offer*
-                with it rather than only a border.
+                not — the same control the navigation bar and both calls to
+                action use, so the emphasis moving across the row moves the
+                *offer* with it rather than only a border.
+
+                Two elements rather than one with a swapped variant, because
+                only one of them can hold the lamp's seven spans. The swap
+                mounts and unmounts a `LavaSurface` as the pointer crosses the
+                row; that is three listeners at human speed, and the alternative
+                — keeping all three lamps mounted and hiding two — would run two
+                gooey filters nobody can see.
               */}
-              <Link
-                to="/register"
-                className={buttonClasses({
-                  variant: isFocused ? 'lava' : 'secondary',
-                  size: 'md',
-                  className: 'w-full',
-                })}
-              >
-                {t(isFree ? 'landing.pricing.ctaFree' : 'landing.pricing.ctaPaid')}
-              </Link>
+              {isFocused ? (
+                <LavaLink to="/register" className="w-full">
+                  {t(isFree ? 'landing.pricing.ctaFree' : 'landing.pricing.ctaPaid')}
+                </LavaLink>
+              ) : (
+                <Link
+                  to="/register"
+                  className={buttonClasses({
+                    variant: 'secondary',
+                    size: 'md',
+                    className: 'w-full',
+                  })}
+                >
+                  {t(isFree ? 'landing.pricing.ctaFree' : 'landing.pricing.ctaPaid')}
+                </Link>
+              )}
 
               <ul className="space-y-3 border-t border-edge pt-6">
                 {featuresOf(offer.limits, t).map((feature) => (

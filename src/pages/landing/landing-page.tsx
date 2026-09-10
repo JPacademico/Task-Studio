@@ -12,6 +12,7 @@ import { FeatureCarousel } from './ui/feature-carousel';
 import { FeatureNotes } from './ui/feature-notes';
 import { IntegrationsStrip } from './ui/integrations-strip';
 import { LandingNav } from './ui/landing-nav';
+import { LavaLink } from './ui/lava-link';
 import { PiticoMark } from './ui/pitico-mark';
 import { PricingTable } from './ui/pricing-table';
 import { Reveal } from './ui/reveal';
@@ -271,22 +272,19 @@ const LandingPage = () => {
 
             <div className="flex shrink-0 flex-wrap items-center gap-2.5">
               {/*
-                `lava` rather than the flat brand fill.
+                The lamp, not the flat brand fill.
 
-                It is the same moving fill the "New project" button in the app
-                carries, and putting it on the two calls to action here is what
-                makes the page and the product read as one thing: the button
-                that gets you in looks like the button you press once you are.
-                See `.ui-lava` for why that is affordable four times on a page
-                and was not affordable twice before.
+                It is the same control the "New project" button in the app is,
+                and putting it on the two calls to action here is what makes the
+                page and the product read as one thing: the button that gets you
+                in is the button you press once you are. See `LavaSurface` for
+                why that is affordable on four buttons at once and was not
+                affordable on two before.
               */}
-              <Link
-                to="/signup"
-                className={buttonClasses({ variant: 'lava', size: 'lg', className: 'gap-2' })}
-              >
+              <LavaLink to="/signup" size="lg">
                 {t('landing.hero.primary')}
                 <ArrowRight aria-hidden className="h-4 w-4" />
-              </Link>
+              </LavaLink>
               <a href="#how" className={buttonClasses({ variant: 'secondary', size: 'lg' })}>
                 {t('landing.hero.secondary')}
               </a>
@@ -536,13 +534,10 @@ const LandingPage = () => {
           </p>
 
           <div className="mt-8 flex flex-wrap justify-center gap-2.5">
-            <Link
-              to="/signup"
-              className={buttonClasses({ variant: 'lava', size: 'lg', className: 'gap-2' })}
-            >
+            <LavaLink to="/signup" size="lg">
               {t('landing.cta.primary')}
               <ArrowRight aria-hidden className="h-4 w-4" />
-            </Link>
+            </LavaLink>
             <Link
               to="/login"
               className={buttonClasses({ variant: 'secondary', size: 'lg' })}

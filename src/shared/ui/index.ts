@@ -9,6 +9,15 @@ export { Button, buttonClasses, type ButtonProps } from './button';
  * anything that only wants that asks `buttonClasses` for `variant: 'lava'`.
  */
 export { LavaButton, type LavaButtonProps } from './lava-button';
+/**
+ * The lamp itself, for a control that is not a `<button>`.
+ *
+ * `.ui-lava` carries everything a class can — the tube, the edge, the label
+ * colour, the hover fill — and the wax is seven elements, which a class cannot
+ * put inside an anchor. So a link wears the variant and renders this. See
+ * `LavaLink` on the landing page.
+ */
+export { LavaSurface } from './lava-surface';
 export { Input, Textarea } from './input';
 export { Modal } from './modal';
 export { Avatar, AvatarStack } from './avatar';

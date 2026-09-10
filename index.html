@@ -30,6 +30,64 @@
     <script src="/theme-init.js"></script>
   </head>
   <body>
+    <!--
+      The gooey filter the "new thing" buttons' lava lamp is drawn through.
+
+      ## Why it lives in the shell rather than in a component
+
+      Because `filter: url(#lava-goo)` resolves against the *document*, and the
+      six or so controls that use it are spread across three routes and two
+      lazily-loaded chunks. A component that rendered its own copy would put
+      duplicate ids in the document the moment two of them were on screen —
+      which is exactly the case this is for — and one that mounted a shared copy
+      into `document.body` would be a side effect running before first paint for
+      the sake of nine lines of markup. Here it costs about 400 bytes, is
+      present before anything can reference it, and there is only ever one.
+
+      ## What it does
+
+      `feGaussianBlur` bleeds the blobs into one another; `feColorMatrix`
+      multiplies the *alpha* channel by 20 and subtracts 8, which turns that
+      soft bleed back into a hard edge. Two blobs whose blurs overlap therefore
+      resolve as one shape with a neck between them, and separate again as they
+      part — the metaball effect, and the only reason this reads as wax rather
+      than as circles sliding past each other.
+
+      `feBlend` puts the untouched blobs back on top so their cores stay the
+      full accent colour rather than the threshold's approximation of it.
+
+      `color-interpolation-filters="sRGB"` is not optional: the default is
+      linearRGB, which would run the threshold against gamma-decoded values and
+      hand back a colour visibly lighter than `--brand` on every skin.
+    -->
+    <svg
+      aria-hidden="true"
+      focusable="false"
+      width="0"
+      height="0"
+      style="position: absolute"
+    >
+      <defs>
+        <filter
+          id="lava-goo"
+          x="-12%"
+          y="-30%"
+          width="124%"
+          height="160%"
+          color-interpolation-filters="sRGB"
+        >
+          <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" />
+          <feColorMatrix
+            in="blur"
+            type="matrix"
+            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -8"
+            result="goo"
+          />
+          <feBlend in="SourceGraphic" in2="goo" />
+        </filter>
+      </defs>
+    </svg>
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
