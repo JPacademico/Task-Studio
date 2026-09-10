@@ -317,3 +317,30 @@ export type DocumentBroadcast = Omit<
   ProjectDocument,
   'canEdit' | 'canManageAccess' | 'canDelete'
 >;
+
+/**
+ * How full one text board is, and how full it is allowed to get.
+ *
+ * ## Why the ceiling comes from the server rather than from the reader's plan
+ *
+ * Because on a project board it is not the reader's plan. A project's pages
+ * share one allowance sized by the **project owner's** plan — a gigabyte on
+ * Baron, 500 MB on Startup, 100 MB on Free — and every member of the project
+ * writes into that same one. A client that drew the gauge from
+ * `billing/me.limits` would show a free member of a Baron project a 100 MB
+ * ceiling on a board that holds a gigabyte, and a Baron member of a free
+ * colleague's project the reverse.
+ *
+ * A personal desk is the one board where the two answers coincide, because
+ * there is only one person on it.
+ *
+ * `null` is no ceiling at all, exactly as it is on the plan catalogue.
+ */
+export interface BoardUsage {
+  scope: 'project' | 'personal';
+  /** The sum of every live page on this board: uploaded originals plus bodies. */
+  usedBytes: number;
+  limitBytes: number | null;
+  documents: number;
+  documentLimit: number | null;
+}

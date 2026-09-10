@@ -270,9 +270,19 @@ const LandingPage = () => {
             </p>
 
             <div className="flex shrink-0 flex-wrap items-center gap-2.5">
+              {/*
+                `lava` rather than the flat brand fill.
+
+                It is the same moving fill the "New project" button in the app
+                carries, and putting it on the two calls to action here is what
+                makes the page and the product read as one thing: the button
+                that gets you in looks like the button you press once you are.
+                See `.ui-lava` for why that is affordable four times on a page
+                and was not affordable twice before.
+              */}
               <Link
                 to="/signup"
-                className={buttonClasses({ size: 'lg', className: 'gap-2' })}
+                className={buttonClasses({ variant: 'lava', size: 'lg', className: 'gap-2' })}
               >
                 {t('landing.hero.primary')}
                 <ArrowRight aria-hidden className="h-4 w-4" />
@@ -526,7 +536,10 @@ const LandingPage = () => {
           </p>
 
           <div className="mt-8 flex flex-wrap justify-center gap-2.5">
-            <Link to="/signup" className={buttonClasses({ size: 'lg', className: 'gap-2' })}>
+            <Link
+              to="/signup"
+              className={buttonClasses({ variant: 'lava', size: 'lg', className: 'gap-2' })}
+            >
               {t('landing.cta.primary')}
               <ArrowRight aria-hidden className="h-4 w-4" />
             </Link>

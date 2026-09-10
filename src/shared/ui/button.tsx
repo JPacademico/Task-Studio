@@ -3,7 +3,7 @@ import { forwardRef, type ButtonHTMLAttributes } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { SkinLoader } from './skin-loader';
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline';
+type Variant = 'primary' | 'lava' | 'secondary' | 'ghost' | 'danger' | 'outline';
 type Size = 'sm' | 'md' | 'lg' | 'icon';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -15,6 +15,35 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 const VARIANTS: Record<Variant, string> = {
   primary:
     'bg-brand text-brand-contrast hover:brightness-110 active:brightness-95 shadow-sm shadow-brand/30',
+  /*
+   * The same button, with a moving fill instead of a flat one.
+   *
+   * ## Why it is a variant and not a component any more
+   *
+   * It was a component — `ShaderButton`, which mounted a three.js scene behind
+   * a `lazy` import and could only ever exist twice on a page, because a
+   * browser hands out a finite number of WebGL contexts. That made it a thing
+   * you could put on two controls in the entire product and nowhere else,
+   * which is why the landing page's four primary buttons could not have it.
+   *
+   * `.ui-lava` is three gradients and two keyframes (see `index.css`). It
+   * costs no JavaScript, no network request and no GPU context, so there is
+   * nothing left to ration and no reason for the cost to be visible at the
+   * call site. A variant is what it always should have been.
+   *
+   * ## Why it is not the default
+   *
+   * A button that draws attention to itself is only useful if almost nothing
+   * else does. This is for the one action a screen exists to support — "New
+   * project", "New task", "Get started" — and every other primary button in
+   * the product is a *confirmation* of something already decided. A shimmering
+   * Save button is noise attached to a decision that has already been made.
+   *
+   * No `bg-*` utility, deliberately: `.ui-lava` sets `background-color` and
+   * `background-image` in `@layer components`, and any Tailwind background
+   * utility here would outrank both and paint a flat colour over the lamp.
+   */
+  lava: 'ui-lava shadow-sm shadow-brand/30',
   /*
    * `ui-btn--secondary` is a skin hook, not a look — nothing in this file
    * reads it. The studio palette keeps `--edge` within a couple of steps of

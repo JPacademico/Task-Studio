@@ -73,6 +73,7 @@ import {
   formatFileSize,
 } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
+import { BoardGauge } from './board-gauge';
 import { DocumentAccessDialog } from './document-access-dialog';
 import { DocumentDownloadMenu } from './download-menu';
 import { FigmaDocument } from './figma-document';
@@ -969,7 +970,18 @@ export const TextBoard = ({
           </Button>
         )}
 
-        <span className="ml-auto flex items-center gap-1.5">
+        {/*
+          How full the board is, between the ways of adding to it and the ways
+          of acting on what is open.
+
+          Placed here on purpose: it is the answer to the question the two
+          controls on its left provoke, and the person who needs it is the one
+          reaching for Import. See `BoardGauge` for why a project's ceiling is
+          not the reader's own plan.
+        */}
+        <BoardGauge projectId={projectId} />
+
+        <span className="flex items-center gap-1.5">
           {open && (
             <>
               {isEditing ? (

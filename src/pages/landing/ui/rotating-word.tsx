@@ -170,10 +170,44 @@ export const RotatingWord = ({ className }: { className?: string }) => {
          * override, not the box, as the thing that was wrong. Removing it puts
          * the delta at zero.
          *
-         * The padding stays: it is what gives descenders somewhere to be drawn
-         * instead of being sliced off by the clip.
+         * ## Why the padding is deep, and why a negative margin cancels it
+         *
+         * The padding is what gives descenders somewhere to be drawn instead of
+         * being sliced off by the clip, and at `0.16em` there was not enough of
+         * it: the bottom of every `p`, `j` and `ç` in the list was being cut.
+         *
+         * The arithmetic, measured rather than guessed. The cell is one line
+         * box tall — `leading-[0.95]`, so 0.95em — while the hand's own content
+         * area is 1.75em (1.252 ascent, 0.498 descent). The difference is split
+         * as half-leading, so the glyphs overflow the box by 0.4em at each end
+         * and the baseline sits 0.85em down. A descender reaching the font's
+         * full 0.498em therefore ends 1.35em from the top of a box that is
+         * 1.11em tall with the old padding — about six pixels of `p` missing at
+         * the headline's size, which is exactly what was reported.
+         *
+         * `0.42em` clears the deepest glyph the metrics allow, with room for
+         * the twelve other hands the skins set — a script face is precisely
+         * where a long descender is most likely, and the value is chosen off
+         * the *declared* descent rather than off the ink of these five words so
+         * it does not have to be re-measured every time a noun changes.
+         *
+         * The negative margin is what keeps the rest of the line where it was.
+         * Padding on an inline-level box grows its margin box, and the line box
+         * grows to fit — so deepening the padding alone would have pushed the
+         * second line of the headline down by a quarter of an em, on the one
+         * line of the page whose spacing is most visible. `-mb` gives back
+         * exactly the added padding, so the box this occupies in the line is
+         * unchanged and only the *clip* is deeper. The baseline does not move:
+         * an inline-grid takes it from the items in its first row, not from its
+         * own margin edge — see the note above.
+         *
+         * The horizontal pair does the same job for a hand's side bearings. A
+         * script face overhangs its advance width, and a clip at the content
+         * edge takes the tail off the last letter; `px`/`-mx` widen the clip
+         * without widening the box, so the cell stays exactly as wide as the
+         * longest noun and the headline still never reflows.
          */
-        'overflow-hidden pb-[0.16em]',
+        'overflow-hidden px-[0.1em] -mx-[0.1em] pb-[0.42em] -mb-[0.26em]',
         className,
       )}
     >

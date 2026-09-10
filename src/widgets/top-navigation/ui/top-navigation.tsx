@@ -14,7 +14,7 @@ import { cn } from '@/shared/lib/cn';
 import { useIsTouchDevice } from '@/shared/lib/hooks';
 import { useNavPreferences } from '@/shared/lib/nav-preferences.store';
 import { useEdgeReveal } from '@/shared/lib/use-edge-reveal';
-import { Avatar, Button, EdgeAffordance, NavPinButton, ShaderButton, SkinLoader, StudioMark } from '@/shared/ui';
+import { Avatar, Button, EdgeAffordance, LavaButton, NavPinButton, SkinLoader, StudioMark } from '@/shared/ui';
 
 interface TopNavigationProps {
   onOpenMobileMenu: () => void;
@@ -111,31 +111,30 @@ export const TopNavigation = ({ onOpenMobileMenu, onCreateProject }: TopNavigati
           {/*
             The one control on this bar that is not navigation.
 
-            It carries a moving gradient rather than the flat brand fill every
-            other primary button has — see `ShaderButton` for why exactly two
-            buttons in the product get that, and why the flat fill is still
-            painted underneath for everybody the effect is not drawn for.
+            It carries a moving fill rather than the flat brand one every other
+            primary button has — see `LavaButton` for why exactly two buttons
+            inside the app get that.
           */}
-          <ShaderButton size="sm" onClick={onCreateProject} className="hidden sm:inline-flex">
+          <LavaButton size="sm" onClick={onCreateProject} className="hidden sm:inline-flex">
             <Plus className="h-3.5 w-3.5" strokeWidth={2.6} />
             {t('nav.newProject')}
-          </ShaderButton>
+          </LavaButton>
           {/*
             Phones get the same action as a single glyph rather than losing it.
 
-            Both twins are in the DOM at all times and only one is displayed, so
-            the hidden one would be a WebGL context nobody can see. It never
-            mounts a scene: `display: none` reads as off-screen to the
-            `IntersectionObserver` behind `useCanvasBudget`.
+            Both twins are in the DOM at all times and only one is displayed.
+            That used to matter a great deal — the hidden one would have been a
+            WebGL context nobody could see — and now costs nothing at all: a
+            `display: none` element runs no animations and paints no gradients.
           */}
-          <ShaderButton
+          <LavaButton
             size="icon"
             onClick={onCreateProject}
             aria-label={t('nav.newProject')}
             className="sm:hidden"
           >
             <Plus className="h-4 w-4" strokeWidth={2.6} />
-          </ShaderButton>
+          </LavaButton>
 
           <NotificationBell />
           <LanguageToggle />

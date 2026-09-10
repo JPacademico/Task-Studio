@@ -315,12 +315,25 @@ export const PlanPanel = () => {
             note={t('billing.usage.resets', { date: formatCalendarDate(current.usage.ai.resetsAt) })}
             t={t}
           />
+          {/*
+            Your own desk, and only your own desk.
+
+            The note under it is doing real work rather than decorating. This
+            meter is the reader's plan applied to the reader's pages, which is
+            correct here and is *not* how a project board works: a project's
+            pages share one allowance sized by the project owner's plan, for
+            every member of the project. Without the line, somebody on Baron
+            reasonably reads "1 GB" as their personal share of every board they
+            can write to. The board's own gauge says the rest — see
+            `BoardGauge`.
+          */}
           <Meter
             label={t('billing.usage.personalBoard')}
             used={current.usage.personalBoardBytes}
             limit={current.limits.documentBoardBytes}
             format={formatBytesUsed}
             formatLimit={formatBytesCeiling}
+            note={t('billing.usage.personalBoardNote')}
             t={t}
           />
         </div>

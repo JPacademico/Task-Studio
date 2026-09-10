@@ -1,15 +1,14 @@
 export { Button, buttonClasses, type ButtonProps } from './button';
 /**
- * The two "make a new thing" buttons, with a moving gradient for a fill.
+ * The two "make a new thing" buttons, with a lamp for a fill.
  *
- * Deliberately not a `variant` on `Button`. That component is used a couple
- * of hundred times and is the thing every other control is measured against;
- * giving it a variant that mounts a WebGL context would put a lazy three.js
- * import one prop away from every button in the product. A separate export
- * makes the cost visible at the call site, which is where the decision to pay
- * it is actually made.
+ * Still its own component rather than only a `Button` variant, and the reason
+ * has changed: it is no longer about cost — `.ui-lava` is three gradients —
+ * but about the loading and label composition these two buttons need and the
+ * two hundred other call sites of `Button` do not. The *fill* is shared, and
+ * anything that only wants that asks `buttonClasses` for `variant: 'lava'`.
  */
-export { ShaderButton, type ShaderButtonProps } from './shader-button';
+export { LavaButton, type LavaButtonProps } from './lava-button';
 export { Input, Textarea } from './input';
 export { Modal } from './modal';
 export { Avatar, AvatarStack } from './avatar';

@@ -102,6 +102,16 @@ export const queryKeys = {
     list: (projectId: string | undefined, taskId?: string) =>
       ['documents', 'list', projectId ?? 'personal', taskId ?? 'all'] as const,
     detail: (documentId: string) => ['documents', documentId] as const,
+    /**
+     * How full one board is. Same scoping rule as `list`: no project id is the
+     * caller's own desk.
+     *
+     * Under the `documents` prefix on purpose — every mutation in this entity
+     * already invalidates that prefix, so adding, importing or binning a page
+     * refreshes the gauge without a single call site learning it exists.
+     */
+    usage: (projectId: string | undefined) =>
+      ['documents', 'usage', projectId ?? 'personal'] as const,
   },
 
   meetings: {

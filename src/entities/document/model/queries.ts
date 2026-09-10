@@ -31,6 +31,21 @@ export const useProjectDocuments = (projectId?: string, taskId?: string) =>
     staleTime: 15_000,
   });
 
+/**
+ * How full the board is, for the gauge above it.
+ *
+ * The same scope argument the list takes, so a project tab and the personal
+ * desk ask the same hook and get the answer for the board they are showing.
+ * `staleTime` matches the list's: the two are read together and there is no
+ * value in one of them being fresher than the other.
+ */
+export const useBoardUsage = (projectId?: string) =>
+  useQuery({
+    queryKey: queryKeys.documents.usage(projectId),
+    queryFn: () => documentApi.boardUsage(projectId),
+    staleTime: 15_000,
+  });
+
 export const useProjectDocument = (documentId: string | undefined) =>
   useQuery({
     queryKey: queryKeys.documents.detail(documentId ?? ''),
@@ -110,17 +125,51 @@ const useDocumentListCache = () => {
     [queryClient],
   );
 
-  return useMemo(() => ({ upsertRow, removeRow }), [removeRow, upsertRow]);
+  /**
+   * Re-ask how full the board is, for the mutations that change its weight.
+   *
+   * ## Why it is not folded into `upsertRow`
+   *
+   * Because `upsertRow` also runs on a rename, on a permissions change, on a
+   * Figma sync and on every row that arrives over the socket — none of which
+   * move a single byte. Refreshing the gauge there would put a `SUM` over the
+   * whole board behind every save anybody on the project makes.
+   *
+   * The three things that genuinely change the total are a page appearing, a
+   * page being imported (which is where the bytes actually are), and a page
+   * going away. Those call this; nothing else does.
+   *
+   * `invalidateQueries` rather than a computed adjustment: the total is
+   * `sourceSize + octet_length(content)` summed on the server, and a client
+   * that tried to keep its own running total would be reimplementing the
+   * sanitiser to guess how long a body will be once it is stored.
+   *
+   * The prefix covers both boards. Adopting a personal page into a project
+   * moves weight from one to the other, and only one of the two ids is known
+   * at the call site.
+   */
+  const refreshUsage = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: [...queryKeys.documents.all, 'usage'] });
+  }, [queryClient]);
+
+  return useMemo(
+    () => ({ upsertRow, removeRow, refreshUsage }),
+    [refreshUsage, removeRow, upsertRow],
+  );
 };
 
 export const useCreateDocument = () => {
-  const { upsertRow } = useDocumentListCache();
+  const { upsertRow, refreshUsage } = useDocumentListCache();
 
   return useMutation({
     mutationFn: (payload: CreateDocumentPayload) => documentApi.create(payload),
     // The API returns the finished row, so the table of contents can be edited
-    // rather than thrown away and fetched again.
-    onSuccess: (document) => upsertRow(document),
+    // rather than thrown away and fetched again. The board's total is the one
+    // thing the response does not carry — see `refreshUsage`.
+    onSuccess: (document) => {
+      upsertRow(document);
+      refreshUsage();
+    },
     onError: (error) => toast.error(errorMessage(error, translate('doc.createFailed'))),
   });
 };
@@ -186,11 +235,14 @@ export const useSetDocumentEditors = () => {
  * other is a document that already exists.
  */
 export const useImportDocument = () => {
-  const { upsertRow } = useDocumentListCache();
+  const { upsertRow, refreshUsage } = useDocumentListCache();
 
   return useMutation({
     mutationFn: (payload: ImportDocumentPayload) => documentApi.import(payload),
-    onSuccess: (document) => upsertRow(document),
+    onSuccess: (document) => {
+      upsertRow(document);
+      refreshUsage();
+    },
     /*
      * No `onError`, deliberately.
      *
@@ -253,12 +305,16 @@ export const useDocumentAssets = (documentId: string | undefined, enabled: boole
 
 /** Puts a Figma file on a project's board as a page. */
 export const useCreateFigmaPage = () => {
-  const { upsertRow } = useDocumentListCache();
+  const { upsertRow, refreshUsage } = useDocumentListCache();
 
   return useMutation({
     mutationFn: (payload: CreateFigmaPagePayload) => documentApi.createFigmaPage(payload),
     onSuccess: (document) => {
       upsertRow(document);
+      // A design page holds a link rather than a file, so it barely moves the
+      // needle — but it is a page on the board, and a gauge that ignored one
+      // kind of page would be wrong in exactly the way nobody would look for.
+      refreshUsage();
       toast.success(translate('figma.pageAdded'));
     },
     onError: (error) => toast.error(errorMessage(error, translate('figma.pageFailed'))),
@@ -345,12 +401,13 @@ export const useFigmaBrief = () =>
   });
 
 export const useDeleteDocument = () => {
-  const { removeRow } = useDocumentListCache();
+  const { removeRow, refreshUsage } = useDocumentListCache();
 
   return useMutation({
     mutationFn: (documentId: string) => documentApi.remove(documentId),
     onSuccess: (_result, documentId) => {
       removeRow(documentId);
+      refreshUsage();
       toast.success(translate('doc.deleted'));
     },
     onError: (error) => toast.error(errorMessage(error)),

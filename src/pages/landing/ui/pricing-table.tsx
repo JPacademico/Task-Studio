@@ -42,6 +42,40 @@ const preferredCurrency = (locale: string): Currency => (locale.startsWith('pt')
 const HIGHLIGHTED: Plan = 'STARTUP';
 
 /**
+ * Which card the row is leaning on right now.
+ *
+ * `HIGHLIGHTED` is where it rests; the pointer moves it. Hovering any card
+ * brings that one forward and lets the other two fall back, which is the
+ * behaviour a three-column table wants and almost never has: the reader is
+ * *already* comparing, and the card under their cursor is the one they are
+ * comparing from.
+ *
+ * Focus counts as well as hover, and it is not a courtesy. Without it the
+ * emphasis would be invisible to anybody tabbing through the three "Get
+ * started" buttons — three identical-looking cards with no indication which
+ * one the focused button belongs to.
+ */
+const useFocusedPlan = () => {
+  const [focused, setFocused] = useState<Plan | null>(null);
+
+  return {
+    focused: focused ?? HIGHLIGHTED,
+    /*
+     * `onPointerEnter` rather than `onMouseEnter`: a tap on a touch screen
+     * fires a pointer event too, so the card somebody taps comes forward. The
+     * pointer type is deliberately not checked — a tap that moves the emphasis
+     * to the card being tapped is correct on a phone as well.
+     */
+    handlers: (plan: Plan) => ({
+      onPointerEnter: () => setFocused(plan),
+      onPointerLeave: () => setFocused((current) => (current === plan ? null : current)),
+      onFocus: () => setFocused(plan),
+      onBlur: () => setFocused((current) => (current === plan ? null : current)),
+    }),
+  };
+};
+
+/**
  * What each plan's card lists, derived from the limits it actually enforces.
  *
  * ## Why these are computed rather than written
@@ -114,6 +148,7 @@ export const PricingTable = () => {
 
   const [interval, setInterval] = useState<BillingInterval>('MONTH');
   const [currency, setCurrency] = useState<Currency>(() => preferredCurrency(locale));
+  const { focused, handlers } = useFocusedPlan();
 
   /*
    * Corrected once the deployment says what it sells — the same settle-on-what-
@@ -139,7 +174,7 @@ export const PricingTable = () => {
     return (
       <div className="grid gap-4 lg:grid-cols-3">
         {[0, 1, 2].map((index) => (
-          <Skeleton key={index} className="h-[26rem] rounded-3xl" />
+          <Skeleton key={index} className="h-[30rem] rounded-3xl" />
         ))}
       </div>
     );
@@ -217,35 +252,82 @@ export const PricingTable = () => {
         )}
       </div>
 
-      {/* --- The three cards ---------------------------------------------- */}
-      <ul className="grid items-start gap-4 lg:grid-cols-3">
+      {/* --- The three cards ----------------------------------------------
+
+          `items-stretch` (the grid default, restored by dropping the
+          `items-start` this had) rather than three cards of their own heights.
+
+          It matters more than it used to. The emphasis now *moves* — see
+          `useFocusedPlan` — and a row of cards with three different heights
+          would have the row's total height change as the pointer crossed it,
+          because the lifted card is the tallest thing in it. Equal heights make
+          the geometry constant, so the only thing that changes on hover is the
+          card, which is the point.
+
+          It is also the reason the marked card no longer grows with
+          `lg:-my-2 lg:py-8`. That was a real change of box, fine when it was
+          fixed at build time and a reflow of the whole section if it followed a
+          cursor. A `transform` says the same thing and costs no layout. */}
+      <ul className="grid gap-4 lg:grid-cols-3">
         {data.plans.map((offer) => {
           const isFree = offer.plan === 'FREE';
           const price = priceFor(offer);
-          const isHighlighted = offer.plan === HIGHLIGHTED;
+          const isFocused = offer.plan === focused;
 
           return (
             <li
               key={offer.plan}
+              {...handlers(offer.plan)}
               className={cn(
-                'ui-card relative flex flex-col gap-5 rounded-3xl border p-6',
                 /*
-                 * The marked card is *lifted*, not recoloured.
-                 *
-                 * A brand-filled middle column would read as an advertisement
-                 * sitting between two products rather than as one of three
-                 * things on offer, and it would put white-on-brand body text
-                 * next to two columns of ordinary body text. A ring, a raised
-                 * surface and a shadow say "this one" in the same visual
-                 * language the rest of the product already uses for emphasis.
+                 * `isolate` is load-bearing, not tidiness: the glow below sits
+                 * at `z-index: -1`, and without a stacking context here it
+                 * would paint behind the *page*, which is to say not at all.
                  */
-                isHighlighted
-                  ? 'border-brand/50 bg-surface-raised shadow-lg shadow-brand/10 lg:-my-2 lg:py-8 lg:ring-1 lg:ring-brand/20'
-                  : 'border-edge bg-surface-raised/60',
+                'relative isolate rounded-3xl transition-transform duration-300 ease-studio',
+                /*
+                 * The focused card is lifted by a transform rather than by a
+                 * change of box. See the note on the list.
+                 */
+                isFocused ? 'z-10 lg:scale-[1.035]' : 'lg:scale-[0.985]',
               )}
             >
-              {isHighlighted && (
-                <Badge className="absolute right-5 top-5 border-brand/40 bg-brand/12 text-brand">
+              {/*
+                The travelling light, and the same light blurred behind the
+                card. Both are described in full on `.lp-rim` in `index.css`;
+                what is decided here is only *which* card has it running.
+
+                The unfocused cards keep the rim, held still and dimmed — so
+                the row reads as three cards in one design with one of them lit,
+                rather than as one designed card beside two plain ones.
+              */}
+              <span aria-hidden className={cn('lp-glow', isFocused && 'lp-glow--active')} />
+              <span aria-hidden className={cn('lp-rim', isFocused && 'lp-rim--active')} />
+
+              <div
+                className={cn(
+                  /*
+                   * Opaque, and that is a requirement rather than a preference:
+                   * this face is what covers the spinning gradient behind it,
+                   * so the rim is a hairline at the edge instead of a colour
+                   * wheel showing through the whole card. The unfocused cards
+                   * used to be `surface-raised/60` and cannot be any more.
+                   */
+                  'ui-card relative flex h-full flex-col gap-6 rounded-3xl',
+                  'border bg-surface-raised p-7 sm:p-8',
+                  /* Taller. Six feature lines and a price is a card that reads
+                     in four seconds and looked cramped doing it; the extra
+                     height is what lets the price, the button and the list
+                     each have a band of their own. */
+                  'min-h-[29rem]',
+                  'transition-[border-color,box-shadow] duration-300 ease-studio',
+                  isFocused
+                    ? 'border-brand/40 shadow-xl shadow-brand/10'
+                    : 'border-edge/80 shadow-sm',
+                )}
+              >
+              {offer.plan === HIGHLIGHTED && (
+                <Badge className="absolute right-6 top-6 border-brand/40 bg-brand/12 text-brand">
                   {t('landing.pricing.popular')}
                 </Badge>
               )}
@@ -300,10 +382,16 @@ export const PricingTable = () => {
                 </p>
               </div>
 
+              {/*
+                The focused card's button carries the lamp, the other two do
+                not — the same fill the navigation bar and both calls to action
+                use, so the emphasis moving across the row moves the *offer*
+                with it rather than only a border.
+              */}
               <Link
                 to="/register"
                 className={buttonClasses({
-                  variant: isHighlighted ? 'primary' : 'secondary',
+                  variant: isFocused ? 'lava' : 'secondary',
                   size: 'md',
                   className: 'w-full',
                 })}
@@ -311,13 +399,13 @@ export const PricingTable = () => {
                 {t(isFree ? 'landing.pricing.ctaFree' : 'landing.pricing.ctaPaid')}
               </Link>
 
-              <ul className="space-y-2.5 border-t border-edge pt-5">
+              <ul className="space-y-3 border-t border-edge pt-6">
                 {featuresOf(offer.limits, t).map((feature) => (
                   <li key={feature} className="flex items-start gap-2.5 text-sm">
                     <Check
                       className={cn(
-                        'mt-0.5 h-4 w-4 shrink-0',
-                        isHighlighted ? 'text-brand' : 'text-positive',
+                        'mt-0.5 h-4 w-4 shrink-0 transition-colors duration-300',
+                        isFocused ? 'text-brand' : 'text-positive',
                       )}
                       aria-hidden
                     />
@@ -325,6 +413,7 @@ export const PricingTable = () => {
                   </li>
                 ))}
               </ul>
+              </div>
             </li>
           );
         })}

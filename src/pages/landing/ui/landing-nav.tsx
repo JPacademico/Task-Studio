@@ -216,16 +216,38 @@ export const LandingNav = () => {
             <span className="hidden sm:inline">{t('landing.nav.docs')}</span>
           </Link>
 
-          {/* Hidden on the narrowest screens for the same reason. The page has
-              already detected the reader's language; changing it is a deliberate
-              act they can perform on any wider screen, or on the sign-in page. */}
-          <LanguageToggle className="hidden min-[400px]:block" />
+          {/*
+            The language picker, which was on this bar and invisible on it.
+
+            Two things were wrong and only the second one was visible. It was
+            written `hidden min-[400px]:block`, and Tailwind silently refuses to
+            generate `min-[…]` variants while `theme.screens` holds an object —
+            which this project's config did, for the `short` height query. The
+            warning is printed at build time and the consequence is not: the
+            class compiled to nothing, so the element was `display: none` at
+            every width since the day it was added. The variant now comes from a
+            plugin instead; see `tailwind.config.js`.
+
+            It also says which language it is currently in. Icon-only, it is a
+            glyph of a letter beside a theme control that is a 60px switch, and
+            a reader looking for a way to change the language has no reason to
+            think that is it. `PT` / `EN` beside the icon is two characters and
+            it turns a mystery into a control — the same treatment the sign-in
+            screens already give it.
+          */}
+          <LanguageToggle withLabel className="hidden min-[400px]:block" />
           <ThemeToggle />
 
           {/* Real anchors wearing the button's clothes — see `buttonClasses`.
               Sign in stays quiet and Get started does not: somebody who
               already has an account knows where to look, and somebody who
-              does not is the person this page is for. */}
+              does not is the person this page is for.
+
+              `lava` rather than the flat brand fill, matching the two calls to
+              action further down the page and the "New project" button they
+              lead to. It is the same fill in all four places, which is what
+              makes it read as one invitation repeated rather than as four
+              buttons. */}
           <Link
             to="/login"
             className={buttonClasses({
@@ -236,7 +258,7 @@ export const LandingNav = () => {
           >
             {t('landing.nav.signIn')}
           </Link>
-          <Link to="/signup" className={buttonClasses({ size: 'sm' })}>
+          <Link to="/signup" className={buttonClasses({ variant: 'lava', size: 'sm' })}>
             {t('landing.nav.getStarted')}
           </Link>
         </div>

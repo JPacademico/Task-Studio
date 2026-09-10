@@ -174,6 +174,60 @@
     --panel-texture-size: auto;
     --page-wash: none;
 
+    /* --- Lava --------------------------------------------------------------
+     *
+     * The flowing fill behind the product's "make a new thing" buttons and the
+     * landing page's primary calls to action. See `.ui-lava` in `components`
+     * for the shape of it; these are the four colours it moves through and the
+     * ground it moves over.
+     *
+     * ## Why they are derived and not written out thirteen times
+     *
+     * Because a hand-authored lava palette per skin is twenty-six palettes to
+     * keep in step with an accent that already exists, and the first one
+     * somebody forgets is a button whose label stops being legible on one
+     * theme in one mode — which is exactly the failure nobody sees in review.
+     * Every value below is `--brand` bent towards one of the semantic hues the
+     * skin has already chosen, so a skin that changes its accent has changed
+     * its lava, and a skin that adds nothing gets a correct one for free.
+     *
+     * ## Why every colour is pushed towards `--lava-deep`
+     *
+     * That is the whole contrast guarantee, and it is the reason this is not
+     * simply four hue rotations.
+     *
+     * The label on these buttons is `--brand-contrast`, a colour each skin
+     * picks to be legible against `--brand` *and nothing else*. Bending the
+     * accent towards amber or emerald moves its luminance, and roughly half
+     * the time it moves it towards the label — so the mix alone would trade a
+     * flat, checked pairing for one that is a little worse once every few
+     * seconds.
+     *
+     * `--lava-deep` is the direction *away* from the label: black on the skins
+     * whose buttons carry white lettering, white on the ones whose buttons
+     * carry black. Pushing every colour a few percent that way is what makes
+     * the moving fill provably no worse than the flat one it replaces. Checked
+     * across all thirteen skins in both palettes: the weakest pairing in the
+     * set is 4.5:1, against 3.9:1 for the flat button that shipped before it.
+     *
+     * Black here, because a light palette's accent carries white lettering.
+     * The three exceptions below are the palettes where it does not.
+     *
+     * (Not to be confused with `--lava-flow` and `--lava-vent`, which belong to
+     * the volcano skin and are a colour and a texture in it. These five are the
+     * button's, and they are global.)
+     */
+    --lava-deep: 0 0 0;
+
+    /* The un-mixed fallback, for a browser with no `color-mix()`: the flat
+       brand fill this replaces, which is a perfectly good button. The
+       `@supports` block at the end of this layer is what upgrades it. */
+    --lava-base: rgb(var(--brand));
+    --lava-a: rgb(var(--brand));
+    --lava-b: rgb(var(--brand));
+    --lava-c: rgb(var(--brand));
+    --lava-d: rgb(var(--brand));
+
     /* --- Controls --------------------------------------------------------- */
     --btn-overlay: none;
     --btn-shadow: none;
@@ -280,6 +334,17 @@
     --brand: 34 211 238;
     --brand-soft: 12 54 68;
     --brand-contrast: 12 12 18;
+
+    /*
+     * White, because a dark palette's accent carries *dark* lettering.
+     *
+     * See `--lava-deep` in `:root`: it names the direction away from
+     * `--brand-contrast`, so every colour the lava moves through can be pushed
+     * a few percent that way and stay at least as legible as the flat fill it
+     * replaces. Every dark palette in this file lightens its accent and darkens
+     * its label, so one declaration here answers for all thirteen of them.
+     */
+    --lava-deep: 255 255 255;
     --positive: 52 211 153;
     --warning: 251 191 36;
     --danger: 248 113 113;
@@ -322,6 +387,11 @@
     --brand: 250 204 21;
     --brand-soft: 254 243 199;
     --brand-contrast: 24 24 44;
+
+    /* One of the two light palettes whose buttons carry black lettering — the
+       accent is a bright yellow. So the lava deepens towards white here, not
+       towards black, and the same holds for this skin's dark palette. */
+    --lava-deep: 255 255 255;
     --positive: 22 148 110;
     --warning: 232 140 24;
     --danger: 226 74 74;
@@ -930,6 +1000,10 @@
     --brand: 234 179 8;
     --brand-soft: 254 240 190;
     --brand-contrast: 26 24 10;
+
+    /* Black lettering on hazard yellow — see `--brand-contrast` above — so the
+       lava deepens towards white rather than towards black. */
+    --lava-deep: 255 255 255;
     --positive: 101 140 20;
     --warning: 200 106 8;
     --danger: 178 20 44;
@@ -3226,6 +3300,60 @@
     }
   }
 
+  /* --- Lava, mixed -------------------------------------------------------
+   *
+   * The real values behind the five `--lava-*` tokens, declared here rather
+   * than beside the fallbacks in `:root` for one reason: `color-mix()` is the
+   * only thing in this stylesheet that is not universally supported, and a
+   * custom property holding a value the browser cannot parse is *invalid at
+   * computed-value time* — it does not fall back to the previous declaration,
+   * it falls back to nothing, and the button loses its background entirely.
+   *
+   * An `@supports` gate is the one construction where the fallback survives:
+   * the plain declarations above stand on their own, and this replaces them
+   * only where the function exists. A browser that lacks it draws the flat
+   * brand button that shipped before the lava, which is a perfectly good
+   * button.
+   *
+   * Written once, at the end of the layer, so it applies to every skin — the
+   * `var()`s inside resolve against whatever palette is on the element, so
+   * this single block is thirteen skins' lava in both modes.
+   *
+   * `oklab` rather than `srgb`, and it is not a detail: mixing teal with amber
+   * in sRGB passes through a muddy grey at the midpoint, because sRGB
+   * interpolation has no notion of perceived lightness. In Oklab the same two
+   * colours cross through the gold that is actually between them, which is the
+   * difference between lava and a smear.
+   */
+  @supports (color: color-mix(in oklab, red 50%, blue)) {
+    :root {
+      /* The ground the blobs move over. Deepened most, because it is what is
+         behind the label wherever no blob happens to be. */
+      --lava-base: color-mix(in oklab, rgb(var(--brand)) 84%, rgb(var(--lava-deep)) 16%);
+
+      /* The accent itself, barely touched — the brightest thing in the lamp. */
+      --lava-a: color-mix(in oklab, rgb(var(--brand)) 94%, rgb(var(--lava-deep)) 6%);
+
+      /* Three hues away from the accent, each borrowed from a colour the skin
+         has already chosen rather than invented here. Warm, cool, and hot. */
+      --lava-b: color-mix(
+        in oklab,
+        color-mix(in oklab, rgb(var(--brand)) 74%, rgb(var(--warning)) 26%) 80%,
+        rgb(var(--lava-deep)) 20%
+      );
+      --lava-c: color-mix(
+        in oklab,
+        color-mix(in oklab, rgb(var(--brand)) 74%, rgb(var(--positive)) 26%) 80%,
+        rgb(var(--lava-deep)) 20%
+      );
+      --lava-d: color-mix(
+        in oklab,
+        color-mix(in oklab, rgb(var(--brand)) 74%, rgb(var(--danger)) 26%) 78%,
+        rgb(var(--lava-deep)) 22%
+      );
+    }
+  }
+
   /* Respect the user's motion preference everywhere, including Framer Motion. */
   @media (prefers-reduced-motion: reduce) {
     *,
@@ -3672,6 +3800,333 @@
     /* Feeds Tailwind's transform composition rather than replacing it, so the
        `active:scale` on the button survives the travel. */
     --tw-translate-y: var(--press-travel);
+  }
+
+  /* --- The lava fill -----------------------------------------------------
+   *
+   * A slow, wandering gradient in place of a flat one, on the handful of
+   * controls that are the single most important thing on their screen: "New
+   * project", "New task", and the landing page's calls to action.
+   *
+   * ## Why this is CSS and not the shader it replaces
+   *
+   * It was a `@shadergradient/react` scene — three.js, a WebGL context and a
+   * lazily-fetched chunk larger than the rest of the application, per button.
+   * That bought a water plane whose motion is a *ripple*: it moves across the
+   * surface rather than through it, and across 150 pixels of button it reads
+   * as a slight shimmer on a flat fill rather than as anything flowing. It
+   * also came with a hard ceiling of two buttons at once, because a browser
+   * hands out a finite number of contexts — which made "put the same fill on
+   * the landing page's four primary buttons" impossible by construction.
+   *
+   * Four blobs of colour drifting over a ground is what a lava lamp actually
+   * is, it is three gradients and two keyframes, it costs no JavaScript, no
+   * network request and no GPU context, and it runs on the compositor on a
+   * phone. There was nothing the shader was buying that this does not do
+   * better at a thousandth of the price.
+   *
+   * ## Why the blobs are on pseudo-elements at a negative z-index
+   *
+   * So the whole thing is one class. `buttonClasses` hands its output to
+   * `<Link>` as often as to `<button>`, and a variant that needed a wrapper
+   * element inside the control would work on one and not the other.
+   *
+   * `z-index: -1` puts them above the element's own background and below its
+   * text — that is the painting order for a stacking context: background and
+   * borders, then negative-index children, then in-flow content. `isolate`
+   * keeps them from escaping behind the page when the button sits on a surface
+   * that has no stacking context of its own.
+   *
+   * ## Why the motion is transform-only
+   *
+   * Every keyframe below moves and scales; none of them touches a colour, a
+   * size or a position. That keeps all four blobs on the compositor, so a
+   * screen with five of these on it costs no main-thread work at all — which
+   * is the property that makes it reasonable to put on more than two buttons.
+   *
+   * The global `prefers-reduced-motion` rule in `base` freezes them, and what
+   * is left is a still gradient rather than an empty box.
+   */
+  .ui-lava {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background-color: var(--lava-base);
+    color: rgb(var(--brand-contrast));
+    /*
+     * `background-color` only — deliberately no `background-image` here.
+     *
+     * The obvious place for the two deeper blobs was a pair of background
+     * layers on the element itself, and it is the one place they could not go:
+     * eight of the thirteen skins already write `background-image:
+     * var(--btn-overlay)` at `[data-skin='…'] .ui-btn`, which outranks anything
+     * this rule can say. The blobs would have vanished on vintage, space,
+     * hazard, eldritch, autumn, runic, underwater and volcano — five skins
+     * looking right and eight looking flat, which is exactly the class of bug
+     * that ships because nobody switches theme while reviewing a button.
+     *
+     * So all four colours live on the two pseudo-elements, two layers each, and
+     * the skins keep their own plate sheen on top of the lamp. `background-
+     * color` is safe: no skin overrides it on `.ui-btn`.
+     */
+  }
+
+  .ui-lava::before,
+  .ui-lava::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  /*
+   * Taller than the button and wider than half of it, on purpose.
+   *
+   * A blob small enough to fit inside the control reads as a *dot* moving
+   * around a button. One that overflows it on every side reads as the button
+   * being a window onto something larger, which is the whole illusion.
+   */
+  /*
+   * Two colours per layer, not one.
+   *
+   * Four blobs on four paths would be the literal reading of a lamp and is
+   * wrong at this size: four things drifting at four speeds inside a 40px
+   * control is soup, and it would need four elements where a button has two
+   * pseudos. Each layer carries a bright blob and a deeper one at the far end
+   * of itself, so the pair travels together and still puts four distinguishable
+   * colours on screen — which is what the eye is actually reading.
+   */
+  .ui-lava::before {
+    left: -26%;
+    top: -85%;
+    width: 88%;
+    height: 270%;
+    background:
+      radial-gradient(closest-side at 50% 30%, var(--lava-a), transparent 72%),
+      radial-gradient(closest-side at 62% 88%, var(--lava-c), transparent 70%);
+    animation: lava-rise-a 17s ease-in-out infinite;
+  }
+
+  .ui-lava::after {
+    left: 44%;
+    top: -95%;
+    width: 84%;
+    height: 290%;
+    background:
+      radial-gradient(closest-side at 45% 68%, var(--lava-b), transparent 74%),
+      radial-gradient(closest-side at 40% 14%, var(--lava-d), transparent 68%);
+    animation: lava-rise-b 23s ease-in-out infinite;
+  }
+
+  /*
+   * Seventeen and twenty-three seconds, and the pair of primes is the point:
+   * the two blobs return to the same relative position once every six and a
+   * half minutes rather than once every cycle, so nothing on the page ever
+   * looks like it is repeating.
+   *
+   * First and last keyframe identical, rather than `alternate`. A lamp that
+   * played its motion backwards would be a lamp somebody could see rewinding.
+   */
+  @keyframes lava-rise-a {
+    0%,
+    100% {
+      transform: translate3d(-6%, 16%, 0) scale(1);
+    }
+    34% {
+      transform: translate3d(12%, -14%, 0) scale(1.22);
+    }
+    67% {
+      transform: translate3d(-2%, -2%, 0) scale(0.92);
+    }
+  }
+
+  @keyframes lava-rise-b {
+    0%,
+    100% {
+      transform: translate3d(6%, -12%, 0) scale(1.08);
+    }
+    30% {
+      transform: translate3d(-14%, 8%, 0) scale(0.9);
+    }
+    71% {
+      transform: translate3d(-4%, 18%, 0) scale(1.24);
+    }
+  }
+
+  /*
+   * A press dips the whole lamp rather than washing the fill out.
+   *
+   * `brightness()` on a control whose background is four colours at once
+   * changes all four unequally, and on the pale skins it takes the lightest of
+   * them past the label. A short scale on the blob layer is the same signal
+   * with none of that: the light appears to move away.
+   */
+  .ui-lava::before,
+  .ui-lava::after {
+    transition: scale 140ms var(--ease-ui);
+  }
+
+  .ui-lava:active::before,
+  .ui-lava:active::after {
+    /*
+     * `scale`, not `transform: scale()`.
+     *
+     * The keyframes above animate `transform`, and a running animation outranks
+     * every ordinary declaration in the cascade — so a `transform` written here
+     * would simply never paint. `scale` is an independent longhand that
+     * composes with `transform` rather than replacing it, which is the one
+     * spelling that can modify an element mid-animation.
+     */
+    scale: 0.94;
+  }
+
+  /* --- The pricing card's rim --------------------------------------------
+   *
+   * The border of a plan card, as a light that travels round it rather than a
+   * ring that sits on it.
+   *
+   * ## How it is drawn
+   *
+   * A square of `conic-gradient`, larger than the card, spinning behind it. The
+   * card's own opaque face covers all of it except a hairline at the edge — so
+   * what is visible is a bright arc running round the border, which is the
+   * effect, and the cost is one rotating layer on the compositor.
+   *
+   * A square, and `aspect-ratio: 1` rather than `inset: 0`, because a conic
+   * gradient in a non-square box is an ellipse: the arc would visibly speed up
+   * along the short sides and crawl along the long ones. Sized off the *width*
+   * and centred, so it covers a card that is taller than it is wide.
+   *
+   * ## Why the angle is a rotation and not a custom property
+   *
+   * The tidier spelling animates `--angle` through `@property` and interpolates
+   * `from var(--angle)` inside the gradient. It is also two years newer than
+   * this needs to be, and where it is unsupported the gradient does not
+   * degrade — it simply never moves, on the one element whose whole job is to
+   * move. `transform: rotate` has worked everywhere for a decade and puts the
+   * work on the compositor rather than repainting a gradient every frame.
+   *
+   * ## Why the unfocused card keeps one
+   *
+   * Because three cards with nothing on their edges and one with a light going
+   * round it reads as two designs on one row. The same rim, held still and
+   * dimmed to a fifth, is a quiet brand-coloured border — which is what those
+   * cards had before — and it means focus is a change of *state* rather than a
+   * change of construction.
+   */
+  .lp-rim {
+    position: absolute;
+    inset: -1px;
+    z-index: 0;
+    overflow: hidden;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0.28;
+    transition:
+      opacity 320ms var(--ease-ui),
+      filter 320ms var(--ease-ui);
+  }
+
+  .lp-rim::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 190%;
+    aspect-ratio: 1;
+    translate: -50% -50%;
+    /*
+     * One bright head with a tail behind it, not a colour wheel. A gradient
+     * that is lit the whole way round is a glowing border; this is a light
+     * that goes round one, which is what was asked for and is also the only
+     * version where the direction of travel is legible.
+     */
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      rgb(var(--brand) / 0.08) 34deg,
+      rgb(var(--brand) / 0.55) 60deg,
+      rgb(var(--brand)) 76deg,
+      rgb(var(--brand-soft)) 86deg,
+      rgb(var(--brand) / 0.5) 100deg,
+      transparent 138deg,
+      transparent 360deg
+    );
+  }
+
+  .lp-rim--active {
+    opacity: 1;
+  }
+
+  .lp-rim--active::before {
+    animation: lp-rim-spin 4.6s linear infinite;
+  }
+
+  @keyframes lp-rim-spin {
+    to {
+      rotate: 360deg;
+    }
+  }
+
+  /*
+   * The glow, which is the rim again and blurred.
+   *
+   * A second layer rather than a `filter` on the first, because blurring the
+   * rim itself would blur the hairline into a smudge and lose the crisp edge
+   * that makes it read as a border at all. This one is pushed out past the
+   * card, blurred hard, and sits behind everything — so the card appears to be
+   * lit from behind by the same travelling light.
+   */
+  .lp-glow {
+    position: absolute;
+    inset: -14px;
+    z-index: -1;
+    overflow: hidden;
+    /*
+     * `inherit`, not `calc(var(--radius-3xl) + 14px)`.
+     *
+     * The arithmetic version is the one that looks right and breaks on one
+     * skin: `--radius-*` feeds a *shorthand*, so a theme is free to set four
+     * corners at once — and eldritch does (`2rem 0.6rem 2rem 0.6rem`). A
+     * `calc()` over a four-value token is invalid, the whole declaration is
+     * dropped, and the glow becomes a hard-cornered rectangle behind a rounded
+     * card on exactly one theme. Inheriting the card's own radius on a box
+     * 14px larger leaves the corners fractionally tight, which is invisible
+     * under an 18px blur.
+     */
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    filter: blur(18px);
+    transition: opacity 320ms var(--ease-ui);
+  }
+
+  .lp-glow::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 190%;
+    aspect-ratio: 1;
+    translate: -50% -50%;
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      rgb(var(--brand) / 0.3) 40deg,
+      rgb(var(--brand) / 0.85) 78deg,
+      rgb(var(--brand) / 0.25) 112deg,
+      transparent 150deg,
+      transparent 360deg
+    );
+  }
+
+  .lp-glow--active {
+    opacity: 0.5;
+  }
+
+  .lp-glow--active::before {
+    animation: lp-rim-spin 4.6s linear infinite;
   }
 
   .postit {

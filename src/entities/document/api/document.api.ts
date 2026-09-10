@@ -3,6 +3,7 @@ import axios from 'axios';
 import { api, SLOW_ROUTE_TIMEOUT_MS } from '@/shared/api/client';
 import type {
   ArchiveListing,
+  BoardUsage,
   CreateDocumentPayload,
   DocumentAsset,
   CreateFigmaPagePayload,
@@ -56,6 +57,21 @@ export const documentApi = {
         ...(projectId ? { projectId } : {}),
         ...(taskId ? { taskId } : {}),
       },
+    });
+    return data;
+  },
+
+  /**
+   * How full this board is, and how full it may get.
+   *
+   * A request of its own rather than a field on the list, because the two have
+   * completely different lifetimes: the table of contents is invalidated by
+   * every rename, and this only moves when a page is added or removed. Folding
+   * it into `list` would make a title edit refetch a `SUM` over the board.
+   */
+  async boardUsage(projectId?: string): Promise<BoardUsage> {
+    const { data } = await api.get<BoardUsage>('/documents/board-usage', {
+      params: projectId ? { projectId } : {},
     });
     return data;
   },

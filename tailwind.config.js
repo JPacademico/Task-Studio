@@ -4,20 +4,18 @@ export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     /**
-     * A height-based variant, beside the width-based ones.
+     * The width breakpoints, and nothing else.
      *
-     * Every breakpoint Tailwind ships is a *width*, and vertical overflow is
-     * not a width problem. A 1366x768 laptop has about 640px of viewport height
-     * once the browser's own chrome is taken out, and the sign-in card wants
-     * 619 of them — so it overflowed, and no amount of shrinking the type by
-     * viewport *width* was ever going to fix it, because the width was fine.
+     * `short` used to live here as a `{ raw }` entry, and it quietly cost the
+     * whole project a feature: Tailwind refuses to generate the `min-[…]` and
+     * `max-[…]` arbitrary variants at all when `screens` contains an object,
+     * and says so as a build *warning* rather than an error. So
+     * `min-[400px]:block` compiled to nothing, and the one element that used it
+     * — the landing page's language picker — was `display: none` at every
+     * width, on every screen, since the day it was added.
      *
-     * `short` is the escape hatch for exactly that: the handful of surfaces
-     * whose vertical padding is generous on a desktop monitor and is the
-     * difference between fitting and scrolling on a laptop.
-     *
-     * `raw` because this is a media query rather than a container width —
-     * Tailwind's `screens` entries otherwise compile to `min-width`.
+     * The variant is declared as a plugin below instead, where it does exactly
+     * the same thing and costs nothing.
      */
     screens: {
       sm: '640px',
@@ -25,7 +23,6 @@ export default {
       lg: '1024px',
       xl: '1280px',
       '2xl': '1536px',
-      short: { raw: '(max-height: 820px)' },
     },
     extend: {
       /**
@@ -206,5 +203,26 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    /**
+     * A height-based variant, beside the width-based ones.
+     *
+     * Every breakpoint Tailwind ships is a *width*, and vertical overflow is
+     * not a width problem. A 1366x768 laptop has about 640px of viewport height
+     * once the browser's own chrome is taken out, and the sign-in card wants
+     * 619 of them — so it overflowed, and no amount of shrinking the type by
+     * viewport *width* was ever going to fix it, because the width was fine.
+     *
+     * `short` is the escape hatch for exactly that: the handful of surfaces
+     * whose vertical padding is generous on a desktop monitor and is the
+     * difference between fitting and scrolling on a laptop.
+     *
+     * A plugin rather than a `screens` entry — see the note there. It stacks
+     * the same way (`sm:short:p-5` still works) and it leaves `min-[…]` and
+     * `max-[…]` working, which the `screens` spelling did not.
+     */
+    ({ addVariant }) => {
+      addVariant('short', '@media (max-height: 820px)');
+    },
+  ],
 };

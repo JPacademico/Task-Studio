@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 
+import { NOTE_COLORS } from '@/shared/config/constants';
 import { useThemePalette } from '@/shared/lib/theme-colors';
 
 /**
@@ -51,12 +52,77 @@ const MAX_LEAN = 0.12;
 /** How fast the lean catches up with the pointer. Per second, frame-rate independent. */
 const LEAN_EASE = 2.4;
 
+/**
+ * The colours the sheets are cut from.
+ *
+ * ## Why the app's own Post-it palette rather than the accent
+ *
+ * The field used to be three tones — the accent, its soft twin, and the page's
+ * ink — which made it a monochrome drift in whatever the skin's brand colour
+ * happens to be. That is a perfectly reasonable *background*, and it is not the
+ * thing the page is arguing: the section underneath is a wall of paper in six
+ * colours, and the introduction was showing a wall of paper in one.
+ *
+ * These are `NOTE_COLORS`, the same seven a note actually gets when somebody
+ * sticks one on a board, minus the grey — which is the one that would add a
+ * card and no colour. Using the real palette rather than a decorative
+ * approximation means the introduction is made of the same material as the
+ * product below it, which is the whole argument of the page.
+ *
+ * ## Why the accent is still in the list
+ *
+ * Last, and once. Without it the field is identical on all thirteen skins,
+ * which would be the only thing on the page that does not answer the theme —
+ * and on the skins whose whole identity is a colour (volcano, hazard, terminal)
+ * that reads as a stock illustration behind a themed page.
+ *
+ * ## Why they stay this faint
+ *
+ * Because there is a headline in front of them. See `TONE_OPACITY`: the whole
+ * range sits between six and eighteen percent, which is enough for the eye to
+ * read "yellow sheet, blue sheet" and far too little to compete with type. The
+ * page also lays a vertical scrim in its own surface colour over the top of
+ * this — see `LandingPage` — so the guarantee does not rest on these numbers
+ * alone.
+ */
+const NOTE_TONES = NOTE_COLORS.filter((colour) => colour !== '#e2e8f0');
+
+/** How many tones a card can be cut from: the sheets, plus the skin's accent. */
+const TONE_COUNT = NOTE_TONES.length + 1;
+
+/**
+ * How present a sheet is, near and far.
+ *
+ * Depth used to be carried by the *tone* — the first colour at 16%, the second
+ * at 12.5%, the third at 9% — which worked with three colours and cannot work
+ * with seven: a card's presence would be decided by which colour it happened to
+ * be rather than by where it is, so a near yellow sheet and a far yellow sheet
+ * would be equally strong and the field would flatten.
+ *
+ * So presence follows nearness, which is what it was always standing in for,
+ * and the colour is free to be any of the seven at any depth.
+ */
+const TONE_OPACITY = { near: 0.18, far: 0.06 } as const;
+
+/**
+ * How much of that survives on a dark page.
+ *
+ * A pastel is a *light* colour: at 18% over a near-white surface it is a tint,
+ * and at 18% over a near-black one it is the brightest thing in the section.
+ * The same number is therefore two different amounts of contrast, and the dark
+ * palettes are the ones where a background competing with a headline is
+ * hardest to notice in review — because the type is bright too.
+ */
+const DARK_TONE_SCALE = 0.62;
+
 interface CardSpec {
   position: [number, number, number];
   rotation: [number, number, number];
   scale: [number, number];
-  /** Which palette colour it is cut from. */
+  /** Which of `TONE_COUNT` colours it is cut from. */
   tone: number;
+  /** 0 at the back of the field, 1 at the front. Drives size, drift and presence. */
+  nearness: number;
   /** Seconds of offset into the drift, so no two cards move together. */
   phase: number;
   /** How far it drifts. Nearer cards move more, which is what reads as depth. */
@@ -98,14 +164,15 @@ const buildField = (): CardSpec[] => {
         (random() - 0.5) * 0.9,
       ],
       scale: [1.1 + nearness * 1.8, 0.85 + nearness * 1.3],
-      tone: Math.floor(random() * 3),
+      nearness,
+      tone: Math.floor(random() * TONE_COUNT),
       phase: random() * Math.PI * 2,
       drift: 0.12 + nearness * 0.4,
     };
   });
 };
 
-const Field = ({ tones }: { tones: string[] }) => {
+const Field = ({ tones, fade }: { tones: string[]; fade: number }) => {
   const group = useRef<THREE.Group>(null);
   const cards = useRef<(THREE.Mesh | null)[]>([]);
   const specs = useMemo(buildField, []);
@@ -133,23 +200,36 @@ const Field = ({ tones }: { tones: string[] }) => {
    */
   const geometry = useMemo(() => new THREE.PlaneGeometry(1, 1), []);
 
+  /*
+   * One material per *card*, not one per colour.
+   *
+   * It used to be one per tone, because presence was a property of the tone.
+   * It is a property of depth now — see `TONE_OPACITY` — so two cards in the
+   * same yellow at different distances need different `opacity`, and `opacity`
+   * lives on the material.
+   *
+   * Fourteen `MeshBasicMaterial`s rather than seven sounds like the expensive
+   * direction and is not: they are all the same *configuration*, so three.js
+   * compiles and caches one shader program for the set and the extra cost is
+   * fourteen uniform blocks. The geometry — the thing that is actually a
+   * buffer on the GPU — is still shared by all of them.
+   */
   const materials = useMemo(
     () =>
-      tones.map(
-        (tone, index) =>
-          new THREE.MeshBasicMaterial({
-            color: new THREE.Color(tone),
-            transparent: true,
-            // The nearest tone is the most present; the others sit back. Low
-            // enough throughout that the headline never has to compete.
-            opacity: 0.16 - index * 0.035,
-            // Both faces, because the cards tilt past edge-on as the field
-            // leans and a single-sided card simply vanishes when it does.
-            side: THREE.DoubleSide,
-            depthWrite: false,
-          }),
-      ),
-    [tones],
+      specs.map((spec) => {
+        const { near, far } = TONE_OPACITY;
+
+        return new THREE.MeshBasicMaterial({
+          color: new THREE.Color(tones[spec.tone % tones.length]),
+          transparent: true,
+          opacity: (far + (near - far) * spec.nearness) * fade,
+          // Both faces, because the cards tilt past edge-on as the field
+          // leans and a single-sided card simply vanishes when it does.
+          side: THREE.DoubleSide,
+          depthWrite: false,
+        });
+      }),
+    [specs, tones, fade],
   );
 
   /*
@@ -251,7 +331,7 @@ const Field = ({ tones }: { tones: string[] }) => {
             cards.current[index] = mesh;
           }}
           geometry={geometry}
-          material={materials[spec.tone]}
+          material={materials[index]}
           position={spec.position}
           rotation={spec.rotation}
           scale={[spec.scale[0], spec.scale[1], 1]}
@@ -264,13 +344,29 @@ const Field = ({ tones }: { tones: string[] }) => {
 export const HeroField = ({ pixelRatio }: { pixelRatio: number }) => {
   const palette = useThemePalette();
 
-  // Three tones, near to far: the accent, its soft twin, and the page's own ink
-  // at low opacity. The last is what keeps the field legible on the skins whose
-  // accent and surface are close together.
-  const tones = useMemo(
-    () => [palette.brand, palette['brand-soft'], palette.content],
-    [palette],
-  );
+  // The six sheets, plus the skin's own accent. See `NOTE_TONES`.
+  const tones = useMemo(() => [...NOTE_TONES, palette.brand], [palette]);
+
+  /*
+   * Whether the page underneath is dark, read off the surface it is painted in.
+   *
+   * Not from `document.documentElement.classList`, and not from a second hook.
+   * `useThemePalette` already re-reads on exactly the two attribute changes
+   * that can move this, so the answer is in a value this component is holding
+   * — and a skin can be dark without carrying the `dark` class (nothing in the
+   * palette forbids it), whereas a surface that is nearly black is nearly black
+   * on any skin.
+   *
+   * The green coefficient alone would do; the three-term form is the standard
+   * one and costs a multiply.
+   */
+  const fade = useMemo(() => {
+    const hex = palette.surface.replace('#', '');
+    const channel = (at: number) => parseInt(hex.slice(at, at + 2), 16) / 255;
+    const luminance = 0.2126 * channel(0) + 0.7152 * channel(2) + 0.0722 * channel(4);
+
+    return luminance < 0.4 ? DARK_TONE_SCALE : 1;
+  }, [palette]);
 
   return (
     <Canvas
@@ -302,7 +398,7 @@ export const HeroField = ({ pixelRatio }: { pixelRatio: number }) => {
       frameloop="always"
       style={{ position: 'absolute', inset: 0 }}
     >
-      <Field tones={tones} />
+      <Field tones={tones} fade={fade} />
     </Canvas>
   );
 };
