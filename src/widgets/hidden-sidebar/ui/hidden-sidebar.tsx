@@ -359,8 +359,8 @@ export const HiddenSidebar = ({ isMobileOpen, onMobileClose }: HiddenSidebarProp
         <AutumnHedge edge="left" isActive={isOpen} />
 
         <header className="flex items-center gap-2.5 px-4 pb-4 pt-5">
-          <span className="relative grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-brand/12 text-brand shadow-[0_8px_20px_-10px_rgb(var(--brand)/0.9)]">
-            <StudioMark className="h-7 w-7" />
+          <span className="relative grid h-10 w-10 shrink-0 place-items-center text-brand">
+            <StudioMark className="h-10 w-10" />
             <span
               aria-hidden
               className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-brand/25"

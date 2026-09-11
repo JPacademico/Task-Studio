@@ -88,8 +88,8 @@ export const TopNavigation = ({ onOpenMobileMenu, onCreateProject }: TopNavigati
         )}
 
         <Link to="/" className="group flex items-center gap-2">
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-brand/12 text-brand ring-1 ring-inset ring-brand/25">
-            <StudioMark className="h-6 w-6" interactive />
+          <span className="grid h-8 w-8 shrink-0 place-items-center text-brand">
+            <StudioMark className="h-8 w-8" interactive />
           </span>
           <span className="hidden font-hand text-base font-bold tracking-normal sm:block">Task Studio</span>
         </Link>

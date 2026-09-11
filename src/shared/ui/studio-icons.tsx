@@ -710,7 +710,7 @@ export const StudioMark = ({ className, interactive = false }: StudioMarkProps) 
       whileHover={interactive && !reduceMotion ? { rotate: 0, scale: 1.06 } : undefined}
       animate={{ rotate: -3 }}
       transition={{ type: 'spring', stiffness: 320, damping: 20 }}
-      style={{ transformOrigin: '20px 20px' }}
+      style={{ transformOrigin: '50% 50%' }}
     >
       {/*
         The paper, with the bottom-right corner rolled under.

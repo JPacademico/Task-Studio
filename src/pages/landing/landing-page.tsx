@@ -511,8 +511,8 @@ const LandingPage = () => {
 
         <div className="relative mx-auto w-full max-w-3xl px-4 py-20 text-center sm:px-6 sm:py-28">
           <Reveal>
-          <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-brand/15 text-brand ring-1 ring-inset ring-brand/25">
-            <StudioMark className="h-9 w-9" />
+          <span className="mx-auto grid h-14 w-14 place-items-center text-brand">
+            <StudioMark className="h-14 w-14" />
           </span>
 
           {/*

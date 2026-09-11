@@ -268,7 +268,8 @@ export const PricingTable = () => {
           It is also the reason the marked card no longer grows with
           `lg:-my-2 lg:py-8`. That was a real change of box, fine when it was
           fixed at build time and a reflow of the whole section if it followed a
-          cursor. A `transform` says the same thing and costs no layout. */}
+          cursor. A `transform` says the same thing and costs no layout — a
+          *translation*, specifically, for the reason given on the card. */}
       <ul className="grid gap-4 lg:grid-cols-3">
         {data.plans.map((offer) => {
           const isFree = offer.plan === 'FREE';
@@ -287,10 +288,27 @@ export const PricingTable = () => {
                  */
                 'relative isolate rounded-3xl transition-transform duration-300 ease-studio',
                 /*
-                 * The focused card is lifted by a transform rather than by a
-                 * change of box. See the note on the list.
+                 * The focused card *rises*. It used to grow, and that was a bug
+                 * on nine of the thirteen skins.
+                 *
+                 * Every one of those skins gives `.ui-card` a `--panel-texture`,
+                 * and those textures are fine repeating patterns — volcano's is
+                 * three 1px hairline gradients at 23°, 97° and 151° over a 6px
+                 * dot screen. Scaling by 1.035 resamples a one-pixel line onto a
+                 * grid it does not land on, so some lines come back brighter
+                 * than others and the dots go irregular; animating the scale
+                 * makes that pattern *crawl* across the card. It reads as the
+                 * card glitching, and it was worst on volcano simply because
+                 * volcano has the most texture.
+                 *
+                 * A translation has no such problem: the pattern is painted
+                 * relative to the element's own box, so it moves with the card
+                 * instead of being regenerated at a new scale, and the browser
+                 * can hand the whole thing to the compositor untouched. It also
+                 * says the same thing — this is the card in front — which is
+                 * the only reason the transform was there.
                  */
-                isFocused ? 'z-10 lg:scale-[1.035]' : 'lg:scale-[0.985]',
+                isFocused ? 'z-10 lg:-translate-y-2' : 'lg:translate-y-0',
               )}
             >
               {/*

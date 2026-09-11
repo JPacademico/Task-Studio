@@ -121,8 +121,8 @@ export const LandingNav = () => {
           aria-label={t('landing.nav.home')}
           className="inline-flex items-center gap-2.5 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
         >
-          <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand/15 text-brand ring-1 ring-inset ring-brand/25">
-            <StudioMark className="h-6 w-6" />
+          <span className="grid h-9 w-9 place-items-center text-brand">
+            <StudioMark className="h-9 w-9" />
           </span>
           {/*
             The name in the skin's own handwriting.

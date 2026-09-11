@@ -82,8 +82,8 @@ export const AuthShell = ({ title, subtitle, children, footer }: AuthShellProps)
 
       <div className="pointer-events-none absolute inset-0 z-20 flex flex-col justify-between p-5 sm:p-8 xl:p-12">
         <span className="pointer-events-auto inline-flex w-fit items-center gap-2.5">
-          <span className="grid h-11 w-11 place-items-center rounded-2xl bg-brand/15 text-brand ring-1 ring-inset ring-brand/25">
-            <StudioMark className="h-8 w-8" interactive />
+          <span className="grid h-11 w-11 place-items-center text-brand">
+            <StudioMark className="h-11 w-11" interactive />
           </span>
           <span className="font-hand text-base font-bold tracking-normal">Task Studio</span>
         </span>
@@ -162,8 +162,8 @@ export const AuthShell = ({ title, subtitle, children, footer }: AuthShellProps)
 
           <div className="p-6 short:p-5 sm:p-7 sm:short:p-5">
             <div className="mb-6 space-y-2 short:mb-4">
-              <span className="inline-grid h-11 w-11 place-items-center rounded-2xl bg-brand/15 text-brand ring-1 ring-inset ring-brand/25 lg:hidden">
-                <StudioMark className="h-8 w-8" />
+              <span className="inline-grid h-11 w-11 place-items-center text-brand lg:hidden">
+                <StudioMark className="h-11 w-11" />
               </span>
               <h1 className="pt-1 text-2xl font-bold tracking-tight">{title}</h1>
               {subtitle && <p className="text-sm leading-relaxed text-content-muted">{subtitle}</p>}

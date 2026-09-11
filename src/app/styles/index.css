@@ -3938,11 +3938,20 @@
    * free when the pointer leaves, which is what "transitions back to the lava
    * lamp" asks for.
    *
-   * `50.5%` rather than `50%`: two boxes meeting exactly at the halfway line
-   * land on a fractional device pixel at most button heights, and the seam
-   * shows as a hairline of tube across a filled button. A half-percent of
-   * overlap costs nothing and is the difference between a solid fill and one
-   * with a scar down the middle.
+   * ## Why the halves overlap by so much
+   *
+   * `54%`, not `50%`. Two boxes that merely *meet* leave a seam: the halfway
+   * line lands on a fractional device pixel at most button heights, and once
+   * anything scales the button — a pricing card lifting, a page zoom, a
+   * non-integer device pixel ratio — the rounding opens a hairline gap and the
+   * dark tube shows through the middle of a filled button as a thin line. A
+   * half-percent of overlap was not enough to survive that; four percent is
+   * three or four whole pixels at every size this button is drawn at.
+   *
+   * Overlapping costs nothing visually because both halves are the same opaque
+   * colour — where they meet, you cannot tell. The only effect is that the eye
+   * finishes closing at about 93% of the sweep rather than exactly at the end,
+   * which is seventeen milliseconds nobody will see.
    */
   .ui-lava::before,
   .ui-lava::after {
@@ -3958,7 +3967,7 @@
      * shutter would be drawn behind the wax while the bottom one covered it.
      */
     z-index: -1;
-    height: 50.5%;
+    height: 54%;
     background: rgb(var(--brand));
     scale: 1 0;
     transition: scale 240ms var(--ease-ui);
@@ -4378,13 +4387,25 @@
   }
 
   /*
-   * The glow, which is the rim again and blurred.
+   * The glow: a soft halo behind the card, lit but *still*.
    *
-   * A second layer rather than a `filter` on the first, because blurring the
-   * rim itself would blur the hairline into a smudge and lose the crisp edge
-   * that makes it read as a border at all. This one is pushed out past the
-   * card, blurred hard, and sits behind everything — so the card appears to be
-   * lit from behind by the same travelling light.
+   * ## Why it does not spin any more
+   *
+   * It used to be a second copy of the rim's conic gradient, rotating, under an
+   * 18px blur — and that combination is the single most expensive thing this
+   * section could ask for. A blur is not composited: when something moves
+   * underneath one, the browser re-runs the blur over the whole box every
+   * frame. So one hovered card meant blurring a 380×530 region sixty times a
+   * second, on top of a skin already painting three hairline gradients and a
+   * dot screen across the same card. That is what a weak moment looks like.
+   *
+   * Nothing was gained for it. At an 18px blur a travelling arc and an even
+   * halo are the same picture — the detail that makes the light legible is the
+   * *sharp* rim, and that still spins, because rotating a crisp gradient is a
+   * compositor transform and costs nothing.
+   *
+   * A plain brand fill inset back to the card's own footprint, blurred once and
+   * cached, is the whole of it now.
    */
   .lp-glow {
     position: absolute;
@@ -4413,28 +4434,15 @@
   .lp-glow::before {
     content: '';
     position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 190%;
-    aspect-ratio: 1;
-    translate: -50% -50%;
-    background: conic-gradient(
-      from 0deg,
-      transparent 0deg,
-      rgb(var(--brand) / 0.3) 40deg,
-      rgb(var(--brand) / 0.85) 78deg,
-      rgb(var(--brand) / 0.25) 112deg,
-      transparent 150deg,
-      transparent 360deg
-    );
+    /* The card's own footprint, so the blur spreads outward from its edge
+       rather than from a square larger than the card. */
+    inset: 14px;
+    border-radius: inherit;
+    background: rgb(var(--brand));
   }
 
   .lp-glow--active {
-    opacity: 0.5;
-  }
-
-  .lp-glow--active::before {
-    animation: lp-rim-spin 4.6s linear infinite;
+    opacity: 0.4;
   }
 
   .postit {

@@ -227,14 +227,19 @@ const onStroke = (x, y, polyline, half) => {
  * enough that the whole set still generates in a couple of seconds, and it
  * costs nothing at runtime because this runs at build time and ships PNGs.
  */
-const drawIcon = (size, { maskable = false } = {}) => {
+const drawIcon = (size, { tiled = false, maskable = false } = {}) => {
   const pixels = Buffer.alloc(size * size * 4);
   const radius = maskable ? 0 : size * 0.22;
-  // Maskable icons need a safe area; a plain tile can run closer to the edge.
-  const pad = maskable ? size * 0.2 : size * 0.14;
+  /*
+   * A tiled icon holds the sheet inside a safe area; an untiled one is *only*
+   * the sheet, so it should use nearly the whole canvas — the tile was what the
+   * old padding was leaving room for.
+   */
+  const pad = maskable ? size * 0.2 : tiled ? size * 0.14 : size * 0.05;
   const samples = 4;
 
   const inRoundedRect = (x, y) => {
+    if (!tiled) return true;
     if (radius === 0) return true;
     const min = radius;
     const max = size - radius;
@@ -261,13 +266,11 @@ const drawIcon = (size, { maskable = false } = {}) => {
 
           if (!inRoundedRect(px, py)) continue;
 
-          // Brand tile behind the paper.
-          let colour = mix(BRAND, BRAND_DEEP, py / size);
-
           // Sheet-local, so the geometry above applies unchanged at any size.
           const u = (px - paperLeft) / paperSize;
           const v = (py - paperTop) / paperSize;
 
+          let colour = null;
           if (u >= -0.05 && u <= 1.08 && v >= -0.05 && v <= 1.05) {
             if (inPolygon(u, v, FACE_POLY)) {
               colour = mix(PAPER_TOP, PAPER_BOTTOM, v);
@@ -277,6 +280,13 @@ const drawIcon = (size, { maskable = false } = {}) => {
             } else if (inPolygon(u, v, FLAP_POLY)) {
               colour = FOLD;
             }
+          }
+
+          // Off the sheet: the brand tile where there is one, nothing where
+          // there is not. An untiled icon is the logo and only the logo.
+          if (!colour) {
+            if (!tiled) continue;
+            colour = mix(BRAND, BRAND_DEEP, py / size);
           }
 
           r += colour[0];
@@ -304,28 +314,21 @@ const drawIcon = (size, { maskable = false } = {}) => {
 
 const FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
-    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#0e7490"/>
-      <stop offset="1" stop-color="#155e75"/>
-    </linearGradient>
     <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#fcc74b"/>
       <stop offset="1" stop-color="#f3ae1c"/>
     </linearGradient>
   </defs>
 
-  <rect width="64" height="64" rx="14" fill="url(#tile)"/>
-
-  <!-- The same sheet the app draws, with its bottom-right corner rolled under
-       and the product's initial on it. The tile stays: at 16px in a tab strip a
-       bare yellow note has to survive whatever colour sits behind it, and a
-       dark surround is what makes the gold read on a light theme and a dark
-       one alike. -->
+  <!-- The sheet and nothing else: no tile, and the sheet grown into the room
+       the tile used to take. A tab strip supplies its own background, and at
+       16px a gold sheet on it is more legible than a gold sheet inside a dark
+       square that has itself shrunk to eleven pixels. -->
   <g transform="rotate(-4 32 32)">
-    <path d="M10 9h44v31.9c-6 1.7-13 7.2-14.5 14.1H10V9Z" fill="url(#paper)"/>
-    <path d="M54 41c-6 1.7-13 7.2-14.5 14.1 10.3-1.7 15.6-6.7 14.5-14.1Z" fill="#e0a21a"/>
+    <path d="M5 4.5h54v37.4c-7.4 2-16 8.5-17.8 16.6H5V4.5Z" fill="url(#paper)"/>
+    <path d="M59 41.9c-7.4 2-16 8.5-17.8 16.6 12.6-2 19.1-7.9 17.8-16.6Z" fill="#e0a21a"/>
     <g
-      transform="translate(15.9 15.3) scale(1.33)"
+      transform="translate(12.9 11.6) scale(1.58)"
       fill="none"
       stroke="#26384b"
       stroke-width="4.2"
@@ -341,10 +344,23 @@ const FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"
 
 mkdirSync(ICONS_DIR, { recursive: true });
 
+/*
+ * The `any` icons are the logo on nothing — a browser or a launcher that shows
+ * one of these puts it on its own background, and a tile behind it would be a
+ * square somebody did not ask for.
+ *
+ * The other two keep theirs, and that is a platform requirement rather than a
+ * preference. A `maskable` icon is cropped to whatever shape the launcher
+ * likes and must cover the whole canvas; transparency there is a hole punched
+ * in the middle of the home screen. iOS composites a transparent
+ * apple-touch-icon onto black, which is a black square nobody asked for either.
+ * Both are surfaces that draw a filled tile no matter what is handed to them,
+ * so the honest thing is to hand them a tile that is the brand's.
+ */
 writeFileSync(join(ICONS_DIR, 'icon-192.png'), drawIcon(192));
 writeFileSync(join(ICONS_DIR, 'icon-512.png'), drawIcon(512));
-writeFileSync(join(ICONS_DIR, 'maskable-512.png'), drawIcon(512, { maskable: true }));
-writeFileSync(join(PUBLIC_DIR, 'apple-touch-icon.png'), drawIcon(180, { maskable: true }));
+writeFileSync(join(ICONS_DIR, 'maskable-512.png'), drawIcon(512, { tiled: true, maskable: true }));
+writeFileSync(join(PUBLIC_DIR, 'apple-touch-icon.png'), drawIcon(180, { tiled: true, maskable: true }));
 writeFileSync(join(PUBLIC_DIR, 'favicon.svg'), FAVICON_SVG);
 
 console.log('Wrote icons/icon-192.png, icons/icon-512.png, icons/maskable-512.png,');
