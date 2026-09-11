@@ -1,5 +1,6 @@
 import { cn } from '@/shared/lib/cn';
 import { type GlyphProps } from './glyph-kit';
+import { LETTER_ON_SHEET, StudioLetter } from './studio-letter';
 
 /**
  * This skin's product mark. Its navigation set is gone.
@@ -52,15 +53,20 @@ export const VolcanoMark = ({ className }: GlyphProps) => (
       strokeLinejoin="round"
     />
 
-    {/* Two fissures, and the core in them. */}
-    <g stroke="rgb(var(--surface-raised))" strokeWidth="2.6" strokeOpacity="0.85">
-      <path d="m11.4 14.6 6.2.6 9.4-1" />
-      <path d="m11.4 21 5 .6 5.6-.8" />
-    </g>
-    <g stroke="rgb(var(--lava-core))" strokeWidth="1.3">
-      <path d="m11.4 14.6 6.2.6 9.4-1" className="ember-pulse" />
-      <path d="m11.4 21 5 .6 5.6-.8" className="ember-pulse ember-pulse--late" />
-    </g>
+    {/*
+      The letter, as a fissure with the core showing through it.
+
+      Same two passes as the cracks it replaces — the split, then the melt down
+      inside it carrying `ember-pulse`. The crust plate is the material; the
+      letter is what has broken open in it.
+    */}
+    <StudioLetter transform={LETTER_ON_SHEET} strokeWidth={4} strokeOpacity={0.85} />
+    <StudioLetter
+      transform={LETTER_ON_SHEET}
+      stroke="rgb(var(--lava-core))"
+      strokeWidth={1.8}
+      className="ember-pulse"
+    />
 
     {/* The melt at the bottom seam — the skin's one claim, on its own mark. */}
     <path

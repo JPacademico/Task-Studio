@@ -1,5 +1,6 @@
 import { cn } from '@/shared/lib/cn';
 import { type GlyphProps } from './glyph-kit';
+import { StudioLetter } from './studio-letter';
 
 /**
  * This skin's product mark. Its navigation set is gone.
@@ -57,26 +58,33 @@ export const EldritchMark = ({ className }: GlyphProps) => (
       opacity="0.9"
     />
 
-    {/* Two lines of writing — and, between them, an eye where a third should
-        have been. It takes the raised-surface colour so it reads as a hole
-        through the sheet rather than as ink on it. */}
-    <g stroke="rgb(var(--surface-raised))" strokeWidth="2" strokeLinecap="round" opacity="0.85">
-      <path d="M9.5 12.5h16" />
-      <path d="M9.5 26h7" />
-    </g>
+    {/* The letter, written on the page. */}
+    <StudioLetter transform="translate(5.8 9.9) scale(0.745)" strokeOpacity={0.9} />
 
+    {/*
+      And the eye, which has moved aside to let it through.
+
+      It used to sit in the middle of the sheet with a line of writing above and
+      below — the eye *was* the third line. The letter needs that middle now, so
+      the eye is smaller and off to the right, watching it. That reads better
+      than it did: something looking at the writing is a stranger idea than
+      something interrupting it.
+
+      Still the raised-surface colour, so it is a hole through the sheet rather
+      than ink on it.
+    */}
     <ellipse
-      cx="18"
-      cy="19"
-      rx="7.4"
-      ry="4.4"
+      cx="24.6"
+      cy="15.4"
+      rx="5.2"
+      ry="3.2"
       fill="rgb(var(--surface-raised))"
       fillOpacity="0.92"
       stroke="rgb(var(--eldritch-glow))"
-      strokeWidth="1.4"
+      strokeWidth="1.3"
     />
-    <circle cx="18" cy="19" r="2.4" fill="currentColor" />
-    <circle cx="16.9" cy="17.9" r="0.75" fill="rgb(var(--surface-raised))" opacity="0.9" />
+    <circle cx="24.6" cy="15.4" r="1.8" fill="currentColor" />
+    <circle cx="23.8" cy="14.6" r="0.6" fill="rgb(var(--surface-raised))" opacity="0.9" />
 
     {/* And what came up over the bottom edge to keep it there. */}
     <g stroke="rgb(var(--eldritch-ichor))" strokeWidth="1.7" strokeLinecap="round" fill="none">

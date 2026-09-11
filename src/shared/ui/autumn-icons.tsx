@@ -1,5 +1,6 @@
 import { cn } from '@/shared/lib/cn';
 import { type GlyphProps } from './glyph-kit';
+import { LETTER_ON_SHEET, StudioLetter } from './studio-letter';
 
 /**
  * This skin's product mark. Its navigation set is gone.
@@ -44,7 +45,7 @@ export const AutumnMark = ({ className }: GlyphProps) => (
 
     {/* The paper. */}
     <path
-      d="M6 6.5h27v20.2L25.4 34H6V6.5Z"
+      d="M6 6.5h27v19.1c-3.7 1-8 4.3-8.9 8.4H6V6.5Z"
       fill="currentColor"
       stroke="rgb(var(--autumn-bark))"
       strokeOpacity="0.45"
@@ -52,27 +53,19 @@ export const AutumnMark = ({ className }: GlyphProps) => (
       strokeLinejoin="round"
     />
 
-    {/* Peeled corner. */}
+    {/* Peeled corner — rolled under, matching the drawn sheet. */}
     <path
-      d="M25.4 34v-7.3H33L25.4 34Z"
+      d="M33 25.6c-3.7 1-8 4.3-8.9 8.4 6.3-1 9.6-4 8.9-8.4Z"
       fill="rgb(var(--surface-raised))"
-      fillOpacity="0.55"
+      fillOpacity="0.72"
       stroke="rgb(var(--autumn-bark))"
       strokeOpacity="0.4"
       strokeWidth="1.2"
       strokeLinejoin="round"
     />
 
-    {/* Two written lines. */}
-    <g
-      stroke="rgb(var(--surface-raised))"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-      strokeOpacity="0.85"
-    >
-      <path d="M11.5 14.5h15.5" />
-      <path d="M11.5 20.5h10.5" />
-    </g>
+    {/* The letter. */}
+    <StudioLetter transform={LETTER_ON_SHEET} strokeOpacity={0.9} />
 
     {/*
       Two leaves that landed on it.

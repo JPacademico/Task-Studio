@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { useSkin } from '@/app/providers/theme-provider';
 import type { ThemeSkin } from '@/entities/user/model/types';
 import { cn } from '@/shared/lib/cn';
+import { LETTER_ON_SHEET, StudioLetter } from './studio-letter';
 import { AutumnMark } from './autumn-icons';
 import { EldritchMark } from './eldritch-icons';
 import { HazardMark } from './hazard-icons';
@@ -608,15 +609,34 @@ const MARKS: Partial<Record<ThemeSkin, ComponentType<{ className?: string }>>> =
 };
 
 /**
- * The product mark: a Post-it with a pin through it.
+ * The product mark: a Post-it with the product's initial on it.
  *
- * This replaces the generic "T" tile that used to sit in the sidebar, the top
- * bar and the auth screen. A workspace built out of paper objects should not
- * introduce itself with a letter in a rounded square.
+ * ## What changed, and what did not
+ *
+ * The drawing is the design team's: one sheet, the bottom-right corner rolled
+ * under, and a handwritten `t`. What it replaces is a sheet carrying two ruled
+ * lines, a pin head and a second sheet stacked behind it — four devices all
+ * saying "this is a piece of paper" to somebody who could already see that it
+ * was, and none of them saying which product it belonged to. A mark has one
+ * job, and the letter is it.
+ *
+ * The pad behind and the pin are gone for that reason rather than to save
+ * shapes: at the 20–28px this renders at in the rail and the top bar, a stack
+ * edge and a pin head are two grey smudges competing with the one stroke that
+ * has to be legible.
+ *
+ * ## Why it is still themed rather than a fixed yellow
+ *
+ * The reference art is a yellow sheet with navy ink, which is this product on
+ * the studio skin and no other. The sheet takes `currentColor` and the ink
+ * takes the page colour, exactly as before — so volcano gets a plate of cooling
+ * crust with the same letter cut into it and hazard gets it stencilled on tape.
+ * The fixed-palette rendering of the reference lives where it has to: the
+ * favicon and the installed-app icons, which cannot ask a stylesheet anything.
  *
  * Several skins introduce themselves as something else entirely, for the same
- * reason: a square of paper is not a thing the arcade or the deep field has.
- * See `MARKS`.
+ * reason a square of paper is not a thing the arcade or the deep field has.
+ * Every one of them carries the letter. See `MARKS`.
  */
 export const StudioMark = ({ className, interactive = false }: StudioMarkProps) => {
   const reduceMotion = useReducedMotion();
@@ -662,15 +682,20 @@ export const StudioMark = ({ className, interactive = false }: StudioMarkProps) 
         <rect x="28" y="24" width="4" height="4" fill="rgb(var(--surface))" />
         <rect x="24" y="24" width="4" height="4" fill="currentColor" fillOpacity="0.5" />
 
-        {/* Two written lines. */}
-        <g fill="rgb(var(--surface-raised))" fillOpacity="0.9">
-          <rect x="9" y="12" width="18" height="3" />
-          <rect x="9" y="19" width="12" height="3" />
-        </g>
+        {/*
+          The letter, in squares.
 
-        {/* The pin, pushed through the corner. */}
-        <rect x="4" y="4" width="8" height="8" fill="rgb(var(--surface-raised))" />
-        <rect x="6" y="6" width="4" height="4" fill="currentColor" />
+          `StudioLetter` is a curve, and a curve is the one thing this skin
+          cannot have — a sprite is not a smooth shape with the anti-aliasing
+          turned off. So the arcade spells the same letter out of four rects on
+          the same grid the peel uses: stem, bar, and a one-step foot where the
+          drawn version flicks right.
+        */}
+        <g fill="rgb(var(--surface-raised))" fillOpacity="0.95">
+          <rect x="15" y="9" width="4" height="15" />
+          <rect x="10" y="13" width="13" height="3" />
+          <rect x="19" y="21" width="5" height="3" />
+        </g>
       </motion.svg>
     );
   }
@@ -687,58 +712,48 @@ export const StudioMark = ({ className, interactive = false }: StudioMarkProps) 
       transition={{ type: 'spring', stiffness: 320, damping: 20 }}
       style={{ transformOrigin: '20px 20px' }}
     >
-      {/* The sheet behind, so the mark reads as a pad and not a single square. */}
-      <rect
-        x="7"
-        y="8"
-        width="26"
-        height="26"
-        rx="3"
-        fill="currentColor"
-        fillOpacity="0.22"
-        transform="rotate(6 20 20)"
-      />
+      {/*
+        The paper, with the bottom-right corner rolled under.
 
-      {/* The paper. */}
+        ## Why the corner is a curl and not a triangle
+
+        It was a triangle — the corner cut off on a straight diagonal — which is
+        the shorthand every "document" icon uses and which says *folded*, not
+        *peeled*. The design team's sheet lifts: the cut edge bows inward as the
+        paper rolls away from it, and the flap behind is a lens rather than a
+        wedge. Two curves instead of two straight lines, and the difference is
+        the whole reason the object reads as something you could pick up.
+
+        The edge and the flap are drawn from the same two control points, so the
+        fold line is shared and no seam can open between them.
+      */}
       <path
-        d="M6 6.5h27v20.2L25.4 34H6V6.5Z"
+        d="M6 6.5h27v19.1c-3.7 1-8 4.3-8.9 8.4H6V6.5Z"
         fill="currentColor"
         stroke="currentColor"
         strokeOpacity="0.35"
         strokeWidth="1.2"
         strokeLinejoin="round"
       />
-      {/* Peeled corner. */}
       <path
-        d="M25.4 34v-7.3H33L25.4 34Z"
+        d="M33 25.6c-3.7 1-8 4.3-8.9 8.4 6.3-1 9.6-4 8.9-8.4Z"
         fill="rgb(var(--surface-raised))"
-        fillOpacity="0.55"
+        fillOpacity="0.72"
         stroke="currentColor"
         strokeOpacity="0.3"
         strokeWidth="1.2"
         strokeLinejoin="round"
       />
 
-      {/* Two written lines. */}
-      <g
-        stroke="rgb(var(--surface-raised))"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-        strokeOpacity="0.85"
-      >
-        <line x1="11.5" y1="14.5" x2="27" y2="14.5" />
-        <line x1="11.5" y1="20.5" x2="22" y2="20.5" />
-      </g>
+      {/*
+        The letter, which is now what the mark says.
 
-      {/* The pin head, pushed through the top-left corner. */}
-      <circle
-        cx="9.5"
-        cy="9"
-        r="3.4"
-        fill="rgb(var(--surface-raised))"
-        stroke="currentColor"
-        strokeWidth="1.6"
-      />
+        Two ruled lines and a pin head used to sit here, and between them they
+        were four shapes saying "this is a note" to somebody already looking at
+        a note. The sheet carries that on its own; what it could not carry was
+        the product's name. See `StudioLetter`.
+      */}
+      <StudioLetter transform={LETTER_ON_SHEET} strokeOpacity={0.92} />
     </motion.svg>
   );
 };

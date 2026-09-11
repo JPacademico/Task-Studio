@@ -1,5 +1,6 @@
 import { cn } from '@/shared/lib/cn';
 import { type GlyphProps } from './glyph-kit';
+import { LETTER_ON_SHEET, StudioLetter } from './studio-letter';
 
 /**
  * This skin's product mark. Its navigation set is gone.
@@ -55,21 +56,20 @@ export const UnderwaterMark = ({ className }: GlyphProps) => (
       strokeLinejoin="round"
     />
 
-    {/* Two lines that have run. */}
-    <g
-      stroke="rgb(var(--surface-raised))"
-      strokeWidth="2.4"
-      strokeOpacity="0.85"
-      strokeLinecap="round"
-      fill="none"
-    >
-      <path d="M11.5 15c2.6-1.4 5.2 1.4 7.8 0s5.2 1.2 7.4 0" />
-      <path d="M11.5 21.4c2.4-1.3 4.8 1.3 7.2 0" />
-    </g>
-    <g stroke="rgb(var(--tide-glow))" strokeWidth="1.3" strokeLinecap="round" fill="none">
-      <path d="M11.5 15c2.6-1.4 5.2 1.4 7.8 0s5.2 1.2 7.4 0" className="tide-caustic" />
-      <path d="M11.5 21.4c2.4-1.3 4.8 1.3 7.2 0" className="tide-caustic tide-caustic--late" />
-    </g>
+    {/*
+      The letter, and the caustic crawling over it.
+
+      Two passes like the two run lines before it: the ink, then the same shape
+      again in the skin's glow carrying `tide-caustic`, so the light moves across
+      the letter the way it moves across everything else down here.
+    */}
+    <StudioLetter transform={LETTER_ON_SHEET} strokeWidth={3.9} strokeOpacity={0.85} />
+    <StudioLetter
+      transform={LETTER_ON_SHEET}
+      stroke="rgb(var(--tide-glow))"
+      strokeWidth={1.8}
+      className="tide-caustic"
+    />
 
     {/* The pin, become a bubble on its way out from under the top edge. */}
     <circle

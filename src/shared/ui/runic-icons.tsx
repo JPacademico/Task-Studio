@@ -1,5 +1,6 @@
 import { cn } from '@/shared/lib/cn';
 import { type GlyphProps } from './glyph-kit';
+import { LETTER_ON_SHEET, StudioLetter } from './studio-letter';
 
 /**
  * This skin's product mark. Its navigation set is gone.
@@ -50,15 +51,22 @@ export const RunicMark = ({ className }: GlyphProps) => (
       strokeLinejoin="round"
     />
 
-    {/* Two cut lines, and the light in them. */}
-    <g stroke="rgb(var(--surface-raised))" strokeWidth="2.4" strokeOpacity="0.85">
-      <path d="M11.5 14.5h15.5" />
-      <path d="M11.5 21h10.5" />
-    </g>
-    <g stroke="rgb(var(--rune-glow))" strokeWidth="1.4">
-      <path d="M11.5 14.5h15.5" className="rune-pulse" />
-      <path d="M11.5 21h10.5" className="rune-pulse rune-pulse--late" />
-    </g>
+    {/*
+      The letter, cut into the stone — and the light down in the cut.
+
+      Drawn twice, exactly as the two rules it replaces were: a wide stroke for
+      the channel and a narrow one inside it carrying the skin's pulse. One path
+      with an animated colour would light the whole cut at once; two give the
+      groove a lit floor and an unlit wall, which is what makes it look carved
+      rather than painted.
+    */}
+    <StudioLetter transform={LETTER_ON_SHEET} strokeWidth={3.9} strokeOpacity={0.85} />
+    <StudioLetter
+      transform={LETTER_ON_SHEET}
+      stroke="rgb(var(--rune-glow))"
+      strokeWidth={1.9}
+      className="rune-pulse"
+    />
 
     {/* The nail, driven through the top-left corner. */}
     <path

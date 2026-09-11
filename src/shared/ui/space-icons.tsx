@@ -1,5 +1,6 @@
 import { cn } from '@/shared/lib/cn';
 import { type GlyphProps } from './glyph-kit';
+import { StudioLetter } from './studio-letter';
 
 /**
  * This skin's product mark. Its navigation set is gone.
@@ -63,16 +64,14 @@ export const SpaceMark = ({ className }: GlyphProps) => (
       strokeLinejoin="round"
     />
 
-    {/* Two written lines. */}
-    <g
-      stroke="rgb(var(--surface-raised))"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeOpacity="0.85"
-    >
-      <path d="M10 14h13" />
-      <path d="M10 19h9" />
-    </g>
+    {/*
+      The letter, etched into the panel.
+
+      Its own placement rather than `LETTER_ON_SHEET`: this note is 21×22 where
+      the drawn skins' sheet is 27×27.5, and the shared transform would push the
+      foot of the letter into the clipped corner.
+    */}
+    <StudioLetter transform="translate(8.4 9.6) scale(0.64)" strokeOpacity={0.9} />
 
     {/* The field it hangs in — and one star flaring hard enough to have points. */}
     <g fill="rgb(var(--space-flare))">

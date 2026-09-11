@@ -1,5 +1,6 @@
 import { cn } from '@/shared/lib/cn';
 import { type GlyphProps } from './glyph-kit';
+import { StudioLetter } from './studio-letter';
 
 /**
  * This skin's product mark. Its navigation set is gone.
@@ -53,11 +54,22 @@ export const NewspaperMark = ({ className }: GlyphProps) => (
     <rect x="7.5" y="15.5" width="21" height="1.4" fill="currentColor" fillOpacity="0.75" />
     <rect x="7.5" y="17.8" width="21" height="0.8" fill="currentColor" fillOpacity="0.45" />
 
-    {/* The lead photograph, and the spot plate on it. */}
-    <rect x="7.5" y="20.5" width="9" height="8" fill="currentColor" fillOpacity="0.8" />
-    <rect x="7.5" y="20.5" width="9" height="1.6" fill="rgb(var(--brand))" />
+    {/*
+      The letter, set where the lead photograph was — and in the spot colour.
 
-    {/* Two columns of story. */}
+      This is the one skin whose ink is not the page colour, and it is the right
+      exception: a front page prints in black and keeps its second plate for the
+      one thing worth the extra pass. Making that thing the product's initial is
+      both what a newspaper would do and the only way this mark carries brand
+      colour at all, now that the photograph's spot rule has gone.
+    */}
+    <StudioLetter
+      transform="translate(3.9 18.5) scale(0.665)"
+      stroke="rgb(var(--brand))"
+      strokeWidth={4}
+    />
+
+    {/* The column of story beside it, and the rule under the fold. */}
     <g stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.7">
       <path d="M19 22h9.5" />
       <path d="M19 25h9.5" />

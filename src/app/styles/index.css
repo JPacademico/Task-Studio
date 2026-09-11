@@ -3913,37 +3913,73 @@
   }
 
   /*
-   * The hover fill: one disc, from the middle out.
+   * The hover fill: two shutters closing on the middle, like an eye.
    *
-   * A circle rather than a wipe because a button has no reading direction and a
-   * left-to-right sweep invents one. 140% of the button's *width* with a 1:1
-   * aspect makes a disc whose radius clears the far corner of even the widest
-   * control here, so the fill always finishes covered rather than leaving a
-   * sliver of tube in the corners.
+   * ## Why not the disc it was
    *
-   * `scale` rather than `width`/`height`: the whole sweep is one compositor
-   * property, so it costs nothing to run and reverses for free when the pointer
-   * leaves. `z-index: -1` puts it over the wax and under the label.
+   * A circle growing out of the centre was the obvious wipe and the wrong one
+   * *for this button*, because of what is behind it. The wax rises up the tube
+   * — the motion underneath is vertical — and a disc expanding radially cuts
+   * across that at every angle at once. The lamp and the fill were two
+   * unrelated gestures happening in the same 240ms.
+   *
+   * Closing from the top and bottom edges runs along the same axis the wax
+   * does: the tube appears to be pinched shut, the last thing to disappear is
+   * the middle band where the blobs actually are, and the two motions read as
+   * one mechanism rather than two effects.
+   *
+   * ## How it is built
+   *
+   * Two shutters, one anchored to each edge, each half the height, each scaled
+   * on Y alone from its own edge. That is the whole thing — no clip-path, no
+   * `background-size`, nothing that repaints. `scale` is an independent
+   * transform property honouring `transform-origin`, so anchoring is one
+   * declaration and the whole sweep stays on the compositor. It reverses for
+   * free when the pointer leaves, which is what "transitions back to the lava
+   * lamp" asks for.
+   *
+   * `50.5%` rather than `50%`: two boxes meeting exactly at the halfway line
+   * land on a fractional device pixel at most button heights, and the seam
+   * shows as a hairline of tube across a filled button. A half-percent of
+   * overlap costs nothing and is the difference between a solid fill and one
+   * with a scar down the middle.
    */
+  .ui-lava::before,
   .ui-lava::after {
     content: '';
     position: absolute;
-    left: 50%;
-    top: 50%;
+    left: 0;
+    right: 0;
+    /*
+     * Above the lamp, below the label. The tube sits at `-2` precisely so both
+     * shutters can sit at `-1`: among negative-z children the painting order is
+     * z-index first and tree order only as a tie-break, and `::before` comes
+     * *before* the lamp element in tree order — so at equal z-index the top
+     * shutter would be drawn behind the wax while the bottom one covered it.
+     */
     z-index: -1;
-    width: 140%;
-    aspect-ratio: 1;
-    translate: -50% -50%;
-    border-radius: 50%;
+    height: 50.5%;
     background: rgb(var(--brand));
-    scale: 0;
+    scale: 1 0;
     transition: scale 240ms var(--ease-ui);
     pointer-events: none;
   }
 
+  .ui-lava::before {
+    top: 0;
+    transform-origin: top;
+  }
+
+  .ui-lava::after {
+    bottom: 0;
+    transform-origin: bottom;
+  }
+
+  .ui-lava:hover::before,
   .ui-lava:hover::after,
+  .ui-lava:focus-visible::before,
   .ui-lava:focus-visible::after {
-    scale: 1;
+    scale: 1 1;
   }
 
   /* --- The tube ---------------------------------------------------------- */
@@ -3951,7 +3987,9 @@
   .lava-lamp {
     position: absolute;
     inset: 0;
-    z-index: -1;
+    /* `-2`, not `-1` — see the shutter note above: it is what lets both halves
+       of the fill paint over the wax regardless of tree order. */
+    z-index: -2;
     overflow: hidden;
     pointer-events: none;
     /*
@@ -4239,6 +4277,164 @@
     .lava-blob:nth-child(6) {
       transform: translate3d(0, -54%, 0);
     }
+  }
+
+  /*
+   * RESTORED after an accidental deletion, not a design change.
+   *
+   * The lava rewrite replaced everything between its own opening comment and
+   * `.postit`, and this block had been written into that span — so the pricing
+   * cards went on rendering `.lp-rim` and `.lp-glow` elements with no rules
+   * behind them, and the travelling light stopped existing while the markup
+   * still said it should be there. If this layer is ever replaced wholesale
+   * again, check what else lives between the markers first.
+   */
+  /* --- The pricing card's rim --------------------------------------------
+   *
+   * The border of a plan card, as a light that travels round it rather than a
+   * ring that sits on it.
+   *
+   * ## How it is drawn
+   *
+   * A square of `conic-gradient`, larger than the card, spinning behind it. The
+   * card's own opaque face covers all of it except a hairline at the edge — so
+   * what is visible is a bright arc running round the border, which is the
+   * effect, and the cost is one rotating layer on the compositor.
+   *
+   * A square, and `aspect-ratio: 1` rather than `inset: 0`, because a conic
+   * gradient in a non-square box is an ellipse: the arc would visibly speed up
+   * along the short sides and crawl along the long ones. Sized off the *width*
+   * and centred, so it covers a card that is taller than it is wide.
+   *
+   * ## Why the angle is a rotation and not a custom property
+   *
+   * The tidier spelling animates `--angle` through `@property` and interpolates
+   * `from var(--angle)` inside the gradient. It is also two years newer than
+   * this needs to be, and where it is unsupported the gradient does not
+   * degrade — it simply never moves, on the one element whose whole job is to
+   * move. `transform: rotate` has worked everywhere for a decade and puts the
+   * work on the compositor rather than repainting a gradient every frame.
+   *
+   * ## Why the unfocused card keeps one
+   *
+   * Because three cards with nothing on their edges and one with a light going
+   * round it reads as two designs on one row. The same rim, held still and
+   * dimmed to a fifth, is a quiet brand-coloured border — which is what those
+   * cards had before — and it means focus is a change of *state* rather than a
+   * change of construction.
+   */
+  .lp-rim {
+    position: absolute;
+    inset: -1px;
+    z-index: 0;
+    overflow: hidden;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0.28;
+    transition:
+      opacity 320ms var(--ease-ui),
+      filter 320ms var(--ease-ui);
+  }
+
+  .lp-rim::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 190%;
+    aspect-ratio: 1;
+    translate: -50% -50%;
+    /*
+     * One bright head with a tail behind it, not a colour wheel. A gradient
+     * that is lit the whole way round is a glowing border; this is a light
+     * that goes round one, which is what was asked for and is also the only
+     * version where the direction of travel is legible.
+     */
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      rgb(var(--brand) / 0.08) 34deg,
+      rgb(var(--brand) / 0.55) 60deg,
+      rgb(var(--brand)) 76deg,
+      rgb(var(--brand-soft)) 86deg,
+      rgb(var(--brand) / 0.5) 100deg,
+      transparent 138deg,
+      transparent 360deg
+    );
+  }
+
+  .lp-rim--active {
+    opacity: 1;
+  }
+
+  .lp-rim--active::before {
+    animation: lp-rim-spin 4.6s linear infinite;
+  }
+
+  @keyframes lp-rim-spin {
+    to {
+      rotate: 360deg;
+    }
+  }
+
+  /*
+   * The glow, which is the rim again and blurred.
+   *
+   * A second layer rather than a `filter` on the first, because blurring the
+   * rim itself would blur the hairline into a smudge and lose the crisp edge
+   * that makes it read as a border at all. This one is pushed out past the
+   * card, blurred hard, and sits behind everything — so the card appears to be
+   * lit from behind by the same travelling light.
+   */
+  .lp-glow {
+    position: absolute;
+    inset: -14px;
+    z-index: -1;
+    overflow: hidden;
+    /*
+     * `inherit`, not `calc(var(--radius-3xl) + 14px)`.
+     *
+     * The arithmetic version is the one that looks right and breaks on one
+     * skin: `--radius-*` feeds a *shorthand*, so a theme is free to set four
+     * corners at once — and eldritch does (`2rem 0.6rem 2rem 0.6rem`). A
+     * `calc()` over a four-value token is invalid, the whole declaration is
+     * dropped, and the glow becomes a hard-cornered rectangle behind a rounded
+     * card on exactly one theme. Inheriting the card's own radius on a box
+     * 14px larger leaves the corners fractionally tight, which is invisible
+     * under an 18px blur.
+     */
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    filter: blur(18px);
+    transition: opacity 320ms var(--ease-ui);
+  }
+
+  .lp-glow::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 190%;
+    aspect-ratio: 1;
+    translate: -50% -50%;
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      rgb(var(--brand) / 0.3) 40deg,
+      rgb(var(--brand) / 0.85) 78deg,
+      rgb(var(--brand) / 0.25) 112deg,
+      transparent 150deg,
+      transparent 360deg
+    );
+  }
+
+  .lp-glow--active {
+    opacity: 0.5;
+  }
+
+  .lp-glow--active::before {
+    animation: lp-rim-spin 4.6s linear infinite;
   }
 
   .postit {

@@ -3,8 +3,12 @@
  *
  * iOS/Safari refuses to install a PWA whose manifest icons 404, and a binary
  * asset does not belong in source control, so the icons are produced from code:
- * a Post-it note — the object the whole app is built around — with a peeled
- * corner and ruled lines, encoded as PNG by hand.
+ * a Post-it note — the object the whole app is built around — with its corner
+ * rolled under and the product's initial on it, encoded as PNG by hand.
+ *
+ * The geometry is lifted from the SVG mark rather than redrawn, so the icon on
+ * a home screen and the mark in the top bar are the same object. What differs
+ * is only what a raster at 16px needs: a heavier stroke and a shaded fold.
  *
  * Run with: npm run icons
  */
@@ -20,11 +24,26 @@ const ICONS_DIR = join(PUBLIC_DIR, 'icons');
 const BRAND = [14, 116, 144]; // #0e7490
 const BRAND_DEEP = [21, 94, 117]; // #155e75
 
-// Post-it palette: a warm yellow sheet, a shaded fold, and ink for the lines.
-const PAPER_TOP = [253, 224, 138]; // #fde08a
-const PAPER_BOTTOM = [250, 204, 90]; // #facc5a
-const FOLD = [225, 170, 52]; // shaded underside of the curl
-const LINE_INK = [124, 92, 20];
+/*
+ * The sheet, as the design team drew it: a deeper, more saturated gold than the
+ * pale yellow this used to be, and navy ink rather than a muddy brown.
+ */
+const PAPER_TOP = [252, 199, 75]; // #fcc74b
+const PAPER_BOTTOM = [243, 174, 28]; // #f3ae1c
+const INK = [38, 56, 75]; // #26384b
+
+/*
+ * The underside of the curl, and the one place this deliberately departs from
+ * the reference art.
+ *
+ * In the original the lifted corner is a *lighter* yellow, which is what paper
+ * actually does when light passes through it. At 180px that is a lovely detail
+ * and at 16px it is nothing at all: two yellows a few percent apart occupy four
+ * pixels and merge into one flat corner, and the curl — the thing that makes
+ * the object read as paper rather than as a square — disappears. Shading the
+ * underside instead keeps it legible at every size the icon is actually used.
+ */
+const FOLD = [224, 162, 26]; // #e0a21a
 
 const crcTable = Array.from({ length: 256 }, (_, n) => {
   let c = n;
@@ -79,17 +98,141 @@ const mix = (a, b, t) => [
 ];
 
 /**
+ * The mark's geometry, in coordinates local to the sheet.
+ *
+ * `0,0` is the sheet's top-left corner and `1,1` its bottom-right, so one set
+ * of numbers draws the icon at 180px and at 512px with nothing to rescale by
+ * hand. They are the SVG mark's own paths — see `StudioMark` and
+ * `StudioLetter` — divided through by the sheet's size, which is what keeps the
+ * installed-app icon and the in-app mark the same drawing rather than two
+ * drawings that look similar.
+ */
+
+/** The sheet's outline, the cut edge bowing inward where the corner rolls away. */
+const FACE = [
+  ['M', 0, 0],
+  ['L', 1, 0],
+  ['L', 1, 0.6945],
+  ['C', 0.863, 0.7309, 0.7037, 0.8509, 0.6704, 1],
+  ['L', 0, 1],
+];
+
+/** The rolled-under flap. Bulges a little past the sheet's right edge, as paper does. */
+const FLAP = [
+  ['M', 1, 0.6945],
+  ['C', 0.863, 0.7309, 0.7037, 0.8509, 0.6704, 1],
+  ['C', 0.9037, 0.9636, 1.0259, 0.8545, 1, 0.6945],
+];
+
+/**
+ * The letter, carried over from `StudioLetter`'s 24-unit box.
+ *
+ * Placed exactly as the in-app mark places it: `translate(3.2 3.1) scale(0.85)`
+ * in sheet units, then divided by the sheet's 27 × 27.5.
+ */
+const letterPoint = (u, v) => [(3.2 + 0.85 * u) / 27, (3.1 + 0.85 * v) / 27.5];
+
+const STEM = [
+  ['M', ...letterPoint(12, 2.2)],
+  ['C', ...letterPoint(11.4, 8), ...letterPoint(11.5, 14.5), ...letterPoint(12.3, 18.2)],
+  ['C', ...letterPoint(12.8, 20.9), ...letterPoint(15.6, 21.8), ...letterPoint(17.8, 20)],
+];
+
+const BAR = [
+  ['M', ...letterPoint(5.4, 11.3)],
+  ['C', ...letterPoint(8.6, 10.6), ...letterPoint(14, 9.9), ...letterPoint(17.9, 9.5)],
+];
+
+/**
+ * Half the letter's stroke, in sheet units.
+ *
+ * A shade heavier than the SVG mark's 3.06/27, for the reason given on
+ * `StudioLetter.strokeWidth`: this file's output is looked at at 16px in a
+ * browser tab, where a stroke that measures right measures one pixel.
+ */
+const INK_HALF_WIDTH = 0.066;
+
+/** Beziers, flattened. Sixteen steps is past the point any of these bends. */
+const flatten = (commands) => {
+  const points = [];
+  let cursor = [0, 0];
+
+  for (const [kind, ...args] of commands) {
+    if (kind === 'M') {
+      cursor = [args[0], args[1]];
+      points.push(cursor);
+    } else if (kind === 'L') {
+      cursor = [args[0], args[1]];
+      points.push(cursor);
+    } else {
+      const [c1x, c1y, c2x, c2y, x, y] = args;
+      const [x0, y0] = cursor;
+      for (let step = 1; step <= 16; step += 1) {
+        const t = step / 16;
+        const m = 1 - t;
+        points.push([
+          m * m * m * x0 + 3 * m * m * t * c1x + 3 * m * t * t * c2x + t * t * t * x,
+          m * m * m * y0 + 3 * m * m * t * c1y + 3 * m * t * t * c2y + t * t * t * y,
+        ]);
+      }
+      cursor = [x, y];
+    }
+  }
+
+  return points;
+};
+
+const FACE_POLY = flatten(FACE);
+const FLAP_POLY = flatten(FLAP);
+const STROKES = [flatten(STEM), flatten(BAR)];
+
+/** Even-odd crossing test. The outlines are closed implicitly. */
+const inPolygon = (x, y, polygon) => {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i, i += 1) {
+    const [xi, yi] = polygon[i];
+    const [xj, yj] = polygon[j];
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+};
+
+/** Whether a point falls inside a stroked polyline of half-width `half`. */
+const onStroke = (x, y, polyline, half) => {
+  for (let i = 1; i < polyline.length; i += 1) {
+    const [ax, ay] = polyline[i - 1];
+    const [bx, by] = polyline[i];
+    const dx = bx - ax;
+    const dy = by - ay;
+    const lengthSquared = dx * dx + dy * dy;
+    let t = lengthSquared === 0 ? 0 : ((x - ax) * dx + (y - ay) * dy) / lengthSquared;
+    t = t < 0 ? 0 : t > 1 ? 1 : t;
+    const px = ax + t * dx - x;
+    const py = ay + t * dy - y;
+    if (px * px + py * py <= half * half) return true;
+  }
+  return false;
+};
+
+/**
  * A Post-it note on a brand tile, drawn straight into an RGBA buffer.
  *
- * The sheet is square with its bottom-right corner peeled away: the triangle
- * below the diagonal is cut out of the paper and redrawn a few shades darker,
- * which is what reads as a fold at 16px without any real shading.
+ * ## Why it is supersampled
+ *
+ * Every edge in this drawing is a diagonal or a curve — the tile's rounded
+ * corners, the sheet's rolled edge, and now a handwritten letter. Sampled once
+ * per pixel they come out as staircases, which was tolerable while the sheet
+ * was a rectangle with three straight rules on it and is not now. Four samples
+ * per axis is sixteen per pixel: enough that a curve at 180px is smooth, cheap
+ * enough that the whole set still generates in a couple of seconds, and it
+ * costs nothing at runtime because this runs at build time and ships PNGs.
  */
 const drawIcon = (size, { maskable = false } = {}) => {
   const pixels = Buffer.alloc(size * size * 4);
   const radius = maskable ? 0 : size * 0.22;
   // Maskable icons need a safe area; a plain tile can run closer to the edge.
   const pad = maskable ? size * 0.2 : size * 0.14;
+  const samples = 4;
 
   const inRoundedRect = (x, y) => {
     if (radius === 0) return true;
@@ -100,66 +243,59 @@ const drawIcon = (size, { maskable = false } = {}) => {
     return (x - cx) ** 2 + (y - cy) ** 2 <= radius ** 2;
   };
 
-  // Paper geometry.
   const paperLeft = pad;
-  const paperRight = size - pad;
   const paperTop = pad;
-  const paperBottom = size - pad;
-  const paperSize = paperRight - paperLeft;
-  const foldSize = paperSize * 0.32;
-
-  // Three ruled lines, skipping the corner the fold eats.
-  const lineHeight = Math.max(1, Math.round(paperSize * 0.045));
-  const lines = [0.24, 0.42, 0.6, 0.78].map((at) => paperTop + paperSize * at);
-  const lineLeft = paperLeft + paperSize * 0.14;
+  const paperSize = size - pad * 2;
 
   for (let y = 0; y < size; y += 1) {
     for (let x = 0; x < size; x += 1) {
-      const offset = (y * size + x) * 4;
-      const px = x + 0.5;
-      const py = y + 0.5;
+      let r = 0;
+      let g = 0;
+      let b = 0;
+      let a = 0;
 
-      if (!inRoundedRect(px, py)) {
-        pixels[offset + 3] = 0;
-        continue;
-      }
+      for (let sy = 0; sy < samples; sy += 1) {
+        for (let sx = 0; sx < samples; sx += 1) {
+          const px = x + (sx + 0.5) / samples;
+          const py = y + (sy + 0.5) / samples;
 
-      // Brand tile behind the paper.
-      let colour = mix(BRAND, BRAND_DEEP, y / size);
+          if (!inRoundedRect(px, py)) continue;
 
-      const onPaper =
-        px >= paperLeft && px <= paperRight && py >= paperTop && py <= paperBottom;
+          // Brand tile behind the paper.
+          let colour = mix(BRAND, BRAND_DEEP, py / size);
 
-      if (onPaper) {
-        // Everything past this diagonal is the dog-eared corner: the near half
-        // is the paper's shaded underside, the far half is gone entirely and
-        // lets the tile show through.
-        const foldEdge = paperRight + paperBottom - foldSize;
-        const isCutAway = px + py > foldEdge;
-        const isFold = isCutAway && px + py < foldEdge + foldSize * 0.55;
+          // Sheet-local, so the geometry above applies unchanged at any size.
+          const u = (px - paperLeft) / paperSize;
+          const v = (py - paperTop) / paperSize;
 
-        if (isFold) {
-          colour = FOLD;
-        } else if (!isCutAway) {
-          colour = mix(PAPER_TOP, PAPER_BOTTOM, (py - paperTop) / paperSize);
-
-          const lineRight =
-            // Lines stop short of the fold so they never run into it.
-            Math.min(paperRight - paperSize * 0.16, foldEdge - py - paperSize * 0.08);
-
-          for (const lineY of lines) {
-            if (py >= lineY && py < lineY + lineHeight && px >= lineLeft && px <= lineRight) {
-              colour = LINE_INK;
-              break;
+          if (u >= -0.05 && u <= 1.08 && v >= -0.05 && v <= 1.05) {
+            if (inPolygon(u, v, FACE_POLY)) {
+              colour = mix(PAPER_TOP, PAPER_BOTTOM, v);
+              if (STROKES.some((stroke) => onStroke(u, v, stroke, INK_HALF_WIDTH))) {
+                colour = INK;
+              }
+            } else if (inPolygon(u, v, FLAP_POLY)) {
+              colour = FOLD;
             }
           }
+
+          r += colour[0];
+          g += colour[1];
+          b += colour[2];
+          a += 255;
         }
       }
 
-      pixels[offset] = colour[0];
-      pixels[offset + 1] = colour[1];
-      pixels[offset + 2] = colour[2];
-      pixels[offset + 3] = 255;
+      const taken = samples * samples;
+      const offset = (y * size + x) * 4;
+      // Averaged over *covered* samples so a partly-covered edge pixel keeps
+      // its colour and only loses alpha — averaging over all of them would
+      // darken every rounded corner towards black.
+      const covered = a / 255;
+      pixels[offset] = covered ? Math.round(r / covered) : 0;
+      pixels[offset + 1] = covered ? Math.round(g / covered) : 0;
+      pixels[offset + 2] = covered ? Math.round(b / covered) : 0;
+      pixels[offset + 3] = Math.round(a / taken);
     }
   }
 
@@ -173,21 +309,31 @@ const FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"
       <stop offset="1" stop-color="#155e75"/>
     </linearGradient>
     <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#fde08a"/>
-      <stop offset="1" stop-color="#facc5a"/>
+      <stop offset="0" stop-color="#fcc74b"/>
+      <stop offset="1" stop-color="#f3ae1c"/>
     </linearGradient>
   </defs>
 
   <rect width="64" height="64" rx="14" fill="url(#tile)"/>
 
-  <!-- The sheet, with its bottom-right corner peeled away. -->
+  <!-- The same sheet the app draws, with its bottom-right corner rolled under
+       and the product's initial on it. The tile stays: at 16px in a tab strip a
+       bare yellow note has to survive whatever colour sits behind it, and a
+       dark surround is what makes the gold read on a light theme and a dark
+       one alike. -->
   <g transform="rotate(-4 32 32)">
-    <path d="M10 9h44v33L44 55H10V9Z" fill="url(#paper)"/>
-    <path d="M44 55V42h10L44 55Z" fill="#e1aa34"/>
-    <g stroke="#7c5c14" stroke-width="3.6" stroke-linecap="round" opacity="0.85">
-      <line x1="18" y1="21" x2="46" y2="21"/>
-      <line x1="18" y1="30" x2="46" y2="30"/>
-      <line x1="18" y1="39" x2="38" y2="39"/>
+    <path d="M10 9h44v31.9c-6 1.7-13 7.2-14.5 14.1H10V9Z" fill="url(#paper)"/>
+    <path d="M54 41c-6 1.7-13 7.2-14.5 14.1 10.3-1.7 15.6-6.7 14.5-14.1Z" fill="#e0a21a"/>
+    <g
+      transform="translate(15.9 15.3) scale(1.33)"
+      fill="none"
+      stroke="#26384b"
+      stroke-width="4.2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <path d="M12 2.2C11.4 8 11.5 14.5 12.3 18.2c.5 2.7 3.3 3.6 5.5 1.8"/>
+      <path d="M5.4 11.3c3.2-.7 8.6-1.4 12.5-1.8"/>
     </g>
   </g>
 </svg>

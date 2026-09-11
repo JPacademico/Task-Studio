@@ -1,5 +1,6 @@
 import { cn } from '@/shared/lib/cn';
 import { type GlyphProps } from './glyph-kit';
+import { StudioLetter } from './studio-letter';
 
 /**
  * This skin's product mark. Its navigation set is gone.
@@ -75,13 +76,18 @@ export const HazardMark = ({ className }: GlyphProps) => (
     <path d="M5 5h27v6.5H5V5Z" fill="url(#hazard-mark-tape)" />
     <path d="M5 11.5h27" stroke="rgb(var(--edge))" strokeWidth="1.4" opacity="0.85" />
 
-    {/* Stamped. The same three blades as the nav glyph, scaled into the body. */}
-    <g fill="rgb(var(--surface-raised))" transform="translate(18.5 21) scale(0.42) translate(-12 -12)">
-      <circle cx="12" cy="12" r="2.8" />
-      <path d="M7.5 4.3A9 9 0 0 1 16.5 4.3L13.5 9.5A3 3 0 0 0 10.5 9.5Z" />
-      <path d="M20.3 17.6A9 9 0 0 1 12.5 22.1L12.5 16.1A3 3 0 0 0 15.1 14.6Z" />
-      <path d="M11.5 22.1A9 9 0 0 1 3.7 17.6L8.9 14.6A3 3 0 0 0 11.5 16.1Z" />
-    </g>
+    {/*
+      Stencilled onto the body, where the hazard trefoil used to be.
+
+      The trefoil was this skin's version of the writing on the note, and it was
+      the one mark in the set that said something other than the product's name
+      — it said "radiation". The tape above it is already the whole of the
+      warning; the body is where the name goes.
+
+      Placed below the tape rather than centred on the sheet, so the bar of the
+      letter does not collide with the header rule.
+    */}
+    <StudioLetter transform="translate(9 13) scale(0.69)" strokeOpacity={0.95} />
 
     {/* The cut corner, lit along the bevel. */}
     <path
