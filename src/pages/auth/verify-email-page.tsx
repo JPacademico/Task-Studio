@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 
 import { authApi } from '@/features/auth/api/auth.api';
 import { useSessionStore } from '@/features/auth/model/session.store';
+import { HumanCheck } from '@/features/auth/ui/human-check';
 import { errorMessage } from '@/shared/api/client';
 import { Button, Input, Spinner } from '@/shared/ui';
 import { AuthShell } from './auth-shell';
@@ -45,8 +46,18 @@ export const VerifyEmailPage = () => {
     },
   });
 
+  const [captchaToken, setCaptchaToken] = useState<string | undefined>();
+
   const resend = useMutation({
-    mutationFn: authApi.resendVerification,
+    /*
+     * Wrapped rather than passed by reference.
+     *
+     * React Query calls `mutationFn(variables, context)`, so handing it a
+     * function whose second parameter is the Turnstile token would quietly
+     * feed it the query context instead — which typechecks as `unknown` in
+     * some versions and would have shipped a token that is never sent.
+     */
+    mutationFn: (address: string) => authApi.resendVerification(address, captchaToken),
     onSuccess: (response) => toast.success(response.message),
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -128,6 +139,8 @@ export const VerifyEmailPage = () => {
           maxLength={TEXT_LIMITS.email}
           placeholder={t('auth.emailPlaceholder')}
         />
+
+        <HumanCheck onToken={setCaptchaToken} />
 
         <Button
           className="w-full"

@@ -7,17 +7,30 @@ export type OAuthProvider = 'google' | 'github';
 
 export type OAuthAvailability = Record<OAuthProvider, boolean>;
 
+/** What the API says about the human check, or `null` if it asks for none. */
+export interface BotProtectionConfig {
+  provider: 'turnstile';
+  siteKey: string;
+}
+
+/** The Turnstile token, on the requests that carry one. */
+interface HumanChecked {
+  captchaToken?: string;
+}
+
 export const authApi = {
-  async register(payload: {
-    email: string;
-    password: string;
-    displayName: string;
-  }): Promise<{ message: string }> {
+  async register(
+    payload: {
+      email: string;
+      password: string;
+      displayName: string;
+    } & HumanChecked,
+  ): Promise<{ message: string }> {
     const { data } = await api.post<{ message: string }>('/auth/register', payload);
     return data;
   },
 
-  async login(payload: { email: string; password: string }): Promise<AuthSession> {
+  async login(payload: { email: string; password: string } & HumanChecked): Promise<AuthSession> {
     const { data } = await api.post<AuthSession>('/auth/login', payload);
     return data;
   },
@@ -28,13 +41,19 @@ export const authApi = {
     return data;
   },
 
-  async resendVerification(email: string): Promise<{ message: string }> {
-    const { data } = await api.post<{ message: string }>('/auth/resend-verification', { email });
+  async resendVerification(email: string, captchaToken?: string): Promise<{ message: string }> {
+    const { data } = await api.post<{ message: string }>('/auth/resend-verification', {
+      email,
+      captchaToken,
+    });
     return data;
   },
 
-  async forgotPassword(email: string): Promise<{ message: string }> {
-    const { data } = await api.post<{ message: string }>('/auth/forgot-password', { email });
+  async forgotPassword(email: string, captchaToken?: string): Promise<{ message: string }> {
+    const { data } = await api.post<{ message: string }>('/auth/forgot-password', {
+      email,
+      captchaToken,
+    });
     return data;
   },
 
@@ -67,6 +86,24 @@ export const authApi = {
    * providers", so an API that has not been redeployed with these endpoints
    * yet simply shows the ordinary form.
    */
+  /**
+   * Whether the sign-in forms should render a human check, and with which key.
+   *
+   * Asked rather than built in, for the reason in `HumanCheck`: the site key
+   * and the API's secret are checked against each other, so a copy carried in
+   * this bundle can go stale against the deployment it is talking to. A failure
+   * is read as "no check" — the throttler and the account lockout are the
+   * layers this one sits on top of, and neither depends on it.
+   */
+  async botProtection(): Promise<BotProtectionConfig | null> {
+    try {
+      const { data } = await api.get<BotProtectionConfig | null>('/auth/bot-protection');
+      return data;
+    } catch {
+      return null;
+    }
+  },
+
   async oauthProviders(): Promise<OAuthAvailability> {
     const { data } = await api.get<OAuthAvailability>('/auth/oauth/providers');
     return data;

@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { authApi } from '@/features/auth/api/auth.api';
+import { HumanCheck } from '@/features/auth/ui/human-check';
 import { errorMessage } from '@/shared/api/client';
 import { Button, Input } from '@/shared/ui';
 import { AuthShell } from './auth-shell';
@@ -15,9 +16,10 @@ export const ForgotPasswordPage = () => {
   const t = useT();
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | undefined>();
 
   const request = useMutation({
-    mutationFn: authApi.forgotPassword,
+    mutationFn: (address: string) => authApi.forgotPassword(address, captchaToken),
     onSuccess: (response) => {
       setSent(true);
       toast.success(response.message);
@@ -58,6 +60,8 @@ export const ForgotPasswordPage = () => {
             maxLength={TEXT_LIMITS.email}
             placeholder={t('auth.emailPlaceholder')}
           />
+          <HumanCheck onToken={setCaptchaToken} />
+
           <Button type="submit" className="w-full" size="lg" isLoading={request.isPending}>
             {t('auth.forgot.submit')}
           </Button>

@@ -91,29 +91,252 @@ const NOTE_TONES = NOTE_COLORS.filter((colour) => colour !== '#e2e8f0');
 const TONE_COUNT = NOTE_TONES.length + 1;
 
 /**
- * How present a sheet is, near and far.
+ * How present a sheet is, near and far, on each polarity.
  *
- * Depth used to be carried by the *tone* — the first colour at 16%, the second
- * at 12.5%, the third at 9% — which worked with three colours and cannot work
- * with seven: a card's presence would be decided by which colour it happened to
- * be rather than by where it is, so a near yellow sheet and a far yellow sheet
- * would be equally strong and the field would flatten.
+ * Depth is carried by nearness rather than by tone: a card's presence should be
+ * decided by where it is, not by which of the seven colours it happened to be
+ * cut from, or a near yellow sheet and a far yellow sheet read as the same
+ * distance and the field flattens.
  *
- * So presence follows nearness, which is what it was always standing in for,
- * and the colour is free to be any of the seven at any depth.
+ * ## Why the two polarities get their own numbers rather than one and a scale
+ *
+ * Because they are not the same problem scaled, and treating them as one is
+ * what made the field invisible.
+ *
+ * There used to be a single range (6% to 18%) and a `DARK_TONE_SCALE` of 0.62
+ * that multiplied it down on dark skins. Both halves of that were wrong in the
+ * same direction. On a light skin a pastel at 6% over a near-white surface is
+ * not a faint sheet, it is *nothing* — the two colours differ by a couple of
+ * points of luminance before the alpha is applied, and the alpha then removes
+ * most of what little was left. And on a dark skin, where a pastel finally has
+ * real contrast to spend, the scale threw 38% of it away.
+ *
+ * So: light skins get their contrast from a *darker tone* (see `toneFor`)
+ * rather than from more alpha, which is why their range is the lower of the
+ * two. Dark skins keep the pastels and get the alpha instead.
  */
-const TONE_OPACITY = { near: 0.18, far: 0.06 } as const;
+const TONE_OPACITY = {
+  light: { near: 0.32, far: 0.12 },
+  dark: { near: 0.42, far: 0.14 },
+} as const;
+
+/** One sheet's two presence values, already chosen for the current polarity. */
+type Presence = (typeof TONE_OPACITY)[keyof typeof TONE_OPACITY];
+
+/** `#rrggbb` -> `[h, s, l]`, h in 0...360, s and l in 0...1. */
+const hexToHsl = (hex: string): [number, number, number] => {
+  const value = hex.replace('#', '');
+  const channel = (at: number) => parseInt(value.slice(at, at + 2), 16) / 255;
+  const [r, g, b] = [channel(0), channel(2), channel(4)];
+
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const lightness = (max + min) / 2;
+  const delta = max - min;
+
+  if (delta === 0) return [0, 0, lightness];
+
+  const saturation = delta / (1 - Math.abs(2 * lightness - 1));
+  const hue =
+    max === r
+      ? 60 * (((g - b) / delta) % 6)
+      : max === g
+        ? 60 * ((b - r) / delta + 2)
+        : 60 * ((r - g) / delta + 4);
+
+  return [(hue + 360) % 360, saturation, lightness];
+};
+
+const hslToHex = (h: number, s: number, l: number): string => {
+  const chroma = (1 - Math.abs(2 * l - 1)) * s;
+  const second = chroma * (1 - Math.abs(((h / 60) % 2) - 1));
+  const match = l - chroma / 2;
+
+  const sextant = Math.floor(h / 60) % 6;
+  const [r, g, b] = (
+    [
+      [chroma, second, 0],
+      [second, chroma, 0],
+      [0, chroma, second],
+      [0, second, chroma],
+      [second, 0, chroma],
+      [chroma, 0, second],
+    ] as const
+  )[sextant];
+
+  return `#${[r, g, b]
+    .map((part) =>
+      Math.round((part + match) * 255)
+        .toString(16)
+        .padStart(2, '0'),
+    )
+    .join('')}`;
+};
 
 /**
- * How much of that survives on a dark page.
+ * Perceived brightness, 0...1, on the sRGB curve the contrast standard uses.
  *
- * A pastel is a *light* colour: at 18% over a near-white surface it is a tint,
- * and at 18% over a near-black one it is the brightest thing in the section.
- * The same number is therefore two different amounts of contrast, and the dark
- * palettes are the ones where a background competing with a headline is
- * hardest to notice in review — because the type is bright too.
+ * The gamma step is the part that matters here: the naive average of the
+ * channels would put the yellow and the violet sheet within a few points of
+ * each other, which is precisely the error `toneFor` exists to correct.
  */
-const DARK_TONE_SCALE = 0.62;
+const relativeLuminance = (hex: string): number => {
+  const value = hex.replace('#', '');
+  const channel = (at: number) => {
+    const raw = parseInt(value.slice(at, at + 2), 16) / 255;
+
+    return raw <= 0.03928 ? raw / 12.92 : ((raw + 0.055) / 1.055) ** 2.4;
+  };
+
+  return 0.2126 * channel(0) + 0.7152 * channel(2) + 0.0722 * channel(4);
+};
+
+/**
+ * What a sheet's colour is rebuilt to weigh on a light page.
+ *
+ * Chosen against the composite rather than in the abstract: at the near alpha
+ * in `TONE_OPACITY.light` it puts every one of the seven tones between 1.45 and
+ * 1.6 contrast against a typical light surface -- unmistakably there, and still
+ * a long way below the type in front of it, which sits above 12.
+ *
+ * The light surfaces across the thirteen skins sit around 0.92, so this is
+ * roughly a quarter of the page's brightness.
+ */
+const LIGHT_TONE_LUMINANCE = 0.22;
+
+/**
+ * The colour a sheet is actually painted, given the page it is drifting over.
+ *
+ * ## Why a light page cannot use the pastels
+ *
+ * `NOTE_COLORS` are sticky-note colours: pale, high-lightness, designed to be
+ * *written on* against a white board. Their lightness sits around 0.85, and the
+ * light skins' surfaces sit around 0.95. Five points of luminance apart, then
+ * multiplied by an alpha — that is a sheet you cannot see, and no amount of
+ * extra opacity fixes it, because the thing being made more opaque is
+ * near-identical to what is behind it. Turning the alpha up just produces a
+ * slightly-off white rectangle, which looks like a rendering artefact rather
+ * than like paper.
+ *
+ * So on a light page the hue is kept and the *tone* is rebuilt: the same colour
+ * family, pushed down to a mid lightness and up in saturation, so it has
+ * somewhere to contrast from. A sheet is then recognisably "the yellow one"
+ * while actually being visible.
+ *
+ * ## Why a dark page keeps them exactly as they are
+ *
+ * Because there the original problem does not exist: a 0.85-lightness pastel
+ * over a 0.1-lightness surface is three quarters of the available range apart.
+ * The pastels are already the right answer and the only thing that was wrong
+ * was how much of them was allowed through.
+ */
+const toneFor = (hex: string, isDark: boolean): string => {
+  if (isDark) return hex;
+
+  const [hue, saturation] = hexToHsl(hex);
+
+  /*
+   * Solve for the lightness that lands this hue on `LIGHT_TONE_LUMINANCE`.
+   *
+   * ## Why not just set a lightness
+   *
+   * Because HSL lightness is not brightness, and the gap between the two is
+   * enormous exactly across this palette. At L=0.52 the violet sheet reaches a
+   * contrast of 1.83 against a light page and the yellow one reaches 1.12 --
+   * the yellow is still invisible while the violet is done, because yellow
+   * carries most of its energy in the green channel that luminance weights at
+   * 0.72 and blue-violet carries its own in the channel weighted at 0.07.
+   *
+   * Six sheets that are meant to read as the same material at the same distance
+   * cannot each pick their own brightness based on which hue they happen to be.
+   * Solving for luminance instead drops the spread across the palette from 0.17
+   * to 0.05, which is the difference between "a scatter of paper" and "some
+   * cards you can see and some you cannot".
+   *
+   * Sixteen bisections on a monotonic function over 0...1 is exact to about one
+   * part in 65,000 -- far finer than the 8 bits it is quantised into -- and it
+   * runs seven times per theme change, not per frame.
+   */
+  let low = 0;
+  let high = 1;
+  let result = hex;
+
+  for (let step = 0; step < 16; step += 1) {
+    const mid = (low + high) / 2;
+    result = hslToHex(hue, saturation, mid);
+
+    if (relativeLuminance(result) > LIGHT_TONE_LUMINANCE) high = mid;
+    else low = mid;
+  }
+
+  return result;
+};
+
+/**
+ * The soft sheet every card is stamped with.
+ *
+ * ## Why a texture rather than a flat rectangle
+ *
+ * Presence and *loudness* are different things, and the field needs the first
+ * without the second — there is a headline in front of it. A flat rectangle at
+ * an alpha high enough to notice is a hard-edged block of colour competing with
+ * type; the same rectangle with a gradient across it and a feathered edge reads
+ * as a sheet of paper catching light at a fraction of the contrast, because the
+ * eye is picking up a *shape* rather than a step in brightness.
+ *
+ * It also fixes the thing that made the old field read as "a coloured haze"
+ * rather than as objects: at 6% alpha a rectangle has no discernible edge, so
+ * fourteen of them at different depths were fourteen overlapping tints. The
+ * gradient gives each one a near corner and a far corner, which is the cue that
+ * says these are separate sheets at separate distances.
+ *
+ * One canvas, one upload, shared by every card — the tint is per-material.
+ */
+const createSheetTexture = (): THREE.CanvasTexture => {
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+
+  const context = canvas.getContext('2d');
+
+  if (context) {
+    /*
+     * Corner to corner, so the lit edge lands somewhere different on every card
+     * once the scatter has rotated them. A vertical gradient would line up on
+     * all fourteen and read as a single wash rather than as separate sheets.
+     */
+    const gradient = context.createLinearGradient(0, 0, size, size);
+    gradient.addColorStop(0, 'rgba(255,255,255,1)');
+    gradient.addColorStop(0.55, 'rgba(255,255,255,0.82)');
+    gradient.addColorStop(1, 'rgba(255,255,255,0.55)');
+
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, size, size);
+
+    /*
+     * A few pixels of feather on the border.
+     *
+     * `destination-out` erases rather than paints, so this thins the alpha at
+     * the edge without touching the gradient underneath. It is what stops a
+     * card from ending in a hard line when it drifts behind the paragraph — a
+     * hard line is the part the eye catches, and the part that makes a
+     * background feel like it is in the way.
+     */
+    const feather = 6;
+    context.globalCompositeOperation = 'destination-out';
+    for (let step = 0; step < feather; step += 1) {
+      context.strokeStyle = `rgba(0,0,0,${(1 - step / feather) * 0.5})`;
+      context.lineWidth = 1;
+      context.strokeRect(step + 0.5, step + 0.5, size - step * 2 - 1, size - step * 2 - 1);
+    }
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+
+  return texture;
+};
 
 interface CardSpec {
   position: [number, number, number];
@@ -172,7 +395,7 @@ const buildField = (): CardSpec[] => {
   });
 };
 
-const Field = ({ tones, fade }: { tones: string[]; fade: number }) => {
+const Field = ({ tones, presence }: { tones: string[]; presence: Presence }) => {
   const group = useRef<THREE.Group>(null);
   const cards = useRef<(THREE.Mesh | null)[]>([]);
   const specs = useMemo(buildField, []);
@@ -201,6 +424,15 @@ const Field = ({ tones, fade }: { tones: string[]; fade: number }) => {
   const geometry = useMemo(() => new THREE.PlaneGeometry(1, 1), []);
 
   /*
+   * One sheet texture for the whole field. See `createSheetTexture`.
+   *
+   * Built once and tinted per card, so fourteen sheets cost one 128x128 upload
+   * rather than fourteen — and the tint that makes them different colours is a
+   * uniform on the material, which is free.
+   */
+  const sheet = useMemo(createSheetTexture, []);
+
+  /*
    * One material per *card*, not one per colour.
    *
    * It used to be one per tone, because presence was a property of the tone.
@@ -217,19 +449,20 @@ const Field = ({ tones, fade }: { tones: string[]; fade: number }) => {
   const materials = useMemo(
     () =>
       specs.map((spec) => {
-        const { near, far } = TONE_OPACITY;
+        const { near, far } = presence;
 
         return new THREE.MeshBasicMaterial({
           color: new THREE.Color(tones[spec.tone % tones.length]),
+          map: sheet,
           transparent: true,
-          opacity: (far + (near - far) * spec.nearness) * fade,
+          opacity: far + (near - far) * spec.nearness,
           // Both faces, because the cards tilt past edge-on as the field
           // leans and a single-sided card simply vanishes when it does.
           side: THREE.DoubleSide,
           depthWrite: false,
         });
       }),
-    [specs, tones, fade],
+    [specs, tones, presence, sheet],
   );
 
   /*
@@ -245,9 +478,10 @@ const Field = ({ tones, fade }: { tones: string[]; fade: number }) => {
   useEffect(
     () => () => {
       geometry.dispose();
+      sheet.dispose();
       materials.forEach((material) => material.dispose());
     },
-    [geometry, materials],
+    [geometry, materials, sheet],
   );
 
   /*
@@ -344,9 +578,6 @@ const Field = ({ tones, fade }: { tones: string[]; fade: number }) => {
 export const HeroField = ({ pixelRatio }: { pixelRatio: number }) => {
   const palette = useThemePalette();
 
-  // The six sheets, plus the skin's own accent. See `NOTE_TONES`.
-  const tones = useMemo(() => [...NOTE_TONES, palette.brand], [palette]);
-
   /*
    * Whether the page underneath is dark, read off the surface it is painted in.
    *
@@ -360,13 +591,28 @@ export const HeroField = ({ pixelRatio }: { pixelRatio: number }) => {
    * The green coefficient alone would do; the three-term form is the standard
    * one and costs a multiply.
    */
-  const fade = useMemo(() => {
+  const isDark = useMemo(() => {
     const hex = palette.surface.replace('#', '');
     const channel = (at: number) => parseInt(hex.slice(at, at + 2), 16) / 255;
-    const luminance = 0.2126 * channel(0) + 0.7152 * channel(2) + 0.0722 * channel(4);
 
-    return luminance < 0.4 ? DARK_TONE_SCALE : 1;
+    return 0.2126 * channel(0) + 0.7152 * channel(2) + 0.0722 * channel(4) < 0.4;
   }, [palette]);
+
+  /*
+   * The six sheets plus the skin's own accent, each resolved for this polarity.
+   *
+   * The accent goes through `toneFor` as well, and that is deliberate rather
+   * than incidental: several of the light skins have a pale brand colour, and
+   * exempting it would leave exactly one card in the field invisible on exactly
+   * those skins — the hardest kind of bug to see, because the other six are
+   * fine and nothing looks broken.
+   */
+  const tones = useMemo(
+    () => [...NOTE_TONES, palette.brand].map((tone) => toneFor(tone, isDark)),
+    [palette, isDark],
+  );
+
+  const presence = isDark ? TONE_OPACITY.dark : TONE_OPACITY.light;
 
   return (
     <Canvas
@@ -398,7 +644,7 @@ export const HeroField = ({ pixelRatio }: { pixelRatio: number }) => {
       frameloop="always"
       style={{ position: 'absolute', inset: 0 }}
     >
-      <Field tones={tones} fade={fade} />
+      <Field tones={tones} presence={presence} />
     </Canvas>
   );
 };

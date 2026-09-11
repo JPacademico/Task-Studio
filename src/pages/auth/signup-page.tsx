@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 import { authApi } from '@/features/auth/api/auth.api';
 import { useSessionStore } from '@/features/auth/model/session.store';
+import { HumanCheck } from '@/features/auth/ui/human-check';
 import { OAuthButtons } from '@/features/auth/ui/oauth-buttons';
 import { errorMessage } from '@/shared/api/client';
 import { TEXT_LIMITS } from '@/shared/config/constants';
@@ -21,6 +22,7 @@ export const SignupPage = () => {
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [captchaToken, setCaptchaToken] = useState<string | undefined>();
 
   const register = useMutation({
     mutationFn: authApi.register,
@@ -52,7 +54,7 @@ export const SignupPage = () => {
         onSubmit={(event) => {
           event.preventDefault();
           if (!passwordIsValid) return;
-          register.mutate({ displayName, email, password });
+          register.mutate({ displayName, email, password, captchaToken });
         }}
       >
         <Input
@@ -94,6 +96,9 @@ export const SignupPage = () => {
           hint={t('auth.reset.hint')}
           error={password.length > 0 && !passwordIsValid ? t('auth.signUp.passwordError') : undefined}
         />
+
+        {/* Nothing at all unless the API reports Turnstile keys. */}
+        <HumanCheck onToken={setCaptchaToken} />
 
         <Button
           type="submit"

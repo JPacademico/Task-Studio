@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 import { authApi } from '@/features/auth/api/auth.api';
 import { useSessionStore } from '@/features/auth/model/session.store';
+import { HumanCheck } from '@/features/auth/ui/human-check';
 import { OAuthButtons } from '@/features/auth/ui/oauth-buttons';
 import { ensureApiAwake, errorMessage, isApiWarm } from '@/shared/api/client';
 import { TEXT_LIMITS } from '@/shared/config/constants';
@@ -21,6 +22,16 @@ export const LoginPage = () => {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  /*
+   * The Turnstile token, when this deployment asks for one.
+   *
+   * Undefined is the normal state on a deployment with no keys, and also the
+   * state a moment after the token expires — `HumanCheck` clears it. The
+   * request carries it either way and the API decides: a deployment without the
+   * secret ignores it, one with it refuses a request that has none.
+   */
+  const [captchaToken, setCaptchaToken] = useState<string | undefined>();
 
   /**
    * Signing in, with the container's nap accounted for.
@@ -48,7 +59,11 @@ export const LoginPage = () => {
   const [isWaking, setIsWaking] = useState(false);
 
   const login = useMutation({
-    mutationFn: async (credentials: { email: string; password: string }) => {
+    mutationFn: async (credentials: {
+      email: string;
+      password: string;
+      captchaToken?: string;
+    }) => {
       if (!isApiWarm()) {
         setIsWaking(true);
         try {
@@ -95,7 +110,7 @@ export const LoginPage = () => {
         aria-busy={login.isPending || undefined}
         onSubmit={(event) => {
           event.preventDefault();
-          login.mutate({ email, password });
+          login.mutate({ email, password, captchaToken });
         }}
       >
         <Input
@@ -129,6 +144,11 @@ export const LoginPage = () => {
             {t('auth.signIn.forgot')}
           </Link>
         </div>
+
+        {/* Renders nothing unless the API reports Turnstile keys. Above the
+            button so the challenge, on the rare occasion it is interactive, is
+            not below the thing it blocks. */}
+        <HumanCheck onToken={setCaptchaToken} />
 
         <Button type="submit" className="w-full" size="lg" isLoading={login.isPending}>
           {t(isWaking ? 'auth.signIn.waking' : 'auth.signIn.submit')}

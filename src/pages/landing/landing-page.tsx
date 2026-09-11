@@ -206,17 +206,40 @@ const LandingPage = () => {
         {/*
           The type sits on a scrim, and the scrim is not decoration.
 
-          The field behind it is translucent paper in the accent colour, and on
-          the lighter skins a card drifting behind the paragraph lifts the
-          background by four or five percent — invisible in a screenshot, and
-          exactly enough to take a `text-content-muted` paragraph below the
-          contrast ratio it was checked at. A vertical fade in the page's own
-          surface colour guarantees that ratio whatever the scene does behind it,
-          and costs one composited gradient.
+          The field behind it is translucent paper, and a card drifting behind
+          the paragraph lifts the background enough to take a
+          `text-content-muted` line below the contrast ratio it was checked at.
+          A fade in the page's own surface colour guarantees that ratio whatever
+          the scene does behind it, and costs one composited gradient.
+
+          ## Why it is two gradients now rather than one
+
+          Because one full-bleed vertical fade cannot tell the difference
+          between the part of the section that has type on it and the part that
+          does not, and it was charging both.
+
+          At 70/40/80 it was removing most of the field everywhere — including
+          the outer thirds, where there is nothing to protect. Combined with a
+          hero that was drawing pastels at six percent, the net result was a
+          background nobody could see, which is the bug this pair of changes is
+          fixing from both ends.
+
+          So the vertical fade is now light enough to let the field read, and
+          the guarantee the paragraph actually depends on is made by the second
+          gradient: an ellipse centred on the copy, opaque in the middle and
+          gone by the edges. The type keeps the same floor it had; the corners
+          of the section get their background back.
+
+          The bottom stop stays heavy on both — that one is doing a different
+          job, blending the section into the one beneath it.
         */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-surface/70 via-surface/40 to-surface/80"
+          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-surface/40 via-surface/15 to-surface/75"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(75%_60%_at_35%_45%,rgb(var(--surface)/0.62),transparent_75%)]"
         />
 
         <div className="relative mx-auto w-full max-w-6xl px-4 pb-16 pt-14 sm:px-6 sm:pb-24 sm:pt-20">
