@@ -2387,6 +2387,138 @@
    * flow in it. Dark is the same mountain at night, when the flow is the only
    * light for miles.
    * --------------------------------------------------------------------- */
+  /*
+   * Halloween — candlelit dark, pumpkin orange, cobwebs in the corners.
+   *
+   * ## Why the light palette is dusk rather than day
+   *
+   * Halloween has no daytime. A bright-white version of this skin would be a
+   * pumpkin sticker on an office document, which is the failure mode of every
+   * seasonal theme — the decoration is applied *to* the interface rather than
+   * being what the interface is made of. So the light palette is the hour
+   * before dark: a warm bone parchment, the kind a paper lantern is cut from,
+   * with ink that has gone violet rather than grey.
+   *
+   * That also keeps the two palettes honest as a pair. The dark one is the
+   * inside of the night, and the light one is standing outside it — same world,
+   * different hour, rather than the same colours inverted.
+   *
+   * ## Why the accent is a real orange and not a safety cone
+   *
+   * `--brand` is asked to sit behind `--brand-contrast` text, so it has to be
+   * dark enough to clear contrast on a filled control. A bright pumpkin at
+   * 255,138,38 is a *light source* and fails that immediately — it is the dark
+   * palette's brand, where it glows against near-black. The light palette gets
+   * the same hue burnt down to an ember so the same button works on both.
+   */
+  [data-skin='halloween'] {
+    --surface: 240 231 216;
+    --surface-raised: 250 244 233;
+    --surface-sunken: 223 211 193;
+    --edge: 108 78 58;
+    --check-edge: var(--edge);
+    --content: 38 26 40;
+    --content-muted: 94 72 92;
+    --content-faint: 140 118 136;
+    /*
+     * An ember, not a flame. See the note above on contrast.
+     *
+     * 178,74,12 was the first choice and measured 4.42 against `--surface` —
+     * fine behind `--brand-contrast` on a filled button, and a hair under AA
+     * for the places the accent is *text*: a link, the footer headline, a
+     * hover state. Darkened until both directions clear 4.5 rather than only
+     * the one that was checked first.
+     */
+    --brand: 172 70 11;
+    --brand-soft: 250 224 196;
+    --brand-contrast: 255 248 238;
+    /* Witch-bottle green: the one green that reads as brewed rather than fresh. */
+    --positive: 72 106 44;
+    --warning: 170 118 10;
+    --danger: 158 30 38;
+
+    /* Carved, so a little rounding but nothing soft. */
+    --radius-sm: 3px;
+    --radius-md: 5px;
+    --radius-lg: 7px;
+    --radius-xl: 9px;
+    --radius-2xl: 12px;
+    --radius-3xl: 16px;
+
+    --font-display: 'Chiller', 'Creepster', 'Impact', 'Haettenschweiler',
+      'Franklin Gothic Heavy', sans-serif;
+    --font-sans: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --font-hand: 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', cursive;
+
+    --panel-border-width: 1px;
+    /* A low warm glow under every panel, as if lit from a candle off-frame. */
+    --shadow-panel:
+      inset 0 1px 0 rgb(255 250 240 / 0.6),
+      0 10px 26px -18px rgb(58 28 10 / 0.55);
+    --press-travel: 1px;
+
+    /* Fine cross-hatch: woven, like the gauze everything gets wrapped in. */
+    --panel-texture:
+      repeating-linear-gradient(45deg, rgb(var(--edge) / 0.05) 0 1px, transparent 1px 7px),
+      repeating-linear-gradient(-45deg, rgb(var(--edge) / 0.05) 0 1px, transparent 1px 7px);
+    --panel-texture-size: 14px 14px;
+
+    --page-wash: radial-gradient(
+      120% 80% at 50% 0%,
+      rgb(var(--brand) / 0.12),
+      transparent 64%
+    );
+
+    --btn-overlay: linear-gradient(180deg, rgb(255 255 255 / 0.14), transparent 60%);
+    --btn-shadow: 0 2px 0 rgb(58 28 10 / 0.25);
+    --btn-shadow-active: 0 1px 0 rgb(58 28 10 / 0.25);
+  }
+
+  /*
+   * The inside of the night.
+   *
+   * Near-black with the purple left in — a pure neutral black would make the
+   * orange read as traffic signage. Everything that glows here (`--brand`,
+   * `--positive`) is a light source rather than a pigment, which is why they
+   * are far brighter than their light-palette counterparts rather than being
+   * the same hue lightened.
+   */
+  [data-skin='halloween'].dark {
+    --surface: 17 12 22;
+    --surface-raised: 27 20 34;
+    --surface-sunken: 11 7 15;
+    --edge: 66 48 82;
+    --check-edge: var(--edge);
+    --content: 242 234 246;
+    --content-muted: 180 164 192;
+    --content-faint: 128 112 144;
+    /* Lit pumpkin. A light source, and never asked to sit behind small text. */
+    --brand: 255 140 40;
+    --brand-soft: 60 34 12;
+    --brand-contrast: 26 13 4;
+    /* Cauldron slime. */
+    --positive: 132 204 98;
+    --warning: 242 192 62;
+    --danger: 234 78 76;
+
+    --shadow-panel:
+      inset 0 1px 0 rgb(255 190 120 / 0.08),
+      0 14px 34px -20px rgb(0 0 0 / 0.85);
+
+    --panel-texture:
+      repeating-linear-gradient(45deg, rgb(255 220 180 / 0.035) 0 1px, transparent 1px 7px),
+      repeating-linear-gradient(-45deg, rgb(255 220 180 / 0.035) 0 1px, transparent 1px 7px);
+
+    /* Two lights: a candle low-left and the moon high-right. */
+    --page-wash:
+      radial-gradient(80% 60% at 8% 92%, rgb(255 140 40 / 0.16), transparent 60%),
+      radial-gradient(70% 50% at 88% 4%, rgb(168 196 255 / 0.08), transparent 62%);
+
+    --btn-overlay: linear-gradient(180deg, rgb(255 190 120 / 0.16), transparent 62%);
+    --btn-shadow: 0 2px 0 rgb(0 0 0 / 0.5);
+    --btn-shadow-active: 0 1px 0 rgb(0 0 0 / 0.5);
+  }
+
   [data-skin='volcano'] {
     /*
      * Ash and pumice, not white.
@@ -9076,4 +9208,146 @@ html [data-sonner-toaster][data-theme] [data-sonner-toast] [data-cancel] {
 [data-skin='underwater'] .ui-card .ui-chip {
   background-image: none;
   box-shadow: none;
+}
+
+
+/* ===========================================================================
+   Halloween — the three moving parts.
+
+   Unlayered, like the other skin-specific rules at the foot of this file, and
+   every selector is gated on `[data-skin='halloween']` so nothing here can
+   reach the other thirteen skins.
+   =========================================================================== */
+
+/* ---------------------------------------------------------------------------
+   The lantern loader.
+
+   The body is still; the carved face lights in sequence. A lantern that bobs or
+   spins reads as being *carried*, which is a different thing from waiting — so
+   the only property animating is `opacity`, on three nodes, and the loop gets
+   its sense of direction from the order they come up in rather than from
+   anything moving.
+   --------------------------------------------------------------------------- */
+.loader-pumpkin {
+  display: inline-grid;
+  place-items: center;
+  color: rgb(var(--brand));
+}
+
+.loader-pumpkin > svg {
+  width: 100%;
+  height: 100%;
+}
+
+.loader-pumpkin__eye,
+.loader-pumpkin__grin {
+  animation: hw-flicker 1.4s ease-in-out infinite;
+}
+
+/* The right eye trails the left, and the grin trails both: left, right, smile. */
+.loader-pumpkin__eye:nth-of-type(2) {
+  animation-delay: 0.16s;
+}
+
+.loader-pumpkin__grin {
+  animation-delay: 0.32s;
+}
+
+@keyframes hw-flicker {
+  0%,
+  100% {
+    opacity: 0.28;
+  }
+  45% {
+    opacity: 1;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   The bats.
+
+   `scaleY` on the whole glyph rather than two rigged wings: at the size these
+   are actually seen — sixteen pixels, moving, for under a second — a rig is
+   invisible, and one compositor property times nine elements is the difference
+   between a flourish and a dropped frame on a phone.
+
+   The travel itself is Framer Motion's (see `BatSwarm`); this is only the flap
+   riding on top of it.
+   --------------------------------------------------------------------------- */
+.hw-bat {
+  transform-origin: 50% 50%;
+}
+
+.hw-bat > svg {
+  animation: hw-flap 0.18s ease-in-out infinite;
+}
+
+@keyframes hw-flap {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(0.45);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Cobwebs on the doors nobody has opened.
+
+   Drawn only on the rail's *unselected* links, so the room the reader is
+   standing in is the one that is clean. That is the whole idea: the webs are a
+   readout of where you are not, which makes them information rather than
+   decoration — and it means the active item gains contrast against its
+   neighbours instead of losing it.
+
+   `pointer-events: none` because the web sits over the link's own hit area, and
+   a decoration that eats clicks on a navigation rail is a bug rather than a
+   flourish. It fades on hover: reaching for a door is enough to disturb it.
+   --------------------------------------------------------------------------- */
+[data-skin='halloween'] .hw-cobweb {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 2.1rem;
+  height: 2.1rem;
+  color: rgb(var(--content));
+  opacity: 0.22;
+  pointer-events: none;
+  /* Mirrored, so the anchor corner of the drawing lands in the top *right*. */
+  transform: scaleX(-1);
+  transition: opacity 0.24s ease;
+}
+
+/* A second, smaller web in the opposite corner on a few of them — see the
+   `nth-child` rule in `SidebarLink`. Two identical corners on every row reads
+   as a border; one corner, sometimes two, reads as neglect. */
+[data-skin='halloween'] .hw-cobweb--alt {
+  top: auto;
+  right: auto;
+  bottom: 0;
+  left: 0;
+  width: 1.4rem;
+  height: 1.4rem;
+  opacity: 0.16;
+  transform: scaleX(1) scaleY(-1);
+}
+
+[data-skin='halloween'] a:hover .hw-cobweb,
+[data-skin='halloween'] a:focus-visible .hw-cobweb {
+  opacity: 0.07;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loader-pumpkin__eye,
+  .loader-pumpkin__grin,
+  .hw-bat > svg {
+    animation: none;
+  }
+
+  /* The face still has to be legible with nothing moving. */
+  .loader-pumpkin__eye,
+  .loader-pumpkin__grin {
+    opacity: 1;
+  }
 }

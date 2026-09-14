@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight, Github, Instagram } from 'lucide-react';
 
@@ -72,6 +72,7 @@ const AUTHOR_URL = 'https://www.instagram.com/pitic0_';
 const LandingPage = () => {
   const t = useT();
   const reduceMotion = useReducedMotion();
+  const navigate = useNavigate();
   const { hash } = useLocation();
 
   /*
@@ -575,43 +576,254 @@ const LandingPage = () => {
       </main>
 
       {/* ================= FOOTER ================= */}
-      <footer className="border-t border-edge/70 bg-surface-raised/50">
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-8 sm:px-6">
-          {/* The same hand the nav, the sign-in desk and the sidebar use. The
-              name is the name wherever it appears next to the mark. */}
-          <span className="inline-flex items-center gap-2 font-hand text-sm font-bold">
-            <StudioMark className="h-5 w-5 text-brand" />
-            Task Studio
-          </span>
+      {/*
+        A desk, not a bar.
 
-          <p className="text-2xs text-content-faint">{t('landing.footer.tagline')}</p>
+        ## What this is adapted from, and what was changed
 
-          <AuthorCredit />
+        The reference is a paper board with three Post-its pinned across its
+        bottom edge, overlapping it. That composition is worth borrowing here
+        for a reason beyond looking good: this product's whole argument is that
+        work should behave like paper, and the footer was the one part of the
+        page still shaped like a website's footer — a grey strip of links.
 
-          <a
-            /*
-             * The repository, not github.com.
-             *
-             * This said "Source" and went to GitHub's own homepage — a link
-             * that looks like proof the project is open and, followed, proves
-             * only that GitHub exists. It is the same repository the CLI's
-             * documentation link points into.
-             */
-            href="https://github.com/JPacademico/Task-Studio"
-            target="_blank"
-            // `noopener` is the one that matters — without it the opened page
-            // gets a handle on this one through `window.opener`.
-            rel="noreferrer noopener"
-            className="inline-flex items-center gap-1.5 text-2xs text-content-muted transition-colors hover:text-content"
-          >
-            <Github aria-hidden className="h-3.5 w-3.5" />
-            {t('landing.footer.source')}
-          </a>
+        Three things in the reference were dropped rather than translated:
+
+          - **The postal address.** There isn't one. Inventing "1942 Design St"
+            would be fabricating a record, and a made-up head office on a real
+            product is the kind of detail that quietly costs trust when somebody
+            checks. The slot says the true thing instead: it is open source, and
+            here is where it lives.
+          - **The newsletter.** There is no list and no endpoint behind one, so
+            the field would have been a control that swallows an address and
+            does nothing. The same visual slot now carries the real funnel — an
+            address here goes to the sign-up form with the field already filled.
+          - **"We're Hiring".** Nobody is.
+
+        ## Why the Post-it colours are literals
+
+        They are the product's material rather than the theme's — the same three
+        sheets `NOTE_COLORS` gives a real note — so they stay put across all
+        fourteen skins, and their ink is written against *the sheet* rather than
+        taken from `--content`, which on a dark skin is near-white and would be
+        unreadable on yellow paper. Everything else here is a token.
+      */}
+      <footer className="relative border-t border-edge/70 bg-surface-raised/50 pb-16 pt-14">
+        <div className="mx-auto w-full max-w-6xl px-4 pb-32 sm:px-6">
+          <div className="flex flex-col gap-10 md:flex-row md:justify-between">
+            {/* ---------- Left: the invitation ---------- */}
+            <div className="flex-1 space-y-7">
+              <div>
+                <h2 className="font-display text-5xl font-bold leading-none tracking-tighter text-brand sm:text-6xl">
+                  {t('landing.footer.talk')}
+                </h2>
+                <p className="mt-2 origin-bottom-left -rotate-1 font-hand text-xl text-content-muted">
+                  {t('landing.footer.coffee')}
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-1 text-sm">
+                <span className="font-semibold text-content">{t('landing.footer.openSource')}</span>
+                <a
+                  href="https://github.com/JPacademico/Task-Studio"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="inline-flex w-fit items-center gap-1.5 text-content-muted transition-colors hover:text-brand"
+                >
+                  <Github aria-hidden className="h-3.5 w-3.5" />
+                  github.com/JPacademico/Task-Studio
+                </a>
+                <span className="text-content-faint">{t('landing.footer.tagline')}</span>
+              </div>
+            </div>
+
+            {/* ---------- Right: the funnel, the map, the small print ---------- */}
+            <div className="flex flex-1 flex-col items-start justify-between gap-7 md:items-end">
+              {/*
+                The reference's newsletter line, carrying the real funnel.
+
+                A `form` with a `GET`-shaped submit rather than an input and a
+                button wired to an onClick: Enter submits it, the browser
+                validates the address before this code ever runs, and password
+                managers and autofill recognise it for what it is.
+              */}
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  const address = new FormData(event.currentTarget).get('email');
+                  navigate(
+                    typeof address === 'string' && address
+                      ? `/register?email=${encodeURIComponent(address)}`
+                      : '/register',
+                  );
+                }}
+                className="w-full max-w-xs border-b-2 border-edge/60 pb-2"
+              >
+                <label
+                  htmlFor="footer-email"
+                  className="mb-1.5 block text-3xs font-bold uppercase tracking-[0.16em] text-content-faint"
+                >
+                  {t('landing.footer.startLabel')}
+                </label>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    id="footer-email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder={t('auth.emailPlaceholder')}
+                    className="w-full border-none bg-transparent font-hand text-lg text-content outline-none placeholder:text-content-faint/60"
+                  />
+                  <button
+                    type="submit"
+                    aria-label={t('landing.footer.startAction')}
+                    className="shrink-0 rounded-lg p-1 text-brand transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+                  >
+                    <ArrowRight aria-hidden className="h-5 w-5" />
+                  </button>
+                </div>
+              </form>
+
+              <nav className="flex flex-wrap gap-x-7 gap-y-2 text-base font-semibold">
+                {[
+                  { to: '/docs', label: 'landing.nav.docs' as const },
+                  { to: '/themes', label: 'landing.footer.themes' as const },
+                  { to: '/login', label: 'landing.nav.signIn' as const },
+                ].map((link) => (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    /* The wavy underline is the reference's one real signature.
+                       It survives translation because it is drawn by the text
+                       decoration rather than by a colour, so it reads the same
+                       on all fourteen skins. */
+                    className="text-content transition-colors hover:text-brand hover:underline hover:decoration-wavy hover:decoration-2 hover:underline-offset-4"
+                  >
+                    {t(link.label)}
+                  </Link>
+                ))}
+              </nav>
+
+              <div className="flex flex-wrap items-center gap-3 text-2xs text-content-faint">
+                <span>{t('landing.footer.rights')}</span>
+                <span aria-hidden>•</span>
+                <AuthorCredit />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ---------- The three pinned notes ---------- */}
+        {/*
+          In flow, pulled up over the board's bottom edge — not absolutely
+          positioned.
+
+          The first version placed them with `absolute bottom-0` and reserved
+          the space with a large `padding-bottom` on the footer. That is two
+          numbers that have to agree, and they only agree at one breakpoint: as
+          soon as the left column wrapped to a third line, the copy grew down
+          into the padding and the yellow sheet landed on top of the tagline.
+
+          A negative margin cannot drift, because the notes are still a block in
+          the layout — the padding above them is theirs to consume, and anything
+          that makes the column taller pushes them down with it. It is also what
+          the reference does, for the same reason.
+        */}
+        <div className="relative z-10 -mt-24 px-4 sm:px-6">
+          <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-5 sm:grid-cols-3">
+            {FOOTER_NOTES.map((note) => (
+              <a
+                key={note.href}
+                href={note.href}
+                target={note.href.startsWith('http') ? '_blank' : undefined}
+                rel={note.href.startsWith('http') ? 'noreferrer noopener' : undefined}
+                className="group relative block origin-top transition-transform duration-500 ease-studio hover:scale-[1.03]"
+                style={{ rotate: `${note.tilt}deg` }}
+              >
+                <div
+                  className="relative min-h-[9.5rem] rounded-sm p-5 shadow-lg transition-transform duration-500 ease-studio group-hover:rotate-0"
+                  style={{ backgroundColor: note.sheet, rotate: `${-note.tilt * 1.6}deg` }}
+                >
+                  {/* The pin. `--danger` rather than a literal red, so the head
+                      belongs to the skin the way the reference's does to its
+                      own palette. */}
+                  <span
+                    aria-hidden
+                    className="absolute -top-2.5 left-1/2 h-4 w-4 -translate-x-1/2 rounded-full bg-danger shadow-md ring-2 ring-danger/30"
+                  >
+                    <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-white/40" />
+                  </span>
+
+                  <span
+                    className="mb-1.5 block pt-1 font-hand text-2xl font-bold"
+                    style={{ color: note.ink }}
+                  >
+                    {t(note.title)}
+                  </span>
+                  <p
+                    className="font-hand text-base leading-snug"
+                    style={{ color: note.ink, opacity: 0.85 }}
+                  >
+                    {t(note.body)}
+                  </p>
+                  <p
+                    className="mt-3 break-all text-sm font-semibold tracking-tight"
+                    style={{ color: note.ink }}
+                  >
+                    {note.detail}
+                  </p>
+                </div>
+              </a>
+            ))}
+          </div>
         </div>
       </footer>
     </div>
   );
 };
+
+/**
+ * The three notes pinned across the footer's bottom edge.
+ *
+ * Data rather than three near-identical blocks of markup: they differ in four
+ * values and agree on everything else, and the version of this with the sheets
+ * written out three times had already drifted by one padding step.
+ *
+ * The sheets are `NOTE_COLORS`' own yellow, pink and blue — the product's
+ * material, fixed across every skin — and each ink is chosen against its sheet
+ * rather than taken from `--content`, which is near-white on a dark skin and
+ * invisible on yellow paper.
+ */
+const FOOTER_NOTES = [
+  {
+    title: 'landing.footer.note1Title' as const,
+    body: 'landing.footer.note1Body' as const,
+    detail: '@JPacademico',
+    href: 'https://github.com/JPacademico/Task-Studio',
+    sheet: '#fde68a',
+    ink: '#4a3d0d',
+    tilt: -2,
+  },
+  {
+    title: 'landing.footer.note2Title' as const,
+    body: 'landing.footer.note2Body' as const,
+    detail: 'github.com/.../issues',
+    href: 'https://github.com/JPacademico/Task-Studio/issues',
+    sheet: '#fbcfe8',
+    ink: '#6b1442',
+    tilt: 2,
+  },
+  {
+    title: 'landing.footer.note3Title' as const,
+    body: 'landing.footer.note3Body' as const,
+    detail: 'task-studio.online/docs',
+    href: '/docs',
+    sheet: '#bfdbfe',
+    ink: '#12395e',
+    tilt: -1,
+  },
+];
 
 /**
  * Who made it.

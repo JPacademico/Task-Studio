@@ -902,7 +902,7 @@ export const TextBoard = ({
           />
         )}
 
-        <Button size="sm" onClick={handleCreate} isLoading={createDocument.isPending}>
+        <Button variant="lava" size="sm" onClick={handleCreate} isLoading={createDocument.isPending}>
           <Plus className="h-3.5 w-3.5" strokeWidth={2.8} />
           {t('doc.new')}
         </Button>

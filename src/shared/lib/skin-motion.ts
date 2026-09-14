@@ -44,6 +44,9 @@ const REVEAL: Record<ThemeSkin, Transition> = {
   // at once and stops — the curve rock actually follows, which is nothing for a
   // long time and then everything.
   VOLCANO: { duration: 0.44, ease: [0.85, 0, 0.12, 1] },
+  // A startle: nothing, then all at once, then it settles. The overshoot is
+  // the point — this is the one skin where things are supposed to jump.
+  HALLOWEEN: { type: 'spring', stiffness: 520, damping: 17, mass: 0.6 },
 };
 
 const MARKER: Record<ThemeSkin, Transition> = {
@@ -60,6 +63,7 @@ const MARKER: Record<ThemeSkin, Transition> = {
   RUNIC: { duration: 0.28, ease: [0.7, 0, 0.3, 1] },
   UNDERWATER: { type: 'spring', stiffness: 150, damping: 15, mass: 1.2 },
   VOLCANO: { duration: 0.32, ease: [0.85, 0, 0.12, 1] },
+  HALLOWEEN: { type: 'spring', stiffness: 560, damping: 18, mass: 0.6 },
 };
 
 /*

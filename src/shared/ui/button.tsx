@@ -1,6 +1,7 @@
 import { forwardRef, type ButtonHTMLAttributes } from 'react';
 
 import { cn } from '@/shared/lib/cn';
+import { LavaSurface } from './lava-surface';
 import { SkinLoader } from './skin-loader';
 
 type Variant = 'primary' | 'lava' | 'secondary' | 'ghost' | 'danger' | 'outline';
@@ -45,10 +46,11 @@ const VARIANTS: Record<Variant, string> = {
    * hairline that is the only thing giving the tube a visible edge against a
    * page of a similar darkness.
    *
-   * On its own this is a still lamp: the tube, the edge and the hover fill. The
-   * wax is seven elements and a class cannot put children in an anchor, so a
-   * call site that wants the motion renders `LavaSurface` inside — see
-   * `LavaLink`.
+   * The class on its own is a *still* lamp: the tube, the edge and the hover
+   * fill. The wax is seven elements, so `Button` now renders `LavaSurface`
+   * itself whenever this variant is selected — see below. A class cannot put
+   * children inside an anchor, which is why `LavaLink` still composes the two
+   * by hand for the landing page's links.
    */
   lava: 'ui-lava',
   /*
@@ -139,6 +141,23 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       {...props}
     >
       {/*
+        The wax, for the one variant that has a tube to put it in.
+
+        Rendered here rather than left to the call site, which is what it used
+        to be. The old arrangement meant `variant="lava"` produced a *still*
+        lamp and nothing said so: the button looked subtly wrong, in a way that
+        reads as a broken gradient rather than as a missing child, and the only
+        way to find out was to know that `LavaSurface` existed. Two of the three
+        call sites that wanted motion got it; the variant was the trap.
+
+        `LavaSurface` gates its own animation on visibility, tab focus, reduced
+        motion and device capability — see `useCanvasBudget` — so an off-screen
+        lamp costs what a flat button costs. There is nothing to ration at the
+        call site and therefore no reason to make it a decision there.
+      */}
+      {variant === 'lava' && <LavaSurface />}
+
+      {/*
         Waiting replaces the label; it does not push it aside.
 
         The spinner used to be *prepended* to the children, so a button grew by
@@ -163,8 +182,14 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         </span>
       )}
 
+      {/* `relative` so the label stacks above the lamp rather than under it —
+          the surface is absolutely positioned inside the same button. */}
       <span
-        className={cn('inline-flex items-center justify-center', GAPS[size], isLoading && 'invisible')}
+        className={cn(
+          'relative inline-flex items-center justify-center',
+          GAPS[size],
+          isLoading && 'invisible',
+        )}
       >
         {children}
       </span>

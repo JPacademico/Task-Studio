@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { AlertTriangle, Check, CreditCard, Minus, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -8,7 +8,6 @@ import {
   useOpenBillingPortal,
   usePlanCatalogue,
   useRefreshPlanAfterCheckout,
-  useStartCheckout,
 } from '@/entities/billing/model/queries';
 import {
   allowsFlavour,
@@ -21,7 +20,7 @@ import {
 } from '@/entities/billing/model/types';
 import { formatCalendarDate } from '@/shared/lib/dates';
 import { cn } from '@/shared/lib/cn';
-import { Badge, Button, Segmented, Skeleton } from '@/shared/ui';
+import { Badge, Button, Segmented, Skeleton, buttonClasses } from '@/shared/ui';
 import { useLocale, useT, type Translate, type TranslationKey } from '@/shared/i18n';
 import { formatBytesCeiling, formatBytesUsed, formatPrice, usageFraction } from '../lib/format';
 
@@ -87,6 +86,15 @@ const FEATURES: FeatureRow[] = [
     render: (l, t) => count(l.membersPerOrganization, t),
   },
   { key: 'billing.feature.tasksPerProject', render: (l, t) => count(l.tasksPerProject, t) },
+  /*
+   * Directly under the task row on purpose.
+   *
+   * These two are the pair a reader is actually comparing: one is now uncapped
+   * on the top tier and the other is the tightest step in the table, so putting
+   * them together is what makes the shape of the offer legible rather than
+   * making the reader hold two rows apart in their head.
+   */
+  { key: 'billing.feature.boardPages', render: (l, t) => count(l.boardPagesPerUser, t) },
   {
     key: 'billing.feature.documentBoard',
     render: (l, t) =>
@@ -154,7 +162,6 @@ export const PlanPanel = () => {
 
   const catalogue = usePlanCatalogue();
   const summary = useBillingSummary();
-  const checkout = useStartCheckout();
   const portal = useOpenBillingPortal();
   const refreshAfterCheckout = useRefreshPlanAfterCheckout();
 
@@ -463,16 +470,28 @@ export const PlanPanel = () => {
                   </ul>
 
                   {canBuy && (
-                    <Button
-                      size="sm"
-                      className="w-full"
-                      isLoading={checkout.isPending}
-                      onClick={() =>
-                        checkout.mutate({ plan: offer.plan, interval, currency })
-                      }
+                    /*
+                     * Routed, not charged — payments are switched off while the
+                     * rest of the product is built out.
+                     *
+                     * The mutation above is deliberately left wired up rather
+                     * than deleted: turning this back into a checkout is one
+                     * `onClick` and nothing else, and a half-removed payment
+                     * path is a far worse thing to come back to than an unused
+                     * one. `useStartCheckout` is still exercised by its own
+                     * tests either way.
+                     *
+                     * A `Link` rather than a `Button onClick={navigate}`,
+                     * because it is a navigation: middle-click, open-in-new-tab
+                     * and a visible address are all things a person reasonably
+                     * expects from something that takes them somewhere.
+                     */
+                    <Link
+                      to={`/plans/soon?plan=${offer.plan}`}
+                      className={buttonClasses({ variant: 'lava', size: 'sm', className: 'w-full' })}
                     >
                       {t('billing.choosePlan', { plan: t(PLAN_NAME[offer.plan]) })}
-                    </Button>
+                    </Link>
                   )}
                 </div>
               );

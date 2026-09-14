@@ -154,6 +154,42 @@ const BODY: Record<ThemeSkin, ReactElement> = {
       <b />
     </span>
   ),
+  /*
+   * A jack-o'-lantern whose face lights in three steps.
+   *
+   * The body does not spin, bounce or pulse as a whole — it is a lantern, and a
+   * lantern that moves reads as being carried. What animates is the *light*:
+   * the two eyes and the grin come up in sequence and fall back, which is a
+   * loop with a direction to it, so it says "still going" the way a spinner
+   * does without anything travelling.
+   *
+   * Three nodes, animating opacity only. See `.loader-pumpkin` in `index.css`.
+   */
+  HALLOWEEN: (
+    <span className="loader-pumpkin">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+        {/* The stalk. */}
+        <path
+          d="M12 5.2c0-1.4.5-2.4 1.7-2.9"
+          stroke="rgb(var(--positive))"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+        />
+        {/* Three lobes, so it reads as a pumpkin rather than a circle. */}
+        <ellipse cx="12" cy="14" rx="8.4" ry="7.4" fill="currentColor" />
+        <ellipse cx="12" cy="14" rx="3.1" ry="7.4" fill="rgb(var(--surface))" fillOpacity="0.14" />
+        {/* The carved face. Surface-coloured, so these are holes. */}
+        <g fill="rgb(var(--surface))">
+          <path className="loader-pumpkin__eye" d="M8.1 11.3l2.7 1.7-2.7 1.7v-3.4Z" />
+          <path className="loader-pumpkin__eye" d="M15.9 11.3v3.4l-2.7-1.7 2.7-1.7Z" />
+          <path
+            className="loader-pumpkin__grin"
+            d="M7.6 16.4h8.8c-.6 1.7-2.3 2.8-4.4 2.8s-3.8-1.1-4.4-2.8Zm2 .9.7 1 .7-1h-1.4Zm3.4 0 .7 1 .7-1h-1.4Z"
+          />
+        </g>
+      </svg>
+    </span>
+  ),
 };
 
 interface SkinLoaderProps {

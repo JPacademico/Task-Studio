@@ -36,6 +36,8 @@ export interface PlanLimits {
   tasksPerProject: Limit;
   documentsPerProject: Limit;
   documentsPerUser: Limit;
+  /** Pages on the personal Post-it board. 3 / 10 / 20 across the tiers. */
+  boardPagesPerUser: Limit;
   teamsPerScope: Limit;
   /** Bytes. Rendered with `formatFileSize`. */
   documentBoardBytes: Limit;

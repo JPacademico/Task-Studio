@@ -489,7 +489,7 @@ export const MeetingsPanel = ({
           )}
 
           {canManage && (
-            <Button size="sm" onClick={() => openComposer(null)}>
+            <Button variant="lava" size="sm" onClick={() => openComposer(null)}>
               <Plus className="h-3.5 w-3.5" strokeWidth={2.8} />
               {t('meetings.new')}
             </Button>

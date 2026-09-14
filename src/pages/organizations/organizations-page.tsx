@@ -185,7 +185,7 @@ const OrganizationsPage = () => {
           <p className="hidden text-sm text-content-muted sm:block">{t('org.subtitle')}</p>
         </div>
 
-        <Button onClick={openCreate}>
+        <Button variant="lava" onClick={openCreate}>
           <Plus className="h-4 w-4" strokeWidth={2.6} />
           {t('org.new')}
         </Button>

@@ -359,7 +359,7 @@ export const OrganizationProjectsBoard = ({
               somewhere else and is being moved in, which is the rarer errand
               and therefore the quieter button.
             */}
-            <Button size="sm" onClick={() => setIsCreating(true)}>
+            <Button variant="lava" size="sm" onClick={() => setIsCreating(true)}>
               <Plus className="h-3.5 w-3.5" strokeWidth={2.8} />
               {t('org.newProject')}
             </Button>

@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { X } from 'lucide-react';
 
 import { cn } from '@/shared/lib/cn';
+import { BatSwarm } from './bat-swarm';
 import { useEscapeKey } from '@/shared/lib/hooks';
 import { Button } from './button';
 import { translate } from '@/shared/i18n';
@@ -142,6 +143,9 @@ export const Modal = ({
                 : { duration: 0.18, ease: [0.22, 1, 0.36, 1] }
             }
           >
+            {/* Nothing at all on the other thirteen skins — see `BatSwarm`. */}
+            <BatSwarm />
+
             {(title ?? description) && (
               <header
                 className={cn(

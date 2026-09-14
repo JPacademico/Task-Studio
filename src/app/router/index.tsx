@@ -33,6 +33,12 @@ const SettingsPage = lazy(() => import('@/pages/settings/settings-page'));
 const CliAuthorizePage = lazy(() => import('@/pages/cli/cli-authorize-page'));
 const ThemeGalleryPage = lazy(() => import('@/pages/themes/theme-gallery-page'));
 /*
+ * Where a plan button goes while payments are switched off. Lazy like the rest:
+ * it is a destination nobody reaches twice, and it should not sit in the bundle
+ * every signed-in reader downloads.
+ */
+const PlanSoonPage = lazy(() => import('@/pages/billing/plan-soon-page'));
+/*
  * The moderation console, split off like the rest — and it is the one chunk
  * essentially nobody ever downloads, which is exactly the argument for keeping
  * it lazy: a page reachable by one person a month should not be in the bundle
@@ -131,6 +137,7 @@ export const AppRouter = () => (
         <Route path="/invitations" element={<InvitationsPage />} />
         <Route path="/themes" element={<ThemeGalleryPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/plans/soon" element={<PlanSoonPage />} />
         {/*
           Inside `ProtectedRoute`, which is the whole security property.
 

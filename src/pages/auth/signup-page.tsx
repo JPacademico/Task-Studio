@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -19,8 +19,17 @@ export const SignupPage = () => {
   const navigate = useNavigate();
   const setPendingEmail = useSessionStore((state) => state.setPendingEmail);
 
+  /*
+   * The address the footer's "Start free" field carried over, if there was one.
+   *
+   * Read once into the initial state rather than synced: this is a handoff, not
+   * a binding — somebody who then edits the field must not have it snap back on
+   * the next render, and clearing the box must not be undone by the URL.
+   */
+  const [searchParams] = useSearchParams();
+
   const [displayName, setDisplayName] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => searchParams.get('email') ?? '');
   const [password, setPassword] = useState('');
   const [captchaToken, setCaptchaToken] = useState<string | undefined>();
 

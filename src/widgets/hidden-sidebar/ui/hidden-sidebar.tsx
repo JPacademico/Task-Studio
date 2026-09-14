@@ -41,6 +41,8 @@ import {
   StudioMark,
 } from '@/shared/ui';
 import { useT, type TranslationKey } from '@/shared/i18n';
+import { useSkin } from '@/app/providers/theme-provider';
+import { CobwebGlyph } from '@/shared/ui/halloween-icons';
 
 interface NavItem {
   to: string;
@@ -137,6 +139,41 @@ interface SidebarLinkProps {
  * Dragging it out drops a pinned copy wherever it is released; the row itself
  * never moves, so it can never be clipped by the nav's own scroll box.
  */
+/**
+ * The web that gathers on a door nobody has opened.
+ *
+ * ## Why it is drawn on the *unselected* rows
+ *
+ * Because it is a readout of where the reader is not, which is the difference
+ * between information and decoration. Webbing every row would be wallpaper;
+ * webbing all but one makes the current room the clean one, and the active
+ * item gains contrast against its neighbours rather than competing with them.
+ *
+ * ## Why the second web is conditional
+ *
+ * Two identical corners on every row reads as a border - the eye stops seeing
+ * it as cobweb within about three rows and starts seeing it as a frame. One
+ * corner, with a second on some of them, reads as neglect, which is the thing
+ * being depicted. The choice is derived from the route so it is stable across
+ * renders and reorderings rather than random.
+ *
+ * Returns null on the other thirteen skins before doing any work.
+ */
+const SidebarCobwebs = ({ to }: { to: string }) => {
+  const skin = useSkin();
+  if (skin !== 'HALLOWEEN') return null;
+
+  // Deterministic, and stable for a given destination.
+  const hasSecond = to.length % 3 === 0;
+
+  return (
+    <>
+      <CobwebGlyph className="hw-cobweb" />
+      {hasSecond && <CobwebGlyph className="hw-cobweb hw-cobweb--alt" />}
+    </>
+  );
+};
+
 const SidebarLink = ({ item, badge, isTouch, onNavigate, onTearingChange }: SidebarLinkProps) => {
   const t = useT();
   // Inert for every row but the two workspace routes — see the hook.
@@ -190,6 +227,9 @@ const SidebarLink = ({ item, badge, isTouch, onNavigate, onTearingChange }: Side
       >
         {({ isActive }) => (
           <>
+            {/* Webs on every door but the one the reader is standing in. */}
+            {!isActive && <SidebarCobwebs to={item.to} />}
+
             {isActive && (
               // One shared element slides between items instead of
               // each row cross-fading its own background.
@@ -358,23 +398,43 @@ export const HiddenSidebar = ({ isMobileOpen, onMobileClose }: HiddenSidebarProp
         <EldritchTendrils edge="left" isActive={isOpen} />
         <AutumnHedge edge="left" isActive={isOpen} />
 
-        <header className="flex items-center gap-2.5 px-4 pb-4 pt-5">
-          <span className="relative grid h-10 w-10 shrink-0 place-items-center text-brand">
-            <StudioMark className="h-10 w-10" />
-            <span
-              aria-hidden
-              className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-brand/25"
-            />
+        {/*
+          The mark, centred, and nothing else.
+
+          ## Why the wordmark and the subtitle are gone
+
+          They were saying what the reader already knew. "Task Studio / Studio
+          workspace" sat at the top of the application the reader is signed into,
+          on a rail they opened deliberately — three words of chrome answering a
+          question nobody in that position is asking, and the subtitle answered
+          it twice. The logo alone identifies the product, which is the only job
+          this corner has.
+
+          ## Why the ring went with them
+
+          It was a `ring-brand/25` circle drawn around a mark that already has
+          its own silhouette, so it read as a container the logo happened to be
+          inside rather than as part of it — and on the skins whose accent is
+          close to the rail's own surface it was a faint smudge with no edge.
+          The mark carries the brand colour itself.
+
+          ## Why the pin is positioned rather than laid out beside it
+
+          Centring is the point, and a flex row with the pin as a sibling
+          centres the logo in *the space the pin leaves*, which is visibly off
+          by half the pin's width. Taking it out of flow is what makes the
+          middle the actual middle. It keeps its own hit area and tab order.
+        */}
+        <header className="relative flex items-center justify-center px-4 pb-4 pt-5">
+          <span className="grid h-11 w-11 place-items-center text-brand">
+            <StudioMark className="h-11 w-11" />
           </span>
 
-          <div className="min-w-0 flex-1 leading-tight">
-            <p className="truncate font-hand text-base font-bold tracking-normal">Task Studio</p>
-            <p className="text-3xs uppercase tracking-[0.16em] text-content-faint">
-              {t('nav.studioWorkspace')}
-            </p>
-          </div>
-
-          {!isTouch && <NavPinButton isPinned={isPinned} onToggle={() => togglePin('left')} />}
+          {!isTouch && (
+            <span className="absolute right-4 top-1/2 -translate-y-1/2">
+              <NavPinButton isPinned={isPinned} onToggle={() => togglePin('left')} />
+            </span>
+          )}
         </header>
 
         <nav className="scrollbar-thin flex flex-1 flex-col gap-5 overflow-y-auto px-3 pb-3">

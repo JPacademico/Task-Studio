@@ -362,7 +362,7 @@ export const GroupsBoard = ({
           description={canManage ? t('groups.emptyBody') : t('groups.emptyBodyMember')}
           action={
             canManage ? (
-              <Button onClick={() => setEditing('new')}>
+              <Button variant="lava" onClick={() => setEditing('new')}>
                 <Plus className="h-3.5 w-3.5" />
                 {t('groups.addColumn')}
               </Button>
