@@ -18,20 +18,27 @@ const SIZES: Record<NonNullable<LavaButtonProps['size']>, string> = {
 };
 
 /**
- * The product's two "make a new thing" buttons, drawn as a lava lamp.
+ * The product's "make a new thing" buttons, drawn as a lava lamp.
  *
- * ## Why only these two get it
+ * ## Which buttons get it
  *
- * Because a button that draws attention to itself is only useful if almost
- * nothing else does. "New project" and "New task" are the one action on their
- * respective screens that everything else exists to support, and they are the
- * two controls where a reader arriving cold should have no doubt about where to
- * start. Every other primary button in the app — Save, Invite, Connect — is a
- * *confirmation* of something already decided, and a shimmering Save button is
- * noise attached to a decision that has already been made.
+ * "New project" in the top bar, "New task" on a project board, and "New task"
+ * on the personal agenda — the one action on each of those screens that
+ * everything else exists to support, and the control where a reader arriving
+ * cold should have no doubt about where to start.
  *
- * The landing page's calls to action are the third case and use `LavaLink`,
- * which is this with an anchor inside it.
+ * The rule is the action, not the screen. The personal agenda's button was for
+ * a while the odd one out — the same "new task" as the board's, drawn flat —
+ * which read as the page being a lesser version of a project rather than as a
+ * deliberate difference, and that is the whole argument for it being here.
+ *
+ * The list stops there. A button that draws attention to itself is only useful
+ * if almost nothing else does, and every other primary button in the app —
+ * Save, Invite, Connect — is a *confirmation* of something already decided. A
+ * shimmering Save button is noise attached to a decision already made.
+ *
+ * The landing page's calls to action are the remaining case and use
+ * `LavaLink`, which is this with an anchor inside it.
  *
  * ## Why the flat accent fill is gone
  *

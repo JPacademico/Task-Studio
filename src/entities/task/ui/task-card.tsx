@@ -307,7 +307,7 @@ const TaskCardBase = ({
           <h3
             title={task.title.length > TEXT_LIMITS.taskTitle ? task.title : undefined}
             className={cn(
-              'text-sm font-semibold leading-snug text-balance break-words',
+              'ui-task-title text-sm font-semibold leading-snug text-balance break-words',
               isDone && 'line-through decoration-content-faint',
             )}
           >

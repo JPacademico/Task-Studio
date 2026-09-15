@@ -105,7 +105,7 @@ export const Section = ({ title, description, action, children, className }: Sec
   <section className={cn('space-y-3', className)}>
     <header className="flex items-end justify-between gap-4">
       <div>
-        <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
+        <h2 className="ui-section-title text-sm font-semibold tracking-tight">{title}</h2>
         {description && <p className="text-xs text-content-muted">{description}</p>}
       </div>
       {action}

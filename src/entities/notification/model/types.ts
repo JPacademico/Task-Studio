@@ -9,7 +9,9 @@ export type NotificationType =
   | 'ORG_INVITE'
   | 'ORG_INVITE_ACCEPTED'
   | 'CHAT_MENTION'
-  | 'AI_SUGGESTION';
+  | 'AI_SUGGESTION'
+  /** Somebody opened or scheduled a live room you are expected at. */
+  | 'LIVE_ROOM_INVITE';
 
 export interface AppNotification {
   id: string;
@@ -47,4 +49,17 @@ export interface NotificationPayload {
    * measure.
    */
   dueAt?: string | null;
+  /**
+   * Which feature wrote this row.
+   *
+   * Only the newer writers set it, and only where the ids alone are ambiguous.
+   * A live-room invitation carries a `projectId` like every task notification
+   * does, and without this the bell would open the board rather than the call
+   * somebody is being invited to — see its `deepLink`.
+   */
+  kind?: string;
+  /** The live room this announces. See `kind`. */
+  roomId?: string;
+  /** When that room opens, as an ISO instant. Rendered by the reader's browser. */
+  opensAt?: string | null;
 }

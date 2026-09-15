@@ -1,0 +1,53 @@
+# The frontend, built and served locally.
+#
+# Not the primary deployment — that is Vercel, and this repository is set up
+# for it. What this gives you is a build that behaves exactly like production:
+# the same nginx headers, the same caching, the same service worker. `npm run
+# preview` does none of that, which is why a CSP mistake tends to survive until
+# it is deployed.
+#
+#   VITE_API_URL=https://api.your-domain.com/api/v1 \
+#   VITE_SOCKET_URL=https://api.your-domain.com \
+#     docker compose up --build
+#
+#   → http://localhost:8080
+#
+# ## Why the API addresses are build arguments rather than environment
+#
+# Because Vite inlines them into the bundle and there is no runtime to read
+# them. A `-e VITE_API_URL=...` on this container changes nothing at all; the
+# value has to be present when `npm run build` runs, which is what the
+# `args:` block below arranges. See the Dockerfile.
+#
+# The consequence worth internalising: **this image is built for one API.**
+# Pointing it at a different one means rebuilding, not restarting.
+
+name: task-studio-ui
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # No defaults. `vite.config.ts` aborts the build when `VITE_API_URL` is
+        # absent rather than baking in a localhost address that would fail for
+        # every visitor — so a missing variable is a failed build here, which is
+        # the loudest and cheapest place for it to fail.
+        VITE_API_URL: ${VITE_API_URL:?set VITE_API_URL, including the /api/v1 suffix}
+        VITE_SOCKET_URL: ${VITE_SOCKET_URL:?set VITE_SOCKET_URL, the API origin with no path}
+
+    restart: unless-stopped
+
+    ports:
+      # Deliberately not 80. This is a container serving plain HTTP, and it
+      # belongs behind something that terminates TLS — either Caddy on the
+      # droplet (add it to the API's stack rather than publishing this) or an
+      # SSH tunnel for a local look.
+      - '8080:80'
+
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'

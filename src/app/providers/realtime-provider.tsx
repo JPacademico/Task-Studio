@@ -51,6 +51,7 @@ const NOTIFICATION_TOAST: Record<AppNotification['type'], 'info' | 'success' | '
   ORG_INVITE_ACCEPTED: 'success',
   CHAT_MENTION: 'info',
   AI_SUGGESTION: 'info',
+  LIVE_ROOM_INVITE: 'info',
 };
 
 /**

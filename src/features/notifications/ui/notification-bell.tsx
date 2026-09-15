@@ -32,6 +32,16 @@ const deepLink = (notification: AppNotification): string | null => {
   if (payload?.organizationId && !payload.projectId) {
     return `/organizations/${payload.organizationId}`;
   }
+  /*
+   * A live room opens the tab it is on, with the room named.
+   *
+   * Checked before the bare `projectId` below, which every project
+   * notification carries: without this an invitation to a call that starts in
+   * four minutes would land somebody on the board and leave them to find it.
+   */
+  if (payload?.kind === 'live-room' && payload.projectId && payload.roomId) {
+    return `/projects/${payload.projectId}?tab=live&room=${payload.roomId}`;
+  }
   // Task notifications open the project board, where the task can be inspected.
   if (payload?.projectId) return `/projects/${payload.projectId}`;
   if (payload?.taskId) return '/tasks';

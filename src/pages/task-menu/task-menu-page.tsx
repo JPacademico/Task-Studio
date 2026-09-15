@@ -25,7 +25,7 @@ import {
 } from '@/features/task-views';
 import { cn } from '@/shared/lib/cn';
 import { formatDayLabel, formatTime } from '@/shared/lib/dates';
-import { Button, EmptyState, RunicText, Section } from '@/shared/ui';
+import { EmptyState, LavaButton, RunicText, Section } from '@/shared/ui';
 import { PendingTasks } from '@/entities/task/ui/pending-tasks';
 import { AgendaSkeleton } from './agenda-skeleton';
 import { useT } from '@/shared/i18n';
@@ -132,11 +132,16 @@ const TaskMenuPage = () => {
 
           {/* The one thing this page could not do. Every other task had to be
               created from a project board, so work that belongs to nobody but
-              you had to be filed under a project to exist at all. */}
-          <Button size="sm" onClick={() => openPersonalComposer(null)}>
+              you had to be filed under a project to exist at all.
+
+              `LavaButton`, matching the project board's own "New task" — this
+              is the same action on the screen that owns it, and it was the one
+              of the three that had been left as a flat control. See
+              `LavaButton` for why the effect is rationed to these three. */}
+          <LavaButton size="sm" onClick={() => openPersonalComposer(null)}>
             <Plus className="h-3.5 w-3.5" strokeWidth={2.8} />
             {t('agenda.newTask')}
-          </Button>
+          </LavaButton>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -191,10 +196,10 @@ const TaskMenuPage = () => {
           }
           action={
             showingPersonal ? (
-              <Button size="sm" onClick={() => openPersonalComposer(null)}>
+              <LavaButton size="sm" onClick={() => openPersonalComposer(null)}>
                 <Plus className="h-3.5 w-3.5" strokeWidth={2.8} />
                 {t('agenda.newPersonalTask')}
-              </Button>
+              </LavaButton>
             ) : undefined
           }
         />

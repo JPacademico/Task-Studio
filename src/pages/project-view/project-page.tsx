@@ -17,6 +17,7 @@ import {
   Users,
   UsersRound,
   Plug,
+  Radio,
 } from 'lucide-react';
 
 import { useProjectRoom } from '@/app/providers/realtime-provider';
@@ -47,6 +48,7 @@ import {
   useProjectChatUnread,
   usePrefetchProjectChat,
 } from '@/features/project-chat-dock/ui/chat-dock';
+import { LivePanel } from '@/features/live-rooms/ui/live-panel';
 import { MeetingsPanel } from '@/features/meetings/ui/meetings-panel';
 import { ProjectSettingsDialog } from '@/features/project-management/ui/project-settings-dialog';
 import {
@@ -86,6 +88,7 @@ type Tab =
   | 'roster'
   | 'teams'
   | 'meetings'
+  | 'live'
   | 'whiteboard'
   | 'text'
   | 'connections'
@@ -108,6 +111,18 @@ const TABS: { value: Tab; label: TranslationKey; icon: ReactNode }[] = [
   // between people, and the question it answers is "who, and when" — not
   // "what state is this work in".
   { value: 'meetings', label: 'project.tabMeetings', icon: <CalendarDays className="h-3 w-3" /> },
+  /*
+   * Immediately after the calendar, because the pair is the point.
+   *
+   * A meeting is an appointment — a time, a place, a list of people
+   * expected. This is the call itself, which is a different thing and not a
+   * better one: a team books the fortnightly review next door and opens a
+   * live room for the ten minutes they need to look at something together.
+   * Anywhere else on the row would suggest the two answer unrelated
+   * questions, and putting it *before* the calendar would suggest a call is
+   * the normal way to arrange one.
+   */
+  { value: 'live', label: 'project.tabLive', icon: <Radio className="h-3 w-3" /> },
   { value: 'whiteboard', label: 'project.tabWhiteboard', icon: <PenTool className="h-3 w-3" /> },
   // Next to the whiteboard on purpose: the two are the same idea in different
   // materials — one is what the project draws, the other is what it writes.
@@ -688,6 +703,26 @@ const ProjectPage = () => {
       )}
       {tab === 'meetings' && (
         <MeetingsPanel projectId={projectId} roster={project.roster} canManage={canManage} />
+      )}
+      {tab === 'live' && projectId && (
+        <LivePanel
+          projectId={projectId}
+          initialRoomId={searchParams.get('room')}
+          /* A concluded project stops accepting new work, and a call is
+             work. The rooms already on it stay readable and joinable. */
+          canCreate={!isFinished}
+          onOpenDocument={(documentId) =>
+            setSearchParams(
+              (params) => {
+                params.set('tab', 'text');
+                params.set('doc', documentId);
+                params.delete('room');
+                return params;
+              },
+              { replace: true },
+            )
+          }
+        />
       )}
       {tab === 'whiteboard' && <Whiteboard projectId={projectId} canClear={canManage} />}
       {tab === 'text' && (

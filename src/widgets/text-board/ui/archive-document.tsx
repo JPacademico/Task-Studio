@@ -153,6 +153,41 @@ export const ArchiveDocument = ({ documentId, source }: ArchiveDocumentProps) =>
         )}
       </div>
 
+      {/*
+        Said before the list, not after it.
+
+        The API refuses an archive whose numbers are impossible — overlapping
+        entries, or more expansion than DEFLATE can produce — so nothing that
+        reaches this component is a constructed bomb. What is left is the real
+        case the refusal must not swallow: a folder of logs or CSVs that
+        honestly unpacks two hundred to one, which is somebody's colleague
+        being helpful and is also thirty gigabytes landing on a laptop.
+
+        So it is a caution rather than a block, it names the number, and it
+        sits above the rows because the decision it informs — whether to press
+        download — is made in the toolbar before anybody scrolls.
+      */}
+      {data?.safety.verdict === 'warn' && (
+        <div
+          role="status"
+          className={cn(
+            'flex items-start gap-2 rounded-xl border border-warning/40 bg-warning/10',
+            'px-2.5 py-2 text-2xs leading-relaxed text-content',
+          )}
+        >
+          <AlertTriangle aria-hidden className="mt-px h-3.5 w-3.5 shrink-0 text-warning" />
+          <span className="min-w-0">
+            <span className="font-semibold">
+              {t('doc.archiveHeavy', {
+                size: formatFileSize(data.safety.declaredBytes),
+                ratio: String(data.safety.ratio),
+              })}
+            </span>{' '}
+            <span className="text-content-muted">{t('doc.archiveHeavyHint')}</span>
+          </span>
+        </div>
+      )}
+
       {/* --- The listing ---------------------------------------------------- */}
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-edge bg-surface-raised">
         {isLoading && (

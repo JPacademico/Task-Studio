@@ -74,6 +74,24 @@ export interface ArchiveEntry {
   modifiedAt: string | null;
 }
 
+/**
+ * The API's read on whether an archive is a zip bomb.
+ *
+ * A `refuse` verdict never reaches here — the listing route throws on one, and
+ * so does the download — so what a client sees is `ok` or `warn`. The warning
+ * is deliberately not a refusal: a folder of logs genuinely compresses two
+ * hundred to one, and what the reader is owed before they click is the number
+ * rather than an argument. See `zip-safety.ts` on the API.
+ */
+export interface ArchiveSafety {
+  verdict: 'ok' | 'warn' | 'refuse';
+  risk: 'overlapping' | 'ratio' | 'size' | null;
+  /** Declared uncompressed total across *every* record, not only listed ones. */
+  declaredBytes: number;
+  /** Declared expansion against the archive's own size. */
+  ratio: number;
+}
+
 export interface ArchiveListing {
   entries: ArchiveEntry[];
   /** How many records the archive declares, before any truncation. */
@@ -81,6 +99,7 @@ export interface ArchiveListing {
   /** True when `entries` stops short of `totalEntries`. */
   isTruncated: boolean;
   uncompressedSize: number;
+  safety: ArchiveSafety;
 }
 
 /** One object on a Figma page — a frame, a component, a section. */

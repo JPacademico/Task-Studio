@@ -114,6 +114,41 @@ export const queryKeys = {
       ['documents', 'usage', projectId ?? 'personal'] as const,
   },
 
+  /**
+   * Live calls, which are not meetings.
+   *
+   * A root of its own rather than a branch of `meetings`, and the reason is
+   * invalidation rather than taxonomy: the two lists refresh on completely
+   * different events — a calendar on a booking, this on somebody pressing
+   * "open a room" — and nesting them would make every meeting write refetch a
+   * list of calls that had not changed.
+   *
+   * There is deliberately no key for a call's *participants*. Who is in a room
+   * right now arrives over the socket and lives in component state; putting it
+   * in the query cache would mean a stale answer surviving in an offline
+   * snapshot, which for presence is worse than no answer.
+   */
+  live: {
+    all: ['live'] as const,
+    /**
+     * One project's rooms.
+     *
+     * `includeEnded` is in the key because it is a different question rather
+     * than a wider view of the same one: the default response omits finished
+     * rooms entirely, so it is not a subset anything can be filtered out of.
+     */
+    list: (projectId: string, includeEnded: boolean) =>
+      ['live', 'list', projectId, includeEnded] as const,
+    detail: (roomId: string) => ['live', roomId] as const,
+    /**
+     * The ICE servers, which are deployment configuration.
+     *
+     * Cached hard and never invalidated by anything a user does — it changes
+     * when the API is redeployed, which is when the whole app reloads anyway.
+     */
+    ice: ['live', 'ice'] as const,
+  },
+
   meetings: {
     all: ['meetings'] as const,
     /**

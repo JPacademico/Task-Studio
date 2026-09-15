@@ -214,7 +214,7 @@ const Greeting = ({ name }: { name: string }) => {
   const [before, after = ''] = t('dash.greeting').split('{name}');
 
   return (
-    <h1 className="text-balance text-xl font-semibold tracking-tight sm:text-2xl">
+    <h1 className="ui-greeting text-balance text-xl font-semibold tracking-tight sm:text-2xl">
       {before}
       <span className="relative whitespace-nowrap">
         {/*
