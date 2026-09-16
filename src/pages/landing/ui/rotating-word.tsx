@@ -121,6 +121,13 @@ export const RotatingWord = ({ className }: { className?: string }) => {
 
   return (
     <span
+      /*
+       * Opts this whole cell out of a skin that clips a gradient through its
+       * headings — Vibecoded does, and this is the one thing in a heading that
+       * moves. See the `[data-no-gradient]` rule at the foot of `index.css` for
+       * why a transformed child cannot take an ancestor's clipped background.
+       */
+      data-no-gradient
       className={cn(
         'relative inline-grid',
         /*

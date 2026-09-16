@@ -4859,58 +4859,63 @@
   }
 
   /* ----------------------------------------------------------------------
-   * The same light, on a page that is already bright.
+   * The travelling light, on a page that is already bright.
    *
-   * ## Why it needed a second set of numbers at all
+   * ## What is actually wrong in light mode
    *
-   * Because "glow" is not a colour, it is a *contrast direction*. On the dark
-   * palettes this is accent-on-near-black: the halo is the brightest thing for
-   * 200px in any direction and 0.4 opacity is plenty. Invert the page and the
-   * same declaration is accent-on-paper - the halo is now *darker* than what
-   * surrounds it, which is a shadow, and a soft accent shadow at 40% under a
-   * white card is very close to nothing at all. Every skin's light palette hit
-   * this, because every skin's light palette is light.
+   * Not the opacity. `.lp-rim--active` is already at 1, and the halo behind the
+   * card (`.lp-glow`) is a different effect that was fine as it was. The
+   * problem is in the conic gradient itself, and it is two things:
    *
-   * ## What changes, and what deliberately does not
+   * 1. **The head of the comet is invisible.** The brightest stop, at 86deg, is
+   *    `--brand-soft` — and on every *light* palette that token is a pale wash
+   *    meant to sit behind small text (studio's is `207 240 246`, near-white).
+   *    Against a white card face it is nothing at all, so the one part of the
+   *    arc that is supposed to read as the light source is a gap. On the dark
+   *    palettes the same token is a deep tone against near-black, which is why
+   *    it has always looked right there and only there.
    *
-   * Only opacity and saturation. The geometry, the blur radius, the spin and
-   * the conic ramp are all untouched, so this is the same effect read in a
-   * different room rather than a second effect maintained alongside the first.
+   * 2. **The ring is one pixel.** `.lp-rim` sits at `inset: -1px` behind a card
+   *    whose face is deliberately opaque, so exactly 1px of the gradient is
+   *    ever on screen. One pixel of saturated colour on black is a bright line;
+   *    one pixel of the same colour on white is a hairline you have to look
+   *    for.
    *
-   * `saturate` is doing as much work as the opacity here: a blur spreads a hue
-   * out until it is mostly the colour of whatever it was blurred over, and over
-   * white that desaturates it badly. Pushing saturation back up is what keeps a
-   * brand halo reading as *the brand* rather than as a grey smudge - and it is
-   * free, because the filter is on a layer that is already being filtered.
+   * ## The fix, and why it is only two properties
    *
-   * The resting rim goes up too. At 0.28 over parchment the card simply had no
-   * edge until it was hovered, which made the whole row look unfinished rather
-   * than calm.
+   * The arc is restated with the soft stop taken out and the alphas raised, and
+   * the ring is widened to 2.5px on the card that is *lit* — the two unfocused
+   * cards keep their hairline, because the row reads as one design with one
+   * card lit rather than three cards of different weights.
+   *
+   * Nothing here touches the animation, the blur, the geometry of `.lp-glow`,
+   * or anything at all in dark mode. Widening an inset and swapping colour
+   * stops are both free: the element still composites as one rotated layer, so
+   * a thicker, brighter ring costs exactly what the thin dim one did.
    * -------------------------------------------------------------------- */
-  html:not(.dark) .lp-rim {
-    opacity: 0.5;
-    filter: saturate(1.5);
-  }
-
-  /*
-   * ...and the focused card still goes all the way to 1.
-   *
-   * Restated rather than inherited, because the rule directly above is
-   * `html:not(.dark) .lp-rim` at (0,2,1) and `.lp-rim--active` is (0,1,0) — so
-   * without this the light-mode resting opacity would *outrank* the active
-   * state and the focused card would end up dimmer than it was before any of
-   * this, which is the exact opposite of the ask.
-   */
   html:not(.dark) .lp-rim--active {
-    opacity: 1;
+    inset: -2.5px;
   }
 
-  html:not(.dark) .lp-glow {
-    filter: blur(18px) saturate(1.6);
-  }
-
-  html:not(.dark) .lp-glow--active {
-    opacity: 0.85;
+  html:not(.dark) .lp-rim--active::before {
+    /*
+     * The same shape of light — one bright head with a tail behind it — with
+     * the head actually lit. `--brand` is held at full strength across the
+     * 72-92deg span where the soft token used to punch a hole, and the tail
+     * behind it starts higher so the whole arc clears the card's own border
+     * colour rather than fading into it.
+     */
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      rgb(var(--brand) / 0.2) 30deg,
+      rgb(var(--brand) / 0.7) 56deg,
+      rgb(var(--brand)) 72deg,
+      rgb(var(--brand)) 92deg,
+      rgb(var(--brand) / 0.65) 108deg,
+      transparent 150deg,
+      transparent 360deg
+    );
   }
 
   .postit {
@@ -10514,14 +10519,75 @@ html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='loading'] 
   );
   -webkit-background-clip: text;
   background-clip: text;
-  color: transparent;
-  /* Firefox needs the text fill colour set explicitly or the clip is ignored. */
+  /*
+   * The fill goes transparent; `color` deliberately does NOT.
+   *
+   * The usual incantation for this effect sets both, and setting `color`
+   * is what breaks everything nested inside a heading: `color` inherits, so
+   * every child ends up transparent too, and `currentColor` — which is how an
+   * icon, a chip or an accented word asks for its own colour — resolves to
+   * transparent along with it. The opt-out rule below then has nothing real to
+   * hand back.
+   *
+   * `-webkit-text-fill-color` alone is enough. It wins over `color` for glyph
+   * fill wherever it is supported, which is every engine that also supports
+   * `background-clip: text` — Firefox has honoured the prefixed property since
+   * 49. Anywhere it is not supported the heading simply renders solid in
+   * `--content`, which is the correct fallback and is what `color` is still
+   * there to provide.
+   */
   -webkit-text-fill-color: transparent;
 }
 
-[data-skin='vibecoded'] :is(h1, h2, h3, h4) :is(svg, .ui-chip, [data-no-gradient]) {
+/*
+ * ...and the things inside a heading that must keep their own paint.
+ *
+ * ## The bug this fixes
+ *
+ * `background-clip: text` paints the *heading's* background through the glyphs
+ * of the heading and everything in it. That works for plain inline text and
+ * fails for anything on its own compositor layer: a transformed or
+ * `will-change` child is rasterised separately, so the ancestor's background
+ * never reaches it — and since `-webkit-text-fill-color: transparent` *is*
+ * inherited, the child ends up with a transparent fill and nothing behind it.
+ *
+ * The landing page's rotating noun is exactly that. It is a `motion.span`
+ * carrying `.gpu`, it animates `y` and `opacity` four times a minute, and the
+ * clip has to be recomputed against a box that is moving — so the word flickers
+ * between the gradient, a slice of the wrong part of the gradient, and nothing.
+ * That is the glitch.
+ *
+ * ## Why `color` is set explicitly and not inherited
+ *
+ * Because the heading's own `color` is `transparent` — that is half of how the
+ * clip works — so `color: inherit` here would inherit transparency and
+ * `currentColor` would resolve to it. Anything opting out of the gradient needs
+ * a real colour handed to it, which is what `--content` is. A child with its
+ * own colour utility (the rotating word is `text-brand`) then overrides that
+ * and `currentColor` picks it up, which is the behaviour every one of these
+ * call sites actually wants.
+ *
+ * `.gpu` is in the list on principle rather than for this one component: any
+ * element that has been pushed onto its own layer cannot receive a clipped
+ * background from an ancestor, so opting it out is the rule, not the
+ * exception.
+ */
+[data-skin='vibecoded'] :is(h1, h2, h3, h4) :is(svg, .ui-chip, .gpu, [data-no-gradient]),
+[data-skin='vibecoded'] :is(h1, h2, h3, h4) :is([data-no-gradient], .gpu) * {
+  background-image: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  /*
+   * Back to whatever colour this element actually asked for. The rotating noun
+   * carries `text-brand` and gets the accent; an icon inheriting from a chip
+   * gets the chip's colour; anything with no colour of its own inherits
+   * `--content` from the heading, which is real now rather than transparent.
+   *
+   * No `color` is set here on purpose: forcing one would outrank the utility
+   * classes these elements use and flatten every accent inside a heading to the
+   * body colour.
+   */
   -webkit-text-fill-color: currentColor;
-  color: inherit;
 }
 
 /*
