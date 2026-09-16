@@ -421,18 +421,19 @@ const DashboardPage = () => {
       {/* --- The masthead ------------------------------------------------ */}
       <header className="panel board-grid relative overflow-hidden px-4 py-5 sm:px-6 sm:py-6">
         {/*
-          One brand bloom, off the top-right corner.
+          The brand bloom that used to sit off the top-right corner has gone.
 
-          The whole plate is otherwise flat, and a dashboard that opens on a
-          flat rectangle is the shape of every admin template ever shipped.
-          A single blurred wash costs one composited layer, tints with the
-          skin because it is the brand token, and is the only decoration on
-          the page that is not also information.
+          It was there to stop the masthead opening on a flat rectangle, which
+          is a real concern and was the wrong fix for it: the right-hand end of
+          this plate is where the three counters live, and a 256px wash of
+          accent behind them put a gradient under the one row on the page that
+          is pure numbers. Tinted digits read as a state - disabled, pending,
+          highlighted - and these are none of those.
+
+          The plate is not flat without it. `board-grid` is still on the header
+          and the skin's own `--panel-texture` still sits behind it, which is
+          the same job done by something that does not vary across the box.
         */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -right-20 -top-28 h-64 w-64 rounded-full bg-brand/15 blur-3xl"
-        />
 
         <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
           <div className="min-w-0 space-y-1">

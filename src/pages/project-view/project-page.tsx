@@ -430,7 +430,7 @@ const ProjectPage = () => {
                 worse than a name that ends in an ellipsis.
               */}
               <div className="flex items-center gap-1.5">
-                <h1 className="min-w-0 truncate text-xl font-semibold tracking-tight sm:text-2xl">
+                <h1 className="ui-project-name ui-project-name--hero min-w-0 truncate text-xl font-semibold tracking-tight sm:text-2xl">
                   {project.name}
                 </h1>
                 <RepositoryLink

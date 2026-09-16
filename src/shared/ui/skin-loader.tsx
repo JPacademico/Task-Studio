@@ -190,6 +190,20 @@ const BODY: Record<ThemeSkin, ReactElement> = {
       </svg>
     </span>
   ),
+
+  /*
+   * A gradient ring, spinning. The single most-shipped loading indicator on the
+   * web, and the only honest one for this skin: a spinner with a conic gradient
+   * and rounded ends is what the snippet produces, so that is what it gets.
+   *
+   * `loader-vibe` is two elements rather than a `border` trick because the
+   * border version cannot hold a gradient — see `index.css`.
+   */
+  VIBECODED: (
+    <span className="loader-vibe">
+      <i />
+    </span>
+  ),
 };
 
 interface SkinLoaderProps {

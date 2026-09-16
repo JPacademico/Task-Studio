@@ -5,7 +5,7 @@ import axios, {
 } from 'axios';
 
 import { env } from '@/shared/config/env';
-import { translate } from '@/shared/i18n';
+import { translate, type TranslationKey } from '@/shared/i18n';
 import { CLIENT_ID, CLIENT_ID_HEADER } from './client-id';
 import { tokenStore } from './token-store';
 
@@ -359,6 +359,128 @@ api.interceptors.response.use(
   },
 );
 
+/* ==========================================================================
+ * Turning a failure into a sentence a person can act on.
+ *
+ * ## What was wrong
+ *
+ * The old version trusted `response.data.message` whenever there was one, and
+ * fell back to `Error.message` when there was not. Both are places the *server
+ * and the transport* write to, not places anybody writes copy, so a fair
+ * number of toasts in this product were showing text written for a developer:
+ *
+ *   - **class-validator**, which is what produces most of them. The API runs
+ *     `ValidationPipe` with `whitelist` and `forbidNonWhitelisted`, so a form
+ *     with one bad field answers `title must be shorter than or equal to 120
+ *     characters` and a stale client answers `property draft should not
+ *     exist`. Both went straight into a toast, in English, on a Portuguese UI.
+ *   - **Nest's own defaults**, for anything thrown without a message:
+ *     `Unauthorized`, `Forbidden resource`, `Internal server error`. These are
+ *     status codes spelled out, and they tell a reader nothing they could not
+ *     see from the fact that it failed.
+ *   - **Axios**, through the `Error.message` branch: `Request failed with
+ *     status code 500`, `Network Error`, `timeout of 15000ms exceeded`.
+ *   - **Prisma**, through the filter on the API, which names the columns of a
+ *     unique constraint: `A record with that ownerId, name already exists.`
+ *
+ * ## The rule
+ *
+ * A message is shown if it reads like something a person wrote, and otherwise
+ * the status code is translated into something that does. The API's own
+ * messages are good - "This project is in the recycle bin. Restore it first."
+ * - and passing those through is the whole reason this function reads the body
+ * at all; what changed is that it now checks first.
+ *
+ * Deliberately a blocklist of known machine shapes rather than a guess at what
+ * prose looks like. The failure mode of a blocklist is that an unfamiliar
+ * machine message slips through, which is where this already was; the failure
+ * mode of the opposite is swallowing a real explanation and replacing it with
+ * "something went wrong", which is worse and much harder to notice.
+ * ========================================================================== */
+
+/**
+ * Message shapes that come from a machine.
+ *
+ * Anchored wherever the shape allows it, so that a sentence merely *containing*
+ * one of these words is not caught by it.
+ */
+const MACHINE_MESSAGE: RegExp[] = [
+  // class-validator, which is the bulk of them.
+  /\b(must be|must not be|must contain|must match|must be a|must be an|must be one of|must be longer|must be shorter|must be a valid)\b/i,
+  /\bshould not (exist|be empty)\b/i,
+  /\bis not a valid (enum|uuid|url|iso|boolean|number|integer|date)\b/i,
+  /^property \S+ should not exist$/i,
+  // Nest's defaults: a status code spelled out as a word.
+  /^(unauthorized|forbidden(\s+resource)?|not found|bad request|conflict|unprocessable entity|payload too large|too many requests|internal server error|bad gateway|service unavailable|gateway timeout)\.?$/i,
+  // Axios, and the runtime underneath it.
+  /^request failed with status code \d+$/i,
+  /^network error$/i,
+  /^timeout of \d+\s*ms exceeded$/i,
+  /^(canceled|cancelled|aborted)$/i,
+  /^(ECONN\w*|ENOTFOUND|ETIMEDOUT|EAI_AGAIN|EPIPE|EHOSTUNREACH|ERR_[A-Z_]+)\b/,
+  /^socket hang up$/i,
+  /^fetch failed$/i,
+  // A route that does not exist answers in Express's voice.
+  /^cannot (get|post|put|patch|delete|head|options)\s/i,
+  // Prisma's unique-constraint message, once it starts naming columns.
+  /*
+   * The API composes it from the constraint's `target`, so "A record with that
+   * name already exists." is decent copy and is left alone, while "A record
+   * with that ownerId, name already exists." is a list of columns and is not.
+   * The tell is a camelCase or snake_case identifier in that list — and note
+   * there is no word boundary inside `ownerId`, which is why the `Id` has to be
+   * anchored to the letter in front of it rather than to `\b`.
+   */
+  /\bwith that [^.]*(?:[A-Za-z]Id|_id|\bid)\b/,
+  // Anything that is obviously not a sentence.
+  /^\[object\s/i,
+  /^[A-Za-z]*Error:\s/,
+  /\bat\s+\S+\s+\(.*:\d+:\d+\)/,
+];
+
+/**
+ * Is this worth showing to the person who pressed the button?
+ *
+ * The length ceiling catches serialised objects and stack traces that got past
+ * the patterns; the whitespace check catches bare identifiers - `P2002`,
+ * `ERR_BAD_REQUEST`, a UUID - which are never copy and are the most common
+ * thing a thin error path produces.
+ */
+const isReadable = (message: string): boolean => {
+  const text = message.trim();
+
+  if (text.length === 0 || text.length > 240) return false;
+  if (!/\s/.test(text)) return false;
+  if (/[{}<>]|\n\s*at\s/.test(text)) return false;
+
+  return !MACHINE_MESSAGE.some((pattern) => pattern.test(text));
+};
+
+/**
+ * What each status means, in the product's own voice.
+ *
+ * Only the ones a reader can do something about are given their own sentence.
+ * Everything else lands on the caller's fallback, which is a message written at
+ * the call site and knows what was being attempted - "Could not save the
+ * document" beats any amount of generic accuracy.
+ */
+const STATUS_MESSAGE: Record<number, TranslationKey> = {
+  400: 'error.badRequest',
+  401: 'error.unauthorized',
+  403: 'error.forbidden',
+  404: 'error.notFound',
+  409: 'error.conflict',
+  413: 'error.tooLarge',
+  422: 'error.invalid',
+  429: 'error.tooMany',
+  500: 'error.server',
+  502: 'error.server',
+  503: 'error.unavailable',
+  // Ours timed out against a server that did answer - almost always a cold
+  // container on this hosting, which is what `slowStart` says.
+  504: 'session.slowStart',
+};
+
 /** Turns any axios failure into a message worth showing in a toast. */
 export const errorMessage = (
   error: unknown,
@@ -366,14 +488,22 @@ export const errorMessage = (
 ): string => {
   if (axios.isAxiosError(error)) {
     const payload = error.response?.data as { message?: string | string[] } | undefined;
-    const message = payload?.message;
+    const raw = payload?.message;
+    /*
+     * An array is a validation failure - Nest sends one entry per broken rule.
+     * Only the first was ever shown, which was already a half-truth, and every
+     * one of them is a class-validator string anyway. Taking the first and
+     * letting `isReadable` reject it lands the whole thing on `error.invalid`,
+     * which says "check the form" - the one useful thing that can be said
+     * without naming a field the reader never saw a name for.
+     */
+    const message = Array.isArray(raw) ? raw[0] : raw;
 
-    if (Array.isArray(message)) return message[0] ?? fallback;
-    if (typeof message === 'string') return message;
+    if (typeof message === 'string' && isReadable(message)) return message;
 
     /*
      * These two look identical to a user and mean opposite things, so they say
-     * different things. `ERR_NETWORK` is no connection at all — their network,
+     * different things. `ERR_NETWORK` is no connection at all - their network,
      * or a misconfigured API address. `ECONNABORTED` is our own timeout firing
      * against a server that accepted the connection, which on this hosting is
      * overwhelmingly a container still starting up.
@@ -398,7 +528,26 @@ export const errorMessage = (
     if (error.code === 'ECONNABORTED') {
       return translate('session.slowStart');
     }
+
+    const status = error.response?.status;
+    if (status) {
+      const known = STATUS_MESSAGE[status];
+      if (known) return translate(known);
+      // Any other 5xx is still our fault and still not theirs to fix.
+      if (status >= 500) return translate('error.server');
+    }
+
+    return fallback;
   }
-  if (error instanceof Error && error.message) return error.message;
+
+  /*
+   * A thrown `Error` that is not an axios one - a parse failure, a guard in our
+   * own code, a rejected file read. Same test: `error.message` is as likely to
+   * be `Unexpected token < in JSON at position 0` as it is to be a sentence.
+   */
+  if (error instanceof Error && error.message && isReadable(error.message)) {
+    return error.message;
+  }
+
   return fallback;
 };

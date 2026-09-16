@@ -187,7 +187,7 @@ export const ProjectCard = ({ project, onTogglePin }: ProjectCardProps) => {
   );
 
   const title = (
-    <p className="px-4 py-3 text-sm font-semibold leading-snug transition-colors group-hover:text-brand">
+    <p className="ui-project-name px-4 py-3 text-sm font-semibold leading-snug transition-colors group-hover:text-brand">
       {project.name}
     </p>
   );

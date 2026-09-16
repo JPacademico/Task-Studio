@@ -47,6 +47,16 @@ const REVEAL: Record<ThemeSkin, Transition> = {
   // A startle: nothing, then all at once, then it settles. The overshoot is
   // the point — this is the one skin where things are supposed to jump.
   HALLOWEEN: { type: 'spring', stiffness: 520, damping: 17, mass: 0.6 },
+  /*
+   * The default `ease-in-out` of every tutorial, at the default 300ms.
+   *
+   * Every other curve in this table was chosen: stone accelerates, water
+   * refuses to stop dead, the arcade quantises. This one is what you get when
+   * nobody chose — the symmetric curve that ships in the snippet — and being
+   * unremarkable is the whole joke. It is the only entry here that would be a
+   * mistake on any other skin.
+   */
+  VIBECODED: { duration: 0.3, ease: 'easeInOut' },
 };
 
 const MARKER: Record<ThemeSkin, Transition> = {
@@ -64,6 +74,7 @@ const MARKER: Record<ThemeSkin, Transition> = {
   UNDERWATER: { type: 'spring', stiffness: 150, damping: 15, mass: 1.2 },
   VOLCANO: { duration: 0.32, ease: [0.85, 0, 0.12, 1] },
   HALLOWEEN: { type: 'spring', stiffness: 560, damping: 18, mass: 0.6 },
+  VIBECODED: { duration: 0.3, ease: 'easeInOut' },
 };
 
 /*

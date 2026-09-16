@@ -263,7 +263,10 @@ const SidebarLink = ({ item, badge, isTouch, onNavigate, onTearingChange }: Side
             */}
             <span className="relative min-w-0 flex-1">
               <span
-                className={cn('block truncate text-sm', isActive ? 'font-semibold' : 'font-medium')}
+                className={cn(
+                  'ui-nav-label block truncate text-sm',
+                  isActive ? 'font-semibold' : 'font-medium',
+                )}
               >
                 <RunicText>{t(item.label)}</RunicText>
               </span>

@@ -27,3 +27,7 @@ Thumbs.db
 
 *.tsbuildinfo
 .eslintcache
+
+# The personal/demo-licensed font source. Never ships: see the note on
+# --font-scary in src/app/styles/index.css.
+custom-fonts/

@@ -14,6 +14,8 @@ import { IntegrationsStrip } from './ui/integrations-strip';
 import { LandingNav } from './ui/landing-nav';
 import { LavaLink } from './ui/lava-link';
 import { PiticoMark } from './ui/pitico-mark';
+import { useSkin } from '@/app/providers/theme-provider';
+import { SkinAmbience } from './ui/skin-ambience';
 import { PricingTable } from './ui/pricing-table';
 import { Reveal } from './ui/reveal';
 import { RotatingWord } from './ui/rotating-word';
@@ -74,6 +76,13 @@ const LandingPage = () => {
   const reduceMotion = useReducedMotion();
   const navigate = useNavigate();
   const { hash } = useLocation();
+  /*
+   * The theme the reader is actually wearing, for the closing section's
+   * ambience. `useSkin` rather than the barrel's index in `ThemeShowcase`:
+   * the point down there is that pressing Apply changes the page you are
+   * standing on, and reading the applied value is what makes that true.
+   */
+  const activeSkin = useSkin();
 
   /*
    * The introduction's 3D field, and the three questions it has to answer
@@ -532,8 +541,35 @@ const LandingPage = () => {
           there is a studio behind this is exactly the person who might sign up
           because of it. */}
       <section className="relative overflow-hidden border-t border-edge/70 bg-surface-raised/40">
+        {/*
+          The applied theme's own weather, across the closing band.
 
-        <div className="relative mx-auto w-full max-w-3xl px-4 py-20 text-center sm:px-6 sm:py-28">
+          ## Why here and nowhere else on the page
+
+          Because this is the one section with the room for it. The app mounts
+          these fields over the *whole viewport* (see `AppLayout`), and the
+          landing page deliberately does not — a reader scrolling a marketing
+          page through a permanent snowfall is being sold a distraction. One
+          band at the foot, after the argument is over, is where an atmospheric
+          flourish costs nothing and lands as a last word rather than as noise.
+
+          ## Why the active skin rather than the one in the barrel
+
+          Because the theme section above already previews the barrel's choice
+          in its own box. This one answers the other half of the promise: press
+          Apply up there and the *page you are standing on* starts behaving like
+          that theme, which is the claim the whole section is making and the
+          only demonstration that settles it.
+
+          Renders nothing for the seven skins without an ambience, nothing under
+          `prefers-reduced-motion`, and it is `pointer-events-none` and
+          `aria-hidden` throughout — the two buttons underneath it stay
+          pressable. `density` is low because this band is wide: the field is
+          meant to be noticed on the second look, not the first.
+        */}
+        <SkinAmbience skin={activeSkin} density={0.55} className="z-0" />
+
+        <div className="relative z-10 mx-auto w-full max-w-3xl px-4 py-20 text-center sm:px-6 sm:py-28">
           <Reveal>
           <span className="mx-auto grid h-14 w-14 place-items-center text-brand">
             <StudioMark className="h-14 w-14" />

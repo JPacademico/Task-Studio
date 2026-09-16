@@ -3,9 +3,10 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowLeft, Github, HardHat } from 'lucide-react';
 
+import { useSessionStore } from '@/features/auth/model/session.store';
 import { useT } from '@/shared/i18n';
 import { cn } from '@/shared/lib/cn';
-import { buttonClasses } from '@/shared/ui';
+import { LavaSurface, buttonClasses } from '@/shared/ui';
 
 /** The plans this page knows how to name. Anything else is named generically. */
 const PLAN_LABEL: Record<string, string> = {
@@ -42,6 +43,19 @@ export const PlanSoonPage = () => {
   const [params] = useSearchParams();
   const reduceMotion = useReducedMotion();
 
+  /*
+   * The way back depends on which side of the sign-in line the reader is on.
+   *
+   * This page is public - a pricing table is read mostly by people without an
+   * account, and answering "can I buy this" with a password field would be
+   * absurd. But that means "Back to settings" is a promise the page cannot
+   * keep for half its readers: a guest following it is bounced to sign-in,
+   * from a page they reached by pressing a button on a marketing page.
+   *
+   * So a guest is sent back where they came from, which is the landing page.
+   */
+  const isSignedIn = useSessionStore((state) => state.status === 'authenticated');
+
   const plan = params.get('plan') ?? '';
   const planName = PLAN_LABEL[plan.toUpperCase()] ?? '';
 
@@ -65,7 +79,9 @@ export const PlanSoonPage = () => {
   );
 
   return (
-    <div className="relative flex min-h-[calc(100vh-4rem)] items-center justify-center overflow-hidden px-4 py-12">
+    /* Full height, not the shell's height minus its bar: this route sits
+       outside `AppLayout` now, so there is no top bar to subtract. */
+    <div className="relative flex min-h-dvh items-center justify-center overflow-hidden px-4 py-12">
       {/*
         Hazard tape, running off both edges.
 
@@ -142,11 +158,17 @@ export const PlanSoonPage = () => {
 
             <div className="mt-7 flex w-full flex-col gap-2.5 sm:flex-row sm:justify-center">
               <Link
-                to="/settings"
+                to={isSignedIn ? '/settings' : '/welcome'}
                 className={buttonClasses({ variant: 'lava', size: 'md' })}
               >
-                <ArrowLeft className="h-4 w-4" />
-                {t('planSoon.back')}
+                {/* The wax - `buttonClasses` cannot put children inside an
+                    anchor, so without this the lamp is a still gradient. Same
+                    composition `LavaLink` does on the landing page. */}
+                <LavaSurface />
+                <span className="relative inline-flex items-center justify-center gap-2">
+                  <ArrowLeft className="h-4 w-4" />
+                  {t(isSignedIn ? 'planSoon.back' : 'planSoon.backHome')}
+                </span>
               </Link>
 
               {/*

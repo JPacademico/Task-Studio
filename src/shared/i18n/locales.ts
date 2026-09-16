@@ -574,8 +574,8 @@ const en = {
   'landing.pitico.before': 'A',
   'landing.pitico.after': ' solution',
   'landing.pitico.letter': 'P.',
-  'landing.pitico.word': 'Pitico.',
-  'landing.pitico.aria': 'Pitico — the studio behind Task Studio',
+  'landing.pitico.word': 'Pico.',
+  'landing.pitico.aria': 'Pico — the studio behind Task Studio',
   'landing.pitico.body':
     'Task Studio is built by a small studio that makes software the way it wants to use it.',
 
@@ -1730,6 +1730,39 @@ const en = {
   'common.loading': 'Loading…',
   'common.you': 'You',
   'common.somethingWentWrong': 'Something went wrong.',
+  /*
+   * What a failure says when the server's own words are not fit to show.
+   *
+   * Each of these is the honest reading of one status code and nothing more -
+   * they are what is left after `errorMessage` rejects a class-validator
+   * string or one of Nest's spelled-out status words. A caller that knows what
+   * was being attempted passes its own fallback instead, and should: "Could
+   * not save the document" is worth more than any of these.
+   */
+  'error.badRequest': 'That could not be completed. Check the details and try again.',
+  'error.invalid': 'Some of the details are not valid. Check the form and try again.',
+  'error.unauthorized': 'You need to be signed in to do that.',
+  'error.forbidden': 'You do not have permission to do that.',
+  'error.notFound': 'That is not there any more.',
+  'error.conflict': 'That clashes with something that already exists.',
+  'error.tooLarge': 'That is too large to upload.',
+  'error.tooMany': 'Too many attempts. Wait a moment and try again.',
+  'error.server': 'Something went wrong on our side. Try again in a moment.',
+  'error.unavailable': 'The server is unavailable right now. Try again in a moment.',
+  'common.showPassword': 'Show password',
+  /*
+   * The phone notice. See `MobileGate`.
+   *
+   * "Being built" rather than "not supported": the first is a date and the
+   * second is a decision, and only one of them is true.
+   */
+  'mobile.title': 'The phone version is still being built',
+  'mobile.body':
+    'Task Studio is a desk tool for now — boards you drag, a whiteboard, a chat dock. The phone build is coming, and we would rather finish it than hand you half of it.',
+  'mobile.desktop': 'Open this on a laptop or desktop and everything is there.',
+  'mobile.tablet': 'A tablet works too — anything wider than a phone opens normally.',
+  'mobile.note': 'Your account and everything in it is untouched.',
+  'common.hidePassword': 'Hide password',
   'common.noDescription': 'No description yet.',
   'session.unreachable': 'Cannot reach the server. Check your connection.',
   'session.slowStart':
@@ -2177,6 +2210,9 @@ const en = {
   'skin.UNDERWATER.tagline': 'Held under',
   'skin.UNDERWATER.body':
     'Broken light from a surface somewhere above you, corners water has had a long time to round off, colour that drains toward blue with depth — and bubbles going up past all of it.',
+  'skin.VIBECODED.tagline': 'Looks like every other app',
+  'skin.VIBECODED.body':
+    'Indigo to fuchsia at 135 degrees, everything rounded to 16px, a gradient through every heading and a logo that is a squircle with a shape in it. The house style of a thousand generated apps, built properly, on purpose.',
   'skin.HALLOWEEN.tagline': 'Something moved in the corner',
   'skin.HALLOWEEN.body':
     'Candlelit dark with a carved lantern for a mark. Webs gather on the doors you have not opened, and opening anything startles whatever was sleeping in it.',
@@ -2371,6 +2407,7 @@ const en = {
   'planSoon.bodyNamed': '{plan} is not switched on yet. We are finishing the rest of the studio before we start taking payments.',
   'planSoon.reassure': 'Nothing you already have changes, and nothing has been charged.',
   'planSoon.back': 'Back to settings',
+  'planSoon.backHome': 'Back to the home page',
   'planSoon.notify': 'Tell me when it opens',
   'planSoon.note': 'Everything on your free plan keeps working exactly as it does now.',
   'billing.feature.projects': 'Projects at a time',
@@ -2908,8 +2945,8 @@ const ptBR: Record<TranslationKey, string> = {
   'landing.pitico.before': 'Uma solução',
   'landing.pitico.after': '',
   'landing.pitico.letter': 'P.',
-  'landing.pitico.word': 'Pitico.',
-  'landing.pitico.aria': 'Pitico — o estúdio por trás do Task Studio',
+  'landing.pitico.word': 'Pico.',
+  'landing.pitico.aria': 'Pico — o estúdio por trás do Task Studio',
   'landing.pitico.body':
     'O Task Studio é feito por um estúdio pequeno, que faz software do jeito que quer usar.',
 
@@ -4022,6 +4059,24 @@ const ptBR: Record<TranslationKey, string> = {
   'common.loading': 'Carregando…',
   'common.you': 'Você',
   'common.somethingWentWrong': 'Algo deu errado.',
+  'error.badRequest': 'Não foi possível concluir. Confira os dados e tente de novo.',
+  'error.invalid': 'Alguns dados não são válidos. Confira o formulário e tente de novo.',
+  'error.unauthorized': 'Você precisa estar conectado para fazer isso.',
+  'error.forbidden': 'Você não tem permissão para fazer isso.',
+  'error.notFound': 'Isso não está mais aqui.',
+  'error.conflict': 'Isso conflita com algo que já existe.',
+  'error.tooLarge': 'Isso é grande demais para enviar.',
+  'error.tooMany': 'Tentativas demais. Espere um instante e tente de novo.',
+  'error.server': 'Algo deu errado do nosso lado. Tente de novo em instantes.',
+  'error.unavailable': 'O servidor está indisponível agora. Tente de novo em instantes.',
+  'common.showPassword': 'Mostrar senha',
+  'mobile.title': 'A versão para celular ainda está em obras',
+  'mobile.body':
+    'Por enquanto o Task Studio é uma ferramenta de mesa — quadros que você arrasta, uma lousa, um chat acoplado. A versão para celular está vindo, e preferimos terminá-la a te entregar metade dela.',
+  'mobile.desktop': 'Abra em um notebook ou desktop e está tudo lá.',
+  'mobile.tablet': 'Tablet também funciona — qualquer tela maior que a de um celular abre normalmente.',
+  'mobile.note': 'Sua conta e tudo que há nela seguem intactos.',
+  'common.hidePassword': 'Ocultar senha',
   'common.noDescription': 'Sem descrição ainda.',
   'session.unreachable': 'Não foi possível alcançar o servidor. Verifique sua conexão.',
   'session.slowStart':
@@ -4457,6 +4512,9 @@ const ptBR: Record<TranslationKey, string> = {
   'skin.UNDERWATER.tagline': 'Mantido sob a água',
   'skin.UNDERWATER.body':
     'Luz quebrada vinda de uma superfície lá em cima, cantos que a água teve muito tempo para arredondar, cores que escorrem para o azul conforme a profundidade — e bolhas subindo por tudo.',
+  'skin.VIBECODED.tagline': 'Igualzinho a todo outro app',
+  'skin.VIBECODED.body':
+    'Do índigo ao fúcsia a 135 graus, tudo arredondado em 16px, gradiente em cada título e um logo que é um quadrado arredondado com uma forma dentro. O estilo de mil apps gerados, feito direito, de propósito.',
   'skin.HALLOWEEN.tagline': 'Algo se mexeu no canto',
   'skin.HALLOWEEN.body':
     'Escuridão à luz de vela, com uma lanterna esculpida como marca. Teias se formam nas portas que você não abriu, e abrir qualquer coisa assusta o que dormia lá dentro.',
@@ -4644,6 +4702,7 @@ const ptBR: Record<TranslationKey, string> = {
   'planSoon.bodyNamed': 'O {plan} ainda não está ativo. Estamos terminando o resto do estúdio antes de começar a cobrar.',
   'planSoon.reassure': 'Nada do que você já tem muda, e nada foi cobrado.',
   'planSoon.back': 'Voltar às configurações',
+  'planSoon.backHome': 'Voltar para a página inicial',
   'planSoon.notify': 'Avise-me quando abrir',
   'planSoon.note': 'Tudo no seu plano gratuito continua funcionando exatamente como agora.',
   'billing.feature.projects': 'Projetos por vez',

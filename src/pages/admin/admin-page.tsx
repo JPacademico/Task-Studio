@@ -21,7 +21,16 @@ import type { AdminReport, AdminStats, AdminUserRow } from '@/features/admin/mod
 import { errorMessage } from '@/shared/api/client';
 import { formatDateTime, formatRelative } from '@/shared/lib/dates';
 import { cn } from '@/shared/lib/cn';
-import { Avatar, Button, EmptyState, Input, Modal, Skeleton, Textarea } from '@/shared/ui';
+import {
+  Avatar,
+  Button,
+  EmptyState,
+  Input,
+  Modal,
+  PasswordInput,
+  Skeleton,
+  Textarea,
+} from '@/shared/ui';
 
 /**
  * The suspension lengths on offer, and why they are buttons and not a number.
@@ -404,10 +413,9 @@ const AdminPage = () => {
             </p>
           </div>
 
-          <Input
+          <PasswordInput
             label="Master password"
             name="admin-password"
-            type="password"
             autoComplete="off"
             required
             value={password}

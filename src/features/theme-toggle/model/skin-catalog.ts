@@ -27,6 +27,16 @@ export interface SkinPreview {
   font: string;
   /** Border weight of the mock's cards. */
   border: number;
+  /**
+   * Vibecoded only: the second half of the gradient.
+   *
+   * The skin's whole identity is a 135-degree indigo-to-fuchsia sweep, and a
+   * preview that painted `brand` as a flat fill would be selling a purple
+   * theme — which is the one thing this theme is not. Every surface in the mock
+   * that is normally a solid accent becomes a gradient between `brand` and
+   * this.
+   */
+  gradient?: string;
   /** Arcade only: the mock's cards lose their corner pixels, like the real thing. */
   notched?: boolean;
   /** Space only: the mock sits on a star field rather than a flat surface. */
@@ -718,6 +728,79 @@ export const SKIN_CATALOG: SkinDefinition[] = [
       radius: 7,
       font: "'Segoe UI', system-ui, sans-serif",
       border: 1,
+    },
+  },
+
+  /*
+   * The fifteenth theme, and the only one that is a genre rather than a place.
+   *
+   * Everything else in this catalogue is somewhere you could stand: a
+   * newsroom, a volcano, the deep field. This one is the screenshot you get
+   * when you ask a model for "a beautiful modern SaaS dashboard" — indigo to
+   * fuchsia at 135 degrees, everything rounded to 16px, a gradient clipped
+   * through every heading, and a logo that is a squircle with an abstract
+   * white glyph in it.
+   *
+   * It is a joke, and it only works because it is built to the same standard
+   * as the fourteen around it. A deliberately ugly theme is just an ugly
+   * theme; this one has to *be* the thing it is imitating closely enough that
+   * the recognition arrives before the criticism does.
+   */
+  {
+    value: 'VIBECODED',
+    name: 'Vibecoded',
+    tagline: 'skin.VIBECODED.tagline',
+    description: 'skin.VIBECODED.body',
+    tags: [
+      'vibecoded',
+      'ai',
+      'generated',
+      'gradient',
+      'indigo',
+      'purple',
+      'fuchsia',
+      'saas',
+      'startup',
+      'glassmorphism',
+      'modern',
+      'slop',
+      'generic',
+      'template',
+      'joke',
+    ],
+    tagsPtBR: [
+      'vibecoded',
+      'ia',
+      'gerado',
+      'gradiente',
+      'roxo',
+      'indigo',
+      'startup',
+      'moderno',
+      'generico',
+      'piada',
+    ],
+    light: {
+      surface: '#f8fafc',
+      raised: '#ffffff',
+      edge: '#e2e8f0',
+      brand: '#6366f1',
+      content: '#0f172a',
+      radius: 16,
+      font: "'Inter', 'Segoe UI', system-ui, sans-serif",
+      border: 1,
+      gradient: '#d946ef',
+    },
+    dark: {
+      surface: '#020617',
+      raised: '#0f172a',
+      edge: '#334155',
+      brand: '#818cf8',
+      content: '#f8fafc',
+      radius: 16,
+      font: "'Inter', 'Segoe UI', system-ui, sans-serif",
+      border: 1,
+      gradient: '#e879f9',
     },
   },
   {

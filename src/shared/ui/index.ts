@@ -18,7 +18,7 @@ export { LavaButton, type LavaButtonProps } from './lava-button';
  * `LavaLink` on the landing page.
  */
 export { LavaSurface } from './lava-surface';
-export { Input, Textarea } from './input';
+export { Input, PasswordInput, Textarea, type PasswordInputProps } from './input';
 export { Modal } from './modal';
 export { Avatar, AvatarStack } from './avatar';
 export {
@@ -63,6 +63,8 @@ export { HazardDrift } from './hazard-decor';
 export { NewspaperMark } from './newspaper-icons';
 export { EldritchMark } from './eldritch-icons';
 export { EldritchTendrils, WanderingEye } from './eldritch-decor';
+// Two eyes in the dark, once a minute, on the halloween skin only.
+export { NightEyes } from './halloween-decor';
 export { AutumnMark } from './autumn-icons';
 export { AutumnFall, AutumnHedge } from './autumn-decor';
 export { RunicMark } from './runic-icons';
@@ -70,6 +72,7 @@ export { RunicText } from './runic-text';
 export { RuneScribe } from './runic-decor';
 export { UnderwaterMark } from './underwater-icons';
 export { BubbleRise } from './underwater-decor';
+export { VibecodedMark } from './vibecoded-icons';
 export { VolcanoMark } from './volcano-icons';
 export { EmberRise } from './volcano-decor';
 // The one arrow every surface asks for. `GazeArrow` and `RuneArrow` are the

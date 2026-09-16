@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 
 import { authApi } from '@/features/auth/api/auth.api';
 import { errorMessage } from '@/shared/api/client';
-import { Button, Input } from '@/shared/ui';
+import { Button, PasswordInput } from '@/shared/ui';
 import { AuthShell } from './auth-shell';
 import { TEXT_LIMITS } from '@/shared/config/constants';
 import { clampText } from '@/shared/lib/text';
@@ -53,10 +53,9 @@ export const ResetPasswordPage = () => {
             if (isValid) reset.mutate({ token, password });
           }}
         >
-          <Input
+          <PasswordInput
             label={t('auth.reset.newPassword')}
             name="password"
-            type="password"
             autoComplete="new-password"
             required
             value={password}
@@ -66,10 +65,9 @@ export const ResetPasswordPage = () => {
             maxLength={TEXT_LIMITS.password}
             hint={t('auth.reset.hint')}
           />
-          <Input
+          <PasswordInput
             label={t('auth.reset.confirmPassword')}
             name="confirmation"
-            type="password"
             autoComplete="new-password"
             required
             value={confirmation}

@@ -315,11 +315,18 @@ export const AuthScene = ({ bounds }: { bounds: React.RefObject<HTMLElement | nu
 
   return (
   <div className="pointer-events-none absolute inset-0 overflow-hidden">
-    {/* Depth: brand blooms and a soft grid, all pure CSS. */}
-    <div
-      aria-hidden
-      className="absolute -left-24 -top-24 h-[28.75rem] w-[28.75rem] rounded-full bg-brand/30 blur-[130px]"
-    />
+    {/*
+      Depth: brand blooms and a soft grid, all pure CSS.
+
+      There were three. The one off the *top-left* corner has gone, and it is
+      the only one that was ever in the way: it sat directly behind the sign-in
+      card on every layout above `sm`, so the one surface on the screen that has
+      to be read - two labelled fields and a button - was reading through a
+      130px wash of accent at 30% on top of whatever the skin's own page wash
+      was already doing there. The other two sit off the bottom-right and dead
+      centre, well clear of the card, and they are what keeps the scene from
+      being a flat rectangle.
+    */}
     <div
       aria-hidden
       className="absolute -bottom-32 right-[-10%] h-[26.25rem] w-[26.25rem] rounded-full bg-brand/20 blur-[130px]"

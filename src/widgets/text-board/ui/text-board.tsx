@@ -1244,10 +1244,10 @@ export const TextBoard = ({
                       }}
                       maxLength={TEXT_LIMITS.documentTitle}
                       aria-label={t('doc.documentTitle')}
-                      className="field h-9 flex-1 text-sm font-semibold"
+                      className="ui-doc-title field h-9 flex-1 text-sm font-semibold"
                     />
                   ) : (
-                    <h3 className="flex-1 truncate text-base font-semibold tracking-tight">
+                    <h3 className="ui-doc-title flex-1 truncate text-base font-semibold tracking-tight">
                       {open.title}
                     </h3>
                   )}

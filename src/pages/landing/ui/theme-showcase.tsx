@@ -13,6 +13,7 @@ import { SKIN_CATALOG } from '@/features/theme-toggle/model/skin-catalog';
 import { SkinMock } from '@/features/theme-toggle/ui/skin-mock';
 import { cn } from '@/shared/lib/cn';
 import { useT } from '@/shared/i18n';
+import { SkinAmbience } from './skin-ambience';
 
 /**
  * How far off centre a name is still drawn.
@@ -400,6 +401,7 @@ export const ThemeShowcase = () => {
       <div className="min-w-0 lg:col-span-2 xl:col-span-1">
         <SkinCompare
           key={skin.value}
+          skin={skin.value}
           light={skin.light}
           dark={skin.dark}
           lightLabel={t('landing.themes.light')}
@@ -445,12 +447,14 @@ export const ThemeShowcase = () => {
  * screenshot has.
  */
 const SkinCompare = ({
+  skin,
   light,
   dark,
   lightLabel,
   darkLabel,
   hint,
 }: {
+  skin: (typeof SKIN_CATALOG)[number]['value'];
   light: (typeof SKIN_CATALOG)[number]['light'];
   dark: (typeof SKIN_CATALOG)[number]['dark'];
   lightLabel: string;
@@ -525,6 +529,31 @@ const SkinCompare = ({
             className="h-full w-full [border-radius:0!important]"
           />
         </div>
+
+        {/*
+          What the skin does to the *room*, over both halves of the wipe.
+
+          ## Why it is over the seam rather than inside one half
+
+          Because it is not a property of the palette — it is a property of the
+          theme, and the box is showing one theme twice. Clipping the leaves to
+          the light half would say the dark half does not have them, which is
+          the opposite of true. Sitting above both, it also survives the wipe:
+          drag the seam and the weather stays put while the world under it
+          changes, which is a more honest demonstration than either half alone.
+
+          ## Why it is under the seam and the labels
+
+          The seam is a control and the labels are a legend; a bat crossing in
+          front of either would make the reader think the control had moved.
+          Everything below this line in the DOM paints over it.
+
+          Renders nothing at all for the seven skins with no ambient animation —
+          see `SkinAmbience`. `density` is under 1 because this box is a
+          fraction of the area the closing section has, and a count that reads
+          as weather across a page band reads as an infestation in a window.
+        */}
+        <SkinAmbience skin={skin} density={0.65} />
 
         {/* The seam itself, and the two labels that say which side is which. */}
         <div

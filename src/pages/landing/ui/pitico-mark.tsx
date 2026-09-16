@@ -38,11 +38,20 @@ export const PiticoMark = ({ className }: { className?: string }) => {
   const middle = baseWord.slice(baseLetter.length);
   const suffix = hasDot ? '.' : '';
 
-  // To center the arrows exactly over the second "i" in "pitico."
-  // Base letter is "p", middle is "itico". Second "i" is at middle index 2.
-  const middleBefore = middle.slice(0, 2); // "it"
-  const middleTarget = middle.charAt(2);   // "i"
-  const middleAfter = middle.slice(3);     // "co"
+  /*
+   * The arrows bracket the middle letter of the part that opens.
+   *
+   * It used to be `charAt(2)` with a comment naming the second "i" of
+   * "pitico" - which stopped being true the moment the word became "pico.",
+   * where index 2 is the "o" and the arrows sat one letter short of the end
+   * instead of over the centre. Deriving the index means the mark survives the
+   * next rename too, and it is the same answer for the old word: the middle of
+   * "itico" is its third letter, which is the "i" the comment was pointing at.
+   */
+  const targetIndex = Math.floor(middle.length / 2);
+  const middleBefore = middle.slice(0, targetIndex);
+  const middleTarget = middle.charAt(targetIndex);
+  const middleAfter = middle.slice(targetIndex + 1);
 
   return (
     <span className={cn('inline-flex items-baseline', className)}>

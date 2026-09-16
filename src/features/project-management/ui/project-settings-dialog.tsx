@@ -14,7 +14,7 @@ import { useTasks } from '@/entities/task/model/queries';
 import { TASK_COLORS, TEXT_LIMITS } from '@/shared/config/constants';
 import { fromDateInput, toDateInput } from '@/shared/lib/dates';
 import { clampText } from '@/shared/lib/text';
-import { Button, ColorPicker, Input, Modal, Textarea } from '@/shared/ui';
+import { Button, ColorPicker, Input, Modal, PasswordInput, Textarea } from '@/shared/ui';
 import { ProjectWindowFields } from './project-window-fields';
 import { useT } from '@/shared/i18n';
 
@@ -424,9 +424,8 @@ export const ProjectSettingsDialog = ({
                     {t('project.finishConfirmBody')}
                   </p>
 
-                  <Input
+                  <PasswordInput
                     name="finishPassword"
-                    type="password"
                     autoComplete="current-password"
                     value={password}
                     onChange={(event) =>

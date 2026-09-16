@@ -60,6 +60,7 @@ const SKIN_ATTRIBUTE: Record<ThemeSkin, string> = {
   UNDERWATER: 'underwater',
   VOLCANO: 'volcano',
   HALLOWEEN: 'halloween',
+  VIBECODED: 'vibecoded',
 };
 
 /**

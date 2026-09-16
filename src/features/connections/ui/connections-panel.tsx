@@ -215,7 +215,7 @@ const Group = ({
 
   return (
     <section className="space-y-2.5">
-      <h3 className="flex items-center gap-2 text-base font-semibold tracking-tight text-content">
+      <h3 className="ui-section-title flex items-center gap-2 text-base font-semibold tracking-tight text-content">
         <span
           aria-hidden
           className="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-brand/12 text-brand"

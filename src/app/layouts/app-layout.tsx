@@ -13,6 +13,7 @@ import {
   BubbleRise,
   EmberRise,
   HazardDrift,
+  NightEyes,
   PageLoader,
   RouteBoundary,
   RuneScribe,
@@ -114,6 +115,13 @@ export const AppLayout = () => {
           again, and the cheapest of the three: transform and opacity only, so
           it composites without a repaint. See `hazard-decor`. */}
       <HazardDrift />
+
+      {/* Something notices you once a minute on the halloween skin: two warm
+          points somewhere on the page, held for a moment, then gone in a
+          tenth of a second. Same contract as everything above it — one skin,
+          nothing under `prefers-reduced-motion`, fixed, aria-hidden and
+          pointer-events-none. See `halloween-decor`. */}
+      <NightEyes />
 
       <div
         className={cn(

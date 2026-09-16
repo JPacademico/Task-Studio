@@ -153,8 +153,11 @@ export const LivePanel = ({
             onChange={setIncludeEnded}
             label={t('live.showEnded')}
           />
+          {/* The lamp, because this is the one "make a new thing" on the tab
+              — the same rule that puts it on "New project" and "New task"
+              rather than on Save. See `Button`'s `lava` variant. */}
           {canCreate && (
-            <Button size="sm" onClick={() => openComposer(null)}>
+            <Button variant="lava" size="sm" onClick={() => openComposer(null)}>
               <Plus className="h-3.5 w-3.5" strokeWidth={2.8} />
               {t('live.new')}
             </Button>
@@ -177,7 +180,7 @@ export const LivePanel = ({
           description={t('live.emptyBody')}
           action={
             canCreate ? (
-              <Button size="sm" onClick={() => openComposer(null)}>
+              <Button variant="lava" size="sm" onClick={() => openComposer(null)}>
                 <Plus className="h-3.5 w-3.5" strokeWidth={2.8} />
                 {t('live.new')}
               </Button>

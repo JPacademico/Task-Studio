@@ -35,7 +35,8 @@ const ThemeGalleryPage = lazy(() => import('@/pages/themes/theme-gallery-page'))
 /*
  * Where a plan button goes while payments are switched off. Lazy like the rest:
  * it is a destination nobody reaches twice, and it should not sit in the bundle
- * every signed-in reader downloads.
+ * every reader downloads — signed in or not. See its route below for why it is
+ * one of the three public ones.
  */
 const PlanSoonPage = lazy(() => import('@/pages/billing/plan-soon-page'));
 /*
@@ -88,6 +89,24 @@ export const AppRouter = () => (
     <Route path="/welcome" element={<LandingPage />} />
     <Route path="/docs" element={<DocsPage />} />
 
+    {/*
+      Where a plan button goes, from either side of the sign-in line.
+
+      Public, and outside `AppLayout`, and both are the same decision. The
+      landing page's pricing table is read overwhelmingly by people who do not
+      have an account — that is who a pricing table is *for* — and the page this
+      route serves says "payments are not switched on yet". Putting that behind
+      the guard would answer "can I buy the Startup plan" with a password field,
+      which is the least informative thing this product could do at the exact
+      moment somebody is trying to give it money. It holds nothing belonging to
+      anybody and reads nothing from the session, so there is nothing to guard.
+
+      Outside the shell for the same reason the landing page is: it is a scene,
+      not a screen — a full-bleed workbench with hazard tape running off both
+      edges and a Post-it hanging over the corner — and it has its own way back.
+    */}
+    <Route path="/plans/soon" element={<PlanSoonPage />} />
+
     <Route element={<GuestRoute />}>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
@@ -137,7 +156,6 @@ export const AppRouter = () => (
         <Route path="/invitations" element={<InvitationsPage />} />
         <Route path="/themes" element={<ThemeGalleryPage />} />
         <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/plans/soon" element={<PlanSoonPage />} />
         {/*
           Inside `ProtectedRoute`, which is the whole security property.
 

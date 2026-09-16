@@ -18,7 +18,8 @@ export type ThemeSkin =
   | 'RUNIC'
   | 'UNDERWATER'
   | 'VOLCANO'
-  | 'HALLOWEEN';
+  | 'HALLOWEEN'
+  | 'VIBECODED';
 
 /** The one place a skin's human name is written down. */
 export const SKIN_LABELS: Record<ThemeSkin, string> = {
@@ -36,6 +37,7 @@ export const SKIN_LABELS: Record<ThemeSkin, string> = {
   UNDERWATER: 'Underwater',
   VOLCANO: 'Volcano',
   HALLOWEEN: 'Halloween',
+  VIBECODED: 'Vibecoded',
 };
 
 /**

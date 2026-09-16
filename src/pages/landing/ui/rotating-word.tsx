@@ -206,8 +206,29 @@ export const RotatingWord = ({ className }: { className?: string }) => {
          * edge takes the tail off the last letter; `px`/`-mx` widen the clip
          * without widening the box, so the cell stays exactly as wide as the
          * longest noun and the headline still never reflows.
+         *
+         * ## And why there is now a top pair as well
+         *
+         * The same bug, at the other end, and only visible in Portuguese. Three
+         * of the five nouns there are *reunioes*, *anotacoes* and *projetos* -
+         * and the first two carry a tilde. A tilde sits above the x-height,
+         * well into the ascender band, and the clip was at the content edge on
+         * that side too: on the skins whose `--font-hand` has a tall ascent the
+         * mark was clipped flat, which turns `o-tilde` into something that
+         * reads as a printing fault in a headline forty pixels high.
+         *
+         * `0.34em` rather than the 0.42 below, and the asymmetry is real: the
+         * deepest thing a hand draws is a descender, which is a stroke, while
+         * the highest is a diacritic sitting on a lowercase letter - it clears
+         * the ascender line on almost no face. The value still has headroom
+         * over every hand the fourteen skins set, because it is chosen off the
+         * declared ascent rather than off the ink of these five words.
+         *
+         * `-mt` gives the padding straight back, for exactly the reason `-mb`
+         * does: without it the headline's *first* line would move down by a
+         * third of an em, which is more visible than the thing being fixed.
          */
-        'overflow-hidden px-[0.1em] -mx-[0.1em] pb-[0.42em] -mb-[0.26em]',
+        'overflow-hidden px-[0.1em] -mx-[0.1em] pb-[0.42em] -mb-[0.26em] pt-[0.34em] -mt-[0.34em]',
         className,
       )}
     >

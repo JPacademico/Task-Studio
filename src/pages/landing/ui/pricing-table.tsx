@@ -273,6 +273,23 @@ export const PricingTable = () => {
       <ul className="grid gap-4 lg:grid-cols-3">
         {data.plans.map((offer) => {
           const isFree = offer.plan === 'FREE';
+          /*
+           * Where the button goes, and it used to go to `/register` - which is
+           * not a route this app has ever had. Every one of these six buttons
+           * landed on the 404 page, which is a remarkable thing to have been
+           * doing on the one screen whose entire job is converting a reader
+           * into an account.
+           *
+           * The two halves go to different places because they are different
+           * questions. The free plan is a sign-up: it exists, it works, and
+           * the next step is an account, so it goes to the account screen. A
+           * paid plan is not purchasable yet - payments are switched off while
+           * the rest of the product is built - so it goes to the page written
+           * to say exactly that, carrying which plan was asked for so the page
+           * can name it. That is the same destination the plan panel in
+           * settings already uses; this screen was simply not pointed at it.
+           */
+          const planCta = isFree ? '/signup' : `/plans/soon?plan=${offer.plan}`;
           const price = priceFor(offer);
           const isFocused = offer.plan === focused;
 
@@ -415,12 +432,12 @@ export const PricingTable = () => {
                 gooey filters nobody can see.
               */}
               {isFocused ? (
-                <LavaLink to="/register" className="w-full">
+                <LavaLink to={planCta} className="w-full">
                   {t(isFree ? 'landing.pricing.ctaFree' : 'landing.pricing.ctaPaid')}
                 </LavaLink>
               ) : (
                 <Link
-                  to="/register"
+                  to={planCta}
                   className={buttonClasses({
                     variant: 'secondary',
                     size: 'md',

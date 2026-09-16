@@ -116,6 +116,20 @@ export const NotificationBell = () => {
               className={cn(
                 'gpu ui-liquid-glass absolute right-0 top-11 z-50 w-[21.25rem] overflow-hidden',
                 'rounded-2xl',
+                /*
+                  ...and stops being glass the moment somebody reaches for it.
+
+                  The frost is worth what it costs while the pane is simply
+                  *present* over a board — it keeps the thing a notification is
+                  about visible underneath. It stops being worth it the instant
+                  the reader leans in, because what they are now reading is four
+                  rows of 12px label, 10px body and a timestamp in
+                  `--content-faint`, composited over whatever colour that board
+                  happens to be at that point. Hovering the pane is the signal
+                  that the page behind it no longer matters; the material
+                  answers by resolving. See `.ui-liquid-glass--solid-on-hover`.
+                */
+                'ui-liquid-glass--solid-on-hover',
               )}
             >
               {/* The rule under the header is the light on a facet edge, not a

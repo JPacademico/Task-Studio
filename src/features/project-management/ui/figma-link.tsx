@@ -4,7 +4,7 @@ import { ExternalLink, Link2, ShieldCheck, Unlink } from 'lucide-react';
 import { useConnectFigma, useDisconnectFigma } from '@/entities/integration/model/queries';
 import type { ProjectFigma } from '@/entities/project/model/types';
 import { cn } from '@/shared/lib/cn';
-import { Button, FigmaMark, HoverHint, Input, Modal } from '@/shared/ui';
+import { Button, FigmaMark, HoverHint, Input, Modal, PasswordInput } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
 interface FigmaLinkProps {
@@ -168,8 +168,10 @@ export const FigmaLinkDialog = ({ projectId, figma, isOpen, onClose }: FigmaLink
             <span className="text-2xs font-semibold uppercase tracking-wide text-content-faint">
               {t('figma.tokenLabel')}
             </span>
-            <Input
-              type="password"
+            {/* A token is pasted, not typed, and a paste that silently
+                lost its last character is invisible behind a row of dots -
+                which is exactly the case the reveal is for. */}
+            <PasswordInput
               value={token}
               onChange={(event) => setToken(event.target.value)}
               placeholder={t('figma.tokenPlaceholder')}

@@ -11,7 +11,7 @@ import { ensureApiAwake, errorMessage, isApiWarm } from '@/shared/api/client';
 import { TEXT_LIMITS } from '@/shared/config/constants';
 import { clampText } from '@/shared/lib/text';
 import { useT } from '@/shared/i18n';
-import { Button, Input } from '@/shared/ui';
+import { Button, Input, PasswordInput } from '@/shared/ui';
 import { AuthShell } from './auth-shell';
 
 export const LoginPage = () => {
@@ -125,10 +125,9 @@ export const LoginPage = () => {
           placeholder={t('auth.emailPlaceholder')}
         />
 
-        <Input
+        <PasswordInput
           label={t('auth.password')}
           name="password"
-          type="password"
           autoComplete="current-password"
           required
           value={password}

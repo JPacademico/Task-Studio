@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { AlertTriangle, Check, CreditCard, Minus, Sparkles } from 'lucide-react';
+import { AlertTriangle, Check, Coins, CreditCard, Minus } from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
@@ -20,7 +20,7 @@ import {
 } from '@/entities/billing/model/types';
 import { formatCalendarDate } from '@/shared/lib/dates';
 import { cn } from '@/shared/lib/cn';
-import { Badge, Button, Segmented, Skeleton, buttonClasses } from '@/shared/ui';
+import { Badge, Button, LavaSurface, Segmented, Skeleton, buttonClasses } from '@/shared/ui';
 import { useLocale, useT, type Translate, type TranslationKey } from '@/shared/i18n';
 import { formatBytesCeiling, formatBytesUsed, formatPrice, usageFraction } from '../lib/format';
 
@@ -242,7 +242,17 @@ export const PlanPanel = () => {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="flex items-center gap-2 text-sm font-semibold">
-              <Sparkles className="h-3.5 w-3.5 shrink-0 text-brand" />
+              {/*
+                Money, not magic.
+
+                `Sparkles` is the icon this product uses for the assistant — it
+                is on the AI panel, the checklist suggestion and the project
+                tab — so spending it here said "something clever happens" above
+                a line about what the account is paying for. A coin says the
+                one thing this section is about, and gives the sparkle back to
+                the feature that had earned it.
+              */}
+              <Coins className="h-3.5 w-3.5 shrink-0 text-brand" />
               {t('billing.currentPlan', { plan: t(PLAN_NAME[current.plan]) })}
             </p>
             <p className="mt-0.5 text-xs leading-relaxed text-content-muted">
@@ -490,7 +500,18 @@ export const PlanPanel = () => {
                       to={`/plans/soon?plan=${offer.plan}`}
                       className={buttonClasses({ variant: 'lava', size: 'sm', className: 'w-full' })}
                     >
-                      {t('billing.choosePlan', { plan: t(PLAN_NAME[offer.plan]) })}
+                      {/*
+                        The wax. `buttonClasses` hands over the tube, the edge
+                        and the hover fill, and a class cannot put children
+                        inside an anchor — so without this the button was a
+                        *still* lamp, which reads as a broken gradient rather
+                        than as a missing child. Same composition `LavaLink`
+                        does on the landing page.
+                      */}
+                      <LavaSurface />
+                      <span className="relative inline-flex items-center justify-center gap-1.5">
+                        {t('billing.choosePlan', { plan: t(PLAN_NAME[offer.plan]) })}
+                      </span>
                     </Link>
                   )}
                 </div>

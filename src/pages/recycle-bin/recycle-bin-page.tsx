@@ -26,9 +26,9 @@ import {
   Badge,
   Button,
   EmptyState,
-  Input,
   Modal,
   PageLoader,
+  PasswordInput,
   PostItGlyph,
   Segmented,
 } from '@/shared/ui';
@@ -506,9 +506,8 @@ const RecycleBinPage = () => {
         <div className="space-y-3">
           <p className="text-xs leading-relaxed text-danger">{t('bin.purgeProjectBody')}</p>
 
-          <Input
+          <PasswordInput
             name="purgePassword"
-            type="password"
             autoComplete="current-password"
             value={password}
             onChange={(event) =>

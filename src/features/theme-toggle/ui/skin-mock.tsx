@@ -57,6 +57,20 @@ export const SkinMock = ({ preview, scale = 1, className }: SkinMockProps) => {
   const radius = preview.radius * Math.min(scale, 1.6);
 
   /*
+   * What the mock paints where it would otherwise paint a flat accent.
+   *
+   * A gradient for the one skin whose identity *is* the gradient, and the plain
+   * brand for the other fourteen. Expressed once here rather than at the four
+   * call sites below, so the two stay in step — and written as a `background`
+   * shorthand because a `linear-gradient` is an image, not a colour, and
+   * `background: <colour>` and `background: <image>` are the only pair of
+   * values both call sites can accept without branching.
+   */
+  const accent = preview.gradient
+    ? `linear-gradient(135deg, ${preview.brand}, ${preview.gradient})`
+    : preview.brand;
+
+  /*
    * Corners that grew rather than being cut.
    *
    * The eldritch skin's radius tokens are asymmetric shorthand — big, small,
@@ -157,7 +171,7 @@ export const SkinMock = ({ preview, scale = 1, className }: SkinMockProps) => {
           style={{
             height: px(14),
             width: px(14),
-            background: preview.brand,
+            background: accent,
             borderRadius: radius / 2.5,
           }}
         />
@@ -167,7 +181,7 @@ export const SkinMock = ({ preview, scale = 1, className }: SkinMockProps) => {
           style={{
             height: px(8),
             width: px(24),
-            background: preview.brand,
+            background: accent,
             borderRadius: radius / 2.5,
           }}
         />
@@ -200,7 +214,7 @@ export const SkinMock = ({ preview, scale = 1, className }: SkinMockProps) => {
                 marginTop: px(2),
                 height: px(6),
                 width: '50%',
-                background: preview.brand,
+                background: accent,
                 borderRadius: radius / 3,
               }}
             />

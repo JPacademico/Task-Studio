@@ -17,7 +17,7 @@ import { errorMessage } from '@/shared/api/client';
 import { TEXT_LIMITS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
 import { clampText } from '@/shared/lib/text';
-import { Avatar, Button, Input, Section, Spinner, Textarea } from '@/shared/ui';
+import { Avatar, Button, Input, PasswordInput, Section, Spinner, Textarea } from '@/shared/ui';
 import { useT, type TranslationKey } from '@/shared/i18n';
 
 /*
@@ -290,10 +290,9 @@ const SettingsPage = () => {
             if (passwordIsValid) changePassword.mutate();
           }}
         >
-          <Input
+          <PasswordInput
             label={t('settings.currentPassword')}
             name="currentPassword"
-            type="password"
             autoComplete="current-password"
             value={currentPassword}
             onChange={(event) =>
@@ -301,10 +300,9 @@ const SettingsPage = () => {
             }
             maxLength={TEXT_LIMITS.password}
           />
-          <Input
+          <PasswordInput
             label={t('auth.reset.newPassword')}
             name="newPassword"
-            type="password"
             autoComplete="new-password"
             value={newPassword}
             onChange={(event) =>

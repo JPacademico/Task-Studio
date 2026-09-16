@@ -2,6 +2,69 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===========================================================================
+   Creepster - the Halloween skin's face for the names in the product.
+
+   ## Why a font file at all, when every other skin's type is a local stack
+
+   Because Chiller, which the skin asks for first, has an x-height of 0.29em -
+   a little over half of Segoe UI's - drawn in hairlines, and it is a
+   Windows-only face so everyone else was already getting the fallback. On the
+   strings this product is actually read through (a task name, a dialog title,
+   a destination in the rail) that is unreadable rather than atmospheric. No
+   amount of `font-size` fixes it either: 17px of a 0.29 x-height is 4.9px of
+   actual letter, which is *smaller* than 14px of Segoe UI was to begin with.
+   There is no system face that is both seasonal and legible at 14px, so the
+   seasonal one ships.
+
+   ## Why this one
+
+   Creepster's x-height is **0.733em** - two and a half times Chiller's, and
+   half again Segoe UI's - so it reads large at a size where the layout still
+   fits, which is the entire requirement. It is also already the second name in
+   this skin's own `--font-display` stack, so it is the face the design was
+   reaching for before anyone had a file for it.
+
+   It covers all of Latin-1, which matters more than it sounds: the Portuguese
+   UI needs a cedilla constantly (Conexoes, Configuracoes, Acao) and a missing
+   glyph does not show up as a missing glyph, it shows up as the *next font in
+   the stack* appearing in the middle of a word. Nothing had to be patched into
+   this one - it arrives complete, which is why it ships byte-for-byte as
+   Google Fonts serves it rather than through a build step.
+
+   ## Licensing
+
+   SIL Open Font License 1.1 - Font Diner, Inc. Free to use commercially, to
+   embed, and to serve from a website, which are the three things this does.
+   The full licence sits beside the file at `public/fonts/creepster-OFL.txt`.
+   Reserved Font Name: "Creepster", so the file is never modified or renamed.
+
+   This replaces Melted Monster, which was here briefly and should not have
+   been: its licence reads "PERSONAL / DEMO USE ONLY and NO COMMERCIAL USE
+   ALLOWED", separately forbids modifying the font, and separately forbids
+   serving it from a website - and this product sells plans, the file had been
+   modified to add a cedilla, and it was being served. All three at once.
+
+   ## Why `size-adjust`
+
+   At 0.733em this face reads nearly half again as large as the UI face at a
+   shared font-size, which would break every `truncate` in the rail. The
+   correction belongs on the em rather than on twenty font-sizes: at 82% it
+   lands about 20% above the UI face, which is a display face reading as one
+   with the layout intact. The per-site sizes below then sit on top of that.
+
+   `swap`, not `block`: a title briefly set in the fallback is strictly better
+   than a title that is briefly not there.
+   =========================================================================== */
+@font-face {
+  font-family: 'Creepster';
+  src: url('/fonts/creepster.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 82%;
+}
+
 /*
  * Theme tokens.
  *
@@ -2449,6 +2512,24 @@
       'Franklin Gothic Heavy', sans-serif;
     --font-sans: 'Segoe UI', system-ui, -apple-system, sans-serif;
     --font-hand: 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', cursive;
+    /*
+     * The face the *names* are set in. See the `@font-face` at the top of this
+     * file, and the block at the foot of it for which names.
+     *
+     * Deliberately a second token rather than a replacement for
+     * `--font-display`. Chiller is still doing the atmospheric work, and it is
+     * still the right face for it: the greeting, the page titles and the
+     * project names are strings a reader already knows the shape of, read once
+     * on arrival, at 20px and up - which is exactly where a hairline brush face
+     * is character rather than an obstacle. This token is for the other kind of
+     * string, the ones somebody is *hunting* for at 14px in a list of thirty.
+     *
+     * The shipped file is first and the local faces behind it are the fallback
+     * for the seconds before it loads, in descending order of how close they
+     * get: Chiller has the character and not the weight, Impact has the weight
+     * and not the character.
+     */
+    --font-scary: 'Creepster', 'Chiller', 'Impact', 'Haettenschweiler', sans-serif;
 
     /*
      * Opened up rather than tightened, against the root default.
@@ -2528,6 +2609,150 @@
     --btn-overlay: linear-gradient(180deg, rgb(255 190 120 / 0.16), transparent 62%);
     --btn-shadow: 0 2px 0 rgb(0 0 0 / 0.5);
     --btn-shadow-active: 0 1px 0 rgb(0 0 0 / 0.5);
+  }
+
+  /* ==========================================================================
+   * Vibecoded — the house style of a thousand generated apps, worn on purpose.
+   *
+   * ## What this skin is
+   *
+   * Every other theme in this catalogue is a *place*: a newsroom, a deep field,
+   * a volcano. This one is a **genre**, and the genre is the screenshot you get
+   * when you ask a model for "a beautiful modern SaaS dashboard". Indigo to
+   * fuchsia at 135 degrees. Everything rounded to 16px. A glass card on a mesh
+   * gradient. Inter, at 600, with a gradient clipped through the heading. Icons
+   * that are all the same rounded-stroke pictogram of nothing in particular.
+   *
+   * It is a joke, and the joke only works if it is *built properly*. A
+   * deliberately bad theme is just a bad theme; this one has to be the thing it
+   * is imitating, drawn to the same standard as the thirteen around it, so that
+   * the recognition lands before the criticism does. Everything below is a real
+   * token doing a real job — the argument is in which values were chosen.
+   *
+   * ## Why the palette is the palette
+   *
+   * 99,102,241 is Tailwind's `indigo-500` and 217,70,239 is `fuchsia-500`, both
+   * untouched. That pairing is not a coincidence in the wild and it is not one
+   * here: it is the default accent of the default config of the framework most
+   * of these are generated with, which is exactly why it is the one everybody
+   * has seen ten thousand times.
+   *
+   * The one place this stops being a joke is contrast. `--brand` sits behind
+   * `--brand-contrast` text on filled controls, and indigo-500 on white clears
+   * AA comfortably; the light palette's content is slate-900 on white, which is
+   * 17:1. The gag is the *taste*, not the legibility — a theme nobody can read
+   * is a bug whatever it is parodying.
+   * ========================================================================== */
+  [data-skin='vibecoded'] {
+    --surface: 248 250 252;
+    --surface-raised: 255 255 255;
+    --surface-sunken: 241 245 249;
+    --edge: 226 232 240;
+    --check-edge: var(--edge);
+    --content: 15 23 42;
+    --content-muted: 71 85 105;
+    --content-faint: 148 163 184;
+
+    --brand: 99 102 241;
+    --brand-soft: 224 231 255;
+    --brand-contrast: 255 255 255;
+    /* The second half of every gradient on this skin. */
+    --vibe-accent: 217 70 239;
+
+    --positive: 16 185 129;
+    --warning: 245 158 11;
+    --danger: 239 68 68;
+
+    /*
+     * Rounded, and then rounded again. `rounded-2xl` on everything is the
+     * single most reliable tell, so the scale is compressed towards it from
+     * both ends — a 6px chip and a 24px panel is a considered scale, and this
+     * skin has not considered anything.
+     */
+    --radius-sm: 10px;
+    --radius-md: 12px;
+    --radius-lg: 14px;
+    --radius-xl: 16px;
+    --radius-2xl: 20px;
+    --radius-3xl: 24px;
+
+    --font-display: 'Inter', 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
+    --font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --font-hand: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    --heading-tracking: -0.02em;
+
+    --panel-border-width: 1px;
+    /*
+     * A shadow with a coloured haze in it, which no real object casts. Three
+     * layers where one would do, because the generated version always stacks
+     * `shadow-lg shadow-indigo-500/20` on top of whatever was already there.
+     */
+    --shadow-panel:
+      inset 0 1px 0 rgb(255 255 255 / 0.9),
+      0 1px 2px rgb(15 23 42 / 0.04),
+      0 12px 32px -12px rgb(var(--brand) / 0.25);
+    --press-travel: 1px;
+
+    /* A mesh gradient. There is always a mesh gradient. */
+    --panel-texture:
+      radial-gradient(60% 80% at 8% 0%, rgb(var(--brand) / 0.07), transparent 60%),
+      radial-gradient(55% 70% at 100% 100%, rgb(var(--vibe-accent) / 0.07), transparent 62%);
+    --panel-texture-size: auto, auto;
+
+    --page-wash:
+      radial-gradient(70% 50% at 12% 0%, rgb(var(--brand) / 0.12), transparent 62%),
+      radial-gradient(60% 45% at 92% 8%, rgb(var(--vibe-accent) / 0.1), transparent 60%),
+      radial-gradient(80% 60% at 50% 110%, rgb(var(--brand) / 0.08), transparent 66%);
+
+    /* The 135-degree sweep, on every filled control, always. */
+    --btn-overlay: linear-gradient(135deg, rgb(var(--vibe-accent) / 0.85), transparent 70%);
+    --btn-shadow: 0 8px 20px -8px rgb(var(--brand) / 0.55);
+    --btn-shadow-active: 0 4px 12px -6px rgb(var(--brand) / 0.55);
+    --btn-weight: 600;
+  }
+
+  /*
+   * The dark half, which is the one it is usually generated in.
+   *
+   * Slate-950 with the indigo left in, because a pure neutral would make the
+   * accent read as a link. Everything glows a little: on this skin a surface is
+   * not lit by anything in particular, it simply emits.
+   */
+  [data-skin='vibecoded'].dark {
+    --surface: 2 6 23;
+    --surface-raised: 15 23 42;
+    --surface-sunken: 2 6 23;
+    --edge: 51 65 85;
+    --check-edge: var(--edge);
+    --content: 248 250 252;
+    --content-muted: 148 163 184;
+    --content-faint: 100 116 139;
+
+    --brand: 129 140 248;
+    --brand-soft: 49 46 129;
+    --brand-contrast: 8 11 30;
+    --vibe-accent: 232 121 249;
+
+    --positive: 52 211 153;
+    --warning: 251 191 36;
+    --danger: 248 113 113;
+
+    --shadow-panel:
+      inset 0 1px 0 rgb(255 255 255 / 0.06),
+      0 16px 40px -16px rgb(0 0 0 / 0.7),
+      0 0 32px -16px rgb(var(--brand) / 0.45);
+
+    --panel-texture:
+      radial-gradient(60% 80% at 8% 0%, rgb(var(--brand) / 0.12), transparent 60%),
+      radial-gradient(55% 70% at 100% 100%, rgb(var(--vibe-accent) / 0.1), transparent 62%);
+
+    --page-wash:
+      radial-gradient(70% 50% at 12% 0%, rgb(var(--brand) / 0.18), transparent 62%),
+      radial-gradient(60% 45% at 92% 8%, rgb(var(--vibe-accent) / 0.14), transparent 60%),
+      radial-gradient(80% 60% at 50% 110%, rgb(var(--brand) / 0.12), transparent 66%);
+
+    --btn-shadow: 0 8px 24px -8px rgb(var(--brand) / 0.7);
+    --btn-shadow-active: 0 4px 14px -6px rgb(var(--brand) / 0.7);
   }
 
   [data-skin='volcano'] {
@@ -3704,6 +3929,51 @@
   }
 
   /*
+   * Glass until you are actually reading it.
+   *
+   * ## Why this is the one place the tint is allowed to move on hover
+   *
+   * The rule directly above says a glass *control* must never change its own
+   * opacity on hover, because the content behind it appears to move and the
+   * reader's eye follows the wrong thing. That argument is about a control
+   * sitting over a live application, and it is still right for one.
+   *
+   * A pane is the opposite case. The frost is there so a summoned overlay does
+   * not erase the screen it covers, and that is worth exactly as much as it
+   * costs - which is nothing while the pane is shut and quite a lot the moment
+   * somebody leans in to read four notifications, each of which is a small
+   * label, a smaller body and a timestamp in `--content-faint`, composited over
+   * whatever the board behind it happens to be. Hovering the pane *is* the
+   * signal that the reader has stopped caring about the page underneath.
+   *
+   * So the material resolves rather than lifts: the tint goes fully opaque, the
+   * backdrop filter stops sampling, and the diagonal sheen - which is the part
+   * that lands directly across the first two rows - comes off, leaving the
+   * skin's own grain. Everything that makes it the *skin's* pane (radius,
+   * border, bevel, bloom) is untouched, so it reads as the same object
+   * settling, not as a different one arriving.
+   *
+   * `:focus-within` as well as `:hover`, because arriving by keyboard is the
+   * same intent and gets the same legibility.
+   */
+  .ui-liquid-glass--solid-on-hover {
+    transition:
+      background-color var(--speed-ui) var(--ease-ui),
+      -webkit-backdrop-filter var(--speed-ui) var(--ease-ui),
+      backdrop-filter var(--speed-ui) var(--ease-ui);
+  }
+
+  .ui-liquid-glass--solid-on-hover:hover,
+  .ui-liquid-glass--solid-on-hover:focus-within {
+    background-color: rgb(var(--surface-raised));
+    /* The grain stays; only the sheen that crosses the type comes off. */
+    background-image: var(--panel-texture, none);
+    background-size: var(--panel-texture-size, auto);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  /*
    * A row inside a sheet of glass.
    *
    * The notification list is one pane with entries in it, not a stack of
@@ -4586,6 +4856,61 @@
 
   .lp-glow--active {
     opacity: 0.4;
+  }
+
+  /* ----------------------------------------------------------------------
+   * The same light, on a page that is already bright.
+   *
+   * ## Why it needed a second set of numbers at all
+   *
+   * Because "glow" is not a colour, it is a *contrast direction*. On the dark
+   * palettes this is accent-on-near-black: the halo is the brightest thing for
+   * 200px in any direction and 0.4 opacity is plenty. Invert the page and the
+   * same declaration is accent-on-paper - the halo is now *darker* than what
+   * surrounds it, which is a shadow, and a soft accent shadow at 40% under a
+   * white card is very close to nothing at all. Every skin's light palette hit
+   * this, because every skin's light palette is light.
+   *
+   * ## What changes, and what deliberately does not
+   *
+   * Only opacity and saturation. The geometry, the blur radius, the spin and
+   * the conic ramp are all untouched, so this is the same effect read in a
+   * different room rather than a second effect maintained alongside the first.
+   *
+   * `saturate` is doing as much work as the opacity here: a blur spreads a hue
+   * out until it is mostly the colour of whatever it was blurred over, and over
+   * white that desaturates it badly. Pushing saturation back up is what keeps a
+   * brand halo reading as *the brand* rather than as a grey smudge - and it is
+   * free, because the filter is on a layer that is already being filtered.
+   *
+   * The resting rim goes up too. At 0.28 over parchment the card simply had no
+   * edge until it was hovered, which made the whole row look unfinished rather
+   * than calm.
+   * -------------------------------------------------------------------- */
+  html:not(.dark) .lp-rim {
+    opacity: 0.5;
+    filter: saturate(1.5);
+  }
+
+  /*
+   * ...and the focused card still goes all the way to 1.
+   *
+   * Restated rather than inherited, because the rule directly above is
+   * `html:not(.dark) .lp-rim` at (0,2,1) and `.lp-rim--active` is (0,1,0) — so
+   * without this the light-mode resting opacity would *outrank* the active
+   * state and the focused card would end up dimmer than it was before any of
+   * this, which is the exact opposite of the ask.
+   */
+  html:not(.dark) .lp-rim--active {
+    opacity: 1;
+  }
+
+  html:not(.dark) .lp-glow {
+    filter: blur(18px) saturate(1.6);
+  }
+
+  html:not(.dark) .lp-glow--active {
+    opacity: 0.85;
   }
 
   .postit {
@@ -8699,8 +9024,28 @@ svg.lucide[stroke-width='2'] {
  * texture two hundred milliseconds of fade behind it. The contrast between the
  * two is arguably a better argument for the material than putting it on both.
  */
-[data-skin='underwater'] .ui-modal,
-[data-skin='volcano'] .ui-modal {
+/*
+ * And it turned out to be all of them, not two.
+ *
+ * The rule above was written for the caustic net and the basalt crazing on the
+ * grounds that those two are high-frequency patterns. The halloween skin's
+ * gauze cross-hatch is another, the halftone and the laid paper are two more,
+ * and the argument in the paragraph above never actually depended on which
+ * pattern it was: a dialog is the densest thing the app draws, it is read at
+ * close range, and every skin's material sits directly behind that type.
+ *
+ * `.ui-modal--flat` further down this file had already reached the same
+ * conclusion from the other direction and was being opted into per dialog,
+ * which is how some project dialogs had the pattern and others did not - the
+ * inconsistency being the actual complaint. It is now the default, and the
+ * opt-in class stays because it costs nothing and says what it means at the
+ * call sites that already carry it.
+ *
+ * `[data-skin]` rather than a bare class so it outranks both the layered
+ * per-skin `.panel` rules and the runic skin's three-layer frame, which
+ * declares `background-image` in its own right.
+ */
+[data-skin] .ui-modal {
   background-image: none;
 }
 
@@ -9041,6 +9386,133 @@ html [data-sonner-toaster][data-theme] [data-sonner-toast] [data-cancel] {
 }
 
 /* ==========================================================================
+ * How long a toast has left, drawn along the bottom of it.
+ *
+ * ## Why it is two pseudo-elements on `[data-content]`
+ *
+ * Because Sonner owns every class on the toast and has already spent both of
+ * the toast's own pseudo-elements: `::before` is the swipe hit area that
+ * bridges the gap between stacked toasts, and `::after` is the filler that
+ * keeps a pointer travelling between them from leaving the list. Overriding
+ * either breaks dismissal by drag.
+ *
+ * `[data-content]` is the wrapper around the title and description. It is
+ * always rendered, Sonner draws nothing on its pseudo-elements, and it is
+ * `position: static` - so an absolutely positioned child of it resolves
+ * against the toast itself, which is the box the bar needs to span. The
+ * alternative was a `MutationObserver` stitching a real element into a
+ * portal owned by somebody else, for a decoration.
+ *
+ * ## Why the pause is CSS and not a timer of ours
+ *
+ * Sonner pauses its own dismissal clock while the list is hovered, focused or
+ * being dragged, and publishes exactly that state as `data-expanded` and
+ * `data-swiping` on each toast. Reading those attributes means the bar cannot
+ * drift out of sync with the thing it is measuring - there is one clock, and
+ * this is a readout of it rather than a second one running alongside. A
+ * JavaScript reimplementation would have to duplicate the pause conditions and
+ * would be wrong the first time either side changed.
+ *
+ * `--ts-toast-duration` is handed down from `AppToaster`, which is also where
+ * the duration Sonner uses is declared - one number, one source.
+ * ========================================================================== */
+
+html [data-sonner-toaster][data-theme] [data-sonner-toast] [data-content]::before,
+html [data-sonner-toaster][data-theme] [data-sonner-toast] [data-content]::after {
+  content: '';
+  position: absolute;
+  /* Inset to the toast's own 16px padding, so the ends of the bar clear the
+     corner radius on every skin rather than poking through it on the round
+     ones. */
+  left: 1rem;
+  right: 1rem;
+  bottom: 0.5rem;
+  height: 2px;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+/* The track: the distance still to run, so the bar reads as a measurement
+   rather than as a line that is mysteriously getting shorter. */
+html [data-sonner-toaster][data-theme] [data-sonner-toast] [data-content]::before {
+  background-color: rgb(var(--content) / 0.14);
+}
+
+/*
+ * The fill. `transform` rather than `width`, so the whole thing runs on the
+ * compositor and a toast arriving never costs a layout pass on the page behind
+ * it - the same reason every other animation in this file is written this way.
+ */
+html [data-sonner-toaster][data-theme] [data-sonner-toast] [data-content]::after {
+  background-color: rgb(var(--content-muted));
+  transform-origin: left center;
+  animation: ts-toast-timer var(--ts-toast-duration, 4200ms) linear forwards;
+}
+
+@keyframes ts-toast-timer {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+/* Stopped while the reader is in it - see the note above on whose clock this
+   is. Both attributes are Sonner's own, and both are exactly when it stops
+   counting down. */
+html [data-sonner-toaster][data-theme] [data-sonner-toast][data-expanded='true'] [data-content]::after,
+html [data-sonner-toaster][data-theme] [data-sonner-toast][data-swiping='true'] [data-content]::after {
+  animation-play-state: paused;
+}
+
+/* The bar takes the accent the leading edge already carries, so the kind of
+   message and the time left are one object rather than two. */
+html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='success'] [data-content]::after {
+  background-color: rgb(var(--positive));
+}
+
+html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='error'] [data-content]::after {
+  background-color: rgb(var(--danger));
+}
+
+html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='warning'] [data-content]::after {
+  background-color: rgb(var(--warning));
+}
+
+html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='info'] [data-content]::after {
+  background-color: rgb(var(--brand));
+}
+
+/*
+ * Nothing at all where there is nothing to measure.
+ *
+ * A loading toast has no duration - it waits on a promise - so a bar running
+ * down to zero under one would be a countdown to an event that is not going to
+ * happen. Same for anything explicitly set to stay.
+ */
+html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='loading'] [data-content]::before,
+html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='loading'] [data-content]::after {
+  content: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /*
+   * Withdrawn rather than frozen.
+   *
+   * A frozen bar is a progress indicator that is lying, and a bar that jumps in
+   * steps is worse than either. Nothing is lost: the toast still dismisses on
+   * the same clock, the close button is still there, and the message is the
+   * content - the bar was only ever telling somebody how long they had to read
+   * it.
+   */
+  html [data-sonner-toaster][data-theme] [data-sonner-toast] [data-content]::before,
+  html [data-sonner-toaster][data-theme] [data-sonner-toast] [data-content]::after {
+    content: none;
+  }
+}
+
+/* ==========================================================================
  * A dialog that gives up the skin's pattern.
  *
  * `.ui-modal` already went flat on the underwater and volcano skins, for a
@@ -9223,6 +9695,300 @@ html [data-sonner-toaster][data-theme] [data-sonner-toast] [data-cancel] {
 
 
 /* ===========================================================================
+   Skin ambience, drawn inside a box.
+
+   The landing page's theme section previews what a skin does to the *room* —
+   leaves coming down, embers going up, something looking at you — for a skin
+   the reader has not applied. See `SkinAmbience`.
+
+   ## Why this is not the app's own decor CSS
+
+   Because every one of those fields travels in `vh`. `AutumnFall` is correct
+   for what it is: weather over the whole viewport, where `120vh` of fall is
+   exactly one screen of it. Drop the same rule into a 300px preview box and the
+   leaf clears the box in the first eighth of its animation and spends the other
+   seven-eighths below the page — the field looks empty with nine elements in it.
+
+   Everything here travels in **container query units** instead. `100cqh` is the
+   height of the nearest size container, which is this field, so one set of
+   numbers is right in a 300px preview and in a 1200px page band with nothing
+   per-site anywhere. The sizes are `cqmin` for the same reason: a leaf is a
+   proportion of the window it falls through, not a fixed 16px that is a
+   snowflake in one box and a dinner plate in the other.
+
+   `container-type: size` is what makes those units resolve. It is safe here
+   precisely because the field is `absolute inset-0` — its size comes from its
+   parent, so the size containment it implies takes nothing away.
+
+   ## Why the particles are absolutely positioned and only transformed
+
+   Nine to twelve elements per field, two fields on screen at once on the theme
+   section, and one of them under a `blur` on some skins. Transform and opacity
+   are the only two properties that composite, so they are the only two that
+   animate here; `top`/`left` are set once and never touched.
+   =========================================================================== */
+
+.sa-field {
+  container-type: size;
+  /* Its own stacking context, so a field never has to be z-ordered against the
+     content it sits behind — and so the browser can keep the whole thing on one
+     compositor layer. */
+  isolation: isolate;
+}
+
+/* The common particle: placed by `left`, sized off the box, moved by transform
+   alone. `--sa-size` is a multiplier the component varies per particle. */
+.sa-field > span {
+  position: absolute;
+  width: calc(4.5cqmin * var(--sa-size, 1));
+  height: calc(4.5cqmin * var(--sa-size, 1));
+  will-change: transform, opacity;
+}
+
+/* ---- Down: leaves ------------------------------------------------------- */
+
+.sa-drop {
+  top: 0;
+  animation: sa-fall var(--sa-life) linear var(--sa-delay) infinite;
+}
+
+.sa-spin {
+  display: block;
+  width: 100%;
+  height: 100%;
+  animation: sa-tumble var(--sa-spin) ease-in-out infinite;
+}
+
+/*
+ * The sway is not a sine wave over the whole fall — that is a pendulum, and a
+ * pendulum is a thing on a string. A leaf slips sideways, catches, slips back,
+ * so the drift changes sign at uneven intervals and its extremes do not line up
+ * with the midpoint of the fall.
+ */
+@keyframes sa-fall {
+  0% {
+    transform: translate3d(0, -20cqh, 0);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  26% {
+    transform: translate3d(var(--sa-drift), 12cqh, 0);
+  }
+  58% {
+    transform: translate3d(calc(var(--sa-drift) * -0.8), 52cqh, 0);
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--sa-drift), 118cqh, 0);
+    opacity: 0;
+  }
+}
+
+@keyframes sa-tumble {
+  0%,
+  100% {
+    transform: rotate(-24deg) scaleX(1);
+  }
+  50% {
+    transform: rotate(24deg) scaleX(0.55);
+  }
+}
+
+/* ---- Up: embers, bubbles, motes ----------------------------------------- */
+
+.sa-rise {
+  bottom: 0;
+  border-radius: 50%;
+  animation: sa-ascend var(--sa-life) linear var(--sa-delay) infinite;
+}
+
+/* An ember is thrown and slows; particulate is carried and does not. The ease
+   is the only thing separating the two, so it is set per kind. */
+.sa-ember {
+  animation-timing-function: cubic-bezier(0.35, 0, 0.7, 1);
+}
+
+.sa-bubble {
+  background: transparent;
+  border: 1.5px solid;
+  /* The highlight that makes it a sphere rather than a ring. */
+  box-shadow: inset -1px -1px 2px rgb(255 255 255 / 0.5);
+}
+
+@keyframes sa-ascend {
+  0% {
+    transform: translate3d(0, 18cqh, 0) scale(1);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.9;
+  }
+  /* The wobble: a bubble does not rise in a straight line, and neither does
+     anything else carried by moving air. Three sign changes, unevenly spaced,
+     so the path never reads as a wave. */
+  34% {
+    transform: translate3d(var(--sa-drift), -18cqh, 0) scale(1.05);
+  }
+  62% {
+    transform: translate3d(calc(var(--sa-drift) * -0.7), -54cqh, 0) scale(1.1);
+  }
+  85% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: translate3d(calc(var(--sa-drift) * 0.4), -112cqh, 0) scale(1.15);
+    opacity: 0;
+  }
+}
+
+/* ---- Across: bats ------------------------------------------------------- */
+
+.sa-cross {
+  /* Wider than tall — a bat is a wingspan. */
+  width: calc(9cqmin * var(--sa-size, 1));
+  height: calc(4.5cqmin * var(--sa-size, 1));
+  left: 0;
+  animation: sa-traverse var(--sa-life) linear var(--sa-delay) infinite;
+}
+
+/*
+ * `scaleY` on the whole glyph rather than two rigged wings: at the size these
+ * are actually seen, a rig is invisible, and one compositor property times
+ * seven elements is the difference between a flourish and a dropped frame.
+ */
+.sa-flap {
+  display: block;
+  width: 100%;
+  height: 100%;
+  animation: sa-flap 0.22s ease-in-out infinite;
+}
+
+@keyframes sa-traverse {
+  0% {
+    transform: translate3d(-20cqw, 0, 0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.9;
+  }
+  /* It rises and falls across the box rather than tracking a straight line —
+     the vertical wander is what makes it flight rather than a slide. */
+  40% {
+    transform: translate3d(35cqw, calc(var(--sa-drift) * -1.4), 0);
+  }
+  70% {
+    transform: translate3d(70cqw, var(--sa-drift), 0);
+  }
+  90% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate3d(120cqw, 0, 0);
+    opacity: 0;
+  }
+}
+
+@keyframes sa-flap {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(0.4);
+  }
+}
+
+/* ---- In place: runes and eyes ------------------------------------------- */
+
+/*
+ * These two do not travel. A rune is cut into a wall and a thing in the dark
+ * opens its eye where it already was — both are events at a *position*, and
+ * moving them would turn either into a floating sprite.
+ *
+ * They are also the two that must never settle into a rhythm, which is what the
+ * long uneven hold in each keyframe list is for: most of the cycle is nothing
+ * happening, and the part that happens is short.
+ */
+.sa-flare {
+  width: calc(5cqmin * var(--sa-size, 1));
+  height: calc(7.5cqmin * var(--sa-size, 1));
+  animation: sa-flare var(--sa-life) ease-in-out var(--sa-delay) infinite;
+}
+
+@keyframes sa-flare {
+  0%,
+  62%,
+  100% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  /* Cut fast, linger, fade. */
+  8% {
+    opacity: 0.95;
+    transform: scale(1);
+  }
+  46% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+}
+
+.sa-blink {
+  width: calc(9cqmin * var(--sa-size, 1));
+  height: calc(5.5cqmin * var(--sa-size, 1));
+  animation: sa-watch var(--sa-life) ease-in-out var(--sa-delay) infinite;
+}
+
+/*
+ * Open slowly, hold, blink once, and be gone quickly.
+ *
+ * The asymmetry is the whole character of it: something that fades out politely
+ * has *left*, and something that is there and then is not was never going to
+ * let you look straight at it. The blink in the middle is what stops two stills
+ * reading as a rendering artefact.
+ */
+@keyframes sa-watch {
+  0%,
+  70%,
+  100% {
+    opacity: 0;
+    transform: scaleY(0.1);
+  }
+  14%,
+  40% {
+    opacity: 0.9;
+    transform: scaleY(1);
+  }
+  46% {
+    opacity: 0.9;
+    transform: scaleY(0.12);
+  }
+  52%,
+  64% {
+    opacity: 0.9;
+    transform: scaleY(1);
+  }
+}
+
+/*
+ * Nothing at all where the reader has asked for less.
+ *
+ * The component checks the preference too and never renders; this is the belt
+ * to that braces, and it also covers the case where the field is already in the
+ * tree when the preference changes.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .sa-field {
+    display: none;
+  }
+}
+
+
+/* ===========================================================================
    Halloween — the three moving parts.
 
    Unlayered, like the other skin-specific rules at the foot of this file, and
@@ -9304,6 +10070,119 @@ html [data-sonner-toaster][data-theme] [data-sonner-toast] [data-cancel] {
 }
 
 /* ---------------------------------------------------------------------------
+   Eyes in the dark.
+
+   Two dots open somewhere on the page, hold for a moment, and are gone. Every
+   minute, never twice in the same place.
+
+   ## Why they are dots and not eyes
+
+   Because the drawing is the reader's. An almond, a pupil and a highlight
+   commits to a creature and gets judged as an illustration of one; two warm
+   points at the right spacing in a dark room are read as something looking
+   before they are read as shapes at all, and whatever the reader supplies
+   behind them is better than anything that could be drawn there. It is also
+   the difference between an effect that survives being seen twice and one that
+   does not.
+
+   ## Why the vanish is not the reverse of the arrival
+
+   They fade up over about a second - long enough that catching it is a
+   double-take rather than a flash - hold, and then go in under a tenth of a
+   second. Something that fades out politely has *left*; something that is
+   there and then is not was never going to let you look straight at it. The
+   whole character of this is in that asymmetry, which is why the timing
+   function on the last leg is `steps` rather than an ease.
+
+   The blink in the middle is what stops two static dots reading as a rendering
+   artefact - a specular highlight, a pair of dead pixels - and confirms them
+   as a pair of eyes at the one moment the reader is still deciding.
+
+   `--hw-eye-life` is the total, and it is declared here rather than in the
+   component so the arithmetic below stays readable as percentages of it.
+   --------------------------------------------------------------------------- */
+.hw-eyes {
+  --hw-eye-life: 3.4s;
+  animation: hw-eyes-life var(--hw-eye-life) linear forwards;
+}
+
+@keyframes hw-eyes-life {
+  0% {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+  /* Up slowly. A full second of the 3.4 is spent arriving. */
+  30% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  95% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  /* And gone, in the last 5% - roughly 170ms, most of which is the eye still
+     catching up. */
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+/*
+ * The dot itself: a hot core with its own light around it.
+ *
+ * Three shadows rather than a `filter: blur()` - a filter forces the element on
+ * to its own layer and repaints it every frame the opacity above changes, and
+ * these are two nodes that exist for three seconds a minute. Layered shadows
+ * composite for free.
+ */
+.hw-eye {
+  border-radius: 999px;
+  background: rgb(255 214 130);
+  box-shadow:
+    0 0 6px 2px rgb(255 176 48 / 0.85),
+    0 0 16px 6px rgb(255 140 40 / 0.5),
+    0 0 34px 14px rgb(255 120 20 / 0.22);
+  animation: hw-eye-blink var(--hw-eye-life) ease-in-out forwards;
+}
+
+/*
+ * The right one closes a hair after the left, which is the detail that makes
+ * it read as one animal rather than as two synchronised lights.
+ */
+.hw-eye:last-child {
+  animation-delay: 0.05s;
+}
+
+@keyframes hw-eye-blink {
+  0%,
+  46%,
+  62%,
+  100% {
+    transform: scaleY(1);
+  }
+  /* One blink, off-centre in the hold so it is not on a beat. */
+  52%,
+  56% {
+    transform: scaleY(0.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /*
+   * Nothing, rather than two still dots.
+   *
+   * This is pure atmosphere with no state in it, and the honest reduced-motion
+   * answer to atmosphere is to leave it out - the same call `BatSwarm` makes.
+   * The component checks the preference too and never schedules anything; this
+   * is the belt to that braces.
+   */
+  .hw-eyes {
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
    Cobwebs on the doors nobody has opened.
 
    Drawn only on the rail's *unselected* links, so the room the reader is
@@ -9365,39 +10244,41 @@ html [data-sonner-toaster][data-theme] [data-sonner-toast] [data-cancel] {
 
 
 /* ===========================================================================
-   Halloween — making the lettering legible.
+   Halloween - making the lettering legible.
 
-   ## The bug
+   ## The bug, and why the first fix was not enough
 
    The skin sets `--font-display` to Chiller, which is what gives it its
    character and is also the thinnest face in the catalogue by some distance.
-   Its x-height is roughly 0.29em where Segoe UI's is 0.50 — so a heading set
+   Its x-height is roughly 0.29em where Segoe UI's is 0.50 - so a heading set
    at 14px in Chiller has letters a little over *half* the height of the body
    text beside it, drawn in hairline strokes, on the darkest palette the app
-   ships. Two places made that unreadable rather than merely atmospheric:
+   ships.
 
-     - **Task names.** `TaskCard` sets its title as an `h3` (it is the card's
-       heading, and that is the right element), so every task on every board
-       inherited the display face at `text-sm`. This is the single most-read
-       string in the product.
-     - **The dashboard.** `Section`'s `h2` is also `text-sm`, so "Your
-       projects" and every heading like it sat at the same size; the greeting
-       above it is an `h1` and had the height but not the weight.
+   The first pass at this raised three font sizes and stopped there, on the
+   theory that the face was fine and the scale was wrong. It was not enough,
+   and the reason is arithmetic: 17px of a 0.29 x-height is 4.9px of actual
+   letter, which is smaller than 14px of Segoe UI was before anybody touched
+   it. Every further point of size makes the *line* longer without making the
+   letters much taller, and a hairline face on a near-black page runs out of
+   contrast before it runs out of size. There is no value that fixes it.
 
-   ## Why the sizes are written out rather than scaled
+   ## So the names get a different face
 
-   There is no way in CSS to say "whatever this element's font-size is, times
-   1.2" — `em` resolves against the *parent*, and these headings take their
-   size from a utility class on themselves, so a relative override would throw
-   the scale away rather than shift it. `font-size-adjust` is the property
-   built for exactly this problem and is the wrong tool here too: it normalises
-   against one aspect ratio, and this stack resolves to Chiller (0.29) on
-   Windows and Impact (0.72) elsewhere, so any value that rescues the first
-   would shrink the second by a third.
+   `--font-scary` - Creepster, shipped as a file, see the `@font-face` at
+   the top of this stylesheet. The split is not by element or by size but by
+   what the string *is*:
 
-   So the three sites the complaint named get explicit sizes, keyed to the
-   utility each one already carries, and the responsive step is restated in its
-   own query because an unlayered rule outranks Tailwind's `sm:` variant too.
+     - A **name** is something a reader is hunting for in a list of thirty: a
+       task title, a dialog's subject, a document, a destination in the rail, a
+       section of the settings. These are read at 14-16px, many at a time, and
+       they get the face that can be read at 14px.
+     - Everything else stays Chiller and should: the greeting, the page titles
+       and the project names are strings somebody already knows the shape of,
+       read once on arrival at 20px and up, which is exactly where a hairline
+       brush face is atmosphere rather than an obstacle. Those get *size*,
+       below, which is the correction that works when the face is already
+       legible.
 
    Unlayered and gated on `[data-skin='halloween']`, like the rest of the
    per-skin work at the foot of this file, so nothing here reaches the other
@@ -9405,37 +10286,127 @@ html [data-sonner-toaster][data-theme] [data-sonner-toast] [data-cancel] {
    =========================================================================== */
 
 /*
- * Task names, on every board and every card.
+ * The names.
  *
- * 17px against the utility's 14px. Chiller's x-height puts that at roughly
- * where 14px of Segoe UI reads, which is the point: the card's title should
- * look the size it always looked, not larger than it was designed to be.
+ * `font-weight: 400` and `font-synthesis-weight: none` together, and they are
+ * the opposite call to the one made for Chiller below. Creepster ships a single
+ * weight and every one of these call sites asks for `font-semibold`, so the
+ * browser would synthesise one by smearing the outline - which is genuinely
+ * useful on a hairline and ruinous on a face this heavy, where the counters of
+ * `e`, `a` and `o` are already nearly closed and a fake bold shuts them. The
+ * face is bold. It does not need help.
  */
-[data-skin='halloween'] .ui-task-title {
-  font-size: 1.0625rem;
-  line-height: 1.35;
+[data-skin='halloween'] .ui-task-title,
+[data-skin='halloween'] .ui-section-title,
+[data-skin='halloween'] .ui-modal-title,
+[data-skin='halloween'] .ui-doc-title,
+[data-skin='halloween'] .ui-nav-label {
+  font-family: var(--font-scary);
+  font-weight: 400;
+  font-synthesis-weight: none;
+  /*
+   * The face's own side bearings are 0.02em, which is tight for something this
+   * blobby: at 14px two round letters in sequence touch and read as one mark.
+   * Opened a hair here rather than through `--heading-tracking`, which belongs
+   * to Chiller and is set three times larger for a reason that does not apply
+   * to this face.
+   */
+  letter-spacing: 0.012em;
+  word-spacing: 0.08em;
+  text-shadow: none;
 }
 
 /*
- * Section headings — "Your projects", "Pinned", and every sibling of them.
+ * Sizes, on top of the em correction.
  *
- * `letter-spacing` is restated on this one and on the greeting below because
- * both carry Tailwind's `tracking-tight`, which sets it *on the element* and so
- * outranks the `--heading-tracking` the skin sets for `h1, h2, h3`. The token
- * is right and simply never reached these two — which are precisely the
- * headings the complaint was about.
+ * `size-adjust: 82%` already puts this face about 20% above the UI face at a
+ * shared nominal size; these carry it the rest of the way, because a name set
+ * in a display face at the size of the label next to it does not read as a
+ * name. Every value is keyed to the utility the element already carries, and
+ * the responsive step is restated in its own query where there is one - an
+ * unlayered rule outranks Tailwind's `sm:` variant too.
+ *
+ * The rail's label is the one that does not move. It sits in a 264px column
+ * with `truncate` on it, and Creepster is a wide face: a step up there buys a
+ * little height and spends a lot of width, and the first thing that costs is
+ * the end of somebody's longest destination.
  */
+[data-skin='halloween'] .ui-task-title,
+[data-skin='halloween'] .ui-nav-label {
+  font-size: 1rem;
+}
 
-/* Section headings — "Your projects", "Pinned", and every sibling of them. */
 [data-skin='halloween'] .ui-section-title {
   font-size: 1.0625rem;
-  line-height: 1.3;
-  letter-spacing: var(--heading-tracking);
+}
+
+/*
+ * The dialog titles and the document title, which were left alone while the
+ * previous face was in - `Modal` sets `text-lg` on its centred header and
+ * `text-base` on its start-aligned one, and one flat override would have
+ * collapsed a distinction that carries real meaning.
+ *
+ * So the step is expressed as a *ratio* rather than a size: `1.08em` resolves
+ * against each element's own font-size, which is the one way to lift both
+ * without flattening the gap between them.
+ */
+[data-skin='halloween'] .ui-modal-title,
+[data-skin='halloween'] .ui-doc-title {
+  font-size: 1.08em;
+}
+
+/*
+ * The document title in its editing state is an `<input>`, and an input does
+ * not inherit `font-family` from the page - it takes the browser's own UI font
+ * unless told otherwise. Without this the title changed face the moment
+ * somebody clicked into it, which reads as the field being a different kind of
+ * thing from the heading it replaces.
+ */
+[data-skin='halloween'] input.ui-doc-title {
+  font-family: var(--font-scary);
+}
+
+/*
+ * Project names, which stay in Chiller and get the other correction.
+ *
+ * This is the case the size argument actually works for: a project name is
+ * read once, at the top of a page, by somebody looking for a string they chose
+ * themselves. The face is worth keeping and the fix is to stop setting it at
+ * heading-in-a-dense-app size.
+ *
+ * ## Why the card and the page heading are not the same number
+ *
+ * Because they are not the same *font*, which is worth knowing before changing
+ * either. The page heading is an `h1`, so it takes `--font-display` from the
+ * base rule and is genuinely Chiller; the card's name is a `<p>` and has always
+ * been the UI face, where 14px is already more letter than 24px of Chiller is.
+ *
+ * So the page heading gets the real correction, and the card gets one step -
+ * enough that a name reads as a name in a grid of them, and not so much that a
+ * 20px line of Segoe UI turns a small card into a poster. Matching the two
+ * numbers would have made one of them wrong whichever number was picked.
+ */
+[data-skin='halloween'] .ui-project-name {
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+[data-skin='halloween'] .ui-project-name--hero {
+  font-size: 1.75rem;
+  line-height: 1.15;
+}
+
+@media (min-width: 640px) {
+  /* Restating `sm:text-2xl`, one step up - an unlayered rule beats the variant
+     it would otherwise leave in place. */
+  [data-skin='halloween'] .ui-project-name--hero {
+    font-size: 2rem;
+  }
 }
 
 /*
  * The greeting, which is the largest thing on the dashboard and was the
- * hardest to read on it — a long string, in a brush face, at 20px.
+ * hardest to read on it - a long string, in a brush face, at 20px.
  */
 [data-skin='halloween'] .ui-greeting {
   font-size: 1.5rem;
@@ -9444,21 +10415,21 @@ html [data-sonner-toaster][data-theme] [data-sonner-toast] [data-cancel] {
 }
 
 @media (min-width: 640px) {
-  /* Restating `sm:text-2xl`, one step up. An unlayered rule beats the variant
-     it would otherwise leave in place. */
   [data-skin='halloween'] .ui-greeting {
     font-size: 1.75rem;
   }
 }
 
 /*
- * And the stroke weight, which is the other half of "hard to see".
+ * And the stroke weight, which is the other half of "hard to see" - for the
+ * headings still set in Chiller.
  *
  * Chiller ships a single weight, so a heading asking for `font-semibold` gets
- * whatever the browser synthesises — which is a smear of the outline, and on a
+ * whatever the browser synthesises - which is a smear of the outline, and on a
  * hairline face that is the one kind of fake bold that genuinely helps. It is
- * left on deliberately (the opposite call to the volcano skin above, whose
- * face is already at 900 and closes up its own counters when doubled).
+ * left on deliberately (the opposite call to the shipped face above, and to
+ * the volcano skin, whose face is already at 900 and closes up its own
+ * counters when doubled).
  *
  * `text-rendering` is what stops the thin diagonals disappearing entirely at
  * small sizes on the dark palette: geometric precision keeps the stems on the
@@ -9475,7 +10446,7 @@ html [data-sonner-toaster][data-theme] [data-sonner-toast] [data-cancel] {
 /*
  * A touch of ink under the light palette's headings.
  *
- * The dark palette gets this free — pale strokes on near-black are already
+ * The dark palette gets this free - pale strokes on near-black are already
  * high contrast. On parchment, a hairline in `--content` at 17px is the case
  * that was still marginal after the size bump, and a 1px shadow of the same
  * colour is the cheapest way to thicken a stroke without a second font file.
@@ -9484,4 +10455,178 @@ html [data-sonner-toaster][data-theme] [data-sonner-toast] [data-cancel] {
 [data-skin='halloween']:not(.dark) h2,
 [data-skin='halloween']:not(.dark) h3 {
   text-shadow: 0 0 1px rgb(var(--content) / 0.55);
+}
+
+/*
+ * ...but never on the names, which now have the second font file that shadow
+ * existed to avoid needing.
+ *
+ * Specificity, deliberately: `:is()` takes the weight of its heaviest argument,
+ * so this lands at (0,3,0) against the (0,2,1) of the `h3` rule above. Four of
+ * these five classes sit on a heading element, so without the extra class the
+ * rule above would win on source order and put a blur under a face that is
+ * already solid.
+ */
+[data-skin='halloween']:not(.dark)
+  :is(.ui-task-title, .ui-section-title, .ui-modal-title, .ui-doc-title, .ui-nav-label) {
+  text-shadow: none;
+}
+
+
+/* ===========================================================================
+   Vibecoded — the four things that actually make it read as generated.
+
+   The palette above is half of it. These are the other half, and each one is a
+   specific tell rather than a general "make it gradient": a gradient clipped
+   through every heading, a 135-degree sweep on every filled control, a ring of
+   accent light around the focused thing, and a spinner that is a conic gradient
+   with rounded ends.
+
+   Unlayered and gated on `[data-skin='vibecoded']`, like every other per-skin
+   block at the foot of this file, so none of it can reach the other fourteen.
+   =========================================================================== */
+
+/*
+ * Gradient text on every heading.
+ *
+ * `background-clip: text` with a transparent fill — the technique that turns up
+ * in every generated hero and then gets left on the `h3` of a settings panel
+ * too, which is the part that gives it away. So it is on `h1` through `h4`
+ * rather than on a hero class, deliberately.
+ *
+ * ## The one place it is switched back off
+ *
+ * A clipped gradient cannot inherit `currentColor`, so anything drawn *inside*
+ * a heading — an icon, a badge, a counter — is filled with the gradient too and
+ * loses its own colour. `:is(svg, .ui-chip, [data-no-gradient])` puts those
+ * back. Without it the connection icons in a section title come out as blocks
+ * of indigo, which is a bug rather than a joke.
+ */
+[data-skin='vibecoded'] h1,
+[data-skin='vibecoded'] h2,
+[data-skin='vibecoded'] h3,
+[data-skin='vibecoded'] h4 {
+  background-image: linear-gradient(
+    135deg,
+    rgb(var(--content)) 0%,
+    rgb(var(--brand)) 55%,
+    rgb(var(--vibe-accent)) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  /* Firefox needs the text fill colour set explicitly or the clip is ignored. */
+  -webkit-text-fill-color: transparent;
+}
+
+[data-skin='vibecoded'] :is(h1, h2, h3, h4) :is(svg, .ui-chip, [data-no-gradient]) {
+  -webkit-text-fill-color: currentColor;
+  color: inherit;
+}
+
+/*
+ * Every filled button is a gradient, and it slides on hover.
+ *
+ * `background-image` rather than `background`, so the `bg-brand` utility
+ * underneath still paints the fallback colour — a gradient that fails to render
+ * leaves a solid indigo button rather than a transparent one.
+ *
+ * The 200% width and the position shift are the cheap version of an animated
+ * gradient: nothing is animated, the box just shows a different part of a
+ * bigger picture, which costs one paint instead of a per-frame recomposite.
+ */
+[data-skin='vibecoded'] .ui-btn:not(.ui-lava) {
+  background-image: linear-gradient(
+    135deg,
+    rgb(var(--brand)) 0%,
+    rgb(var(--vibe-accent)) 50%,
+    rgb(var(--brand)) 100%
+  );
+  background-size: 200% 100%;
+  background-position: 0% 0%;
+  transition: background-position 420ms var(--ease-ui), box-shadow 220ms var(--ease-ui);
+}
+
+[data-skin='vibecoded'] .ui-btn:not(.ui-lava):hover {
+  background-position: 100% 0%;
+}
+
+/*
+ * The secondary and ghost buttons keep their own fill.
+ *
+ * They are `bg-surface-sunken` and `transparent` respectively, and a gradient
+ * on both would leave a screen where every control looks equally important —
+ * which is the actual failure mode of the style, and a step past the joke into
+ * something unusable. The tell is that the *primary* is always a gradient, not
+ * that everything is.
+ */
+[data-skin='vibecoded'] .ui-btn--secondary,
+[data-skin='vibecoded'] .ui-btn:is([class*='text-content-muted'], [class*='border-edge']) {
+  background-image: none;
+}
+
+/*
+ * A ring of accent light around whatever has focus.
+ *
+ * Every other skin uses the shared `focus-visible:ring-brand/50`. This one adds
+ * a second, wider, softer ring outside it in the accent — the "glow" that turns
+ * up on every generated input, and the reason focus on this skin looks like a
+ * notification rather than a cursor position.
+ */
+[data-skin='vibecoded'] .field:focus {
+  border-color: rgb(var(--brand));
+  box-shadow:
+    0 0 0 3px rgb(var(--brand) / 0.18),
+    0 0 0 6px rgb(var(--vibe-accent) / 0.1),
+    0 4px 14px -6px rgb(var(--brand) / 0.4);
+}
+
+/*
+ * The spinner: a conic gradient with a hole in it.
+ *
+ * Two elements rather than the `border-top-color` trick every other spinner on
+ * the web uses, because a border cannot hold a gradient. The outer element is
+ * the full cone; `mask` cuts the middle out of it, which is what leaves a ring
+ * with one lit end and one transparent one.
+ */
+.loader-vibe {
+  display: inline-grid;
+  place-items: center;
+  aspect-ratio: 1;
+}
+
+.loader-vibe > i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgb(var(--brand) / 0.15) 90deg,
+    rgb(var(--brand)) 260deg,
+    rgb(var(--vibe-accent)) 340deg,
+    transparent 360deg
+  );
+  /* The hole. Both prefixes, because Safari still needs the -webkit- one. */
+  -webkit-mask: radial-gradient(closest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2px));
+  mask: radial-gradient(closest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2px));
+  animation: loader-vibe-spin 0.9s linear infinite;
+}
+
+@keyframes loader-vibe-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /*
+   * Still, but not gone: this one is a *progress* indicator, so unlike the
+   * decorative fields it has something to say while it is on screen. It holds
+   * its shape and stops turning.
+   */
+  .loader-vibe > i {
+    animation: none;
+  }
 }

@@ -13,6 +13,7 @@ import { NewspaperMark } from './newspaper-icons';
 import { RunicMark } from './runic-icons';
 import { SpaceMark } from './space-icons';
 import { UnderwaterMark } from './underwater-icons';
+import { VibecodedMark } from './vibecoded-icons';
 import { VolcanoMark } from './volcano-icons';
 
 /**
@@ -608,6 +609,7 @@ const MARKS: Partial<Record<ThemeSkin, ComponentType<{ className?: string }>>> =
   UNDERWATER: UnderwaterMark,
   VOLCANO: VolcanoMark,
   HALLOWEEN: HalloweenMark,
+  VIBECODED: VibecodedMark,
 };
 
 /**

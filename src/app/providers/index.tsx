@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, type CSSProperties, type ReactNode } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { Toaster } from 'sonner';
 
@@ -34,6 +34,14 @@ import { ThemeProvider, useTheme } from './theme-provider';
  * rather than as Sonner's, and the tint is what makes the type of a message
  * legible at a glance without reading it.
  */
+/**
+ * How long a toast stays, in one place.
+ *
+ * Read twice below: once by Sonner, which dismisses on it, and once by the
+ * stylesheet, which draws it. See the note at the call site.
+ */
+const TOAST_DURATION_MS = 4_200;
+
 const AppToaster = () => {
   const isTouch = useIsTouchDevice();
   const { isDark } = useTheme();
@@ -57,7 +65,25 @@ const AppToaster = () => {
       // Radius, material and shadow come from the skin — see index.css. Only the
       // type scale is set here, because it is the one thing a toast should not
       // inherit from a skin that sets display type in a poster face.
-      toastOptions={{ className: 'text-sm', duration: 4200 }}
+      toastOptions={{
+        className: 'text-sm',
+        duration: TOAST_DURATION_MS,
+        /*
+          The same number again, this time where CSS can read it.
+
+          The timer bar along the bottom of a toast is a CSS animation (see
+          `[data-content]::after` in `index.css`), so its length has to come
+          from somewhere, and the one thing worse than no progress bar is one
+          that finishes at a different moment from the thing it is measuring.
+          Handing the duration down as a custom property means there is one
+          number in the codebase and both clocks are set from it.
+
+          The cast is because `CSSProperties` has no index signature for custom
+          properties — the values are perfectly valid CSS, TypeScript simply has
+          no way to say so.
+        */
+        style: { '--ts-toast-duration': `${TOAST_DURATION_MS}ms` } as CSSProperties,
+      }}
     />
   );
 };
