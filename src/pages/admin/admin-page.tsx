@@ -230,12 +230,27 @@ const AdminPage = () => {
   const [planNote, setPlanNote] = useState('');
   const [isSavingPlan, setIsSavingPlan] = useState(false);
 
-  // Whether the deployment has a console at all, asked once and unauthenticated.
+  /*
+   * Whether the deployment has a console at all, asked once and unauthenticated.
+   *
+   * A failed probe is deliberately *not* read as "no console". It used to be,
+   * and the result was a page that told an administrator their password was
+   * never set whenever the API was asleep, offline, or refusing the request for
+   * any other reason — the most confusing possible answer, because it names a
+   * cause the reader then goes and checks and finds correct.
+   *
+   * Only the 503 the API raises for a missing `ADMIN_PASSWORD` means that.
+   * Anything else is a failure to *ask*, so the password form is shown and the
+   * attempt is allowed to produce a real error of its own.
+   */
   useEffect(() => {
     adminApi
       .status()
       .then((result) => setIsAvailable(result.enabled))
-      .catch(() => setIsAvailable(false));
+      .catch((error) => {
+        const status = (error as { response?: { status?: number } })?.response?.status;
+        setIsAvailable(status === 503 ? false : true);
+      });
   }, []);
 
   /**

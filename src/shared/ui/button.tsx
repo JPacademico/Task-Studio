@@ -67,10 +67,40 @@ const VARIANTS: Record<Variant, string> = {
   danger: 'bg-danger text-white hover:brightness-110',
 };
 
+/**
+ * The three text sizes, and why none of them sets a fixed height any more.
+ *
+ * ## What a fixed height actually did
+ *
+ * `h-10` is not "forty pixels tall"; it is "forty pixels tall *whatever is
+ * inside it*". A label that needed two lines got forty pixels anyway, and
+ * since there was no vertical padding either, the two lines filled the box
+ * edge to edge — the text touched the border top and bottom and, on the skins
+ * that uppercase and track out their labels, spilled past it.
+ *
+ * It is not a hypothetical. "Voltar para a página inicial" is the Portuguese
+ * for a four-word English label; put it beside a second button in a 420px card
+ * and it wraps. The same happens to any label in any language on a narrow
+ * phone, and it happened on every skin at once because the height was set here
+ * rather than by the theme.
+ *
+ * ## What replaces it
+ *
+ * A *minimum* height and real vertical padding. The minimum keeps every
+ * existing button exactly the size it was — one line of 14px text plus 16px of
+ * padding is 36px, which is under the 40px floor, so `min-h` wins and nothing
+ * on any of the two hundred call sites moves by a pixel. The padding only
+ * becomes visible when a label wraps, which is precisely when it is needed:
+ * the button grows to fit its own text and keeps the same breathing room above
+ * and below that it has at the sides.
+ *
+ * `icon` keeps both dimensions fixed. It holds a 16px glyph and nothing that
+ * can wrap, and it has to stay square.
+ */
 const SIZES: Record<Size, string> = {
-  sm: 'h-8 px-3 text-xs',
-  md: 'h-10 px-4 text-sm',
-  lg: 'h-12 px-6 text-base',
+  sm: 'min-h-8 px-3 py-1.5 text-xs',
+  md: 'min-h-10 px-4 py-2 text-sm',
+  lg: 'min-h-12 px-6 py-2.5 text-base',
   icon: 'h-9 w-9',
 };
 

@@ -49,10 +49,28 @@ interface SkinMockProps {
   preview: SkinPreview;
   /** 1 is the settings thumbnail; the gallery's preview box runs at 2.4. */
   scale?: number;
+  /**
+   * Whether to draw the still stand-ins for the things that move.
+   *
+   * A thumbnail has no room for an animation and no time to be watched, so it
+   * paints three bubbles frozen mid-rise and lets them say "this theme has
+   * bubbles". That is the right trade at 120 pixels.
+   *
+   * It is the wrong one under `SkinAmbience`. The showcase draws a *real* field
+   * of rising bubbles over this mock, and the frozen three then sit in the
+   * middle of it not moving — which does not read as a still, it reads as three
+   * bubbles that are stuck. Every surface with a live field passes `false`.
+   */
+  stillParticles?: boolean;
   className?: string;
 }
 
-export const SkinMock = ({ preview, scale = 1, className }: SkinMockProps) => {
+export const SkinMock = ({
+  preview,
+  scale = 1,
+  stillParticles = true,
+  className,
+}: SkinMockProps) => {
   const px = (value: number) => value * scale;
   const radius = preview.radius * Math.min(scale, 1.6);
 
@@ -301,8 +319,9 @@ export const SkinMock = ({ preview, scale = 1, className }: SkinMockProps) => {
       )}
 
       {/* Underwater: three on their way up. Last but one in the mock, so they
-          pass in front of the cards — which is where the real ones are. */}
-      {preview.caustic && (
+          pass in front of the cards — which is where the real ones are. Skipped
+          wherever a live field is drawn over this — see `stillParticles`. */}
+      {preview.caustic && stillParticles && (
         <>
           {[
             { left: '22%', top: '52%', size: px(7) },

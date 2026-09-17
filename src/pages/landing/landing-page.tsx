@@ -191,10 +191,22 @@ const LandingPage = () => {
           has asked for reduced motion sees instead. The section has never had a
           frame in which it had no background, which is the only reason the field
           is allowed to arrive late.
+
+          ## Why it comes out of a variable now
+
+          Because Studio does not want it. On a loud skin the tint is what makes
+          the top of the page feel lit; on the plain one it reads as a gradient
+          nobody removed, and the paper field behind it is doing that job
+          already. `--hero-wash` is `none` there and the brand radial everywhere
+          else — see the `[data-skin='studio']` block in `index.css`.
+
+          The two scrims below are *not* part of this and stay on every skin:
+          they are drawn in the page's own surface colour and they are what
+          holds the paragraph's contrast ratio up over a moving field.
         */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_0%,rgb(var(--brand)/0.14),transparent_70%)]"
+          className="pointer-events-none absolute inset-0 [background-image:var(--hero-wash)]"
         />
 
         {/*

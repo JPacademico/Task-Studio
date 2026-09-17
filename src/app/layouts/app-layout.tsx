@@ -10,6 +10,7 @@ import { useIsTouchDevice } from '@/shared/lib/hooks';
 import { useNavPreferences } from '@/shared/lib/nav-preferences.store';
 import {
   AutumnFall,
+  BloodDrip,
   BubbleRise,
   EmberRise,
   HazardDrift,
@@ -22,6 +23,7 @@ import {
 import { HiddenSidebar } from '@/widgets/hidden-sidebar/ui/hidden-sidebar';
 import { BranchCommitPrompt } from '@/features/task-management/ui/branch-commit-prompt';
 import { ImportTracker } from '@/widgets/import-tracker/ui/import-tracker';
+import { SpotifyPlayer } from '@/widgets/spotify-player/ui/spotify-player';
 import { ProjectRail } from '@/widgets/project-rail/ui/project-rail';
 import { TopNavigation } from '@/widgets/top-navigation/ui/top-navigation';
 import { useShellPrefetch } from './use-shell-prefetch';
@@ -49,7 +51,22 @@ export const AppLayout = () => {
   const openProjectDialog = () => setIsCreateProjectOpen(true);
 
   return (
-    <div className="relative min-h-full bg-surface">
+    /*
+     * `isolate`, and it is load-bearing rather than tidy.
+     *
+     * `BloodDrip` below paints at `z-index: -1` so that every card, menu and
+     * rail in the product covers it. A negative index only stays *inside* an
+     * element if that element forms a stacking context — without `isolate` this
+     * div is merely `position: relative`, the layer escapes to the root
+     * context, and `bg-surface` on this very div paints over it. The stain
+     * would exist, correctly, and be invisible everywhere.
+     */
+    <div className="relative isolate min-h-full bg-surface">
+      {/* Halloween only, behind everything, never over anything. It reads
+          `--hw-drip-top` from `TopNavigation` so the runs start at the bottom
+          edge of the bar whether it is pinned, revealed or away. */}
+      <BloodDrip />
+
       <TopNavigation
         onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
         onCreateProject={openProjectDialog}
@@ -78,6 +95,13 @@ export const AppLayout = () => {
           page and it carries on. Renders nothing at all when there is no
           import running. */}
       <ImportTracker />
+
+      {/* The music, for whoever connected an account. Mounted by the shell
+          rather than by a page, because it is the reader's own furniture: it
+          survives every route change, it keeps the corner they parked it in,
+          and it renders nothing at all for everybody else — see
+          `SpotifyPlayer`. */}
+      <SpotifyPlayer />
 
       {/*
         Mounted once, for the same reason the tracker is: a task can be

@@ -38,6 +38,7 @@ export { SkinLoader } from './skin-loader';
 export { Select, type SelectOption } from './select';
 export { NibCursor, NibPreview } from './nib-preview';
 export { RouteBoundary } from './route-boundary';
+export { ScrollProgress } from './scroll-progress';
 export { EdgeAffordance, NavPinButton } from './edge-affordance';
 export { ExpandToggle, ExpandableStage } from './expandable-stage';
 export { HoverHint } from './hover-hint';
@@ -52,6 +53,7 @@ export {
   FigmaMark,
   GitHubMark,
   SlackMark,
+  SpotifyMark,
   TrelloMark,
   WebhookMark,
 } from './service-marks';
@@ -64,7 +66,7 @@ export { NewspaperMark } from './newspaper-icons';
 export { EldritchMark } from './eldritch-icons';
 export { EldritchTendrils, WanderingEye } from './eldritch-decor';
 // Two eyes in the dark, once a minute, on the halloween skin only.
-export { NightEyes } from './halloween-decor';
+export { BloodDrip, NightEyes } from './halloween-decor';
 export { AutumnMark } from './autumn-icons';
 export { AutumnFall, AutumnHedge } from './autumn-decor';
 export { RunicMark } from './runic-icons';

@@ -3,6 +3,7 @@ import { useReducedMotion } from 'framer-motion';
 
 import type { ThemeSkin } from '@/entities/user/model/types';
 import { cn } from '@/shared/lib/cn';
+import { BatGlyph } from '@/shared/ui/halloween-icons';
 
 /**
  * The seven skins that do something to the *room*, and what each one does.
@@ -97,15 +98,6 @@ const LeafGlyph = ({ fill }: { fill: string }) => (
       transform="rotate(18 12 12)"
     />
     <path d="M12 4v16" stroke="rgb(0 0 0 / 0.35)" strokeWidth="1.1" fill="none" />
-  </svg>
-);
-
-const BatGlyph = ({ fill }: { fill: string }) => (
-  <svg viewBox="0 0 32 16" className="h-full w-full" aria-hidden>
-    <path
-      d="M16 4c1.4-2 2.6-2.6 3.4-1.6.5.6.4 1.6-.1 2.4 2-.9 3.8-.7 5.5.6 1.3 1 2.2.9 3.4-.3-.3 2.2-1.4 3.7-3.3 4.5-1.7.7-3.3.6-4.8-.3-1.3-.8-2.4-.6-3.2.5l-.9 1.2-.9-1.2c-.8-1.1-1.9-1.3-3.2-.5-1.5.9-3.1 1-4.8.3C5.2 8.8 4.1 7.3 3.8 5.1c1.2 1.2 2.1 1.3 3.4.3 1.7-1.3 3.5-1.5 5.5-.6-.5-.8-.6-1.8-.1-2.4.8-1 2-.4 3.4 1.6Z"
-      fill={fill}
-    />
   </svg>
 );
 
@@ -251,12 +243,38 @@ export const SkinAmbience = ({ skin, density = 1, className }: SkinAmbienceProps
 
           case 'bats':
             return (
-              <span key={index} className="sa-cross" style={{ ...style, top: `${p.top}%` }}>
-                <span className="sa-flap">
-                  {/* Always the silhouette, never the accent: a bat is a shape
-                      against the sky, and an orange one reads as a logo. */}
-                  <BatGlyph fill={toneA} />
-                </span>
+              /*
+               * The app's own bat, not a flat copy of it.
+               *
+               * This used to be a second silhouette declared in this file, with
+               * its own path and its own idea of a flap — so the bats crossing
+               * the preview were a different animal from the ones coming off a
+               * dialog, and only one of the two got fixed whenever either was.
+               * `BatGlyph` is rigged (see `halloween-icons.tsx`) and animates
+               * its own wings, so the wrapper that used to squash the whole
+               * glyph is gone with it.
+               *
+               * Colour comes from `--hw-bat-ink` rather than from `toneA`,
+               * which is the one place this component reads a live token
+               * instead of a literal — and it has to. The tone is a fixed
+               * near-black, which is correct over the light half of the compare
+               * box and invisible over the dark one; the token is the only
+               * value that knows which of those the reader is looking at.
+               * `--bat-flap` slows the beat: these are crossing a sky, not
+               * passing your face.
+               */
+              <span
+                key={index}
+                className="sa-cross"
+                style={{
+                  ...style,
+                  top: `${p.top}%`,
+                  color: 'rgb(var(--hw-bat-ink))',
+                  ['--bat-flap' as string]: '0.42s',
+                  filter: 'drop-shadow(0 0 4px rgb(var(--hw-bat-rim) / 0.5))',
+                }}
+              >
+                <BatGlyph className="h-full w-full" />
               </span>
             );
 

@@ -65,18 +65,59 @@ export const HalloweenMark = ({ className }: GlyphProps) => (
 );
 
 /**
- * One bat, drawn as a single path so a hundred of them are still one node each.
+ * One bat, rigged: a body and two wings that beat independently.
  *
- * The wings do not animate individually — the flap is a `scaleY` on the whole
- * glyph (see `.hw-bat` in `index.css`), which is one compositor property and
- * reads correctly at the size these are actually seen at. Rigging two wings
- * would be more code, more nodes and, at 16 pixels, invisible.
+ * ## Why it stopped being a single path
+ *
+ * It was one path and the "flap" was a `scaleY` on the whole glyph — the bat
+ * squashed vertically, body and all, twice a second. The argument for it was
+ * that a rig is invisible at sixteen pixels, and that was true of the *old*
+ * sixteen pixels: a shape wide enough to read as a wingspan, squashing.
+ *
+ * What it actually looked like next to a real flapping bat is the thing this
+ * change is about. A bat in flight moves its wings through about fifty degrees
+ * and keeps its body level; squashing the body is what a moth pinned to a
+ * board does. Rigging the two wings costs two more nodes and one more keyframe
+ * list, and it is the difference between a shape that is being animated and
+ * something that is flying.
+ *
+ * ## How the rig works
+ *
+ * Each wing is its own path, rotating about the shoulder it joins the body at —
+ * `transform-box: fill-box` plus a `transform-origin` on the side nearest the
+ * body, both in `.bat-wing` in `index.css`. The two are mirror images across
+ * `x = 16`, written out rather than produced with `scale(-1, 1)` on a group: a
+ * CSS `transform` replaces an SVG `transform` attribute rather than composing
+ * with it, so the mirror would be silently thrown away the moment the flap
+ * animation touched the same element. (It was, the first time.)
+ *
+ * The trailing edge of each wing has two notches. That is the whole silhouette:
+ * at twenty pixels it is the only feature that separates a bat from a bird, and
+ * it survives being scaled down further than anything else in the shape.
+ *
+ * The glyph carries no colour of its own — `currentColor` throughout — so the
+ * modal swarm and the landing page's field each set their own, which is what
+ * lets one of them be a silhouette against a cream page and the other a
+ * moonlit shape against a near-black one.
  */
 export const BatGlyph = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 24 16" fill="none" aria-hidden className={className}>
+  <svg viewBox="0 0 32 16" fill="none" aria-hidden className={className}>
     <path
-      d="M12 4.6c.9-1.5 2-2.2 2.6-1.3.4.6.3 1.5.1 2.2 1.3-1.4 3-2.4 4.6-2.4-.6.9-.8 2-.7 3 1-.8 2.2-1.2 3.4-1.1-1.4.9-2.3 2.3-2.8 3.9-.4 1.4-1.5 2.4-3 2.6-1.3.2-2.5-.4-3.2-1.5l-1-1.5-1 1.5c-.7 1.1-1.9 1.7-3.2 1.5-1.5-.2-2.6-1.2-3-2.6C4.3 7.3 3.4 5.9 2 5c1.2-.1 2.4.3 3.4 1.1.1-1-.1-2.1-.7-3 1.6 0 3.3 1 4.6 2.4-.2-.7-.3-1.6.1-2.2.6-.9 1.7-.2 2.6 1.3Z"
+      className="bat-wing bat-wing--l"
       fill="currentColor"
+      d="M16 6.6 L9.5 4.2 L2 2.4 C3 4.6 4.2 6.4 5.8 8 L6.6 6.6 C7.4 8.4 8.8 9.8 10.6 10.6 L11.2 9 C12 10.2 13.8 11 16 11 Z"
+    />
+    <path
+      className="bat-wing bat-wing--r"
+      fill="currentColor"
+      d="M16 6.6 L22.5 4.2 L30 2.4 C29 4.6 27.8 6.4 26.2 8 L25.4 6.6 C24.6 8.4 23.2 9.8 21.4 10.6 L20.8 9 C20 10.2 18.2 11 16 11 Z"
+    />
+    {/* The ears, which are what stop the body reading as a beak. */}
+    <path fill="currentColor" d="M14.8 5.8 13.7 3.1 15.9 4.8Z" />
+    <path fill="currentColor" d="M17.2 5.8 18.3 3.1 16.1 4.8Z" />
+    <path
+      fill="currentColor"
+      d="M16 5.1c1 0 1.8.8 1.8 1.9v2.2c0 1.6-.8 2.9-1.8 2.9s-1.8-1.3-1.8-2.9V7c0-1.1.8-1.9 1.8-1.9Z"
     />
   </svg>
 );

@@ -237,6 +237,38 @@
     --panel-texture-size: auto;
     --page-wash: none;
 
+    /* --- Brand washes ------------------------------------------------------
+     *
+     * Three soft brand tints that used to be written into the components that
+     * carry them — the top of the landing page's introduction, and the two
+     * navigation rails. They are tokens now for one reason: a skin has to be
+     * able to say "not on me".
+     *
+     * `--page-wash` above is the whole page's tint and these are not; each is
+     * local to one surface, which is why they cannot be folded into it.
+     *
+     * Every skin gets them, and Studio turns all three off — see the
+     * `[data-skin='studio']` block below for why. */
+    --hero-wash: radial-gradient(60% 50% at 50% 0%, rgb(var(--brand) / 0.14), transparent 70%);
+    --rail-wash-left: radial-gradient(120% 60% at 0% 0%, rgb(var(--brand) / 0.16), transparent 62%);
+    --rail-wash-right: radial-gradient(120% 60% at 100% 0%, rgb(var(--brand) / 0.16), transparent 62%);
+
+    /* --- The bats ----------------------------------------------------------
+     *
+     * Declared on `:root` rather than inside the Halloween skin, because one of
+     * the two places bats are drawn is the landing page's theme *preview* — a
+     * box showing Halloween while the reader is wearing something else
+     * entirely. A token scoped to `[data-skin='halloween']` would resolve to
+     * nothing there, and the field would paint in whatever the fallback was.
+     *
+     * The ink lifts in dark mode and the rim brightens. Both are needed: a
+     * silhouette at #261a28 is invisible on a #110c16 page, and pure inversion
+     * (a white bat) reads as a moth. Lifting it a third of the way and putting
+     * a warm halo behind it is the streetlamp version, which is the one that
+     * looks like a bat in both palettes. */
+    --hw-bat-ink: 38 26 40;
+    --hw-bat-rim: 172 70 11;
+
     /* --- Lava --------------------------------------------------------------
      *
      * The flowing fill behind the product's "make a new thing" buttons and the
@@ -364,6 +396,32 @@
     color-scheme: light;
   }
 
+  /* -----------------------------------------------------------------------
+   * Skin: STUDIO — the plain one, and the only one that opts out of the
+   * brand washes.
+   *
+   * ## Why this block exists at all when `:root` *is* Studio
+   *
+   * Every value above is Studio's, and the other skins override what they
+   * want. That works because the defaults are the quiet choice — except for
+   * the three washes, where it is the other way round. A brand tint bleeding
+   * out of the top of the page and the inner corner of each rail is an
+   * *effect*: it is what makes Volcano feel lit and Space feel like a
+   * viewport. Studio is the skin somebody picks to make the product look like
+   * a tool, and on a plain grey-and-blue palette the same tint reads as a
+   * gradient somebody forgot to delete.
+   *
+   * So the wash stays the default — a new skin inherits the lit look without
+   * writing a line — and Studio says no. Declaring `none` in `:root` instead
+   * would have meant adding the gradient by hand to all fourteen other skins,
+   * and forgetting it on the fifteenth.
+   * --------------------------------------------------------------------- */
+  [data-skin='studio'] {
+    --hero-wash: none;
+    --rail-wash-left: none;
+    --rail-wash-right: none;
+  }
+
   .dark {
     /*
      * The three greys, pulled apart.
@@ -442,6 +500,10 @@
     --glass-shade-alpha: 0.35;
     --glass-sheen: 0.1;
     --glass-bloom: 0 14px 38px -18px rgb(0 0 0 / 0.75);
+
+    /* Moonlit rather than inverted — see the note in `:root`. */
+    --hw-bat-ink: 138 115 153;
+    --hw-bat-rim: 255 140 40;
 
     color-scheme: dark;
   }
@@ -3913,6 +3975,36 @@
    * do on a control sitting over a live application.
    */
   .ui-liquid-glass--interactive {
+    /*
+     * The halo is declared here, unlit, and *not* only on hover.
+     *
+     * ## The bug this fixes
+     *
+     * The resting material is four shadows and the hover state used to be five
+     * — the same four with a brand halo inserted before the bloom. A browser
+     * cannot interpolate two `box-shadow` lists of different lengths by
+     * matching them up; it pads the shorter one with transparent shadows *at
+     * the end*, so the pairs it actually animated were
+     *
+     *     bloom            ->  brand halo
+     *     (nothing)        ->  bloom
+     *
+     * The bloom therefore faded out of its own slot while a second copy faded
+     * in one slot later. For 150ms the panel had the wrong shadow under it and
+     * then snapped back — the "flick" around the border of the project tabs,
+     * and it was worst in light mode, where `--glass-bloom` is a dark shadow
+     * against a pale page and the mismatch is at its most visible.
+     *
+     * Declaring the halo at zero alpha in the resting state makes both lists
+     * five shadows in the same order, of the same types, so every pair
+     * interpolates with its own opposite number and only the alpha moves.
+     */
+    box-shadow:
+      inset 0 1px 0 0 rgb(var(--glass-rim) / var(--glass-rim-alpha)),
+      inset 0 -1px 0 0 rgb(0 0 0 / var(--glass-shade-alpha)),
+      inset 0 0 0 1px rgb(var(--glass-rim) / calc(var(--glass-rim-alpha) * 0.22)),
+      0 16px 40px -18px rgb(var(--brand) / 0),
+      var(--glass-bloom);
     transition:
       box-shadow var(--speed-ui) var(--ease-ui),
       border-color var(--speed-ui) var(--ease-ui);
@@ -9860,18 +9952,6 @@ html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='loading'] 
   animation: sa-traverse var(--sa-life) linear var(--sa-delay) infinite;
 }
 
-/*
- * `scaleY` on the whole glyph rather than two rigged wings: at the size these
- * are actually seen, a rig is invisible, and one compositor property times
- * seven elements is the difference between a flourish and a dropped frame.
- */
-.sa-flap {
-  display: block;
-  width: 100%;
-  height: 100%;
-  animation: sa-flap 0.22s ease-in-out infinite;
-}
-
 @keyframes sa-traverse {
   0% {
     transform: translate3d(-20cqw, 0, 0);
@@ -9894,16 +9974,6 @@ html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='loading'] 
   100% {
     transform: translate3d(120cqw, 0, 0);
     opacity: 0;
-  }
-}
-
-@keyframes sa-flap {
-  0%,
-  100% {
-    transform: scaleY(1);
-  }
-  50% {
-    transform: scaleY(0.4);
   }
 }
 
@@ -10048,30 +10118,82 @@ html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='loading'] 
 /* ---------------------------------------------------------------------------
    The bats.
 
-   `scaleY` on the whole glyph rather than two rigged wings: at the size these
-   are actually seen — sixteen pixels, moving, for under a second — a rig is
-   invisible, and one compositor property times nine elements is the difference
-   between a flourish and a dropped frame on a phone.
+   Two rigged wings, beating about the shoulder they join the body at, and a
+   body that stays level — see `BatGlyph` for why this replaced a `scaleY` on
+   the whole glyph.
 
-   The travel itself is Framer Motion's (see `BatSwarm`); this is only the flap
-   riding on top of it.
+   Both halves of the product use this rig: the burst off a dialog's border
+   (`BatSwarm`) and the field crossing the landing page's theme box
+   (`SkinAmbience`). The travel is each one's own; the flap is here, once.
+
+   `--bat-flap` is the beat. It is a variable because the two are at different
+   distances: a bat a metre from your face beats visibly slower than a shape
+   crossing the sky, and the field's is set longer for exactly that reason.
    --------------------------------------------------------------------------- */
-.hw-bat {
-  transform-origin: 50% 50%;
+.bat-wing {
+  /* Percentages on `transform-origin` need a box to be percentages *of*; for an
+     SVG shape that box is the path's own bounding box, and nothing else here
+     gives the right answer — the default (`view-box`) would swing every wing
+     about the centre of the whole glyph. */
+  transform-box: fill-box;
+  animation: bat-flap-r var(--bat-flap, 0.34s) ease-in-out infinite;
 }
 
-.hw-bat > svg {
-  animation: hw-flap 0.18s ease-in-out infinite;
+.bat-wing--l {
+  /* The shoulder: the inner edge, a little above centre, which is where the
+     joint actually is on the shape. */
+  transform-origin: 100% 30%;
+  animation-name: bat-flap-l;
 }
 
-@keyframes hw-flap {
+.bat-wing--r {
+  transform-origin: 0% 30%;
+}
+
+/*
+ * Up further than down, and faster up than down.
+ *
+ * A wingbeat is not a sine wave: the downstroke is the one doing the work and
+ * it is quicker, the recovery is slower and travels less. Splitting the cycle
+ * at 40% rather than 50% is the whole of that asymmetry, and it is what stops
+ * nine bats on screen looking like nine metronomes.
+ */
+@keyframes bat-flap-l {
   0%,
   100% {
-    transform: scaleY(1);
+    transform: rotate(-28deg);
   }
-  50% {
-    transform: scaleY(0.45);
+  40% {
+    transform: rotate(15deg);
   }
+}
+
+@keyframes bat-flap-r {
+  0%,
+  100% {
+    transform: rotate(28deg);
+  }
+  40% {
+    transform: rotate(-15deg);
+  }
+}
+
+.hw-bat {
+  transform-origin: 50% 50%;
+  /* Close enough to see the wings move, slow enough to read as flight. */
+  --bat-flap: 0.3s;
+  color: rgb(var(--hw-bat-ink));
+  /*
+   * A rim of the skin's own orange, and the reason these are visible at all.
+   *
+   * The swarm used to be drawn in `--content`, which flips with the palette:
+   * dark bats on the cream page, *white* bats in dark mode. A white bat is a
+   * moth. Now the silhouette stays dark in both and a soft halo behind it does
+   * the separating — the same trick a streetlamp plays on anything flying past
+   * it, and the only version of this that works on a near-black page without
+   * inverting the animal.
+   */
+  filter: drop-shadow(0 0 3px rgb(var(--hw-bat-rim) / 0.55));
 }
 
 /* ---------------------------------------------------------------------------
@@ -10236,7 +10358,7 @@ html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='loading'] 
 @media (prefers-reduced-motion: reduce) {
   .loader-pumpkin__eye,
   .loader-pumpkin__grin,
-  .hw-bat > svg {
+  .bat-wing {
     animation: none;
   }
 
@@ -10693,6 +10815,261 @@ html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='loading'] 
    * its shape and stops turning.
    */
   .loader-vibe > i {
+    animation: none;
+  }
+}
+
+/* ===========================================================================
+   Skin: PAPER — the pointer is a paper plane.
+   ===========================================================================
+
+   ## Why this skin gets a cursor and the others do not (yet)
+
+   A custom cursor is the most intrusive thing a theme can do. It replaces a
+   control the operating system owns, it is drawn at a size the page cannot
+   read, and it is the one piece of chrome a reader tracks continuously — so it
+   has to be *legible first and characterful second*, and the shape has to work
+   at 32 pixels with no anti-aliasing to rely on.
+
+   Paper is the skin where it earns its place: it is already an illustrated
+   world with thick ink outlines and flat fills, and a paper plane is the one
+   object in that world that is unmistakable at cursor size. It is also the
+   right metaphor — a plane is a thing you point and send.
+
+   ## Why two files and not one rotated
+
+   A cursor cannot be transformed by CSS. The two states are the same dart drawn
+   at two angles, and the angles are the whole message: the diagonal one sits
+   where the system arrow sits, so nothing about aiming changes, and the upright
+   one says "this will go somewhere" on anything that can be pressed. Rotating
+   the diagonal one to vertical about its own centre would also move the nose,
+   and the nose is the hotspot.
+
+   ## Hotspots
+
+   `3 3` and `16 2` — the nose in each drawing, to the pixel. A cursor whose
+   hotspot is not on its point is the single most disorienting thing an
+   interface can do: every click lands somewhere the reader did not aim.
+
+   ## Fallbacks
+
+   Each rule ends in the keyword it replaces (`auto`, `pointer`, `text`), so a
+   browser that refuses the image — or a user agent that caps cursor size and
+   drops it — gets the ordinary system cursor rather than nothing.
+
+   Disabled controls, text fields and drag handles are deliberately *not*
+   covered: `not-allowed`, the I-beam and `grab` each say something no plane can
+   say, and a theme is not worth losing them over.
+   --------------------------------------------------------------------------- */
+
+[data-skin='paper'] {
+  cursor: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%20width%3D%2232%22%20height%3D%2232%22%3E%3Cg%20stroke%3D%22%231a1a30%22%20stroke-width%3D%221.6%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%203%2024.8%209.2%2014.2%2014.2Z%22%20fill%3D%22%23facc15%22%2F%3E%3Cpath%20d%3D%22M3%203%2014.2%2014.2%209.2%2024.8Z%22%20fill%3D%22%23eab308%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 3 3, auto;
+}
+
+[data-skin='paper'] a[href],
+[data-skin='paper'] button:not(:disabled),
+[data-skin='paper'] summary,
+[data-skin='paper'] select:not(:disabled),
+[data-skin='paper'] label[for],
+[data-skin='paper'] [role='button']:not([aria-disabled='true']),
+[data-skin='paper'] [role='tab'],
+[data-skin='paper'] [role='menuitem'],
+[data-skin='paper'] [role='option'],
+[data-skin='paper'] [role='switch'],
+[data-skin='paper'] input[type='checkbox']:not(:disabled),
+[data-skin='paper'] input[type='radio']:not(:disabled),
+[data-skin='paper'] input[type='submit']:not(:disabled),
+[data-skin='paper'] input[type='button']:not(:disabled),
+[data-skin='paper'] .cursor-pointer {
+  cursor: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%20width%3D%2232%22%20height%3D%2232%22%3E%3Cg%20stroke%3D%22%231a1a30%22%20stroke-width%3D%221.6%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M16%202%2029%2028%2016%2022Z%22%20fill%3D%22%23eab308%22%2F%3E%3Cpath%20d%3D%22M16%202%2016%2022%203%2028Z%22%20fill%3D%22%23facc15%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 16 2, pointer;
+}
+
+/* The two the plane must not swallow: a field is still a field, and something
+   you can pick up still says so. */
+[data-skin='paper'] input:not([type='checkbox']):not([type='radio']):not([type='submit']):not([type='button']),
+[data-skin='paper'] textarea,
+[data-skin='paper'] [contenteditable='true'] {
+  cursor: text;
+}
+
+[data-skin='paper'] .cursor-grab {
+  cursor: grab;
+}
+
+[data-skin='paper'] .cursor-grabbing,
+[data-skin='paper'] .cursor-grab:active {
+  cursor: grabbing;
+}
+
+/* ===========================================================================
+   Halloween: what ran down the wall under the header.
+   ===========================================================================
+
+   ## What it is
+
+   One flat silhouette — a pooled edge with runs hanging off it — painted in the
+   skin's own oxblood and masked out of a solid colour. Flat 2D on purpose: the
+   reference for this is a printed decal, not a render, and every highlight and
+   soft shadow that could have gone on it would have made it a *thing in the
+   room* rather than a mark on the wall behind everything.
+
+   ## Why a mask rather than a coloured image
+
+   The shape is one file and the colour is two values — deeper and browner on
+   the cream page, brighter on the near-black one. A data URI cannot read a
+   custom property, so an image with the colour baked in would be two images
+   that have to be edited in step. The silhouette is therefore a mask and
+   `background-color` is the paint, which also means the alpha is a token
+   somebody can turn down without regenerating anything.
+
+   ## Why it never overlaps anything
+
+   `z-index: -1` inside the shell's own stacking context (`isolate` on the
+   layout root). That puts it above the page's background colour and below every
+   piece of content in it — a card, a menu, a toast and the rails all paint over
+   it, which is the whole requirement. It is also `pointer-events: none` and
+   `aria-hidden`, so nothing can be clicked through it and nothing is announced.
+
+   ## Why the top is a variable
+
+   The runs start at the bottom edge of the header, and on this product the
+   header is not always there: it is a hidden rail that slides in on pointer
+   proximity and can be pinned open. `--hw-drip-top` is published by
+   `TopNavigation` — the one component that knows — and the layer eases between
+   the two positions, so the blood follows the bar down instead of hanging in
+   mid-air above it.
+   --------------------------------------------------------------------------- */
+
+[data-skin='halloween'] {
+  /* Dried, on a cream page. */
+  --hw-blood: 124 26 26;
+  --hw-blood-alpha: 0.34;
+}
+
+[data-skin='halloween'].dark {
+  /* Wetter and darker, because the page it is on is nearly black. */
+  --hw-blood: 138 20 38;
+  --hw-blood-alpha: 0.5;
+}
+
+.hw-blood {
+  position: fixed;
+  left: 0;
+  right: 0;
+  /* Sits under the header when there is one, at the top of the page when there
+     is not — see `--hw-drip-top`. */
+  top: var(--hw-drip-top, 0px);
+  height: 420px;
+  z-index: -1;
+  pointer-events: none;
+  background-color: rgb(var(--hw-blood) / var(--hw-blood-alpha));
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%201200%20420%22%20width%3D%221200%22%20height%3D%22420%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M1200%200%20H0%20V22%20Q27.0%2038.2%2054%2026%20Q81.0%2044.95%20108%2039%20Q132.0%2044.95%20156%2029%20Q181.0%2031.450000000000003%20206%2024%20Q231.0%2040.900000000000006%20256%2036%20Q284.0%2051.7%20312%2044%20Q342.0%2051.7%20372%2028%20Q396.0%2036.85%20420%2033%20Q445.0%2036.85%20470%2025%20Q493.0%2046.3%20516%2040%20Q544.0%2046.3%20572%2031%20Q600.0%2034.15%20628%2024%20Q650.0%2039.55%20672%2035%20Q700.0%2054.400000000000006%20728%2046%20Q759.0%2054.400000000000006%20790%2027%20Q816.0%2042.25%20842%2037%20Q870.0%2042.25%20898%2030%20Q923.0%2049.0%20948%2042%20Q979.0%2049.0%201010%2026%20Q1034.0%2038.2%201058%2034%20Q1087.0%2038.2%201116%2028%20Q1143.0%2043.6%201170%2038%20Q1185.0%2043.6%201200%2031%20L1200%200%20Z%20M38%2024%20C38%2076.80000000000001%2040.025%2086.4%2040.025%20117.525%20A2.475%202.475%200%200%200%2044.975%20117.525%20C44.975%2086.4%2047%2076.80000000000001%2047%2024%20ZM37.5%20117.525%20a5.0%205.0%200%201%200%2010.0%200%20a5.0%205.0%200%201%200%20-10.0%200%20Z%20M96%2024%20C96%2048.2%2097.125%2052.6%2097.125%2066.625%20A1.375%201.375%200%200%200%2099.875%2066.625%20C99.875%2052.6%20101%2048.2%20101%2024%20Z%20M150%2024%20C150%20151.60000000000002%20152.7%20174.8%20152.7%20252.7%20A3.3000000000000003%203.3000000000000003%200%200%200%20159.29999999999998%20252.7%20C159.29999999999998%20174.8%20162%20151.60000000000002%20162%2024%20ZM148.5%20252.7%20a7.5%207.5%200%201%200%2015.0%200%20a7.5%207.5%200%201%200%20-15.0%200%20Z%20M214%2024%20C214%2062.5%20214.9%2069.5%20214.9%2092.9%20A1.1%201.1%200%200%200%20217.1%2092.9%20C217.1%2069.5%20218%2062.5%20218%2024%20ZM212.6%2092.9%20a3.4%203.4%200%201%200%206.8%200%20a3.4%203.4%200%201%200%20-6.8%200%20Z%20M268%2024%20C268%20106.5%20269.35%20121.5%20269.35%20172.35%20A1.6500000000000001%201.6500000000000001%200%200%200%20272.65000000000003%20172.35%20C272.65000000000003%20121.5%20274%20106.5%20274%2024%20Z%20M330%2024%20C330%20205.50000000000003%20333.15%20238.5%20333.15%20350.15%20A3.8500000000000005%203.8500000000000005%200%200%200%20340.84999999999997%20350.15%20C340.84999999999997%20238.5%20344%20205.50000000000003%20344%2024%20ZM328.0%20350.15%20a9.0%209.0%200%201%200%2018.0%200%20a9.0%209.0%200%201%200%20-18.0%200%20Z%20M402%2024%20C402%2055.900000000000006%20403.125%2061.7%20403.125%2080.625%20A1.375%201.375%200%200%200%20405.875%2080.625%20C405.875%2061.7%20407%2055.900000000000006%20407%2024%20ZM400.9%2080.625%20a3.6%203.6%200%201%200%207.2%200%20a3.6%203.6%200%201%200%20-7.2%200%20Z%20M452%2024%20C452%20128.5%20454.025%20147.5%20454.025%20211.525%20A2.475%202.475%200%200%200%20458.97499999999997%20211.525%20C458.97499999999997%20147.5%20461%20128.5%20461%2024%20ZM450.3%20211.525%20a6.2%206.2%200%201%200%2012.4%200%20a6.2%206.2%200%201%200%20-12.4%200%20Z%20M520%2024%20C520%2081.2%20520.9%2091.6%20520.9%20126.9%20A1.1%201.1%200%200%200%20523.1%20126.9%20C523.1%2091.6%20524%2081.2%20524%2024%20Z%20M566%2024%20C566%20171.4%20568.475%20198.2%20568.475%20288.975%20A3.0250000000000004%203.0250000000000004%200%200%200%20574.525%20288.975%20C574.525%20198.2%20577%20171.4%20577%2024%20ZM564.5%20288.975%20a7.0%207.0%200%201%200%2014.0%200%20a7.0%207.0%200%201%200%20-14.0%200%20Z%20M640%2024%20C640%2058.1%20641.125%2064.3%20641.125%2084.625%20A1.375%201.375%200%200%200%20643.875%2084.625%20C643.875%2064.3%20645%2058.1%20645%2024%20ZM639.1%2084.625%20a3.4%203.4%200%201%200%206.8%200%20a3.4%203.4%200%201%200%20-6.8%200%20Z%20M694%2024%20C694%20102.10000000000001%20695.35%20116.30000000000001%20695.35%20164.35%20A1.6500000000000001%201.6500000000000001%200%200%200%20698.65%20164.35%20C698.65%20116.30000000000001%20700%20102.10000000000001%20700%2024%20ZM692.6%20164.35%20a4.4%204.4%200%201%200%208.8%200%20a4.4%204.4%200%201%200%20-8.8%200%20Z%20M752%2024%20C752%20189.0%20754.925%20219.0%20754.925%20320.425%20A3.575%203.575%200%200%200%20762.0749999999999%20320.425%20C762.0749999999999%20219.0%20765%20189.0%20765%2024%20ZM750.1%20320.425%20a8.4%208.4%200%201%200%2016.8%200%20a8.4%208.4%200%201%200%20-16.8%200%20Z%20M826%2024%20C826%2052.6%20826.9%2057.8%20826.9%2074.9%20A1.1%201.1%200%200%200%20829.1%2074.9%20C829.1%2057.8%20830%2052.6%20830%2024%20Z%20M872%2024%20C872%20121.9%20874.025%20139.7%20874.025%20199.525%20A2.475%202.475%200%200%200%20878.975%20199.525%20C878.975%20139.7%20881%20121.9%20881%2024%20ZM870.5%20199.525%20a6.0%206.0%200%201%200%2012.0%200%20a6.0%206.0%200%201%200%20-12.0%200%20Z%20M936%2024%20C936%2076.80000000000001%20937.125%2086.4%20937.125%20118.625%20A1.375%201.375%200%200%200%20939.875%20118.625%20C939.875%2086.4%20941%2076.80000000000001%20941%2024%20ZM934.9%20118.625%20a3.6%203.6%200%201%200%207.2%200%20a3.6%203.6%200%201%200%20-7.2%200%20Z%20M992%2024%20C992%20159.3%20994.7%20183.9%20994.7%20266.7%20A3.3000000000000003%203.3000000000000003%200%200%200%201001.3000000000001%20266.7%20C1001.3000000000001%20183.9%201004%20159.3%201004%2024%20ZM990.6%20266.7%20a7.4%207.4%200%201%200%2014.8%200%20a7.4%207.4%200%201%200%20-14.8%200%20Z%20M1062%2024%20C1062%2061.400000000000006%201063.125%2068.2%201063.125%2090.625%20A1.375%201.375%200%200%200%201065.875%2090.625%20C1065.875%2068.2%201067%2061.400000000000006%201067%2024%20ZM1061.1%2090.625%20a3.4%203.4%200%201%200%206.8%200%20a3.4%203.4%200%201%200%20-6.8%200%20Z%20M1112%2024%20C1112%20112.0%201113.35%20128.0%201113.35%20182.35%20A1.6500000000000001%201.6500000000000001%200%200%200%201116.6499999999999%20182.35%20C1116.6499999999999%20128.0%201118%20112.0%201118%2024%20ZM1110.4%20182.35%20a4.6%204.6%200%201%200%209.2%200%20a4.6%204.6%200%201%200%20-9.2%200%20Z%20M1164%2024%20C1164%2088.9%201165.8%20100.7%201165.8%20139.8%20A2.2%202.2%200%200%200%201170.2%20139.8%20C1170.2%20100.7%201172%2088.9%201172%2024%20ZM1162.6%20139.8%20a5.4%205.4%200%201%200%2010.8%200%20a5.4%205.4%200%201%200%20-10.8%200%20Z%20M173.8%20300%20a4.2%204.2%200%201%200%208.4%200%20a4.2%204.2%200%201%200%20-8.4%200%20Z%20M482.6%20252%20a3.4%203.4%200%201%200%206.8%200%20a3.4%203.4%200%201%200%20-6.8%200%20Z%20M695.2%20360%20a4.8%204.8%200%201%200%209.6%200%20a4.8%204.8%200%201%200%20-9.6%200%20Z%20M1006.2%20330%20a3.8%203.8%200%201%200%207.6%200%20a3.8%203.8%200%201%200%20-7.6%200%20Z%20M857.0%20262%20a3.0%203.0%200%201%200%206.0%200%20a3.0%203.0%200%201%200%20-6.0%200%20Z%22%2F%3E%3C%2Fsvg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%201200%20420%22%20width%3D%221200%22%20height%3D%22420%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M1200%200%20H0%20V22%20Q27.0%2038.2%2054%2026%20Q81.0%2044.95%20108%2039%20Q132.0%2044.95%20156%2029%20Q181.0%2031.450000000000003%20206%2024%20Q231.0%2040.900000000000006%20256%2036%20Q284.0%2051.7%20312%2044%20Q342.0%2051.7%20372%2028%20Q396.0%2036.85%20420%2033%20Q445.0%2036.85%20470%2025%20Q493.0%2046.3%20516%2040%20Q544.0%2046.3%20572%2031%20Q600.0%2034.15%20628%2024%20Q650.0%2039.55%20672%2035%20Q700.0%2054.400000000000006%20728%2046%20Q759.0%2054.400000000000006%20790%2027%20Q816.0%2042.25%20842%2037%20Q870.0%2042.25%20898%2030%20Q923.0%2049.0%20948%2042%20Q979.0%2049.0%201010%2026%20Q1034.0%2038.2%201058%2034%20Q1087.0%2038.2%201116%2028%20Q1143.0%2043.6%201170%2038%20Q1185.0%2043.6%201200%2031%20L1200%200%20Z%20M38%2024%20C38%2076.80000000000001%2040.025%2086.4%2040.025%20117.525%20A2.475%202.475%200%200%200%2044.975%20117.525%20C44.975%2086.4%2047%2076.80000000000001%2047%2024%20ZM37.5%20117.525%20a5.0%205.0%200%201%200%2010.0%200%20a5.0%205.0%200%201%200%20-10.0%200%20Z%20M96%2024%20C96%2048.2%2097.125%2052.6%2097.125%2066.625%20A1.375%201.375%200%200%200%2099.875%2066.625%20C99.875%2052.6%20101%2048.2%20101%2024%20Z%20M150%2024%20C150%20151.60000000000002%20152.7%20174.8%20152.7%20252.7%20A3.3000000000000003%203.3000000000000003%200%200%200%20159.29999999999998%20252.7%20C159.29999999999998%20174.8%20162%20151.60000000000002%20162%2024%20ZM148.5%20252.7%20a7.5%207.5%200%201%200%2015.0%200%20a7.5%207.5%200%201%200%20-15.0%200%20Z%20M214%2024%20C214%2062.5%20214.9%2069.5%20214.9%2092.9%20A1.1%201.1%200%200%200%20217.1%2092.9%20C217.1%2069.5%20218%2062.5%20218%2024%20ZM212.6%2092.9%20a3.4%203.4%200%201%200%206.8%200%20a3.4%203.4%200%201%200%20-6.8%200%20Z%20M268%2024%20C268%20106.5%20269.35%20121.5%20269.35%20172.35%20A1.6500000000000001%201.6500000000000001%200%200%200%20272.65000000000003%20172.35%20C272.65000000000003%20121.5%20274%20106.5%20274%2024%20Z%20M330%2024%20C330%20205.50000000000003%20333.15%20238.5%20333.15%20350.15%20A3.8500000000000005%203.8500000000000005%200%200%200%20340.84999999999997%20350.15%20C340.84999999999997%20238.5%20344%20205.50000000000003%20344%2024%20ZM328.0%20350.15%20a9.0%209.0%200%201%200%2018.0%200%20a9.0%209.0%200%201%200%20-18.0%200%20Z%20M402%2024%20C402%2055.900000000000006%20403.125%2061.7%20403.125%2080.625%20A1.375%201.375%200%200%200%20405.875%2080.625%20C405.875%2061.7%20407%2055.900000000000006%20407%2024%20ZM400.9%2080.625%20a3.6%203.6%200%201%200%207.2%200%20a3.6%203.6%200%201%200%20-7.2%200%20Z%20M452%2024%20C452%20128.5%20454.025%20147.5%20454.025%20211.525%20A2.475%202.475%200%200%200%20458.97499999999997%20211.525%20C458.97499999999997%20147.5%20461%20128.5%20461%2024%20ZM450.3%20211.525%20a6.2%206.2%200%201%200%2012.4%200%20a6.2%206.2%200%201%200%20-12.4%200%20Z%20M520%2024%20C520%2081.2%20520.9%2091.6%20520.9%20126.9%20A1.1%201.1%200%200%200%20523.1%20126.9%20C523.1%2091.6%20524%2081.2%20524%2024%20Z%20M566%2024%20C566%20171.4%20568.475%20198.2%20568.475%20288.975%20A3.0250000000000004%203.0250000000000004%200%200%200%20574.525%20288.975%20C574.525%20198.2%20577%20171.4%20577%2024%20ZM564.5%20288.975%20a7.0%207.0%200%201%200%2014.0%200%20a7.0%207.0%200%201%200%20-14.0%200%20Z%20M640%2024%20C640%2058.1%20641.125%2064.3%20641.125%2084.625%20A1.375%201.375%200%200%200%20643.875%2084.625%20C643.875%2064.3%20645%2058.1%20645%2024%20ZM639.1%2084.625%20a3.4%203.4%200%201%200%206.8%200%20a3.4%203.4%200%201%200%20-6.8%200%20Z%20M694%2024%20C694%20102.10000000000001%20695.35%20116.30000000000001%20695.35%20164.35%20A1.6500000000000001%201.6500000000000001%200%200%200%20698.65%20164.35%20C698.65%20116.30000000000001%20700%20102.10000000000001%20700%2024%20ZM692.6%20164.35%20a4.4%204.4%200%201%200%208.8%200%20a4.4%204.4%200%201%200%20-8.8%200%20Z%20M752%2024%20C752%20189.0%20754.925%20219.0%20754.925%20320.425%20A3.575%203.575%200%200%200%20762.0749999999999%20320.425%20C762.0749999999999%20219.0%20765%20189.0%20765%2024%20ZM750.1%20320.425%20a8.4%208.4%200%201%200%2016.8%200%20a8.4%208.4%200%201%200%20-16.8%200%20Z%20M826%2024%20C826%2052.6%20826.9%2057.8%20826.9%2074.9%20A1.1%201.1%200%200%200%20829.1%2074.9%20C829.1%2057.8%20830%2052.6%20830%2024%20Z%20M872%2024%20C872%20121.9%20874.025%20139.7%20874.025%20199.525%20A2.475%202.475%200%200%200%20878.975%20199.525%20C878.975%20139.7%20881%20121.9%20881%2024%20ZM870.5%20199.525%20a6.0%206.0%200%201%200%2012.0%200%20a6.0%206.0%200%201%200%20-12.0%200%20Z%20M936%2024%20C936%2076.80000000000001%20937.125%2086.4%20937.125%20118.625%20A1.375%201.375%200%200%200%20939.875%20118.625%20C939.875%2086.4%20941%2076.80000000000001%20941%2024%20ZM934.9%20118.625%20a3.6%203.6%200%201%200%207.2%200%20a3.6%203.6%200%201%200%20-7.2%200%20Z%20M992%2024%20C992%20159.3%20994.7%20183.9%20994.7%20266.7%20A3.3000000000000003%203.3000000000000003%200%200%200%201001.3000000000001%20266.7%20C1001.3000000000001%20183.9%201004%20159.3%201004%2024%20ZM990.6%20266.7%20a7.4%207.4%200%201%200%2014.8%200%20a7.4%207.4%200%201%200%20-14.8%200%20Z%20M1062%2024%20C1062%2061.400000000000006%201063.125%2068.2%201063.125%2090.625%20A1.375%201.375%200%200%200%201065.875%2090.625%20C1065.875%2068.2%201067%2061.400000000000006%201067%2024%20ZM1061.1%2090.625%20a3.4%203.4%200%201%200%206.8%200%20a3.4%203.4%200%201%200%20-6.8%200%20Z%20M1112%2024%20C1112%20112.0%201113.35%20128.0%201113.35%20182.35%20A1.6500000000000001%201.6500000000000001%200%200%200%201116.6499999999999%20182.35%20C1116.6499999999999%20128.0%201118%20112.0%201118%2024%20ZM1110.4%20182.35%20a4.6%204.6%200%201%200%209.2%200%20a4.6%204.6%200%201%200%20-9.2%200%20Z%20M1164%2024%20C1164%2088.9%201165.8%20100.7%201165.8%20139.8%20A2.2%202.2%200%200%200%201170.2%20139.8%20C1170.2%20100.7%201172%2088.9%201172%2024%20ZM1162.6%20139.8%20a5.4%205.4%200%201%200%2010.8%200%20a5.4%205.4%200%201%200%20-10.8%200%20Z%20M173.8%20300%20a4.2%204.2%200%201%200%208.4%200%20a4.2%204.2%200%201%200%20-8.4%200%20Z%20M482.6%20252%20a3.4%203.4%200%201%200%206.8%200%20a3.4%203.4%200%201%200%20-6.8%200%20Z%20M695.2%20360%20a4.8%204.8%200%201%200%209.6%200%20a4.8%204.8%200%201%200%20-9.6%200%20Z%20M1006.2%20330%20a3.8%203.8%200%201%200%207.6%200%20a3.8%203.8%200%201%200%20-7.6%200%20Z%20M857.0%20262%20a3.0%203.0%200%201%200%206.0%200%20a3.0%203.0%200%201%200%20-6.0%200%20Z%22%2F%3E%3C%2Fsvg%3E");
+  -webkit-mask-repeat: repeat-x;
+  mask-repeat: repeat-x;
+  -webkit-mask-size: 1200px 420px;
+  mask-size: 1200px 420px;
+  -webkit-mask-position: 0 0;
+  mask-position: 0 0;
+  /* The same spring the rail itself travels on, near enough: the blood is
+     attached to the bar, so the two have to move together or the mark reads as
+     a separate object that happens to be nearby. */
+  transition: top 320ms var(--ease-ui, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hw-blood {
+    transition: none;
+  }
+}
+
+/* ===========================================================================
+   The Spotify player.
+   ===========================================================================
+
+   Two pieces of chrome the component cannot express in utilities: a record that
+   turns, and a range input that looks like it belongs to whichever skin is on.
+
+   Everything else about the player — its surface, its border, its radius, its
+   shadow — comes from `.panel`, so the arcade skin gets a hard-edged tile and
+   the newsprint skin gets a printed box without this block knowing either name.
+   --------------------------------------------------------------------------- */
+
+.sp-disc {
+  /* A record: a black disc, a label, and the light catching one groove. The
+     conic gradient is the sheen; without it a spinning circle is a circle. */
+  background:
+    conic-gradient(
+      from 0deg,
+      rgb(var(--content) / 0.05) 0deg,
+      rgb(var(--content) / 0.24) 40deg,
+      rgb(var(--content) / 0.05) 90deg,
+      rgb(var(--content) / 0.22) 200deg,
+      rgb(var(--content) / 0.05) 280deg,
+      rgb(var(--content) / 0.24) 330deg,
+      rgb(var(--content) / 0.05) 360deg
+    ),
+    radial-gradient(circle at 50% 50%, rgb(var(--brand) / 0.35) 0 34%, transparent 36%),
+    rgb(var(--surface-sunken));
+  border: 1px solid rgb(var(--edge) / 0.7);
+  animation: sp-spin 3.4s linear infinite;
+}
+
+@keyframes sp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/*
+ * The volume slider.
+ *
+ * `appearance: none` then both vendor thumbs, because the pseudo-elements
+ * cannot be combined into one selector list — a browser that does not
+ * understand one of them discards the whole rule, which is how a restyled
+ * slider ends up with a default thumb on exactly one engine.
+ */
+.sp-volume {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 3px;
+  border-radius: 999px;
+  background: rgb(var(--edge) / 0.8);
+  outline: none;
+  cursor: pointer;
+}
+
+.sp-volume::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+  background: rgb(var(--brand));
+  border: 1px solid rgb(var(--surface-raised));
+}
+
+.sp-volume::-moz-range-thumb {
+  width: 11px;
+  height: 11px;
+  border: 1px solid rgb(var(--surface-raised));
+  border-radius: 999px;
+  background: rgb(var(--brand));
+}
+
+.sp-volume:focus-visible {
+  box-shadow: 0 0 0 2px rgb(var(--brand) / 0.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /*
+   * The disc holds still.
+   *
+   * Unlike the decorative fields, the spin is *state* — it is how the player
+   * says the music is playing — so the glyph in the middle keeps carrying that
+   * on its own, which it does anyway. Nothing is lost but the motion.
+   */
+  .sp-disc {
     animation: none;
   }
 }

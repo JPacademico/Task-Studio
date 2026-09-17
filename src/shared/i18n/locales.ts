@@ -423,6 +423,37 @@ const en = {
   'cli.commandsRegion': 'Task Studio CLI commands',
   'cli.commandScrollable': 'Command — scroll sideways to see the rest',
 
+  // ---- Spotify ------------------------------------------------------------
+  'spotify.title': 'Spotify',
+  'spotify.pitch':
+    'Put a small player on your screen: what is playing, skip and pause, volume, and a search box. Yours alone — nobody on your projects can see or touch it.',
+  'spotify.connect': 'Connect Spotify',
+  'spotify.connected': 'Spotify is connected.',
+  'spotify.cancelled': 'No Spotify account was connected.',
+  'spotify.failed': 'Spotify could not be connected. Try again.',
+  'spotify.connectedAs': 'Connected as {name}',
+  'spotify.disconnect': 'Disconnect',
+  'spotify.disconnected': 'Spotify is disconnected.',
+  'spotify.disconnectFailed': 'Could not disconnect Spotify.',
+  'spotify.updateFailed': 'Could not change that.',
+  'spotify.commandFailed': 'Spotify would not do that.',
+  'spotify.showPlayer': 'Show the player',
+  'spotify.showPlayerHint': 'Keeps the connection and hides the player from your screen.',
+  'spotify.unavailable': 'Not enabled here',
+  'spotify.unavailableHint':
+    'This deployment has no Spotify application configured, so there is nothing to connect to.',
+  'spotify.open': 'Open the player',
+  'spotify.close': 'Close the player',
+  'spotify.play': 'Play',
+  'spotify.pause': 'Pause',
+  'spotify.next': 'Next track',
+  'spotify.previous': 'Previous track',
+  'spotify.idle': 'Nothing is playing',
+  'spotify.premiumOnly': 'Spotify allows skipping and volume on Premium only.',
+  'spotify.searchPlaceholder': 'Search songs or artists',
+  'spotify.notice':
+    'The player controls whatever device Spotify is already playing on. Nothing you listen to is stored here.',
+
   // ---- Google Calendar ----------------------------------------------------
   'calendar.title': 'Google Calendar',
   'calendar.pitch':
@@ -1101,6 +1132,10 @@ const en = {
   'figma.name': 'Figma',
   'figma.connectedTitle': 'Figma is connected',
   'figma.securityLabel': 'About this token',
+  /* The way out of the dialog for somebody who has neither half of the form
+     yet. Opens the documentation in a new tab, deliberately: a step-by-step
+     that navigated away would take the fields already filled in with it. */
+  'figma.howTo': 'How to set this up',
   'figma.open': 'Open in Figma',
   'figma.connect': 'Connect Figma',
   'figma.connectTitle': 'Connect this project to Figma',
@@ -2211,8 +2246,7 @@ const en = {
   'skin.UNDERWATER.body':
     'Broken light from a surface somewhere above you, corners water has had a long time to round off, colour that drains toward blue with depth — and bubbles going up past all of it.',
   'skin.VIBECODED.tagline': 'Looks like every other app',
-  'skin.VIBECODED.body':
-    'Indigo to fuchsia at 135 degrees, everything rounded to 16px, a gradient through every heading and a logo that is a squircle with a shape in it. The house style of a thousand generated apps, built properly, on purpose.',
+  'skin.VIBECODED.body': 'i did not write a single line for this one',
   'skin.HALLOWEEN.tagline': 'Something moved in the corner',
   'skin.HALLOWEEN.body':
     'Candlelit dark with a carved lantern for a mark. Webs gather on the doors you have not opened, and opening anything startles whatever was sleeping in it.',
@@ -2811,6 +2845,37 @@ const ptBR: Record<TranslationKey, string> = {
   'cli.copyFailed': 'Não foi possível copiar. Selecione a linha e copie manualmente.',
   'cli.commandsRegion': 'Comandos do Task Studio CLI',
   'cli.commandScrollable': 'Comando — role para o lado para ver o resto',
+
+  // ---- Spotify ------------------------------------------------------------
+  'spotify.title': 'Spotify',
+  'spotify.pitch':
+    'Coloca um player pequeno na sua tela: o que está tocando, pular e pausar, volume e uma busca. Só seu — ninguém nos seus projetos vê nem mexe nele.',
+  'spotify.connect': 'Conectar o Spotify',
+  'spotify.connected': 'O Spotify está conectado.',
+  'spotify.cancelled': 'Nenhuma conta do Spotify foi conectada.',
+  'spotify.failed': 'Não foi possível conectar o Spotify. Tente de novo.',
+  'spotify.connectedAs': 'Conectado como {name}',
+  'spotify.disconnect': 'Desconectar',
+  'spotify.disconnected': 'O Spotify foi desconectado.',
+  'spotify.disconnectFailed': 'Não foi possível desconectar o Spotify.',
+  'spotify.updateFailed': 'Não foi possível alterar isso.',
+  'spotify.commandFailed': 'O Spotify não aceitou esse comando.',
+  'spotify.showPlayer': 'Mostrar o player',
+  'spotify.showPlayerHint': 'Mantém a conexão e esconde o player da sua tela.',
+  'spotify.unavailable': 'Não está ativo aqui',
+  'spotify.unavailableHint':
+    'Esta instalação não tem um aplicativo do Spotify configurado, então não há o que conectar.',
+  'spotify.open': 'Abrir o player',
+  'spotify.close': 'Fechar o player',
+  'spotify.play': 'Tocar',
+  'spotify.pause': 'Pausar',
+  'spotify.next': 'Próxima faixa',
+  'spotify.previous': 'Faixa anterior',
+  'spotify.idle': 'Nada tocando',
+  'spotify.premiumOnly': 'O Spotify só permite pular e mudar o volume no Premium.',
+  'spotify.searchPlaceholder': 'Buscar músicas ou artistas',
+  'spotify.notice':
+    'O player controla o aparelho em que o Spotify já está tocando. Nada do que você ouve fica guardado aqui.',
 
   'calendar.title': 'Google Agenda',
   'calendar.pitch':
@@ -3465,6 +3530,7 @@ const ptBR: Record<TranslationKey, string> = {
   'figma.name': 'Figma',
   'figma.connectedTitle': 'O Figma está conectado',
   'figma.securityLabel': 'Sobre este token',
+  'figma.howTo': 'Como configurar',
   'figma.open': 'Abrir no Figma',
   'figma.connect': 'Conectar o Figma',
   'figma.connectTitle': 'Conectar este projeto ao Figma',
@@ -4513,8 +4579,7 @@ const ptBR: Record<TranslationKey, string> = {
   'skin.UNDERWATER.body':
     'Luz quebrada vinda de uma superfície lá em cima, cantos que a água teve muito tempo para arredondar, cores que escorrem para o azul conforme a profundidade — e bolhas subindo por tudo.',
   'skin.VIBECODED.tagline': 'Igualzinho a todo outro app',
-  'skin.VIBECODED.body':
-    'Do índigo ao fúcsia a 135 graus, tudo arredondado em 16px, gradiente em cada título e um logo que é um quadrado arredondado com uma forma dentro. O estilo de mil apps gerados, feito direito, de propósito.',
+  'skin.VIBECODED.body': 'não escrevi uma única linha para esse aqui',
   'skin.HALLOWEEN.tagline': 'Algo se mexeu no canto',
   'skin.HALLOWEEN.body':
     'Escuridão à luz de vela, com uma lanterna esculpida como marca. Teias se formam nas portas que você não abriu, e abrir qualquer coisa assusta o que dormia lá dentro.',

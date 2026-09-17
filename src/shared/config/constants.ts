@@ -58,6 +58,8 @@ export const STORAGE_KEYS = {
    * would be wrong on most of them.
    */
   importTrackerPosition: 'task-studio:import-tracker-position',
+  /** Where the reader parked the Spotify player. Per device, as above. */
+  spotifyPosition: 'task-studio:spotify-position',
 } as const;
 
 /** Curated task palette — arbitrary hex is allowed, these are the one-click set. */

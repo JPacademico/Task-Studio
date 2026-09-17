@@ -156,7 +156,23 @@ export const PlanSoonPage = () => {
 
             <p className="mt-2 text-xs text-content-faint">{t('planSoon.reassure')}</p>
 
-            <div className="mt-7 flex w-full flex-col gap-2.5 sm:flex-row sm:justify-center">
+            {/*
+              Wrapping, and that is the whole fix for a row of two.
+
+              Side by side these need about four hundred and fifty pixels in
+              English and more than the card has in Portuguese — and on the
+              skins that uppercase their labels, more again. Without
+              `flex-wrap` the shortfall came out of the buttons: they shrank,
+              their labels broke onto a second line, and the text ended up
+              pressed against the top and bottom borders.
+
+              Wrapping spends the shortfall on a second row instead, which is
+              the same thing the narrow layout above already does. Each button
+              keeps its natural width and its label stays on one line; when
+              even one row is too tight the padding added in `button.tsx` keeps
+              a wrapped label off the edge.
+            */}
+            <div className="mt-7 flex w-full flex-col flex-wrap gap-2.5 sm:flex-row sm:items-center sm:justify-center">
               <Link
                 to={isSignedIn ? '/settings' : '/welcome'}
                 className={buttonClasses({ variant: 'lava', size: 'md' })}

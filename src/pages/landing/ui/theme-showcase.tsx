@@ -501,9 +501,13 @@ const SkinCompare = ({
           property below compiles to. The frame is `overflow-hidden`, so it
           still does the rounding — there is simply nothing fighting it now.
         */}
+        {/* `stillParticles={false}` on both halves: `SkinAmbience` below draws
+            the live field, and the mock's frozen stand-ins sitting inside it
+            read as bubbles that are stuck rather than as a still. */}
         <SkinMock
           preview={light}
           scale={COMPARE_SCALE}
+          stillParticles={false}
           className="w-full [border-radius:0!important]"
         />
 
@@ -526,6 +530,7 @@ const SkinCompare = ({
           <SkinMock
             preview={dark}
             scale={COMPARE_SCALE}
+            stillParticles={false}
             className="h-full w-full [border-radius:0!important]"
           />
         </div>

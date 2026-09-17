@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ExternalLink, Link2, ShieldCheck, Unlink } from 'lucide-react';
+import { BookText, ExternalLink, Link2, ShieldCheck, Unlink } from 'lucide-react';
 
 import { useConnectFigma, useDisconnectFigma } from '@/entities/integration/model/queries';
 import type { ProjectFigma } from '@/entities/project/model/types';
@@ -217,6 +217,36 @@ export const FigmaLinkDialog = ({ projectId, figma, isOpen, onClose }: FigmaLink
             <HoverHint label={t('figma.securityLabel')} hint={t('figma.sharedCredential')}>
               <ShieldCheck className="h-3.5 w-3.5" />
             </HoverHint>
+
+            {/*
+              The tutorial, in the corner nobody has to look at.
+
+              This dialog asks for two things somebody has to go and fetch from
+              another product, and the hint above the buttons can only name the
+              menu path — it has no room for what a token may read, what the
+              file link looks like, or what to do when Figma refuses it. The
+              documentation has all of that, so the dialog points at it from the
+              one place a reader looks when a form has defeated them.
+
+              A new tab, deliberately: following this in place would throw away
+              a link and a token somebody may have already pasted. `rel` is
+              there because `target="_blank"` without it hands the opened page a
+              live `window.opener`.
+            */}
+            <a
+              href="/docs#figma"
+              target="_blank"
+              rel="noreferrer noopener"
+              className={cn(
+                'inline-flex items-center gap-1.5 text-xs font-medium text-content-muted',
+                'transition-colors hover:text-brand',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
+                'rounded-lg px-1 py-0.5',
+              )}
+            >
+              <BookText className="h-3.5 w-3.5" />
+              {t('figma.howTo')}
+            </a>
 
             <span className="ml-auto flex gap-2">
               <Button type="button" variant="ghost" onClick={onClose}>

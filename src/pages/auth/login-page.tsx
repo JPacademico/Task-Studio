@@ -9,6 +9,7 @@ import { HumanCheck } from '@/features/auth/ui/human-check';
 import { OAuthButtons } from '@/features/auth/ui/oauth-buttons';
 import { ensureApiAwake, errorMessage, isApiWarm } from '@/shared/api/client';
 import { TEXT_LIMITS } from '@/shared/config/constants';
+import { cn } from '@/shared/lib/cn';
 import { clampText } from '@/shared/lib/text';
 import { useT } from '@/shared/i18n';
 import { Button, Input, PasswordInput } from '@/shared/ui';
@@ -149,39 +150,59 @@ export const LoginPage = () => {
             not below the thing it blocks. */}
         <HumanCheck onToken={setCaptchaToken} />
 
-        <Button type="submit" className="w-full" size="lg" isLoading={login.isPending}>
-          {t(isWaking ? 'auth.signIn.waking' : 'auth.signIn.submit')}
-        </Button>
-
         {/*
-          Said only while it is true, and only on the slow path.
+          The button and its status line are one block, not two rows.
 
-          A cold start is tens of seconds of a button that looks stuck. The
-          spinner alone reads as "something is wrong with my password"; this
-          says which of the two waits this is, and it goes quiet the moment the
-          container answers.
+          They used to be siblings in the form's `space-y-4`, and the status
+          also held a `min-h` line open whether or not it had anything to say.
+          On the ordinary path — which is every sign-in that is not a cold start
+          — that bought a permanently empty sixteen-pixel paragraph plus its own
+          sixteen-pixel gap, and the "or" row sat fifty-odd pixels below the
+          button with nothing in between.
 
-          Always rendered, empty, rather than mounted when the wait begins.
-          Two reasons and both are real: a live region announces a *change* to
-          text that was already there, so one that appears at the same moment as
-          its content is frequently announced by nothing at all — and a
-          paragraph appearing under the button pushed the OAuth row down by a
-          line, mid-wait, on the one screen where nothing should move while
-          somebody is watching it. `min-h` holds the line either way.
+          Wrapping them removes the gap between the two, and the margin below is
+          now conditional, so the empty state takes no room at all.
         */}
-        <p
-          role="status"
-          aria-live="polite"
-          className="min-h-[1rem] text-center text-2xs leading-relaxed text-content-faint"
-        >
-          {isWaking ? t('auth.signIn.wakingHint') : ''}
-        </p>
+        <div>
+          <Button type="submit" className="w-full" size="lg" isLoading={login.isPending}>
+            {t(isWaking ? 'auth.signIn.waking' : 'auth.signIn.submit')}
+          </Button>
+
+          {/*
+            Said only while it is true, and only on the slow path.
+
+            A cold start is tens of seconds of a button that looks stuck. The
+            spinner alone reads as "something is wrong with my password"; this
+            says which of the two waits this is, and it goes quiet the moment
+            the container answers.
+
+            Still always rendered rather than mounted when the wait begins: a
+            live region announces a *change* to text that was already there, and
+            one that appears at the same moment as its content is frequently
+            announced by nothing at all.
+
+            What it no longer does is hold the line open while empty. The layout
+            therefore moves once, downwards, at the start of a cold start — the
+            one moment the reader is waiting rather than reading, and a cheaper
+            price than a permanent hole under the button on every other visit.
+          */}
+          <p
+            role="status"
+            aria-live="polite"
+            className={cn(
+              'text-center text-2xs leading-relaxed text-content-faint',
+              isWaking && 'mt-2',
+            )}
+          >
+            {isWaking ? t('auth.signIn.wakingHint') : ''}
+          </p>
+        </div>
       </form>
 
       {/* Renders nothing at all unless the API has provider keys — see
           `OAuthButtons`. Outside the form, because these are navigations and
           an <a> inside a <form> that submits on Enter is a trap. */}
-      <OAuthButtons intent="signIn" className="mt-5" />
+      <OAuthButtons intent="signIn" className="mt-4" />
     </AuthShell>
   );
 };

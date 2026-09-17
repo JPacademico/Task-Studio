@@ -9,6 +9,7 @@ import { queryKeys } from '@/shared/api/query-keys';
 import { STORAGE_KEYS } from '@/shared/config/constants';
 import { translate } from '@/shared/i18n';
 import { calendarApi } from '../api/calendar.api';
+import { spotifyApi } from '../api/spotify.api';
 import { figmaApi, type ConnectFigmaPayload } from '../api/figma.api';
 import { githubApi } from '../api/github.api';
 import { importsApi } from '../api/imports.api';
@@ -19,6 +20,8 @@ import type {
   CalendarSettingsPayload,
   RepositoryImportJob,
   RepositoryImportPayload,
+  SpotifyPlayback,
+  SpotifyTransport,
   WebhookPayloadDraft,
 } from './types';
 
@@ -687,5 +690,149 @@ export const useRevokeApiToken = () => {
       toast.success(translate('cli.revoked'));
     },
     onError: (error) => toast.error(errorMessage(error, translate('tokens.revokeFailed'))),
+  });
+};
+
+
+// ---------------------------------------------------------------------------
+// Spotify
+// ---------------------------------------------------------------------------
+
+/**
+ * The connection itself: who is linked, and whether the deployment offers this.
+ *
+ * Long stale time and a refetch on focus, exactly like the calendar's — the row
+ * changes when the person changes it, and the one case that matters is coming
+ * back to the tab after the consent redirect.
+ */
+export const useSpotifyStatus = () =>
+  useQuery({
+    queryKey: queryKeys.integrations.spotify,
+    queryFn: spotifyApi.status,
+    staleTime: 5 * 60_000,
+  });
+
+/**
+ * What is playing, while somebody is looking at it.
+ *
+ * ## Why this polls, and why it stops
+ *
+ * Spotify has no webhook and no socket for playback: a track that ends on
+ * somebody's phone is a fact this application can only learn by asking. Five
+ * seconds is the slowest interval at which a paused-then-played track still
+ * feels live, and `enabled` is what keeps it from being a background cost —
+ * nothing polls unless a player is actually open on screen.
+ *
+ * `refetchIntervalInBackground` stays off (the default): a hidden tab polling
+ * somebody's music every five seconds is a battery cost with nobody to see it,
+ * and the answer on return is one refetch away.
+ *
+ * ## Why failures are quiet
+ *
+ * No retry and no toast. Every reason this call fails is either transient (a
+ * device went away, Spotify is rate-limiting) or already visible on the card in
+ * settings (the grant was revoked). A player that shouted about a skipped poll
+ * would be the loudest thing in the product.
+ */
+export const useSpotifyPlayback = (enabled: boolean) =>
+  useQuery({
+    queryKey: queryKeys.integrations.spotifyPlayback,
+    queryFn: spotifyApi.playback,
+    enabled,
+    refetchInterval: enabled ? 5_000 : false,
+    retry: false,
+    staleTime: 2_000,
+  });
+
+/**
+ * Press a button, then ask what happened.
+ *
+ * Spotify applies a transport command asynchronously — the endpoint answers 204
+ * well before the device has actually skipped — so refetching immediately
+ * reports the *old* track about half the time. The short delay before
+ * invalidating is not a guess at a network round trip; it is waiting for the
+ * device to catch up, which is a different thing and is why it is here rather
+ * than in the query's `staleTime`.
+ */
+export const useSpotifyCommand = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (action: SpotifyTransport) => spotifyApi.command(action),
+    onSuccess: () => {
+      window.setTimeout(() => {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.integrations.spotifyPlayback });
+      }, 400);
+    },
+    onError: (error) => toast.error(errorMessage(error, translate('spotify.commandFailed'))),
+  });
+};
+
+/**
+ * The volume slider.
+ *
+ * Optimistic, and it has to be: a slider that waits for a server round trip
+ * before moving is a slider that does not work. The cached playback is written
+ * immediately so the thumb follows the pointer, and the poll above is left to
+ * correct it if the device disagrees.
+ */
+export const useSpotifyVolume = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (volume: number) => spotifyApi.setVolume(volume),
+    onMutate: (volume) => {
+      queryClient.setQueryData<SpotifyPlayback | undefined>(
+        queryKeys.integrations.spotifyPlayback,
+        (current) => (current ? { ...current, volume } : current),
+      );
+    },
+    onError: (error) => toast.error(errorMessage(error, translate('spotify.commandFailed'))),
+  });
+};
+
+/** Start one of the search results. */
+export const useSpotifyPlayTrack = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (trackId: string) => spotifyApi.play(trackId),
+    onSuccess: () => {
+      window.setTimeout(() => {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.integrations.spotifyPlayback });
+      }, 400);
+    },
+    onError: (error) => toast.error(errorMessage(error, translate('spotify.commandFailed'))),
+  });
+};
+
+/** Forget the grant. */
+export const useDisconnectSpotify = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: spotifyApi.disconnect,
+    onSuccess: () => {
+      queryClient.setQueryData(queryKeys.integrations.spotify, {
+        available: true,
+        connection: null,
+      });
+      queryClient.removeQueries({ queryKey: queryKeys.integrations.spotifyPlayback });
+      toast.success(translate('spotify.disconnected'));
+    },
+    onError: (error) => toast.error(errorMessage(error, translate('spotify.disconnectFailed'))),
+  });
+};
+
+/** Keep the grant, hide the player. */
+export const useSetSpotifyEnabled = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (isEnabled: boolean) => spotifyApi.setEnabled(isEnabled),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.integrations.spotify });
+    },
+    onError: (error) => toast.error(errorMessage(error, translate('spotify.updateFailed'))),
   });
 };

@@ -384,8 +384,10 @@ export const HiddenSidebar = ({ isMobileOpen, onMobileClose }: HiddenSidebarProp
           // between a 12px and a 24px blur is invisible; the cost is not.
           'border-r border-edge bg-surface-raised/95 backdrop-blur-md',
           // A brand-tinted wash down the rail plus a lit inner edge: the panel
-          // should read as a lit surface, not a flat grey box.
-          'bg-[radial-gradient(120%_60%_at_0%_0%,rgb(var(--brand)/0.16),transparent_62%)]',
+          // should read as a lit surface, not a flat grey box. `none` on
+          // Studio, where a plain raised surface is the point — see
+          // `--rail-wash-left` in `index.css`.
+          '[background-image:var(--rail-wash-left)]',
           'shadow-[8px_0_40px_-24px_rgb(0_0_0/0.65)]',
         )}
       >

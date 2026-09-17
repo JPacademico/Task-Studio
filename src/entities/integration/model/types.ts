@@ -331,3 +331,69 @@ export interface CreatedApiToken {
   /** Shown once. No endpoint will ever return this again. */
   token: string;
 }
+
+
+// ---------------------------------------------------------------------------
+// Spotify
+// ---------------------------------------------------------------------------
+
+/**
+ * One person's connected account, as the API describes it.
+ *
+ * Nothing here is a credential — the refresh token never leaves the server and
+ * no route returns it, which is what makes this shape safe to hold in a query
+ * cache that lives in memory next to everything else.
+ */
+export interface SpotifyConnection {
+  displayName: string;
+  spotifyUserId: string;
+  /** Where the person's own Spotify profile is, for the name to link to. */
+  profileUrl: string;
+  /**
+   * Whether the transport controls will work.
+   *
+   * Spotify refuses play, pause, skip and volume for everybody who is not
+   * Premium. Knowing before drawing them is the difference between a player
+   * with four buttons that fail and one that quietly shows what is playing.
+   */
+  isPremium: boolean;
+  /** The user's own switch: keeps the grant, hides the player. */
+  isEnabled: boolean;
+  /** The last thing Spotify refused. Cleared by the next call that works. */
+  lastError: string | null;
+  connectedAt: string;
+}
+
+export interface SpotifyStatus {
+  /** Whether the deployment has the credentials for this at all. */
+  available: boolean;
+  connection: SpotifyConnection | null;
+}
+
+export interface SpotifyTrack {
+  id: string;
+  name: string;
+  /** Every artist on the track, joined — the player has one line for them. */
+  artist: string;
+  url: string;
+  artistUrl: string | null;
+  albumArt: string | null;
+}
+
+export interface SpotifyPlayback {
+  isPlaying: boolean;
+  /** Null when nothing is playing anywhere, which is not an error. */
+  track: SpotifyTrack | null;
+  /** 0-100, or null on a device that does not report one. */
+  volume: number | null;
+  deviceName: string | null;
+  isPremium: boolean;
+}
+
+export interface SpotifySearchResults {
+  tracks: SpotifyTrack[];
+  artists: { id: string; name: string; url: string }[];
+}
+
+/** The four verbs the API accepts. A closed list on both sides. */
+export type SpotifyTransport = 'play' | 'pause' | 'next' | 'previous';

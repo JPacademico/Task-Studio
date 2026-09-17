@@ -9,6 +9,7 @@ import { cn } from '@/shared/lib/cn';
 import { useIsTouchDevice } from '@/shared/lib/hooks';
 import { NavGlyph } from '@/shared/ui';
 import { clampToViewport, useFloatingShortcuts, type FloatingShortcut } from '../model/shortcuts.store';
+import { useViewportDragBounds } from '@/shared/lib/use-viewport-drag-bounds';
 import { iconFor } from './shortcut-icon';
 
 /**
@@ -44,6 +45,19 @@ const ShortcutPill = ({ shortcut }: { shortcut: FloatingShortcut }) => {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const suppressClickRef = useRef(false);
+  const pillRef = useRef<HTMLDivElement>(null);
+
+  /*
+   * Constraints during the gesture, not only a clamp after it.
+   *
+   * `move` already refused an off-screen coordinate, so a pill could never be
+   * *left* outside the window — but it could be dragged there and then snap
+   * back on release, which is the same thing as far as anybody watching is
+   * concerned. Framer refuses the travel instead, and it refuses it against the
+   * pill's measured size rather than the 190x44 the store assumes for a label
+   * whose width is somebody's project name.
+   */
+  const { bounds, measure } = useViewportDragBounds(pillRef, x, y);
 
   const Icon = iconFor(shortcut.icon);
   // A nav pill translates; a project pill is somebody's project name and is
@@ -57,7 +71,9 @@ const ShortcutPill = ({ shortcut }: { shortcut: FloatingShortcut }) => {
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.85 }}
       transition={{ type: 'spring', stiffness: 460, damping: 32 }}
+      ref={pillRef}
       drag
+      dragConstraints={bounds}
       dragMomentum={false}
       dragElastic={0.05}
       /*
@@ -84,6 +100,8 @@ const ShortcutPill = ({ shortcut }: { shortcut: FloatingShortcut }) => {
       whileDrag={{ scale: 1.04, zIndex: DRAGGING_Z }}
       onDragStart={() => {
         suppressClickRef.current = true;
+        // The label can change width between drags — measure this one now.
+        measure();
       }}
       onDragEnd={(_, info) => {
         const next = clampToViewport(shortcut.x + info.offset.x, shortcut.y + info.offset.y);

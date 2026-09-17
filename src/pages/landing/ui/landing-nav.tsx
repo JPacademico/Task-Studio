@@ -6,7 +6,7 @@ import { BookText } from 'lucide-react';
 import { LanguageToggle } from '@/features/language-toggle/ui/language-toggle';
 import { ThemeToggle } from '@/features/theme-toggle/ui/theme-toggle';
 import { cn } from '@/shared/lib/cn';
-import { buttonClasses, StudioMark } from '@/shared/ui';
+import { buttonClasses, ScrollProgress, StudioMark } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 import { LavaLink } from './lava-link';
 
@@ -54,6 +54,16 @@ export const LandingNav = () => {
 
   return (
     <header className="sticky top-0 z-40 border-b border-edge/70 bg-surface/80 backdrop-blur">
+      {/*
+        How far down the page you are, on the header's own bottom edge.
+
+        Here rather than on the `main` of either page, because this bar is the
+        one piece of chrome the landing page and the documentation share, and
+        both of them are one long column with no other progress cue in it. See
+        `ScrollProgress` for why it is a transform and how it picks up each
+        skin's accent without naming one.
+      */}
+      <ScrollProgress />
       {/*
         The first thing in the tab order, and invisible until it is reached.
 

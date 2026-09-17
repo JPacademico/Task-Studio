@@ -155,3 +155,25 @@ export const GitHubMark = ({ className }: MarkProps) => (
     />
   </svg>
 );
+
+/**
+ * Spotify — the circle and its three arcs.
+ *
+ * Drawn rather than fetched, like every other mark in this file: a remote
+ * brand asset is a network request, a cache policy and a thing that breaks when
+ * somebody else reorganises their CDN. The arcs are strokes rather than filled
+ * crescents, which is what keeps it legible at the 18px the player draws it at.
+ *
+ * `currentColor` on the glyph and the brand green on the disc, so the mark sits
+ * correctly on a dark panel and on a cream one without a second copy.
+ */
+export const SpotifyMark = ({ className }: MarkProps) => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className={className}>
+    <circle cx="12" cy="12" r="11" fill="#1DB954" />
+    <g fill="none" stroke="#0b1f12" strokeLinecap="round">
+      <path d="M6.4 8.6c3.6-1.1 7.6-.8 11 .9" strokeWidth="2.1" />
+      <path d="M7.3 12.2c3-.9 6.3-.6 9.1.8" strokeWidth="1.8" />
+      <path d="M8.2 15.6c2.4-.7 5-.5 7.2.7" strokeWidth="1.5" />
+    </g>
+  </svg>
+);

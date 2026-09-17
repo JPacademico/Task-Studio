@@ -337,7 +337,8 @@ export const ProjectRail = ({ onCreateProject }: ProjectRailProps) => {
           // the most expensive thing on the page, and at 95% opacity nobody
           // can tell it apart from a cheaper one.
           'border-l border-edge bg-surface-raised/95 backdrop-blur-md',
-          'bg-[radial-gradient(120%_60%_at_100%_0%,rgb(var(--brand)/0.16),transparent_62%)]',
+          // `none` on Studio — see `--rail-wash-right` in `index.css`.
+          '[background-image:var(--rail-wash-right)]',
           'shadow-[-8px_0_40px_-24px_rgb(0_0_0/0.65)]',
         )}
       >

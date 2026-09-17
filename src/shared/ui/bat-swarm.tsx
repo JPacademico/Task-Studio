@@ -128,20 +128,52 @@ export const BatSwarm = ({ anchor }: BatSwarmProps) => {
         const jitter = ((index * 37) % 11) / 11;
         const distance = 140 + jitter * 130;
 
+        /*
+         * The sway, and why the travel is three points rather than one.
+         *
+         * Straight out along the radius is how a firework leaves, not how a bat
+         * does. Real flight is a line with a lateral wander on it — the animal
+         * is being carried by its own wingbeats, so it crabs a little to one
+         * side and then the other on its way out.
+         *
+         * `swayX`/`swayY` is the radial direction turned ninety degrees, scaled
+         * by a per-index amount and signed by whether the index is odd. Framer
+         * reads the three-element arrays below as a path through those points,
+         * so each bat leaves on a shallow S rather than on a ray. It is the one
+         * change that makes nine of them read as a swarm rather than as an
+         * explosion diagram.
+         */
+        const swing = (28 + jitter * 34) * (index % 2 === 0 ? 1 : -1);
+        const swayX = -sin * swing;
+        const swayY = cos * swing;
+
         return {
           // Percentages of the dialog's own box, so one set of numbers is
           // correct for a 512px form and a full-width bottom sheet alike.
           left: 50 + edgeX * 50,
           top: 50 + edgeY * 50,
-          // Straight out along the radius. The travel is what carries them off
-          // the dialog; the starting point is what puts them on its edge.
-          x: cos * distance,
-          y: sin * distance,
-          // Banked into the turn, roughly facing where it is going.
-          rotate: (angle * 180) / Math.PI * 0.2 + (jitter - 0.5) * 36,
+          // Out along the radius, with a lateral wander on the way — see the
+          // note on `swing`. The travel is what carries them off the dialog;
+          // the starting point is what puts them on its edge.
+          x: [0, cos * distance * 0.45 + swayX, cos * distance],
+          y: [0, sin * distance * 0.45 + swayY, sin * distance],
+          /*
+           * Banked, and banked *through* the sway rather than into a fixed
+           * angle: the middle value leans the bat towards the side it is
+           * drifting to and the last one levels it off, which is the same
+           * three points the travel uses and therefore lands on the same beats.
+           */
+          rotate: [
+            0,
+            ((angle * 180) / Math.PI) * 0.2 + (swing > 0 ? 14 : -14),
+            ((angle * 180) / Math.PI) * 0.2 + (jitter - 0.5) * 36,
+          ],
           scale: 0.55 + jitter * 0.5,
           delay: index * 0.028,
-          duration: 0.85 + jitter * 0.45,
+          // Longer than it was: a bat that crosses 200px in three quarters of a
+          // second is a projectile. Slower is also what makes the wingbeat
+          // visible, which is the whole point of having rigged it.
+          duration: 1.3 + jitter * 0.6,
         };
       }),
     [],
@@ -171,7 +203,8 @@ export const BatSwarm = ({ anchor }: BatSwarmProps) => {
       {flight.map((bat, index) => (
         <motion.span
           key={index}
-          className="hw-bat absolute text-content"
+          /* The colour and the halo are `.hw-bat`'s — see `--hw-bat-ink`. */
+          className="hw-bat absolute"
           /*
            * Negative margins rather than a `translate(-50%, -50%)`, because
            * Framer owns `transform` on this element — it is animating `x`, `y`,
@@ -189,15 +222,22 @@ export const BatSwarm = ({ anchor }: BatSwarmProps) => {
           animate={{
             x: bat.x,
             y: bat.y,
-            opacity: [0, 0.85, 0.85, 0],
+            opacity: [0, 0.9, 0.9, 0],
             scale: bat.scale,
             rotate: bat.rotate,
           }}
           transition={{
             duration: bat.duration,
             delay: bat.delay,
-            ease: [0.22, 0.61, 0.36, 1],
-            opacity: { times: [0, 0.15, 0.6, 1], duration: bat.duration, delay: bat.delay },
+            /*
+             * `easeOut` rather than the custom curve, now that the travel is a
+             * three-point path. A cubic-bezier is applied *between each pair* of
+             * keyframes, so the old curve made the bat sprint to the midpoint,
+             * stop, and sprint again — a stutter exactly where the sway is
+             * supposed to read as one continuous arc.
+             */
+            ease: 'easeOut',
+            opacity: { times: [0, 0.15, 0.62, 1], duration: bat.duration, delay: bat.delay },
           }}
         >
           <BatGlyph className="h-4 w-6" />

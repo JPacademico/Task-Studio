@@ -5,6 +5,7 @@ import { ArrowLeft, Terminal } from 'lucide-react';
 import { CommandLine } from '@/features/cli/ui/cli-commands';
 import { LandingNav } from '@/pages/landing/ui/landing-nav';
 import { cn } from '@/shared/lib/cn';
+import { FigmaMark } from '@/shared/ui';
 import { useLocale, useT } from '@/shared/i18n';
 import { DOCS, type DocsSection } from './docs-content';
 
@@ -229,11 +230,21 @@ const Section = ({ section }: { section: DocsSection }) => {
       className="scroll-mt-24"
     >
       <h3 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+        {/* The Figma mark keeps its own colours and therefore its own plate:
+            five brand colours inside a brand-tinted square is one tint too
+            many, and the mark is recognisable enough to need no help. */}
         <span
           aria-hidden
-          className="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-brand/12 text-brand"
+          className={cn(
+            'grid h-6 w-6 shrink-0 place-items-center rounded-lg',
+            section.icon === 'figma' ? 'bg-surface-sunken' : 'bg-brand/12 text-brand',
+          )}
         >
-          <Terminal className="h-3.5 w-3.5" />
+          {section.icon === 'figma' ? (
+            <FigmaMark className="h-3.5 w-3.5" />
+          ) : (
+            <Terminal className="h-3.5 w-3.5" />
+          )}
         </span>
         {section.title}
       </h3>

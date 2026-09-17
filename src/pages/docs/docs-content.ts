@@ -43,6 +43,16 @@ export interface DocsSection {
   id: string;
   /** The word in the sidebar and on the heading. */
   title: string;
+  /**
+   * The glyph beside the heading. A terminal unless stated.
+   *
+   * There was no choice here while every section was a list of commands — the
+   * icon said "this is the CLI" and it was true fifteen times over. The Figma
+   * section is the first that is not about a terminal at all: it is a thing you
+   * do in two websites, and a prompt symbol over it would be the page's own
+   * navigation telling the reader they are in the wrong place.
+   */
+  icon?: 'terminal' | 'figma';
   /** One line under the heading. Omitted where the commands speak. */
   intro?: string;
   commands?: DocsCommand[];
@@ -238,6 +248,52 @@ const en: DocsDocument = {
         },
       ],
     },
+    {
+      label: 'CONNECTIONS',
+      sections: [
+        {
+          id: 'figma',
+          title: 'Connect Figma to a project',
+          icon: 'figma',
+          intro:
+            'Linking a Figma file puts the design beside the project name and lets the Documents tab hold the file itself — its pages and frames, rendered by Figma, with a download for any single object. It takes about two minutes, once per project.',
+          notes: [
+            {
+              title: 'Before you start',
+              body: 'You need to be the project owner or an admin, and a Figma account that can already open the file. If the Figma card reads "Not enabled here", this deployment has no encryption key configured and cannot store a Figma token at all — that is a server setting, so ask whoever runs it.',
+            },
+            {
+              title: 'Step 1 — copy the file link',
+              body: 'Open the file in Figma and copy the address out of the browser bar: figma.com/design/<key>/<name>. Share → Copy link gives the same thing. Only the key matters, so anything after it can stay.',
+            },
+            {
+              title: 'Step 2 — make a personal access token',
+              body: 'In Figma: Settings → Security → Personal access tokens → Generate new token. Read-only file access is enough — Task Studio never writes to Figma. Copy the token as soon as it appears (it starts with figd_); Figma shows it exactly once and there is no way back to it.',
+            },
+            {
+              title: 'Step 3 — paste both into the project',
+              body: 'In Task Studio: open the project → Connections → the Figma card → paste the link in the first field and the token in the second → Connect. The Figma mark beside the project name opens the same dialog.',
+            },
+            {
+              title: 'What "Connected" means here',
+              body: 'Both halves are checked before anything is stored: one call to Figma to see whose token it is, and one to confirm that token can actually read that file. If either fails nothing is saved and the dialog says which — so a connected project is a checked one, not a typed one.',
+            },
+            {
+              title: 'The token is shared, and that is the one thing to think about',
+              body: 'Everybody on the project reads the design through the token you paste, the way a team shares a deploy key. It is encrypted at rest, never shown again and returned by no route — but a Figma token can read every file its account can see, not only the one linked here. If that is more than you want to share, make a Figma account for the team, give it access to just those files, and use its token.',
+            },
+            {
+              title: 'What you get',
+              body: 'A Figma mark beside the project name that goes straight to the file. A Figma page in the Documents tab listing pages, frames and components with previews, and a download for any one of them as PNG, JPEG, SVG or PDF. A Sync button that re-reads the file — cheap, because it compares Figma\u2019s version marker first and usually stops there. And, where the assistant is configured, a Build brief button that drafts a brief from the page and frame names; it never sees the artwork, and what it writes lands in a panel, not on your design.',
+            },
+            {
+              title: 'If it does not connect',
+              body: '"Figma refused that token" — it was revoked, or made without file read access. "That Figma file does not exist, or the connected token cannot see it" — the file lives in a team that account is not in; invite it, or use a token from an account that is. "Figma is rate-limiting this token" — too many syncs or exports in a minute on a token the whole project shares; it clears by itself. "The stored Figma credential could not be read" — the server\u2019s encryption key changed, so reconnect the file once.',
+            },
+          ],
+        },
+      ],
+    },
   ],
 };
 
@@ -410,6 +466,52 @@ const ptBR: DocsDocument = {
             {
               title: 'Ambiente',
               body: 'TASKSTUDIO_TOKEN e TASKSTUDIO_API_URL têm precedência sobre o arquivo de credenciais, então um container nunca herda um login velho de um diretório home.',
+            },
+          ],
+        },
+      ],
+    },
+    {
+      label: 'CONEXÕES',
+      sections: [
+        {
+          id: 'figma',
+          title: 'Conectar o Figma a um projeto',
+          icon: 'figma',
+          intro:
+            'Ligar um arquivo do Figma coloca o design ao lado do nome do projeto e deixa a aba Documentos guardar o próprio arquivo — páginas e frames renderizados pelo Figma, com download de qualquer objeto separadamente. Leva uns dois minutos, uma vez por projeto.',
+          notes: [
+            {
+              title: 'Antes de começar',
+              body: 'Você precisa ser dono do projeto ou admin, e ter uma conta do Figma que já consiga abrir o arquivo. Se o card do Figma disser "Não está ativo aqui", esta instalação não tem a chave de criptografia configurada e não consegue guardar um token do Figma — isso é configuração de servidor, então fale com quem cuida dele.',
+            },
+            {
+              title: 'Passo 1 — copie o link do arquivo',
+              body: 'Abra o arquivo no Figma e copie o endereço da barra do navegador: figma.com/design/<chave>/<nome>. Compartilhar → Copiar link dá a mesma coisa. Só a chave importa, então o que vem depois dela pode ficar.',
+            },
+            {
+              title: 'Passo 2 — gere um token de acesso pessoal',
+              body: 'No Figma: Settings → Security → Personal access tokens → Generate new token. Acesso somente de leitura aos arquivos já basta — o Task Studio nunca escreve no Figma. Copie o token assim que ele aparecer (começa com figd_); o Figma mostra uma única vez e não há como voltar.',
+            },
+            {
+              title: 'Passo 3 — cole os dois no projeto',
+              body: 'No Task Studio: abra o projeto → Conexões → card do Figma → cole o link no primeiro campo e o token no segundo → Conectar. A marca do Figma ao lado do nome do projeto abre o mesmo diálogo.',
+            },
+            {
+              title: 'O que "Conectado" quer dizer aqui',
+              body: 'As duas metades são verificadas antes de qualquer coisa ser guardada: uma chamada ao Figma para saber de quem é o token, e outra para confirmar que ele consegue mesmo ler aquele arquivo. Se alguma falhar, nada é salvo e o diálogo diz qual — ou seja, projeto conectado é projeto verificado, não projeto digitado.',
+            },
+            {
+              title: 'O token é compartilhado, e é nisso que vale pensar',
+              body: 'Todo mundo no projeto lê o design pelo token que você colar, do mesmo jeito que um time compartilha uma deploy key. Ele é criptografado em repouso, nunca mais é exibido e nenhuma rota devolve ele — mas um token do Figma lê todos os arquivos que aquela conta enxerga, não só o que foi ligado aqui. Se isso for mais do que você quer compartilhar, crie uma conta do Figma para o time, dê acesso só aos arquivos certos e use o token dela.',
+            },
+            {
+              title: 'O que você ganha',
+              body: 'Uma marca do Figma ao lado do nome do projeto que vai direto ao arquivo. Uma página do Figma na aba Documentos listando páginas, frames e componentes com prévias, e download de qualquer um deles em PNG, JPEG, SVG ou PDF. Um botão Sincronizar que relê o arquivo — barato, porque ele compara antes o marcador de versão do Figma e normalmente para por aí. E, onde o assistente estiver configurado, um botão Gerar briefing que escreve um resumo a partir dos nomes das páginas e frames; ele nunca vê a arte, e o que escreve aparece num painel, não no seu design.',
+            },
+            {
+              title: 'Se não conectar',
+              body: '"O Figma recusou esse token" — ele foi revogado, ou criado sem leitura de arquivos. "Esse arquivo do Figma não existe, ou o token conectado não enxerga ele" — o arquivo está num time do qual aquela conta não faz parte; convide ela, ou use o token de uma conta que já esteja. "O Figma está limitando esse token" — sincronizações ou exportações demais em um minuto, num token que o projeto inteiro divide; passa sozinho. "Não foi possível ler a credencial do Figma guardada" — a chave de criptografia do servidor mudou, então basta reconectar o arquivo uma vez.',
             },
           ],
         },

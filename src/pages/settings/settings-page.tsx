@@ -10,6 +10,7 @@ import { authApi } from '@/features/auth/api/auth.api';
 import { PlanPanel } from '@/features/billing/ui/plan-panel';
 import { useSessionStore } from '@/features/auth/model/session.store';
 import { CalendarConnectionPanel } from '@/features/calendar-sync/ui/calendar-connection-panel';
+import { SpotifyConnectionPanel } from '@/features/spotify/ui/spotify-connection-panel';
 import { CliMachinesPanel } from '@/features/cli/ui/cli-machines-panel';
 import { CliPanel } from '@/features/cli/ui/cli-panel';
 import { SkinPicker } from '@/features/theme-toggle/ui/skin-picker';
@@ -262,6 +263,12 @@ const SettingsPage = () => {
         */}
         <div className="space-y-3">
           <CalendarConnectionPanel />
+          {/* Spotify between the calendar and the terminal, which is where it
+              belongs by weight: it is the second *personal* connection on the
+              page — one account, connected once, visible to nobody else — and
+              the CLI below is a different kind of thing entirely. Renders a
+              single line on a deployment with no Spotify application. */}
+          <SpotifyConnectionPanel />
           <CliPanel />
         </div>
       </Section>

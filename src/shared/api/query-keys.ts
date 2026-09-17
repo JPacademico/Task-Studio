@@ -265,6 +265,19 @@ export const queryKeys = {
     imports: ['integrations', 'imports'] as const,
     /** Their linked calendar, and whether the deployment offers one. */
     calendar: ['integrations', 'calendar'] as const,
+    /** Their Spotify grant, and whether the deployment offers one. */
+    spotify: ['integrations', 'spotify'] as const,
+    /**
+     * What is playing right now.
+     *
+     * Its own key rather than a field on `spotify`, and for a stronger reason
+     * than the feed's below: this one is *polled* while a player is open and
+     * the connection is not. Sharing a key would either poll the connection
+     * every few seconds or leave the track stale — and the two have completely
+     * different lifetimes, one being a stored grant and the other being a fact
+     * about the last four seconds.
+     */
+    spotifyPlayback: ['integrations', 'spotify', 'playback'] as const,
     /**
      * The subscribable feed's *status* — never its URL.
      *

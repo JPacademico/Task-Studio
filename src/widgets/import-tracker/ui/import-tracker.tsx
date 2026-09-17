@@ -16,6 +16,7 @@ import { useCancelImport, useImportJobs } from '@/entities/integration/model/que
 import type { ImportStep, RepositoryImportJob } from '@/entities/integration/model/types';
 import { STORAGE_KEYS } from '@/shared/config/constants';
 import { useIsTouchDevice, useLocalStorage } from '@/shared/lib/hooks';
+import { useViewportDragBounds } from '@/shared/lib/use-viewport-drag-bounds';
 import { cn } from '@/shared/lib/cn';
 import { Button } from '@/shared/ui';
 import { useT, type TranslationKey } from '@/shared/i18n';
@@ -102,6 +103,11 @@ export const ImportTracker = () => {
   const x = useMotionValue(storedPosition.x);
   const y = useMotionValue(storedPosition.y);
   const dragControls = useDragControls();
+  const cardRef = useRef<HTMLElement>(null);
+
+  /* Measured bounds, so the card cannot be carried off the screen and cannot
+     be bounded against a width it no longer has — see the hook. */
+  const { bounds: dragBounds, measure: measureDragBounds } = useViewportDragBounds(cardRef, x, y);
 
   const visible = jobs.filter((job) => !dismissed.has(job.id));
 
@@ -172,6 +178,7 @@ export const ImportTracker = () => {
 
   return (
     <motion.aside
+      ref={cardRef}
       aria-label={t('importTracker.title')}
       drag={!isTouch}
       dragListener={false}
@@ -179,17 +186,16 @@ export const ImportTracker = () => {
       dragMomentum={false}
       dragElastic={0}
       /*
-       * Keeps the card inside the viewport whatever the screen size. The
-       * numbers are the card's own width and a generous height, so the handle
-       * can always be reached again — a card dragged fully off-screen is one
-       * the reader has to clear their site data to get back.
+       * Keeps the card inside the viewport whatever the screen size, so the
+       * handle can always be reached again — a card dragged fully off-screen is
+       * one the reader has to clear their site data to get back.
+       *
+       * Measured rather than written out. The four literals this replaces
+       * assumed a 360px card and "about 160" of height, and the card grows a
+       * row per running import. See `useViewportDragBounds`.
        */
-      dragConstraints={{
-        left: -24,
-        right: window.innerWidth - 360,
-        top: -window.innerHeight + 160,
-        bottom: 24,
-      }}
+      dragConstraints={dragBounds}
+      onDragStart={measureDragBounds}
       style={isTouch ? undefined : { x, y }}
       onDragEnd={() => setStoredPosition({ x: x.get(), y: y.get() })}
       initial={{ opacity: 0, y: 24, scale: 0.96 }}

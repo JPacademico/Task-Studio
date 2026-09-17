@@ -17,6 +17,7 @@ import { formatTime } from '@/shared/lib/dates';
 import { STORAGE_KEYS, TEXT_LIMITS } from '@/shared/config/constants';
 import { clampText } from '@/shared/lib/text';
 import { useIsTouchDevice, useLocalStorage } from '@/shared/lib/hooks';
+import { useViewportDragBounds } from '@/shared/lib/use-viewport-drag-bounds';
 import { Avatar, Button, SendGlyph, SkinLoader } from '@/shared/ui';
 
 interface ProjectChatProps {
@@ -75,6 +76,13 @@ export const ProjectChat = ({
   const [isPinTargeted, setIsPinTargeted] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const windowRef = useRef<HTMLElement>(null);
+
+  /* The window cannot be carried off the screen — see the hook. */
+  const { bounds: dragBounds, measure: measureDragBounds } = useViewportDragBounds(
+    windowRef,
+    x,
+    y,
+  );
 
   /*
    * History is fetched rarely and kept for a long time, because the socket is
@@ -280,13 +288,18 @@ export const ProjectChat = ({
       dragControls={dragControls}
       dragMomentum={false}
       dragElastic={0}
-      // Keeps the window inside the viewport on any screen size.
-      dragConstraints={{
-        left: -window.innerWidth + 380,
-        right: 24,
-        top: -window.innerHeight + 220,
-        bottom: 24,
-      }}
+      /*
+       * Measured, not guessed.
+       *
+       * This was four literals worked out from the window being 380 wide and
+       * "about 220" tall, read once during a render. All three assumptions were
+       * wrong in some state: the window grows with its own content, a stored
+       * offset from a large monitor survives into a small one, and
+       * `window.innerWidth` changes without a render. See
+       * `useViewportDragBounds`.
+       */
+      dragConstraints={dragBounds}
+      onDragStart={measureDragBounds}
       // A sheet is positioned by the layout, so a stored desktop offset must
       // not carry over and push it off-screen.
       style={isTouch ? undefined : { x, y }}

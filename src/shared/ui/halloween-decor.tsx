@@ -143,3 +143,32 @@ export const NightEyes = () => {
     </span>
   );
 };
+
+/**
+ * What ran down the wall under the header. Halloween only.
+ *
+ * ## Why a component at all, when it is one div and a stylesheet rule
+ *
+ * Because of the guard. Every other skin has to cost nothing — no element, no
+ * mask to decode, no layer for the compositor to keep — and a `display: none`
+ * rule still parses the mask on some engines. Returning `null` is the only
+ * version of "off" that is actually free, and it is the same contract
+ * `NightEyes` and `BatSwarm` are written to.
+ *
+ * ## Why it is not gated on reduced motion
+ *
+ * Unlike the eyes and the bats, nothing here moves. It is a stain on a wall: it
+ * has no animation of its own, and the one transition it does have — following
+ * the header down — is switched off in the media query in `index.css`. A reader
+ * who has asked for less motion has not asked for less *theme*.
+ *
+ * Everything else about it is in `.hw-blood`: the silhouette, the colour, why
+ * it is a mask, and why it can never paint over anything.
+ */
+export const BloodDrip = () => {
+  const skin = useSkin();
+
+  if (skin !== 'HALLOWEEN') return null;
+
+  return <div aria-hidden className="hw-blood" />;
+};
