@@ -10,7 +10,6 @@ import { useIsTouchDevice } from '@/shared/lib/hooks';
 import { useNavPreferences } from '@/shared/lib/nav-preferences.store';
 import {
   AutumnFall,
-  BloodDrip,
   BubbleRise,
   EmberRise,
   HazardDrift,
@@ -52,20 +51,14 @@ export const AppLayout = () => {
 
   return (
     /*
-     * `isolate`, and it is load-bearing rather than tidy.
+     * Back to `relative` alone.
      *
-     * `BloodDrip` below paints at `z-index: -1` so that every card, menu and
-     * rail in the product covers it. A negative index only stays *inside* an
-     * element if that element forms a stacking context — without `isolate` this
-     * div is merely `position: relative`, the layer escapes to the root
-     * context, and `bg-surface` on this very div paints over it. The stain
-     * would exist, correctly, and be invisible everywhere.
+     * `isolate` was here for exactly one thing — giving the Halloween blood a
+     * stacking context to sit behind everything in — and that decoration is
+     * gone. Leaving the property behind would be a stacking context nothing
+     * asks for, quietly trapping any future negative-z child of this shell.
      */
-    <div className="relative isolate min-h-full bg-surface">
-      {/* Halloween only, behind everything, never over anything. It reads
-          `--hw-drip-top` from `TopNavigation` so the runs start at the bottom
-          edge of the bar whether it is pinned, revealed or away. */}
-      <BloodDrip />
+    <div className="relative min-h-full bg-surface">
 
       <TopNavigation
         onOpenMobileMenu={() => setIsMobileMenuOpen(true)}

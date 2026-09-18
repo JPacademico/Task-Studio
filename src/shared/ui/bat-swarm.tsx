@@ -126,7 +126,16 @@ export const BatSwarm = ({ anchor }: BatSwarmProps) => {
 
         // A fixed wobble per index, so the ring is not a perfect clock face.
         const jitter = ((index * 37) % 11) / 11;
-        const distance = 140 + jitter * 130;
+        /*
+         * Further, because they are bigger.
+         *
+         * The travel used to end about 140-270px out, which cleared a 24px bat
+         * comfortably. A 48px one is still half over the dialog at that
+         * distance, so the swarm looked like it stopped rather than left. The
+         * increase is roughly the size difference, not a round number chosen
+         * for its own sake.
+         */
+        const distance = 190 + jitter * 150;
 
         /*
          * The sway, and why the travel is three points rather than one.
@@ -210,13 +219,13 @@ export const BatSwarm = ({ anchor }: BatSwarmProps) => {
            * Framer owns `transform` on this element — it is animating `x`, `y`,
            * `scale` and `rotate` through it — and a CSS translate written
            * alongside would simply be overwritten on the first frame.
-           * `BatGlyph` is `h-4 w-6`, so half of that is 0.5rem and 0.75rem.
+           * `BatGlyph` is `h-8 w-12`, so half of that is 1rem and 1.5rem.
            */
           style={{
             left: `${bat.left}%`,
             top: `${bat.top}%`,
-            marginLeft: '-0.75rem',
-            marginTop: '-0.5rem',
+            marginLeft: '-1.5rem',
+            marginTop: '-1rem',
           }}
           initial={{ x: 0, y: 0, opacity: 0, scale: 0.3, rotate: 0 }}
           animate={{
@@ -240,7 +249,12 @@ export const BatSwarm = ({ anchor }: BatSwarmProps) => {
             opacity: { times: [0, 0.15, 0.62, 1], duration: bat.duration, delay: bat.delay },
           }}
         >
-          <BatGlyph className="h-4 w-6" />
+          {/* Twice what it was. At 16 pixels the rig was there and nobody
+              could see it — the wings, the ears and the notched trailing edge
+              are all features of a *shape*, and a shape needs room. The margins
+              above are half of this, so the glyph stays centred on its own
+              point on the dialog's border. */}
+          <BatGlyph className="h-8 w-12" />
         </motion.span>
       ))}
     </div>

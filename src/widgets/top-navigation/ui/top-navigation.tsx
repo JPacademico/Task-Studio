@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { LogOut, Menu, Plus, Wifi, WifiOff } from 'lucide-react';
@@ -46,30 +46,6 @@ export const TopNavigation = ({ onOpenMobileMenu, onCreateProject }: TopNavigati
   });
 
   const isOpen = isTouch || isRevealed;
-
-  /*
-   * Where the bottom edge of this bar currently is, published for the page
-   * behind it.
-   *
-   * Exactly one thing reads it — the Halloween blood that runs down from under
-   * the header — and this is the only place that knows the answer: the bar is
-   * `fixed`, it slides away on a spring when the pointer leaves, it can be
-   * pinned open, and on touch it never leaves at all. Anything downstream
-   * trying to work that out for itself would be reimplementing `useEdgeReveal`
-   * against a DOM measurement.
-   *
-   * A CSS variable rather than a prop, because the consumer is a sibling three
-   * levels away in a different subtree, and threading a number through the
-   * layout for one seasonal decoration would put Halloween in the signature of
-   * a component that has nothing to do with it. `3.5rem` is this bar's height;
-   * the safe-area inset is added for the notch it sits under.
-   */
-  useEffect(() => {
-    document.documentElement.style.setProperty(
-      '--hw-drip-top',
-      isOpen ? 'calc(3.5rem + env(safe-area-inset-top, 0px))' : '0px',
-    );
-  }, [isOpen]);
 
   return (
     <>

@@ -66,7 +66,7 @@ export { NewspaperMark } from './newspaper-icons';
 export { EldritchMark } from './eldritch-icons';
 export { EldritchTendrils, WanderingEye } from './eldritch-decor';
 // Two eyes in the dark, once a minute, on the halloween skin only.
-export { BloodDrip, NightEyes } from './halloween-decor';
+export { NightEyes } from './halloween-decor';
 export { AutumnMark } from './autumn-icons';
 export { AutumnFall, AutumnHedge } from './autumn-decor';
 export { RunicMark } from './runic-icons';
