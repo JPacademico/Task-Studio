@@ -143,14 +143,45 @@ export const AppLayout = () => {
       <div
         className={cn(
           'transition-[padding] duration-300 ease-studio',
-          !isTouch && pinned.left && 'pl-[264px]',
-          !isTouch && pinned.right && 'pr-[260px]',
+          /*
+           * The gutters a pinned rail needs, in the rail's own units.
+           *
+           * These were `264px` and `260px` — the two rails' widths as they
+           * measure at a 16px root. The rails themselves are `w-[16.5rem]` and
+           * `w-[16.25rem]`, so from 1024px up, where the root scale kicks in,
+           * they grew and the gutters did not: at the 22px ceiling a pinned
+           * rail is 363px wide over a 264px gutter and covers the first
+           * hundred pixels of the page. Stated in `rem`, the two can only
+           * agree. See `hidden-sidebar` and `project-rail` for the widths.
+           */
+          !isTouch && pinned.left && 'pl-[16.5rem]',
+          !isTouch && pinned.right && 'pr-[16.25rem]',
         )}
       >
         <main
           className={cn(
-            // Tighter on phones so more of the page fits before the first scroll.
-            'mx-auto w-full max-w-[87.5rem] px-3 pb-16 sm:px-6 sm:pb-24 lg:px-10',
+            /*
+             * Tighter on phones so more of the page fits before the first
+             * scroll, and a cap that keeps growing on panels the root scale
+             * has stopped growing for.
+             *
+             * `max(87.5rem, 78vw)` is the whole idea: below about 1900px the
+             * `rem` term wins and the column is exactly what it has always
+             * been — the root scale is still climbing there, so the column
+             * climbs with it. Past that the root hits its ceiling and the
+             * `vw` term takes over, so a 2560 panel gets a ~2000px column
+             * instead of a 1700px one and a 3440 gets ~2450px instead of the
+             * same 1700px with 850px of margin on either side. `min(124rem,
+             * …)` is the backstop: a column wider than that is a line of text
+             * nobody can track back to the start of, and 124rem at the 22px
+             * ceiling is already 2728px.
+             *
+             * Pages that are prose rather than workspace set their own,
+             * narrower caps inside this one — settings at `max-w-3xl`, the
+             * docs at `max-w-6xl` — so widening here cannot stretch a
+             * paragraph across a television.
+             */
+            'mx-auto w-full max-w-[min(124rem,max(87.5rem,78vw))] px-3 pb-16 sm:px-6 sm:pb-24 lg:px-10',
             // The bar is always on for touch, so the gutter is only needed there
             // — or when the user has pinned it open on desktop.
             // The bar is `3.5rem` plus whatever the notch takes, so the

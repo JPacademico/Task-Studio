@@ -288,6 +288,34 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
     };
 
+    /*
+     * The project was binned by its owner, and this tab is somebody else.
+     *
+     * The server emitted this from the start and nothing listened, which is
+     * half of why a deleted project's tasks stayed on a teammate's personal
+     * board: their agenda has no reason to refetch — no task changed — and the
+     * cards sat there until something unrelated invalidated the cache. The
+     * other half was the deleting tab's own cache, handled in
+     * `useDeleteProject`.
+     *
+     * The project's own subtree is dropped rather than invalidated, for the
+     * reason spelled out there: it is gone, and asking the server about it
+     * four more times produces four 404s with toasts attached. This tab may
+     * well be *looking* at the project when this arrives, so the detail
+     * queries have live observers — `removeQueries` empties them and the page
+     * falls back to its not-found state instead of flashing an error.
+     */
+    const handleProjectDeleted = (payload: { projectId?: string }, meta?: RealtimeMeta) => {
+      if (isOwnEvent(meta)) return;
+
+      if (payload?.projectId) {
+        queryClient.removeQueries({ queryKey: queryKeys.projects.detail(payload.projectId) });
+      }
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.meetings.all });
+    };
+
     const handleError = (payload: { message?: string }) => {
       if (payload?.message) toast.error(payload.message);
     };
@@ -319,6 +347,7 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
     socket.on('roster:joined', handleRosterEvent);
     socket.on('roster:left', handleRosterEvent);
     socket.on('project:updated', handleRosterEvent);
+    socket.on('project:deleted', handleProjectDeleted);
     socket.on('error', handleError);
 
     return () => {
@@ -344,6 +373,7 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
       socket.off('roster:joined', handleRosterEvent);
       socket.off('roster:left', handleRosterEvent);
       socket.off('project:updated', handleRosterEvent);
+      socket.off('project:deleted', handleProjectDeleted);
       socket.off('error', handleError);
     };
   }, [queryClient, status]);

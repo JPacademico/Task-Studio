@@ -1,5 +1,5 @@
 /**
- * Applies the stored palette and skin before first paint.
+ * Applies the stored palette, skin and cursor preference before first paint.
  *
  * ## Why this is a file and not an inline `<script>`
  *
@@ -47,9 +47,25 @@
       RUNIC: 'runic',
       UNDERWATER: 'underwater',
       VOLCANO: 'volcano',
+      HALLOWEEN: 'halloween',
+      VIBECODED: 'vibecoded',
       STUDIO: 'studio',
     };
     root.dataset.skin = SKINS[localStorage.getItem('task-studio:theme-skin')] || 'studio';
+
+    /*
+     * The cursor opt-out, which has to be here rather than in React for the
+     * same reason the skin does — only more so.
+     *
+     * A skin arriving late is a flash of the wrong colour. A *cursor* arriving
+     * late is a knife appearing under somebody's hand a beat after the page
+     * does, on a machine where they had turned it off. Written only when it is
+     * off, matching the `html:not([data-cursor='off'])` gate in the stylesheet:
+     * the default costs nothing and needs no attribute.
+     */
+    if (localStorage.getItem('task-studio:custom-cursor') === 'off') {
+      root.dataset.cursor = 'off';
+    }
   } catch {
     /* private mode — fall back to the class already on <html> */
     root.dataset.skin = 'studio';

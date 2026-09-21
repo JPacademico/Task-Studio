@@ -90,11 +90,11 @@ export const TaskSprintView = ({
         <span className="flex flex-wrap items-center gap-x-4 gap-y-1 text-2xs text-content-muted">
           <span className="inline-flex items-center gap-1.5">
             <CheckCircle2 className="h-3 w-3 text-positive" />
-            {stats.done}/{stats.total} done
+            {t('sprint.done', { done: String(stats.done), total: String(stats.total) })}
           </span>
           <span className={cn('inline-flex items-center gap-1.5', stats.late > 0 && 'text-danger')}>
             <AlertTriangle className="h-3 w-3" />
-            {stats.late} late
+            {t('sprint.late', { count: String(stats.late) })}
           </span>
         </span>
       </header>

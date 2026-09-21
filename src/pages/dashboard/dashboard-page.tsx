@@ -28,7 +28,7 @@ import type { Task } from '@/entities/task/model/types';
 import { useCurrentUser } from '@/features/auth/model/session.store';
 import { cn } from '@/shared/lib/cn';
 import { withAlpha } from '@/shared/lib/colors';
-import { Button, EmptyState, RunicText, Section, Skeleton } from '@/shared/ui';
+import { Button, EmptyState, RunicText, Section, Skeleton, Switch } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
 /**
@@ -328,7 +328,26 @@ const DashboardPage = () => {
   const navigate = useNavigate();
 
   const { data: overview, isLoading: overviewLoading } = useUserOverview();
-  const { data: projects = [], isLoading: projectsLoading } = useProjects();
+  /*
+   * Archived projects are off by default, and reachable.
+   *
+   * Archiving has existed on the server since the model was written —
+   * `isArchived` on the row, `includeArchived` on the list query, the flag on
+   * the update DTO — and nothing in the app could set it or see it, which made
+   * it a feature only an API client had. The two halves are this switch and
+   * the control in `ProjectSettingsDialog`; without both, archiving something
+   * would be a way to lose it.
+   *
+   * A separate query key (`list({ includeArchived: true })`) rather than a
+   * client-side filter over one list, because the server is the thing that
+   * decides: asking for the wider set is a different question, and caching it
+   * apart is what stops a reader who has never pressed this from paying for
+   * rows they will not see.
+   */
+  const [showArchived, setShowArchived] = useState(false);
+  const { data: projects = [], isLoading: projectsLoading } = useProjects(
+    showArchived ? { includeArchived: true } : {},
+  );
   const { data: organizations = [] } = useOrganizations();
   /*
    * "Up next for you", and the two things that were wrong with how it asked.
@@ -514,10 +533,32 @@ const DashboardPage = () => {
             </span>
           }
           action={
-            <Button size="sm" variant="secondary" onClick={() => setIsCreateOpen(true)}>
-              <FolderPlus className="h-3.5 w-3.5" />
-              {t('dash.newProject')}
-            </Button>
+            <div className="flex items-center gap-3">
+              {/*
+                Always drawn, and the first draft of this was not.
+
+                Hiding it until `projects` contained something archived reads
+                as the considerate choice and is in fact a trap: the default
+                list is the one the *server* has already filtered — archived
+                projects are excluded by `isArchived: false` in
+                `ProjectsService.list` — so that condition is false exactly
+                when it matters, and the only control that could bring an
+                archived project back was hidden by the act of archiving one.
+                A switch that does nothing on an empty archive is a much
+                smaller cost than a one-way door.
+              */}
+              <Switch
+                id="show-archived"
+                checked={showArchived}
+                onChange={setShowArchived}
+                label={t('dash.showArchived')}
+                className="text-2xs text-content-muted"
+              />
+              <Button size="sm" variant="secondary" onClick={() => setIsCreateOpen(true)}>
+                <FolderPlus className="h-3.5 w-3.5" />
+                {t('dash.newProject')}
+              </Button>
+            </div>
           }
         >
           {projectsLoading ? (

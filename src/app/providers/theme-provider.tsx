@@ -21,6 +21,9 @@ interface ThemeContextValue {
   /** The visual language the whole app is drawn in. */
   skin: ThemeSkin;
   setSkin: (skin: ThemeSkin) => void;
+  /** Whether a skin that draws its own pointer is allowed to. */
+  hasCustomCursor: boolean;
+  setHasCustomCursor: (enabled: boolean) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -38,6 +41,28 @@ const readStoredSkin = (): ThemeSkin => {
     return normaliseSkin(localStorage.getItem(STORAGE_KEYS.themeSkin));
   } catch {
     return 'STUDIO';
+  }
+};
+
+/**
+ * Whether the skins that draw their own pointer are allowed to.
+ *
+ * On unless somebody turned it off: a skin that ships a cursor ships it as part
+ * of the look, and a theme gallery whose previews lie about what you are about
+ * to get is worse than one extra checkbox.
+ *
+ * Stored only on this device, deliberately, and this is the one preference in
+ * this file that is *not* mirrored to the profile. A custom cursor is a
+ * statement about the machine it is drawn on — a trackpad on a 4K laptop, a
+ * borrowed desktop, a screen being shared in a meeting — rather than about the
+ * person. Following somebody across devices is exactly the wrong behaviour for
+ * it, and it would need a column on the user row to do the wrong thing.
+ */
+const readStoredCursor = (): boolean => {
+  try {
+    return localStorage.getItem(STORAGE_KEYS.customCursor) !== 'off';
+  } catch {
+    return true;
   }
 };
 
@@ -78,6 +103,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [preference, setPreferenceState] = useState<ThemePreference>(readStored);
   const [isDark, setIsDark] = useState(() => resolveIsDark(readStored()));
   const [skin, setSkinState] = useState<ThemeSkin>(readStoredSkin);
+  const [hasCustomCursor, setCursorState] = useState<boolean>(readStoredCursor);
 
   const apply = useCallback((next: ThemePreference) => {
     const dark = resolveIsDark(next);
@@ -89,9 +115,24 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     document.documentElement.dataset.skin = SKIN_ATTRIBUTE[next] ?? 'studio';
   }, []);
 
-  // The attribute is set pre-paint by index.html; re-assert it on mount so a
-  // storage write that failed there (private mode) still lands.
+  /*
+   * One attribute, and only when it is off.
+   *
+   * The cursor blocks in `index.css` are written as
+   * `html:not([data-cursor='off']) [data-skin='…']`, so the presence of this
+   * attribute drops every one of them and the system pointer comes back. The
+   * absent case is the default, which means a page that never runs this — a
+   * cached shell, a crashed bundle — still draws the skin as designed.
+   */
+  const applyCursor = useCallback((enabled: boolean) => {
+    if (enabled) delete document.documentElement.dataset.cursor;
+    else document.documentElement.dataset.cursor = 'off';
+  }, []);
+
+  // Both attributes are set pre-paint by index.html; re-assert them on mount so
+  // a storage read that failed there (private mode) still lands.
   useEffect(() => applySkin(skin), [applySkin, skin]);
+  useEffect(() => applyCursor(hasCustomCursor), [applyCursor, hasCustomCursor]);
 
   // Adopt the server-side preferences once the session resolves.
   useEffect(() => {
@@ -167,6 +208,19 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     [applySkin],
   );
 
+  const setHasCustomCursor = useCallback(
+    (enabled: boolean) => {
+      setCursorState(enabled);
+      try {
+        localStorage.setItem(STORAGE_KEYS.customCursor, enabled ? 'on' : 'off');
+      } catch {
+        /* ignore */
+      }
+      applyCursor(enabled);
+    },
+    [applyCursor],
+  );
+
   const value = useMemo<ThemeContextValue>(
     () => ({
       preference,
@@ -175,8 +229,10 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
       toggle: () => setPreference(isDark ? 'LIGHT' : 'DARK'),
       skin,
       setSkin,
+      hasCustomCursor,
+      setHasCustomCursor,
     }),
-    [isDark, preference, setPreference, setSkin, skin],
+    [hasCustomCursor, isDark, preference, setHasCustomCursor, setPreference, setSkin, skin],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

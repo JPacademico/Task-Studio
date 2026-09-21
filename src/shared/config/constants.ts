@@ -6,6 +6,14 @@ export const STORAGE_KEYS = {
   refreshToken: 'task-studio:refresh-token',
   theme: 'task-studio:theme',
   themeSkin: 'task-studio:theme-skin',
+  /**
+   * Whether the skins that draw their own pointer may.
+   *
+   * Per-device rather than per-account, and the only theme preference that is
+   * not mirrored to the profile — see `readStoredCursor` in `theme-provider`
+   * for why a cursor is a fact about the machine and not about the person.
+   */
+  customCursor: 'task-studio:custom-cursor',
   chatPosition: 'task-studio:chat-position',
   chatDock: 'task-studio:chat-dock',
   pinnedNav: 'task-studio:pinned-nav',

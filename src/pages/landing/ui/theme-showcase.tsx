@@ -10,6 +10,7 @@ import { Check, Palette } from 'lucide-react';
 
 import { useTheme } from '@/app/providers/theme-provider';
 import { SKIN_CATALOG } from '@/features/theme-toggle/model/skin-catalog';
+import { CursorToggle } from '@/features/theme-toggle/ui/cursor-toggle';
 import { SkinMock } from '@/features/theme-toggle/ui/skin-mock';
 import { cn } from '@/shared/lib/cn';
 import { useT } from '@/shared/i18n';
@@ -398,7 +399,7 @@ export const ThemeShowcase = () => {
       {/* ---------------------------------------------------------------
           Light against dark
           --------------------------------------------------------------- */}
-      <div className="min-w-0 lg:col-span-2 xl:col-span-1">
+      <div className="min-w-0 space-y-3 lg:col-span-2 xl:col-span-1">
         <SkinCompare
           key={skin.value}
           skin={skin.value}
@@ -408,6 +409,18 @@ export const ThemeShowcase = () => {
           darkLabel={t('landing.themes.dark')}
           hint={t('landing.themes.hint')}
         />
+
+        {/*
+          Under the preview, on the landing page as in settings.
+
+          Two of the themes on this wheel replace the reader's pointer, and this
+          is the moment they are deciding whether to wear one — so the opt-out
+          belongs here rather than being something they discover afterwards in a
+          settings page they have not reached yet. It writes through the same
+          provider the apply button does, so a choice made on this page is the
+          choice the app starts with.
+        */}
+        <CursorToggle />
       </div>
     </div>
   );

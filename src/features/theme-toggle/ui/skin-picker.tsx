@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { useTheme } from '@/app/providers/theme-provider';
 import { cn } from '@/shared/lib/cn';
 import { SETTINGS_SKIN_LIMIT, SKIN_CATALOG } from '../model/skin-catalog';
+import { CursorToggle } from './cursor-toggle';
 import { SkinMock } from './skin-mock';
 import { useT } from '@/shared/i18n';
 
@@ -76,6 +77,9 @@ export const SkinPicker = () => {
           );
         })}
       </div>
+
+      {/* Directly under the tiles, which is the preview on this surface. */}
+      <CursorToggle />
 
       {/*
         The way out of settings.

@@ -4,11 +4,17 @@ import { Search, User, UserRound, X } from 'lucide-react';
 import type {
   ListTasksParams,
   TaskLateness,
+  TaskPriority,
   TaskScope,
   TaskStatus,
   TaskType,
 } from '@/entities/task/model/types';
-import { TASK_STATUS_META, TASK_TYPE_META, TEXT_LIMITS } from '@/shared/config/constants';
+import {
+  TASK_PRIORITY_META,
+  TASK_STATUS_META,
+  TASK_TYPE_META,
+  TEXT_LIMITS,
+} from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
 import { clampText } from '@/shared/lib/text';
 import { Segmented, Select } from '@/shared/ui';
@@ -78,6 +84,23 @@ const PERSONAL_TABS: { value: PersonalTab; label: TranslationKey; icon: ReactNod
 const STATUSES: (TaskStatus | 'ALL')[] = ['ALL', 'TODO', 'IN_PROGRESS', 'COMPLETED'];
 const TYPES: (TaskType | 'ALL')[] = ['ALL', 'MEGA', 'MICRO', 'MULTI', 'STANDARD'];
 
+/*
+ * Urgent first, which is the opposite of the enum's own order.
+ *
+ * A dropdown is read from the top and this one is opened with a question in
+ * mind — "what is on fire" — far more often than its opposite. `LOW` last is
+ * the rarely-wanted end, which is where a rarely-wanted option belongs.
+ */
+const PRIORITIES: (TaskPriority | 'ALL')[] = ['ALL', 'URGENT', 'HIGH', 'NORMAL', 'LOW'];
+
+/** The ink each priority is written in elsewhere, as a dot in the dropdown. */
+const PRIORITY_SWATCH: Record<TaskPriority, string> = {
+  LOW: '#94a3b8',
+  NORMAL: '#64748b',
+  HIGH: '#f59e0b',
+  URGENT: '#ef4444',
+};
+
 /** The dot each status carries elsewhere in the app, reused in the dropdown. */
 const STATUS_SWATCH: Record<TaskStatus, string> = {
   TODO: '#94a3b8',
@@ -122,6 +145,7 @@ export const TaskFilters = ({
   const hasActiveFilters = Boolean(
     value.status ??
       value.type ??
+      value.priority ??
       value.lateness ??
       value.search ??
       value.pinnedOnly ??
@@ -209,6 +233,35 @@ export const TaskFilters = ({
           value: type,
           label: t(type === 'ALL' ? 'filters.type' : TASK_TYPE_META[type].label),
           hint: type === 'ALL' ? undefined : t(TASK_TYPE_META[type].hint),
+        }))}
+      />
+
+      {/*
+        Priority, which the API has always accepted and nothing ever sent.
+
+        `ListTasksQueryDto` declares it, `TasksService.buildFilter` applies it
+        and `ListTasksParams` carries it — the control to set it was simply
+        never built, so the one question a board is most often opened with
+        could only be answered by reading every card. It goes last in the row
+        because it is the narrowest of the four: status and lateness describe
+        where work *is*, and priority describes what somebody decided about it.
+      */}
+      <Select
+        /*
+         * Narrower than its neighbours, because its words are shorter.
+         *
+         * The note above the row applies with force here: this is the fifth
+         * control on a line that also carries the layout switcher, and the
+         * width it takes is width the switcher does not have. "Urgent" and
+         * "Priority" are the longest strings it ever shows.
+         */
+        className="w-[6.5rem]"
+        value={value.priority ?? 'ALL'}
+        onChange={(priority) => patch({ priority: priority === 'ALL' ? undefined : priority })}
+        options={PRIORITIES.map((priority) => ({
+          value: priority,
+          label: t(priority === 'ALL' ? 'filters.priority' : TASK_PRIORITY_META[priority].label),
+          swatch: priority === 'ALL' ? undefined : PRIORITY_SWATCH[priority],
         }))}
       />
 

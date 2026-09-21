@@ -1,6 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Building2, CheckCircle2, FolderMinus, RotateCcw, Trash2 } from 'lucide-react';
+import {
+  AlertTriangle,
+  Archive,
+  ArchiveRestore,
+  Building2,
+  CheckCircle2,
+  FolderMinus,
+  RotateCcw,
+  Trash2,
+} from 'lucide-react';
 
 import { useDetachProject } from '@/entities/organization/model/queries';
 import {
@@ -244,6 +253,29 @@ export const ProjectSettingsDialog = ({
     onClose();
   };
 
+  /**
+   * Put the project away, or take it back out.
+   *
+   * Reversible, destroys nothing, and deliberately *not* in the danger zone —
+   * the same argument the unfiling control above makes. An archived project
+   * keeps its roster, its board, its pages and its history; it stops appearing
+   * on the dashboard, which is the whole of what it does.
+   *
+   * Closing on archive and staying open on un-archive is the asymmetry that
+   * matches what each one is for: putting something away is the last thing
+   * somebody wants to do with it, and taking it back out is the first of
+   * several.
+   */
+  const handleArchive = async (next: boolean) => {
+    await updateProject.mutateAsync({ isArchived: next });
+    if (next) {
+      onClose();
+      // The dashboard is where it will and will not be, depending. Staying on
+      // a project that has just left the board is a page about nothing.
+      navigate('/', { replace: true });
+    }
+  };
+
   const handleDelete = async () => {
     if (!canDelete) return;
 
@@ -363,6 +395,47 @@ export const ProjectSettingsDialog = ({
             >
               <FolderMinus className="h-3.5 w-3.5" />
               {t(isConfirmingUnfile ? 'project.unfileConfirm' : 'project.unfile')}
+            </Button>
+          </section>
+        )}
+
+        {/* --- Out of the way, and back again -------------------------------
+
+            Above the rule for the reason `handleArchive` gives: nothing is
+            destroyed and one click undoes it. Hidden on a finished project,
+            because the API refuses that combination outright — finishing is
+            the stronger state and already keeps the project off the board
+            (see `ProjectsService.update`) — so offering the control there
+            would be offering a button whose only outcome is an error.
+
+            Owner only, matching every other structural control in this
+            dialog. */}
+        {isOwner && !isFinished && (
+          <section className="space-y-2.5 rounded-xl border border-edge bg-surface-sunken/50 p-3.5">
+            <header className="flex items-center gap-2">
+              <Archive className="h-3.5 w-3.5 shrink-0 text-content-faint" />
+              <h3 className="text-xs font-semibold">
+                {t(project.isArchived ? 'project.archivedTitle' : 'project.archiveTitle')}
+              </h3>
+            </header>
+
+            <p className="text-2xs leading-relaxed text-content-muted">
+              {t(project.isArchived ? 'project.unarchiveExplain' : 'project.archiveExplain')}
+            </p>
+
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => void handleArchive(!project.isArchived)}
+              isLoading={updateProject.isPending}
+            >
+              {project.isArchived ? (
+                <ArchiveRestore className="h-3.5 w-3.5" />
+              ) : (
+                <Archive className="h-3.5 w-3.5" />
+              )}
+              {t(project.isArchived ? 'project.unarchive' : 'project.archive')}
             </Button>
           </section>
         )}

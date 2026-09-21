@@ -153,7 +153,14 @@ export const ColorPicker = ({ value, onChange, options, label }: ColorPickerProp
 interface SwitchProps {
   checked: boolean;
   onChange: (checked: boolean) => void;
-  label?: string;
+  /**
+   * `ReactNode` rather than `string`, so a label can carry an icon.
+   *
+   * The alternative — laying the icon out beside the switch — puts it outside
+   * the `<label>` this renders, which silently costs the row its click target:
+   * the words would toggle the control and the icon next to them would not.
+   */
+  label?: ReactNode;
   id?: string;
   /** Applied to the row, so a compact surface can set its own type scale. */
   className?: string;
@@ -401,6 +408,57 @@ interface SegmentedProps<T extends string> {
    * unrelated treatments.
    */
   variant?: 'sunken' | 'glass';
+  /**
+   * How much room the strip takes.
+   *
+   * ## Why a project's tabs are not the same size as a filter
+   *
+   * `sm` is a control *on* a page — the scope filter over a task list, the
+   * range picker on a chart. It should be quiet, because the page is the
+   * subject and the filter is an adjustment to it.
+   *
+   * `lg` is for a strip that *is* the page's navigation: a project's Board,
+   * Groups, Documents, Live. Twelve options of 12px type in a 36px strip is
+   * the right size for a filter and too small for the control every visit to
+   * the busiest screen in the product starts with — the labels read as a
+   * caption under the project name rather than as the tabs they are.
+   *
+   * ## Why it is one step and not a scale
+   *
+   * Because the root font size already does the scaling (see the note on
+   * `html { font-size }` in `index.css`): every value here is in `rem`, so the
+   * strip measures 49px at 1600x860 and 60px at 2560x1440 without a second
+   * number being written down. What `lg` changes is the *proportion* — one
+   * type step up and more vertical padding — which is the part a viewport
+   * cannot infer.
+   *
+   * ## What it deliberately does not grow
+   *
+   * Horizontal padding, gaps and icons. A project's twelve tabs are the
+   * widest thing this control ever holds, and growing all four dimensions put
+   * them at about 105% of the content column — so the strip wrapped to two
+   * rows at 1024, at 1280 and at 1440 alike, because the root scale grows the
+   * column and the type together and that ratio barely moves with the
+   * viewport. 91px of navigation on a 900px-tall laptop is a worse trade than
+   * the small type it was fixing. Taller and larger-typed but no wider comes
+   * in at about 96% of the column, which fits on one line with room to spare.
+   *
+   * The icons stay at their 12px: beside 14px type that is a ratio of 0.86,
+   * which is where an icon belongs next to a label anyway.
+   *
+   * ## Where the step happens
+   *
+   * `min-[1600px]:`, measured rather than chosen. It is the width at which
+   * the page shell's `78vw` term starts winning over its `rem` cap (see
+   * `app-layout`) and gives the column room the type does not take with it —
+   * the first width where twelve tabs and their labels fit on one line in
+   * Portuguese, which is the longer of the two languages and therefore the
+   * one that decides.
+   *
+   * Below it both sizes are identical, so every laptop keeps exactly the strip
+   * it has today.
+   */
+  size?: 'sm' | 'lg';
 }
 
 export const Segmented = <T extends string>({
@@ -410,12 +468,16 @@ export const Segmented = <T extends string>({
   className,
   label,
   variant = 'sunken',
+  size = 'sm',
 }: SegmentedProps<T>) => (
   <div
     role="group"
     aria-label={label}
     className={cn(
-      'ui-segment inline-flex items-center gap-1 rounded-xl p-1',
+      'ui-segment inline-flex items-center rounded-xl',
+      size === 'lg'
+        ? 'gap-1 p-1 min-[1600px]:gap-1.5 min-[1600px]:rounded-2xl min-[1600px]:p-1.5'
+        : 'gap-1 p-1',
       variant === 'glass'
         ? 'ui-liquid-glass ui-liquid-glass--interactive'
         : 'border border-edge bg-surface-sunken',
@@ -430,6 +492,8 @@ export const Segmented = <T extends string>({
         aria-pressed={value === option.value}
         className={cn(
           'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium',
+          size === 'lg' &&
+            'min-[1600px]:rounded-xl min-[1600px]:py-2 min-[1600px]:text-sm min-[1600px]:font-semibold',
           'transition-colors duration-150',
           /*
            * A focus ring, because there was none.

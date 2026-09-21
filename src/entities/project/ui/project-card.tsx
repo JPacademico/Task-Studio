@@ -186,9 +186,24 @@ export const ProjectCard = ({ project, onTogglePin }: ProjectCardProps) => {
     />
   );
 
+  /*
+    Archived says so on the card, because nothing else on screen would.
+
+    An archived project is only ever drawn when the reader has asked to see
+    archived projects, so this is not news — it is the answer to "which of
+    these are the archived ones", which a mixed grid cannot give any other way.
+    A muted chip rather than a dimmed card: the project is not disabled, and
+    fading the one thing somebody turned a switch on to look at would be
+    working against them.
+  */
   const title = (
-    <p className="ui-project-name px-4 py-3 text-sm font-semibold leading-snug transition-colors group-hover:text-brand">
-      {project.name}
+    <p className="ui-project-name flex items-center gap-2 px-4 py-3 text-sm font-semibold leading-snug transition-colors group-hover:text-brand">
+      <span className="min-w-0 flex-1 truncate">{project.name}</span>
+      {project.isArchived && (
+        <span className="shrink-0 rounded-full bg-surface-sunken px-1.5 py-px text-4xs font-medium uppercase tracking-wide text-content-faint">
+          {t('project.archivedChip')}
+        </span>
+      )}
     </p>
   );
 

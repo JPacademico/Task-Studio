@@ -1,13 +1,13 @@
-# Graph Report - C:/Users/jorda/OneDrive/Documentos/GitHub/Task-Studio/Task-Studio-UI  (2026-09-16)
+# Graph Report - .  (2026-09-18)
 
 ## Corpus Check
-- 20 files · ~398,605 words
+- 43 files · ~412,130 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2230 nodes · 3034 edges · 222 communities (163 shown, 59 thin omitted)
-- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 62 edges (avg confidence: 0.65)
-- Token cost: 54,060 input · 0 output
+- 2287 nodes · 3094 edges · 228 communities (166 shown, 62 thin omitted)
+- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 67 edges (avg confidence: 0.66)
+- Token cost: 473,371 input · 0 output
 
 ## Community Hubs (Navigation)
 - Task Sync & Overview Delta
@@ -129,7 +129,6 @@
 - Notification Bell & Opt-in
 - Organization Banner Preview
 - Chat Pin Widget (ui)
-- Figma Link Dialog
 - Repository Link Dialog
 - Task Composer
 - CLI Authorize Page
@@ -147,10 +146,10 @@
 - Skin Motion Reveal (entities)
 - index.html Metaball Filter
 - README PWA/Deploy Notes
+- Plain Text to HTML
 - API Tokens Types
 - CLI Device Auth API
 - Board Selection Geometry
-- Image Drop Handling
 - Whiteboard Ink Layer
 - Invitations Page
 - Notes Board Page
@@ -167,36 +166,36 @@
 - Floating Shortcut Layer
 - Settings Page (pages)
 - Top Navigation Bar (widgets)
+- Auth Token Storage (SECURITY.md)
 - GitHub Repository API
 - Project Window Chip
 - Pending Tasks Widget
-- API Tokens Panel UI
 - Calendar Connection Panel
 - CLI Machines Panel
 - Tear-off Drag Hook
 - Tear-off Ghost Visual
+- Language Toggle Control
 - Board Pager Control
 - Board Loading Skeleton
-- Plan Soon Page
 - Settings Page (settings/)
 - Project Chat Panel
 - Project Dashboard Metrics
 - Top Navigation Bar (ui)
 - TypeScript Root References
 - clsx Dependency
+- date-fns Dependency
 - dnd-kit Modifiers Dependency
 - dnd-kit Sortable Dependency
-- dnd-kit Utilities Dependency
 - React Hook Form Resolvers
 - lucide-react Icon Dependency
 - Paper Design Shaders Dependency
 - React Dependency
 - React DOM Dependency
+- React Hook Form Dependency
 - React Router DOM Dependency
 - React Three Fiber Dependency
 - Socket.io Client Dependency
 - TanStack Query Dependency
-- README Edge Reveal Notes
 - Calendar Feed Panel
 - Calendar Sync Badge
 - Branch Commit Prompt
@@ -210,9 +209,15 @@
 - PostCSS Config
 - Theme Init Script
 - README Theme System Notes
-- Referrer-Policy Header
-- CSS Variable Theme System
 - Cache-Control Header Policy
+- Permissions-Policy Header
+- Referrer-Policy Header
+- X-Content-Type-Options Header
+- Cache-Control Header Policy
+- Theme Init Bootstrap Script
+- Referrer-Policy Header
+- CSS Theme Variables
+- Asset Cache-Control Policy
 - Permissions-Policy Header
 - Referrer-Policy Header
 - X-Content-Type-Options Header
@@ -256,7 +261,7 @@
 - **Performance-first Interaction Design Pattern** — readme_useedgereveal, readme_drag_and_drop_design, readme_60fps_rules [INFERRED 0.85]
 - **PWA/iOS Delivery Flow** — readme_pwa_workbox, readme_ios_safari_specifics, readme_npm_scripts, readme_vercel_deployment [INFERRED 0.75]
 
-## Communities (222 total, 59 thin omitted)
+## Communities (228 total, 62 thin omitted)
 
 ### Community 0 - "Task Sync & Overview Delta"
 Cohesion: 0.05
@@ -264,11 +269,11 @@ Nodes (62): taskApi, blockingAssigneeCount(), canCompleteTask(), completionBlock
 
 ### Community 1 - "Skin Decor (Underwater/Volcano/Hazard)"
 Cohesion: 0.06
-Nodes (33): CENTRE, EdgeAffordance(), EdgeAffordanceProps, GRADIENT, NavPinButton(), NavPinButtonProps, RAIL, RAIL_TONE (+25 more)
+Nodes (41): GoogleCalendarMark(), HazardDrift(), MOTES, HoverHint(), HoverHintProps, FieldShellProps, Input, InputProps (+33 more)
 
 ### Community 2 - "Landing Page Features & Nav"
 Cohesion: 0.06
-Nodes (41): ExpandableStage(), ExpandableStageProps, ExpandToggle(), ExpandToggleProps, GoogleCalendarMark(), HazardDrift(), MOTES, HoverHint() (+33 more)
+Nodes (33): CENTRE, EdgeAffordance(), EdgeAffordanceProps, GRADIENT, NavPinButton(), NavPinButtonProps, RAIL, RAIL_TONE (+25 more)
 
 ### Community 3 - "App Bootstrap, Router & Providers"
 Cohesion: 0.06
@@ -295,28 +300,28 @@ Cohesion: 0.08
 Nodes (30): documentApi, useAdoptDocument(), useCreateDocument(), useCreateFigmaPage(), useDeleteDocument(), useDocumentListCache(), useImportDocument(), useProjectDocumentsRealtime() (+22 more)
 
 ### Community 9 - "Socket Client & Token Store"
+Cohesion: 0.06
+Nodes (5): ConnectFigmaPayload, figmaApi, rememberedFigmaAvailability(), rememberFigmaAvailability(), useFigmaAvailability()
+
+### Community 10 - "Skin Icon Marks"
 Cohesion: 0.08
 Nodes (24): SpeakingDetector, Tracked, AUDIO_CONSTRAINTS, Connection, FALLBACK_ICE, LiveCallStatus, LivePeer, useLiveCall() (+16 more)
 
-### Community 10 - "Skin Icon Marks"
+### Community 11 - "Live Room UI & Audio Detection"
 Cohesion: 0.09
 Nodes (25): organizationApi, useAttachProject(), useCreateOrganization(), useDetachProject(), useInviteToOrganization(), useOrganizationRefresh(), useRemoveOrganizationMember(), useRevokeOrganizationInvitation() (+17 more)
 
-### Community 11 - "Live Room UI & Audio Detection"
+### Community 12 - "Organization API & Types"
 Cohesion: 0.12
 Nodes (32): meetingApi, meetingRoomApi, byStart(), invalidateAgenda(), invalidateInheritedRooms(), organizationKey(), projectKey(), removeMeeting() (+24 more)
 
-### Community 12 - "Organization API & Types"
+### Community 13 - "Meeting API & Queries"
 Cohesion: 0.07
 Nodes (32): Build args instead of runtime env vars, Caddy (API droplet reverse proxy), Dockerfile, json-file logging with rotation, nginx (production-parity server), npm run preview (dev preview, not production-parity), 8080:80 port mapping, Not binding port 80 directly, put behind TLS terminator (+24 more)
 
-### Community 13 - "Meeting API & Queries"
+### Community 14 - "Frontend Deployment (Docker/nginx)"
 Cohesion: 0.08
 Nodes (29): Apple Touch Icon (Task Studio Brand Mark), Icon-192 Brand Mark, Icon-512 Post-it Note Brand Mark, Maskable 512 Icon (Post-it Mark, Full-Bleed Tile), Why Maskable Icons Keep Their Background Tile, BAR, BRAND, BRAND_DEEP (+21 more)
-
-### Community 14 - "Frontend Deployment (Docker/nginx)"
-Cohesion: 0.07
-Nodes (5): ConnectFigmaPayload, figmaApi, rememberedFigmaAvailability(), rememberFigmaAvailability(), useFigmaAvailability()
 
 ### Community 15 - "Icon Generation Script"
 Cohesion: 0.10
@@ -355,40 +360,40 @@ Cohesion: 0.15
 Nodes (15): AiAllowance, aiApi, AiStatus, AiSuggestion, ProjectTaskSuggestion, SubtaskSuggestion, useInvalidateAllowance(), useSuggestDraftSubtasks() (+7 more)
 
 ### Community 24 - "Frontend Dependencies (devDeps)"
+Cohesion: 0.12
+Nodes (18): spotifyApi, tokensApi, ApiToken, BoardImportSource, CreatedApiToken, ImportSource, ImportStatus, ImportStep (+10 more)
+
+### Community 25 - "Live Room API & Types"
 Cohesion: 0.17
 Nodes (13): taskGroupApi, invalidateGroups(), orderKey, useCreateTaskGroup(), useDeleteTaskGroup(), useReorderTaskGroups(), useUpdateTaskGroup(), CreateTaskGroupPayload (+5 more)
 
-### Community 25 - "Live Room API & Types"
+### Community 26 - "AI Suggestions API"
 Cohesion: 0.11
 Nodes (12): FOOTER_NOTES, FeatureCarousel(), FeatureNotes(), NOTES, PiticoMark(), Reveal(), ENTER, EXIT (+4 more)
 
-### Community 26 - "AI Suggestions API"
+### Community 27 - "Task Group Board API"
 Cohesion: 0.11
 Nodes (18): AdminPage, CliAuthorizePage, DashboardPage, DocsPage, InvitationsPage, LandingPage, MeetingsPage, NotesBoardPage (+10 more)
 
-### Community 27 - "Task Group Board API"
+### Community 28 - "Grouped Task Board UI"
 Cohesion: 0.13
 Nodes (10): read(), Stored, useHiddenColumns(), write(), GroupTaskCard(), GroupTaskCardProps, RIBBON, GroupsBoardProps (+2 more)
 
-### Community 28 - "Grouped Task Board UI"
+### Community 29 - "Meeting Composer & Rooms Manager"
 Cohesion: 0.14
 Nodes (13): MeetingComposer(), MeetingComposerProps, nextHour(), dayKey(), MeetingRow, MeetingRowProps, MeetingsPanel(), MeetingsPanelProps (+5 more)
 
-### Community 29 - "Meeting Composer & Rooms Manager"
+### Community 30 - "i18n Locale System"
 Cohesion: 0.15
 Nodes (12): COLUMNS, DemoBoard(), LANES, RESIDENTS, DemoChat(), MESSAGES, DemoFrame(), DemoFrameProps (+4 more)
 
-### Community 30 - "i18n Locale System"
+### Community 31 - "Board & Task Constants"
 Cohesion: 0.19
 Nodes (15): detectLocale(), LocaleState, substitute(), syncDocumentLang(), Translate, useLocale(), useLocaleStore, useT() (+7 more)
 
-### Community 31 - "Board & Task Constants"
+### Community 32 - "Calendar Sync & Import Types"
 Cohesion: 0.12
 Nodes (16): RFC-5321, BOARD_INK_COLORS, CONNECTOR_COLORS, EDGE_REVEAL_PX, GROUP_COLUMNS_PER_PAGE, MAX_BOARD_PAGES, MAX_GROUPS_PER_PROJECT, MAX_TASK_NOTES (+8 more)
-
-### Community 32 - "Calendar Sync & Import Types"
-Cohesion: 0.17
-Nodes (15): calendarApi, BoardImportSource, CalendarConnection, CalendarFeedSecret, CalendarFeedStatus, CalendarSettingsPayload, CalendarStatus, CalendarSyncResult (+7 more)
 
 ### Community 33 - "Personal Board Query Cache"
 Cohesion: 0.21
@@ -407,464 +412,472 @@ Cohesion: 0.13
 Nodes (16): base-uri 'self', Cloudflare R2 (bucket-specific hostname), connect-src 'self' https: wss:, Content-Security-Policy, contentEditable innerHTML + sanitiser (defense in depth), documentApi.sourceObjectUrl, form-action 'self', frame-ancestors 'none' (+8 more)
 
 ### Community 37 - "Project Board Query Cache"
-Cohesion: 0.16
-Nodes (9): AMBIENCE, AmbientSkin, buildField(), hasAmbience(), noise(), Particle, SkinAmbience(), SkinAmbienceProps (+1 more)
+Cohesion: 0.17
+Nodes (13): IntegrationsStrip(), Service, SERVICES, DiscordMark(), ExportMark(), FeedMark(), FigmaMark(), GitHubMark() (+5 more)
 
 ### Community 38 - "Floating Shortcuts Store"
-Cohesion: 0.22
-Nodes (13): boardApi, BoardPage, BoardSnapshot, BoardStroke, CreateBoardStrokePayload, CreateNoteLinkPayload, CreateNotePayload, ListNotesParams (+5 more)
+Cohesion: 0.14
+Nodes (15): build-cursors.py, build-cursors.py, Dark Mode Hover Knife Cursor Frame, Dark Mode Resting Knife Cursor Frame, Dark Stab Cursor Frame (dark-stab.png), Light Hover Knife Cursor Frame (light-hover.png), Light Mode Resting Knife Cursor Frame, Light Mode Stab Cursor Frame (light-stab.png) (+7 more)
 
 ### Community 39 - "Integrations Strip & Service Marks"
-Cohesion: 0.26
-Nodes (12): clampToViewport(), FloatingShortcut, PILL, read(), ShortcutIcon, ShortcutsState, useFloatingShortcuts, write() (+4 more)
+Cohesion: 0.23
+Nodes (13): BoardPage, BoardSnapshot, BoardStroke, CreateBoardStrokePayload, CreateNoteLinkPayload, CreateNotePayload, ListNotesParams, NoteKind (+5 more)
 
 ### Community 40 - "Notification API & Copy"
+Cohesion: 0.24
+Nodes (13): boardApi, useCreateProjectNote(), useCreateProjectNoteLink(), useDeleteProjectNote(), useDeleteProjectNoteLink(), useGroupProjectNotes(), usePatchProjectNotes(), usePatchProjectPositions() (+5 more)
+
+### Community 41 - "Team API & Queries"
+Cohesion: 0.22
+Nodes (10): clampToViewport(), FloatingShortcut, PILL, read(), ShortcutIcon, ShortcutsState, useFloatingShortcuts, write() (+2 more)
+
+### Community 42 - "Session Store & Sign Out"
 Cohesion: 0.20
 Nodes (14): HeroField, buildField(), CardSpec, createSheetTexture(), Field(), HeroField(), hexToHsl(), hslToHex() (+6 more)
 
-### Community 41 - "Team API & Queries"
-Cohesion: 0.19
-Nodes (12): IntegrationsStrip(), Service, SERVICES, DiscordMark(), ExportMark(), FeedMark(), FigmaMark(), GitHubMark() (+4 more)
-
-### Community 42 - "Session Store & Sign Out"
-Cohesion: 0.26
-Nodes (12): useCreateProjectNote(), useCreateProjectNoteLink(), useDeleteProjectNote(), useDeleteProjectNoteLink(), useGroupProjectNotes(), usePatchProjectNotes(), usePatchProjectPositions(), useProjectBoardCache() (+4 more)
-
 ### Community 43 - "Billing Format & Plan Panel"
+Cohesion: 0.17
+Nodes (9): AMBIENCE, AmbientSkin, buildField(), hasAmbience(), noise(), Particle, SkinAmbience(), SkinAmbienceProps (+1 more)
+
+### Community 44 - "Skin Picker & Catalog"
 Cohesion: 0.21
 Nodes (6): notificationApi, dropNotification(), useNotificationActions(), AppNotification, NotificationPayload, NotificationType
 
-### Community 44 - "Skin Picker & Catalog"
+### Community 45 - "Edge Affordance (alt)"
 Cohesion: 0.30
 Nodes (11): teamApi, keyFor(), useCreateTeam(), useDeleteTeam(), useTeamRefresh(), useTeams(), useUpdateTeam(), CreateTeamPayload (+3 more)
 
-### Community 45 - "Edge Affordance (alt)"
+### Community 46 - "Frontend Dependencies (deps)"
 Cohesion: 0.18
 Nodes (10): authApi, BotProtectionConfig, HumanChecked, OAuthAvailability, OAuthProvider, SessionState, SessionStatus, useCurrentUser() (+2 more)
 
-### Community 46 - "Frontend Dependencies (deps)"
+### Community 47 - "Eldritch/Runic Decor Icons"
 Cohesion: 0.20
 Nodes (10): formatBytesCeiling(), formatBytesUsed(), formatPrice(), usageFraction(), BLURB, FeatureRow, FEATURES, PLAN_NAME (+2 more)
 
-### Community 47 - "Eldritch/Runic Decor Icons"
-Cohesion: 0.23
+### Community 48 - "Task Board Columns"
+Cohesion: 0.22
 Nodes (9): SETTINGS_SKIN_LIMIT, SKIN_BY_VALUE, SKIN_CATALOG, SkinDefinition, SkinPreview, leaf(), notch(), SkinMock() (+1 more)
 
-### Community 48 - "Task Board Columns"
+### Community 49 - "Board Connector Layer"
 Cohesion: 0.21
 Nodes (11): DemoCommit(), DemoMeetings(), DemoNotes(), DemoPages(), DemoUndo(), DemoWhiteboard(), PAGE_LINES, WALL (+3 more)
 
-### Community 49 - "Board Connector Layer"
+### Community 50 - "Board Marquee Selection"
 Cohesion: 0.14
 Nodes (13): CENTRE, EdgeAffordance(), EdgeAffordanceProps, GRADIENT, IRIS_GRADIENT, NavPinButton(), NavPinButtonProps, RAIL (+5 more)
 
-### Community 50 - "Board Marquee Selection"
-Cohesion: 0.15
-Nodes (13): axios, dependencies, axios, @shadergradient/react, sonner, tailwind-merge, three, zod (+5 more)
-
 ### Community 51 - "Nav Rail Preferences Store"
+Cohesion: 0.15
+Nodes (13): axios, clsx, dependencies, axios, clsx, @shadergradient/react, sonner, tailwind-merge (+5 more)
+
+### Community 52 - "Task Filters UI"
 Cohesion: 0.24
 Nodes (10): LandingNav(), scrollToSection(), scrollToTop(), GAPS, LavaLink(), LavaLinkProps, featuresOf(), preferredCurrency() (+2 more)
 
-### Community 52 - "Task Filters UI"
+### Community 53 - "README Stack Overview"
 Cohesion: 0.18
 Nodes (10): DirectionArrow(), DirectionArrowProps, EldritchTendrils(), EldritchTendrilsProps, GazeArrow(), GazeArrowProps, nextSighting(), Sighting (+2 more)
 
-### Community 53 - "README Stack Overview"
+### Community 54 - "Activity Log API"
+Cohesion: 0.21
+Nodes (10): bloodied(), frame(), Builds the Halloween knife cursor from the three drawings in this folder. Run…, The point of the blade: the opaque pixel nearest the top-left corner. Measured…, `base` with only the red pixels of `Knife3` laid over it. The three files are…, One crop box for every drawing in the set. Cropping each frame to its own…, One cursor frame: turned to the arrow's diagonal, scaled, placed. The rotation…, tip() (+2 more)
+
+### Community 55 - "Admin API & Types"
 Cohesion: 0.27
 Nodes (9): byDeadline(), ColumnOverflow(), ColumnOverflowToggle(), useColumnCapacity(), COLUMNS, DraggableTask(), lockedHint(), TaskBoard() (+1 more)
 
-### Community 54 - "Activity Log API"
+### Community 56 - "CLI Commands & Connection UI"
 Cohesion: 0.23
 Nodes (9): Listener, Point, PositionBus, centreOf(), ConnectorLayer(), ConnectorLayerProps, curveBetween(), headTransform() (+1 more)
 
-### Community 55 - "Admin API & Types"
+### Community 57 - "Chat Dock Store & UI"
 Cohesion: 0.18
 Nodes (4): MarqueeOptions, Rect, ConnectBannerProps, SelectionBarProps
 
-### Community 56 - "CLI Commands & Connection UI"
+### Community 58 - "Task Filters UI (duplicate export)"
 Cohesion: 0.23
 Nodes (11): DEFAULTS, NavEdge, NavPreferencesState, PinnedEdges, RailScope, read(), readRailScope(), StoredPreferences (+3 more)
 
-### Community 57 - "Chat Dock Store & UI"
+### Community 59 - "Docs Content & Page"
 Cohesion: 0.18
 Nodes (9): FiltersVariant, LATENESS, PERSONAL_TABS, PersonalTab, PROJECT_SCOPES, STATUS_SWATCH, STATUSES, TaskFiltersProps (+1 more)
 
-### Community 58 - "Task Filters UI (duplicate export)"
+### Community 60 - "HTML Sanitization"
 Cohesion: 0.18
 Nodes (11): zustand, Layered Dependency Rule (app→pages→widgets→features→entities→shared), Feature-Sliced Design, Optimistic Update Strategy, React 19, Sonner (toasts), Tailwind CSS, TanStack Query (+3 more)
 
-### Community 59 - "Docs Content & Page"
+### Community 61 - "Note Optimistic Updates"
 Cohesion: 0.22
 Nodes (6): App(), ALWAYS_OPEN, MobileGate(), AppProviders(), AppRouter(), container
 
-### Community 60 - "HTML Sanitization"
+### Community 62 - "Webhooks Panel UI"
 Cohesion: 0.29
 Nodes (5): activityApi, ActivityEntry, ActivityPage, ActivityType, RevertResult
 
-### Community 61 - "Note Optimistic Updates"
+### Community 63 - "Query Cache Persistence"
 Cohesion: 0.29
 Nodes (9): adminApi, adminTokenStore, client, AdminReport, AdminSession, AdminStats, AdminUserRow, BanPayload (+1 more)
 
-### Community 62 - "Webhooks Panel UI"
+### Community 64 - "Autumn Skin Decor"
 Cohesion: 0.25
 Nodes (3): CLI_DOCS_URL, CliCommandList(), DocsLink()
 
-### Community 63 - "Query Cache Persistence"
+### Community 65 - "Chat & Whiteboard API Types"
 Cohesion: 0.22
 Nodes (5): ChatDockState, PersistedDock, restored, useChatDock, write()
 
-### Community 64 - "Autumn Skin Decor"
+### Community 66 - "Local Note Edit Tracking"
 Cohesion: 0.18
 Nodes (9): FiltersVariant, LATENESS, PERSONAL_TABS, PersonalTab, PROJECT_SCOPES, STATUS_SWATCH, STATUSES, TaskFiltersProps (+1 more)
 
-### Community 65 - "Chat & Whiteboard API Types"
+### Community 67 - "OAuth Sign-in Buttons"
 Cohesion: 0.22
 Nodes (7): DOCS, DocsCommand, DocsDocument, DocsGroup, DocsSection, en, ptBR
 
-### Community 66 - "Local Note Edit Tracking"
+### Community 68 - "Roster Panel & Report Dialog"
 Cohesion: 0.24
 Nodes (9): ALLOWED_ATTRIBUTES, ALLOWED_STYLE_PROPERTIES, ALLOWED_TAGS, clean(), DISCARDED_TAGS, GLOBAL_ATTRIBUTES, isSafeUrl(), sanitizeDocumentHtml() (+1 more)
 
-### Community 67 - "OAuth Sign-in Buttons"
+### Community 69 - "Desktop Notification Permission"
 Cohesion: 0.22
 Nodes (7): BatSwarm(), BatSwarmProps, Box, BatGlyph(), HalloweenMark(), Modal(), ModalProps
 
-### Community 68 - "Roster Panel & Report Dialog"
+### Community 70 - "Halloween Skin Decor"
 Cohesion: 0.20
 Nodes (7): adoptServerNote(), CreateNoteRequest, geometryDiffers(), optimisticNote(), pendingNoteId(), PlaceholderContext, splitCreateRequest()
 
-### Community 69 - "Desktop Notification Permission"
+### Community 71 - "Import Progress Tracker"
 Cohesion: 0.20
 Nodes (7): ALL_EVENTS, ComposeRequest, EVENT_LABEL, FLAVOUR_LABEL, FLAVOUR_PLACEHOLDER, WebhookRowProps, WebhooksPanelProps
 
-### Community 70 - "Halloween Skin Decor"
+### Community 72 - "package.json Metadata"
 Cohesion: 0.31
 Nodes (9): clearPersistedQueries(), hydrateQueryCache(), isPersistable(), PERSISTED_PREFIXES, PersistedBlob, PersistedEntry, persistQueryCache(), read() (+1 more)
 
-### Community 71 - "Import Progress Tracker"
+### Community 73 - "Post-it Note Author Stamp"
 Cohesion: 0.20
 Nodes (7): AutumnFall(), AutumnHedge(), AutumnHedgeProps, FALLING, LeafProps, LeafTone, TONE_FILL
 
-### Community 72 - "package.json Metadata"
+### Community 74 - "Organization Invite Dialog"
 Cohesion: 0.25
 Nodes (8): NOTIFICATION_TOAST, RealtimeContext, RealtimeContextValue, RealtimeMeta, RealtimeProvider(), roomHolders, useProjectRoom(), useRealtime()
 
-### Community 73 - "Post-it Note Author Stamp"
+### Community 75 - "Organization Members Panel"
 Cohesion: 0.31
 Nodes (7): readStored(), readStoredSkin(), resolveIsDark(), SKIN_ATTRIBUTE, ThemeContext, ThemeContextValue, ThemeProvider()
 
-### Community 74 - "Organization Invite Dialog"
+### Community 76 - "Organization Projects Board"
 Cohesion: 0.28
 Nodes (7): chatApi, whiteboardApi, ChatDelivery, ChatMessage, WhiteboardElement, WhiteboardElementType, WhiteboardStrokeData
 
-### Community 75 - "Organization Members Panel"
-Cohesion: 0.25
-Nodes (8): EditableField, markLocalNoteEdit(), mergeRemoteNote(), pending, PendingEdit, prune(), releaseLocalNoteEdit(), UpdateNotePayload
-
-### Community 76 - "Organization Projects Board"
-Cohesion: 0.25
-Nodes (6): Note, NoteAuthorStamp(), NoteAuthorStampProps, NoteHandle, PostIt, PostItProps
-
 ### Community 77 - "Rich Text Editor Toolbar"
 Cohesion: 0.25
-Nodes (6): ASSUME_BOTH, LABELS, MARKS, OAuthButtons(), OAuthButtonsProps, readRemembered()
+Nodes (8): EditableField, markLocalNoteEdit(), mergeRemoteNote(), pending, PendingEdit, prune(), releaseLocalNoteEdit(), Note
 
 ### Community 78 - "Note Checklist & Task Detail Modal"
 Cohesion: 0.25
-Nodes (5): ReportUserDialog(), ReportUserDialogProps, ASSIGNABLE_ROLES, ROLE_ICON, RosterPanelProps
+Nodes (6): ASSUME_BOTH, LABELS, MARKS, OAuthButtons(), OAuthButtonsProps, readRemembered()
 
 ### Community 79 - "Hidden Sidebar Nav (ui)"
+Cohesion: 0.25
+Nodes (5): ReportUserDialog(), ReportUserDialogProps, ASSIGNABLE_ROLES, ROLE_ICON, RosterPanelProps
+
+### Community 80 - "Project Changelog UI"
 Cohesion: 0.28
 Nodes (4): DesktopNotice, isSupported(), NotificationAccess, requestNotificationAccess()
 
-### Community 80 - "Project Changelog UI"
+### Community 81 - "Hidden Sidebar Nav (entities)"
 Cohesion: 0.31
 Nodes (7): TrackerState, useImportTracker, ImportRow(), ImportRowProps, ImportTracker(), isLive(), STEP_LABEL
 
-### Community 81 - "Hidden Sidebar Nav (entities)"
+### Community 82 - "README Drag & Drop Notes"
 Cohesion: 0.25
 Nodes (7): description, engines, node, name, private, type, version
 
-### Community 82 - "README Drag & Drop Notes"
-Cohesion: 0.25
-Nodes (4): ASSIGNABLE_ROLES, InviteListProps, OrganizationDialogProps, ProjectPickerProps
-
 ### Community 83 - "npm Scripts"
-Cohesion: 0.25
-Nodes (4): ASSIGNABLE_ROLES, InviteFormProps, MemberRowProps, OrganizationMembersPanelProps
+Cohesion: 0.29
+Nodes (7): calendarApi, CalendarConnection, CalendarFeedSecret, CalendarFeedStatus, CalendarSettingsPayload, CalendarStatus, CalendarSyncResult
 
 ### Community 84 - "App Layout & Route Prefetch"
 Cohesion: 0.29
-Nodes (6): Lane, laneOf(), LANES, OrganizationProjectsBoard(), OrganizationProjectsBoardProps, ProjectCardProps
+Nodes (5): NoteAuthorStamp(), NoteAuthorStampProps, NoteHandle, PostIt, PostItProps
 
 ### Community 85 - "Webhooks API Types"
 Cohesion: 0.25
-Nodes (4): COLORS, PromptKind, RichTextEditorProps, SIZES
+Nodes (4): ASSIGNABLE_ROLES, InviteListProps, OrganizationDialogProps, ProjectPickerProps
 
 ### Community 86 - "Bot Protection (Turnstile)"
-Cohesion: 0.29
-Nodes (4): NoteCardProps, NoteChecklist(), NoteChecklistProps, TaskDetailModalProps
+Cohesion: 0.25
+Nodes (4): ASSIGNABLE_ROLES, InviteFormProps, MemberRowProps, OrganizationMembersPanelProps
 
 ### Community 87 - "Teams Panel UI"
-Cohesion: 0.25
-Nodes (4): GROUPS, HiddenSidebarProps, NavItem, SidebarLinkProps
+Cohesion: 0.29
+Nodes (6): Lane, laneOf(), LANES, OrganizationProjectsBoard(), OrganizationProjectsBoardProps, ProjectCardProps
 
 ### Community 88 - "Dashboard Page Greeting/Tiles"
-Cohesion: 0.29
-Nodes (6): APPEARANCE, ChangelogRowProps, dayKey(), ProjectChangelog(), ProjectChangelogProps, SENTENCE
+Cohesion: 0.25
+Nodes (4): COLORS, PromptKind, RichTextEditorProps, SIZES
 
 ### Community 89 - "Shared React Hooks"
 Cohesion: 0.29
-Nodes (4): GROUPS, HiddenSidebarProps, NavItem, SidebarLinkProps
+Nodes (4): NoteCardProps, NoteChecklist(), NoteChecklistProps, TaskDetailModalProps
 
 ### Community 90 - "Runic Text Tokens"
-Cohesion: 0.29
-Nodes (7): @dnd-kit/core, framer-motion, @dnd-kit/core, framer-motion, 60fps Animation Rules, Two-tool Drag & Drop strategy, style-src 'self' 'unsafe-inline'
+Cohesion: 0.25
+Nodes (4): GROUPS, HiddenSidebarProps, NavItem, SidebarLinkProps
 
 ### Community 91 - "Theme Palette Tokens"
 Cohesion: 0.29
-Nodes (7): scripts, build, dev, icons, lint, preview, typecheck
+Nodes (6): APPEARANCE, ChangelogRowProps, dayKey(), ProjectChangelog(), ProjectChangelogProps, SENTENCE
 
 ### Community 92 - "Route Intent Prefetch"
-Cohesion: 0.38
-Nodes (4): AGENDA_PREFETCH, rememberedBoardPage(), useRouteIntentPrefetch(), useShellPrefetch()
+Cohesion: 0.29
+Nodes (4): GROUPS, HiddenSidebarProps, NavItem, SidebarLinkProps
 
 ### Community 93 - "File Attachment Field"
-Cohesion: 0.38
-Nodes (3): QueryProvider(), SessionProvider(), useTheme()
+Cohesion: 0.29
+Nodes (7): @dnd-kit/core, framer-motion, @dnd-kit/core, framer-motion, 60fps Animation Rules, Two-tool Drag & Drop strategy, style-src 'self' 'unsafe-inline'
 
 ### Community 94 - "Vercel Deployment Config"
-Cohesion: 0.33
-Nodes (6): webhooksApi, CreatedWebhook, ProjectWebhook, WebhookEvent, WebhookPayloadDraft, WebhookTestResult
+Cohesion: 0.29
+Nodes (7): scripts, build, dev, icons, lint, preview, typecheck
 
 ### Community 95 - "Skin Picker Preview (duplicate)"
 Cohesion: 0.38
-Nodes (6): HumanCheck(), HumanCheckProps, loadTurnstile(), TurnstileApi, useBotProtection(), Window
+Nodes (4): AGENDA_PREFETCH, rememberedBoardPage(), useRouteIntentPrefetch(), useShellPrefetch()
 
 ### Community 96 - "Whiteboard Component (entities)"
-Cohesion: 0.29
-Nodes (3): TeamComposerProps, TeamRowProps, TeamsPanelProps
+Cohesion: 0.38
+Nodes (3): QueryProvider(), SessionProvider(), useTheme()
 
 ### Community 97 - "Document Byline & Creator Stamp"
 Cohesion: 0.33
-Nodes (3): DashboardPage(), rankUpNext(), TONES
+Nodes (6): webhooksApi, CreatedWebhook, ProjectWebhook, WebhookEvent, WebhookPayloadDraft, WebhookTestResult
 
 ### Community 98 - "Board/Repo Import API Types"
 Cohesion: 0.38
-Nodes (3): useIsDesktop(), useIsTouchDevice(), useMediaQuery()
+Nodes (6): HumanCheck(), HumanCheckProps, loadTurnstile(), TurnstileApi, useBotProtection(), Window
 
 ### Community 99 - "Note Recycle Bin API"
-Cohesion: 0.33
-Nodes (5): DIGRAPHS, LETTERS, RuneToken, runeTokens(), toRunes()
+Cohesion: 0.29
+Nodes (3): TeamComposerProps, TeamRowProps, TeamsPanelProps
 
 ### Community 100 - "Connections Panel UI"
-Cohesion: 0.38
-Nodes (6): readPalette(), ThemePalette, ThemeToken, TOKENS, tripletToHex(), useThemePalette()
+Cohesion: 0.33
+Nodes (3): DashboardPage(), rankUpNext(), TONES
 
 ### Community 101 - "Organization Dashboard Metrics"
 Cohesion: 0.38
-Nodes (5): forget(), IntentHandlers, isSpeculationWelcome(), lastPrefetchedAt, useIntentPrefetch()
+Nodes (3): useIsDesktop(), useIsTouchDevice(), useMediaQuery()
 
 ### Community 102 - "Admin Page (Bans/Plans)"
+Cohesion: 0.33
+Nodes (5): DIGRAPHS, LETTERS, RuneToken, runeTokens(), toRunes()
+
+### Community 103 - "Image Preparation for Upload"
+Cohesion: 0.38
+Nodes (6): readPalette(), ThemePalette, ThemeToken, TOKENS, tripletToHex(), useThemePalette()
+
+### Community 104 - "Edge Reveal Hook"
+Cohesion: 0.38
+Nodes (5): forget(), IntentHandlers, isSpeculationWelcome(), lastPrefetchedAt, useIntentPrefetch()
+
+### Community 105 - "Avatar & Avatar Stack"
 Cohesion: 0.38
 Nodes (6): extensionOf(), FileAttachmentField(), FileAttachmentFieldProps, FileAttachmentRow(), FileAttachmentRowProps, formatFileSize()
 
-### Community 103 - "Image Preparation for Upload"
+### Community 106 - "Text Input & Textarea"
 Cohesion: 0.29
 Nodes (6): buildCommand, framework, headers, outputDirectory, rewrites, $schema
 
-### Community 104 - "Edge Reveal Hook"
+### Community 107 - "Project Rail Nav (ui)"
 Cohesion: 0.33
 Nodes (3): SkinDefinition, SkinPreview, SKINS
 
-### Community 105 - "Avatar & Avatar Stack"
+### Community 108 - "Whiteboard Component (ui)"
 Cohesion: 0.47
 Nodes (5): isStroke(), readImageSize(), Tool, Whiteboard(), WhiteboardProps
 
-### Community 106 - "Text Input & Textarea"
+### Community 109 - "Chat Pin Widget (entities)"
 Cohesion: 0.40
 Nodes (4): DocumentByline(), DocumentBylineProps, DocumentCreatorStampProps, nameFor()
 
-### Community 107 - "Project Rail Nav (ui)"
+### Community 110 - "Project Rail Nav (widget)"
 Cohesion: 0.40
 Nodes (5): importsApi, BoardImportPayload, CancelImportResult, RepositoryImportJob, RepositoryImportPayload
 
-### Community 111 - "PWA Service Worker Notes"
+### Community 114 - "Board Undo History"
 Cohesion: 0.40
 Nodes (4): AdminPage(), DURATIONS, planLabel(), PLANS
 
-### Community 112 - "Studio Mark & Favicon Design"
+### Community 115 - "Board Toolbar"
 Cohesion: 0.47
 Nodes (5): encodeAt(), PreparedImage, prepareImage(), PrepareOptions, scaleToFit()
 
-### Community 113 - "Invite Picker Component"
+### Community 116 - "Notification Bell & Opt-in"
 Cohesion: 0.33
 Nodes (3): Edge, KeepOut, Options
 
-### Community 114 - "Board Undo History"
+### Community 117 - "Organization Banner Preview"
 Cohesion: 0.33
 Nodes (5): Avatar(), AvatarProps, AvatarStack(), AvatarStackProps, SIZES
 
-### Community 115 - "Board Toolbar"
+### Community 118 - "Chat Pin Widget (ui)"
 Cohesion: 0.40
 Nodes (3): ProjectRailProps, RailProject(), urgencyOf()
 
-### Community 116 - "Notification Bell & Opt-in"
+### Community 120 - "Repository Link Dialog"
 Cohesion: 0.47
 Nodes (5): adoptStroke(), isStroke(), Tool, Whiteboard(), WhiteboardProps
 
-### Community 118 - "Chat Pin Widget (ui)"
+### Community 122 - "CLI Authorize Page"
 Cohesion: 0.50
 Nodes (3): ProjectRailProps, RailProject(), urgencyOf()
 
-### Community 119 - "Figma Link Dialog"
+### Community 123 - "Shader Wash Background"
 Cohesion: 0.40
 Nodes (5): vite-plugin-pwa, /registerSW.js, script-src 'self', public/theme-init.js, vite-plugin-pwa
 
-### Community 120 - "Repository Link Dialog"
+### Community 124 - "Meetings Page (Agenda)"
 Cohesion: 0.50
 Nodes (5): favicon.svg (browser tab icon), Gold paper linearGradient definition, Rotated Post-it note shape with peeled corner, Handwritten 't' glyph stroke paths, StudioMark()
 
-### Community 121 - "Task Composer"
+### Community 125 - "Organization Page Tabs"
 Cohesion: 0.40
 Nodes (3): InvitePickerProps, Person, Tab
 
-### Community 122 - "CLI Authorize Page"
+### Community 126 - "Recycle Bin Page"
 Cohesion: 0.50
 Nodes (4): BoardAction, BoardHistory, isTypingTarget(), useBoardHistory()
 
-### Community 123 - "Shader Wash Background"
+### Community 127 - "Task Menu / Agenda Skeleton"
 Cohesion: 0.40
 Nodes (3): BoardTool, BoardToolbarProps, TOOLS
 
-### Community 124 - "Meetings Page (Agenda)"
+### Community 128 - "API Base URL Resolution"
 Cohesion: 0.60
 Nodes (3): deepLink(), NotificationBell(), NotificationOptIn()
 
-### Community 129 - "Color Utilities (avatar/ink)"
+### Community 133 - "Layout Switcher Control"
 Cohesion: 0.40
 Nodes (3): EMPTY_ROSTER, PRIORITIES, TaskComposerProps
 
-### Community 130 - "Canvas Budget / Device Capability"
+### Community 134 - "Skin Motion Reveal (entities)"
 Cohesion: 0.60
 Nodes (3): CliAuthorizePage(), prettyCode(), RequestCard()
 
-### Community 131 - "Write Order Sequencing"
+### Community 135 - "index.html Metaball Filter"
 Cohesion: 0.40
 Nodes (3): ShaderGradient, ShaderGradientCanvas, ShaderWashProps
 
-### Community 132 - "Runic Decor Marks"
+### Community 136 - "README PWA/Deploy Notes"
 Cohesion: 0.50
 Nodes (3): AgendaRowProps, dayKey(), MeetingsPage()
 
-### Community 134 - "Skin Motion Reveal (entities)"
+### Community 138 - "API Tokens Types"
 Cohesion: 0.50
 Nodes (3): Bin, daysUntil(), ExpiryBadge()
 
-### Community 135 - "index.html Metaball Filter"
+### Community 139 - "CLI Device Auth API"
 Cohesion: 0.60
 Nodes (3): AgendaSkeleton(), isSameDay(), TaskMenuPage()
 
-### Community 136 - "README PWA/Deploy Notes"
+### Community 140 - "Board Selection Geometry"
 Cohesion: 0.50
 Nodes (4): apiUrl, env, resolveApiUrl(), stripTrailingSlash()
 
-### Community 138 - "API Tokens Types"
+### Community 142 - "Whiteboard Ink Layer"
 Cohesion: 0.50
 Nodes (3): isCapableDevice(), NetworkInformation, useCanvasBudget()
 
-### Community 139 - "CLI Device Auth API"
+### Community 143 - "Invitations Page"
 Cohesion: 0.40
 Nodes (3): chains, sequences, writeSequence
 
-### Community 140 - "Board Selection Geometry"
-Cohesion: 0.50
-Nodes (4): Mark, nextMark(), RuneScribe(), STAVES
-
-### Community 141 - "Image Drop Handling"
-Cohesion: 0.40
-Nodes (4): PopupBox, Select(), SelectOption, SelectProps
-
 ### Community 144 - "Notes Board Page"
-Cohesion: 0.50
-Nodes (4): lava-goo SVG metaball filter, React app entry script (/src/main.tsx), Metaball (gooey blob) visual effect, theme-init.js pre-paint script tag
+Cohesion: 0.40
+Nodes (4): ExpandableStage(), ExpandableStageProps, ExpandToggle(), ExpandToggleProps
 
 ### Community 145 - "Organizations List Page"
 Cohesion: 0.50
-Nodes (4): iOS/Safari PWA specifics, npm Scripts (dev/build/preview/typecheck/icons), vite-plugin-pwa / Workbox PWA setup, Vercel Deployment (vercel.json)
+Nodes (4): Mark, nextMark(), RuneScribe(), STAVES
 
 ### Community 146 - "Project Page Tabs (entities)"
-Cohesion: 0.67
-Nodes (3): escapeText(), MAX_PLAIN_TEXT_CHARS, plainTextToHtml()
+Cohesion: 0.40
+Nodes (4): PopupBox, Select(), SelectOption, SelectProps
 
-### Community 147 - "Theme Gallery Page"
+### Community 149 - "Text Clamp Utilities"
 Cohesion: 0.50
-Nodes (3): tokensApi, ApiToken, CreatedApiToken
+Nodes (4): lava-goo SVG metaball filter, React app entry script (/src/main.tsx), Metaball (gooey blob) visual effect, theme-init.js pre-paint script tag
 
 ### Community 150 - "Card Press Interaction Hook"
-Cohesion: 0.67
-Nodes (3): fitImage(), ImageDropOptions, useImageDrop()
+Cohesion: 0.50
+Nodes (4): iOS/Safari PWA specifics, npm Scripts (dev/build/preview/typecheck/icons), vite-plugin-pwa / Workbox PWA setup, Vercel Deployment (vercel.json)
 
 ### Community 151 - "Runic Text Component (ui)"
 Cohesion: 0.67
+Nodes (3): escapeText(), MAX_PLAIN_TEXT_CHARS, plainTextToHtml()
+
+### Community 154 - "Task Type Tag Badge"
+Cohesion: 0.67
+Nodes (3): fitImage(), ImageDropOptions, useImageDrop()
+
+### Community 155 - "Floating Shortcut Layer"
+Cohesion: 0.67
 Nodes (3): InkLayer(), InkLayerProps, toPath()
 
-### Community 152 - "Zoomable Image Viewer"
+### Community 156 - "Settings Page (pages)"
 Cohesion: 0.67
 Nodes (3): byNewest(), InvitationsPage(), UnifiedInvitation
 
-### Community 159 - "GitHub Repository API"
+### Community 163 - "Calendar Connection Panel"
 Cohesion: 0.67
 Nodes (3): CardPressHandlers, isOwnedByInnerControl(), useCardPress()
 
-### Community 160 - "Project Window Chip"
+### Community 164 - "CLI Machines Panel"
 Cohesion: 0.67
 Nodes (3): NavGlyphKey, NavGlyph(), NavGlyphProps
 
-### Community 161 - "Pending Tasks Widget"
+### Community 165 - "Tear-off Drag Hook"
 Cohesion: 0.67
 Nodes (3): nextSighting(), NightEyes(), Sighting
 
-### Community 162 - "API Tokens Panel UI"
-Cohesion: 0.67
-Nodes (3): NibCursor(), NibPreview(), ringDiameter()
-
-### Community 163 - "Calendar Connection Panel"
+### Community 166 - "Tear-off Ghost Visual"
 Cohesion: 0.67
 Nodes (3): RunicText(), RunicTextProps, seedOf()
 
-### Community 164 - "CLI Machines Panel"
+### Community 167 - "Language Toggle Control"
 Cohesion: 0.67
 Nodes (3): clamp(), ZoomableImage(), ZoomableImageProps
 
-### Community 170 - "Plan Soon Page"
+### Community 173 - "Project Dashboard Metrics"
 Cohesion: 0.67
 Nodes (3): Creepster Font, Font Diner, Inc, SIL Open Font License Version 1.1
 
-### Community 171 - "Settings Page (settings/)"
+### Community 174 - "Top Navigation Bar (ui)"
 Cohesion: 1.00
 Nodes (3): Structural fix: httpOnly cookie on shared parent domain, Access/refresh tokens stored in localStorage, shared/api/token-store (token-store.ts)
 
 ## Knowledge Gaps
-- **705 isolated node(s):** `chatApi`, `whiteboardApi`, `SessionStatus`, `SessionState`, `container` (+700 more)
+- **718 isolated node(s):** `chatApi`, `whiteboardApi`, `SessionStatus`, `SessionState`, `container` (+713 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **59 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **62 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `HeroField` connect `Notification API & Copy` to `Live Room API & Types`?**
+- **Why does `HeroField` connect `Session Store & Sign Out` to `AI Suggestions API`?**
   _High betweenness centrality (0.002) - this node is a cross-community bridge._
-- **Why does `devDependencies` connect `Auth Pages & Desk Scene` to `Hidden Sidebar Nav (entities)`, `Figma Link Dialog`?**
+- **Why does `dependencies` connect `Nav Rail Preferences Store` to `Branch Commit Prompt`, `Theme Toggle Button`, `Not Found Page`, `Offline Query Cache Purge`, `Query Key Registry`, `cn() Class Merge Utility`, `UID Generator Utility`, `Reveal on Scroll Hook`, `PostCSS Config`, `Theme Init Script`, `README Theme System Notes`, `Cache-Control Header Policy`, `Permissions-Policy Header`, `Referrer-Policy Header`, `X-Content-Type-Options Header`, `README Drag & Drop Notes`, `HTML Sanitization`, `File Attachment Field`?**
   _High betweenness centrality (0.002) - this node is a cross-community bridge._
-- **Why does `dependencies` connect `Board Marquee Selection` to `Calendar Feed Panel`, `Calendar Sync Badge`, `Branch Commit Prompt`, `Theme Toggle Button`, `Not Found Page`, `Offline Query Cache Purge`, `Query Key Registry`, `cn() Class Merge Utility`, `UID Generator Utility`, `Reveal on Scroll Hook`, `PostCSS Config`, `Theme Init Script`, `Task Filters UI (duplicate export)`, `Hidden Sidebar Nav (entities)`, `Runic Text Tokens`, `Socket.io Client Dependency`, `TanStack Query Dependency`, `README Edge Reveal Notes`?**
-  _High betweenness centrality (0.002) - this node is a cross-community bridge._
+- **Why does `Content-Security-Policy` connect `Note & Board Types` to `Shader Wash Background`, `File Attachment Field`, `Top Navigation Bar (ui)`?**
+  _High betweenness centrality (0.001) - this node is a cross-community bridge._
 - **What connects `chatApi`, `whiteboardApi`, `SessionStatus` to the rest of the system?**
-  _705 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _718 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Task Sync & Overview Delta` be split into smaller, more focused modules?**
   _Cohesion score 0.05160628844839371 - nodes in this community are weakly interconnected._
 - **Should `Skin Decor (Underwater/Volcano/Hazard)` be split into smaller, more focused modules?**
-  _Cohesion score 0.05551020408163265 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.0596078431372549 - nodes in this community are weakly interconnected._
 - **Should `Landing Page Features & Nav` be split into smaller, more focused modules?**
-  _Cohesion score 0.05959183673469388 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05551020408163265 - nodes in this community are weakly interconnected._

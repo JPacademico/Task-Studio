@@ -139,6 +139,15 @@ export interface SkinDefinition {
    * in English.
    */
   tagsPtBR?: string[];
+  /**
+   * Whether this theme replaces the mouse pointer.
+   *
+   * Two do, and it is the one thing a theme can change that the reader cannot
+   * ignore — so it is declared here rather than being knowable only by reading
+   * the cursor blocks at the bottom of `index.css`. The picker uses it to say
+   * whether the control it offers applies to what is currently on screen.
+   */
+  drawsCursor?: boolean;
   light: SkinPreview;
   dark: SkinPreview;
 }
@@ -188,6 +197,7 @@ export const SKIN_CATALOG: SkinDefinition[] = [
     description: 'skin.PAPER.body',
     tags: ['illustrated', 'playful', 'cartoon', 'yellow', 'bold', 'friendly', 'sticker'],
     tagsPtBR: ['ilustrado', 'divertido', 'desenho', 'amarelo', 'marcante', 'adesivo', 'papel'],
+    drawsCursor: true,
     light: {
       surface: '#e4ecfe',
       raised: '#fcfdff',
@@ -709,6 +719,7 @@ export const SKIN_CATALOG: SkinDefinition[] = [
       'noite',
       'escuro',
     ],
+    drawsCursor: true,
     light: {
       surface: '#f0e7d8',
       raised: '#faf4e9',

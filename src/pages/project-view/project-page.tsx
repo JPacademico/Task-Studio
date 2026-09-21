@@ -587,6 +587,22 @@ const ProjectPage = () => {
            */
           variant="glass"
           /*
+           * The larger step, and the only place in the app that asks for it.
+           *
+           * This strip is where every visit to a project starts and it was
+           * drawn at filter size: 12px labels and 12px icons in a 36px well,
+           * under a project title set at 30px. It read as a caption rather
+           * than as navigation, and on a 2K panel — where the root scale makes
+           * everything else grow — it was the one control that still looked
+           * like a footnote.
+           *
+           * `lg` is a no-op below 1600px, so the phone layout described
+           * immediately below is untouched: same twelve tabs, same one
+           * scrolling row, same 12px type at the distance a phone is read
+           * from. See `Segmented`'s `size`.
+           */
+          size="lg"
+          /*
            * A scrolling strip on a phone, a wrapping row above it.
            *
            * Twelve tabs wrapped is four or five stacked rows on a 390px screen

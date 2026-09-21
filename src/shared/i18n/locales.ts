@@ -192,6 +192,7 @@ const en = {
   'dash.allProjects': 'All projects',
   'dash.yourProjects': 'Your projects',
   'dash.newProject': 'New project',
+  'dash.showArchived': 'Archived',
   'dash.greeting': 'Good to see you, {name}.',
   'dash.greetingFallback': 'there',
   'agenda.nothingCompleted': 'Nothing completed yet',
@@ -314,6 +315,15 @@ const en = {
     'Takes the project out of this company and leaves everything else where it is — the roster, the tasks, the pages and the teams all stay. You can file it again from the company page at any time.',
   'project.unfile': 'Remove from organization',
   'project.unfileConfirm': 'Confirm — remove',
+  'project.archiveTitle': 'Put this project away',
+  'project.archivedTitle': 'This project is archived',
+  'project.archiveExplain':
+    'Takes it off the dashboard and leaves everything inside it untouched — the roster, the board, the pages and the history all stay exactly as they are. Nothing is deleted and you can take it back out whenever you like.',
+  'project.unarchiveExplain':
+    'It is off the dashboard until you take it back out. Everything inside it is untouched.',
+  'project.archive': 'Archive project',
+  'project.archivedChip': 'Archived',
+  'project.unarchive': 'Take out of the archive',
   'project.dangerZone': 'Ending this project',
 
   // Finishing: keeps the record, clears the work. See the settings dialog.
@@ -1340,6 +1350,8 @@ const en = {
   'views.emptyMonth': 'An empty month',
   'views.noMatch': 'No task matches these filters.',
   'views.sprint': 'Sprint',
+  'sprint.done': '{done}/{total} done',
+  'sprint.late': '{count} late',
   'views.nothingInSprint': 'Nothing in this sprint',
   'views.nothingToList': 'Nothing to list',
   'views.moveToBin': 'Move to recycle bin',
@@ -1406,6 +1418,9 @@ const en = {
   'themes.preview': 'Preview',
   'themes.currentlyApplied': 'Currently applied',
   'themes.bothModes': 'Light and dark stay your own setting — every theme ships both.',
+  'themes.cursor': 'Theme cursor',
+  'themes.cursorHint': 'This theme draws its own pointer. Turn it off to keep your usual one.',
+  'themes.cursorHintInactive': 'Some themes draw their own pointer. Off keeps your usual one.',
   // ---- Dashboard ---------------------------------------------------------
   'dash.title': 'Dashboard',
   'dash.subtitle': 'Everything you own and everything assigned to you, in one place.',
@@ -1889,6 +1904,7 @@ const en = {
   'filters.personal': 'Personal',
   'filters.status': 'Status',
   'filters.type': 'Type',
+  'filters.priority': 'Priority',
   'filters.time': 'Time',
   'filters.late': 'Late',
   'filters.lateHint': 'Past the deadline, still open',
@@ -2624,6 +2640,7 @@ const ptBR: Record<TranslationKey, string> = {
   'dash.allProjects': 'Todos os projetos',
   'dash.yourProjects': 'Seus projetos',
   'dash.newProject': 'Novo projeto',
+  'dash.showArchived': 'Arquivados',
   'dash.greeting': 'Que bom te ver, {name}.',
   'dash.greetingFallback': 'por aqui',
   'agenda.nothingCompleted': 'Nada concluído ainda',
@@ -2743,6 +2760,15 @@ const ptBR: Record<TranslationKey, string> = {
     'Tira o projeto desta empresa e deixa todo o resto no lugar — a equipe, as tarefas, as páginas e os times continuam. Dá para arquivá-lo de novo pela página da empresa quando quiser.',
   'project.unfile': 'Remover da organização',
   'project.unfileConfirm': 'Confirmar — remover',
+  'project.archiveTitle': 'Guardar este projeto',
+  'project.archivedTitle': 'Este projeto está arquivado',
+  'project.archiveExplain':
+    'Tira o projeto do painel e não mexe em nada que está dentro dele — a equipe, o quadro, as páginas e o histórico ficam exatamente como estão. Nada é apagado e você pode tirá-lo do arquivo quando quiser.',
+  'project.unarchiveExplain':
+    'Ele fica fora do painel até você tirá-lo do arquivo. Tudo que está dentro dele continua intacto.',
+  'project.archive': 'Arquivar projeto',
+  'project.archivedChip': 'Arquivado',
+  'project.unarchive': 'Tirar do arquivo',
   'project.dangerZone': 'Encerrando este projeto',
 
   'project.finishProject': 'Concluir projeto',
@@ -3716,6 +3742,8 @@ const ptBR: Record<TranslationKey, string> = {
   'views.emptyMonth': 'Um mês vazio',
   'views.noMatch': 'Nenhuma tarefa corresponde a estes filtros.',
   'views.sprint': 'Sprint',
+  'sprint.done': '{done}/{total} concluídas',
+  'sprint.late': '{count} atrasadas',
   'views.nothingInSprint': 'Nada neste sprint',
   'views.nothingToList': 'Nada para listar',
   'views.moveToBin': 'Mover para a lixeira',
@@ -3783,6 +3811,11 @@ const ptBR: Record<TranslationKey, string> = {
   'themes.preview': 'Prévia',
   'themes.currentlyApplied': 'Aplicado no momento',
   'themes.bothModes': 'Claro e escuro continuam sendo sua escolha — todo tema traz os dois.',
+  'themes.cursor': 'Cursor do tema',
+  'themes.cursorHint':
+    'Este tema desenha o próprio ponteiro. Desligue para manter o seu de sempre.',
+  'themes.cursorHintInactive':
+    'Alguns temas desenham o próprio ponteiro. Desligado mantém o seu de sempre.',
   'dash.title': 'Painel',
   'dash.subtitle': 'Tudo o que é seu e tudo o que foi atribuído a você, em um só lugar.',
   'dash.createProject': 'Criar um projeto',
@@ -4227,6 +4260,7 @@ const ptBR: Record<TranslationKey, string> = {
   'filters.personal': 'Pessoais',
   'filters.status': 'Status',
   'filters.type': 'Tipo',
+  'filters.priority': 'Prioridade',
   'filters.time': 'Prazo',
   'filters.late': 'Atrasada',
   'filters.lateHint': 'Passou do prazo e ainda está aberta',

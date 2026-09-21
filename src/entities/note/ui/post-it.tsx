@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { motion, useMotionValue, type MotionValue } from 'framer-motion';
+import { motion, useMotionValue, useTransform, type MotionValue } from 'framer-motion';
 import { Check, Link2, Palette, Pin, Trash2, Zap } from 'lucide-react';
 
 import { NOTE_COLORS, TEXT_LIMITS } from '@/shared/config/constants';
@@ -34,6 +34,62 @@ const COMMIT_DELAY_MS = 2_000;
  */
 const MIN_SIZE = 80;
 const MAX_SIZE = 900;
+
+/**
+ * The sheet the type scale was designed around: a new note, at 220px square,
+ * holding 15px handwriting inside 14px of padding.
+ *
+ * Everything below is expressed as a ratio against these three numbers rather
+ * than as a table of sizes, so a note at any width between `MIN_SIZE` and
+ * `MAX_SIZE` gets type that belongs to it.
+ */
+const BASE_SIZE = 220;
+const BASE_FONT = 15;
+const BASE_PAD = 14;
+
+/**
+ * Type size for a sheet of a given size.
+ *
+ * ## Why the text scales at all
+ *
+ * Because the sheet is paper and the words are written on it. Before this, the
+ * type was fixed at 15px whatever the note measured, which failed at both ends
+ * of the handle: dragging a note down to 80px left a line and a half of text
+ * behind an inner scrollbar — the reader's own sentence, hidden inside a note
+ * small enough to read at a glance — and dragging one out to 600px produced a
+ * poster with a caption on it. Neither is a sheet of paper. Resizing a Post-it
+ * should feel like choosing a bigger sheet, and writing on a bigger sheet is
+ * bigger.
+ *
+ * ## Why the square root
+ *
+ * A linear scale is what the metaphor suggests and it is wrong in practice:
+ * 15px at 220 becomes 61px at 900, which is a headline, and 5px at 80, which
+ * is unreadable. Square root keeps the direction of the change — bigger sheet,
+ * bigger writing — while compressing both ends, so a note four times the area
+ * carries twice the type. The clamps then cap what is left: never smaller than
+ * 11px, which is the floor for the handwriting face at a glance, and never
+ * larger than 24px, past which a note holds one sentence.
+ *
+ * ## Why the smaller dimension decides
+ *
+ * A note dragged wide and short has room across and none down. Scaling on
+ * width would fill it with type too tall for the two lines it can show, which
+ * is the same overflow this exists to prevent, arrived at from the other side.
+ */
+const fontFor = (size: number): number =>
+  Math.max(11, Math.min(24, BASE_FONT * Math.sqrt(size / BASE_SIZE)));
+
+/**
+ * Padding for a sheet of a given size, on the same curve.
+ *
+ * 14px of margin is a comfortable border on a 220px note and a quarter of the
+ * width of an 80px one — which is how a small note ended up with more margin
+ * than text. Linear here rather than square root, because margin is the thing
+ * that should give way first: the words are what the note is for.
+ */
+const padFor = (size: number): number =>
+  Math.max(6, Math.min(BASE_PAD, (BASE_PAD * size) / BASE_SIZE));
 
 /*
  * Every callback below takes the note's id as its first argument rather than
@@ -146,6 +202,7 @@ const PostItBase = ({
   // sheet — and its textarea — on every frame of the drag.
   const width = useMotionValue(note.width);
   const height = useMotionValue(note.height);
+
 
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [draft, setDraft] = useState(note.content);
@@ -266,6 +323,31 @@ const PostItBase = ({
 
   const ink = readableInk(note.color);
   const isImage = note.kind === 'IMAGE';
+
+  /*
+   * The type scale, derived from the sheet and not from a render.
+   *
+   * This is the half that makes the resize *dynamic*. The corner handle writes
+   * straight to `width` and `height` sixty times a second and deliberately
+   * never touches React state, so anything computed in the component body —
+   * including a font size — would be stale for the whole gesture and correct
+   * only after it ended. A derived motion value is recomputed by the same
+   * frame loop that moves the corner, so the words re-flow under the pointer
+   * as the sheet changes shape.
+   *
+   * Declared here rather than beside the motion values it reads, because it
+   * needs `isImage`: an image's height is its own, so its box has no second
+   * dimension worth reading and it scales on width alone, which is the only
+   * thing its handle changes.
+   */
+  const shortSide = useTransform([width, height], ([w, h]: number[]) =>
+    isImage ? w : Math.min(w, h),
+  );
+  const fontSize = useTransform(shortSide, fontFor);
+  // The title is the one line that is read first, so it stays a touch larger
+  // than the body at every size rather than being scaled from a smaller base.
+  const titleSize = useTransform(shortSide, (size: number) => fontFor(size) * 1.02);
+  const padding = useTransform(shortSide, padFor);
 
   // While wiring notes together, a click must not also nudge the card: the
   // gesture is "point at this one", not "pick it up".
@@ -472,7 +554,7 @@ const PostItBase = ({
         width,
         // A written sheet is the box it was drawn as, so the corner handle has
         // something to change; an image keeps its own aspect and grows down.
-        ...(isImage ? {} : { height }),
+        ...(isImage ? {} : { height, padding }),
         backgroundColor: isImage ? '#ffffff' : note.color,
         color: ink,
         zIndex: note.zIndex,
@@ -517,7 +599,10 @@ const PostItBase = ({
         // promotes the one note actually being dragged, for the duration of
         // the drag, which is the behaviour that was wanted.
         'postit group/note absolute flex flex-col cursor-grab touch-none select-none active:cursor-grabbing',
-        isImage ? 'p-2' : 'postit-grain p-3.5',
+        // A written sheet's padding is a motion value (it shrinks with the
+        // sheet); an image's is fixed, because the picture inside it is what
+        // carries the size.
+        isImage ? 'p-2' : 'postit-grain',
         isSelected && 'ring-2 ring-brand ring-offset-2 ring-offset-surface-sunken',
         isConnectSource && 'ring-2 ring-positive ring-offset-2 ring-offset-surface-sunken',
         isConnectTarget && 'cursor-crosshair',
@@ -592,7 +677,7 @@ const PostItBase = ({
       )}
 
       <div className="mb-1.5 flex shrink-0 items-center justify-between gap-2">
-        <input
+        <motion.input
           value={titleDraft}
           onChange={(event) => {
             const next = clampText(event.target.value, TEXT_LIMITS.noteTitle);
@@ -612,10 +697,16 @@ const PostItBase = ({
           placeholder={t(isImage ? 'notes.imageCaption' : 'notes.noteTitle')}
           maxLength={TEXT_LIMITS.noteTitle}
           className={cn(
-            'w-full bg-transparent text-sm font-bold outline-none placeholder:opacity-40',
+            'w-full bg-transparent font-bold outline-none placeholder:opacity-40',
             isImage ? 'font-sans text-xs' : 'font-hand',
           )}
-          style={{ color: isImage ? undefined : ink }}
+          style={{
+            color: isImage ? undefined : ink,
+            // An image's caption keeps its fixed `text-xs`: it is a label on a
+            // picture rather than writing on a sheet, and it sits under a box
+            // whose height the reader does not control.
+            ...(isImage ? {} : { fontSize: titleSize }),
+          }}
         />
 
         <div className="flex shrink-0 items-center gap-0.5">
@@ -689,7 +780,7 @@ const PostItBase = ({
           style={{ maxHeight: height }}
         />
       ) : (
-        <textarea
+        <motion.textarea
           ref={textareaRef}
           value={draft}
           onChange={(event) => {
@@ -707,9 +798,39 @@ const PostItBase = ({
           onPaste={(event) => clampOnPaste(event, TEXT_LIMITS.noteContent)}
           placeholder={t('notes.writeSomething')}
           maxLength={TEXT_LIMITS.noteContent}
-          className="min-h-0 w-full flex-1 resize-none overflow-auto bg-transparent font-hand text-[0.9375rem] leading-relaxed outline-none placeholder:opacity-40"
-          style={{ color: ink }}
+          /*
+           * `overflow-auto` stays, and is now the floor rather than the
+           * behaviour. The type scales with the sheet, so the common case —
+           * a note holding what a note holds — fits; the scrollbar is what
+           * catches somebody who pasted an essay into an 80px square, which
+           * the counter below warns about before they get there.
+           */
+          className="min-h-0 w-full flex-1 resize-none overflow-auto bg-transparent font-hand leading-relaxed outline-none placeholder:opacity-40"
+          style={{ color: ink, fontSize }}
         />
+      )}
+
+      {/*
+        How much room is left, shown only when it is nearly gone.
+
+        The limit is 2,000 characters and it is enforced three ways already —
+        `clampText`, `clampOnPaste` and `maxLength` — so nothing can exceed it.
+        What was missing was any warning that it exists: typing simply stopped
+        working, which reads as a broken note rather than as a full one. This
+        appears in the last tenth and counts down.
+
+        Absolutely positioned, so it cannot push the textarea it annotates, and
+        `pointer-events-none` so it is never a target between the reader and
+        the corner handle beneath it.
+      */}
+      {!isImage && draft.length > TEXT_LIMITS.noteContent * 0.9 && (
+        <span
+          aria-live="polite"
+          className="pointer-events-none absolute bottom-1 left-2 text-4xs font-semibold tabular-nums opacity-60"
+          style={{ color: ink }}
+        >
+          {TEXT_LIMITS.noteContent - draft.length}
+        </span>
       )}
 
       {/* Traceability: whose handwriting this is, on the paper itself. */}

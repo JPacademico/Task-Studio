@@ -185,6 +185,27 @@ export const useDeleteProject = () => {
        * key, so it does not prefix-match `projects.list({ organizationId })`.
        */
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      /*
+       * The caches that hold the project's rows *outside* the project.
+       *
+       * The API stops serving a binned project's tasks and meetings the moment
+       * it is binned — the agenda joins on `project.deletedAt: null` — but the
+       * client does not find that out on its own: `tasks.agenda` is a separate
+       * key with its own `staleTime`, so without this the personal task board
+       * keeps drawing tasks from a project that no longer exists until
+       * something unrelated happens to invalidate it. That was the bug; a card
+       * you could still click, belonging to a project you had just deleted.
+       *
+       * Three prefixes rather than a bare `invalidateQueries()`: the blunt
+       * version would also refetch the binned project's own scoped caches —
+       * whiteboard, chat, roster — and every one of those answers 404 with a
+       * toast attached. `usePurgeProject` can afford it because by then
+       * nothing is observing them.
+       */
+      void queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.meetings.all });
+      // Binning frees a project slot, and the plan meters count what exists.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.billing.summary });
       toast.success(translate('toast.projectBinned'));
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -215,6 +236,12 @@ export const useRestoreProject = () => {
       // `projects.all` is the shared prefix, so the bin and the live list both
       // refresh — the project just moved from one to the other.
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      // And the same three the bin path drops, in the other direction: the
+      // project's tasks and meetings become visible again, and it takes its
+      // plan slot back.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.meetings.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.billing.summary });
       toast.success(translate('toast.projectRestored'));
     },
     onError: (error) => toast.error(errorMessage(error)),

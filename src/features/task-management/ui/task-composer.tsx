@@ -384,6 +384,22 @@ export const TaskComposer = ({
   const handleSubmit = async () => {
     if (!canSubmit) return;
 
+    /*
+     * The step somebody typed and did not press Enter on.
+     *
+     * `addStep` is wired to Enter and to the "+" button, so a reader who types
+     * the last step and goes straight for Create had it silently dropped —
+     * the field still showed the words while the task was saved without them.
+     * Flushing here is the whole fix, and it has to be a local value rather
+     * than `setChecklist` + read: this runs in the same tick as the request,
+     * and a state update queued now is not visible to the payload below.
+     */
+    const pendingStep = checklistDraft.trim();
+    const steps =
+      pendingStep && checklist.length < MAX_TASK_NOTES
+        ? [...checklist, pendingStep]
+        : checklist;
+
     const shared = {
       title: title.trim(),
       description: description.trim() || undefined,
@@ -457,7 +473,7 @@ export const TaskComposer = ({
         ...shared,
         // Merged with the individual picks above by the API; empty is omitted.
         ...(!isPersonal && teamIds.length > 0 ? { teamIds } : {}),
-        checklist: checklist.length > 0 ? checklist : undefined,
+        checklist: steps.length > 0 ? steps : undefined,
         ...(groupId ? { groupId } : {}),
         attachmentKey: attachment?.key || undefined,
         attachmentThumbKey: attachment?.thumbKey ?? undefined,
