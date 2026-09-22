@@ -39,8 +39,8 @@ interface GlyphProps {
  * — and a mark that changed stone with the lights would not be a mark. Jade is
  * the one constant in an imperial room: it is a stone rather than a light, and
  * `--dragon-jade` is declared in both palettes at the value the stone actually
- * is under each. The cord and the drilled eye take the accent, which is the
- * part that *is* allowed to be gold in one room and red in the other.
+ * is under each. The drilled eye takes the accent, which is the one part that
+ * *is* allowed to be gold in one room and red in the other.
  */
 export const JadeMark = ({ className }: GlyphProps) => (
   <svg viewBox="0 0 40 40" fill="none" aria-hidden className={cn('h-10 w-10', className)}>
@@ -58,23 +58,25 @@ export const JadeMark = ({ className }: GlyphProps) => (
       </linearGradient>
     </defs>
 
-    {/* The silk cord through the drilled eye, in the room's own metal. */}
-    <path
-      d="M20 2.6c-2.6 0-4 1.5-4 3.2"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      opacity="0.85"
-    />
-    <path
-      d="M20 2.6c2.6 0 4 1.5 4 3.2"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      opacity="0.85"
-    />
+    {/*
+      The plaque.
 
-    {/* The plaque. */}
+      ## Why there is no cord above it any more
+
+      There was: two short `currentColor` strokes arching out of the drilled
+      eye, the silk the pendant hangs from. It was cinnabar on the light
+      palette, which put a small red hook on top of the mark at every size the
+      mark is drawn — 16px in a browser tab, 32px in the rail, 44px on the
+      landing page — and at the two smaller ones it stopped reading as a cord
+      and started reading as a stray mark above the logo.
+
+      The drilled eye stays, and it is the part that was doing the work. A hole
+      bored through the top of a plaque says *this hangs from something*
+      without having to draw the something; that is how the object is
+      identified on a real pendant seen flat. What is gone is the attempt to
+      also draw the something, at a size where it could only ever be four
+      pixels of red.
+    */}
     <rect x="7" y="5.6" width="26" height="29" rx="4.2" fill="url(#ts-jade-stone)" />
 
     {/* The bevel: an inset rule the whole way round, which is what makes the
@@ -90,7 +92,8 @@ export const JadeMark = ({ className }: GlyphProps) => (
       strokeWidth="1"
     />
 
-    {/* The drilled eye the cord passes through. */}
+    {/* The drilled eye — the hole a cord would pass through, which is the whole
+        of what says this is a pendant. See the note on the plaque. */}
     <circle cx="20" cy="9.6" r="1.5" fill="rgb(var(--dragon-jade-deep))" />
     <circle cx="20" cy="9.6" r="1.5" stroke="currentColor" strokeOpacity="0.5" strokeWidth="0.7" />
 

@@ -16,22 +16,25 @@ import { translate, type TranslationKey } from '@/shared/i18n';
  */
 
 /**
- * The scroll face, named once because both palettes use it.
+ * The skin's face, named once because both palettes use it.
  *
- * Kaiti (楷体) is the brush-written regular script a hanging scroll is
- * inscribed in and it ships with both Windows and macOS, so the great majority
- * of readers get the real thing with no network request — this project
- * self-hosts exactly one font and that one is licensed for it. Songti/SimSun
- * is the woodblock-print fallback a step down, and Georgia is the last resort
- * that at least keeps the serif.
+ * 乐米曲奇方块体 — LeMi CookieBlock — a geometric rounded-square face where
+ * Latin, numerals and CJK are all built on one grid with an even stroke.
  *
- * Latin text falls through to Georgia on most machines either way, which is
- * correct: Kaiti's Latin glyphs are an afterthought in the face, and an
- * interface that is mostly English set in them reads as broken rather than as
- * calligraphic.
+ * The chain behind it is the real skin's, verbatim, and it has to be: the
+ * preview's whole job is to show somebody what they are about to get, so a mock
+ * that resolved to a face the page itself would not use is a mock that lies.
+ * That includes the fallbacks — the shipped `.woff2` is not in the repository
+ * yet (see `custom-font/dragon/README.md`), so on most machines today what the
+ * card draws is `Verdana`, which is also what the skin draws.
+ *
+ * This replaced Kaiti, the brush-written scroll script the skin used to set its
+ * headings in. The argument for the change is in the stylesheet beside
+ * `--font-display`; the short version is that Kaiti's Latin is an afterthought
+ * in that design, and this interface is mostly Latin.
  */
 const DRAGON_FONT =
-  "'Kaiti SC', KaiTi, STKaiti, 'Songti SC', SimSun, Georgia, 'Times New Roman', serif";
+  "'LeMi CookieBlock', 'Yuanti SC', YouYuan, 'M PLUS Rounded 1c', Verdana, 'Segoe UI', sans-serif";
 
 export interface SkinPreview {
   surface: string;
@@ -966,27 +969,27 @@ export const SKIN_CATALOG: SkinDefinition[] = [
      * light — and it is what the mark is cut from.
      */
     light: {
-      surface: '#e7dbc2',
-      raised: '#f6eedc',
-      edge: '#9c7434',
-      brand: '#a32a1e',
-      content: '#2a1c14',
+      surface: '#f3e2b5',
+      raised: '#faefcf',
+      edge: '#b78a3a',
+      brand: '#b83420',
+      content: '#2c1b12',
       radius: 6,
       font: DRAGON_FONT,
       border: 1,
-      scrollTrim: '#c69a4a',
-      jade: '#3f8f70',
+      scrollTrim: '#e2b44c',
+      jade: '#3a8a6a',
     },
     dark: {
-      surface: '#160b0c',
-      raised: '#261315',
-      edge: '#8f6a2e',
-      brand: '#e0a33a',
-      content: '#f4e6cf',
+      surface: '#220c0c',
+      raised: '#3a1413',
+      edge: '#9e7430',
+      brand: '#e8aa3e',
+      content: '#f6e8d1',
       radius: 6,
       font: DRAGON_FONT,
       border: 1,
-      scrollTrim: '#7d5c28',
+      scrollTrim: '#c6983e',
       jade: '#52b189',
     },
   },

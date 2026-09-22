@@ -129,13 +129,28 @@ ARC_RADIUS = 72 * S
 ARC_FROM = 180.0   # degrees; the socket, level with the arc centre
 ARC_TO = 118.0     # the tip
 
-# Everything is drawn shifted by this, in supersampled pixels, so the vertical
-# layout sits clear of the canvas edges before anything is rotated.
+# Everything is drawn shifted by this, in supersampled pixels, so the layout
+# sits clear of the canvas edges before anything is rotated.
 #
-# The x term grew with the arc centre: the socket now sits 82 units to the left
-# of that centre, so a 60-unit offset put the whole shaft off the left edge of
-# the canvas before a single rotation had happened.
-OFFSET = (120 * S, 40 * S)
+# ## Why the x term is so much larger than the drawing is wide
+#
+# Because it has to clear the *rotated* extent, not the drawn one, and the
+# rotation is about the ferrule - a point near the top of a composition that is
+# mostly below it. Swinging a 90-unit shaft anticlockwise throws its butt a long
+# way to the left of anything in the vertical layout.
+#
+# It was 120, which was enough for the vertical drawing and not enough for two
+# of the three poses: the resting frame lost 54 supersampled pixels off the left
+# edge of the canvas and the slash frame lost 102. Both losses landed on the
+# blade's belly - the widest, most recognisable part of the silhouette - so the
+# delivered cursor had a crescent with a flat side.
+#
+# The clipping was invisible in the generated PNGs because `union` crops to the
+# content that survived: a frame clipped at x=0 reports a bounding box starting
+# at x=0, which looks exactly like a frame that happens to touch the edge. The
+# `crop (0, ...)` in this script's own output was the tell, and the assertion
+# below now makes it an error rather than a thing to notice.
+OFFSET = (170 * S, 40 * S)
 
 
 def along(t: float) -> float:
@@ -461,6 +476,55 @@ def union(*images: Image.Image) -> tuple[int, int, int, int]:
 
 
 CROP = union(*POSES.values())
+
+
+def assert_uncropped() -> None:
+    """Refuse to build a frame that the working canvas has cut into.
+
+    ## Why this cannot be left to the eye
+
+    A pose that runs off the canvas is silently *repaired* by every step after
+    it. `getbbox` reports the content that survived, so a frame clipped at x=0
+    has a bounding box starting at x=0 - which is indistinguishable from a
+    frame that merely touches the edge. `union` then takes that box, `place`
+    scales it to fit, and the delivered PNG is a perfectly clean, perfectly
+    wrong cursor: a crescent blade with one side flattened, at the correct size
+    and in the correct place.
+
+    That is exactly what shipped. The resting frame lost 54 supersampled pixels
+    and the slash frame 102, both off the belly of the blade, and the only sign
+    anywhere in the pipeline was a `0` in this script's own printed crop box.
+
+    So the check is on the *pose* canvases, before the crop: if any opaque pixel
+    sits on the outermost row or column, something was thrown away and the
+    answer is a larger `WORK` or `OFFSET`, not a smaller weapon.
+    """
+    for name, image in POSES.items():
+        box = image.getbbox()
+        if box is None:
+            raise SystemExit(f'{name}: drew nothing at all')
+
+        left, top, right, bottom = box
+        touching = []
+        if left <= 0:
+            touching.append('left')
+        if top <= 0:
+            touching.append('top')
+        if right >= image.width:
+            touching.append('right')
+        if bottom >= image.height:
+            touching.append('bottom')
+
+        if touching:
+            raise SystemExit(
+                f'{name}: content reaches the {", ".join(touching)} edge of the '
+                f'{image.width}x{image.height} canvas (bbox {box}) - it has been '
+                f'clipped. Increase OFFSET and/or WORK.'
+            )
+
+
+assert_uncropped()
+
 SCALE = (WEAPON * S) / max(CROP[2] - CROP[0], CROP[3] - CROP[1])
 
 

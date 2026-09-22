@@ -3142,7 +3142,7 @@
       ],
       "confidence": "INFERRED",
       "relation": "shares_data_with",
-      "why": "inferred connection - not explicitly stated in source; crosses file types (code \u2194 image); connects across different repos/directories; bridges separate communities; peripheral node `Handwritten 't' glyph stroke paths` unexpectedly reaches hub `StudioLetter()`"
+      "why": "inferred connection - not explicitly stated in source; crosses file types (code ↔ image); connects across different repos/directories; bridges separate communities; peripheral node `Handwritten 't' glyph stroke paths` unexpectedly reaches hub `StudioLetter()`"
     },
     {
       "source": "drawIcon()",
@@ -3153,7 +3153,7 @@
       ],
       "confidence": "INFERRED",
       "relation": "conceptually_related_to",
-      "why": "inferred connection - not explicitly stated in source; crosses file types (code \u2194 image); connects across different repos/directories; peripheral node `Apple Touch Icon (Task Studio Brand Mark)` unexpectedly reaches hub `drawIcon()`"
+      "why": "inferred connection - not explicitly stated in source; crosses file types (code ↔ image); connects across different repos/directories; peripheral node `Apple Touch Icon (Task Studio Brand Mark)` unexpectedly reaches hub `drawIcon()`"
     },
     {
       "source": "drawIcon()",
@@ -3164,7 +3164,7 @@
       ],
       "confidence": "INFERRED",
       "relation": "shares_data_with",
-      "why": "inferred connection - not explicitly stated in source; crosses file types (code \u2194 image); connects across different repos/directories; peripheral node `Icon-192 Brand Mark` unexpectedly reaches hub `drawIcon()`"
+      "why": "inferred connection - not explicitly stated in source; crosses file types (code ↔ image); connects across different repos/directories; peripheral node `Icon-192 Brand Mark` unexpectedly reaches hub `drawIcon()`"
     },
     {
       "source": "StudioLetter()",
@@ -3175,7 +3175,7 @@
       ],
       "confidence": "INFERRED",
       "relation": "shares_data_with",
-      "why": "inferred connection - not explicitly stated in source; crosses file types (code \u2194 image); connects across different repos/directories; bridges separate communities"
+      "why": "inferred connection - not explicitly stated in source; crosses file types (code ↔ image); connects across different repos/directories; bridges separate communities"
     },
     {
       "source": "Task Studio README",
@@ -3186,11 +3186,44 @@
       ],
       "confidence": "EXTRACTED",
       "relation": "references",
-      "why": "crosses file types (doc \u2194 code); connects across different repos/directories; bridges separate communities"
+      "why": "crosses file types (doc ↔ code); connects across different repos/directories; bridges separate communities"
     }
   ],
-  "tokens": {
-    "input": 0,
-    "output": 0
-  }
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `dependencies` connect `dependencies` to `react-dom`, `react-hook-form`, `react-router-dom`, `@react-three/fiber`, `socket.io-client`, `@tanstack/react-query`, `three`, `@dnd-kit/core`, `devDependencies`, `Task Studio README`, `date-fns`, `@dnd-kit/modifiers`, `@dnd-kit/sortable`, `@dnd-kit/utilities`, `@hookform/resolvers`, `lucide-react`, `@paper-design/shaders-react`, `react`?",
+      "why": "High betweenness centrality (0.002) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `NightEyes()` connect `halloween-decor.tsx` to `ui/index.ts`?",
+      "why": "High betweenness centrality (0.001) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `RuneScribe()` connect `runic-decor.tsx` to `ui/index.ts`?",
+      "why": "High betweenness centrality (0.001) - this node is a cross-community bridge."
+    },
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `chatApi`, `whiteboardApi`, `SessionStatus` to the rest of the system?",
+      "why": "731 weakly-connected nodes found - possible documentation gaps or missing edges."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `project-board-queries.ts` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.05299608551641072 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `task/model/queries.ts` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.05194805194805195 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `ui/index.ts` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.04918032786885246 - nodes in this community are weakly interconnected."
+    }
+  ]
 }

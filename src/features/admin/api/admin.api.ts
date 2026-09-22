@@ -7,7 +7,7 @@ import type {
   AdminReport,
   AdminSession,
   AdminStats,
-  AdminUserRow,
+  AdminUserPage,
   BanPayload,
   SetPlanPayload,
 } from '../model/types';
@@ -98,8 +98,21 @@ export const adminApi = {
     return data;
   },
 
-  async users(query: string, bannedOnly: boolean, plan?: Plan): Promise<AdminUserRow[]> {
-    const { data } = await client.get<AdminUserRow[]>('/users', {
+  /**
+   * One page of the directory.
+   *
+   * The API answers with the rows *and* the size of the set they came from,
+   * which is the half that makes paging possible at all: a client holding
+   * twenty-five rows cannot otherwise tell "that is everybody" from "that is
+   * the first twenty-five of two hundred". See `AdminUserPage`.
+   */
+  async users(
+    query: string,
+    bannedOnly: boolean,
+    plan?: Plan,
+    page = 1,
+  ): Promise<AdminUserPage> {
+    const { data } = await client.get<AdminUserPage>('/users', {
       params: {
         ...(query ? { q: query } : {}),
         ...(bannedOnly ? { bannedOnly: true } : {}),
@@ -107,6 +120,9 @@ export const adminApi = {
         // them, which is what makes it useful for "the paying accounts among
         // the reported ones".
         ...(plan ? { plan } : {}),
+        // Always sent, including for page 1: a param that appears only
+        // sometimes is one a proxy or a cache can key on inconsistently.
+        page,
       },
     });
     return data;

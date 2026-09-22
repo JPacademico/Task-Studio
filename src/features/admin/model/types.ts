@@ -1,6 +1,24 @@
 import type { Plan, PlanSource, SubscriptionStatus } from '@/entities/billing/model/types';
 
 /** One account, as the moderation console sees it. */
+/**
+ * One page of the directory, with enough about the whole set to walk it.
+ *
+ * Mirrors the API's own `AdminUserPage`. `total` and `pageCount` are computed
+ * against the *filtered* set rather than the whole table, so "37 accounts"
+ * under a plan filter means thirty-seven on that plan — which is the number
+ * somebody reading it is asking about.
+ */
+export interface AdminUserPage {
+  rows: AdminUserRow[];
+  total: number;
+  /** One-based, and already clamped to at least 1 by the API. */
+  page: number;
+  pageSize: number;
+  /** At least 1, including for an empty directory. */
+  pageCount: number;
+}
+
 export interface AdminUserRow {
   id: string;
   /**

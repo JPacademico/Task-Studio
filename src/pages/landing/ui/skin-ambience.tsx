@@ -29,7 +29,7 @@ const AMBIENCE = {
   HALLOWEEN: { kind: 'bats', tones: ['#1c1420', '#ff8c28'], count: 7 },
   RUNIC: { kind: 'runes', tones: ['#b45309', '#f59e0b'], count: 5 },
   ELDRITCH: { kind: 'eyes', tones: ['#2dd4bf', '#a855f7'], count: 4 },
-  DRAGON: { kind: 'lanterns', tones: ['#a32a1e', '#e0a33a'], count: 7 },
+  DRAGON: { kind: 'lanterns', tones: ['#e05833', '#f2c54f'], count: 7 },
 } as const satisfies Partial<
   Record<ThemeSkin, { kind: string; tones: readonly [string, string]; count: number }>
 >;

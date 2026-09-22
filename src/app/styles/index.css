@@ -58,11 +58,54 @@
    =========================================================================== */
 @font-face {
   font-family: 'Creepster';
-  src: url('/fonts/creepster.woff2') format('woff2');
+  /* `/fonts/<theme>/<file>`, not `/fonts/<file>`. Every shipped face lives in
+     a folder named after the skin that uses it, and its licence and upstream
+     file live in `custom-font/<theme>/` — see `custom-font/README.md` for why
+     those are two directories rather than one. */
+  src: url('/fonts/halloween/creepster.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
   size-adjust: 82%;
+}
+
+/* ===========================================================================
+   The Dragon skin's face: 乐米曲奇方块体 — LeMi CookieBlock.
+   ===========================================================================
+
+   A geometric rounded-square face where Latin, numerals and CJK are all built
+   on one square grid with an even stroke and softened corners. It replaces the
+   Kaiti/Georgia pair the skin used to set its type in — see
+   `custom-font/dragon/README.md` for that argument.
+
+   ## `local()` before `url()`
+
+   Anybody who already has the font installed gets it with no network request
+   at all, which for a CJK face is not a micro-optimisation: even subsetted
+   these are an order of magnitude larger than a Latin face.
+
+   ## The file may not be there, and that is survivable by design
+
+   The `.woff2` is not in the repository — it needs a licence check and a
+   subsetting pass first, both of which are written up in the theme's README.
+   Until it lands, this declaration resolves to nothing and the type falls
+   through to the chain behind it on `--font-display`/`--font-sans`, which ends
+   in faces that ship on every machine. That is the whole reason the chain is
+   five deep rather than one: a skin whose text is unreadable because one file
+   is missing is a skin broken by a CDN hiccup.
+
+   `swap`, so the fallback is painted immediately and replaced if the real face
+   arrives. Never `block` — invisible text is worse than provisional text.
+   =========================================================================== */
+@font-face {
+  font-family: 'LeMi CookieBlock';
+  src:
+    local('乐米曲奇方块体'),
+    local('LeMi CookieBlock'),
+    url('/fonts/dragon/lemi-cookie-block.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
 }
 
 /*
@@ -3155,23 +3198,55 @@
    * light. `JadeMark` is cut from it.
    */
   [data-skin='dragon'] {
-    --surface: 231 219 194;
-    --surface-raised: 246 238 220;
-    --surface-sunken: 215 200 172;
-    --edge: 156 116 52;
+    /*
+     * ## Why the whole light palette moved
+     *
+     * It was built from a photograph of raw silk: a grey-leaning tan ground
+     * with a dark brick accent used sparingly, which is what an aged scroll
+     * actually looks like and is also, in a working interface, *drab*. The
+     * complaint was that the red is faded, and it was correct twice over — the
+     * accent itself was dark (a 163/42/30 brick), and the ground it sat on was
+     * grey enough to pull what saturation it had back out of it.
+     *
+     * The reference this is now built from is the other tradition: flat vector
+     * illustration of an imperial hall, where the ground is a warm wheat, the
+     * lacquer is an orange-leaning vermillion, and the roof is a clean chrome
+     * gold. Every value below is sampled from it and then moved only as far as
+     * contrast required.
+     *
+     * ## What contrast required
+     *
+     * The illustration's own vermillion — 224/88/51 — measures 3.0:1 on its own
+     * background, which is fine for a roof and not fine for a link. So the
+     * palette splits what used to be one colour into two:
+     *
+     *   - `--brand` is the *readable* vermillion, 184/52/32, which is 4.6:1 on
+     *     the page and 5.2:1 on a panel. It is noticeably more orange and more
+     *     saturated than the brick it replaces while still carrying text.
+     *   - `--dragon-vermilion` is the illustration's own, unmoved. It is for
+     *     surfaces and ornament — the dragon's mouth and claws, the rule under
+     *     the top bar, the seal — where nothing has to be read off it.
+     *
+     * That split is the whole trick, and it is why this can look like the
+     * reference without failing AA anywhere text is set.
+     */
+    --surface: 243 226 181;
+    --surface-raised: 250 239 207;
+    --surface-sunken: 227 206 158;
+    --edge: 183 138 58;
     --check-edge: var(--edge);
-    --content: 42 28 20;
-    --content-muted: 96 72 54;
-    --content-faint: 142 118 94;
+    --content: 44 27 18;
+    --content-muted: 104 72 46;
+    --content-faint: 132 100 68;
 
-    /* Cinnabar: the seal, and the only red on the light page. 5.28:1. */
-    --brand: 163 42 30;
-    --brand-soft: 245 222 210;
-    --brand-contrast: 253 247 238;
+    /* Vermillion, readable. 4.61:1 on the page, 5.16:1 on a panel. */
+    --brand: 184 52 32;
+    --brand-soft: 248 220 200;
+    --brand-contrast: 255 248 236;
     /* Jade, which is this skin's green everywhere and not only on the mark. */
-    --positive: 47 122 92;
-    --warning: 176 124 24;
-    --danger: 158 34 34;
+    --positive: 38 108 80;
+    --warning: 143 92 8;
+    --danger: 170 38 30;
 
     /*
      * Squared, with the corners eased rather than rounded.
@@ -3188,93 +3263,136 @@
     --radius-2xl: 10px;
     --radius-3xl: 14px;
 
-    /*
-     * Kaiti (楷体) for display, Georgia for running text, and the split is the
-     * whole typographic decision.
-     *
-     * Kaiti is the brush-written regular script a scroll is inscribed in, and
-     * it ships with both Windows and macOS — so most readers get the real face
-     * with no network request, which matters in a project that self-hosts
-     * exactly one font. What it is *not* is a Latin text face: its roman glyphs
-     * are an afterthought in the design, and an interface that is mostly
-     * English set in them reads as broken rather than as calligraphic.
-     *
-     * So it takes the strings that are read once, large, and already known by
-     * shape — headings, project names, the greeting — and Georgia takes the
-     * thirty-item list somebody is scanning at 14px. Georgia is the right
-     * fallback rather than a compromise: it is a serif cut for the screen, and
-     * on this page it reads as an old book, which is where this skin lives.
-     */
-    --font-display: 'Kaiti SC', KaiTi, STKaiti, 'Songti SC', SimSun, Georgia, serif;
-    --font-sans: Georgia, 'Songti SC', SimSun, 'Times New Roman', serif;
-    --font-hand: 'Kaiti SC', KaiTi, STKaiti, 'Songti SC', SimSun, cursive;
 
     /*
-     * Opened up, for the same reason the halloween skin opens its own.
+     * 乐米曲奇方块体 for everything, and the single stack is the decision.
      *
-     * A brush face's strokes already run towards one another; the root's
-     * default negative tracking closes the gap the rest of the way and turns a
-     * heading into one continuous mark.
+     * ## What this replaced
+     *
+     * Kaiti (楷体) for display and Georgia for running text — a brush-written
+     * regular script for the headings and a screen serif for the thirty-item
+     * list underneath them. The argument for the split was sound and the result
+     * was two typefaces that share nothing: Kaiti's Latin glyphs are an
+     * afterthought in that design, so an interface that is mostly English set
+     * in them reads as broken rather than as calligraphic, which is exactly why
+     * Georgia had to be underneath carrying almost all of the actual text.
+     *
+     * The replacement is one face that is a *system* — Latin, numerals and CJK
+     * all built on the same square grid with the same even stroke — so the
+     * heading and the list are the same voice at two sizes, which is what the
+     * split was trying to buy in the first place.
+     *
+     * The brush has not left the skin. It is in the dragon, the scroll rods and
+     * the seal, where it is *drawing* rather than setting type.
+     *
+     * ## The chain behind it
+     *
+     * Five deep, because the shipped file is not in the repository yet — see
+     * `custom-font/dragon/README.md`. `Yuanti SC` and `YouYuan` are the system
+     * rounded CJK faces on macOS and Windows; `M PLUS Rounded 1c` is the
+     * archetype for anybody who has it; and `Verdana` is the floor, chosen not
+     * because it is rounded (it is not) but because it is the widest,
+     * squarest, most even-stroked face that exists on every machine — and
+     * proportion is the part that survives at 13px.
      */
+    --font-display: 'LeMi CookieBlock', 'Yuanti SC', YouYuan, 'M PLUS Rounded 1c', Verdana,
+      'Segoe UI', sans-serif;
+    --font-sans: 'LeMi CookieBlock', 'Yuanti SC', YouYuan, 'M PLUS Rounded 1c', Verdana,
+      'Segoe UI', sans-serif;
+    --font-hand: 'LeMi CookieBlock', 'Yuanti SC', YouYuan, 'M PLUS Rounded 1c', Verdana,
+      'Segoe UI', sans-serif;
+
     --heading-tracking: 0.02em;
 
     --panel-border-width: 1px;
     /* Lamplight from above, and the shadow a mounted sheet casts off a wall. */
     --shadow-panel:
-      inset 0 1px 0 rgb(255 250 238 / 0.7),
-      0 12px 28px -20px rgb(74 40 18 / 0.6);
+      inset 0 1px 0 rgb(255 252 240 / 0.8),
+      0 12px 28px -20px rgb(120 58 22 / 0.55);
     --press-travel: 1px;
 
     /*
-     * Silk, and the mounting bands at the head and foot of the sheet.
+     * The material, rebuilt to match the reference's flat-vector surface.
      *
-     * Three layers, and the first is the one that makes this a scroll rather
-     * than a textured card: a single non-repeating gradient that darkens the
-     * top and bottom few pixels of every panel into brocade, leaving the middle
-     * clear. The two repeating layers behind it are the weave — crossed
-     * hairlines at 18px, which at normal viewing distance is a texture rather
-     * than a pattern.
+     * Four layers now, and the first two are the new ones:
      *
-     * `--panel-texture-size` carries one entry per layer, in the same order:
-     * the bands are sized to the panel, the weave tiles.
+     *  1. **A vermillion wash down the top of every panel.** The reference's
+     *     buildings are red *masses*, not red outlines, and the single biggest
+     *     reason the old skin read as faded is that no surface anywhere in it
+     *     was actually red — the colour existed only in hairlines and labels.
+     *     This puts a real, if quiet, warmth into the top of each card.
+     *  2. **Brocade bands at head and foot**, as before but in gold rather than
+     *     the old muddy ochre.
+     *  3-4. **The crossed hairline weave**, which the reference also has inside
+     *     its medallion. Kept, tightened, and warmed.
+     *
+     * `--panel-texture-size` carries one entry per layer, in the same order.
      */
     --panel-texture:
       linear-gradient(
         180deg,
-        rgb(var(--dragon-brocade) / 0.5) 0 5px,
-        transparent 5px calc(100% - 5px),
-        rgb(var(--dragon-brocade) / 0.5) calc(100% - 5px)
+        rgb(var(--dragon-vermilion) / 0.13),
+        rgb(var(--dragon-vermilion) / 0.03) 38%,
+        transparent 62%
       ),
-      repeating-linear-gradient(45deg, rgb(var(--edge) / 0.06) 0 1px, transparent 1px 9px),
-      repeating-linear-gradient(-45deg, rgb(var(--edge) / 0.06) 0 1px, transparent 1px 9px);
-    --panel-texture-size: 100% 100%, 18px 18px, 18px 18px;
+      linear-gradient(
+        180deg,
+        rgb(var(--dragon-brocade) / 0.62) 0 5px,
+        transparent 5px calc(100% - 5px),
+        rgb(var(--dragon-brocade) / 0.62) calc(100% - 5px)
+      ),
+      repeating-linear-gradient(45deg, rgb(var(--edge) / 0.07) 0 1px, transparent 1px 9px),
+      repeating-linear-gradient(-45deg, rgb(var(--edge) / 0.07) 0 1px, transparent 1px 9px);
+    --panel-texture-size: 100% 100%, 100% 100%, 18px 18px, 18px 18px;
 
-    --page-wash: radial-gradient(
-      130% 90% at 50% 0%,
-      rgb(var(--brand) / 0.1),
-      transparent 62%
-    );
+    /*
+     * The page itself carries the taupe medallion the reference puts behind its
+     * building — a large, soft, desaturated disc high on the page that the
+     * content sits in front of. It is what stops a flat wheat ground reading as
+     * an empty canvas, and it is the one element here that is neither red nor
+     * gold.
+     */
+    --page-wash:
+      radial-gradient(
+        58% 42% at 50% 6%,
+        rgb(186 166 158 / 0.38),
+        rgb(186 166 158 / 0.12) 55%,
+        transparent 72%
+      ),
+      radial-gradient(130% 90% at 50% 0%, rgb(var(--dragon-vermilion) / 0.12), transparent 62%);
 
-    --btn-overlay: linear-gradient(180deg, rgb(255 255 255 / 0.16), transparent 62%);
-    --btn-shadow: 0 2px 0 rgb(74 40 18 / 0.28);
-    --btn-shadow-active: 0 1px 0 rgb(74 40 18 / 0.28);
+    --btn-overlay: linear-gradient(180deg, rgb(255 255 255 / 0.2), transparent 62%);
+    --btn-shadow: 0 2px 0 rgb(120 58 22 / 0.3);
+    --btn-shadow-active: 0 1px 0 rgb(120 58 22 / 0.3);
 
     /* ---- The skin's own objects. See `dragon-icons.tsx`. ---- */
 
+    /*
+     * The illustration's own vermillion, unmoved and unreadable-on.
+     *
+     * This is the colour the reference paints its walls, its columns and its
+     * lattice in, and it is 3.0:1 on the page — which is exactly right for a
+     * wall and exactly wrong for a label. Nothing that carries text may use it;
+     * `--brand` is the readable sibling. See the note at the top of this block.
+     */
+    --dragon-vermilion: 224 88 51;
+    /* The deeper red the reference shades its eaves and its under-roof with. */
+    --dragon-lacquer: 183 52 45;
+
     /* The gold rule of the mounting, drawn twice around every panel below. */
-    --dragon-trim: 198 154 74;
+    --dragon-trim: 226 180 76;
     /* The brocade band at the head and foot of a sheet. */
-    --dragon-brocade: 168 128 62;
+    --dragon-brocade: 196 148 56;
 
     /* The stone the mark is cut from: lit face, body, and the shadowed cut. */
     --dragon-jade-lit: 168 216 192;
-    --dragon-jade: 63 143 112;
-    --dragon-jade-deep: 28 82 62;
+    --dragon-jade: 58 138 106;
+    --dragon-jade-deep: 26 78 58;
 
     /* The lacquered rod the scroll is wound on, and its highlight. */
-    --dragon-rod: 122 62 44;
-    --dragon-rod-lit: 186 112 78;
-    --dragon-rod-deep: 62 28 18;
+    --dragon-rod: 150 62 40;
+    --dragon-rod-lit: 206 118 74;
+    --dragon-rod-deep: 74 30 18;
 
     /*
      * The animal itself — see `DragonGlyph`.
@@ -3283,96 +3401,124 @@
      *
      * Because a dragon on a lacquer screen is not painted in the room's
      * palette; it is painted in *its own*, and the room is what it is seen
-     * against. `--brand` is cinnabar on this page and gold on the dark one, so
-     * a dragon drawn in it would be two different animals depending on the
+     * against. `--brand` is vermillion on this page and gold on the dark one,
+     * so a dragon drawn in it would be two different animals depending on the
      * lights — which is exactly what a mark is allowed to do and a creature
      * is not.
      *
      * So the scale is gold in both palettes, the crest and the mane take the
      * jade the mark is already cut from, the claws and the open mouth are
-     * cinnabar, and `--dragon-ink` is the brush line around all of it. The two
-     * palettes differ only in how much light is falling on the thing.
+     * vermillion, and `--dragon-ink` is the brush line around all of it. The
+     * two palettes differ only in how much light is falling on the thing.
      */
-    --dragon-scale: 226 164 62;
-    --dragon-scale-lit: 246 212 136;
-    --dragon-scale-deep: 176 104 36;
-    --dragon-cinnabar: 186 46 34;
-    --dragon-ink: 62 28 18;
+    --dragon-scale: 242 197 79;
+    --dragon-scale-lit: 251 227 148;
+    --dragon-scale-deep: 198 130 40;
+    --dragon-cinnabar: var(--dragon-vermilion);
+    --dragon-ink: 74 34 20;
   }
 
-  /*
-   * The hall at night: black lacquer, gold leaf, and the red left in the black.
-   *
-   * A neutral dark would make the gold read as brass on charcoal — office
-   * signage. Every surface here keeps a red cast because the room itself is
-   * lacquered red and the light in it is warm, which is the same argument the
-   * volcano and runic palettes make about their own light sources.
-   */
   [data-skin='dragon'].dark {
-    --surface: 22 11 12;
-    --surface-raised: 38 19 21;
-    --surface-sunken: 15 7 8;
-    --edge: 143 106 46;
+    /*
+     * The hall at night: lacquer red, gold leaf, and the red left in the black.
+     *
+     * A neutral dark would make the gold read as brass on charcoal — office
+     * signage. Every surface here keeps a red cast because the room itself is
+     * lacquered red and the light in it is warm, which is the same argument the
+     * volcano and runic palettes make about their own light sources.
+     *
+     * ## What moved with the light palette
+     *
+     * The same complaint applied here for a different reason. The surfaces were
+     * a near-neutral 22/11/12 and 38/19/21 — dark enough that the red in them
+     * was theoretical, so the room read as charcoal with gold on it rather than
+     * as a lacquered hall. They are more saturated and a step lighter now,
+     * which is what lets the red be *seen* as red without touching the gold's
+     * contrast: `--brand` still measures 7.95:1 on a panel and 9.10:1 on the
+     * page, where AA wants 4.5.
+     */
+    --surface: 34 12 12;
+    --surface-raised: 58 20 19;
+    --surface-sunken: 22 7 7;
+    --edge: 158 116 48;
     --check-edge: var(--edge);
-    --content: 244 230 207;
-    --content-muted: 198 176 148;
-    --content-faint: 150 128 104;
+    --content: 246 232 209;
+    --content-muted: 202 178 148;
+    --content-faint: 154 130 104;
 
-    /* Gold leaf. 8.75:1 on the lacquer, and the only thing in the room that is
+    /* Gold leaf. 7.95:1 on a panel, and the only thing in the room that is
        allowed to be bright. */
-    --brand: 224 163 58;
-    --brand-soft: 62 40 14;
-    --brand-contrast: 26 14 6;
+    --brand: 232 170 62;
+    --brand-soft: 74 46 16;
+    --brand-contrast: 28 14 6;
     --positive: 82 177 137;
-    --warning: 232 186 74;
-    --danger: 226 78 66;
+    --warning: 236 190 78;
+    --danger: 232 88 72;
 
     --shadow-panel:
-      inset 0 1px 0 rgb(255 214 150 / 0.09),
+      inset 0 1px 0 rgb(255 214 150 / 0.11),
       0 16px 36px -22px rgb(0 0 0 / 0.9);
 
+    /* Same four layers as the light palette, at night. The vermillion wash is
+       the one that changes most: on black lacquer it is the difference between
+       a panel that is part of the room and one cut out of grey card. */
     --panel-texture:
       linear-gradient(
         180deg,
-        rgb(var(--dragon-brocade) / 0.34) 0 5px,
-        transparent 5px calc(100% - 5px),
-        rgb(var(--dragon-brocade) / 0.34) calc(100% - 5px)
+        rgb(var(--dragon-vermilion) / 0.16),
+        rgb(var(--dragon-vermilion) / 0.04) 38%,
+        transparent 62%
       ),
-      repeating-linear-gradient(45deg, rgb(255 216 160 / 0.035) 0 1px, transparent 1px 9px),
-      repeating-linear-gradient(-45deg, rgb(255 216 160 / 0.035) 0 1px, transparent 1px 9px);
+      linear-gradient(
+        180deg,
+        rgb(var(--dragon-brocade) / 0.4) 0 5px,
+        transparent 5px calc(100% - 5px),
+        rgb(var(--dragon-brocade) / 0.4) calc(100% - 5px)
+      ),
+      repeating-linear-gradient(45deg, rgb(255 216 160 / 0.045) 0 1px, transparent 1px 9px),
+      repeating-linear-gradient(-45deg, rgb(255 216 160 / 0.045) 0 1px, transparent 1px 9px);
 
-    --page-wash: radial-gradient(
-      130% 90% at 50% 0%,
-      rgb(var(--brand) / 0.09),
-      transparent 60%
-    );
+    /* The medallion again, as the darker disc a lit hall has behind its altar.
+       Warmer and weaker than the light page's: on black it takes very little
+       to read as a shape rather than as a gradient. */
+    --page-wash:
+      radial-gradient(
+        58% 42% at 50% 6%,
+        rgb(120 70 58 / 0.3),
+        rgb(120 70 58 / 0.1) 55%,
+        transparent 72%
+      ),
+      radial-gradient(130% 90% at 50% 0%, rgb(var(--brand) / 0.09), transparent 60%);
 
-    --btn-overlay: linear-gradient(180deg, rgb(255 255 255 / 0.1), transparent 58%);
+    --btn-overlay: linear-gradient(180deg, rgb(255 255 255 / 0.12), transparent 58%);
     --btn-shadow: 0 2px 0 rgb(0 0 0 / 0.5);
     --btn-shadow-active: 0 1px 0 rgb(0 0 0 / 0.5);
 
-    --dragon-trim: 166 124 54;
-    --dragon-brocade: 126 92 40;
+    --dragon-vermilion: 228 96 58;
+    --dragon-lacquer: 176 50 42;
+
+    --dragon-trim: 198 152 62;
+    --dragon-brocade: 150 110 44;
 
     --dragon-jade-lit: 132 208 176;
     --dragon-jade: 82 177 137;
     --dragon-jade-deep: 20 68 52;
 
-    --dragon-rod: 96 44 34;
-    --dragon-rod-lit: 158 88 60;
-    --dragon-rod-deep: 40 16 12;
+    --dragon-rod: 120 54 38;
+    --dragon-rod-lit: 182 100 66;
+    --dragon-rod-deep: 46 18 12;
 
     /*
      * The animal in lamplight: the same five materials, lit from a smaller
      * source. The gold comes up rather than down — it is the one thing in a
      * dark hall that is meant to catch the light — and the ink goes nearly
-     * black, because a warm brown outline that reads as a drawn line on cream
+     * black, because a warm brown outline that reads as a drawn line on wheat
      * reads as a smudge on lacquer.
      */
-    --dragon-scale: 232 174 74;
-    --dragon-scale-lit: 250 222 158;
-    --dragon-scale-deep: 168 100 34;
-    --dragon-cinnabar: 198 54 40;
+    --dragon-scale: 246 204 92;
+    --dragon-scale-lit: 253 232 168;
+    --dragon-scale-deep: 190 122 38;
+    --dragon-cinnabar: var(--dragon-vermilion);
     --dragon-ink: 26 12 8;
 
     color-scheme: dark;
@@ -9171,6 +9317,42 @@ button:focus-visible .rune-swap__latin,
   border-radius: var(--avatar-radius, 9999px);
   box-shadow: var(--avatar-frame, 0 0 0 2px rgb(var(--surface-raised)));
   clip-path: var(--avatar-clip, none);
+  /*
+   * `vertical-align: middle`, and it is a real bug fix rather than a nicety.
+   *
+   * ## What was wrong, measured
+   *
+   * The component is an `inline-flex` span, so it is an inline-level box and
+   * the line it sits on aligns it by its baseline. Where that baseline *is*
+   * depends on what is inside:
+   *
+   *   - **Showing initials**, the box takes the baseline of that text, which
+   *     lands on the line's own baseline. Nothing extra is reserved, and a
+   *     2rem avatar sits in a 2rem parent. This case always looked right.
+   *   - **Showing a photo**, there is no text anywhere in the box, so it
+   *     aligns by its bottom margin edge instead — and the line box then
+   *     reserves the font's descender space *underneath* it. Measured in the
+   *     top bar: a 31.8px avatar inside a 37.66px button. Nearly six pixels of
+   *     dead room below the picture, which pushed it up off the centre of a
+   *     row whose every other control is a centred grid.
+   *
+   * So the disruption only ever appeared for somebody who had actually
+   * uploaded a picture, which is why it survived so long — the default account
+   * renders initials and looks fine.
+   *
+   * ## Why the fix goes here
+   *
+   * Aligning to the middle makes the box's own centre the reference instead of
+   * a baseline that may or may not exist, so what is inside it stops
+   * mattering. One declaration on the class every avatar already wears fixes
+   * the top bar, the stacks, the byline chips, the roster rows and the admin
+   * console's list together; the alternative was a layout override at each of
+   * the forty-odd call sites, which is how half of them end up missing it.
+   *
+   * The top bar additionally makes its wrapping button a grid, which removes
+   * the line box rather than merely aligning within it — see the note there.
+   */
+  vertical-align: middle;
 }
 
 /*
@@ -11855,7 +12037,7 @@ html:not([data-cursor='off'])[data-skin='halloween'] .cursor-grab:active {
    =========================================================================== */
 
 /*
- * The seam a rail shares with the page is a jade rule, and a light runs up it.
+ * The seam a rail shares with the page is a gold rule, and a light runs up it.
  *
  * ## Why the rails are the surface that gets this
  *
@@ -11863,72 +12045,117 @@ html:not([data-cursor='off'])[data-skin='halloween'] .cursor-grab:active {
  * field sinks a gravity well into it, the eldritch one grows limbs out of it,
  * the autumn one grows a hedge. This skin had the generic hairline — a 1px
  * `--brand` gradient, the same object drawn on every theme that had not thought
- * about it — while the panels beside it were being mounted like scrolls. Jade
- * is the material this skin already owns (the mark is cut from it; `--positive`
- * *is* it) and it is the one thing in an imperial room that is neither the
- * lacquer nor the gold, which makes it the right colour for a boundary between
- * two surfaces that are both one of those.
+ * about it — while the panels beside it were being mounted like scrolls.
  *
- * ## Why gold in the dark and jade in the light
+ * ## Why gold in both palettes now, where the light page used to be jade
  *
- * The dark palette is a lacquered hall and its whole rule is that gold is what
- * marks something out against walls that are already red. Jade at full strength
- * on black is a dark green line on a dark red wall — technically a second
- * colour, practically absent. The light page is cream, where jade has real
- * contrast and gold does not.
+ * The first pass split them: gold in the dark hall, jade on the cream page, on
+ * the reasoning that gold has no contrast against cream. That reasoning was
+ * about a *hairline*. At the width this is drawn now it is a mounting bar, and
+ * a mounting bar is the one thing in this room that is unambiguously gold —
+ * every panel on the page is already trimmed in `--dragon-trim`, and the rail
+ * was the only edge disagreeing with them. The deeper `--dragon-brocade` at the
+ * ends and the darker `--edge` hairline down the middle are what give it enough
+ * separation from the paper without asking the gold to do it alone.
+ *
+ * Jade did not lose its job; it moved to the frame round a face, which is one
+ * object rather than two full-height edges — see the avatar block below.
+ *
+ * ## Why it is three pixels
+ *
+ * A 1px rule is a hairline whatever colour it is, and at a hairline the sheen
+ * that runs up it is a moving speck. Three is the narrowest width at which the
+ * bar reads as a piece of mounting hardware and the light travelling along it
+ * reads as a highlight on metal.
  */
+[data-skin='dragon'] .nav-rail--left .nav-rail__edge,
+[data-skin='dragon'] .nav-rail--right .nav-rail__edge {
+  width: 3px;
+}
+
 [data-skin='dragon'] .nav-rail__edge {
   /* The inherited Tailwind gradient is a `background-image`, so it has to be
      overridden rather than merely tinted — otherwise the brand hairline is
-     still there underneath this one. */
-  background-image: linear-gradient(
-    to bottom,
-    transparent,
-    rgb(var(--dragon-jade) / 0.9) 12%,
-    rgb(var(--dragon-jade-lit) / 0.75) 50%,
-    rgb(var(--dragon-jade) / 0.9) 88%,
-    transparent
-  );
+     still there underneath this one.
+
+     Two layers: the gold bar, and a darker hairline down its centre. The
+     hairline is what keeps three pixels of flat metal from reading as a
+     highlighter stripe — real trim has a seam. */
+  background-image:
+    linear-gradient(
+      to right,
+      transparent 0 1px,
+      rgb(var(--edge) / 0.55) 1px 2px,
+      transparent 2px
+    ),
+    linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--dragon-brocade)) 10%,
+      rgb(var(--dragon-trim)) 50%,
+      rgb(var(--dragon-brocade)) 90%,
+      transparent
+    );
 }
 
 [data-skin='dragon'].dark .nav-rail__edge {
-  background-image: linear-gradient(
-    to bottom,
-    transparent,
-    rgb(var(--brand) / 0.85) 12%,
-    rgb(var(--dragon-trim) / 0.95) 50%,
-    rgb(var(--brand) / 0.85) 88%,
-    transparent
-  );
+  background-image:
+    linear-gradient(
+      to right,
+      transparent 0 1px,
+      rgb(0 0 0 / 0.45) 1px 2px,
+      transparent 2px
+    ),
+    linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--dragon-brocade)) 10%,
+      rgb(var(--brand)) 50%,
+      rgb(var(--dragon-brocade)) 90%,
+      transparent
+    );
 }
 
 /*
  * The header's rule is the same object turned on its side, and it is red.
  *
  * It was `via-brand/40` — a fortieth of the way to a colour, which on cream
- * produced a pink line somebody had to be told was there. The complaint was
- * exactly right. This one is cinnabar at nearly full strength, which is the
- * weight a seal is stamped at and is what the rest of the skin means by red.
+ * produced a pink line somebody had to be told was there. This one is
+ * vermillion at full strength, which is the weight a seal is stamped at and is
+ * what the rest of the skin means by red.
  *
- * Cinnabar explicitly rather than `--brand`, because `--brand` is gold on the
- * dark palette and this rule is meant to be red in both rooms: it is the
- * lacquer line at the bottom of a beam, not an accent.
+ * `--dragon-vermilion` explicitly rather than `--brand`, because `--brand` is
+ * gold on the dark palette and this rule is meant to be red in both rooms: it
+ * is the lacquer line at the bottom of a beam, not an accent. It is also the
+ * *unreadable* vermillion rather than the readable one, which is exactly right
+ * here — nothing is set in it, so it can be the colour the reference actually
+ * paints with.
+ *
+ * ## Why it is two tones
+ *
+ * Because a painted beam is. The reference shades every eave the same way:
+ * vermillion on the lit face, a deeper `--dragon-lacquer` along the underside.
+ * Three pixels split two-to-one reproduces that at rule scale, and it is the
+ * difference between a red line and a red *edge of something*.
  */
 [data-skin='dragon'] .nav-rail--top .nav-rail__edge {
+  height: 3px;
   background-image: linear-gradient(
+    to bottom,
+    rgb(var(--dragon-vermilion)) 0 2px,
+    rgb(var(--dragon-lacquer)) 2px
+  );
+  /* The horizontal fade is a mask rather than a second background layer, so the
+     two-tone split above survives it intact — a second gradient would paint
+     *over* the shading and flatten it back to one tone, and a transparent one
+     would be a layer the compositor still has to blend for no effect at all. */
+  mask-image: linear-gradient(
     to right,
     transparent,
-    rgb(var(--dragon-cinnabar) / 0.95) 14%,
-    rgb(var(--dragon-cinnabar)) 50%,
-    rgb(var(--dragon-cinnabar) / 0.95) 86%,
+    rgb(0 0 0) 14%,
+    rgb(0 0 0) 86%,
     transparent
   );
-}
-
-/* Thicker than a hairline, because a lacquer rule is not a hairline. The bar's
-   own `border-b` sits under it and carries the actual division. */
-[data-skin='dragon'] .nav-rail--top .nav-rail__edge {
-  height: 2px;
 }
 
 [data-skin='dragon'] .nav-rail--top {
@@ -11968,6 +12195,9 @@ html:not([data-cursor='off'])[data-skin='halloween'] .cursor-grab:active {
  * onto both surfaces the rule divides, which is the half that makes it read as
  * light rather than as paint.
  *
+ * Its *brightness* is a separate question from its size, and the answer moved
+ * once the rule underneath got wider. See the gradient below.
+ *
  * ## The ten seconds, and why most of the animation is nothing happening
  *
  * The sweep itself is under two seconds; the rest of the cycle is the light
@@ -11990,20 +12220,31 @@ html:not([data-cursor='off'])[data-skin='halloween'] .cursor-grab:active {
   content: '';
   position: absolute;
   /* Wider than the rule so the glow spills onto both surfaces it divides. */
-  left: -4px;
-  right: -4px;
+  left: -3px;
+  right: -3px;
   height: 5rem;
   bottom: 0;
   pointer-events: none;
+  /*
+   * Gold rather than jade, following the rule it runs along, and dimmer than
+   * it was.
+   *
+   * The first pass put a near-white core at 0.95 with a bloom behind it, which
+   * on a 1px rule was the only way to see it at all. On a 3px bar that same
+   * light is a torch being shone up the side of the page once every ten
+   * seconds — the thing you look at rather than the thing you notice. Dropping
+   * the core to a warm 0.6 and halving the bloom leaves a highlight that
+   * travels the metal without becoming the brightest object on screen.
+   */
   background: linear-gradient(
     to top,
     transparent,
-    rgb(var(--dragon-jade-lit) / 0.75) 40%,
-    rgb(255 255 255 / 0.95) 58%,
-    rgb(var(--dragon-jade-lit) / 0.75) 74%,
+    rgb(var(--dragon-trim) / 0.4) 40%,
+    rgb(255 246 222 / 0.6) 58%,
+    rgb(var(--dragon-trim) / 0.4) 74%,
     transparent
   );
-  box-shadow: 0 0 14px 3px rgb(var(--dragon-jade-lit) / 0.45);
+  box-shadow: 0 0 10px 1px rgb(var(--dragon-trim) / 0.22);
   filter: blur(1.5px);
   animation: dragon-rail-sheen 10s linear infinite;
 }
@@ -12013,12 +12254,12 @@ html:not([data-cursor='off'])[data-skin='halloween'] .cursor-grab:active {
   background: linear-gradient(
     to top,
     transparent,
-    rgb(var(--brand) / 0.8) 40%,
-    rgb(255 240 205) 58%,
-    rgb(var(--brand) / 0.8) 74%,
+    rgb(var(--brand) / 0.45) 40%,
+    rgb(255 240 205 / 0.72) 58%,
+    rgb(var(--brand) / 0.45) 74%,
     transparent
   );
-  box-shadow: 0 0 16px 3px rgb(var(--brand) / 0.5);
+  box-shadow: 0 0 12px 1px rgb(var(--brand) / 0.25);
 }
 
 /*
@@ -12059,11 +12300,10 @@ html:not([data-cursor='off'])[data-skin='halloween'] .cursor-grab:active {
  *
  * ## How the frame is built
  *
- * Four concentric shadows, outward from the picture: the cream mount the print
- * sits on, a fine gold fillet, the width of the frame itself in brocade, and a
- * last gold line at its outer edge. That is the actual construction of a gilt
- * frame, in the order a frame is actually built, and it is why it reads as an
- * object with depth rather than as three borders.
+ * Three concentric shadows, outward from the picture: the mount the print sits
+ * on, the width of the frame itself, and a last hairline at its outer edge.
+ * That is the order a frame is actually built in, and it is why it reads as an
+ * object with depth rather than as two borders.
  *
  * `--avatar-inner` adds the rebate — the lit top and shadowed bottom inside the
  * opening, where the frame overlaps the picture. Without it the photo looks
@@ -12071,45 +12311,60 @@ html:not([data-cursor='off'])[data-skin='halloween'] .cursor-grab:active {
  *
  * Squared off to `--radius-sm`, which is 2px here: nothing in an imperial room
  * is round, and the panels this sits between are all cut corners.
+ *
+ * ## Why jade, and why it is four pixels rather than seven
+ *
+ * It was gold, and gold was the wrong metal for this one object. Every panel on
+ * the page is already mounted in `--dragon-trim`, the top bar's rule is
+ * cinnabar, and the dark palette's entire accent is gold — so a gilt frame
+ * round a face was a fourth gold rectangle competing with the three it sits
+ * between, and in dark mode it was gold on gold. Jade is the one material this
+ * skin owns that is neither the lacquer nor the metal: it is what the mark is
+ * cut from, it is the skin's `--positive`, and it reads as *a different kind of
+ * thing* against either palette without being louder than the panels.
+ *
+ * The width went with it. Seven pixels of moulding around a 2rem picture is a
+ * frame with a photograph in it rather than a photograph in a frame, and in the
+ * top bar it was wide enough to crowd the controls either side. Four is enough
+ * to read as mounted at 1.5rem and still be a frame at 4rem.
  */
 [data-skin='dragon'] .avatar {
   --avatar-radius: var(--radius-sm);
   --avatar-frame:
-    0 0 0 2px rgb(var(--surface-raised)),
-    0 0 0 3px rgb(var(--dragon-trim)),
-    0 0 0 6px rgb(var(--dragon-brocade)),
-    0 0 0 7px rgb(var(--dragon-trim) / 0.9),
-    0 4px 12px -4px rgb(74 40 18 / 0.7);
+    0 0 0 1px rgb(var(--surface-raised)),
+    0 0 0 3px rgb(var(--dragon-jade)),
+    0 0 0 4px rgb(var(--dragon-jade-deep)),
+    0 3px 9px -3px rgb(20 52 42 / 0.55);
   --avatar-inner:
-    inset 0 1px 0 rgb(255 250 238 / 0.5),
-    inset 0 -2px 4px rgb(74 40 18 / 0.45),
-    inset 0 0 0 1px rgb(var(--dragon-trim) / 0.35);
+    inset 0 1px 0 rgb(var(--dragon-jade-lit) / 0.45),
+    inset 0 -2px 4px rgb(20 52 42 / 0.4),
+    inset 0 0 0 1px rgb(var(--dragon-jade-deep) / 0.35);
 }
 
 [data-skin='dragon'].dark .avatar {
   --avatar-frame:
-    0 0 0 2px rgb(var(--surface-raised)),
-    0 0 0 3px rgb(var(--dragon-trim)),
-    0 0 0 6px rgb(var(--dragon-brocade)),
-    0 0 0 7px rgb(var(--dragon-trim) / 0.9),
-    0 4px 14px -4px rgb(0 0 0 / 0.85);
+    0 0 0 1px rgb(var(--surface-raised)),
+    0 0 0 3px rgb(var(--dragon-jade)),
+    0 0 0 4px rgb(var(--dragon-jade-deep)),
+    0 3px 10px -3px rgb(0 0 0 / 0.8);
   --avatar-inner:
-    inset 0 1px 0 rgb(255 214 150 / 0.22),
-    inset 0 -2px 5px rgb(0 0 0 / 0.6),
-    inset 0 0 0 1px rgb(var(--dragon-trim) / 0.4);
+    inset 0 1px 0 rgb(var(--dragon-jade-lit) / 0.3),
+    inset 0 -2px 5px rgb(0 0 0 / 0.55),
+    inset 0 0 0 1px rgb(var(--dragon-jade-deep) / 0.5);
 }
 
 /*
- * The frame paints outside the avatar's own box — seven pixels of it — so
+ * The frame paints outside the avatar's own box — four pixels of it — so
  * anything that packs avatars tightly has to be told to leave room.
  *
- * `AvatarStack` overlaps them by 0.5rem on purpose, which is 8px and therefore
- * exactly the width of this frame: without the extra bite the gilt edges
- * collide and the row reads as one long moulding. The chip's own left padding
- * is set for a 2px ring and is doubled here for the same reason.
+ * `AvatarStack` overlaps them by 0.5rem on purpose, which is 8px: at the old
+ * seven-pixel width the jade edges collided and the row read as one long
+ * moulding, so the chip's padding was doubled to 0.5rem. At four it no longer
+ * has to be — 0.375rem clears the frame with a pixel to spare and puts the
+ * chip back within sight of every other skin's.
  */
 [data-skin='dragon'] .avatar-chip {
-  padding-left: 0.5rem;
+  padding-left: 0.375rem;
 }
 
 /* ===========================================================================
@@ -12177,7 +12432,7 @@ html:not([data-cursor='off'])[data-skin='halloween'] .cursor-grab:active {
 
    ## Hotspot
 
-   `4 4` — the point of the blade in the resting frame, measured from the
+   `11 4` — the point of the blade in the resting frame, measured from the
    pixels rather than guessed.
 
    Text fields, disabled controls and drag handles are left alone: an I-beam,
@@ -12185,11 +12440,11 @@ html:not([data-cursor='off'])[data-skin='halloween'] .cursor-grab:active {
    --------------------------------------------------------------------------- */
 
 html:not([data-cursor='off'])[data-skin='dragon'] {
-  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAFjUlEQVR42u2ZXWxTZRjH/+ej53Q9bdet3cYc+2KjYzBho4C6wDpGWDAQEy8aNRHmUE/8AEbmBRcGek5AExOvNi9mbyRu4WYqJJNBYgwdJuIiDS4gDBUmbjJWQNZ2bdfz6cU+HBiMH7idJnuu3ouTk/f3/p/neZ/nfYBFM5gFAgETACItNy+KohkA1d7e/vbBgwffA1AuCAJtZCBy7ub9fr/S0dHxjmtJ4ZH+0HfbAXBzvzE0gN/vl7q6ujq9W7YdiCZV3L5zVwEgGd1rZgGOHz/+Ze2mhucnkhKuDw2hpCAP6RALswBV1evrSRODwcEfQNMmUBTLAGCi0SiVFjGgg8BELIbRsTtgWRYkSWUA4OLxOJEWCpAEgdhEHLH4BBiGhcli5gBkpo0LkRSFaGwCiqKApCiYM2wcgFyWZVUAuuEBCACpVAq6rkPTNZjNFhZAYVtbm5IWAACg61MgiiTDYrVTtbW16wDkADDsZXYfgMlkAggCmqbCke1CRaWnEsCy1tZWk+EBNE2D3caBpijomgqapmF3OQsBrBkeHjZsHMwCKKoKR2YmLJYMqJoOWUrBwtnMXq+38eTJk05RFFmfD5RhAVRNg8ViRnHhUiiKAk3T4Mh2wr1qrTeRSHj9fr/U3Q3VuFmIIKAoKiorymA2m6GoKhRZgs2ZnyXs23zom2PbxxobG9s4IE8QjBPU96VRVVWRabfBU10FWVagKgrsmU6o3MpKWk65WJZdHQfMgGCYCpX+o5SYyqOplIQV7nIkEkmEBi7BwgJ0Tg2OnftV6ek5cSYQCNzked4wQT17ki5nNqw2OwiChCQrWFtdhSc8a5CSZUymkqDzvdTuN/bs4Hm+ShRFxih9wmxWKS8t5h2OTI6zcoSV48AwZpQtK0VpSTFkWQHNmokbV6/mc9HruV0nTveJoigFg0FtoZWYG4jbAdQ1Nzd7a2pqSrKysq0mE0ObTDRJMox+9vMeWrpxltyxLV/vvcaG2ttP8YFA4NJ5nkcAWLByg5jbzPM8TwEoBVACwAnAAoAFkGp9uujIC8+tyokrKoZPhbWgo6yvs7NnjyRJVxZSBeLBdSAQoAcHB2lFUbTJyUnNarXSiqJoicTdjmdWje6KnRsnI1fuIckQOlFQMHTRWd7d29v74etjYzcEQFuwLDRzijzPKwDmZpmZy+twH5B8d/3ypqJSl+X7kTAR/3FoadLCrUkkEsz0v+T5VuNhpYH+wFoXRSQ/DeLMbZ3NzCXkDfl52cSkKlPWa8NLLtz67dopICQARNAgAH+yYBCaCODoxER/Fck2SKSWs9RppyK0zuS7rPUXbkVjQeD8tCvqhgMAoAenWob4W0UlQ3njkTLVTDuKOYs5TKrMilzbpoGbkQimIMj5gvin1aUuAgiHwyOheOrbL34O9698LGuLLcOUAV1nKly2TQOjkYjHg9Do6Pwo8W/LY1XTtLAgCIOHP/7kl8cLshocGYyZhM64c+11p0OR8fmE+E+lyPTb6Yv7vO57hxpX6vs3lulNnuIYgDc9HpiM3I4+CLGzxVsxC7HTUxQD8Fp9Peh0gtjVUjelRMvGMn2npzAKgE83iKYW7/LxGYhdUxCvpg0Ez/MmAM3765aPH2qsnFJiXVEEwCs+n48KBGD4AYrJ5/NRAF7a53VHZiCaNhRHALw8fUcQC51G//KuuHz5Munz+QY+6v3qVnVh9mZHBsNKkyr7ZFVOA5VbYYuNjIQmdaRE0bgqEADoaSV276ktj/ifrdJDXTv0z97fLNsBob6+/pHEw//VFuoA1O7ubgLA0Q++/unA6qecMstQ6L+duicBfW63Oy0GicT0Ewy9devWzr17ay8CaBaERxsH8+FOBIAlAGqMPvV8qAkCaEEQGKNPPf+OEou2aIv2CO13FzQp42bWQOcAAAAASUVORK5CYII=") 4 4, auto;
+  cursor: url("data:image/png;base64,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") 11 4, auto;
 }
 
 html:not([data-cursor='off'])[data-skin='dragon'].dark {
-  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAE4ElEQVR42u2ZW2wUZRTH/2dmdme73e72QuqNi4jRIgVKoSIiMUZIaY0tBFNKQSUR5QE00aBPKJcao2+SkPhAbIw+tDUtGJAEBY1YQhSoGCS2XKRAoS3d3vbSLTPzfXN82N2mMUaDbuls0vMyk8w8nN93/ufyfR8waQ4zZlbT2Xkt8Sxl5mcT74qTfdbGOk9EgplXNzYfbFL0zJrEJ3IywOjqJpzf0n752v5QTChXOm9E00E1ypgI1HZc7947YkpxpeMqr1mxVEkrgMtXb25X3Tq3tV+Epmk0NGT40ktCimpHwmHq7glC13V0dd3KS6sIgFmJRIcRGY7C7dbRFx2YmlYAiqoiHIlCCAFFVdHfHypIoqVFGSUAhmHAtm3FZhuRoaFCABoRifSQEADmuJSkJdgScmZPT0/B3/3nWACXywUQgdmWgZw85UaPeAoAObkbjzpm2zb8WZnQVBW2LUnTNLT8fLw6kQO24wGElMgOBOD1ZkAIqVqWyX3B3qXMPCfe51hjdl5PGAWQtg2v14MZ06ZCCAEwS392jvZJXeM7RMREJIicV5HGzkIQQmL2o7Pg8XhgWpYmLBMdnV1r+dKuLXx+4xFmLmCAmJ2T1MrYMiqlRMCfhYVFhbAsASkEMn0B/b263r2trTdKAeQSwACTExuZUIhswzBR8MjDKJ4/B7HbBlRYUs8v5hPXZ/5ERCeZWSUi6TiAnOyA5s30Kaqq2dJmUbKwSCwpWSANy4JpGSKoFs27HjGqiUgmNz5OMBozTn/Ufat/3W3TnObxeEGKCl13o/tWEL/8+hv6Q1GcPfF9eNt955fN/aDlXHID5BiAhGUx89MAlgwMDM4KhSJ5lmX6cvLzI3t27ZwXunBkSmX5/XL51s0vEVU1MrMKIiYn9Il/28w3bC2sO/1ZGf9YVyoOrl/Uzfx7OfPEJ/NfHUiODZTowJzIEwaCS4/ve7H55rHglFDbICxdMd5Y91wt3trzDYCzILJpAiZXuoP/mIH8K8uLGtq8rmcu3AwaflbObWr96m1gbguIiAA5ocPcPysMGgG9D81Y+Fp371Dfvffk6gMaSpqKK98EkZsAyRMwtd6RhhnQCBC8rGTD5+rwNsXjnv9HOAJyq0d3/HCxAsDtxKLYjgQAQByPRybKFpedztXL2/vCG0+NRJGta9++f+xCBQDjbkLQ/6haREQ4tO7JL1r7h9YPxgz4ddeR2u/aVzHDJALdDYj/rFkiAjPT8/UnN0zL89UHvDoihrXy3RWzDxDBxTxawZwJAICJiJlZeaX+VM2MKVkNfq+OyIhZtuMuQqSiEVFCTlxXs7j+al9kbThmwJ/hPrz7aNtqZojxlFOqOukoxKfVjzdcG4hWhWIGAhmuQ7uPtq8ZT4hUjgJJCOyrXtTYORB7IRQzkJPhOrgzDiHHAyKV+kzmBF5tOLN2eo63OeB1Y3DEqthZOruJCAozMzNUpwIkIcDMvKnxTNUDub79Aa8bg8NmZW35Y01ERESQqYz8eFQImxKh2Nxwumpqru9AdqaOrr6RVR+/XPw1M0+Pn5+lBmI8x2GF40mh7F21oDlIVmXFmgdhCr78xMbDhWA2icjxZ6/JCOsn61ZeOv9lJTNvf53jcEqaXBzGIZi5kPnDGqRQPhO191aAtLzChZLWd9CTNmmTNj72J1JTcXq2Wu0LAAAAAElFTkSuQmCC") 4 4, auto;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAFjElEQVR42u1ZbWxTZRg9z3vvbbtutOsWyhwS8SsCi0OECUETEqIONQ5lsoQYv1FRfmBixIiggPGHiX/8iPrDBKPG6PhQgYCK3/4RAeNH0CFGGKPb2Mbasq61vfe+xx+9RSQkgHRbl/Akzb1pm/Y57znv+zznucD5GEVB0hjNyZvedT7Ja717NdJ5mWfwHSGpRMQhede77298W+nAvMJnpQ6gkLxLcsX+g7Hn+5JpDPa1ZUpFGep0mveSf6G7L/l8f3LQ7uiIcdk990jJAyBperJZGTsSX06I/fvv+5TP75OuTKaipAF4K++QvOlAR/dzhDg9Pb3mkd4+BAIBxGL9kVLZA+oUyQsATbL64KGutyxfgNlsRh0bSEk68zf9/gB6+o9OKGUGlIgQwFPhqupoKpVyDWWoRPIYXNeBYVro6k1MKhUA5smr723asX+1H37QsAIktUEA2WwOJIUkEv19Uz35uKXGQKHS3jImVBnK5XJaRAQACIKkchwbg+n05Mz27Rd5TKlSPIXmmpaPJFh4w2dZ+bqgtRuKVPmOTJ49u1AnSgmABoDe3v6o1lpInV99aoRCFVBKQWsXPn8A27/esQgAvVfJABAAcJ2cWzggRQSuq1EVqURZwA/H1cq2c+w41H49yYn5rUODHJkj9ZQAai6o2WcoRRFFAHBdF2MqKjBhfC0c2xFo7YYi1YF1721+XES0iLgiI8PEyQAKSaw/loiLaRrHV1VrjSmTLodlmXBc19CujX37D9zNrpVLufeB7SQvISHk8G7q//yZd4QqEdlpgN9Ho1FDazpKKTiOg+pIJa6qn4K/s1lxbBv+8jGhta/0vrr7h4PzAITyLLAkWgmOH19zX6yj/ei4cVETgA2A2VwO9VMmob5uEtKZLHyG65hjG7i7+9LPReQnrwXRIwrAS0BEpO2KyybOG0z2d9SMi1plZUGxLMvVgDP7mulOw9X1biaTEduxnQ49dSbJJo9BczgByOlaaQBRkss7u/vuzNp2TaAsCKUM+Hw+xDq78ePPvyI+kMZP333Zs27O4Tly39a2Qic7ogAKlvEESURIzgEwM94Xv6R/YKCarhsMR6pSL65aMS3X8VXk1pvH23MfeaJFpHELSRMiWrzaMpIhpzPzby+t27DnnZv59Zs3Op/c2dBOxm4oRV8v+YJF07uqf+/3NH712g3xdxZM42tXXsxXGy5P8eXlT5KcRsLgEPoGKdJvkEDtL3PrN7WX+2f+EevJjjWsPXf/8M0TQO33EMFQSUkVZ+JCU4DO+osbFh85mkxcUFPt74I7e/OM65ZBxEC+KVSlykChhJsCOJxVt3idH49ZZVbdn8lj8Ad9W1d80baAhJMnorhMFBOAeHyEcf30xp3R4Py2owOLdqVTiJZZW57d0baAhFtsEDJEUzwREdW6cOYHe5MDzYl0FpEya/PqHW3NxQYxNLoUAUndsn5nS224fFM46Ec8YzetaZy8QQQGi7gnhqpzpIgIST68flfLhVXlH4aDfvQP5uavbpyyXgSqWCCG2oQo5vWk3miZsaEzkb4tmc4iEvR/tPqz3+4goc9VTkPdu2uPCb2kdfcdF1YGPwoHfYins7etvrE4TAyH+TgO4qHW3Qtrw+Ufh8t8iKezt69trGs9VxDD6WMLcjJeb5mxsSsx2JRM51BdHtj4zKd7W0gCEIicnZyG24gfB/FGS8OmzkTq1mQ6h2gosPHpbXsXepZWzmbSMdwznYKc3CWtu5prKyu2VJb7cbh3sPnl+6dvITmB+cZKSpWBk5kwX2q6elPczN3S1DxRcrb+Y9a9264k6XhTvxGdOZ0p+8Fv37zpwK8fNJFc9Sjz4BQwKh4c5kGQqXpyzSKcpXxKxiidaGGBUfkIF2pUP4M+H+fjfPz/+AfeS/7U0k4AygAAAABJRU5ErkJggg==") 11 4, auto;
 }
 
 html:not([data-cursor='off'])[data-skin='dragon'] a[href],
@@ -12207,7 +12462,7 @@ html:not([data-cursor='off'])[data-skin='dragon'] input[type='radio']:not(:disab
 html:not([data-cursor='off'])[data-skin='dragon'] input[type='submit']:not(:disabled),
 html:not([data-cursor='off'])[data-skin='dragon'] input[type='button']:not(:disabled),
 html:not([data-cursor='off'])[data-skin='dragon'] .cursor-pointer {
-  cursor: url("data:image/png;base64,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") 4 4, pointer;
+  cursor: url("data:image/png;base64,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") 11 4, pointer;
 }
 
 html:not([data-cursor='off'])[data-skin='dragon'].dark a[href],
@@ -12225,18 +12480,18 @@ html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='radio']:not(:
 html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='submit']:not(:disabled),
 html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='button']:not(:disabled),
 html:not([data-cursor='off'])[data-skin='dragon'].dark .cursor-pointer {
-  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAFmElEQVR42u2ZaWxUVRTH/+fe92amnaUzpS2L0LKUIluDVYqABgNVEgMYDBC+iDExIZGYCIm4RD+YiMsHFDGS6AeNBomJBqIoSyWkSKGWrRWUze4F2tJO6TILdN67xw/zSkZipdTIe024n2bem7x7f2f5n3fOAPfWMFjMLJhZG+DeSDvPpt3u4ABARAqAAqAz8zQAxQAeOPXb2Xl7du36BsB7zCyJyHSS1WXK5+nMvLm2vvli1ZlzfLmtk4+fqeFX3nynE0CAmQkAOcYD/dZk5nwAb9U1Xlnhy8hwebwBQOo4eqz6xomqaj0vFFwPoMd6juEIgJTDr2lp7/zI5U4Pmgx0d/cYxCzKyiu55WqHi4y+8y9s2LCdmYWdoSMGOPzGtnD3l30JDnZ0hA3TNCEFaRXHq0R98yUIYpo1bcoWAKb1DLYdIOXwyxuaW95PmGzE4zHFrDS3y4WLNfU4e+FPDvj88lpHe8fq1cu/YWayO3FTPaAApJ04Wf2hLyPEkd5eIiIhhEA0Fkf16bNwu92mEAK5Y/N2W7Fvq/X/BkBEzMxLx4zNzeu61qWISDIzdF1HTV0DenojcOk6xaIRLF648HtLdchutRS3fJ/jCwRYKcUWFBKJBBqbL0NIySAhI709UffWTZUA2KoPjgLIN01FzIoAQEqJ3t4Iunt64dKl0qTEiKzs0xO2bWu1tN9xAColqSGIEItfR8IwIEgwiJA/Kf+89RPphIJ7K0A1wEwk2UoMGIYBZgaIwEohMzOnzgmxPxDA/q7OMGm6JDADYJAQyWwlglImsrM8XXYrz0B1QBDRsWDAeygUDEqQMFgxfN40aJqW9AKA9kgogqQLTCd6QIWCGWvbW1sigYyAZpiGGfD7EfD7kEgkZKxP8ZXDr77YV77iFwa8/QrslDqgrGp8oSA/b2XrpUbT78+QHrfbGD0qB6ZpkKkEsxkvisb7MgB4mEHsJA9YrxKSiPYVzZr55KWG2javz6fNmD7VdLtcCZ9HUIeaWBEs+WE2EXVY5mcnhVAqROmc4qLZPeG27ySbsnj2gzoJIiNtsiSCkcwZ+5NZ/NPFfggAzRMnjl85tWDCkvzc0WUqHkV1xaE8AOlWFSZHAvRDACBm1onop9/X527tPvIZP5J5LJ15yzJO3hN2A2i36yyTCssyeujZpXltYZKa9LeVHlkxCtjBTvZAKgQRmd4Fq3a0VvX0VH5ey53bmsYkQ4wUO0VG/y2Ukgm75MD9FbHKYIRob+PVOTj48TNEULA5jAa5OREzBKeb3cLnQsRMRLB9/1xmnkxEJg/6OXYBEEAENSHa90fnDcMMpnt8za1t7QAMZof0xINIZkD31vhI1Hp8bhxt6ygionq7i5kY/JwLAquerygZk7nbJSXKhZrLzDlEsLUeiEFGEAMgWru2NmvNrJ3dCROmRwv2vr18XpLOvuZm0MlHBMUA0aIPqsIubgy5dHxxon5xaoQ5GgAAW5IZL8gOluuaQG04sgCARkTGcAC4+e6/rHBcqcnA9YRZwDs3TLd8IBwP0D9GCbw8t8xQHAt4dLn3x19LrDQXw8EDKjlOfKkpJ+CpStMlKho7Syw8NRwAbo5TisdlHxSCcDV6o5j50yy75HQIAMkucv6jD/183WC4JGV2bdo33y45vWMAy9Kgle+e9OiiyefW8dXx2ifsklMxtH+fWAKITcrxlbs0gbpw9DG75HSoykEA8PSM8aWKgXjCnMJ7X59mh5wOabN+OfVuLCzrM1Xc79Hlgd2HFzGD7racDnUzS07faBzpT6tO1yT2nLzyeHJKcXfl9L9YSwJA4X2hA8pFKmuy92FmLiCCsnoERzT1t12LPplfH/q6WmSP8ITQtO45AK8BLOwqbHcgRUkrM/PMc98+dYob1m1mjhQmxy3OGb/fW//3+gth6LGB3lA97AAAAABJRU5ErkJggg==") 4 4, pointer;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAFkklEQVR42u1ZW2xUVRRd+5wzczuvdsqrCLG1VkLaQopINEggQgJGFAMGigaMPzbBGPyEHzQREk0kRgO+lQ8T/RGwGCUaSPtBeZXQlsYWqC0UoaWUUtrpvDoz957tx502lcSktnPrYDg/M8mde2evvdde+3GBB+c+P8wsmFn9w7UCp/9fTNJwQUSaiEwABjM/zszbmPmLU2cafj965Ogr6d/KbPO6HPO9gpn3dXRe72hubeOu3rtc39zOO99+rweAh5kJADlli5qI8URkMXMZgN3tnTfW5+VPkx5fLli4cOL0+WRjU7OaXzhzO4A4AAnAygoAY4x/o/tW317DE/AxBEKhIZO1FrUnTvPt/kG3IXRTVVXV4TTFrKzIgTHG7+kPxT5LmvD19/ebWmsIInXq7HnR1dML0hYWlZd9CIAnk2MZBTDG+Nd6+gZ2RWNxc3g4zsxaGYYbl9o68MeVTp0bCMihwf7uTZvW/cjM5LT3xwuAAGgAwfMNTXuVO0dHo1EhhCApJcLhCJpbLiInJ0eDgeLix6rHcJ//cwBp7zMzv1xYXDIzFAppIYRgZiil0NbRiWg0DpdSIhIO4YXVS39Kg+apUMR/w9GlbsPD2tJ2WIiQSCRwvesmpJJMQojhWGygqKioAQATkc4WABYAxOKJEtM0CWBiZigpERoKIxyOwKWUllKhYM6cBgADzCyyKQIEAFrrv3mUhEA0FodpWRCCGADKysovTbbCOwFAAIDf52mWUjBgG0sATNMEmEFE0JaFh2bMvupk1Z0ogBEqHI1GwiSkGDVQEI0GybJMTJ/uG5wq6owbABHpdEWtIa2b8oNBycyWZobf74OUckSucOV2MGLfA52NEUjNnTPr9Tt9t5J5wSClUkmdl5cLv98H00zJWJL5Tl3VTq6vrGGGwQyaCjqNK9nSUZBE1Di/5JGtfT3dwh/IFV5Pjjl71kyYZoo0JJup+JLhRMoPwI0p4tK41SLdSigiOlixsPSlrmtXBwKBXLVwQamlpCvlz5FikOfVeFZUP01EIRBA2VCJ7wFhpiNR3fhV1ZP9t7p/8bqVfGJxhUtIQjxQLpnZzpkpTubJDDQbWi62n9rz/j7esmXbtRH6TJWcTqjgpOkkmNlFRNUd7y77MlJ/gJfPqM9jPvA8A5Suxo4fNdEbR+SVmWX3r5UvFkVipKQKhk8e35ALVPMURUBNlk12NA59e2HHx8/1tAx4gt7gw+k5mLOWQvdQiYg2/vzouciFQAT0w5Wbz+DSwcr0NZnVAEbaOmaIlKGHXLkGolYqhI++X8HMxURkOU2lyQMgu3UoGTZb7iZNHfAYubG+mz0ANHOWzMTjaTV8wnvZS3TN4zfoWFf/IiL6026LnM0FkZmywAJrK08smxX8za0UaoS1nAcGgkSwkO0Usj1MgnbsaC96dsGRsGkh5ZKzcODNp9JNqsj2CIAIdrJu/eRcr9S9+W6Fr+svrRlR2qwHAIBhzwyh4un+024lcbk3vNJ+fpZs5sY5O9NzpYXHQUAkYZZz8655RM5u6DL3YHuNwnPXb65NmDrpN5S77vO6VQDIyTwQGXS/ZgZRRWV7vtdo9boUaq/2rbFllvl+oBAAlgD04sJgrZSEW0Pxpcycl96R0n0AwF65rF654FjSYghBBdi/1VE5zehDR7cRGz+tl0L0BgyFb05edFROReaHNZZEFCrM954xlMTFnvAqAAIOrdqdCCsBoLXlRcdAQCSZllOHXnhkHsCInL6zuTZh6WTAUO6z39WtYnZGToUD7rfllCrbp/mMVq+SOFzXtdouaJmXU4cKjC2npQV5NcgROn+ef/nogJPhKCg4eNbtX9ZZWN0q8vOMGbj71qsAdgMsAJqy3emE3+Lbn4NL2g6tb+Qb2z9g5vJ0W0F4cP5H5y8AV8aLgwoTfAAAAABJRU5ErkJggg==") 11 4, pointer;
 }
 
 /* The slash. `:active` rather than a class, so it covers everything a pointer
    can be held down on — including the page itself, where half the clicks in any
    application land. */
 html:not([data-cursor='off'])[data-skin='dragon'] :active {
-  cursor: url("data:image/png;base64,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") 4 4, auto;
+  cursor: url("data:image/png;base64,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") 11 4, auto;
 }
 
 html:not([data-cursor='off'])[data-skin='dragon'].dark :active {
-  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAEfElEQVR42u2YW2wVVRSGvzUznXNKaZuW0gu3QClyMUFCSkSUCJLgJYWHEjUhEAlRHzQxxEQI8c1YDUSNgfiCkNSAKCAgKfKgVfGCghBEMC2EFtJS2lIoldJznTmzfOi0npCIL1zmmPMnk713ZpLZ/1pr/2uvBVncX8jQRFUNEfHS1uOAycAYIB8YCYSANhHZGTgC/qbLgGqgAkgAl4EOoM9fp4CUiMSD6IHlQAlwAmgGYr7VSwALMPyxT0QuBpHAHOAPoBAoAzzgBjAAxH3rIyI6NA8agXKgHLgOdItISlVDgO1bH3+Mi8hA4E6zqo71CYVUdZSqFqtqnqpamaJIOf7G89MsfttDHzQPFKmqmRGbzSKgMP5XV4uMw6dr1lRmoieGN3umoPwgMMrPwEbGESgurZi+cdO2nf59x1NVQxXxE5kEnkA8HnMxrcWbP/58PxAWEU8EFREX0MATUFUrHou5kXi8ZsOHW77n5RMVql1zVDfWqWqR7wUJrOq8+c4mtS0LwzTdcG7YutYbaa8uONY2a2zP/Kplh2YAZwfDS1IieIHzwNSqSpKOSzKZtKKRqFdUGJ5wOjZ3/mcnJ7q0b6sWERURRwRPVc20xwiEB1rbu7X1Yhun/2ym70Y/qurZOTnqkmMko/1eyM45vPaJ7rqRD9d1isi5wIVQc0u72raN4zh0dl2h/dJl/urvT7muS0Fxidn06xEKr37JgkUTnAXJks088tRRZq3s8Cu3ZpAUgifc2/AaJnDuQoerqhimqeFQCBGxbNvm2tUe4gnn2CfrXiipeTJ3splj0bq9jUTCZUxe6GTtzCkNfHTgfRG5OSgGCGCKkLoX6jVMoKcvoqo6JKl0tLd5FaWlP02aNL5eROpVV8z7Zfv1fZ3HewvkVDQ3Ghb6bsbojcViY0yr6YGq0QcW1q3cK1Nea/pH2TAHy1C8u0VmmIDjaaMlOEAncBr4TkTO+BIrIqKq+0ZBrJDlW5ftuNS1Phq2w7Zp5DoplwvJBNeTbrxsZPjnJTPH7p6zvPKgVG/pSpdpRO54iMl/FDkCGCKSUhBJs6LW1Eyjp3X12fL83NSI3Ik/XO1d1GWmcjXlMZBwSXp6bVJx3tevzp+2K2/dnm+BSJpnLN8r3h1tbN2SrLz0RtfQ9wqCYojgqqpFQ8N4Wbr0onaumX7yvXO1h1s6a3sGErNDpuC4KfoTLjmm0TKjoqDhpVWzd8szW4+mETFAjX/51929PisYQ+FwS1dPtHH9Y1/tOvLcqY7empjjTTQF4o5LX8zRorB9fEFl2d6nNyzZL6Vrz9/v+7/4oeUpGAwScdPe52v9isXbG1ueP9/Tv4jBTgfRpEss6UYKR4R+fHfz478xY+03IlVHglLAiE8GERlugGl0x7juD/Ys/eL39mcv34jNsxTbtWHl6qncjDhNc1cdejCQFZ4q5i3dDvTKpocaX1z4Vv0bj7a1HKhVHVj3ekaUq6pq+co2JBwVqm+/oqqjM6p8VTAyqeN3mzwT/IoviyyyyCKLLLLIIou7iL8B62MoNBRuKrcAAAAASUVORK5CYII=") 4 4, auto;
+  cursor: url("data:image/png;base64,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") 11 4, auto;
 }
 
 /* And the same thing again on the pressable list, which is not redundant.
@@ -12259,7 +12514,7 @@ html:not([data-cursor='off'])[data-skin='dragon'] input[type='radio']:not(:disab
 html:not([data-cursor='off'])[data-skin='dragon'] input[type='submit']:not(:disabled):active,
 html:not([data-cursor='off'])[data-skin='dragon'] input[type='button']:not(:disabled):active,
 html:not([data-cursor='off'])[data-skin='dragon'] .cursor-pointer:active {
-  cursor: url("data:image/png;base64,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") 4 4, pointer;
+  cursor: url("data:image/png;base64,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") 11 4, pointer;
 }
 
 html:not([data-cursor='off'])[data-skin='dragon'].dark a[href]:active,
@@ -12277,7 +12532,7 @@ html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='radio']:not(:
 html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='submit']:not(:disabled):active,
 html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='button']:not(:disabled):active,
 html:not([data-cursor='off'])[data-skin='dragon'].dark .cursor-pointer:active {
-  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAEfElEQVR42u2YW2wVVRSGvzUznXNKaZuW0gu3QClyMUFCSkSUCJLgJYWHEjUhEAlRHzQxxEQI8c1YDUSNgfiCkNSAKCAgKfKgVfGCghBEMC2EFtJS2lIoldJznTmzfOi0npCIL1zmmPMnk713ZpLZ/1pr/2uvBVncX8jQRFUNEfHS1uOAycAYIB8YCYSANhHZGTgC/qbLgGqgAkgAl4EOoM9fp4CUiMSD6IHlQAlwAmgGYr7VSwALMPyxT0QuBpHAHOAPoBAoAzzgBjAAxH3rIyI6NA8agXKgHLgOdItISlVDgO1bH3+Mi8hA4E6zqo71CYVUdZSqFqtqnqpamaJIOf7G89MsfttDHzQPFKmqmRGbzSKgMP5XV4uMw6dr1lRmoieGN3umoPwgMMrPwEbGESgurZi+cdO2nf59x1NVQxXxE5kEnkA8HnMxrcWbP/58PxAWEU8EFREX0MATUFUrHou5kXi8ZsOHW77n5RMVql1zVDfWqWqR7wUJrOq8+c4mtS0LwzTdcG7YutYbaa8uONY2a2zP/Kplh2YAZwfDS1IieIHzwNSqSpKOSzKZtKKRqFdUGJ5wOjZ3/mcnJ7q0b6sWERURRwRPVc20xwiEB1rbu7X1Yhun/2ym70Y/qurZOTnqkmMko/1eyM45vPaJ7rqRD9d1isi5wIVQc0u72raN4zh0dl2h/dJl/urvT7muS0Fxidn06xEKr37JgkUTnAXJks088tRRZq3s8Cu3ZpAUgifc2/AaJnDuQoerqhimqeFQCBGxbNvm2tUe4gnn2CfrXiipeTJ3splj0bq9jUTCZUxe6GTtzCkNfHTgfRG5OSgGCGCKkLoX6jVMoKcvoqo6JKl0tLd5FaWlP02aNL5eROpVV8z7Zfv1fZ3HewvkVDQ3Ghb6bsbojcViY0yr6YGq0QcW1q3cK1Nea/pH2TAHy1C8u0VmmIDjaaMlOEAncBr4TkTO+BIrIqKq+0ZBrJDlW5ftuNS1Phq2w7Zp5DoplwvJBNeTbrxsZPjnJTPH7p6zvPKgVG/pSpdpRO54iMl/FDkCGCKSUhBJs6LW1Eyjp3X12fL83NSI3Ik/XO1d1GWmcjXlMZBwSXp6bVJx3tevzp+2K2/dnm+BSJpnLN8r3h1tbN2SrLz0RtfQ9wqCYojgqqpFQ8N4Wbr0onaumX7yvXO1h1s6a3sGErNDpuC4KfoTLjmm0TKjoqDhpVWzd8szW4+mETFAjX/51929PisYQ+FwS1dPtHH9Y1/tOvLcqY7empjjTTQF4o5LX8zRorB9fEFl2d6nNyzZL6Vrz9/v+7/4oeUpGAwScdPe52v9isXbG1ueP9/Tv4jBTgfRpEss6UYKR4R+fHfz478xY+03IlVHglLAiE8GERlugGl0x7juD/Ys/eL39mcv34jNsxTbtWHl6qncjDhNc1cdejCQFZ4q5i3dDvTKpocaX1z4Vv0bj7a1HKhVHVj3ekaUq6pq+co2JBwVqm+/oqqjM6p8VTAyqeN3mzwT/IoviyyyyCKLLLLIIou7iL8B62MoNBRuKrcAAAAASUVORK5CYII=") 4 4, pointer;
+  cursor: url("data:image/png;base64,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") 11 4, pointer;
 }
 
 /* The three the blade must not swallow. */
@@ -12295,6 +12550,7 @@ html:not([data-cursor='off'])[data-skin='dragon'] .cursor-grabbing,
 html:not([data-cursor='off'])[data-skin='dragon'] .cursor-grab:active {
   cursor: grabbing;
 }
+
 /* ===========================================================================
    Skin: PIXEL — the pointer is the system arrow, redrawn on a grid.
    ===========================================================================

@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowLeft,
   Ban,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   CreditCard,
   Flag,
   Lock,
@@ -211,6 +213,19 @@ const AdminPage = () => {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  /*
+   * Where in the directory we are, and how big it is.
+   *
+   * `page` is one-based because it is the number a person reads. `total` and
+   * `pageCount` come back from the API beside the rows rather than being
+   * guessed from the row count: twenty-five rows could equally be the whole
+   * directory or the first page of two hundred, and there is no way to tell
+   * those apart from the array alone. See `AdminUserPage`.
+   */
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [pageCount, setPageCount] = useState(1);
+
   const [target, setTarget] = useState<AdminUserRow | null>(null);
   const [reason, setReason] = useState('');
   const [days, setDays] = useState<number | null>(7);
@@ -263,11 +278,23 @@ const AdminPage = () => {
   const refresh = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [users, counts] = await Promise.all([
-        adminApi.users(query.trim(), bannedOnly, planFilter ?? undefined),
+      const [directory, counts] = await Promise.all([
+        adminApi.users(query.trim(), bannedOnly, planFilter ?? undefined, page),
         adminApi.stats(),
       ]);
-      setRows(users);
+      setRows(directory.rows);
+      setTotal(directory.total);
+      setPageCount(directory.pageCount);
+      /*
+       * The API's answer wins over the request.
+       *
+       * It clamps a page number past the end rather than refusing it, so
+       * asking for page 9 of a 3-page directory comes back as page 3 with its
+       * rows. Writing that back is what keeps the control and the list
+       * agreeing — without it the footer would say "9 of 3" over page 3's
+       * contents, and "next" would do nothing forever.
+       */
+      if (directory.page !== page) setPage(directory.page);
       setStats(counts);
     } catch (error) {
       const status = (error as { response?: { status?: number } })?.response?.status;
@@ -281,7 +308,7 @@ const AdminPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [bannedOnly, planFilter, query]);
+  }, [bannedOnly, page, planFilter, query]);
 
   /*
    * Re-runs when a *toggle* changes, and not when the search box is typed in.
@@ -295,7 +322,28 @@ const AdminPage = () => {
     if (!token) return;
     void refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, bannedOnly, planFilter]);
+  }, [token, bannedOnly, planFilter, page]);
+
+  /*
+   * Changing a filter returns to the first page.
+   *
+   * Without this, narrowing a three-page directory to one page while standing
+   * on page 3 asks the API for a page that no longer exists — which it clamps,
+   * so the reader silently lands somewhere they did not choose. Going back to
+   * the top is the only answer that is the same every time.
+   *
+   * It runs *before* the fetch above on the same change, because setting state
+   * in an effect re-renders before the browser paints; the request that goes
+   * out is the one for page 1.
+   */
+  const firstRender = useRef(true);
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    setPage(1);
+  }, [bannedOnly, planFilter]);
 
   const handleSignIn = async () => {
     setIsSigningIn(true);
@@ -379,7 +427,18 @@ const AdminPage = () => {
   const shell = useMemo(
     () =>
       cn(
-        'min-h-dvh bg-surface px-5 py-10 sm:px-8',
+        'min-h-dvh bg-surface px-5 pb-10 sm:px-8',
+        /*
+         * A deep top gutter, and it is not symmetry for its own sake.
+         *
+         * This page renders outside `AppLayout`, so it has none of the shell's
+         * chrome above it — no top bar, no reveal strip, nothing. `py-10` put
+         * the "Admin console" eyebrow about forty pixels under the browser's
+         * own toolbar, which on a maximised window reads as the page having
+         * been cut off rather than as a page that starts there. The extra
+         * breathing room is what tells a reader this is the top.
+         */
+        'pt-16 sm:pt-20',
         // Flat, and deliberately not skinned. See the component note.
         'safe-t safe-b safe-l safe-r',
       ),
@@ -749,6 +808,69 @@ const AdminPage = () => {
             </li>
           ))}
         </ul>
+
+        {/*
+          The pager.
+
+          ## Why it is drawn even on a single page
+
+          Because its other job is saying *how many accounts there are*, and
+          that number is worth having whether or not it spills onto a second
+          page. A footer that appeared only past twenty-five rows would also be
+          a control that moves the page under somebody the moment a search
+          crosses the threshold.
+
+          The two buttons are hidden — not disabled-and-drawn — on a
+          single-page directory, because a pair of permanently dead arrows is
+          chrome that teaches a reader to ignore that corner of the screen.
+
+          ## Why it does not draw a numbered page list
+
+          Twenty-five to a page over a directory that is realistically hundreds
+          of accounts means a numbered strip is either truncated with ellipses
+          or longer than the rows above it. Previous/next plus "page N of M" is
+          the whole of what an administrator working through a filtered list
+          needs, and it costs one line.
+        */}
+        {rows !== null && (
+          <footer className="flex flex-wrap items-center justify-between gap-3 pt-1">
+            <p className="text-2xs text-content-faint">
+              {total === 0
+                ? 'No accounts'
+                : `${total} account${total === 1 ? '' : 's'}`}
+              {pageCount > 1 && ` · page ${page} of ${pageCount}`}
+            </p>
+
+            {pageCount > 1 && (
+              <div className="flex items-center gap-1.5">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  /*
+                    Guarded on `isLoading` as well as on the bound, because the
+                    request for the next page is in flight for a moment during
+                    which the button is still pressable — and two presses would
+                    skip a page and land on a number the list never showed.
+                  */
+                  disabled={page <= 1 || isLoading}
+                  onClick={() => setPage((current) => Math.max(1, current - 1))}
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                  Previous
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={page >= pageCount || isLoading}
+                  onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
+                >
+                  Next
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            )}
+          </footer>
+        )}
       </div>
 
       {/* --- The suspension sheet -------------------------------------------- */}

@@ -395,9 +395,9 @@
     "semantic_hash": "c7b5417490c4ed94adef51d99f5b50c7"
   },
   "src/widgets/top-navigation/ui/top-navigation.tsx": {
-    "mtime": 1790089652.8354177,
-    "ast_hash": "bc863bd4a8201f1a6099210b85117671",
-    "semantic_hash": "bc863bd4a8201f1a6099210b85117671"
+    "mtime": 1790103252.444154,
+    "ast_hash": "c5ce18352a433f0a4448ce632b1d6727",
+    "semantic_hash": "c5ce18352a433f0a4448ce632b1d6727"
   },
   "src/widgets/whiteboard/ui/whiteboard.tsx": {
     "mtime": 1790026066.629066,
@@ -690,9 +690,9 @@
     "semantic_hash": "b43930fc6d57cced78490ff7722ad7e6"
   },
   "src/features/theme-toggle/model/skin-catalog.ts": {
-    "mtime": 1790027403.4470725,
-    "ast_hash": "e4e4d795ecf7a43f5748f8332c2efda7",
-    "semantic_hash": "e4e4d795ecf7a43f5748f8332c2efda7"
+    "mtime": 1790103066.6462798,
+    "ast_hash": "90fad64ee4757ea1b43ad573b586ca01",
+    "semantic_hash": "90fad64ee4757ea1b43ad573b586ca01"
   },
   "src/features/theme-toggle/ui/skin-mock.tsx": {
     "mtime": 1790028396.9292102,
@@ -1150,14 +1150,14 @@
     "semantic_hash": "bb64a1da8a03d73d24e7970b8ba13de4"
   },
   "src/features/admin/api/admin.api.ts": {
-    "mtime": 1788968794.1523664,
-    "ast_hash": "d92de7fe7645ee9545bcb4242d00155d",
-    "semantic_hash": "d92de7fe7645ee9545bcb4242d00155d"
+    "mtime": 1790102377.2703283,
+    "ast_hash": "063080b6c47a7118c566477d714d1662",
+    "semantic_hash": "063080b6c47a7118c566477d714d1662"
   },
   "src/features/admin/model/types.ts": {
-    "mtime": 1788968776.5119493,
-    "ast_hash": "2b4a1f033783d624db30cf0024b58f4c",
-    "semantic_hash": "2b4a1f033783d624db30cf0024b58f4c"
+    "mtime": 1790102377.2203164,
+    "ast_hash": "30b0a6813d08996521464f7530fa2704",
+    "semantic_hash": "30b0a6813d08996521464f7530fa2704"
   },
   "src/features/project-management/ui/github-import-panel.tsx": {
     "mtime": 1788360952.4266725,
@@ -1165,9 +1165,9 @@
     "semantic_hash": "8635d5c5a5efbf46f80ff691628af9ca"
   },
   "src/pages/admin/admin-page.tsx": {
-    "mtime": 1790026065.8784885,
-    "ast_hash": "3b85eb766341df6af7ac816fd275999a",
-    "semantic_hash": "3b85eb766341df6af7ac816fd275999a"
+    "mtime": 1790102440.1762624,
+    "ast_hash": "fb19979f3ffd36707fc0125e4bbea689",
+    "semantic_hash": "fb19979f3ffd36707fc0125e4bbea689"
   },
   "src/shared/api/warm-on-intent.ts": {
     "mtime": 1787852164.5902674,
@@ -1630,19 +1630,14 @@
     "semantic_hash": "a2a079d54bbf687b00b0d755c3f4abc6"
   },
   "src/pages/landing/ui/skin-ambience.tsx": {
-    "mtime": 1790028360.8171678,
-    "ast_hash": "8c757b55ae9279f3d85ead3afc0c1d70",
-    "semantic_hash": "8c757b55ae9279f3d85ead3afc0c1d70"
+    "mtime": 1790103073.0940583,
+    "ast_hash": "fc2f0f68ac319b64a9880b616a38b206",
+    "semantic_hash": "fc2f0f68ac319b64a9880b616a38b206"
   },
   "src/shared/ui/vibecoded-icons.tsx": {
     "mtime": 1789564716.758494,
     "ast_hash": "17767b4e4cf2a96d725959bd2e4b617a",
     "semantic_hash": "17767b4e4cf2a96d725959bd2e4b617a"
-  },
-  "public/fonts/creepster-OFL.txt": {
-    "mtime": 1789563979.3388932,
-    "ast_hash": "004bea72d006c1398d5ad82f78c89b08",
-    "semantic_hash": "004bea72d006c1398d5ad82f78c89b08"
   },
   "custom-cursor/halloween/build-cursors.py": {
     "mtime": 1789998958.4505017,
@@ -1715,9 +1710,9 @@
     "semantic_hash": "a083ebbd8b33d930047a7de52d1ff969"
   },
   "custom-cursor/dragon/build-cursors.py": {
-    "mtime": 1790091096.808843,
-    "ast_hash": "dd2498803a86d0d0ba74735e34b4d48c",
-    "semantic_hash": "dd2498803a86d0d0ba74735e34b4d48c"
+    "mtime": 1790102692.0454664,
+    "ast_hash": "e37e05b9a60557282bc9d59a5db5dae5",
+    "semantic_hash": "e37e05b9a60557282bc9d59a5db5dae5"
   },
   "src/entities/chat/lib/mentions.ts": {
     "mtime": 1790028944.7614527,
@@ -1735,9 +1730,9 @@
     "semantic_hash": "15875eebfb68d9d245d6b6053672dfee"
   },
   "src/shared/ui/dragon-icons.tsx": {
-    "mtime": 1790090602.2480578,
-    "ast_hash": "843eea4a21d1c938bde3850abd595da9",
-    "semantic_hash": "843eea4a21d1c938bde3850abd595da9"
+    "mtime": 1790102622.3730736,
+    "ast_hash": "c37c932b07db4b96b7e3f6d8b9928bb1",
+    "semantic_hash": "c37c932b07db4b96b7e3f6d8b9928bb1"
   },
   "src/widgets/project-chat/ui/mention-picker.tsx": {
     "mtime": 1790026512.3046646,

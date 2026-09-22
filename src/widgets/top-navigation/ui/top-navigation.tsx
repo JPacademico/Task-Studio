@@ -142,10 +142,34 @@ export const TopNavigation = ({ onOpenMobileMenu, onCreateProject }: TopNavigati
           <ThemeToggle />
 
           <div className="relative">
+            {/*
+              `grid place-items-center`, not the bare button it was.
+
+              A `<button>` is `inline-block`, so its contents live in a line
+              box — and an avatar showing a *photo* has no text baseline, so
+              that line box aligned it by its bottom edge and reserved the
+              font's descender space underneath. Measured: a 31.8px picture
+              inside a 37.66px button, sitting high, in a row whose every other
+              control is a centred grid. (An avatar showing initials has a text
+              baseline and was always fine, which is why this only showed for
+              accounts that had uploaded a picture.)
+
+              `.avatar` carries `vertical-align: middle` now, which fixes the
+              alignment everywhere it is used; making this one a grid removes
+              the line box altogether, so the button's box is exactly the
+              avatar's.
+
+              `leading-none` for the same reason one level down: a grid item
+              still inherits a line-height, and on the initials fallback that
+              was what made a photo-less avatar measure taller than a photo.
+            */}
             <button
               type="button"
               onClick={() => setIsMenuOpen((open) => !open)}
-              className="ml-0.5 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+              className={cn(
+                'ml-0.5 grid shrink-0 place-items-center rounded-full leading-none',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
+              )}
               aria-label={t('nav.accountMenu')}
             >
               <Avatar name={user?.displayName ?? '?'} src={user?.avatarUrl} size="sm" />
