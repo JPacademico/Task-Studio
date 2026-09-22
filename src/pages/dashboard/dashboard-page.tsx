@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import {
+  Archive,
   ArrowRight,
   Building2,
   CalendarClock,
@@ -415,10 +416,31 @@ const DashboardPage = () => {
    * matters because the list is otherwise sorted by the API, and a comparator
    * that reordered ties would make the grid jump every time a pin was toggled.
    */
-  const ordered = useMemo(
-    () => [...projects].sort((left, right) => Number(right.isPinned) - Number(left.isPinned)),
-    [projects],
-  );
+  const ordered = useMemo(() => {
+    /*
+     * The switch is a *filter*, not an inclusion.
+     *
+     * `includeArchived: true` is the widest question the API answers — every
+     * project, archived or not — and showing that whole set was reading the
+     * control as "and archived ones too". Nobody turns on a switch labelled
+     * "Archived" to be shown the same twelve live projects with three extra
+     * cards somewhere in the middle of them; they turn it on to go and find
+     * something they put away. So the wide answer is fetched and narrowed here
+     * to exactly the archived half.
+     *
+     * It stays a client-side narrowing rather than a third query parameter
+     * because the wide set is already cached under its own key (see the note
+     * on `showArchived`), and an `archivedOnly` flag would be a third list for
+     * the server to keep consistent with the other two for no new information.
+     */
+    const visible = showArchived
+      ? projects.filter((project) => project.isArchived)
+      : projects;
+
+    return [...visible].sort(
+      (left, right) => Number(right.isPinned) - Number(left.isPinned),
+    );
+  }, [projects, showArchived]);
 
   const firstName = user?.displayName.split(' ')[0] ?? t('dash.greetingFallback');
 
@@ -568,16 +590,33 @@ const DashboardPage = () => {
               ))}
             </div>
           ) : ordered.length === 0 ? (
-            <EmptyState
-              icon={<Layers className="h-6 w-6" />}
-              title={t('dash.noProjects')}
-              description={t('dash.noProjectsBody')}
-              action={
-                <Button size="sm" onClick={() => setIsCreateOpen(true)}>
-                  {t('dash.createProject')}
-                </Button>
-              }
-            />
+            /*
+              Two empty states, because they are two different facts.
+
+              "No projects yet" with a button that makes one is right for
+              somebody who has never created anything. It is actively wrong for
+              somebody who has ten projects and has just asked to see the
+              archived ones: they are not empty-handed, their archive is, and
+              offering to create a project answers a question they did not ask.
+            */
+            showArchived ? (
+              <EmptyState
+                icon={<Archive className="h-6 w-6" />}
+                title={t('dash.noArchived')}
+                description={t('dash.noArchivedBody')}
+              />
+            ) : (
+              <EmptyState
+                icon={<Layers className="h-6 w-6" />}
+                title={t('dash.noProjects')}
+                description={t('dash.noProjectsBody')}
+                action={
+                  <Button size="sm" onClick={() => setIsCreateOpen(true)}>
+                    {t('dash.createProject')}
+                  </Button>
+                }
+              />
+            )
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               <AnimatePresence initial={false}>

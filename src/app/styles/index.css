@@ -264,11 +264,36 @@
      * `--page-wash` above is the whole page's tint and these are not; each is
      * local to one surface, which is why they cannot be folded into it.
      *
-     * Every skin gets them, and Studio turns all three off — see the
-     * `[data-skin='studio']` block below for why. */
+     * Every skin gets `--hero-wash`, and Studio turns it off — see the
+     * `[data-skin='studio']` block below for why.
+     *
+     * ## Why the two rail washes default to `none` and the hero wash does not
+     *
+     * They used to be symmetrical: all three on by default, Studio opting out
+     * of all three. That was the right default for a wash that sits at the top
+     * of a page and the wrong one for a wash that sits down the inside edge of
+     * a menu, and the difference is what the surface behind it is doing.
+     *
+     * The hero wash bleeds into a wide, mostly empty band above a headline.
+     * There is nothing for it to interfere with, and on a coloured skin it is
+     * the thing that makes the page read as lit rather than as printed.
+     *
+     * A rail wash falls down a 16rem column of *navigation* — a list of small
+     * labels, each with its own hover and active state. On the four skins whose
+     * accent is already a light source (a volcano lit from below, a gradient
+     * theme, a viewport onto a star field, a containment corridor) it reads as
+     * the room the rail is in. On the other twelve it reads as a tint somebody
+     * left on, it fights the active row's own accent fill for the same corner
+     * of the panel, and it is the first thing you notice about a menu whose
+     * whole job is to be noticed second.
+     *
+     * So the rails default to nothing and the four skins that earn it ask for
+     * it by name, below. The inversion is deliberate: a new skin now inherits a
+     * clean rail and adds an effect if it wants one, rather than inheriting an
+     * effect and having to know to remove it. */
     --hero-wash: radial-gradient(60% 50% at 50% 0%, rgb(var(--brand) / 0.14), transparent 70%);
-    --rail-wash-left: radial-gradient(120% 60% at 0% 0%, rgb(var(--brand) / 0.16), transparent 62%);
-    --rail-wash-right: radial-gradient(120% 60% at 100% 0%, rgb(var(--brand) / 0.16), transparent 62%);
+    --rail-wash-left: none;
+    --rail-wash-right: none;
 
     /* --- The bats ----------------------------------------------------------
      *
@@ -435,8 +460,28 @@
    * --------------------------------------------------------------------- */
   [data-skin='studio'] {
     --hero-wash: none;
-    --rail-wash-left: none;
-    --rail-wash-right: none;
+  }
+
+  /* ---------------------------------------------------------------------
+   * The four skins whose rails are lit.
+   *
+   * Volcano is lit from below, Vibecoded *is* a gradient, Space is a viewport
+   * onto something bright, and Hazard is a corridor with its own lighting. On
+   * each of those the tint down the inside edge of a rail reads as the room
+   * continuing past the panel, which is the effect the wash was written for.
+   *
+   * Everything else takes the `:root` default of `none` — see the note there.
+   * --------------------------------------------------------------------- */
+  [data-skin='volcano'],
+  [data-skin='vibecoded'],
+  [data-skin='space'],
+  [data-skin='hazard'] {
+    --rail-wash-left: radial-gradient(120% 60% at 0% 0%, rgb(var(--brand) / 0.16), transparent 62%);
+    --rail-wash-right: radial-gradient(
+      120% 60% at 100% 0%,
+      rgb(var(--brand) / 0.16),
+      transparent 62%
+    );
   }
 
   .dark {
@@ -3230,6 +3275,29 @@
     --dragon-rod: 122 62 44;
     --dragon-rod-lit: 186 112 78;
     --dragon-rod-deep: 62 28 18;
+
+    /*
+     * The animal itself — see `DragonGlyph`.
+     *
+     * ## Why it has its own five colours and does not reuse the skin's
+     *
+     * Because a dragon on a lacquer screen is not painted in the room's
+     * palette; it is painted in *its own*, and the room is what it is seen
+     * against. `--brand` is cinnabar on this page and gold on the dark one, so
+     * a dragon drawn in it would be two different animals depending on the
+     * lights — which is exactly what a mark is allowed to do and a creature
+     * is not.
+     *
+     * So the scale is gold in both palettes, the crest and the mane take the
+     * jade the mark is already cut from, the claws and the open mouth are
+     * cinnabar, and `--dragon-ink` is the brush line around all of it. The two
+     * palettes differ only in how much light is falling on the thing.
+     */
+    --dragon-scale: 226 164 62;
+    --dragon-scale-lit: 246 212 136;
+    --dragon-scale-deep: 176 104 36;
+    --dragon-cinnabar: 186 46 34;
+    --dragon-ink: 62 28 18;
   }
 
   /*
@@ -3293,6 +3361,19 @@
     --dragon-rod: 96 44 34;
     --dragon-rod-lit: 158 88 60;
     --dragon-rod-deep: 40 16 12;
+
+    /*
+     * The animal in lamplight: the same five materials, lit from a smaller
+     * source. The gold comes up rather than down — it is the one thing in a
+     * dark hall that is meant to catch the light — and the ink goes nearly
+     * black, because a warm brown outline that reads as a drawn line on cream
+     * reads as a smudge on lacquer.
+     */
+    --dragon-scale: 232 174 74;
+    --dragon-scale-lit: 250 222 158;
+    --dragon-scale-deep: 168 100 34;
+    --dragon-cinnabar: 198 54 40;
+    --dragon-ink: 26 12 8;
 
     color-scheme: dark;
   }
@@ -7868,89 +7949,136 @@
   }
 }
 
-/* --- The watcher --------------------------------------------------------- */
+/* --- What is under the page ---------------------------------------------- */
 
 /*
- * The whole life of one sighting: open, hold, gone.
+ * The whole life of one appearance: up, hold, gone.
  *
  * A single CSS animation rather than a Framer enter/exit pair, because the
  * element's *removal* must not depend on an animation finishing — see the note
- * in `WanderingEye`. `forwards` holds the final frame so the eye is already
- * invisible by the time React unmounts it, and the duration matches
- * `APPEARANCE_DURATION` exactly: the two are a pair, and changing one without
- * the other either cuts the fade short or leaves a gap of nothing.
+ * in `KrakenRise`. `forwards` holds the final frame so the arm is already
+ * below the edge by the time React unmounts it, and the duration matches
+ * `RISE_DURATION` exactly: the two are a pair, and changing one without the
+ * other either cuts the retreat short or leaves a limb standing in the room
+ * with nothing left to animate it.
+ *
+ * ## Why the three stops are not evenly spaced
+ *
+ * Because the three movements are not the same movement. 0→16% is the rise,
+ * about seven tenths of a second, on a curve that decelerates hard — something
+ * heavy coming up out of water arrives and then stops, it does not coast in.
+ * 16→86% is three seconds of being there, which is the part the brief asks
+ * for and the part that has to be long enough to notice and short enough not
+ * to become scenery. 86→100% is under six tenths on an accelerating curve: it
+ * does not withdraw, it drops.
+ *
+ * `104%` rather than `100%` at both ends. The arm carries a drop shadow, and a
+ * limb parked at exactly its own height still has a few pixels of glow over
+ * the bottom edge of the window — which on a page that can scroll is a smudge
+ * sitting there for the next fifty-six seconds.
  */
-.eldritch-watcher-life {
-  animation: watcher-life 2.6s ease-in-out forwards;
+.kraken-life {
+  animation: kraken-life 4.2s forwards;
+  will-change: transform;
 }
 
-@keyframes watcher-life {
+@keyframes kraken-life {
   0% {
-    opacity: 0;
-    transform: scale(0.5);
+    transform: translate3d(0, 104%, 0);
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
   }
-  18% {
-    opacity: 1;
-    transform: scale(1);
+  16% {
+    transform: translate3d(0, 0, 0);
+    animation-timing-function: linear;
   }
-  74% {
-    opacity: 1;
-    transform: scale(1);
+  86% {
+    transform: translate3d(0, 0, 0);
+    animation-timing-function: cubic-bezier(0.7, 0, 0.84, 0);
   }
   100% {
-    opacity: 0;
-    transform: scale(0.45);
+    transform: translate3d(0, 104%, 0);
   }
-}
-
-.eldritch-watcher {
-  filter: drop-shadow(0 0 12px rgb(var(--eldritch-glow) / 0.6));
 }
 
 /*
- * Exactly one blink, in the middle of the life.
+ * The glow is the outline.
  *
- * `infinite` was wrong for the same reason the four-second lifetime was: a
- * thing that keeps blinking at you is a thing you are watching, and the eye is
- * supposed to be the one doing the watching. One close, around halfway, timed
- * against the same 2.6s the element exists for — so the two are a pair, and
- * changing one without the other puts the blink after the fade.
+ * The three segments are drawn unstroked — see the note in `KrakenArm` — so
+ * this is the only thing separating the arm from the page behind it. Two
+ * shadows rather than one: a tight bright rim that does the work a 1px stroke
+ * would have done, and a wide soft one that puts the limb in water.
  */
-.eldritch-watcher__lid {
+.kraken-arm {
+  filter:
+    drop-shadow(0 0 1.5px rgb(var(--eldritch-glow) / 0.8))
+    drop-shadow(0 0 14px rgb(var(--eldritch-glow) / 0.4));
+}
+
+/*
+ * A joint bends about the point where its segment meets the one before it.
+ *
+ * `fill-box` + `center bottom` is what puts the pivot there: every segment is
+ * drawn symmetrically about x=0 in its own local space with its base edge at
+ * the bottom of its own bounding box, so the bottom-centre of that box *is*
+ * the joint. No magic numbers, and it stays correct if a path is redrawn.
+ *
+ * The curling tip is the one place this is approximate — a hook is not
+ * symmetric, so its box centre sits a few units to one side of the joint. The
+ * segment overlaps four units into its parent, which is more than the error
+ * the offset introduces, so the bend still closes rather than gapping. This is
+ * the same trade `Tendril` makes with `left center`.
+ */
+.kraken-arm__joint {
   transform-box: fill-box;
-  transform-origin: center;
-  animation: watcher-blink 2.6s ease-in-out 1 forwards;
+  transform-origin: center bottom;
+  /* Sinusoidal rather than ease-in-out: a limb in water has no hard stops at
+     the ends of its travel, and `alternate` at both ends is where a cheap
+     sway gives itself away. */
+  animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
 }
 
-@keyframes watcher-blink {
-  0%,
-  40% {
-    transform: scaleY(1);
+.kraken-arm__joint--mid {
+  animation-name: kraken-flex-mid;
+  animation-duration: 2.9s;
+}
+
+/*
+ * The tip lags the middle by a beat, and swings further.
+ *
+ * That phase offset is the whole trick, and it is the rails' trick: bend two
+ * joints in step and the limb reads as one rigid arm pivoting; bend the outer
+ * one late and the bend *travels* up the limb, which is what a living tentacle
+ * does. The extra amplitude is the same idea — the further from the anchor,
+ * the more free movement there is.
+ *
+ * The amounts are smaller than the rails' because the limb is five times
+ * longer. Nine degrees at the base of a 40px feeler is a twitch; nine degrees
+ * at the base of a quarter-height arm sweeps most of a screen, which reads as
+ * something being waved rather than as something alive. "Slightly", as asked.
+ */
+.kraken-arm__joint--tip {
+  animation-name: kraken-flex-tip;
+  animation-duration: 2.38s;
+  animation-delay: 0.52s;
+}
+
+@keyframes kraken-flex-mid {
+  from {
+    transform: rotate(-4.5deg);
   }
-  48% {
-    transform: scaleY(0.04);
-  }
-  57%,
-  100% {
-    transform: scaleY(1);
+  to {
+    transform: rotate(5deg);
   }
 }
 
-/* Nested inside the lid on purpose: a blink should take the slit with it. */
-.eldritch-watcher__pupil {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: watcher-gaze 2.6s ease-in-out 1 forwards;
-}
-
-/* It finds you, rather than sweeping back and forth. */
-@keyframes watcher-gaze {
-  0% {
-    transform: translateX(-22%);
+@keyframes kraken-flex-tip {
+  from {
+    transform: rotate(-11deg);
   }
-  60%,
-  100% {
-    transform: translateX(6%);
+  to {
+    transform: rotate(13deg);
   }
 }
 
@@ -11546,7 +11674,7 @@ html:not([data-cursor='off'])[data-skin='halloween'] .cursor-grab:active {
  *
  * Without it the dragon pops into existence at the edge of the window. The
  * ramps are short — a tenth of the crossing each — so almost all of the flight
- * is at full (which is to say, very low) opacity.
+ * is at full (which is to say, reduced) opacity.
  */
 .dragon-flight {
   --dragon-flight-life: 11s;
@@ -11560,37 +11688,124 @@ html:not([data-cursor='off'])[data-skin='halloween'] .cursor-grab:active {
  *
  * `dragon-cross` animates `opacity` for its entry and exit ramps, and an
  * animated property beats the element's own declaration outright — so an
- * `opacity: 0.085` written beside that animation is simply discarded, and the
- * first build put a fully opaque dragon across the page. Splitting them means
- * the two multiply the way they were always meant to: the ramp fades this
- * element from 0 to 1 and back, and what it is fading *is* a body already
- * drawn at a fraction of full strength.
+ * `opacity` written beside that animation is simply discarded, and the first
+ * build put a fully opaque dragon across the page. Splitting them means the
+ * two multiply the way they were always meant to: the ramp fades this element
+ * from 0 to 1 and back, and what it is fading *is* a body already drawn at a
+ * fraction of full strength.
  *
- * The number itself is what the whole decoration lives or dies on. At 0.2 it
- * is an illustration travelling across somebody's task board sixty times an
- * hour; at 0.05 nobody ever sees it. The dark palette gets slightly more,
- * because gold on black lacquer at a given alpha is fainter than cinnabar on
- * cream.
+ * ## Why this is four times what it was
+ *
+ * It was 0.085, and that was the correct number for the animal it was drawn
+ * for: a single-colour silhouette with no internal structure, where anything
+ * above about a tenth was an illustration travelling across somebody's task
+ * board sixty times an hour. The replacement is a coloured drawing built from
+ * materials — gold scale, jade crest, cinnabar claws — and at 8% those
+ * materials are three indistinguishable pale smudges, which is to say the
+ * whole of the work is invisible.
+ *
+ * At 0.34 it is still unmistakably *behind* the page. It sits at `z-0`, under
+ * every panel, card and dialog in the product, so on a working screen it is
+ * only ever seen through the gaps between things — which is the entire
+ * intended experience, and what keeps it survivable at this strength.
+ *
+ * The dark palette gets slightly more, because gold on black lacquer at a
+ * given alpha reads fainter than the same gold on cream.
  */
 .dragon-flight__body {
-  opacity: 0.085;
+  opacity: 0.34;
 }
 
 [data-skin='dragon'].dark .dragon-flight__body {
-  opacity: 0.12;
+  opacity: 0.42;
 }
 
 /*
- * The swim.
+ * The swim is gone from this element, and that is the point.
  *
- * Its own element and its own short cycle, unrelated to the crossing — which
- * is the point: a body that rises and falls on a period that does not divide
- * the journey never repeats visibly. The rotation is tiny; past about two
- * degrees the animal reads as tumbling rather than swimming.
+ * It used to be one `translateY`/`rotate` cycle on the whole glyph — the
+ * entire animal rising and falling as a single rigid object, which is a plank
+ * on a swell. The undulation now belongs to the body itself, one segment at a
+ * time, below. Leaving both would be a wave inside a bob.
  */
-.dragon-flight__body {
-  animation: dragon-swim 2.6s ease-in-out infinite;
-  transform-origin: 70% 50%;
+
+/* --- The wave ------------------------------------------------------------ */
+
+/*
+ * One segment of the body, and the reason there are two rules rather than one.
+ *
+ * `.dragon-seg` rises and falls; `.dragon-seg__tilt` leans. They are separate
+ * elements because `transform` is one property: a second animation on the same
+ * element replaces the first outright, however many functions are written in
+ * it. Nesting them multiplies instead, which is what is wanted — a piece of
+ * body that is both displaced and turned.
+ *
+ * ## The delay is the whole effect
+ *
+ * `var(--i)` is the segment's distance from the head, set by the component.
+ * Multiplied by the lag it puts every segment a fixed fraction of a cycle
+ * behind the one in front of it, so each piece repeats what its neighbour did a
+ * moment earlier and the bend *travels* down the body. That is a travelling
+ * wave, and it is the only difference between a serpent and a caterpillar.
+ *
+ * The `- 8s` is not decoration. A positive delay is a *pause*: without
+ * subtracting more than the longest per-segment offset, a crossing would begin
+ * with a perfectly straight, perfectly still dragon holding that pose for the
+ * first second and a half of its life. Starting every segment part-way through
+ * its own cycle means the animal enters already swimming.
+ *
+ * ## Why the lean runs a quarter of a period late
+ *
+ * Because the steepest part of a wave is where it is moving fastest, not where
+ * it is highest. Offsetting the rotation by a quarter of the period is what
+ * puts the maximum lean at the midpoint of the travel — which is the
+ * derivative of the displacement, and is why the body reads as following a
+ * curve rather than as a row of pieces each nodding on its own.
+ *
+ * ## Why `view-box`
+ *
+ * These groups are positioned by a `transform` *attribute* on their parent,
+ * and their own contents are drawn around a local origin. `fill-box` would
+ * resolve percentages against each piece's own ink — a different box per
+ * segment, and for the head a box dominated by whiskers — so the pieces would
+ * displace by different amounts. `view-box` gives every one of them the same
+ * reference, which is what keeps the wave a wave.
+ */
+.dragon-seg {
+  transform-box: view-box;
+  animation: dragon-undulate var(--wave-dur, 2.2s) ease-in-out infinite;
+  animation-delay: calc(var(--i) * var(--wave-lag, 0.062s) - 8s);
+}
+
+.dragon-seg__tilt {
+  transform-box: view-box;
+  animation: dragon-tilt var(--wave-dur, 2.2s) ease-in-out infinite;
+  animation-delay: calc(var(--i) * var(--wave-lag, 0.062s) - 8s + var(--wave-dur, 2.2s) * 0.25);
+}
+
+/*
+ * `px` inside an SVG is a user unit, not a CSS pixel, so these are distances in
+ * the glyph's own coordinate system and scale with it — which is why the same
+ * numbers are right whether the dragon is drawn at 7.5rem or at a thumbnail.
+ */
+@keyframes dragon-undulate {
+  0%,
+  100% {
+    transform: translateY(calc(var(--amp) * -1px));
+  }
+  50% {
+    transform: translateY(calc(var(--amp) * 1px));
+  }
+}
+
+@keyframes dragon-tilt {
+  0%,
+  100% {
+    transform: rotate(calc(var(--tilt) * -1deg));
+  }
+  50% {
+    transform: rotate(calc(var(--tilt) * 1deg));
+  }
 }
 
 @keyframes dragon-cross {
@@ -11608,16 +11823,6 @@ html:not([data-cursor='off'])[data-skin='halloween'] .cursor-grab:active {
   }
 }
 
-@keyframes dragon-swim {
-  0%,
-  100% {
-    transform: translateY(-0.35rem) rotate(-1.4deg);
-  }
-  50% {
-    transform: translateY(0.35rem) rotate(1.4deg);
-  }
-}
-
 /*
  * Nothing moves for a reader who asked for that.
  *
@@ -11628,7 +11833,8 @@ html:not([data-cursor='off'])[data-skin='halloween'] .cursor-grab:active {
  */
 @media (prefers-reduced-motion: reduce) {
   .dragon-flight,
-  .dragon-flight__body,
+  .dragon-seg,
+  .dragon-seg__tilt,
   .loader-scroll > i,
   .loader-scroll > b {
     animation: none;
@@ -11645,6 +11851,268 @@ html:not([data-cursor='off'])[data-skin='halloween'] .cursor-grab:active {
 }
 
 /* ===========================================================================
+   Skin: DRAGON — the rails, the header rule, and the frame round a face.
+   =========================================================================== */
+
+/*
+ * The seam a rail shares with the page is a jade rule, and a light runs up it.
+ *
+ * ## Why the rails are the surface that gets this
+ *
+ * Every skin marks that seam and the mark is what the skin is *about*: the deep
+ * field sinks a gravity well into it, the eldritch one grows limbs out of it,
+ * the autumn one grows a hedge. This skin had the generic hairline — a 1px
+ * `--brand` gradient, the same object drawn on every theme that had not thought
+ * about it — while the panels beside it were being mounted like scrolls. Jade
+ * is the material this skin already owns (the mark is cut from it; `--positive`
+ * *is* it) and it is the one thing in an imperial room that is neither the
+ * lacquer nor the gold, which makes it the right colour for a boundary between
+ * two surfaces that are both one of those.
+ *
+ * ## Why gold in the dark and jade in the light
+ *
+ * The dark palette is a lacquered hall and its whole rule is that gold is what
+ * marks something out against walls that are already red. Jade at full strength
+ * on black is a dark green line on a dark red wall — technically a second
+ * colour, practically absent. The light page is cream, where jade has real
+ * contrast and gold does not.
+ */
+[data-skin='dragon'] .nav-rail__edge {
+  /* The inherited Tailwind gradient is a `background-image`, so it has to be
+     overridden rather than merely tinted — otherwise the brand hairline is
+     still there underneath this one. */
+  background-image: linear-gradient(
+    to bottom,
+    transparent,
+    rgb(var(--dragon-jade) / 0.9) 12%,
+    rgb(var(--dragon-jade-lit) / 0.75) 50%,
+    rgb(var(--dragon-jade) / 0.9) 88%,
+    transparent
+  );
+}
+
+[data-skin='dragon'].dark .nav-rail__edge {
+  background-image: linear-gradient(
+    to bottom,
+    transparent,
+    rgb(var(--brand) / 0.85) 12%,
+    rgb(var(--dragon-trim) / 0.95) 50%,
+    rgb(var(--brand) / 0.85) 88%,
+    transparent
+  );
+}
+
+/*
+ * The header's rule is the same object turned on its side, and it is red.
+ *
+ * It was `via-brand/40` — a fortieth of the way to a colour, which on cream
+ * produced a pink line somebody had to be told was there. The complaint was
+ * exactly right. This one is cinnabar at nearly full strength, which is the
+ * weight a seal is stamped at and is what the rest of the skin means by red.
+ *
+ * Cinnabar explicitly rather than `--brand`, because `--brand` is gold on the
+ * dark palette and this rule is meant to be red in both rooms: it is the
+ * lacquer line at the bottom of a beam, not an accent.
+ */
+[data-skin='dragon'] .nav-rail--top .nav-rail__edge {
+  background-image: linear-gradient(
+    to right,
+    transparent,
+    rgb(var(--dragon-cinnabar) / 0.95) 14%,
+    rgb(var(--dragon-cinnabar)) 50%,
+    rgb(var(--dragon-cinnabar) / 0.95) 86%,
+    transparent
+  );
+}
+
+/* Thicker than a hairline, because a lacquer rule is not a hairline. The bar's
+   own `border-b` sits under it and carries the actual division. */
+[data-skin='dragon'] .nav-rail--top .nav-rail__edge {
+  height: 2px;
+}
+
+[data-skin='dragon'] .nav-rail--top {
+  border-bottom-color: rgb(var(--dragon-cinnabar) / 0.55);
+}
+
+/*
+ * The light that runs up the rail, every ten seconds.
+ *
+ * ## Why it is the same gesture as the "Browse themes" bar
+ *
+ * That control sweeps a skewed band of light across itself on hover, and it is
+ * the one piece of motion in this product that means *this surface is
+ * lacquered*. A rail in an imperial hall is the same material, so it gets the
+ * same sheen — travelling bottom to top rather than left to right, because the
+ * surface it is on is vertical.
+ *
+ * ## Why it is an `::after` on the edge rather than a new element
+ *
+ * `.nav-rail::after` is already spoken for by five other skins (the well, the
+ * hazard tape, the tendril membrane), and taking it here would mean this skin
+ * silently disagreeing with whichever of those is edited next. The lit-edge
+ * span is this skin's own object and has no pseudo-element of its own, so the
+ * sheen belongs to it — and it inherits the edge's exact geometry for free,
+ * which is the whole reason the light tracks the rule rather than the panel.
+ *
+ * ## Why the band is so much bigger than the rule
+ *
+ * A 1px light travelling up a 1px line is a dot, and the first pass at this was
+ * exactly that: a 2rem band four pixels wide, which on a 900px rail read as a
+ * speck somebody would have to be told about. The band is 5rem tall and nine
+ * pixels across now, with a blur and a bloom either side of it, so what reads
+ * is a *length* of the rule brightening and dimming as the light passes —
+ * which is what a highlight moving along a polished edge actually looks like.
+ *
+ * The bloom is a `box-shadow` rather than a second element: it spills the glow
+ * onto both surfaces the rule divides, which is the half that makes it read as
+ * light rather than as paint.
+ *
+ * ## The ten seconds, and why most of the animation is nothing happening
+ *
+ * The sweep itself is under two seconds; the rest of the cycle is the light
+ * parked below the bottom of the rail at zero opacity. One animation with a
+ * mostly empty timeline is cheaper and steadier than a timer that mounts
+ * something every ten seconds, it costs no JavaScript at all, and it cannot
+ * drift. `83%` is where the light re-enters from underneath, so the travel is
+ * the last fifth of every ten-second turn — about 1.7 seconds to cross the
+ * window, which is a light running up a polished edge rather than a spark
+ * fired out of the floor.
+ */
+[data-skin='dragon'] .nav-rail--left .nav-rail__edge,
+[data-skin='dragon'] .nav-rail--right .nav-rail__edge {
+  position: absolute;
+  overflow: visible;
+}
+
+[data-skin='dragon'] .nav-rail--left .nav-rail__edge::after,
+[data-skin='dragon'] .nav-rail--right .nav-rail__edge::after {
+  content: '';
+  position: absolute;
+  /* Wider than the rule so the glow spills onto both surfaces it divides. */
+  left: -4px;
+  right: -4px;
+  height: 5rem;
+  bottom: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    transparent,
+    rgb(var(--dragon-jade-lit) / 0.75) 40%,
+    rgb(255 255 255 / 0.95) 58%,
+    rgb(var(--dragon-jade-lit) / 0.75) 74%,
+    transparent
+  );
+  box-shadow: 0 0 14px 3px rgb(var(--dragon-jade-lit) / 0.45);
+  filter: blur(1.5px);
+  animation: dragon-rail-sheen 10s linear infinite;
+}
+
+[data-skin='dragon'].dark .nav-rail--left .nav-rail__edge::after,
+[data-skin='dragon'].dark .nav-rail--right .nav-rail__edge::after {
+  background: linear-gradient(
+    to top,
+    transparent,
+    rgb(var(--brand) / 0.8) 40%,
+    rgb(255 240 205) 58%,
+    rgb(var(--brand) / 0.8) 74%,
+    transparent
+  );
+  box-shadow: 0 0 16px 3px rgb(var(--brand) / 0.5);
+}
+
+/*
+ * `bottom: 0` plus a negative `translateY` is what sends it upward: the band
+ * starts just below the rail and ends just above it, so neither end of the
+ * travel is visible as a fade happening in the middle of the rule.
+ */
+@keyframes dragon-rail-sheen {
+  0%,
+  80% {
+    transform: translateY(5.5rem);
+    opacity: 0;
+  }
+  83% {
+    transform: translateY(5.5rem);
+    opacity: 1;
+  }
+  97% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(calc(-100vh - 5.5rem));
+    opacity: 0;
+  }
+}
+
+/*
+ * A face, mounted like a painting.
+ *
+ * ## Why this skin needed one when it was getting the default
+ *
+ * Every other skin that has an opinion about a person's picture states it —
+ * taped behind glass, punched out of a sprite sheet, bolted into a brass bezel,
+ * screened onto newsprint. This one had nothing, so a round photo with a 2px
+ * ring sat in the corner of a room where every other rectangle on screen is
+ * mounted with a double gold rule. It was the one element still wearing the
+ * default skin's clothes.
+ *
+ * ## How the frame is built
+ *
+ * Four concentric shadows, outward from the picture: the cream mount the print
+ * sits on, a fine gold fillet, the width of the frame itself in brocade, and a
+ * last gold line at its outer edge. That is the actual construction of a gilt
+ * frame, in the order a frame is actually built, and it is why it reads as an
+ * object with depth rather than as three borders.
+ *
+ * `--avatar-inner` adds the rebate — the lit top and shadowed bottom inside the
+ * opening, where the frame overlaps the picture. Without it the photo looks
+ * printed on the frame rather than sitting behind it.
+ *
+ * Squared off to `--radius-sm`, which is 2px here: nothing in an imperial room
+ * is round, and the panels this sits between are all cut corners.
+ */
+[data-skin='dragon'] .avatar {
+  --avatar-radius: var(--radius-sm);
+  --avatar-frame:
+    0 0 0 2px rgb(var(--surface-raised)),
+    0 0 0 3px rgb(var(--dragon-trim)),
+    0 0 0 6px rgb(var(--dragon-brocade)),
+    0 0 0 7px rgb(var(--dragon-trim) / 0.9),
+    0 4px 12px -4px rgb(74 40 18 / 0.7);
+  --avatar-inner:
+    inset 0 1px 0 rgb(255 250 238 / 0.5),
+    inset 0 -2px 4px rgb(74 40 18 / 0.45),
+    inset 0 0 0 1px rgb(var(--dragon-trim) / 0.35);
+}
+
+[data-skin='dragon'].dark .avatar {
+  --avatar-frame:
+    0 0 0 2px rgb(var(--surface-raised)),
+    0 0 0 3px rgb(var(--dragon-trim)),
+    0 0 0 6px rgb(var(--dragon-brocade)),
+    0 0 0 7px rgb(var(--dragon-trim) / 0.9),
+    0 4px 14px -4px rgb(0 0 0 / 0.85);
+  --avatar-inner:
+    inset 0 1px 0 rgb(255 214 150 / 0.22),
+    inset 0 -2px 5px rgb(0 0 0 / 0.6),
+    inset 0 0 0 1px rgb(var(--dragon-trim) / 0.4);
+}
+
+/*
+ * The frame paints outside the avatar's own box — seven pixels of it — so
+ * anything that packs avatars tightly has to be told to leave room.
+ *
+ * `AvatarStack` overlaps them by 0.5rem on purpose, which is 8px and therefore
+ * exactly the width of this frame: without the extra bite the gilt edges
+ * collide and the row reads as one long moulding. The chip's own left padding
+ * is set for a 2px ring and is doubled here for the same reason.
+ */
+[data-skin='dragon'] .avatar-chip {
+  padding-left: 0.5rem;
+}
+
+/* ===========================================================================
    Skin: DRAGON — the pointer is a guan dao.
    ===========================================================================
 
@@ -11654,18 +12122,33 @@ html:not([data-cursor='off'])[data-skin='halloween'] .cursor-grab:active {
    Three states:
 
      — **at rest**, carried on the 135-degree diagonal the system arrow sits on;
-     — **over anything pressable**, brought up to 112 degrees — a weapon raised
-       rather than carried, which is the whole of the hover signal;
-     — **while the button is held**, whipped down to 96 degrees with the arc of
-       the swing drawn behind it. One frame each way, no loop, because a cursor
-       cannot tween — the arc is what makes a single frame read as motion.
+     — **over anything pressable**, brought up to 106 degrees — the blade swung
+       up and forward off the carrying diagonal, which is the whole of the
+       hover signal;
+     — **while the button is held**, whipped anticlockwise to 160 degrees — down
+       and away to the left — with the arc of the swing drawn behind it. One
+       frame each way, no loop, because a cursor cannot tween; the arc is what
+       makes a single frame read as motion.
 
-   ## Why the tip does not move between states
+   ## Why the blade is what moves
 
-   Every frame is rotated about the point of the blade, so the point is in the
-   same place in all six and only the shaft swings. That is how a polearm is
-   held on a target, and it is what lets one hotspot be correct in every state
-   instead of in one of them.
+   Every frame is rotated about the *ferrule* — the brass collar binding the
+   blade to the shaft — rather than about the point of the blade. Rotating
+   about the point is what an earlier version did, and it is why the weapon
+   appeared to be a stick waving behind a blade that never went anywhere: a
+   rotation leaves its centre fixed, so the centre is the one part of the
+   drawing that cannot be seen to move. With the centre at the ferrule there is
+   blade on one side of it and shaft on the other, both travel, and the eye
+   follows the blade because it is the bright end.
+
+   The hotspot is the resting frame's point, held fixed across all six. A click
+   therefore lands exactly where it always did; what changed is that the weapon
+   now swings around that position instead of dragging it along.
+
+   ## Which side the edge is on
+
+   The left. A guan dao carried on the up-left diagonal has its cutting edge
+   facing forward along the direction of the swing, and the swing goes left.
 
    ## Why two palettes
 
@@ -11694,7 +12177,7 @@ html:not([data-cursor='off'])[data-skin='halloween'] .cursor-grab:active {
 
    ## Hotspot
 
-   `7 3` — the point of the blade in the resting frame, measured from the
+   `4 4` — the point of the blade in the resting frame, measured from the
    pixels rather than guessed.
 
    Text fields, disabled controls and drag handles are left alone: an I-beam,
@@ -11702,11 +12185,11 @@ html:not([data-cursor='off'])[data-skin='halloween'] .cursor-grab:active {
    --------------------------------------------------------------------------- */
 
 html:not([data-cursor='off'])[data-skin='dragon'] {
-  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACoAAAAqCAYAAADFw8lbAAAEpklEQVR42u2YXUxTZxjH/6f2gxZayWihi6V0ZtVW5kCLmVsGFSuNcZsui1uWMHUuGXEmc5tzWe/oIeZELxYN2S7WJVsyd0OaEBenkeHGmYg4PwI4/MBSKBRbKqUiaqUFzrMLWqeLi7tosSb9JW/y5uQ5Ob/zf5/3JOcFsswDTqdTDIABAI7jKpuamtrOnb9wu72jc7q9/XSsqakpUFtb+zWAYpfLJUnWPglJEQCx2+1u8Qz6Z4LhWzQSuklDwXEaHo1QKHKbPAPDwt69e68CqJp32cQDRRzHlXd1dYXGJu5R//AoXfYM0aVrvvvjssdHA/4bNBqeIIfD0Qtg9bzJJpPkOK787LmuuxPRGfL6R8nju079vgD1DwVpwB8i73CQrnr91Ns3SMOjN+lCT69gMBi+0Wg0eekUXZCc8DxP+/fvz9+46c2uwkV65cW/LqHf68PVPi883kEM+a8jHI5AIIJKqYREIkE0GkWRVstE79xStrS0dLIsG+Z5XgBAqRYVJycsyxrNpWWnxyan84/+3oxYfOZ+0ezsLKZnpiHMzqL3Sh+KCjWoKF8ObZEaRAwqq6qKwXGm8fHxrnRIPiRKRJY/O8+MdV/uu5OfmyvKyVVIpVKZXCJX5Mhy5JI8pYpRqBYiPh1H6MYYjp/g8eorq1Be9iIYRioDoG5sbIynXdTpdLYBCAKIJa7LAeQD0Gg0WGa3165YZCg1MWJJfoGmkJmKTYE/dQZqtQYyhUxUVFSkVqlUUo/HkxZZ5oFEmYaGBlkgEBA9WBCJRGJutzsHgA7AcpPJtK5mw+Y3FAsLnhXL5IxOWwBjiVZYV13JAmhwAmInMJtq2X/vUtEjagQAjMvlEgeDQXl9fb2orm4j965F+OiEbwmUOguYuxEKtzVe7Jws5Do6Oo6xLDtTX18fT9yb2l2fDPYRAwBw5MgR0uv14p6enujOnas/judF1YcO/dotV5bk3bnGyzfV5GpX6ZjXf+68EW5tbT2LuVTTlujjEAEQdDrdhpGRkYUAfgNg+2nf6oN6ubLwWrMf0nt079jiFYcDgcDB4ZMnL/qAqXQk+jgIACYnJwddLtcVi8USW7NmzZVd+w4P6caY0uekUk0gHpMYQgHD8dCE11A+0W33gS6k6Uvwf1ciOURvz73wy66ykrEfaspo36rFtHup1gugevduyP+j99Oa6CNTfgdYsKSuLug+1j+1XBGz5BYoFTG5+JlidV7Vt823ulmWDfA8T3iCyT6UsNFoVBUCW7ZXvnCqwWYWPrM+T9sqSgYArGNZNicVyaZO2AIJAPMHtqXtDptJ+NxqpK0WfUIWOSlaxdTIHjhwQA6gdLvN3P7lWpOwx2qkrRXFgwBqMk1WlFjqZe9bzScda5cKe6xGem+lPiHLZpZsItmHZLes1PsA2DMu2aTstmrzHw7bXBtsqTD4ANgf/DfLpDYwb11r5B02k/CF1UibzYt8AOyZ9mP7j6x9Gf9ppVH47pOX6JdG210AOzJONtEG5l07Ks6e//E1+v6r6kkAb2XikYHI6YQYQPn69dajAD7M5PMNhuY2kI6IGOApOo3JdJ4KySxZsmTJkiXL/PA3QTQJRUuwSNEAAAAASUVORK5CYII=") 7 3, auto;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAFjUlEQVR42u2ZXWxTZRjH/+ej53Q9bdet3cYc+2KjYzBho4C6wDpGWDAQEy8aNRHmUE/8AEbmBRcGek5AExOvNi9mbyRu4WYqJJNBYgwdJuIiDS4gDBUmbjJWQNZ2bdfz6cU+HBiMH7idJnuu3ouTk/f3/p/neZ/nfYBFM5gFAgETACItNy+KohkA1d7e/vbBgwffA1AuCAJtZCBy7ub9fr/S0dHxjmtJ4ZH+0HfbAXBzvzE0gN/vl7q6ujq9W7YdiCZV3L5zVwEgGd1rZgGOHz/+Ze2mhucnkhKuDw2hpCAP6RALswBV1evrSRODwcEfQNMmUBTLAGCi0SiVFjGgg8BELIbRsTtgWRYkSWUA4OLxOJEWCpAEgdhEHLH4BBiGhcli5gBkpo0LkRSFaGwCiqKApCiYM2wcgFyWZVUAuuEBCACpVAq6rkPTNZjNFhZAYVtbm5IWAACg61MgiiTDYrVTtbW16wDkADDsZXYfgMlkAggCmqbCke1CRaWnEsCy1tZWk+EBNE2D3caBpijomgqapmF3OQsBrBkeHjZsHMwCKKoKR2YmLJYMqJoOWUrBwtnMXq+38eTJk05RFFmfD5RhAVRNg8ViRnHhUiiKAk3T4Mh2wr1qrTeRSHj9fr/U3Q3VuFmIIKAoKiorymA2m6GoKhRZgs2ZnyXs23zom2PbxxobG9s4IE8QjBPU96VRVVWRabfBU10FWVagKgrsmU6o3MpKWk65WJZdHQfMgGCYCpX+o5SYyqOplIQV7nIkEkmEBi7BwgJ0Tg2OnftV6ek5cSYQCNzked4wQT17ki5nNqw2OwiChCQrWFtdhSc8a5CSZUymkqDzvdTuN/bs4Hm+ShRFxih9wmxWKS8t5h2OTI6zcoSV48AwZpQtK0VpSTFkWQHNmokbV6/mc9HruV0nTveJoigFg0FtoZWYG4jbAdQ1Nzd7a2pqSrKysq0mE0ObTDRJMox+9vMeWrpxltyxLV/vvcaG2ttP8YFA4NJ5nkcAWLByg5jbzPM8TwEoBVACwAnAAoAFkGp9uujIC8+tyokrKoZPhbWgo6yvs7NnjyRJVxZSBeLBdSAQoAcHB2lFUbTJyUnNarXSiqJoicTdjmdWje6KnRsnI1fuIckQOlFQMHTRWd7d29v74etjYzcEQFuwLDRzijzPKwDmZpmZy+twH5B8d/3ypqJSl+X7kTAR/3FoadLCrUkkEsz0v+T5VuNhpYH+wFoXRSQ/DeLMbZ3NzCXkDfl52cSkKlPWa8NLLtz67dopICQARNAgAH+yYBCaCODoxER/Fck2SKSWs9RppyK0zuS7rPUXbkVjQeD8tCvqhgMAoAenWob4W0UlQ3njkTLVTDuKOYs5TKrMilzbpoGbkQimIMj5gvin1aUuAgiHwyOheOrbL34O9698LGuLLcOUAV1nKly2TQOjkYjHg9Do6Pwo8W/LY1XTtLAgCIOHP/7kl8cLshocGYyZhM64c+11p0OR8fmE+E+lyPTb6Yv7vO57hxpX6vs3lulNnuIYgDc9HpiM3I4+CLGzxVsxC7HTUxQD8Fp9Peh0gtjVUjelRMvGMn2npzAKgE83iKYW7/LxGYhdUxCvpg0Ez/MmAM3765aPH2qsnFJiXVEEwCs+n48KBGD4AYrJ5/NRAF7a53VHZiCaNhRHALw8fUcQC51G//KuuHz5Munz+QY+6v3qVnVh9mZHBsNKkyr7ZFVOA5VbYYuNjIQmdaRE0bgqEADoaSV276ktj/ifrdJDXTv0z97fLNsBob6+/pHEw//VFuoA1O7ubgLA0Q++/unA6qecMstQ6L+duicBfW63Oy0GicT0Ewy9devWzr17ay8CaBaERxsH8+FOBIAlAGqMPvV8qAkCaEEQGKNPPf+OEou2aIv2CO13FzQp42bWQOcAAAAASUVORK5CYII=") 4 4, auto;
 }
 
 html:not([data-cursor='off'])[data-skin='dragon'].dark {
-  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACoAAAAqCAYAAADFw8lbAAAD2ElEQVR42u2YbWhbVRjH/8+9N0vbtWna1L5sOt8W10hri7XdxqzB0Wyr2weZ4lCs31rwbXOsG3OrFhSEfdMPblTnC7hJV5w4UQZD62h9gWp10FHqGLiywrrZmpcmTZPce/5+SDqzUhCGqRnkDxfu5Rw4P/7P85znngPktAQiqaW930WyOxyZHRq7cPHy+PjEGMkeko2pcX0pmGQxSBFRADSSB/70z7xiKbosS8FSCiIC+zIb5mYjsVUrK/aLyNskdRGxlgx0fkGSVQCOTQXnNgZDQZimaVEpISkAoGmastvztPw8m1S4ittF5GimYWWhkySrrkxO9xcUO6uDwUAiEY8bIAQi0DQNpEIiYUIppRzFTsyGAyH33atWA/hLRACAmQA1rhMnIfMt4hQNW/XI+dHo5NVrtkAgpBKJhKYbujgKC1FVVY4VlRUwDEMLz8yYTmeJE8CTItJD0hARM9OOusYu/HHqqj+8YeiXYcTi/6xnWRZMy1RUSgHQK24rk4fqa7FyRaVpz8vXy0uXf6mJPJ7J8KeD1l66dK118LfRULmjyB5X8VL/9PTtU37/fcFgwKMbhqugoBDxRBzRaNTSAL15w1pV90CNFpyeOu++d1VtJospPfQjAEYWm9TTg7KODjac/u7cE0M//7jdUeRwzcXmcPb7n+ByuWA36CRZCCCSqTxNd1QALLYnWiLCtHmVZwZGdg3+MPgydaPgjkoXH26qm6jxuO9MEWoCqP8aVEtzlCJiLvIQgJDUSdpFZHLTI6GvN7pOL9dmLsb94ZjW/+1gYeDItnaSZQIokkbGQP+tWaWKxEpGYbTp0Y41H77xplHvKCk99vtgX+mvKvLe5b7tn2Wy8m+mxebd8D2y4/DAOz4e9VZzuOXBAZLrSRZxkc6XaUdvTGyRuVQq6CR1qend2TzheKFEX4azoWDzOV/DbgACQuNNrpGJ1ivzzl3ZVPfBR746Hmq8xxptrd2XdB/G/+bogu1nvti0yjPd+3yUI2XOolhvJHboRNv6V0VgpopLgCz6PSSQx487t77luz+627uaJ59bdyA1ZiCrxKRzPNmxtcvnie7xutnX1nQwLQ2yxlkhaQMAfvHiYwdbPNFOr5sn2hq7shH2eqjZ+1JrV0v1bKfXzePPNL6WNpZVsLaFsJ8+3fh6tjqbhP1855YunyfS6XXz+LPruheezbIrDb5q39zl80T2et18d0t9d7aebJOw/Xs27/WuCb+/ay0nv3mqP1thk2kQ2L9j+JNtFieeP5zFdwbJbkiON2T/BUeq2ueP37fMbUxOOeWUU0455ZTTLaO/AeGTALQkbYODAAAAAElFTkSuQmCC") 7 3, auto;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAE4ElEQVR42u2ZW2wUZRTH/2dmdme73e72QuqNi4jRIgVKoSIiMUZIaY0tBFNKQSUR5QE00aBPKJcao2+SkPhAbIw+tDUtGJAEBY1YQhSoGCS2XKRAoS3d3vbSLTPzfXN82N2mMUaDbuls0vMyk8w8nN93/ufyfR8waQ4zZlbT2Xkt8Sxl5mcT74qTfdbGOk9EgplXNzYfbFL0zJrEJ3IywOjqJpzf0n752v5QTChXOm9E00E1ypgI1HZc7947YkpxpeMqr1mxVEkrgMtXb25X3Tq3tV+Epmk0NGT40ktCimpHwmHq7glC13V0dd3KS6sIgFmJRIcRGY7C7dbRFx2YmlYAiqoiHIlCCAFFVdHfHypIoqVFGSUAhmHAtm3FZhuRoaFCABoRifSQEADmuJSkJdgScmZPT0/B3/3nWACXywUQgdmWgZw85UaPeAoAObkbjzpm2zb8WZnQVBW2LUnTNLT8fLw6kQO24wGElMgOBOD1ZkAIqVqWyX3B3qXMPCfe51hjdl5PGAWQtg2v14MZ06ZCCAEwS392jvZJXeM7RMREJIicV5HGzkIQQmL2o7Pg8XhgWpYmLBMdnV1r+dKuLXx+4xFmLmCAmJ2T1MrYMiqlRMCfhYVFhbAsASkEMn0B/b263r2trTdKAeQSwACTExuZUIhswzBR8MjDKJ4/B7HbBlRYUs8v5hPXZ/5ERCeZWSUi6TiAnOyA5s30Kaqq2dJmUbKwSCwpWSANy4JpGSKoFs27HjGqiUgmNz5OMBozTn/Ufat/3W3TnObxeEGKCl13o/tWEL/8+hv6Q1GcPfF9eNt955fN/aDlXHID5BiAhGUx89MAlgwMDM4KhSJ5lmX6cvLzI3t27ZwXunBkSmX5/XL51s0vEVU1MrMKIiYn9Il/28w3bC2sO/1ZGf9YVyoOrl/Uzfx7OfPEJ/NfHUiODZTowJzIEwaCS4/ve7H55rHglFDbICxdMd5Y91wt3trzDYCzILJpAiZXuoP/mIH8K8uLGtq8rmcu3AwaflbObWr96m1gbguIiAA5ocPcPysMGgG9D81Y+Fp371Dfvffk6gMaSpqKK98EkZsAyRMwtd6RhhnQCBC8rGTD5+rwNsXjnv9HOAJyq0d3/HCxAsDtxKLYjgQAQByPRybKFpedztXL2/vCG0+NRJGta9++f+xCBQDjbkLQ/6haREQ4tO7JL1r7h9YPxgz4ddeR2u/aVzHDJALdDYj/rFkiAjPT8/UnN0zL89UHvDoihrXy3RWzDxDBxTxawZwJAICJiJlZeaX+VM2MKVkNfq+OyIhZtuMuQqSiEVFCTlxXs7j+al9kbThmwJ/hPrz7aNtqZojxlFOqOukoxKfVjzdcG4hWhWIGAhmuQ7uPtq8ZT4hUjgJJCOyrXtTYORB7IRQzkJPhOrgzDiHHAyKV+kzmBF5tOLN2eo63OeB1Y3DEqthZOruJCAozMzNUpwIkIcDMvKnxTNUDub79Aa8bg8NmZW35Y01ERESQqYz8eFQImxKh2Nxwumpqru9AdqaOrr6RVR+/XPw1M0+Pn5+lBmI8x2GF40mh7F21oDlIVmXFmgdhCr78xMbDhWA2icjxZ6/JCOsn61ZeOv9lJTNvf53jcEqaXBzGIZi5kPnDGqRQPhO191aAtLzChZLWd9CTNmmTNj72J1JTcXq2Wu0LAAAAAElFTkSuQmCC") 4 4, auto;
 }
 
 html:not([data-cursor='off'])[data-skin='dragon'] a[href],
@@ -11724,7 +12207,7 @@ html:not([data-cursor='off'])[data-skin='dragon'] input[type='radio']:not(:disab
 html:not([data-cursor='off'])[data-skin='dragon'] input[type='submit']:not(:disabled),
 html:not([data-cursor='off'])[data-skin='dragon'] input[type='button']:not(:disabled),
 html:not([data-cursor='off'])[data-skin='dragon'] .cursor-pointer {
-  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACoAAAAqCAYAAADFw8lbAAAFeUlEQVR42u1YXUxURxT+7r37vywssAqL/FUEG02kitSaqmysadOHtg+tLS+1L7pPbaIk7asD4cGSRhrStHgfWpqUxCilUaBGqnhtKnRt2LQLLKEGV8DdRRaE/bn7w96904cu1hhSq+wCSf2eJjPJzJlz5jvfOQM8w/8UzOPWCSEcADYQCHCSJMnRaFTmeV4CQNfcekKIoq6uTguATV6GeWQMnueV/+Gi6fEoIUQBgCWESMkpuamp6VVKqYXjuCJRFONer9fZ2traDmCa53mF1WpdE+8yAJhTp0691dnZeXNk9E9xaHScTrhnqGdmgbrvzdHh0Vv0Rr8tcuzYsS4Az6+WZx8c0NDQYMzIyDhSWVl53FxYWppnLmAkKYFIJIJYLAY5kQDDMGA5DkajEUH/PM582TLU1NR0lBBiJ4Qk0ulZbmlw6NCh12Sq/JzVGc3e2QVmeGQUU1NuiOEwNGo19HodKCgkKQFRDEGt1WPbtu15zmHHxra2tmuEkIggCOk3tK+vb/7qlcvTo0NOVSweN4XDUU14MYHbdyZw2zWJkBhGbk42NBoNKKVYjC0i31yAnKyMvI6OjiGLxTImCIKcdkMBhAH8Njs7/fMfg7bh3CytXq3Vb8o1bVQmZBlurxeTdz3YkJuDLIMBiYQEhmWhVqlU/JlWpyAI11cl9EvgeT5cVVXl5HlesPVfd5WVbdmm0uqyMzONCIZCmHJ7UViQD61WA4DBYizGXLr4w4g/GOwDIK2aoV1dXVQQBJnnedFsNtv51i8cxWZTqc6QU2zIzGJCogh/IIjNpcVQKpUQQwG0ffvNQDgc7gWQttCzy8xRANRqtUo8z0vNzc397e3tVsfNaz2BhVmalZkJz/Q93PV6odfrMTvjk30+n4dSGk9n6Nl/WaMA6IkTJ2LNzc2TXV1dH/7usPcFg4tUoVBgYsINlmUxOTEeBnCroaFB/Zj90mboEmSXyyUDmDy4h5ssoP2MTJUIBkPwuKdw4cKFOwAcc3NzdK08+kAUcnJa4o2NjcX7cxfe3p7rift9LmrIMcE5dive09NzlhAy2dLSEl9V1i8HQQDV6XTsp1//Gv3q/MiPu6r2FoTm/fnjP7XJWUUVrt7eXnttbSA8OLgOKqqk9xVJba9pPLojNvjd6/T7zw6EAFgJIap0av6TPH4ZQMLj8TAAftlQnX93etAP8Ueftrq6+iVCiIH8HSFmzUL/MCyCQAVA7u4en3iDGg6HFiXuFTVKHBrjzPDcnPMjIC6k4a0+cTohgEwIFAC6RVYSNZkajN2f15lMps1jgPJkmgj1VHnPQ8AAkH1zkbGwLIOqWbW7vz8bQIxZB2/0n3oASBBCOEGTzTMSXTDmGpj9u4pqAOyqr69PS+J/2g1lgLCXHY6OGyZthx8yOJYpAfDytZMnpXRq/lN1B8keq+y4pSL6cU05fXd3iQBgC88j5e3JSkJEA4GAEsCdTLVqKEOjhJZiJ4A9Hg9h1jw9PYyBgQEKIBE1PXc/n4m8Q6msjmYZxHPnL15N1qZ0PXgUABI8zyttNtslsIwvz6Bhdmu4AwBeqKurS2n4V8xOj8fKAIi4N2Sci8sULCsXAth3/fTp9fGbsgypiupqtkY+sVTQ93eW3ACwNZWkSkW+WyKVW6tV2nVqBRiW7gCwN5Wk4lKxSZJUsphZOFPARWoVLKNelDTi2e7uqyRF2p8qBUnU19dr7HZ7H8NwXr1CgaoKnQXAiyCpOSNlUpdsRaL+8uzug28Wo/a9sk2VlZUfEIIMQlZe/nGpMtRms1EAsk5XOrtvp/LwFRe973DMtJhM847OTiTWWwYAADWAIwD2AlCtKzItIwLO8vLymYGBgfh69OSj35ksnuEZVo6/AGCqfSqM3TzrAAAAAElFTkSuQmCC") 7 3, pointer;
+  cursor: url("data:image/png;base64,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") 4 4, pointer;
 }
 
 html:not([data-cursor='off'])[data-skin='dragon'].dark a[href],
@@ -11742,18 +12225,18 @@ html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='radio']:not(:
 html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='submit']:not(:disabled),
 html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='button']:not(:disabled),
 html:not([data-cursor='off'])[data-skin='dragon'].dark .cursor-pointer {
-  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACoAAAAqCAYAAADFw8lbAAAEQklEQVR42u2YW2wUZRiG329mp7vd2RNNtwdFltaClibVG6GotaC1ilGjMRoCIVEsIopRJCRc6IVao2BQb0TqiRiblIRGaSKxWAWiUZJGSEpqiIeAltLSGnva7tbdObxedLdda0wb6S4b7Xc1mfln8vzvfP/3fv8PzMf/NGSm5yQlMU4AEABFxM4KepIKSccMY9TLpihJBYCIiJVybymAUgALAIwDOCcinUnY1LHpjL+olvylJJcBeDhu4s4zP/1arutuh6blgLQwNDiISDR+wp2rvSAiRzIFKynKuQDcAGDzue7e+/0L8tymaWF8fByGYdi2bVNEICKK3++X8MgQSkNXbhSR/SSVdOdtKmh584FPGm3NWQ3FgXg8ZrqdTgYCPkdRQVB8Pg9M04RpWhARy63rSmR0GOVLSytFpCvdsH9b9Q0N79yY48/Z2n+xb60/L19i8T8sl6apJYsXobLiWrjduTAMAyKKGQzmO/K8zg9E5NF0p4BMu2aKwive2PfRq7G4scowTUajUfh9Xqm5aQUKg/kwDMPWvV7RhL8UFeRdA8CY/o20KposO0l1vvz29M6jx46+7PH4lLHImO1yOpU1tTXw+7xUHZrAMgZLxCyTUGgoo6DTgCkiNsnbX3rt7YOay+UPh8N2cWGBUndrNZ1Op9Ay+hdfVVwmImPpBFX+cQYiVgJSE5H253dsqRuPjEZ8Xq/S2z/Anr6L1HUdQvSJSCThYExXjiozSi5iJGA7Htr69D2xuIQ1TbPPn++1VFVlaFHx1wnAtDqVMstxNgBUeJqDwdhx3bJUdXQ0rFzo6RYALclsudygAohNMjBy7NPt61dGO4zIwIAeyFP9waIvROSrRA3NiJXOplHRSOYCwJmzw5t2PrfL2LXp3m9IlpNUyVn/nYwBqwC0d3cs7zrZtIa9nz/QloluSvmX5cyo313TOnBq1Pru9R+vI1kiIhaRRapyCtbRVl15Yd/yJeT62vdJBggonLkZz4iiEICJfDQL/Y5Ol8+F1rPdVwAISKI6ZAVoagJcb2iHY6TxgxGvgkgYgEg2gU6oSgUbnmpdVRBocQX0wOGNKzdMrKnMblFmsfonnIg9e6perC3nM9VlXQDUrMnRKWuFRVKRhds7cnK1U5oiFWxcd4ukTCIrQFPet59dvazR49Kw+9DpxyYKA5FVoEnb1LY1t8QtDnePRO9jtGlh4r6STYoysQUZrCoJHsjXna7Pnmxcl7L1zhrQyVp191tr3zNsov3n3noAGiZUlawBnVxUOU+czPe4TmiquoSvPHhbijFki6JT39l2R0Wj2+lAw/HvN891izonoJO96JamQ4Zl//5bJHYXGxpCc9moKHPX/dEhIiOrry7+0O1Q1Y/72+oToqbLVS+pTxXyzZuP7Kll+946kgwlXEzJurNWkl52PnKQ3Ps4SQ85ebY6H5eUBjMdBM/HfPzX4k/k8vl0acgGiAAAAABJRU5ErkJggg==") 7 3, pointer;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAFmElEQVR42u2ZaWxUVRTH/+fe92amnaUzpS2L0LKUIluDVYqABgNVEgMYDBC+iDExIZGYCIm4RD+YiMsHFDGS6AeNBomJBqIoSyWkSKGWrRWUze4F2tJO6TILdN67xw/zSkZipdTIe024n2bem7x7f2f5n3fOAPfWMFjMLJhZG+DeSDvPpt3u4ABARAqAAqAz8zQAxQAeOPXb2Xl7du36BsB7zCyJyHSS1WXK5+nMvLm2vvli1ZlzfLmtk4+fqeFX3nynE0CAmQkAOcYD/dZk5nwAb9U1Xlnhy8hwebwBQOo4eqz6xomqaj0vFFwPoMd6juEIgJTDr2lp7/zI5U4Pmgx0d/cYxCzKyiu55WqHi4y+8y9s2LCdmYWdoSMGOPzGtnD3l30JDnZ0hA3TNCEFaRXHq0R98yUIYpo1bcoWAKb1DLYdIOXwyxuaW95PmGzE4zHFrDS3y4WLNfU4e+FPDvj88lpHe8fq1cu/YWayO3FTPaAApJ04Wf2hLyPEkd5eIiIhhEA0Fkf16bNwu92mEAK5Y/N2W7Fvq/X/BkBEzMxLx4zNzeu61qWISDIzdF1HTV0DenojcOk6xaIRLF648HtLdchutRS3fJ/jCwRYKcUWFBKJBBqbL0NIySAhI709UffWTZUA2KoPjgLIN01FzIoAQEqJ3t4Iunt64dKl0qTEiKzs0xO2bWu1tN9xAColqSGIEItfR8IwIEgwiJA/Kf+89RPphIJ7K0A1wEwk2UoMGIYBZgaIwEohMzOnzgmxPxDA/q7OMGm6JDADYJAQyWwlglImsrM8XXYrz0B1QBDRsWDAeygUDEqQMFgxfN40aJqW9AKA9kgogqQLTCd6QIWCGWvbW1sigYyAZpiGGfD7EfD7kEgkZKxP8ZXDr77YV77iFwa8/QrslDqgrGp8oSA/b2XrpUbT78+QHrfbGD0qB6ZpkKkEsxkvisb7MgB4mEHsJA9YrxKSiPYVzZr55KWG2javz6fNmD7VdLtcCZ9HUIeaWBEs+WE2EXVY5mcnhVAqROmc4qLZPeG27ySbsnj2gzoJIiNtsiSCkcwZ+5NZ/NPFfggAzRMnjl85tWDCkvzc0WUqHkV1xaE8AOlWFSZHAvRDACBm1onop9/X527tPvIZP5J5LJ15yzJO3hN2A2i36yyTCssyeujZpXltYZKa9LeVHlkxCtjBTvZAKgQRmd4Fq3a0VvX0VH5ey53bmsYkQ4wUO0VG/y2Ukgm75MD9FbHKYIRob+PVOTj48TNEULA5jAa5OREzBKeb3cLnQsRMRLB9/1xmnkxEJg/6OXYBEEAENSHa90fnDcMMpnt8za1t7QAMZof0xINIZkD31vhI1Hp8bhxt6ygionq7i5kY/JwLAquerygZk7nbJSXKhZrLzDlEsLUeiEFGEAMgWru2NmvNrJ3dCROmRwv2vr18XpLOvuZm0MlHBMUA0aIPqsIubgy5dHxxon5xaoQ5GgAAW5IZL8gOluuaQG04sgCARkTGcAC4+e6/rHBcqcnA9YRZwDs3TLd8IBwP0D9GCbw8t8xQHAt4dLn3x19LrDQXw8EDKjlOfKkpJ+CpStMlKho7Syw8NRwAbo5TisdlHxSCcDV6o5j50yy75HQIAMkucv6jD/183WC4JGV2bdo33y45vWMAy9Kgle+e9OiiyefW8dXx2ifsklMxtH+fWAKITcrxlbs0gbpw9DG75HSoykEA8PSM8aWKgXjCnMJ7X59mh5wOabN+OfVuLCzrM1Xc79Hlgd2HFzGD7racDnUzS07faBzpT6tO1yT2nLzyeHJKcXfl9L9YSwJA4X2hA8pFKmuy92FmLiCCsnoERzT1t12LPplfH/q6WmSP8ITQtO45AK8BLOwqbHcgRUkrM/PMc98+dYob1m1mjhQmxy3OGb/fW//3+gth6LGB3lA97AAAAABJRU5ErkJggg==") 4 4, pointer;
 }
 
 /* The slash. `:active` rather than a class, so it covers everything a pointer
    can be held down on — including the page itself, where half the clicks in any
    application land. */
 html:not([data-cursor='off'])[data-skin='dragon'] :active {
-  cursor: url("data:image/png;base64,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") 7 3, auto;
+  cursor: url("data:image/png;base64,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") 4 4, auto;
 }
 
 html:not([data-cursor='off'])[data-skin='dragon'].dark :active {
-  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACoAAAAqCAYAAADFw8lbAAAEUUlEQVR42u1YTWhcVRg95973XmbSZv4ynWmapBhTbNWKoSlKay0oQnAT0I0udONC0EUprlxJRUQL4qZaN4qiVEKxSAUXrRuxklo1IhQsNmlTaTJJatPpTDpJZua9+7mYG52msbZg3qSQDy4zd957w/nO93fuA1Zt1VbtfzEu3osI7e+LrwlJA0DuCM9ERC/hRHiMiohj91kAXXalAPgArgI4S/I0gDl7v7IMh2JO3fcth784+klmQ0dPOpXQmUwGVBq+70PEYG62hDlfzkc0Bki+TXJGREhSQs9REdnx+v4Dn6Uzbd2ZdLLcfVenTqdbUalU6AeBikajjMdaUC5d+zWbSfUDGAPAMJitD/1CKFv37T9wVDmRR0xQDe7Z1KW3PbgVSikYY4zW2s9msx78ymCsJbpbarSasBnVJAMAa95694Pjymvemc/ngw3rM/rx3TvgeR5MEEA7bjURj7npRPNzJA+JiEPSX06g6jrUZGCrurT5lZf6Z2eunk8lkzo3ecl8+/0piAhAwhhDKiUA+sMqJnUDxTWwztPA9L5X9zxTLObLiXhMLuYm5MzvI/A8DyKG1WqVPtBuHzOhA7VgfRFxSf78ZF//G1RKN3meOTtyHnNz81BKASQcoNwwRheB1Tt7736nOl+60Bxt1oWZkrk8fQWO64pWCgB++q//WXagdlSSQLnv+ZdfMyIARArFIhyt1dTkBAAcrru3YUCx0Ha2Z95smS1e9qkcVa5U/Hg8rtYlW74i+Utdp2gMUFv9RuTg3tOff/d+HGPOfMVIKpl0/hgdKWazmT1WwMiKECAi0ikim74+8tGH+w8eksGh3woi8lSdM6EXk7JLWw3g2nWFxIU1W1848ue5M/6JT98bIvllWCG/QZSIiGeBsg6wBuCJIAqgfdg9xvXt0cdEPn6W5EAYE2kp9eTa/YLejFqZlwYwC+DH+xJrJ0q5agcwH3oa1gPdbPdNC63J6tAhknkAOPdE7/DJYqkDLx7vATAQZiHVA71oP30A10iW69KCANSxvp5MMQKM5nLdItJKcro2/UPsoySn7JomWRYRiogSQJEUkGvXgBNaKySCyjAAX2T5J9JSVX/doY6kkDQEpAZI/F1bO49prTFk/AjJAiCKIYVfLRqZskTe2VHKEvb2nyrQYNAxG6XmUENy9Gbyugaosyl/KfDRFLCNgAgac7i72THAMvfoZd+YoBKgDYAiYRASs7dVDGTX1Yirp8u+n5V8PhZmH71VoAuMzcci7qQim1E+kbQXuJKAQkQUAMSj3kTE1cDJb9b9y2uhhodeAUC2JTruOQqzZyfXW65XHFAAQHcqOuYoheGxK20rMUf/tgfaWscVgXP5YntIp5DbBWojfP+6CShiarbasVIZrVG35d5ccaYqo+MzWeuAWTmTyb7iBQhs7PV7dmXoNqmH5YeROMlCGArq1oEKbfQfqm7b3joeW+vmrHb9R72u2h1kfwE6ts7UIanKhAAAAABJRU5ErkJggg==") 7 3, auto;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAEfElEQVR42u2YW2wVVRSGvzUznXNKaZuW0gu3QClyMUFCSkSUCJLgJYWHEjUhEAlRHzQxxEQI8c1YDUSNgfiCkNSAKCAgKfKgVfGCghBEMC2EFtJS2lIoldJznTmzfOi0npCIL1zmmPMnk713ZpLZ/1pr/2uvBVncX8jQRFUNEfHS1uOAycAYIB8YCYSANhHZGTgC/qbLgGqgAkgAl4EOoM9fp4CUiMSD6IHlQAlwAmgGYr7VSwALMPyxT0QuBpHAHOAPoBAoAzzgBjAAxH3rIyI6NA8agXKgHLgOdItISlVDgO1bH3+Mi8hA4E6zqo71CYVUdZSqFqtqnqpamaJIOf7G89MsfttDHzQPFKmqmRGbzSKgMP5XV4uMw6dr1lRmoieGN3umoPwgMMrPwEbGESgurZi+cdO2nf59x1NVQxXxE5kEnkA8HnMxrcWbP/58PxAWEU8EFREX0MATUFUrHou5kXi8ZsOHW77n5RMVql1zVDfWqWqR7wUJrOq8+c4mtS0LwzTdcG7YutYbaa8uONY2a2zP/Kplh2YAZwfDS1IieIHzwNSqSpKOSzKZtKKRqFdUGJ5wOjZ3/mcnJ7q0b6sWERURRwRPVc20xwiEB1rbu7X1Yhun/2ym70Y/qurZOTnqkmMko/1eyM45vPaJ7rqRD9d1isi5wIVQc0u72raN4zh0dl2h/dJl/urvT7muS0Fxidn06xEKr37JgkUTnAXJks088tRRZq3s8Cu3ZpAUgifc2/AaJnDuQoerqhimqeFQCBGxbNvm2tUe4gnn2CfrXiipeTJ3splj0bq9jUTCZUxe6GTtzCkNfHTgfRG5OSgGCGCKkLoX6jVMoKcvoqo6JKl0tLd5FaWlP02aNL5eROpVV8z7Zfv1fZ3HewvkVDQ3Ghb6bsbojcViY0yr6YGq0QcW1q3cK1Nea/pH2TAHy1C8u0VmmIDjaaMlOEAncBr4TkTO+BIrIqKq+0ZBrJDlW5ftuNS1Phq2w7Zp5DoplwvJBNeTbrxsZPjnJTPH7p6zvPKgVG/pSpdpRO54iMl/FDkCGCKSUhBJs6LW1Eyjp3X12fL83NSI3Ik/XO1d1GWmcjXlMZBwSXp6bVJx3tevzp+2K2/dnm+BSJpnLN8r3h1tbN2SrLz0RtfQ9wqCYojgqqpFQ8N4Wbr0onaumX7yvXO1h1s6a3sGErNDpuC4KfoTLjmm0TKjoqDhpVWzd8szW4+mETFAjX/51929PisYQ+FwS1dPtHH9Y1/tOvLcqY7empjjTTQF4o5LX8zRorB9fEFl2d6nNyzZL6Vrz9/v+7/4oeUpGAwScdPe52v9isXbG1ueP9/Tv4jBTgfRpEss6UYKR4R+fHfz478xY+03IlVHglLAiE8GERlugGl0x7juD/Ys/eL39mcv34jNsxTbtWHl6qncjDhNc1cdejCQFZ4q5i3dDvTKpocaX1z4Vv0bj7a1HKhVHVj3ekaUq6pq+co2JBwVqm+/oqqjM6p8VTAyqeN3mzwT/IoviyyyyCKLLLLIIou7iL8B62MoNBRuKrcAAAAASUVORK5CYII=") 4 4, auto;
 }
 
 /* And the same thing again on the pressable list, which is not redundant.
@@ -11776,7 +12259,7 @@ html:not([data-cursor='off'])[data-skin='dragon'] input[type='radio']:not(:disab
 html:not([data-cursor='off'])[data-skin='dragon'] input[type='submit']:not(:disabled):active,
 html:not([data-cursor='off'])[data-skin='dragon'] input[type='button']:not(:disabled):active,
 html:not([data-cursor='off'])[data-skin='dragon'] .cursor-pointer:active {
-  cursor: url("data:image/png;base64,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") 7 3, pointer;
+  cursor: url("data:image/png;base64,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") 4 4, pointer;
 }
 
 html:not([data-cursor='off'])[data-skin='dragon'].dark a[href]:active,
@@ -11794,7 +12277,7 @@ html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='radio']:not(:
 html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='submit']:not(:disabled):active,
 html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='button']:not(:disabled):active,
 html:not([data-cursor='off'])[data-skin='dragon'].dark .cursor-pointer:active {
-  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACoAAAAqCAYAAADFw8lbAAAEUUlEQVR42u1YTWhcVRg95973XmbSZv4ynWmapBhTbNWKoSlKay0oQnAT0I0udONC0EUprlxJRUQL4qZaN4qiVEKxSAUXrRuxklo1IhQsNmlTaTJJatPpTDpJZua9+7mYG52msbZg3qSQDy4zd957w/nO93fuA1Zt1VbtfzEu3osI7e+LrwlJA0DuCM9ERC/hRHiMiohj91kAXXalAPgArgI4S/I0gDl7v7IMh2JO3fcth784+klmQ0dPOpXQmUwGVBq+70PEYG62hDlfzkc0Bki+TXJGREhSQs9REdnx+v4Dn6Uzbd2ZdLLcfVenTqdbUalU6AeBikajjMdaUC5d+zWbSfUDGAPAMJitD/1CKFv37T9wVDmRR0xQDe7Z1KW3PbgVSikYY4zW2s9msx78ymCsJbpbarSasBnVJAMAa95694Pjymvemc/ngw3rM/rx3TvgeR5MEEA7bjURj7npRPNzJA+JiEPSX06g6jrUZGCrurT5lZf6Z2eunk8lkzo3ecl8+/0piAhAwhhDKiUA+sMqJnUDxTWwztPA9L5X9zxTLObLiXhMLuYm5MzvI/A8DyKG1WqVPtBuHzOhA7VgfRFxSf78ZF//G1RKN3meOTtyHnNz81BKASQcoNwwRheB1Tt7736nOl+60Bxt1oWZkrk8fQWO64pWCgB++q//WXagdlSSQLnv+ZdfMyIARArFIhyt1dTkBAAcrru3YUCx0Ha2Z95smS1e9qkcVa5U/Hg8rtYlW74i+Utdp2gMUFv9RuTg3tOff/d+HGPOfMVIKpl0/hgdKWazmT1WwMiKECAi0ikim74+8tGH+w8eksGh3woi8lSdM6EXk7JLWw3g2nWFxIU1W1848ue5M/6JT98bIvllWCG/QZSIiGeBsg6wBuCJIAqgfdg9xvXt0cdEPn6W5EAYE2kp9eTa/YLejFqZlwYwC+DH+xJrJ0q5agcwH3oa1gPdbPdNC63J6tAhknkAOPdE7/DJYqkDLx7vATAQZiHVA71oP30A10iW69KCANSxvp5MMQKM5nLdItJKcro2/UPsoySn7JomWRYRiogSQJEUkGvXgBNaKySCyjAAX2T5J9JSVX/doY6kkDQEpAZI/F1bO49prTFk/AjJAiCKIYVfLRqZskTe2VHKEvb2nyrQYNAxG6XmUENy9Gbyugaosyl/KfDRFLCNgAgac7i72THAMvfoZd+YoBKgDYAiYRASs7dVDGTX1Yirp8u+n5V8PhZmH71VoAuMzcci7qQim1E+kbQXuJKAQkQUAMSj3kTE1cDJb9b9y2uhhodeAUC2JTruOQqzZyfXW65XHFAAQHcqOuYoheGxK20rMUf/tgfaWscVgXP5YntIp5DbBWojfP+6CShiarbasVIZrVG35d5ccaYqo+MzWeuAWTmTyb7iBQhs7PV7dmXoNqmH5YeROMlCGArq1oEKbfQfqm7b3joeW+vmrHb9R72u2h1kfwE6ts7UIanKhAAAAABJRU5ErkJggg==") 7 3, pointer;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAEfElEQVR42u2YW2wVVRSGvzUznXNKaZuW0gu3QClyMUFCSkSUCJLgJYWHEjUhEAlRHzQxxEQI8c1YDUSNgfiCkNSAKCAgKfKgVfGCghBEMC2EFtJS2lIoldJznTmzfOi0npCIL1zmmPMnk713ZpLZ/1pr/2uvBVncX8jQRFUNEfHS1uOAycAYIB8YCYSANhHZGTgC/qbLgGqgAkgAl4EOoM9fp4CUiMSD6IHlQAlwAmgGYr7VSwALMPyxT0QuBpHAHOAPoBAoAzzgBjAAxH3rIyI6NA8agXKgHLgOdItISlVDgO1bH3+Mi8hA4E6zqo71CYVUdZSqFqtqnqpamaJIOf7G89MsfttDHzQPFKmqmRGbzSKgMP5XV4uMw6dr1lRmoieGN3umoPwgMMrPwEbGESgurZi+cdO2nf59x1NVQxXxE5kEnkA8HnMxrcWbP/58PxAWEU8EFREX0MATUFUrHou5kXi8ZsOHW77n5RMVql1zVDfWqWqR7wUJrOq8+c4mtS0LwzTdcG7YutYbaa8uONY2a2zP/Kplh2YAZwfDS1IieIHzwNSqSpKOSzKZtKKRqFdUGJ5wOjZ3/mcnJ7q0b6sWERURRwRPVc20xwiEB1rbu7X1Yhun/2ym70Y/qurZOTnqkmMko/1eyM45vPaJ7rqRD9d1isi5wIVQc0u72raN4zh0dl2h/dJl/urvT7muS0Fxidn06xEKr37JgkUTnAXJks088tRRZq3s8Cu3ZpAUgifc2/AaJnDuQoerqhimqeFQCBGxbNvm2tUe4gnn2CfrXiipeTJ3splj0bq9jUTCZUxe6GTtzCkNfHTgfRG5OSgGCGCKkLoX6jVMoKcvoqo6JKl0tLd5FaWlP02aNL5eROpVV8z7Zfv1fZ3HewvkVDQ3Ghb6bsbojcViY0yr6YGq0QcW1q3cK1Nea/pH2TAHy1C8u0VmmIDjaaMlOEAncBr4TkTO+BIrIqKq+0ZBrJDlW5ftuNS1Phq2w7Zp5DoplwvJBNeTbrxsZPjnJTPH7p6zvPKgVG/pSpdpRO54iMl/FDkCGCKSUhBJs6LW1Eyjp3X12fL83NSI3Ik/XO1d1GWmcjXlMZBwSXp6bVJx3tevzp+2K2/dnm+BSJpnLN8r3h1tbN2SrLz0RtfQ9wqCYojgqqpFQ8N4Wbr0onaumX7yvXO1h1s6a3sGErNDpuC4KfoTLjmm0TKjoqDhpVWzd8szW4+mETFAjX/51929PisYQ+FwS1dPtHH9Y1/tOvLcqY7empjjTTQF4o5LX8zRorB9fEFl2d6nNyzZL6Vrz9/v+7/4oeUpGAwScdPe52v9isXbG1ueP9/Tv4jBTgfRpEss6UYKR4R+fHfz478xY+03IlVHglLAiE8GERlugGl0x7juD/Ys/eL39mcv34jNsxTbtWHl6qncjDhNc1cdejCQFZ4q5i3dDvTKpocaX1z4Vv0bj7a1HKhVHVj3ekaUq6pq+co2JBwVqm+/oqqjM6p8VTAyqeN3mzwT/IoviyyyyCKLLLLIIou7iL8B62MoNBRuKrcAAAAASUVORK5CYII=") 4 4, pointer;
 }
 
 /* The three the blade must not swallow. */
@@ -11810,5 +12293,129 @@ html:not([data-cursor='off'])[data-skin='dragon'] .cursor-grab {
 
 html:not([data-cursor='off'])[data-skin='dragon'] .cursor-grabbing,
 html:not([data-cursor='off'])[data-skin='dragon'] .cursor-grab:active {
+  cursor: grabbing;
+}
+/* ===========================================================================
+   Skin: PIXEL — the pointer is the system arrow, redrawn on a grid.
+   ===========================================================================
+
+   Generated by `custom-cursor/pixel/build-cursors.py`. Re-run it after any
+   change and paste the result over this block; nothing here is hand-edited.
+
+   ## Why this skin's cursor is not an object
+
+   Every other pointer in this product replaces the arrow with a *thing* — a
+   paper plane, a knife, a guan dao — because those skins are places, and a
+   place has objects in it. This one is not a place; it is a rendering mode.
+   The interface is the same interface, drawn by a machine with a small
+   framebuffer and sixteen colours. The right pointer for that machine is the
+   pointer everybody already has, drawn the way that machine would have had to
+   draw it: a 12x19 grid, scaled 3x with no interpolation, every
+   diagonal a staircase.
+
+   It is also a little larger than the system arrow — about 36x57 against
+   a typical 32px — which is the other half of the effect. A pixel arrow at
+   exactly system size reads as a slightly broken cursor; one that is visibly
+   chunkier reads as a deliberate one.
+
+   ## One state, deliberately
+
+   No hover frame and no press frame. The other three skins change on both, and
+   they are right to: they are showing you an object being aimed and used. A
+   1987 machine had one pointer and the system's own I-beam over text, and a
+   pixel arrow that grew or tilted under the mouse would be a modern
+   affordance wearing a costume. The `pointer` fallback keyword still applies
+   everywhere the browser would normally use it, so nothing about hit-testing
+   or accessibility changes.
+
+   ## Two palettes
+
+   The page underneath decides, the same way the Dragon skin's does. Both are
+   a light body with a dark outline; the dark palette simply pushes both
+   further apart, because an outline that reads as a line on a pale page reads
+   as a smudge on a black one. `.dark` sits on the same element as `data-skin`,
+   so this is one extra selector rather than a media query that would be wrong
+   for anybody overriding the theme.
+
+   ## The opt-out
+
+   Every selector is gated on `html:not([data-cursor='off'])`. The switch in the
+   theme picker writes `data-cursor="off"` onto the root element, which drops
+   this whole block and hands back the system pointer — no second stylesheet,
+   and no JavaScript that has to know which skins draw a cursor.
+
+   ## Hotspot
+
+   `1 1` — the centre of the arrow's point. The tip is the top-left drawn
+   pixel by construction, and at 3x that pixel is 3 screen pixels across, so
+   hotspotting on its corner would put every click off the point somebody
+   aimed with.
+
+   Text fields, disabled controls and drag handles are left alone: an I-beam,
+   `not-allowed` and `grab` each say something no arrow can say.
+   --------------------------------------------------------------------------- */
+
+html:not([data-cursor='off'])[data-skin='pixel'] {
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAA5CAYAAABeSIndAAAAvElEQVR42u3ZQQ6DIBCFYTAeQmWv9z+O3bf1FnbTNG9jKgrMLP63ggUJyceQCcRpmPfwzWt7xGCcLjiLuw1FJdNY8UH2L71Onu/1N07jYlJ9kGWReeCD7DKZFR9kRcha8kFWnKw2H2RVyWrwQdaMrBQfZCZkd/ggMyfL5YPMFdkZPsiakaVxubyWKitOphxaHWcIaPKbkSmTEuglpnw0+SZkR0y85HvKLRb9uDm6MHOPAWRsiI6xRscIWU4+C/9pLIqt2XkAAAAASUVORK5CYII=") 1 1, auto;
+}
+
+html:not([data-cursor='off'])[data-skin='pixel'].dark {
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAA5CAYAAABeSIndAAAAu0lEQVR42u3ZsQ6DIBSFYTBOKpu+/wPara2rXZrmLKaiwL3DfyYYSEg+LrmBOA3zHr55bY8YjNMFZ3G3oahkGis+yP6l18nzvf7GaVxMqg+yLDIPfJBdJrPig6wIWUs+yIqT1eaDrCpZDT7ImpGV4oPMhOwOH2TmZLl8kLkiO8MHWTOyNC6X11JlxcmUQ6vjDAFNfjMyZVICvcSUjybfhOyIiZd8T7nFoh83Rxdm7jGAjA3RMdboGCHLyQcvl2r4xyJFhQAAAABJRU5ErkJggg==") 1 1, auto;
+}
+
+/* The same arrow over anything pressable, and that is not redundant: without
+   it the browser's own `pointer` hand takes over on every link and button, and
+   the one place a reader looks hardest at the cursor is the place it would
+   stop being pixel art. The fallback keyword is still `pointer`, so a machine
+   that refuses the image gets the hand rather than the plain arrow. */
+html:not([data-cursor='off'])[data-skin='pixel'] a[href],
+html:not([data-cursor='off'])[data-skin='pixel'] button:not(:disabled),
+html:not([data-cursor='off'])[data-skin='pixel'] summary,
+html:not([data-cursor='off'])[data-skin='pixel'] select:not(:disabled),
+html:not([data-cursor='off'])[data-skin='pixel'] label[for],
+html:not([data-cursor='off'])[data-skin='pixel'] [role='button']:not([aria-disabled='true']),
+html:not([data-cursor='off'])[data-skin='pixel'] [role='tab'],
+html:not([data-cursor='off'])[data-skin='pixel'] [role='menuitem'],
+html:not([data-cursor='off'])[data-skin='pixel'] [role='option'],
+html:not([data-cursor='off'])[data-skin='pixel'] [role='switch'],
+html:not([data-cursor='off'])[data-skin='pixel'] input[type='checkbox']:not(:disabled),
+html:not([data-cursor='off'])[data-skin='pixel'] input[type='radio']:not(:disabled),
+html:not([data-cursor='off'])[data-skin='pixel'] input[type='submit']:not(:disabled),
+html:not([data-cursor='off'])[data-skin='pixel'] input[type='button']:not(:disabled),
+html:not([data-cursor='off'])[data-skin='pixel'] .cursor-pointer {
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAA5CAYAAABeSIndAAAAvElEQVR42u3ZQQ6DIBCFYTAeQmWv9z+O3bf1FnbTNG9jKgrMLP63ggUJyceQCcRpmPfwzWt7xGCcLjiLuw1FJdNY8UH2L71Onu/1N07jYlJ9kGWReeCD7DKZFR9kRcha8kFWnKw2H2RVyWrwQdaMrBQfZCZkd/ggMyfL5YPMFdkZPsiakaVxubyWKitOphxaHWcIaPKbkSmTEuglpnw0+SZkR0y85HvKLRb9uDm6MHOPAWRsiI6xRscIWU4+C/9pLIqt2XkAAAAASUVORK5CYII=") 1 1, pointer;
+}
+
+html:not([data-cursor='off'])[data-skin='pixel'].dark a[href],
+html:not([data-cursor='off'])[data-skin='pixel'].dark button:not(:disabled),
+html:not([data-cursor='off'])[data-skin='pixel'].dark summary,
+html:not([data-cursor='off'])[data-skin='pixel'].dark select:not(:disabled),
+html:not([data-cursor='off'])[data-skin='pixel'].dark label[for],
+html:not([data-cursor='off'])[data-skin='pixel'].dark [role='button']:not([aria-disabled='true']),
+html:not([data-cursor='off'])[data-skin='pixel'].dark [role='tab'],
+html:not([data-cursor='off'])[data-skin='pixel'].dark [role='menuitem'],
+html:not([data-cursor='off'])[data-skin='pixel'].dark [role='option'],
+html:not([data-cursor='off'])[data-skin='pixel'].dark [role='switch'],
+html:not([data-cursor='off'])[data-skin='pixel'].dark input[type='checkbox']:not(:disabled),
+html:not([data-cursor='off'])[data-skin='pixel'].dark input[type='radio']:not(:disabled),
+html:not([data-cursor='off'])[data-skin='pixel'].dark input[type='submit']:not(:disabled),
+html:not([data-cursor='off'])[data-skin='pixel'].dark input[type='button']:not(:disabled),
+html:not([data-cursor='off'])[data-skin='pixel'].dark .cursor-pointer {
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAA5CAYAAABeSIndAAAAu0lEQVR42u3ZsQ6DIBSFYTBOKpu+/wPara2rXZrmLKaiwL3DfyYYSEg+LrmBOA3zHr55bY8YjNMFZ3G3oahkGis+yP6l18nzvf7GaVxMqg+yLDIPfJBdJrPig6wIWUs+yIqT1eaDrCpZDT7ImpGV4oPMhOwOH2TmZLl8kLkiO8MHWTOyNC6X11JlxcmUQ6vjDAFNfjMyZVICvcSUjybfhOyIiZd8T7nFoh83Rxdm7jGAjA3RMdboGCHLyQcvl2r4xyJFhQAAAABJRU5ErkJggg==") 1 1, pointer;
+}
+
+/* The three the arrow must not swallow. */
+html:not([data-cursor='off'])[data-skin='pixel'] input:not([type='checkbox']):not([type='radio']):not([type='submit']):not([type='button']),
+html:not([data-cursor='off'])[data-skin='pixel'] textarea,
+html:not([data-cursor='off'])[data-skin='pixel'] [contenteditable='true'] {
+  cursor: text;
+}
+
+html:not([data-cursor='off'])[data-skin='pixel'] .cursor-grab {
+  cursor: grab;
+}
+
+html:not([data-cursor='off'])[data-skin='pixel'] .cursor-grabbing,
+html:not([data-cursor='off'])[data-skin='pixel'] .cursor-grab:active {
   cursor: grabbing;
 }

@@ -75,10 +75,11 @@ export const TopNavigation = ({ onOpenMobileMenu, onCreateProject }: TopNavigati
           'shadow-[0_10px_30px_-24px_rgb(0_0_0/0.8)]',
         )}
       >
-        {/* Lit lower edge, mirroring the sidebar's inner edge. */}
+        {/* Lit lower edge, mirroring the sidebar's inner edge, and wearing the
+            same hook — see the note there. */}
         <span
           aria-hidden
-          className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-brand/40 to-transparent"
+          className="nav-rail__edge absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-brand/40 to-transparent"
         />
 
         {isTouch && (

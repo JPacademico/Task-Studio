@@ -68,6 +68,15 @@ export const STORAGE_KEYS = {
   importTrackerPosition: 'task-studio:import-tracker-position',
   /** Where the reader parked the Spotify player. Per device, as above. */
   spotifyPosition: 'task-studio:spotify-position',
+  /**
+   * Whether the player is pinned open.
+   *
+   * Per device for the same reason its position is: "keep this on screen" is a
+   * statement about the screen in front of somebody, and a second monitor's
+   * worth of room is not a reason to give a laptop a permanent 336px panel in
+   * the corner.
+   */
+  spotifyPinned: 'task-studio:spotify-pinned',
 } as const;
 
 /** Curated task palette — arbitrary hex is allowed, these are the one-click set. */

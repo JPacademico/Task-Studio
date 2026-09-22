@@ -14,11 +14,11 @@ import {
   EmberRise,
   HazardDrift,
   DragonFlight,
+  KrakenRise,
   NightEyes,
   PageLoader,
   RouteBoundary,
   RuneScribe,
-  WanderingEye,
 } from '@/shared/ui';
 import { HiddenSidebar } from '@/widgets/hidden-sidebar/ui/hidden-sidebar';
 import { BranchCommitPrompt } from '@/features/task-management/ui/branch-commit-prompt';
@@ -105,11 +105,12 @@ export const AppLayout = () => {
       */}
       <BranchCommitPrompt />
 
-      {/* Something opens an eye somewhere on the page every twenty seconds.
-          Inert on every skin but the eldritch one, and inert entirely under
-          `prefers-reduced-motion` — it is fixed, aria-hidden and
-          pointer-events-none, so it can never take a click off a control. */}
-      <WanderingEye />
+      {/* Something comes up over the bottom of the window once a minute, holds
+          for three seconds and drops back. Inert on every skin but the
+          eldritch one, and inert entirely under `prefers-reduced-motion` — it
+          is fixed, aria-hidden and pointer-events-none, so it can never take a
+          click off a control. See `KrakenRise` for what it replaced and why. */}
+      <KrakenRise />
 
       {/* Leaves coming down over the page. Inert on every skin but the autumn
           one and under `prefers-reduced-motion`, and — like the eye — fixed,

@@ -5,6 +5,7 @@ import { X } from 'lucide-react';
 
 import { cn } from '@/shared/lib/cn';
 import { BatSwarm } from './bat-swarm';
+import { FireworkBurst } from './firework-burst';
 import { useEscapeKey } from '@/shared/lib/hooks';
 import { Button } from './button';
 import { translate } from '@/shared/i18n';
@@ -83,7 +84,8 @@ export const Modal = ({
   const reduceMotion = useReducedMotion();
   const [isMounted, setIsMounted] = useState(isOpen);
   /*
-   * Handed to `BatSwarm`, which draws itself over this box from outside it.
+   * Handed to the two skin decorations, which draw themselves over this box
+   * from outside it.
    *
    * The swarm used to be a child, and could not be one: the panel is
    * `overflow-hidden`, so every bat was clipped at the border it was supposed
@@ -253,15 +255,19 @@ export const Modal = ({
           </motion.div>
 
           {/*
-            Bats off the edges of the dialog, and nothing at all on the other
-            thirteen skins — see `BatSwarm`.
+            Bats off the edges of the dialog on one skin, fireworks off them on
+            another, and nothing at all on the other fourteen — see `BatSwarm`
+            and `FireworkBurst`. Each returns `null` before doing any work on a
+            skin that is not its own, so the cost to everybody else is two
+            function calls per dialog opening.
 
-            A sibling of the panel rather than a child of it, which is the
-            entire reason the effect works now: the panel is `overflow-hidden`,
-            so anything launched from inside it was clipped at exactly the
-            border it was meant to be crossing.
+            Both are siblings of the panel rather than children of it, which is
+            the entire reason either effect works: the panel is
+            `overflow-hidden`, so anything launched from inside it was clipped
+            at exactly the border it was meant to be crossing.
           */}
           <BatSwarm anchor={panelRef} />
+          <FireworkBurst anchor={panelRef} />
         </div>
       )}
     </AnimatePresence>,

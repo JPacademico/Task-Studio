@@ -248,188 +248,288 @@ export const GazeArrow = ({ direction, fallback: Fallback, className }: GazeArro
 };
 
 /* ------------------------------------------------------------------------ *
- * The watcher
+ * What is under the page
  * ------------------------------------------------------------------------ */
 
-/** How often something opens. Long enough that it is never quite expected. */
-const APPEARANCE_INTERVAL = 20_000;
 /**
- * How long it stays: open, one blink, gone.
+ * How often something reaches up over the bottom edge.
  *
- * It used to linger for four and a half seconds and blink twice, which gave
- * you time to look straight at it — and a thing you can study is a decoration,
- * not a fright. Under three seconds it is over before you have finished
- * turning your head, which is the entire effect.
+ * A minute, against the watcher's twenty seconds. This is a much larger event
+ * — a quarter of the window rather than a 3rem glyph, and four seconds rather
+ * than under three — so it has to be correspondingly rarer or it stops being
+ * an intrusion and becomes a metronome somebody is trying to work through.
  */
-const APPEARANCE_DURATION = 2_600;
+const RISE_INTERVAL = 60_000;
 
-interface Sighting {
-  /** Percentages of the viewport, kept clear of the edges and the chrome. */
+/**
+ * The whole life of one appearance, and it must match `kraken-life` in
+ * `index.css`.
+ *
+ * The number lives in both places for the reason the dragon's and the
+ * watcher's did: the stylesheet needs it to place keyframe stops as
+ * percentages, and this needs it to know when the element is finished and can
+ * be dropped. Tying them together through a custom property would leave the
+ * CSS unreadable on its own, which is a bad trade for a constant that never
+ * changes.
+ *
+ * Four point two seconds, spent unevenly: about seven tenths climbing, three
+ * seconds standing in the room, and just under six tenths dropping back. The
+ * asymmetry is the whole character of it — something that rises and falls at
+ * the same speed is a piston.
+ */
+const RISE_DURATION = 4_200;
+
+/**
+ * The first one does not wait a full minute.
+ *
+ * The same argument the dragon's crossing makes. A minute of an apparently
+ * ordinary page before the skin does the thing it is named for is not
+ * restraint, it is hiding the feature from anybody who tries the theme and
+ * moves on. It arrives once, a little after the skin does, and then keeps the
+ * minute.
+ */
+const FIRST_RISE_DELAY = 9_000;
+
+interface Rise {
+  /** Where along the bottom edge it comes up, as a percentage of the width. */
   x: number;
-  y: number;
-  scale: number;
+  /** How far up it reaches, in `vh`. Capped at a quarter of the window. */
+  reach: number;
+  /** Mirrored for half of them, so the curl is not always the same hook. */
+  flipped: boolean;
   key: number;
 }
 
-const nextSighting = (): Sighting => ({
-  x: 8 + Math.random() * 78,
-  y: 12 + Math.random() * 70,
-  scale: 0.8 + Math.random() * 0.55,
+/*
+ * Kept off the last tenth of each side.
+ *
+ * Those are where a pinned rail, the player and the chat dock sit, and a limb
+ * rising behind a fixed panel reads as a rendering fault rather than as depth:
+ * the panel does not move with it, so the animal appears to slide under a
+ * sticker. The middle four fifths is all page.
+ */
+const nextRise = (): Rise => ({
+  x: 10 + Math.random() * 80,
+  // 16-25vh. The ceiling is the brief; the floor is what it takes to read as
+  // an arm rather than as a bump on the bottom edge of the window.
+  reach: 16 + Math.random() * 9,
+  flipped: Math.random() < 0.5,
   key: Date.now(),
 });
 
 /**
- * Something opens an eye somewhere on the page, watches, and closes it.
+ * One arm, drawn from the base up.
  *
- * Every twenty seconds, in a place you were not looking. It is `position:
- * fixed`, `pointer-events-none` and `aria-hidden`, so it can never intercept a
- * click, never lands in the accessibility tree, and never affects layout — it
- * is a mood, and a mood that can eat a button is a bug.
+ * ## Why it is the same rig as the rail's tendrils
  *
- * Mounted once by the app shell and inert on every other skin, which is why it
- * costs nothing to leave in the tree: on seven of the eight themes this
- * component returns `null` before it schedules anything.
+ * Because it is the same animal, and the skin should only have one idea about
+ * how its limbs move. Three pieces: a root bolted to the bottom of the screen,
+ * then two segments that rotate about the joint where each meets the one
+ * before it, with the outer one lagging by a fraction of the cycle so the bend
+ * *travels* outward instead of the whole limb swinging as one rigid piece. See
+ * `Tendril` for the long version of that argument — it is the difference
+ * between a tentacle and a windscreen wiper.
+ *
+ * What is different is scale, and therefore detail. The rail's limbs are 40px
+ * feelers and survive on silhouette alone; this one is a quarter of the window
+ * tall, where a plain tapering outline reads as a sock. So it carries suckers
+ * down its inner face, in the two staggered rows a cephalopod actually has,
+ * and they are what tells you which way the arm is turned as it bends.
+ *
+ * ## Why it is drawn vertically rather than reusing the rail's drawing rotated
+ *
+ * The rail's limb is drawn along +x because that is the direction it grows out
+ * of a vertical seam, and its joints pivot about `left center` accordingly.
+ * Rotating that whole thing ninety degrees would mean a transform on the svg
+ * root — which is exactly where `.eldritch-tendril`'s own `scaleY` already
+ * lives, and stacking a second one there is how two rigs silently start
+ * fighting. Drawing this one the way it stands costs a second set of paths and
+ * keeps both readable on their own.
  */
-export const WanderingEye = () => {
+const KrakenArm = ({ flipped }: { flipped: boolean }) => (
+  <svg
+    viewBox="0 0 64 220"
+    fill="none"
+    aria-hidden
+    preserveAspectRatio="none"
+    className="kraken-arm h-full w-full"
+    style={flipped ? { transform: 'scaleX(-1)' } : undefined}
+  >
+    <g fill="rgb(var(--eldritch-ichor))" fillOpacity="0.88">
+      {/* Root. Bolted to the bottom edge: no transform, ever. It is what keeps
+          the arm attached to whatever is down there while everything above it
+          moves. */}
+      <path
+        d="M19 221 C 18.4 206, 19.6 190, 22 172 L 42 172 C 44.4 190, 45.6 206, 45 221 Z"
+      />
+      <g opacity="0.55" fill="rgb(var(--eldritch-glow))">
+        <ellipse cx="27" cy="208" rx="3.1" ry="2.3" />
+        <ellipse cx="37" cy="203" rx="2.9" ry="2.2" />
+        <ellipse cx="28" cy="192" rx="2.8" ry="2.1" />
+        <ellipse cx="37" cy="187" rx="2.6" ry="2" />
+        <ellipse cx="29" cy="177" rx="2.4" ry="1.8" />
+      </g>
+
+      {/* Everything past here bends. The attribute transform positions each
+          joint; the CSS animation lives on a child, because a CSS transform on
+          an SVG element *replaces* its transform attribute rather than
+          composing with it. */}
+      <g transform="translate(32 172)">
+        <g className="kraken-arm__joint kraken-arm__joint--mid">
+          {/* Starts at y=4, i.e. slightly *inside* the segment before it. Two
+              shapes meeting exactly on the joint line separate on the outside
+              of every bend and open a hairline crease; overlapping them means
+              the bend can only ever close, never gap.
+
+              None of the three segments is stroked, and that is what the
+              overlap is *for*. An outline follows each piece all the way round,
+              including across the line where it is buried in its neighbour — so
+              a stroked arm has two bright rules drawn straight across it at the
+              joints, which reads as a limb assembled from three tubes. The
+              silhouette is carried by the glow instead; see `.kraken-arm`. */}
+          <path
+            d="M-10 4 C -11 -14, -9 -40, -7 -64 L 7 -64 C 9 -40, 11 -14, 10 4 Z"
+          />
+          <g opacity="0.5" fill="rgb(var(--eldritch-glow))">
+            <ellipse cx="-4" cy="-8" rx="2.3" ry="1.7" />
+            <ellipse cx="4.4" cy="-16" rx="2.2" ry="1.6" />
+            <ellipse cx="-3.4" cy="-26" rx="2" ry="1.5" />
+            <ellipse cx="3.8" cy="-36" rx="1.9" ry="1.4" />
+            <ellipse cx="-2.8" cy="-46" rx="1.7" ry="1.3" />
+            <ellipse cx="3" cy="-56" rx="1.5" ry="1.2" />
+          </g>
+
+          <g transform="translate(0 -64)">
+            <g className="kraken-arm__joint kraken-arm__joint--tip">
+              {/* The tip curls back on itself, which is where an arm ends
+                  rather than in a point. */}
+              <path
+                d="M-7 4 C -8 -16, -6 -38, 0 -52 C 4 -61, 11 -64, 14 -58 C 16.4 -53, 13 -48, 10 -50.4 C 13 -53.6, 10 -57, 6.6 -53 C 2.4 -48, 2 -24, 7 4 Z"
+              />
+              <g opacity="0.48" fill="rgb(var(--eldritch-glow))">
+                <ellipse cx="-2.4" cy="-8" rx="1.5" ry="1.2" />
+                <ellipse cx="0.4" cy="-22" rx="1.3" ry="1" />
+                <ellipse cx="3.4" cy="-36" rx="1.1" ry="0.9" />
+                <ellipse cx="8" cy="-49" rx="0.9" ry="0.8" />
+              </g>
+            </g>
+          </g>
+        </g>
+      </g>
+    </g>
+  </svg>
+);
+
+/**
+ * Once a minute, something comes up over the bottom of the window.
+ *
+ * ## Why this replaced the eye
+ *
+ * The watcher was the wrong object for the skin it was in. The rails already
+ * grow tentacles — the seam between a hidden menu and the page is held by
+ * something with limbs — and then, separately and unrelatedly, an eye would
+ * open in the middle of the page and blink at you. Two mythologies, and the
+ * one that only ever appeared for two and a half seconds was the one carrying
+ * the skin's name.
+ *
+ * This is the same animal as the rails: an arm, reaching a quarter of the way
+ * up the window from underneath, moving the way theirs move, and then dropping
+ * back out of sight. It says the thing gripping the edges of the page is also
+ * *under* it, which is where the rails were already pointing.
+ *
+ * ## Why the animation is CSS and the removal is a timer
+ *
+ * Exactly the argument `DragonFlight` and the old watcher both make, and it is
+ * worth restating because it is the one thing that is easy to get wrong here.
+ * `AnimatePresence` will not unmount a child until its exit animation
+ * completes, and Framer advances animations on `requestAnimationFrame` — which
+ * stops in a background tab. An arm that retreated while the tab was hidden
+ * would never be removed, and would still be sitting in the DOM, mid-rise,
+ * when the reader came back. So the whole appearance is one CSS animation the
+ * element carries from birth, and `setTimeout` is what takes it away. Timers
+ * fire in hidden tabs.
+ *
+ * ## The contract
+ *
+ * One skin, nothing under `prefers-reduced-motion`, and `fixed`, `aria-hidden`
+ * and `pointer-events-none` throughout — so it cannot intercept a click,
+ * cannot reach the accessibility tree, and cannot affect layout. Mounted once
+ * by the app shell, where it returns `null` before scheduling anything on every
+ * other skin in the catalogue.
+ */
+export const KrakenRise = () => {
   const skin = useSkin();
   const reduceMotion = useReducedMotion();
-  const [sighting, setSighting] = useState<Sighting | null>(null);
+  const [rise, setRise] = useState<Rise | null>(null);
 
-  const isWatching = skin === 'ELDRITCH' && !reduceMotion;
+  const isReaching = skin === 'ELDRITCH' && !reduceMotion;
 
   useEffect(() => {
-    if (!isWatching) {
-      setSighting(null);
+    if (!isReaching) {
+      setRise(null);
       return;
     }
 
-    const timer = setInterval(() => setSighting(nextSighting()), APPEARANCE_INTERVAL);
-    return () => clearInterval(timer);
-  }, [isWatching]);
+    /*
+     * A timeout that starts an interval, rather than an interval alone.
+     *
+     * Both handles are cleared on the way out, including the interval the
+     * timeout has not created yet — `clearInterval(undefined)` is a no-op, so
+     * the unmount path is correct whether or not the first rise has happened.
+     * Without this, switching away from the skin inside the first nine seconds
+     * would leave an interval running for the life of the tab.
+     */
+    let repeat: ReturnType<typeof setInterval> | undefined;
 
-  /*
-   * It leaves on a timer, and the timer is the only thing that removes it.
-   *
-   * The first version wrapped this in `<AnimatePresence>` with an `exit`
-   * variant, which is the obvious way to fade something out — and it was
-   * wrong for the reason this codebase has now hit three times (see the route
-   * transitions in `app-layout.tsx` and the grid in the theme gallery):
-   * AnimatePresence will not unmount a child until its exit animation
-   * *completes*, and Framer drives that on `requestAnimationFrame`. In a
-   * backgrounded tab rAF stops, the exit never finishes, and the eye stays on
-   * screen — permanently, and no longer where a later sighting says it is.
-   *
-   * So the fade is a CSS animation the element carries for its whole life
-   * (`.eldritch-watcher-life`), and removal is this `setTimeout`. Timers fire
-   * in hidden tabs; animations do not have to finish for state to advance.
-   */
+    const first = setTimeout(() => {
+      setRise(nextRise());
+      repeat = setInterval(() => setRise(nextRise()), RISE_INTERVAL);
+    }, FIRST_RISE_DELAY);
+
+    return () => {
+      clearTimeout(first);
+      clearInterval(repeat);
+    };
+  }, [isReaching]);
+
   useEffect(() => {
-    if (!sighting) return;
+    if (!rise) return;
 
-    const timer = setTimeout(() => setSighting(null), APPEARANCE_DURATION);
+    const timer = setTimeout(() => setRise(null), RISE_DURATION);
     return () => clearTimeout(timer);
-  }, [sighting]);
+  }, [rise]);
 
-  if (!isWatching || !sighting) return null;
+  if (!isReaching || !rise) return null;
 
   return (
     <span
-      // Keyed so a new sighting is a new element and restarts the animation
+      // Keyed so each appearance is a new element and restarts the animation
       // rather than inheriting the previous one's progress.
-      key={sighting.key}
+      key={rise.key}
       aria-hidden
-      className="eldritch-watcher-life pointer-events-none fixed z-[70] block"
+      /*
+       * `z-0`, so the arm passes *behind* every panel on the page.
+       *
+       * The watcher sat at `z-[70]`, over everything including open dialogs,
+       * because it was small, brief and meant to be caught out of the corner
+       * of an eye. A quarter-height limb drawn over a form somebody is typing
+       * into is not atmosphere, it is an obstruction — so this one belongs to
+       * the room rather than to the foreground, and the page's own surfaces
+       * occlude it exactly as a wall would.
+       */
+      className="kraken-life pointer-events-none fixed bottom-0 z-0 block"
       style={{
-        left: `${sighting.x}vw`,
-        top: `${sighting.y}vh`,
-        width: `${(3.4 * sighting.scale).toFixed(2)}rem`,
+        left: `${rise.x}vw`,
+        height: `${rise.reach.toFixed(1)}vh`,
+        // Proportional to the reach rather than fixed, so a short arm is a
+        // *short* arm and not a stubby one. The ratio is the drawing's own.
+        width: `${(rise.reach * 0.29).toFixed(2)}vh`,
+        // Centred on its own point along the edge, which is what keeps `x` a
+        // percentage of the window rather than a percentage minus half a limb.
+        marginLeft: `${(rise.reach * -0.145).toFixed(2)}vh`,
       }}
     >
-      {/*
-        Not a human eye.
-
-        The first version was an almond with a round pupil and a highlight —
-        which is the eye on every emoji keyboard, and reads as *someone*
-        looking rather than as *something*. Four things take it off the
-        mammal branch:
-
-          - The orb is a lumpy sphere, not a symmetric lens. Its outline is
-            deliberately uneven from one side to the other.
-          - The pupil is a vertical slit. Nothing with a slit pupil is going
-            to reassure anybody.
-          - The sclera is veined, in the wrong colour, radiating outwards from
-            the iris — the one detail that says the thing is alive and
-            unwell.
-          - Small limbs grip the orb from outside. It is not set in a face; it
-            is being held.
-      */}
-      <svg viewBox="0 0 64 64" fill="none" className="eldritch-watcher h-auto w-full">
-        {/* The glow it sits in — no light source on the page could produce
-            it, which is the point. */}
-        <circle cx="32" cy="32" r="30" fill="rgb(var(--eldritch-glow))" opacity="0.18" />
-
-        {/* What is holding it. Outside the lid group, so a blink does not
-            take the grip with it. */}
-        <g
-          stroke="rgb(var(--eldritch-ichor))"
-          strokeWidth="2.6"
-          strokeLinecap="round"
-          opacity="0.85"
-        >
-          <path d="M9 20 C 3 15, 2 8, 6 4" />
-          <path d="M55 20 C 61 15, 62 8, 58 4" />
-          <path d="M8 44 C 2 48, 1 56, 5 60" />
-          <path d="M56 44 C 62 48, 63 56, 59 60" />
-          <path d="M32 60 C 30 63, 26 64, 23 62" />
-        </g>
-
-        {/* The orb. Blinks by collapsing its own height — one `scaleY` on the
-            compositor, and it takes the iris and the slit with it. */}
-        <g className="eldritch-watcher__lid">
-          {/* Lumpy on purpose: the right side bulges lower than the left. */}
-          <path
-            d="M32 6 C 46 6, 58 16, 58 31 C 58 45, 47 57, 32 57 C 18 57, 7 46, 7 32 C 7 17, 19 6, 32 6 Z"
-            fill="rgb(var(--surface-raised))"
-            fillOpacity="0.72"
-            stroke="rgb(var(--brand))"
-            strokeWidth="2"
-          />
-
-          {/* Veins. Short, crooked, and reaching the rim. */}
-          <g
-            stroke="rgb(var(--danger))"
-            strokeWidth="1.1"
-            strokeLinecap="round"
-            opacity="0.5"
-            fill="none"
-          >
-            <path d="M22 26 C 16 22, 13 18, 11 14" />
-            <path d="M42 25 C 48 22, 52 19, 54 15" />
-            <path d="M23 40 C 17 43, 14 47, 12 51" />
-            <path d="M43 39 C 49 42, 52 46, 54 50" />
-            <path d="M32 44 C 31 50, 32 54, 33 56" />
-          </g>
-
-          {/* The iris — a hot ring rather than a flat disc. */}
-          <circle cx="32" cy="32" r="13" fill="rgb(var(--eldritch-ichor))" fillOpacity="0.55" />
-          <circle cx="32" cy="32" r="13" stroke="rgb(var(--eldritch-glow))" strokeWidth="1.8" />
-          <circle
-            cx="32"
-            cy="32"
-            r="8.5"
-            stroke="rgb(var(--brand))"
-            strokeWidth="1"
-            opacity="0.7"
-          />
-
-          {/* The slit, drifting. No highlight: a wet catchlight is the single
-              most humanising mark you can put on an eye. */}
-          <g className="eldritch-watcher__pupil">
-            <ellipse cx="32" cy="32" rx="3.1" ry="12" fill="rgb(0 0 0)" />
-            <ellipse cx="32" cy="32" rx="1.4" ry="9" fill="rgb(var(--eldritch-glow))" opacity="0.4" />
-          </g>
-        </g>
-      </svg>
+      <KrakenArm flipped={rise.flipped} />
     </span>
   );
 };

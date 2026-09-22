@@ -18,9 +18,10 @@ import { useNavPreferences, type RailScope } from '@/shared/lib/nav-preferences.
 import { useEdgeReveal, useReleaseAfterTearOff } from '@/shared/lib/use-edge-reveal';
 import {
   AutumnHedge,
-  Button,
   EdgeAffordance,
   EldritchTendrils,
+  LavaButton,
+  LavaSurface,
   NavGlyph,
   NavPinButton,
   Segmented,
@@ -342,9 +343,11 @@ export const ProjectRail = ({ onCreateProject }: ProjectRailProps) => {
           'shadow-[-8px_0_40px_-24px_rgb(0_0_0/0.65)]',
         )}
       >
+        {/* The lit inner edge, and the hook a skin replaces it through — see
+            the note on the left rail's. */}
         <span
           aria-hidden
-          className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-brand/45 to-transparent"
+          className="nav-rail__edge absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-brand/45 to-transparent"
         />
 
         <EldritchTendrils edge="right" isActive={isRevealed} />
@@ -438,28 +441,60 @@ export const ProjectRail = ({ onCreateProject }: ProjectRailProps) => {
             name — so this links there rather than opening a second copy of it
             from a 260px rail.
           */}
+          {/*
+            Both of these now carry the lamp.
+
+            ## Why this is not a fourth exception to `LavaButton`'s own rule
+
+            That rule is "the one action on a screen that everything else exists
+            to support", and it is the same action here: this footer holds the
+            single most consequential control in the rail, directly under a list
+            of everything that already exists. It is also the control most
+            likely to be *missed* — it lives at the bottom of a panel that is
+            hidden until a pointer reaches the screen edge, so it gets no benefit
+            from a reader scanning the page. A moving fill is what carries the
+            eye to the bottom of a menu that just slid into view.
+
+            It is the same action as the top bar's "New project" besides, drawn
+            two different ways in two places that are both chrome — which is the
+            inconsistency the rule was written to prevent, arrived at from the
+            other side.
+
+            ## Why the organisation half is hand-drawn and the project half is not
+
+            Because one navigates and the other opens a dialog, and that
+            distinction is worth keeping in the element. `LavaButton` is a
+            `<button>`; rendering a navigation as one throws away middle-click,
+            open-in-new-tab and the destination on hover. So the link keeps
+            being a link and borrows the class and the surface instead — exactly
+            the composition `LavaLink` uses on the landing page.
+          */}
           {isProjects ? (
-            <Button variant="secondary" size="sm" onClick={onCreateProject} className="w-full">
+            <LavaButton size="sm" onClick={onCreateProject} className="w-full">
               <Plus className="h-3.5 w-3.5" strokeWidth={2.6} />
               {t('dash.newProject')}
-            </Button>
+            </LavaButton>
           ) : (
             <NavLink
               to="/organizations"
-              /*
-                Hand-drawn rather than a `Button`, because it is a link — but it
-                borrows the same two class hooks so it hovers like one. Without
-                `ui-btn--secondary` this was the one control in the footer with
-                no visible hover on the default skin; see the note on the
-                variant in `button.tsx`.
-              */
               className={cn(
-                'ui-btn ui-btn--secondary flex h-8 w-full items-center justify-center gap-1.5 rounded-xl',
-                'bg-surface-sunken px-3 text-xs text-content transition-colors hover:bg-edge/60',
+                // No `bg-*` beside `ui-lava`: a utility background outranks the
+                // component layer and would paint a flat colour straight over
+                // the tube. See the note in `lava-button.tsx`.
+                'ui-btn ui-lava flex h-8 w-full items-center justify-center gap-1.5 rounded-xl',
+                'px-3 text-xs font-medium',
+                'transition-transform duration-150 active:scale-[0.98]',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
               )}
             >
-              <Plus className="h-3.5 w-3.5" strokeWidth={2.6} />
-              {t('org.new')}
+              <LavaSurface />
+              {/* `relative` is what lifts the label over the lamp: the surface
+                  and the hover fill both sit at `z-index: -1` inside this
+                  anchor's own stacking context. */}
+              <span className="relative inline-flex items-center gap-1.5">
+                <Plus className="h-3.5 w-3.5" strokeWidth={2.6} />
+                {t('org.new')}
+              </span>
             </NavLink>
           )}
         </footer>

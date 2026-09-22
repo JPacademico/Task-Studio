@@ -775,6 +775,27 @@ export const useSpotifyCommand = () => {
  * before moving is a slider that does not work. The cached playback is written
  * immediately so the thumb follows the pointer, and the poll above is left to
  * correct it if the device disagrees.
+ *
+ * ## Why a failure rolls the cache back, and why it only speaks once
+ *
+ * Dragging this with nothing playing anywhere used to produce a *stack* of
+ * identical toasts, and there were three separate reasons for it:
+ *
+ *  1. **Every intermediate value was a request.** A native `range` fires
+ *     `change` on each step of a drag, so one gesture was thirty calls to
+ *     Spotify and thirty chances to fail. The player now commits one value per
+ *     gesture — see `VolumeControl` — which is the half of the fix that had
+ *     to happen at the call site rather than here.
+ *  2. **The failures arrived seconds apart.** `toast` collapses repeats inside
+ *     a short window, so a burst that spans a slow drag defeats it by
+ *     construction. One request per gesture means one message.
+ *  3. **The optimistic write was never undone.** The thumb stayed where it was
+ *     dragged to on a device that had refused the change, so the control was
+ *     reporting a volume nothing was set to until the next poll landed.
+ *
+ * `onMutate` returns the value it replaced and `onError` puts it back, which is
+ * React Query's own shape for this and is why the rollback cannot drift out of
+ * step with the optimistic write.
  */
 export const useSpotifyVolume = () => {
   const queryClient = useQueryClient();
@@ -782,16 +803,27 @@ export const useSpotifyVolume = () => {
   return useMutation({
     mutationFn: (volume: number) => spotifyApi.setVolume(volume),
     onMutate: (volume) => {
+      const previous = queryClient.getQueryData<SpotifyPlayback | undefined>(
+        queryKeys.integrations.spotifyPlayback,
+      );
+
       queryClient.setQueryData<SpotifyPlayback | undefined>(
         queryKeys.integrations.spotifyPlayback,
         (current) => (current ? { ...current, volume } : current),
       );
+
+      return { previous };
     },
-    onError: (error) => toast.error(errorMessage(error, translate('spotify.commandFailed'))),
+    onError: (error, _volume, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(queryKeys.integrations.spotifyPlayback, context.previous);
+      }
+      toast.error(errorMessage(error, translate('spotify.commandFailed')));
+    },
   });
 };
 
-/** Start one of the search results. */
+/** Start one of the search results, replacing whatever is playing. */
 export const useSpotifyPlayTrack = () => {
   const queryClient = useQueryClient();
 
@@ -805,6 +837,27 @@ export const useSpotifyPlayTrack = () => {
     onError: (error) => toast.error(errorMessage(error, translate('spotify.commandFailed'))),
   });
 };
+
+/**
+ * Put one of the search results next in line.
+ *
+ * What the player's search box does now, and the reason it is a different hook
+ * rather than a flag: queueing succeeds without disturbing anything, so there
+ * is nothing to refetch — the current track has not changed and will not for
+ * several minutes. Invalidating playback here would be a poll asking a question
+ * whose answer this call did not touch.
+ *
+ * The confirmation is a toast instead, because a queued track is otherwise
+ * *invisible*: nothing on screen moves, and a control that appears to do
+ * nothing is one people press again.
+ */
+export const useSpotifyQueueTrack = () =>
+  useMutation({
+    mutationFn: (track: { id: string; name: string }) => spotifyApi.queue(track.id),
+    onSuccess: (_result, track) =>
+      toast.success(translate('spotify.queued', { name: track.name })),
+    onError: (error) => toast.error(errorMessage(error, translate('spotify.queueFailed'))),
+  });
 
 /** Forget the grant. */
 export const useDisconnectSpotify = () => {

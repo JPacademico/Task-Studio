@@ -62,15 +62,17 @@ const nextFlight = (): Flight => ({
 /**
  * Once a minute, something long crosses the hall.
  *
- * ## Why it is behind everything and drawn at almost nothing
+ * ## Why it is behind everything
  *
  * The skin is already loud — lacquer red, gold mounting rules on every panel, a
  * brush face — and a fully opaque dragon travelling across a task board would
- * be an interruption rather than an atmosphere. At the opacity `.dragon-flight`
- * sets it is closer to a shadow passing over the room than to an illustration:
- * you notice that something went by, and if you look directly at it you can see
- * what it was. That is the whole intended experience, and it is also what makes
- * it survivable sixty times an hour.
+ * be an interruption rather than an atmosphere. It sits at `z-0`, under every
+ * panel, card and dialog in the product, so on a working screen it is only ever
+ * seen through the gaps between things: you notice that something went by, and
+ * if you are looking at an empty part of the page you can see what it was. That
+ * is what makes it survivable sixty times an hour, and it is why it can now be
+ * drawn in colour at a strength that would be unbearable in the foreground —
+ * see the note on `.dragon-flight__body`.
  *
  * ## Why the animation is CSS and the removal is a timer
  *
@@ -145,23 +147,38 @@ export const DragonFlight = () => {
       style={{ top: `${flight.lane}vh` }}
     >
       {/*
-        Three transforms, three elements, and they have to be separate.
+        Two transforms, two elements, and they still have to be separate.
 
         The outer element's `transform` is the crossing itself — it belongs to
         `.dragon-flight` and is overwritten on that animation's first frame, so
-        anything written beside it is lost. The middle one carries everything
-        that is *fixed* for this flight, pitch and size together in one
-        declaration for the same reason. The inner one undulates, and has to be
-        its own element rather than sharing the middle one: an animated
-        `transform` would overwrite the pitch and the scale written there, which
-        is the same trap one level down.
+        anything written beside it is lost. This one carries everything that is
+        *fixed* for this flight, pitch and size together in one declaration for
+        the same reason.
+
+        There used to be a third, and it was the body undulating as one rigid
+        piece. The undulation belongs to the animal now — twenty-six segments,
+        each a fraction of a cycle behind the one in front of it, inside the
+        glyph itself — so what is left here is only the opacity, which is a
+        property of how the drawing is *composited over the page* rather than
+        anything the drawing knows about. See `DragonGlyph` and
+        `.dragon-flight__body`.
       */}
       <span
         className="block"
         style={{ transform: `rotate(${flight.pitch}deg) scale(${flight.scale.toFixed(2)})` }}
       >
         <span className="dragon-flight__body block">
-          <DragonGlyph className="h-[7.5rem] w-auto text-brand" />
+          {/*
+            Taller than the old glyph was, and shorter across.
+
+            The previous drawing was a 264×68 outline — nearly four to one, so
+            at 7.5rem tall it was 29rem of viewport wide. The new one is roughly
+            two to one because it has a head with antlers on it and a tail fin,
+            both of which need vertical room. Eleven rem puts the *body* back at
+            about the length it used to be while giving the animal somewhere to
+            put its own silhouette.
+          */}
+          <DragonGlyph className="h-[11rem] w-auto" />
         </span>
       </span>
     </span>

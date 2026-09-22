@@ -391,10 +391,16 @@ export const HiddenSidebar = ({ isMobileOpen, onMobileClose }: HiddenSidebarProp
           'shadow-[8px_0_40px_-24px_rgb(0_0_0/0.65)]',
         )}
       >
-        {/* Lit inner edge. */}
+        {/* Lit inner edge.
+
+            `nav-rail__edge` carries no styles of its own on most skins — it is
+            a hook, like `ui-modal` and `ui-task-title`, so a skin can replace
+            this hairline with its own idea of what divides a menu from a page.
+            The Dragon skin draws a jade rule here and runs a light up it; see
+            the foot of `index.css`. */}
         <span
           aria-hidden
-          className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-brand/45 to-transparent"
+          className="nav-rail__edge absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-brand/45 to-transparent"
         />
 
         {/* Whatever is growing out of the seam this rail shares with the page.

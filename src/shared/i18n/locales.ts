@@ -461,6 +461,11 @@ const en = {
   'spotify.idle': 'Nothing is playing',
   'spotify.premiumOnly': 'Spotify allows skipping and volume on Premium only.',
   'spotify.searchPlaceholder': 'Search songs or artists',
+  'spotify.queued': 'Queued “{name}” — it plays next.',
+  'spotify.queueFailed': 'Spotify would not queue that.',
+  'spotify.pin': 'Keep the player open',
+  'spotify.unpin': 'Let the player close again',
+  'spotify.noDevice': 'Open Spotify on a device to use this.',
   'spotify.notice':
     'The player controls whatever device Spotify is already playing on. Nothing you listen to is stored here.',
 
@@ -1433,6 +1438,10 @@ const en = {
   'dash.pinnedProjects': 'Pinned projects',
   'dash.noProjects': 'No projects yet',
   'dash.noProjectsBody': 'Create your first project, then invite people into its roster.',
+  'dash.noArchived': 'You do not have any archived Projects yet',
+  'dash.noArchivedBody':
+    'Archiving a project takes it out of your list without deleting anything. Whatever you archive shows up here.',
+  'dash.archivedOnly': 'Showing archived projects only',
   'dash.upNext': 'Up next for you',
   'dash.nothingAssigned': 'Nothing assigned to you',
   'dash.nothingAssignedBody': 'When a project owner assigns you work, it shows up here.',
@@ -2901,6 +2910,11 @@ const ptBR: Record<TranslationKey, string> = {
   'spotify.idle': 'Nada tocando',
   'spotify.premiumOnly': 'O Spotify só permite pular e mudar o volume no Premium.',
   'spotify.searchPlaceholder': 'Buscar músicas ou artistas',
+  'spotify.queued': '“{name}” entrou na fila — toca em seguida.',
+  'spotify.queueFailed': 'O Spotify não colocou isso na fila.',
+  'spotify.pin': 'Manter o player aberto',
+  'spotify.unpin': 'Deixar o player fechar de novo',
+  'spotify.noDevice': 'Abra o Spotify em algum aparelho para usar isto.',
   'spotify.notice':
     'O player controla o aparelho em que o Spotify já está tocando. Nada do que você ouve fica guardado aqui.',
 
@@ -3826,6 +3840,10 @@ const ptBR: Record<TranslationKey, string> = {
   'dash.pinnedProjects': 'Projetos fixados',
   'dash.noProjects': 'Nenhum projeto ainda',
   'dash.noProjectsBody': 'Crie seu primeiro projeto e convide pessoas para a equipe.',
+  'dash.noArchived': 'Você ainda não tem nenhum projeto arquivado',
+  'dash.noArchivedBody':
+    'Arquivar um projeto tira ele da sua lista sem apagar nada. O que você arquivar aparece aqui.',
+  'dash.archivedOnly': 'Mostrando só os projetos arquivados',
   'dash.upNext': 'A seguir para você',
   'dash.nothingAssigned': 'Nada atribuído a você',
   'dash.nothingAssignedBody':

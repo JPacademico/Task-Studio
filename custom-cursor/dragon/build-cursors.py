@@ -19,26 +19,26 @@ rotate, crop, scale and place it. There is no drawing for this one, so the
 weapon is constructed here - which changes what the file is for but not what it
 has to guarantee, and the guarantees are the interesting part:
 
-  - **One canvas, one crop, one scale, one placement** for every frame. Frames
-    registered against their own bounding boxes drift by a pixel or two between
-    states, and the pointer visibly twitches the moment it crosses onto a link.
-  - **Rotation about the blade tip**, so the tip is in the same place in every
-    frame and the *shaft* is what swings. That is how a polearm is actually
-    held on a target, and it is what lets the hotspot sit on the tip in all
-    three states rather than being correct in one of them.
-  - **Supersampled 4x and reduced with LANCZOS**, because a 38px weapon drawn
+  - **One canvas, one crop, one scale, one placement** for every frame, and one
+    hotspot for all of them. Frames registered against their own bounding boxes
+    drift by a pixel or two between states, and the pointer visibly twitches
+    the moment it crosses onto a link.
+  - **Rotation about the ferrule** - the brass collar where the blade meets the
+    shaft - so the blade sweeps through a real arc and the shaft counter-swings
+    behind it. See the note on PIVOT for why this is not the blade tip.
+  - **Supersampled 4x and reduced with LANCZOS**, because a 44px weapon drawn
     directly has no antialiasing on a curve and a guan dao is nothing but
     curves.
 
 ## The three states
 
   - **at rest**, on the 135-degree diagonal the system arrow sits on;
-  - **over anything pressable**, brought up to 112 degrees - the "more straight
-    angle" of a weapon raised to strike rather than carried;
-  - **while the button is held**, whipped down to 96 degrees with the arc of
-    the swing drawn behind it. A cursor cannot tween, so the arc is what makes
-    one frame read as motion: the blade is somewhere new *and* there is a
-    bright trail showing where it came from.
+  - **over anything pressable**, brought up to 106 degrees - a weapon raised,
+    the blade swung up and forward off the carrying diagonal;
+  - **while the button is held**, whipped anticlockwise to 160 degrees - down
+    and away to the left - with the arc of the swing drawn behind it. A cursor
+    cannot tween, so the arc is what makes one frame read as motion: the blade
+    is somewhere new *and* there is a bright trail showing where it came from.
 """
 import base64
 import io
@@ -59,9 +59,13 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # smaller fraction of the footprint than a knife's is. Every current browser
 # accepts a cursor image up to 128px; past that the declaration is dropped and
 # the fallback keyword takes over.
-BOX = 42
-# The weapon's long side inside that box.
-WEAPON = 38
+# Bigger than the 42 it was, and the increase is bought rather than spent: the
+# frames now sweep a much wider arc (see PIVOT), so one crop box covering all
+# three is larger than it used to be and the weapon inside it reduces further.
+# 48 keeps the blade at roughly the size it was on screen.
+BOX = 48
+# The composition's long side inside that box.
+WEAPON = 44
 # Where the whole composition sits, leaving room for the swing arc.
 REST = 2
 
@@ -75,11 +79,11 @@ S = 4
 # Sized from the geometry rather than guessed: the shaft ends about 640
 # supersampled pixels from the tip, and a rotation can swing it to either side,
 # so the canvas has to hold the tip plus that radius in every direction.
-WORK = 1200
+WORK = 1400
 
 REST_DEGREES = 135
-HOVER_DEGREES = 112
-SLASH_DEGREES = 96
+HOVER_DEGREES = 106
+SLASH_DEGREES = 160
 
 # ---------------------------------------------------------------------------
 # Palette
@@ -106,17 +110,44 @@ OUTLINE = (24, 16, 12, 255)
 # ---------------------------------------------------------------------------
 
 # The blade's centreline is an arc, so that the edge curves the way a crescent
-# blade does instead of being a triangle with a bent side. Centre to the LEFT
-# of the weapon means the arc sweeps up and to the left, which is the direction
-# the blade has to lean for the whole thing to sit on the pointer's diagonal.
-ARC_CENTRE = (10 * S, 70 * S)
+# blade does instead of being a triangle with a bent side.
+#
+# ## Which side the edge is on, and why it moved
+#
+# `belly` is measured along the *outward* normal - away from the arc centre -
+# so the cutting edge is always on the far side of the blade from that centre.
+# Putting the centre to the left of the weapon therefore put the edge on the
+# right, which is what it was and what was wrong with it: a guan dao held on
+# the pointer's up-left diagonal has its edge facing forward along the swing,
+# and the swing goes left.
+#
+# The centre is now to the RIGHT of the shaft, so the arc sweeps up and to the
+# right, the belly bulges left, and the bright edge is the left-hand side of
+# the silhouette in every frame.
+ARC_CENTRE = (-10 * S, 70 * S)
 ARC_RADIUS = 72 * S
-ARC_FROM = 0.0    # degrees; the socket, level with the arc centre
-ARC_TO = 62.0     # the tip
+ARC_FROM = 180.0   # degrees; the socket, level with the arc centre
+ARC_TO = 118.0     # the tip
 
 # Everything is drawn shifted by this, in supersampled pixels, so the vertical
 # layout sits clear of the canvas edges before anything is rotated.
-OFFSET = (60 * S, 40 * S)
+#
+# The x term grew with the arc centre: the socket now sits 82 units to the left
+# of that centre, so a 60-unit offset put the whole shaft off the left edge of
+# the canvas before a single rotation had happened.
+OFFSET = (120 * S, 40 * S)
+
+
+def along(t: float) -> float:
+    """A position on the blade as a fraction from socket (0) to tip (1).
+
+    The arc now runs *backwards* in degrees - 180 down to 118 - because the
+    centre moved to the other side of the weapon. Every place that used to say
+    `ARC_FROM + n` to mean "a little way along the blade" would now walk off
+    the socket end instead, so they ask for a fraction and this does the
+    arithmetic in one place.
+    """
+    return ARC_FROM + (ARC_TO - ARC_FROM) * t
 
 
 def on_arc(degrees: float) -> tuple[float, float]:
@@ -150,6 +181,39 @@ def spine(t: float) -> float:
 
 
 BLADE_TIP = on_arc(ARC_TO)
+SOCKET = on_arc(ARC_FROM)
+
+# ---------------------------------------------------------------------------
+# The pivot
+# ---------------------------------------------------------------------------
+
+# The brass ferrule, a few units below the socket: the collar that binds the
+# blade to the shaft, and the point the whole weapon now turns about.
+#
+# ## Why not the blade tip, which is where it used to be
+#
+# Because rotating about the tip is *why* the complaint was "only the shaft
+# moves". It is geometrically true: a rotation leaves its centre fixed, so with
+# the centre on the point of the blade the blade turns in place through a few
+# degrees while the ninety-unit shaft sweeps a visible arc behind it. The
+# reading is exactly what the picture shows - a stick waving behind a blade
+# that is going nowhere.
+#
+# Moving the centre to the ferrule puts roughly seventy units of blade on one
+# side of it and ninety of shaft on the other, so both ends travel and the
+# blade is the end the eye follows, because it is the bright one. The hover
+# state now genuinely raises the blade and the slash genuinely swings it.
+#
+# ## What this costs, and why it is affordable
+#
+# The hotspot can no longer be the tip in every frame, because the tip moves.
+# It is the *rest* frame's tip, held fixed for all three - so the point lands
+# under the pointer where a pointer is at rest, and pressing or crossing onto a
+# link swings the weapon around that same screen position rather than dragging
+# the position with it. A click still lands exactly where it landed before,
+# which is the property that actually matters; what changes is that the reader
+# can see the weapon move.
+PIVOT = (SOCKET[0], SOCKET[1] + 5.5 * S)
 
 
 def blade_polygon() -> list[tuple[float, float]]:
@@ -242,8 +306,8 @@ def draw_weapon(canvas: Image.Image) -> None:
     # The small hooked spur on the spine near the socket. It is the one detail
     # that separates a guan dao from a generic crescent blade on a stick, and
     # it survives being scaled to 38px because it breaks the silhouette.
-    base = on_arc(ARC_FROM + 6)
-    nx, ny = arc_normal(ARC_FROM + 6)
+    base = on_arc(along(0.1))
+    nx, ny = arc_normal(along(0.1))
     pen.polygon(
         [
             (base[0] - nx * 4 * S, base[1] - ny * 4 * S),
@@ -294,19 +358,28 @@ def draw_weapon(canvas: Image.Image) -> None:
 def draw_swing(canvas: Image.Image) -> None:
     """The arc the blade has just come through. Slash frame only.
 
-    Three concentric strokes falling off in opacity, swept between the resting
-    angle and the slash angle about the same tip the frames rotate about. Drawn
+    Three concentric strokes falling off in opacity, swept by the *tip* about
+    the ferrule the frames rotate about - which is now the path the cutting
+    edge actually took, rather than the path the butt of the shaft took. Drawn
     *before* the weapon so the blade sits on top of its own trail.
+
+    The sweep runs backwards from the tip's current position through the angle
+    the blade covered between the raised pose and this one. `HOVER` rather than
+    `REST` as the far end, because the frame before a press is almost always
+    the raised one: a press happens on something pressable.
     """
-    socket = on_arc(ARC_FROM)
-    pivot = BLADE_TIP
+    pivot = PIVOT
 
-    # The arc is swept by the *socket*, because that is the end that travels.
-    radius = math.dist(socket, pivot)
-    start = math.degrees(math.atan2(-(socket[1] - pivot[1]), socket[0] - pivot[0]))
-    sweep = REST_DEGREES - SLASH_DEGREES
+    radius = math.dist(BLADE_TIP, pivot)
+    start = math.degrees(math.atan2(-(BLADE_TIP[1] - pivot[1]), BLADE_TIP[0] - pivot[0]))
+    # Four fifths of the actual travel rather than all of it. A trail that
+    # reaches the whole way back to the raised pose leaves a bright arc hanging
+    # in space with nothing at its far end; stopping short makes it a wake
+    # behind the blade, which is what it is meant to read as - and it keeps the
+    # slash frame's bounding box, and therefore every frame's scale, tighter.
+    sweep = (SLASH_DEGREES - HOVER_DEGREES) * 0.8
 
-    for offset, alpha, width in ((0.0, 150, 2.4), (6.0 * S, 90, 1.7), (12.0 * S, 45, 1.2)):
+    for offset, alpha, width in ((0.0, 165, 2.6), (7.0 * S, 105, 1.9), (14.0 * S, 55, 1.3)):
         points = []
         for step in range(19):
             degrees = start - sweep * (step / 18)
@@ -337,11 +410,11 @@ def draw_swing(canvas: Image.Image) -> None:
 
 
 def pose(degrees: float, with_swing: bool) -> Image.Image:
-    """One frame, at `degrees`, rotated about the blade tip.
+    """One frame, at `degrees`, rotated about the ferrule.
 
-    The tip is the fixed point in every frame, which is what lets one hotspot
-    be correct in all of them: the blade stays on what the reader is aiming at
-    and the shaft swings behind it.
+    The ferrule is the fixed point in every frame, so the blade sweeps a real
+    arc and the shaft counter-swings behind it. See the note on PIVOT for why
+    this is no longer the blade tip, and what it costs.
     """
     canvas = Image.new('RGBA', (WORK, WORK), (0, 0, 0, 0))
     if with_swing:
@@ -353,7 +426,7 @@ def pose(degrees: float, with_swing: bool) -> Image.Image:
     # counter-clockwise and takes its centre in image coordinates.
     return canvas.rotate(
         degrees - 90,
-        center=BLADE_TIP,
+        center=PIVOT,
         resample=Image.BICUBIC,
         expand=False,
     )
@@ -487,9 +560,16 @@ def tip(image: Image.Image) -> tuple[int, int]:
 #
 # Dark rather than light because the halo adds a pixel on every side, and
 # hotspotting on the rim would put the click a pixel above and left of the
-# point it is drawn on. Resting rather than slashing because the slash frame's
-# blade has deliberately moved: holding the hotspot still is what makes the
-# swing visible.
+# point it is drawn on.
+#
+# Resting rather than hovering or slashing, and that choice now carries weight
+# it did not before. With the frames turning about the ferrule the tip is in a
+# different place in each of them, so there is no single point that is the tip
+# of all three - one of them has to be picked, and the resting frame is the one
+# the pointer spends its life in. Holding the hotspot there is also what makes
+# the other two states visible: the weapon swings around a fixed screen
+# position instead of carrying it along, which is the whole point of the
+# change. See PIVOT.
 HOTSPOT = tip(FRAMES['dark-rest'])
 
 built = f'{HERE}/built'
@@ -542,18 +622,33 @@ css = f'''
    Three states:
 
      - **at rest**, carried on the {REST_DEGREES}-degree diagonal the system arrow sits on;
-     - **over anything pressable**, brought up to {HOVER_DEGREES} degrees - a weapon raised
-       rather than carried, which is the whole of the hover signal;
-     - **while the button is held**, whipped down to {SLASH_DEGREES} degrees with the arc of
-       the swing drawn behind it. One frame each way, no loop, because a cursor
-       cannot tween - the arc is what makes a single frame read as motion.
+     - **over anything pressable**, brought up to {HOVER_DEGREES} degrees - the blade swung
+       up and forward off the carrying diagonal, which is the whole of the
+       hover signal;
+     - **while the button is held**, whipped anticlockwise to {SLASH_DEGREES} degrees - down
+       and away to the left - with the arc of the swing drawn behind it. One
+       frame each way, no loop, because a cursor cannot tween; the arc is what
+       makes a single frame read as motion.
 
-   ## Why the tip does not move between states
+   ## Why the blade is what moves
 
-   Every frame is rotated about the point of the blade, so the point is in the
-   same place in all six and only the shaft swings. That is how a polearm is
-   held on a target, and it is what lets one hotspot be correct in every state
-   instead of in one of them.
+   Every frame is rotated about the *ferrule* - the brass collar binding the
+   blade to the shaft - rather than about the point of the blade. Rotating
+   about the point is what an earlier version did, and it is why the weapon
+   appeared to be a stick waving behind a blade that never went anywhere: a
+   rotation leaves its centre fixed, so the centre is the one part of the
+   drawing that cannot be seen to move. With the centre at the ferrule there is
+   blade on one side of it and shaft on the other, both travel, and the eye
+   follows the blade because it is the bright end.
+
+   The hotspot is the resting frame's point, held fixed across all six. A click
+   therefore lands exactly where it always did; what changed is that the weapon
+   now swings around that position instead of dragging it along.
+
+   ## Which side the edge is on
+
+   The left. A guan dao carried on the up-left diagonal has its cutting edge
+   facing forward along the direction of the swing, and the swing goes left.
 
    ## Why two palettes
 

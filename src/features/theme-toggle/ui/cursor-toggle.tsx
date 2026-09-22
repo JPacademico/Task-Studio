@@ -11,9 +11,10 @@ import { Switch } from '@/shared/ui';
  * ## Why this is a control and not a decision the theme makes
  *
  * A custom cursor is the one thing a skin changes that the reader cannot look
- * away from. Several themes ship one — Paper throws a paper plane, Halloween
- * carries a knife, Dragon a guan dao — and each is the point of the theme
- * rather than decoration on it, so they are on by default. But a pointer is
+ * away from. Four themes ship one — Paper throws a paper plane, Halloween
+ * carries a knife, Dragon swings a guan dao, and Pixel art simply redraws the
+ * arrow on a grid — and each is the point of the theme rather than decoration
+ * on it, so they are on by default. But a pointer is
  * also the one piece of chrome somebody may have a real reason to keep: a
  * screen being shared, a precision drag on a whiteboard, a machine where a 40px
  * PNG cursor lags behind the system one, or simply not wanting a knife on a

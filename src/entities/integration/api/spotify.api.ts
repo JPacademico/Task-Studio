@@ -69,4 +69,16 @@ export const spotifyApi = {
   async play(trackId: string): Promise<void> {
     await api.post('/integrations/spotify/play', { trackId });
   },
+
+  /**
+   * The same track, next in line instead of now.
+   *
+   * What the player's search box calls. `play` replaces the playback context
+   * outright — picking a song out of a list used to end the album somebody was
+   * listening to — and this appends to the user queue instead. See the API's
+   * `SpotifyClient.queue`.
+   */
+  async queue(trackId: string): Promise<void> {
+    await api.post('/integrations/spotify/queue', { trackId });
+  },
 };

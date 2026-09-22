@@ -1,3 +1,5 @@
+import type { CSSProperties, ReactNode } from 'react';
+
 import { cn } from '@/shared/lib/cn';
 
 interface GlyphProps {
@@ -117,100 +119,408 @@ export const JadeMark = ({ className }: GlyphProps) => (
   </svg>
 );
 
+/* -------------------------------------------------------------------------- *
+ * The dragon
+ * -------------------------------------------------------------------------- */
+
+/**
+ * How many pieces the body is built from, and how far apart they sit.
+ *
+ * Twenty-six at 8.7 units is a body about 220 units long against a segment that
+ * is at most 23 wide — so consecutive scales overlap by roughly two thirds and
+ * the join between them reads as a scale rather than as a seam. Fewer segments
+ * and the animal is a caterpillar; more and each one's own animation is buying
+ * a difference nobody can see.
+ */
+const SEGMENTS = 26;
+const SEGMENT_STEP = 8.7;
+
+/** Where the head sits in the viewBox, and the line the body rests on. */
+const HEAD_X = 268;
+const SPINE_Y = 74;
+
+/**
+ * The wave: one period, and how far behind its neighbour each segment runs.
+ *
+ * `SEGMENT_LAG * SEGMENTS` is about three quarters of `WAVE_SECONDS`, which is
+ * the number that actually matters — it is how much of a sine wave is visible
+ * along the animal at any moment. At a full period the body would hold a
+ * complete S and read as a fixed shape wobbling; at a tenth of one every
+ * segment moves together and the whole dragon bobs like a plank. Three
+ * quarters is one long undulation travelling from the head to the tail, which
+ * is the motion this is for.
+ *
+ * Both are handed to the stylesheet as custom properties on the root of the
+ * drawing rather than written down twice. Every other timing in this skin is
+ * duplicated between a component and `index.css` — the crossing's eleven
+ * seconds, the watcher's lifetime — and that is right for a number the CSS has
+ * to place keyframe stops against. These two are only ever *read* by the
+ * animation, never used to position anything, so the variable carries them and
+ * there is nothing to keep in step.
+ */
+const WAVE_SECONDS = 2.2;
+const SEGMENT_LAG = 0.062;
+
+/**
+ * How thick the body is at each segment, head first.
+ *
+ * Two regimes, because a dragon is not a cone. The first five swell from the
+ * neck out to the shoulder — that is what makes the head read as a head rather
+ * than as the wide end of a tube — and everything past it falls away to a whip.
+ * The exponent is what makes the fall-off a taper rather than a straight line:
+ * at 1.0 the tail is a wedge, and at 0.5 the body holds its mass through the
+ * middle and loses it quickly at the very end, which is how the animal is drawn
+ * everywhere it is drawn.
+ */
+const radius = (index: number): number => {
+  if (index <= 4) return 8 + index * 0.95;
+
+  const t = (index - 4) / (SEGMENTS - 5);
+  return Math.max(2.2, 11.6 * (1 - t) ** 0.5);
+};
+
+/**
+ * How far that segment travels, and how much it leans doing it.
+ *
+ * Both grow towards the tail. A wave of constant amplitude is a rope being
+ * shaken; the tail of a swimming animal always moves further than its
+ * shoulders, because there is less of it and nothing behind it to resist.
+ */
+const amplitude = (index: number): number => 12 + (index / (SEGMENTS - 1)) * 13;
+const lean = (index: number): number => 5 + (index / (SEGMENTS - 1)) * 8;
+
+/**
+ * The two custom properties every animated piece carries.
+ *
+ * The phase is `--i`; `.dragon-seg` in `index.css` multiplies it by the lag and
+ * subtracts a large constant, which is what starts every segment part-way
+ * through its own cycle rather than all of them at zero. The subtraction is
+ * what matters: a positive delay is a *pause*, so the first crossing would
+ * begin with a perfectly straight dragon sitting still for a beat.
+ */
+const rig = (index: number, leanBonus = 0): CSSProperties =>
+  ({
+    '--i': index,
+    '--amp': amplitude(index).toFixed(2),
+    '--tilt': (lean(index) + leanBonus).toFixed(2),
+  }) as CSSProperties;
+
+/** One segment's pair of nested groups: the rise and fall, then the lean. */
+const Segment = ({
+  index,
+  dx = 0,
+  leanBonus = 0,
+  children,
+}: {
+  index: number;
+  dx?: number;
+  leanBonus?: number;
+  children: ReactNode;
+}) => (
+  <g transform={`translate(${(HEAD_X - index * SEGMENT_STEP + dx).toFixed(2)} ${SPINE_Y})`}>
+    {/*
+      Two elements, and they have to be two.
+
+      The rise and fall is a `translateY` and the lean is a `rotate`, and they
+      run a quarter of a period apart — the lean is at its steepest where the
+      travel is fastest, which is what a body following a wave actually does.
+      Written on one element the second animation would simply overwrite the
+      first, because a `transform` is one property however many functions are
+      in it. `.dragon-seg__tilt` carries the quarter-period offset; see the
+      stylesheet.
+    */}
+    <g className="dragon-seg" style={rig(index)}>
+      <g className="dragon-seg__tilt" style={rig(index, leanBonus)}>
+        {children}
+      </g>
+    </g>
+  </g>
+);
+
+/** Indices counted from the head, so `map` runs head-first and paints tail-first. */
+const bodyOrder = Array.from({ length: SEGMENTS }, (_, index) => SEGMENTS - 1 - index);
+
 /**
  * The dragon itself: the thing that crosses the page once a minute.
  *
- * ## Why the body is one filled outline and not a stroked line
+ * ## Why it is a rig rather than a drawing
  *
- * A Chinese dragon tapers — thick through the shoulders, thin to a whip at the
- * tail — and SVG has no tapering stroke. A constant-width path reads as a hose.
- * So the silhouette is a closed outline generated from a centreline and a width
- * function: the centreline gives it two and a bit undulations so it is
- * serpentine rather than merely curved, and the width swells at the shoulder
- * and narrows again into the neck, which is what makes the head read as a head
- * rather than as the end of the tube.
+ * The previous version was one filled outline generated from a centreline, and
+ * it could not move. What it had instead was a `translateY`/`rotate` cycle on
+ * the whole glyph — the entire animal rising and falling as one rigid body,
+ * which is a plank on a swell rather than anything alive. Nothing that flies or
+ * swims moves that way, and it is the single loudest thing wrong with a
+ * serpent: a serpent is *defined* by the wave passing along it.
  *
- * The coordinates are sampled rather than hand-drawn, which is why there are so
- * many of them. They are not meant to be edited by hand — the generator is
- * eight lines of trigonometry and lives in the commit that added this file.
+ * So the body is twenty-six overlapping pieces, each carrying the same
+ * animation on its own delay. The head leads, every piece behind it repeats
+ * what the piece in front did a fraction of a second earlier, and the result is
+ * one undulation travelling from the head to the tip of the tail — the motion
+ * of every snake game ever written, which is exactly the reference.
  *
- * ## Why it is one colour
+ * ## Why this is cheaper than it looks
  *
- * It passes behind the entire interface at low opacity. Every detail that
- * survives that is silhouette: the undulation, the crest, the horns, the
- * whiskers, the four legs. A second colour would be two indistinguishable
- * greys in practice and a second paint the compositor has to do for real.
+ * Every moving part animates `transform` and nothing else, so the whole animal
+ * is handed to the compositor once and costs the main thread nothing per frame
+ * — no layout, no paint, no style recalculation. That is the same budget the
+ * eldritch rails already spend on twenty-one jointed limbs at all times, and
+ * this one exists for eleven seconds a minute on one skin.
+ *
+ * It is also why this is not a GIF. A GIF of this animal at a size that does
+ * not dissolve on a 4K panel is a few hundred kilobytes of fixed-palette frames
+ * with one-bit transparency, locked to one size, one frame rate and one colour
+ * scheme — and this skin has two palettes. What is here instead is a few
+ * kilobytes of markup that is resolution-independent, themed by the same
+ * variables as everything else, pausable, and free to the main thread.
+ *
+ * ## Why it is in colour now
+ *
+ * Because the old one could not afford to be. A single-colour silhouette at 8%
+ * opacity was the right answer for a shape with no internal structure — every
+ * detail that survived was outline, and a second colour would have been two
+ * indistinguishable greys. This one is built from parts that are genuinely
+ * different materials: gold scale, jade crest and mane, cinnabar claws and
+ * mouth. Drawn flat they would be a mess; drawn as themselves they are the
+ * animal off a lacquer screen, which is what the skin is.
+ *
+ * The opacity it is composited at is `.dragon-flight__body`'s problem, not
+ * this component's — see the note there for what changed and why.
  */
 export const DragonGlyph = ({ className }: GlyphProps) => (
-  <svg viewBox="0 0 264 68" fill="none" aria-hidden className={cn('h-16 w-auto', className)}>
-    <g fill="currentColor">
-      {/* The body, tail at the left, neck at the right. */}
-      <path d="M 7.9 37.4 L 10.3 38.1 L 12.8 38.6 L 15.3 39.2 L 17.8 39.7 L 20.2 40.2 L 22.7 40.7 L 25.2 41.2 L 27.7 41.6 L 30.2 42.0 L 32.7 42.3 L 35.2 42.6 L 37.7 42.9 L 40.2 43.2 L 42.8 43.4 L 45.3 43.6 L 47.8 43.7 L 50.3 43.8 L 52.9 43.8 L 55.4 43.8 L 58.0 43.7 L 60.5 43.7 L 63.1 43.5 L 65.6 43.3 L 68.2 43.1 L 70.7 42.8 L 73.3 42.5 L 75.8 42.2 L 78.4 41.8 L 80.9 41.3 L 83.5 40.9 L 86.0 40.4 L 88.6 39.9 L 91.1 39.4 L 93.6 38.8 L 96.2 38.2 L 98.7 37.7 L 101.2 37.1 L 103.7 36.5 L 106.2 35.9 L 108.7 35.3 L 111.2 34.7 L 113.7 34.1 L 116.2 33.6 L 118.7 33.1 L 121.1 32.5 L 123.6 32.1 L 126.0 31.6 L 128.5 31.2 L 130.9 30.8 L 133.3 30.5 L 135.7 30.2 L 138.1 30.0 L 140.5 29.8 L 142.9 29.6 L 145.2 29.5 L 147.6 29.5 L 149.9 29.5 L 152.3 29.6 L 154.6 29.7 L 157.0 29.9 L 159.3 30.1 L 161.6 30.4 L 164.0 30.8 L 166.3 31.2 L 168.6 31.6 L 171.0 32.2 L 173.3 32.7 L 175.7 33.3 L 178.0 34.0 L 180.4 34.6 L 182.8 35.4 L 185.2 36.1 L 187.6 36.8 L 190.1 37.6 L 192.5 38.4 L 195.0 39.2 L 197.4 40.0 L 199.9 40.8 L 202.5 41.7 L 205.0 42.5 L 207.5 43.2 L 210.1 44.0 L 212.7 44.7 L 215.3 45.4 L 217.9 46.1 L 220.5 46.7 L 223.1 47.3 L 225.8 47.8 L 228.4 48.2 L 231.1 48.5 L 232.9 40.9 L 230.6 40.0 L 228.3 39.0 L 225.9 38.1 L 223.6 37.1 L 221.2 36.1 L 218.8 35.0 L 216.5 34.0 L 214.1 33.0 L 211.7 31.9 L 209.2 30.9 L 206.8 29.9 L 204.3 28.9 L 201.8 27.9 L 199.3 26.9 L 196.8 26.0 L 194.3 25.0 L 191.8 24.2 L 189.2 23.3 L 186.6 22.6 L 184.0 21.8 L 181.4 21.1 L 178.8 20.5 L 176.2 20.0 L 173.5 19.5 L 170.9 19.0 L 168.3 18.7 L 165.6 18.3 L 163.0 18.1 L 160.3 17.9 L 157.7 17.8 L 155.1 17.7 L 152.4 17.7 L 149.8 17.8 L 147.2 17.9 L 144.6 18.1 L 141.9 18.4 L 139.3 18.7 L 136.8 19.0 L 134.2 19.4 L 131.6 19.9 L 129.0 20.4 L 126.5 21.0 L 123.9 21.5 L 121.4 22.2 L 118.9 22.8 L 116.4 23.5 L 113.8 24.2 L 111.3 24.9 L 108.9 25.6 L 106.4 26.3 L 103.9 27.1 L 101.4 27.8 L 99.0 28.6 L 96.5 29.3 L 94.0 30.0 L 91.6 30.7 L 89.2 31.4 L 86.7 32.1 L 84.3 32.7 L 81.8 33.4 L 79.4 34.0 L 77.0 34.5 L 74.6 35.1 L 72.1 35.6 L 69.7 36.0 L 67.3 36.5 L 64.9 36.8 L 62.4 37.2 L 60.0 37.5 L 57.6 37.8 L 55.2 38.0 L 52.7 38.2 L 50.3 38.3 L 47.8 38.4 L 45.4 38.5 L 42.9 38.5 L 40.5 38.5 L 38.0 38.5 L 35.5 38.4 L 33.1 38.3 L 30.6 38.2 L 28.1 38.0 L 25.6 37.8 L 23.1 37.6 L 20.7 37.4 L 18.2 37.1 L 15.7 36.9 L 13.1 36.6 L 10.6 36.4 L 8.1 36.2 Z" />
+  <svg
+    viewBox="0 0 300 148"
+    fill="none"
+    aria-hidden
+    className={cn('h-16 w-auto', className)}
+    style={
+      {
+        '--wave-dur': `${WAVE_SECONDS}s`,
+        '--wave-lag': `${SEGMENT_LAG}s`,
+      } as CSSProperties
+    }
+  >
+    {/*
+      Six passes, and the order is the whole of the depth in this drawing.
 
-      {/* The dorsal crest: twelve spines along the top edge, growing towards
-          the head. Sampled off the same centreline, so they sit on the body
-          rather than near it. */}
-      <path d="M 40.4 43.3 L 42.7 46.0 L 45.2 43.5 Z M 55.6 43.9 L 58.1 46.5 L 60.4 43.6 Z M 70.9 42.9 L 73.8 45.4 L 75.6 42.1 Z M 86.2 40.4 L 89.3 42.9 L 90.9 39.3 Z M 101.4 37.1 L 104.6 39.7 L 106.1 35.9 Z M 116.3 33.6 L 119.5 36.4 L 121.0 32.5 Z M 130.9 30.9 L 133.9 34.1 L 135.7 30.1 Z M 145.2 29.6 L 147.7 33.3 L 150.0 29.4 Z M 159.2 30.2 L 161.2 34.4 L 164.0 30.7 Z M 173.4 32.8 L 174.7 37.4 L 178.0 33.9 Z M 187.8 36.9 L 188.7 41.7 L 192.3 38.4 Z M 202.7 41.6 L 203.4 46.7 L 207.2 43.3 Z" />
+      Each pass walks the body separately so that *every* crest spine is behind
+      *every* scale, rather than each segment's own spine being behind its own
+      scale and in front of its neighbour's. Interleaving them — one segment
+      drawn complete, then the next — is what gives a scalloped body a row of
+      fins that appear to be threaded through it.
+    */}
 
-      {/* The tail fin — a spray of three blades, which is where a Chinese
-          dragon ends rather than in a point. */}
-      <path d="M9 36.8 L 3 27.6 L 5.6 35.8 L 0.6 33.8 L 4.8 38 L 1.4 44 L 7.2 38.9 Z" />
+    {/* 1. The dorsal crest, behind everything. */}
+    {bodyOrder
+      .filter((index) => index >= 1 && index <= SEGMENTS - 2)
+      .map((index) => {
+        const r = radius(index);
+        // Uneven heights from the index rather than from `Math.random`: a ridge
+        // of identical triangles is a stegosaurus, and a ridge that is a
+        // different shape on every render is a flicker.
+        const spine = (r * 0.95 + 3) * (0.82 + ((index * 7) % 5) * 0.09);
+
+        return (
+          <Segment key={`crest-${index}`} index={index}>
+            <path
+              d={`M-5.4 ${(-r + 2).toFixed(1)} C -3.4 ${(-r - spine).toFixed(1)}, 0.6 ${(
+                -r -
+                spine * 1.1
+              ).toFixed(1)}, 4.6 ${(-r + 1).toFixed(1)} Z`}
+              fill="rgb(var(--dragon-jade))"
+            />
+          </Segment>
+        );
+      })}
+
+    {/* 2. The far pair of legs: the same limb, dimmer and a little behind. The
+           cheapest depth cue there is, and the only one that survives at this
+           size. */}
+    {[6, 16].map((index) => (
+      <Segment key={`far-leg-${index}`} index={index} dx={-3}>
+        <path
+          d="M-3 4 C -7 11, -5 18, 1 22 L 6 18 C 2 15, 1 11, 3 5 Z"
+          fill="rgb(var(--dragon-scale-deep))"
+          opacity="0.5"
+        />
+      </Segment>
+    ))}
+
+    {/* 3. The body. */}
+    {bodyOrder.map((index) => {
+      const r = radius(index);
+
+      return (
+        <Segment key={`body-${index}`} index={index}>
+          {/* Wider than it is tall, which is what turns a stack of circles into
+              a body: at this ratio the visible part of each scale is a shallow
+              arc rather than a disc. */}
+          <ellipse
+            cx="0"
+            cy="0"
+            rx={(r * 1.5).toFixed(2)}
+            ry={r.toFixed(2)}
+            fill="rgb(var(--dragon-scale))"
+            stroke="rgb(var(--dragon-ink))"
+            strokeOpacity="0.17"
+            strokeWidth="1"
+          />
+          {r > 3 && (
+            <ellipse
+              cx="0"
+              cy={(r * 0.42).toFixed(2)}
+              rx={(r * 1.08).toFixed(2)}
+              ry={(r * 0.46).toFixed(2)}
+              fill="rgb(var(--dragon-scale-lit))"
+              fillOpacity="0.5"
+            />
+          )}
+          {r > 5 && (
+            <path
+              d={`M${(-r * 0.9).toFixed(1)} ${(-r * 0.32).toFixed(1)} q ${(r * 0.9).toFixed(
+                1,
+              )} ${(r * 0.5).toFixed(1)} ${(r * 1.8).toFixed(1)} 0`}
+              stroke="rgb(var(--dragon-scale-deep))"
+              strokeOpacity="0.45"
+              strokeWidth="1"
+              fill="none"
+            />
+          )}
+        </Segment>
+      );
+    })}
+
+    {/* 4. The tail fin — a spray of three blades, which is where a Chinese
+           dragon ends rather than in a point. Carried by the last segment, so
+           it whips with it instead of trailing behind. */}
+    <Segment index={SEGMENTS - 1} dx={-4} leanBonus={6}>
+      <path
+        d="M6 0 C 0 -2, -7 -8, -13 -17 C -5 -14, -1 -11, 2 -8 C -1 -15, -3 -22, -2 -30 C 3 -22, 5 -15, 6 -8 C 9 -14, 14 -19, 20 -22 C 17 -13, 12 -5, 7 1 Z"
+        fill="rgb(var(--dragon-jade))"
+        stroke="rgb(var(--dragon-ink))"
+        strokeOpacity="0.34"
+        strokeWidth="1"
+      />
+    </Segment>
+
+    {/* 5. The near pair of legs, over the body. */}
+    {[5, 15].map((index) => (
+      <Segment key={`leg-${index}`} index={index} dx={2}>
+        {/* The jade tuft at the shoulder — the flame every drawing of this
+            animal puts where a limb leaves the body. */}
+        <path d="M-8 4 C -13 10, -15 16, -14 22 C -10 16, -7 12, -3 9 Z" fill="rgb(var(--dragon-jade))" />
+        <path
+          d="M-4 2 C -8 11, -6 20, 1 26 L 7 21 C 2 17, 1 12, 4 4 Z"
+          fill="rgb(var(--dragon-scale))"
+          stroke="rgb(var(--dragon-ink))"
+          strokeOpacity="0.34"
+          strokeWidth="1"
+        />
+        <path
+          d="M1 26 C -3 29, -6 32, -8 36 M3.4 27 C 2.6 31, 2 34, 2 38 M6 25.6 C 8.6 29, 10.6 32, 12 35"
+          stroke="rgb(var(--dragon-cinnabar))"
+          strokeWidth="2"
+          strokeLinecap="round"
+          fill="none"
+        />
+      </Segment>
+    ))}
+
+    {/* 6. The head, which is segment zero and therefore leads the wave. */}
+    <Segment index={0} leanBonus={3}>
+      {/* The barbels, trailing back over the neck. Drawn first so the skull
+          sits on top of where they leave the snout. */}
+      <g
+        stroke="rgb(var(--dragon-jade-lit))"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        fill="none"
+      >
+        <path d="M25 -4 C 17 -10, 2 -13, -16 -10 C -28 -8, -36 -11, -43 -16" />
+        <path d="M23 4 C 17 11, 2 16, -16 14 C -28 13, -36 16, -43 22" />
+      </g>
+
+      {/* The mane: jade flames off the back of the skull, behind it only. */}
+      <path
+        d="M-12 -9 C -19 -15, -25 -13, -31 -18 C -26 -8, -23 -3, -18 0 C -25 1, -30 6, -34 15 C -26 10, -18 8, -12 9 Z"
+        fill="rgb(var(--dragon-jade))"
+      />
+
+      {/* The beard, under the hinge. */}
+      <path d="M-9 6 C -11 15, -16 22, -24 25 C -18 17, -15 12, -15 6 Z" fill="rgb(var(--dragon-jade))" />
+
+      {/* Antlers. Stroked rather than filled: three tapering branches read as a
+          rack at thirty pixels, where three closed outlines read as a blob. */}
+      <g
+        stroke="rgb(var(--dragon-scale-deep))"
+        strokeWidth="3.2"
+        strokeLinecap="round"
+        fill="none"
+      >
+        <path d="M-5 -14 C -10 -22, -16 -28, -25 -33" />
+        <path d="M-13 -24 C -16 -29, -21 -33, -27 -35" />
+        <path d="M-9 -19 C -10 -26, -8 -32, -4 -36" />
+      </g>
 
       {/*
-        The head.
+        The open mouth.
 
-        Built as a wedge rather than a circle: the snout is long and squared,
-        the jaw drops away underneath it, and the skull is deepest just behind
-        the eye. That profile is most of what separates a Chinese dragon's head
-        from a snake's at silhouette size.
+        The whole wedge between the two jaws, filled before either of them is
+        drawn. Drawing the *gap* instead — a sliver following the lower jaw's
+        own top edge — is what made the first pass read as a closed mouth with a
+        red line on it: there was nothing behind the teeth.
       */}
-      <path d="M231 40.4c4-2.2 9.6-2.6 14.4-1.2 4.6 1.3 8.4 3.4 10.9 5.6.8.7.6 1.6-.5 1.9-2.6.6-4.9.6-7.2.2.7 1.4.6 2.7-.4 3.6-.7.6-1.7.5-2.3-.3-1.2-1.6-2.9-2.8-4.9-3.5-3.6.9-7.3.7-10.6-.6l.6-5.7Z" />
+      <path d="M-8 0 L 26 1 L 21 15 C 8 12, -2 8, -9 5 Z" fill="rgb(var(--dragon-cinnabar))" />
+      <path
+        d="M-6 3 C 2 6, 10 9, 16 12 C 10 14, 0 11, -7 8 Z"
+        fill="rgb(var(--dragon-cinnabar))"
+        opacity="0.55"
+      />
 
-      {/* Two horns, sweeping back over the neck. */}
-      <path d="M240.5 38.2c-1-3-3.4-5.6-6.7-7.2-.8-.4-.5-1.4.4-1.3 4.6.5 8.2 3.3 9.6 7.4l-3.3 1.1Z" />
-      <path d="M235.2 38.4c-1.8-2.6-4.6-4.4-8.2-5.2-.9-.2-.9-1.2 0-1.3 4.8-.5 9 1.5 11.2 5.2l-3 1.3Z" />
+      {/* Upper skull and snout. Blunt rather than tapered, with the nose turned
+          up as part of the same outline: a Chinese dragon's muzzle ends in a
+          squared nose, and a point is what makes the same drawing read as a
+          lizard. A separate blob on the end reads as a ball. */}
+      <path
+        d="M-14 -7 C -13 -17, -3 -22, 6 -18 C 11 -16, 14 -12, 18 -10 C 22 -9, 27 -10, 28 -5 C 29 -1, 26 1, 23 1 L 5 1 C -7 1, -13 -2, -14 -7 Z"
+        fill="rgb(var(--dragon-scale))"
+        stroke="rgb(var(--dragon-ink))"
+        strokeOpacity="0.45"
+        strokeWidth="1.2"
+      />
+      <path
+        d="M-7 -14 C -1 -18, 6 -17, 10 -13"
+        stroke="rgb(var(--dragon-scale-deep))"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        fill="none"
+      />
 
-      {/* The eye. Surface-coloured so it is a hole in the silhouette — the one
-          place the page shows through, which is what makes it read as an eye
-          at four pixels across. */}
-      <circle cx="243.4" cy="42.4" r="1.5" fill="rgb(var(--surface))" />
+      {/* Upper teeth, hanging off the lip line. */}
+      <path d="M8 1 l 2.6 4.6 l 2.2 -4.4 Z M16 1.4 l 2.4 4.2 l 2.2 -4 Z" fill="rgb(253 250 242)" />
 
-      {/* The mane, behind the skull. */}
-      <path d="M233.6 37.6c-2.4-1.2-5.2-1.6-8.4-1.2l1 2.6c2.6-.7 5-.6 7.4.2v-1.6Z" opacity="0.85" />
-    </g>
+      {/* Lower jaw, dropped away under the snout. */}
+      <path
+        d="M-12 4 C -3 8, 8 11, 18 14 C 22 15.4, 22 18.4, 18 18 C 7 16.8, -4 13, -12 9.6 Z"
+        fill="rgb(var(--dragon-scale))"
+        stroke="rgb(var(--dragon-ink))"
+        strokeOpacity="0.45"
+        strokeWidth="1.2"
+      />
+      <path d="M9 11.4 l 1.6 -4.4 l 2.6 3.6 Z" fill="rgb(253 250 242)" />
 
-    {/*
-      Whiskers, drawn rather than filled.
-
-      The one part of the animal that is a line: two long barbels trailing back
-      from the snout, and they are what makes a serpent read as a *dragon* from
-      across a room. Stroked so they keep their weight when the whole glyph is
-      scaled down.
-    */}
-    <g stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" fill="none">
-      <path d="M252.4 47.2c-2.8 5.2-8.6 8-17.4 8.4" />
-      <path d="M248.6 49.4c-1.6 4.6-6.2 7.6-13.8 9" />
-    </g>
-
-    {/*
-      Four legs, at the shoulder and the hip on both sides of the body.
-
-      The near pair are solid; the far pair are the same shape at lower opacity
-      and slightly higher, which is the cheapest possible depth cue and the only
-      one that survives being drawn at 8% alpha behind a page.
-    */}
-    <g fill="currentColor">
-      <g opacity="0.55">
-        <path d="M166 24.5c-1.8 3.4-1.4 6.8 1.2 10.2l2.6-1.4c-1.8-2.8-2-5.4-.6-7.8l-3.2-1Z" />
-        <path d="M86.5 35.2c-2 3.2-1.8 6.6.6 10.2l2.7-1.3c-1.7-2.9-1.8-5.5-.3-7.9l-3-1Z" />
-      </g>
-      {/* Near shoulder, with three claws. */}
-      <path d="M171.4 26.6c-2.4 3.8-2.2 7.8.6 12l3-1.6c-2-3.2-2.2-6.2-.6-9.2l-3-1.2Z" />
-      <path d="M171.6 37.4l-2.4 4.2 1.4.6 2-3.4Zm1.6.8-.8 4.6 1.6.2.6-4.2Zm1.8.2.8 4.4 1.5-.5-1.1-4.2Z" />
-      {/* Near hip. */}
-      <path d="M92 37.4c-2.6 3.6-2.6 7.6 0 12l3-1.5c-1.9-3.2-1.9-6.2-.2-9.3l-2.8-1.2Z" />
-      <path d="M92 47.8l-2.2 4.3 1.4.6 1.9-3.5Zm1.7.7-.7 4.7 1.6.1.5-4.2Zm1.8.1.9 4.4 1.5-.5-1.2-4.2Z" />
-    </g>
+      {/* The eye, and the nostril on top of the nose. */}
+      <circle
+        cx="-2"
+        cy="-10"
+        r="4.2"
+        fill="rgb(253 248 236)"
+        stroke="rgb(var(--dragon-ink))"
+        strokeOpacity="0.55"
+        strokeWidth="1"
+      />
+      <circle cx="-1" cy="-10" r="2" fill="rgb(var(--dragon-ink))" />
+      <circle cx="24" cy="-6" r="1.5" fill="rgb(var(--dragon-ink))" opacity="0.6" />
+    </Segment>
   </svg>
 );
 
