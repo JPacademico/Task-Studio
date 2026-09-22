@@ -204,6 +204,27 @@ const BODY: Record<ThemeSkin, ReactElement> = {
       <i />
     </span>
   ),
+
+  /*
+   * A scroll unrolling, and rolling back.
+   *
+   * The loop is the gesture the whole skin is built on: two lacquered rods and
+   * a sheet of silk between them, the sheet widening and narrowing while the
+   * rods travel apart and back together. Nothing spins, because nothing in an
+   * imperial hall spins — waiting here is something being *opened*, which is
+   * also the honest metaphor for what a loading state is.
+   *
+   * Three nodes: the two rods and the silk. The rods translate, the silk
+   * scales on its own X axis, and all three run off one keyframe set so they
+   * cannot drift out of step. See `.loader-scroll` in `index.css`.
+   */
+  DRAGON: (
+    <span className="loader-scroll">
+      <i />
+      <b />
+      <i />
+    </span>
+  ),
 };
 
 interface SkinLoaderProps {

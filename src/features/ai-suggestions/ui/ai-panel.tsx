@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CalendarClock, Check, MessageSquareText, Sparkles, Wand2, X } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/shared/lib/toast';
 
 import { useAddCreatedTasks } from '@/entities/task/model/queries';
 import { errorMessage } from '@/shared/api/client';

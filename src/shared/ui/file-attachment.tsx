@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Download, FileText, Paperclip, X } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/shared/lib/toast';
 
 import {
   DOCUMENT_ACCEPT,

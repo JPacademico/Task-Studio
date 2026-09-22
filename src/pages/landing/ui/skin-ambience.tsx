@@ -29,6 +29,7 @@ const AMBIENCE = {
   HALLOWEEN: { kind: 'bats', tones: ['#1c1420', '#ff8c28'], count: 7 },
   RUNIC: { kind: 'runes', tones: ['#b45309', '#f59e0b'], count: 5 },
   ELDRITCH: { kind: 'eyes', tones: ['#2dd4bf', '#a855f7'], count: 4 },
+  DRAGON: { kind: 'lanterns', tones: ['#a32a1e', '#e0a33a'], count: 7 },
 } as const satisfies Partial<
   Record<ThemeSkin, { kind: string; tones: readonly [string, string]; count: number }>
 >;
@@ -98,6 +99,35 @@ const LeafGlyph = ({ fill }: { fill: string }) => (
       transform="rotate(18 12 12)"
     />
     <path d="M12 4v16" stroke="rgb(0 0 0 / 0.35)" strokeWidth="1.1" fill="none" />
+  </svg>
+);
+
+/**
+ * A paper lantern, for the imperial skin.
+ *
+ * Deliberately not the dragon. The dragon is a 264-unit glyph that takes eleven
+ * seconds to cross a whole viewport — inside a preview box a few hundred pixels
+ * wide it would be a red smear passing every second or so, which sells the
+ * wrong thing about the theme. Lanterns rising are the same room without the
+ * set piece in it, and they read at 14 pixels.
+ *
+ * Two colours: the paper takes the accent, the cap and the base take the metal.
+ */
+const LanternGlyph = ({ fill, trim }: { fill: string; trim: string }) => (
+  <svg viewBox="0 0 16 24" className="h-full w-full" aria-hidden>
+    {/* The hanging cord and the top cap. */}
+    <path d="M8 0v3" stroke={trim} strokeWidth="1.2" fill="none" />
+    <rect x="4.5" y="3" width="7" height="1.8" rx="0.6" fill={trim} />
+    {/* The paper body: barrel-shaped, which is the whole silhouette. */}
+    <path d="M8 4.8c4.4 0 6.4 2.6 6.4 6.2S12.4 17.2 8 17.2 1.6 14.6 1.6 11 3.6 4.8 8 4.8Z" fill={fill} />
+    {/* Two ribs, so the paper reads as stretched over a frame. */}
+    <g stroke={trim} strokeWidth="0.7" strokeOpacity="0.55" fill="none">
+      <path d="M4.4 5.9c-1 1.5-1.4 3.2-1.4 5.1s.4 3.6 1.4 5.1" />
+      <path d="M11.6 5.9c1 1.5 1.4 3.2 1.4 5.1s-.4 3.6-1.4 5.1" />
+    </g>
+    {/* The base, and the tassel hanging off it. */}
+    <rect x="4.5" y="17.2" width="7" height="1.8" rx="0.6" fill={trim} />
+    <path d="M8 19v4" stroke={fill} strokeWidth="1.4" fill="none" />
   </svg>
 );
 
@@ -293,6 +323,25 @@ export const SkinAmbience = ({ skin, density = 1, className }: SkinAmbienceProps
             return (
               <span key={index} className="sa-blink" style={{ ...style, top: `${p.top}%` }}>
                 <EyeGlyph fill={toneA} pupil={toneB} />
+              </span>
+            );
+
+          /*
+           * Lanterns go *up*, on the same `sa-rise` the embers and bubbles use.
+           *
+           * The glow is a drop-shadow in the lantern's own red rather than a
+           * `box-shadow` on the box, because the box is a rectangle and the
+           * lantern is not — a box-shadow would put a rectangular halo behind
+           * a rounded object, which is exactly what it looks like.
+           */
+          case 'lanterns':
+            return (
+              <span
+                key={index}
+                className="sa-rise"
+                style={{ ...style, filter: `drop-shadow(0 0 6px ${toneA}88)` }}
+              >
+                <LanternGlyph fill={toneA} trim={toneB} />
               </span>
             );
 

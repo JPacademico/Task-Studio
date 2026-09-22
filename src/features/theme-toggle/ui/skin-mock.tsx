@@ -107,6 +107,22 @@ export const SkinMock = ({
     clipPath: preview.notched ? notch(px(3)) : undefined,
     padding: px(6),
     gap: px(4),
+    /*
+     * Dragon: every panel mounted like a hanging scroll.
+     *
+     * The same three inset rings the real skin draws — a hairline of gold at
+     * the edge, a band of the panel's own paper, then a second hairline — done
+     * here in the mock's own scaled pixels. It is the loudest thing this skin
+     * does to a surface, and a preview that painted only red and gold would be
+     * selling a colour scheme rather than a theme.
+     */
+    boxShadow: preview.scrollTrim
+      ? [
+          `inset 0 0 0 ${px(0.75)}px ${preview.scrollTrim}`,
+          `inset 0 0 0 ${px(2)}px ${preview.raised}`,
+          `inset 0 0 0 ${px(2.75)}px ${preview.scrollTrim}`,
+        ].join(', ')
+      : undefined,
   };
 
   const line = (width: string, opacity: number): CSSProperties => ({
@@ -189,7 +205,13 @@ export const SkinMock = ({
           style={{
             height: px(14),
             width: px(14),
-            background: accent,
+            /*
+             * Dragon's mark is cut from jade rather than painted in the accent
+             * — the one skin whose logo is a different colour from its brand,
+             * and therefore the one whose mock would be wrong without this.
+             * See `JadeMark`.
+             */
+            background: preview.jade ?? accent,
             borderRadius: radius / 2.5,
           }}
         />

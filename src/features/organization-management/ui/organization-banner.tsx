@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ImagePlus, Loader2, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/shared/lib/toast';
 
 import { useUpdateOrganization } from '@/entities/organization/model/queries';
 import type { Organization } from '@/entities/organization/model/types';

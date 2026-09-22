@@ -1419,8 +1419,6 @@ const en = {
   'themes.currentlyApplied': 'Currently applied',
   'themes.bothModes': 'Light and dark stay your own setting — every theme ships both.',
   'themes.cursor': 'Theme cursor',
-  'themes.cursorHint': 'This theme draws its own pointer. Turn it off to keep your usual one.',
-  'themes.cursorHintInactive': 'Some themes draw their own pointer. Off keeps your usual one.',
   // ---- Dashboard ---------------------------------------------------------
   'dash.title': 'Dashboard',
   'dash.subtitle': 'Everything you own and everything assigned to you, in one place.',
@@ -2269,6 +2267,9 @@ const en = {
   'skin.VOLCANO.tagline': 'The crust is a lid',
   'skin.VOLCANO.body':
     'Ash-grey plates crazed with fractures, a hot seam under every edge where the melt shows through, type struck rather than set — and embers going up off all of it.',
+  'skin.DRAGON.tagline': 'Something long passes the window',
+  'skin.DRAGON.body':
+    'Lacquer red and imperial gold behind jade, every panel bordered like a hanging scroll and rolled open on its own handles. Once a minute a dragon crosses the hall, end to end, and is gone.',
 
   'theme.light': 'Light',
   'theme.dark': 'Dark',
@@ -3812,10 +3813,6 @@ const ptBR: Record<TranslationKey, string> = {
   'themes.currentlyApplied': 'Aplicado no momento',
   'themes.bothModes': 'Claro e escuro continuam sendo sua escolha — todo tema traz os dois.',
   'themes.cursor': 'Cursor do tema',
-  'themes.cursorHint':
-    'Este tema desenha o próprio ponteiro. Desligue para manter o seu de sempre.',
-  'themes.cursorHintInactive':
-    'Alguns temas desenham o próprio ponteiro. Desligado mantém o seu de sempre.',
   'dash.title': 'Painel',
   'dash.subtitle': 'Tudo o que é seu e tudo o que foi atribuído a você, em um só lugar.',
   'dash.createProject': 'Criar um projeto',
@@ -4620,6 +4617,9 @@ const ptBR: Record<TranslationKey, string> = {
   'skin.VOLCANO.tagline': 'A crosta é uma tampa',
   'skin.VOLCANO.body':
     'Placas cinza-cinza rachadas por fraturas, uma costura quente sob cada borda onde o magma aparece, tipografia golpeada em vez de composta — e brasas subindo de tudo isso.',
+  'skin.DRAGON.tagline': 'Algo comprido passa pela janela',
+  'skin.DRAGON.body':
+    'Vermelho laca e ouro imperial atrás do jade, cada painel emoldurado como um pergaminho suspenso e aberto pelos próprios cilindros. Uma vez por minuto um dragão atravessa o salão, de ponta a ponta, e some.',
 
   'theme.light': 'Claro',
   'theme.dark': 'Escuro',

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { toast } from 'sonner';
+import { toast } from '@/shared/lib/toast';
 import { Check, Copy, Link2, RotateCcw, Rss } from 'lucide-react';
 
 import {

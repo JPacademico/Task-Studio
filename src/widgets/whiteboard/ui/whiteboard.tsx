@@ -13,7 +13,7 @@ import {
   Undo2,
   Users,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/shared/lib/toast';
 
 import { useRealtime } from '@/app/providers/realtime-provider';
 import { whiteboardApi } from '@/entities/chat/api/chat.api';

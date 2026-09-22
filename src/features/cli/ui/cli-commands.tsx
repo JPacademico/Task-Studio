@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, Copy, ExternalLink } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/shared/lib/toast';
 
 import { env } from '@/shared/config/env';
 import { cn } from '@/shared/lib/cn';

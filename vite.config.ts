@@ -206,6 +206,94 @@ export default defineConfig(({ mode }) => {
                 networkTimeoutSeconds: 6,
                 expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 },
                 cacheableResponse: { statuses: [200] },
+                plugins: [
+                  {
+                    /*
+                     * Answer with a response instead of rejecting, and this is
+                     * the fix for a console full of errors in a working app.
+                     *
+                     * ## What was happening
+                     *
+                     * `NetworkFirst` falls back to the cache when the network
+                     * call fails, and *rejects* when the cache has nothing
+                     * either. A rejected handler makes the `FetchEvent` resolve
+                     * to a network error, and Chrome prints one line per
+                     * occurrence:
+                     *
+                     *   The FetchEvent for "…" resulted in a network error
+                     *   response: the promise was rejected.
+                     *
+                     * That is logged by the browser itself, from the service
+                     * worker's scope — no `catch` in application code can reach
+                     * it and no error handler can silence it.
+                     *
+                     * And it fires constantly during ordinary use, because two
+                     * completely normal things take that path:
+                     *
+                     *   - **A cancelled request.** React Query aborts in-flight
+                     *     queries when the component that owns them unmounts, so
+                     *     every navigation away from a page that was still
+                     *     loading aborts a handful of requests. Each abort is a
+                     *     throw inside the handler, on a URL that has usually
+                     *     never been cached.
+                     *   - **A slow one.** `networkTimeoutSeconds` makes the
+                     *     handler give up on the cache's behalf after six
+                     *     seconds. On a first-ever call to an endpoint there is
+                     *     nothing cached to give up *to*, so a request that is
+                     *     merely slow — and that goes on to succeed — leaves an
+                     *     error in the console behind it.
+                     *
+                     * In both cases the application is fine: axios sees a failed
+                     * request, the query retries or reports, and the user
+                     * notices nothing. The only casualty is the console, which
+                     * fills with red for a page that is working.
+                     *
+                     * ## Why a 504
+                     *
+                     * `handlerDidError` has to return a `Response` for the
+                     * `FetchEvent` to resolve normally, and the status is what
+                     * the page will see. 504 is the honest one — the worker
+                     * reached neither the network nor a cached copy — and the
+                     * client already has wording for it: `errorMessage` maps 504
+                     * to `session.slowStart`, which says the server is waking
+                     * up. An opaque `Response.error()` would be a network error
+                     * again and would change nothing.
+                     *
+                     * This must stay self-contained: `generateSW` stringifies it
+                     * into `sw.js`, so it cannot close over anything in this
+                     * file.
+                     */
+                    handlerDidError: async () =>
+                      new Response(
+                        JSON.stringify({
+                          statusCode: 504,
+                          message: 'The application could not reach the server.',
+                        }),
+                        {
+                          status: 504,
+                          statusText: 'Gateway Timeout',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            /*
+                             * The marker that says this never reached the
+                             * server, and it is load-bearing.
+                             *
+                             * `client.ts` times requests differently depending
+                             * on whether the API has answered recently — a warm
+                             * container gets a short timeout, a cold one a long
+                             * one — and it decides that by noticing any
+                             * response at all. A synthetic 504 looks like one,
+                             * so without this header a worker that could not
+                             * reach a *sleeping* server would mark it warm and
+                             * the next real call would be given the short
+                             * timeout and fail. See `SW_SYNTHETIC_HEADER`.
+                             */
+                            'X-Served-By': 'task-studio-sw',
+                          },
+                        },
+                      ),
+                  },
+                ],
               },
             },
             {

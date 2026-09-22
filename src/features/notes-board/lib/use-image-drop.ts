@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { toast } from 'sonner';
+import { toast } from '@/shared/lib/toast';
 
 import {
   optimisticNote,

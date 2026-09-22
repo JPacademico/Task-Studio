@@ -4,6 +4,7 @@ import { useSkin } from '@/app/providers/theme-provider';
 import { cn } from '@/shared/lib/cn';
 import { translate } from '@/shared/i18n';
 import type { NavEdge } from '@/shared/lib/nav-preferences.store';
+import { ScrollHandle } from './dragon-icons';
 import { PushPin } from './studio-icons';
 
 interface EdgeAffordanceProps {
@@ -139,17 +140,92 @@ const SWELL_KEYFRAMES: Record<NavEdge, Record<string, number[]>> = {
  * only chooses what the bulge is made of — the deep field sinks a singularity
  * into the edge instead of a glow, and that is the whole of the difference.
  */
+/**
+ * Where the scroll rod sits, and how far it leans out.
+ *
+ * Matched to `SWELL` rather than chosen: the rod is a *replacement* for the
+ * bulge, so it takes the same length along the edge (`h-52`) and a reach across
+ * it inside the same 38px the wave was tuned to. Anything wider would be a new
+ * decision about how much of the page the hint is allowed to cover, and that
+ * decision was already made and already argued.
+ *
+ * Only the two side rails get one. The top bar is not a scroll — a hanging
+ * scroll has rods at the left and right of the sheet and nothing along the top
+ * — so the bar keeps the glow, which is also what stops three identical rods
+ * framing the window like a picture.
+ */
+const ROD: Record<'left' | 'right', string> = {
+  left: 'left-0 top-1/2 h-52 w-[1.5rem] origin-left',
+  right: 'right-0 top-1/2 h-52 w-[1.5rem] origin-right',
+};
+
 export const EdgeAffordance = ({ edge, isHidden, label }: EdgeAffordanceProps) => {
   const reduceMotion = useReducedMotion();
   const skin = useSkin();
   const isSpace = skin === 'SPACE';
   const isEldritch = skin === 'ELDRITCH';
+  /*
+   * The one skin that replaces the object rather than its material.
+   *
+   * Every other skin here changes what the bulge is *made of* — a singularity,
+   * an iris, a glow — and that rule is deliberate and worth keeping: one shape
+   * at one size on every theme is why the hint is learnable at all.
+   *
+   * This is the exception it is worth making. The imperial skin has a literal
+   * object that means "there is more here, pull it open", and it is the object
+   * the rest of the skin is already built out of — every panel in it is mounted
+   * like a hanging scroll. A glow next to that reads as a hint bolted onto a
+   * theme; the rod reads as the edge of the sheet the whole page is printed on.
+   *
+   * The top bar is excluded; see `ROD`.
+   */
+  const isScroll = skin === 'DRAGON' && edge !== 'top';
 
   // Nothing to invite the user towards while the menu is already on screen, so
   // the loops stop rather than running forever behind `opacity: 0` — three
   // rails were otherwise holding six infinite animations open at all times,
   // including for a menu the user had pinned permanently open.
   const isAnimating = isHidden && !reduceMotion;
+
+  if (isScroll) {
+    return (
+      <div
+        aria-hidden
+        title={label}
+        className={cn(
+          'pointer-events-none fixed inset-0 z-30 transition-opacity duration-300',
+          isHidden ? 'opacity-100' : 'opacity-0',
+        )}
+      >
+        {/*
+          One element, not two.
+
+          The glow version is a wave plus a lit rail because a soft gradient has
+          no edge of its own and needs the strip to say where it comes from. A
+          drawn object has an edge, so the second layer would be a light behind
+          a solid thing — visible only as a smudge around it.
+
+          It breathes on the same three-second cycle as every other skin's hint,
+          and on the same two axes: a little along the edge, more across it. On
+          a rod that reads as the scroll being eased open and let back — which
+          is the gesture the hint is asking for.
+        */}
+        <motion.span
+          className={cn('fixed text-brand drop-shadow-[0_0_10px_rgb(var(--brand)/0.35)]', ROD[edge as 'left' | 'right'])}
+          initial={false}
+          style={CENTRE[edge]}
+          animate={
+            isAnimating
+              ? { scaleX: [0.88, 1, 0.88], scaleY: [0.97, 1, 0.97], opacity: [0.72, 1, 0.72] }
+              : { opacity: 0.85 }
+          }
+          transition={{ duration: 3, repeat: isAnimating ? Infinity : 0, ease: [0.4, 0, 0.2, 1] }}
+        >
+          <ScrollHandle edge={edge as 'left' | 'right'} />
+        </motion.span>
+      </div>
+    );
+  }
 
   return (
     <div

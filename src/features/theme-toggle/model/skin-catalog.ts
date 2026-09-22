@@ -15,6 +15,24 @@ import { translate, type TranslationKey } from '@/shared/i18n';
  * active one, which a variable cannot do.
  */
 
+/**
+ * The scroll face, named once because both palettes use it.
+ *
+ * Kaiti (楷体) is the brush-written regular script a hanging scroll is
+ * inscribed in and it ships with both Windows and macOS, so the great majority
+ * of readers get the real thing with no network request — this project
+ * self-hosts exactly one font and that one is licensed for it. Songti/SimSun
+ * is the woodblock-print fallback a step down, and Georgia is the last resort
+ * that at least keeps the serif.
+ *
+ * Latin text falls through to Georgia on most machines either way, which is
+ * correct: Kaiti's Latin glyphs are an afterthought in the face, and an
+ * interface that is mostly English set in them reads as broken rather than as
+ * calligraphic.
+ */
+const DRAGON_FONT =
+  "'Kaiti SC', KaiTi, STKaiti, 'Songti SC', SimSun, Georgia, 'Times New Roman', serif";
+
 export interface SkinPreview {
   surface: string;
   raised: string;
@@ -49,6 +67,21 @@ export interface SkinPreview {
   sludge?: string;
   /** Newsprint only: the double rule under the mock's masthead. */
   rule?: boolean;
+  /**
+   * Dragon only: the gold mounting rule inset inside every card.
+   *
+   * The scroll border is the loudest thing this skin does to a panel — every
+   * surface in it is framed the way a hanging scroll is mounted — and a mock
+   * that only painted red and gold would be selling a colour scheme.
+   */
+  scrollTrim?: string;
+  /**
+   * Dragon only: the jade the mark is cut from.
+   *
+   * A third colour, and the reason the palette is not simply "red and gold":
+   * jade is the one cool note in an imperial room and it is what the logo is.
+   */
+  jade?: string;
   /** Newsprint only: a halftone screen over the whole mock. */
   halftone?: boolean;
   /**
@@ -869,6 +902,92 @@ export const SKIN_CATALOG: SkinDefinition[] = [
       font: "'Archivo Black', 'Anton', Impact, 'Franklin Gothic Heavy', sans-serif",
       border: 2,
       molten: ['#ff701a', '#ffeca8'],
+    },
+  },
+  {
+    value: 'DRAGON',
+    name: 'Dragon',
+    tagline: 'skin.DRAGON.tagline',
+    description: 'skin.DRAGON.body',
+    tags: [
+      'dragon',
+      'china',
+      'chinese',
+      'imperial',
+      'palace',
+      'forbidden city',
+      'scroll',
+      'jade',
+      'gold',
+      'lacquer',
+      'cinnabar',
+      'red',
+      'dynasty',
+      'oriental',
+      'calligraphy',
+      'seal',
+      'guan dao',
+    ],
+    tagsPtBR: [
+      'dragão',
+      'china',
+      'chinês',
+      'imperial',
+      'palácio',
+      'cidade proibida',
+      'pergaminho',
+      'jade',
+      'ouro',
+      'laca',
+      'vermelho',
+      'dinastia',
+      'oriental',
+      'caligrafia',
+      'selo',
+    ],
+    drawsCursor: true,
+    /*
+     * Two rooms rather than one palette lightened and darkened.
+     *
+     * **Light is the scroll.** Raw silk and rice paper, mounted in gold-brown
+     * brocade, with the accent taken from the one red thing on a finished
+     * painting: the artist's seal. Cinnabar on cream is the highest-contrast
+     * pair in the whole reference and it is *already* how the source material
+     * uses red — sparingly, as the mark of authorship.
+     *
+     * **Dark is the hall.** Black lacquer with a red undertone, and the accent
+     * moves to imperial gold. That hue shift between palettes is deliberate
+     * and it is the only one in the catalogue: a lacquered hall *is* red, so
+     * red becomes the surface rather than the accent, and an accent painted
+     * red on top of it would disappear. Gold leaf is what an imperial room
+     * actually uses to mark something out against its own walls.
+     *
+     * Jade stays constant across both, because it is a stone rather than a
+     * light — and it is what the mark is cut from.
+     */
+    light: {
+      surface: '#e7dbc2',
+      raised: '#f6eedc',
+      edge: '#9c7434',
+      brand: '#a32a1e',
+      content: '#2a1c14',
+      radius: 6,
+      font: DRAGON_FONT,
+      border: 1,
+      scrollTrim: '#c69a4a',
+      jade: '#3f8f70',
+    },
+    dark: {
+      surface: '#160b0c',
+      raised: '#261315',
+      edge: '#8f6a2e',
+      brand: '#e0a33a',
+      content: '#f4e6cf',
+      radius: 6,
+      font: DRAGON_FONT,
+      border: 1,
+      scrollTrim: '#7d5c28',
+      jade: '#52b189',
     },
   },
 ];

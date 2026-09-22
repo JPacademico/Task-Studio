@@ -13,7 +13,7 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core';
 import { Lock } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/shared/lib/toast';
 
 import { TaskCard } from '@/entities/task/ui/task-card';
 import {

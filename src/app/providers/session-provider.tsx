@@ -1,6 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { toast } from '@/shared/lib/toast';
 
 import { authApi } from '@/features/auth/api/auth.api';
 import { useSessionStore } from '@/features/auth/model/session.store';

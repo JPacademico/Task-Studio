@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { toast } from 'sonner';
+import { toast } from '@/shared/lib/toast';
 import { AlertTriangle, ExternalLink } from 'lucide-react';
 
 import { spotifyApi } from '@/entities/integration/api/spotify.api';

@@ -336,6 +336,38 @@ const ProjectPage = () => {
     if (projectId && project?.name) syncChatName(projectId, project.name);
   }, [project?.name, projectId, syncChatName]);
 
+  /*
+   * `?chat=open` — how a mention notification arrives here.
+   *
+   * The bell deep-links to the project with this set (see its `deepLink`),
+   * because the conversation is a floating dock rather than a route: there is
+   * no URL that *is* the chat, and landing on the board with the window shut
+   * leaves somebody who was just summoned with nothing to open.
+   *
+   * Gated on the project having loaded, because the dock is opened with a name
+   * as well as an id and it draws that name in its header — opening early puts
+   * an empty title bar on screen for the length of the fetch.
+   *
+   * The parameter is consumed on the way in. Left in the URL it would reopen
+   * the window on every reload and, worse, fight the reader who just closed it;
+   * `replace` keeps the whole thing out of history, so Back goes wherever they
+   * came from rather than to the same page with the chat opening again.
+   */
+  useEffect(() => {
+    if (searchParams.get('chat') !== 'open') return;
+    if (!projectId || !project?.name) return;
+
+    openChat(projectId, project.name);
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.delete('chat');
+        return next;
+      },
+      { replace: true },
+    );
+  }, [searchParams, setSearchParams, projectId, project?.name, openChat]);
+
   // Leaving the project closes its chat — unless the pin is in, which is the
   // entire point of the pin.
   useEffect(

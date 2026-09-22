@@ -6,6 +6,7 @@ import type { ThemeSkin } from '@/entities/user/model/types';
 import { cn } from '@/shared/lib/cn';
 import { LETTER_ON_SHEET, StudioLetter } from './studio-letter';
 import { AutumnMark } from './autumn-icons';
+import { JadeMark } from './dragon-icons';
 import { HalloweenMark } from './halloween-icons';
 import { EldritchMark } from './eldritch-icons';
 import { HazardMark } from './hazard-icons';
@@ -610,6 +611,7 @@ const MARKS: Partial<Record<ThemeSkin, ComponentType<{ className?: string }>>> =
   VOLCANO: VolcanoMark,
   HALLOWEEN: HalloweenMark,
   VIBECODED: VibecodedMark,
+  DRAGON: JadeMark,
 };
 
 /**

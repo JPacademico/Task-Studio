@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { toast } from 'sonner';
+import { toast } from '@/shared/lib/toast';
 import { AlertTriangle, Check, Copy, Plus, Send, Webhook } from 'lucide-react';
 
 import {

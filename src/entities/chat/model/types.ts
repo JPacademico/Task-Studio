@@ -25,6 +25,18 @@ export interface ChatMessage {
    * arriving and replace the local copy instead of drawing a second one.
    */
   clientId?: string;
+  /**
+   * Ids of the roster members this message calls out with `@`.
+   *
+   * Resolved by the composer's picker, narrowed to actual members by the API,
+   * and stored with the row — so "was I mentioned" survives a reload and does
+   * not depend on re-parsing prose. Optional because a client can meet a
+   * message written by an older API, where the column did not exist.
+   *
+   * Not what drives the highlight: see `entities/chat/lib/mentions` for why
+   * that is matched against the roster's names instead.
+   */
+  mentions?: string[];
   /** @see ChatDelivery — set on our own optimistic copies only. */
   delivery?: ChatDelivery;
 }

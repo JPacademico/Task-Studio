@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Socket } from 'socket.io-client';
-import { toast } from 'sonner';
+import { toast } from '@/shared/lib/toast';
 
 import {
   notificationBody,

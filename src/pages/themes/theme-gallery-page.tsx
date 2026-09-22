@@ -10,7 +10,7 @@ import {
   Sun,
   X,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/shared/lib/toast';
 
 import { useTheme } from '@/app/providers/theme-provider';
 import type { ThemeSkin } from '@/entities/user/model/types';

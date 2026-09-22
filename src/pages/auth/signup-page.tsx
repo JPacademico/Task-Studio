@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { toast } from '@/shared/lib/toast';
 
 import { authApi } from '@/features/auth/api/auth.api';
 import { useSessionStore } from '@/features/auth/model/session.store';

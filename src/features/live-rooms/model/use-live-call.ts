@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { toast } from 'sonner';
+import { toast } from '@/shared/lib/toast';
 
 import { useIceServers } from '@/entities/live-room/model/queries';
 import type {

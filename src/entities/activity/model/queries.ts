@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { toast } from '@/shared/lib/toast';
 
 import { useRealtime } from '@/app/providers/realtime-provider';
 import { errorMessage } from '@/shared/api/client';

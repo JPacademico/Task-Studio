@@ -13,6 +13,7 @@ import {
   BubbleRise,
   EmberRise,
   HazardDrift,
+  DragonFlight,
   NightEyes,
   PageLoader,
   RouteBoundary,
@@ -139,6 +140,14 @@ export const AppLayout = () => {
           nothing under `prefers-reduced-motion`, fixed, aria-hidden and
           pointer-events-none. See `halloween-decor`. */}
       <NightEyes />
+
+      {/* And once a minute on the imperial skin, something long crosses the
+          hall from one side to the other and is gone. The longest-lived of
+          these by a distance — eleven seconds against a third of a second —
+          which is why it is drawn at a fraction of the opacity: it has to be
+          survivable sixty times an hour on a page somebody is working on. Same
+          contract as everything above it. See `dragon-decor`. */}
+      <DragonFlight />
 
       <div
         className={cn(

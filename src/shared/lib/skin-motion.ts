@@ -57,6 +57,16 @@ const REVEAL: Record<ThemeSkin, Transition> = {
    * mistake on any other skin.
    */
   VIBECODED: { duration: 0.3, ease: 'easeInOut' },
+  /*
+   * Ceremony. Slow to start, unhurried through the middle, and it settles
+   * rather than stopping.
+   *
+   * The reference is a hanging scroll being unrolled: nothing in an imperial
+   * hall moves abruptly, and nothing is allowed to snap. This is the longest
+   * curve in the table that is not a spring, which is deliberate — a spring
+   * would add a bounce, and lacquered wood does not bounce.
+   */
+  DRAGON: { duration: 0.42, ease: [0.32, 0, 0.16, 1] },
 };
 
 const MARKER: Record<ThemeSkin, Transition> = {
@@ -75,6 +85,7 @@ const MARKER: Record<ThemeSkin, Transition> = {
   VOLCANO: { duration: 0.32, ease: [0.85, 0, 0.12, 1] },
   HALLOWEEN: { type: 'spring', stiffness: 560, damping: 18, mass: 0.6 },
   VIBECODED: { duration: 0.3, ease: 'easeInOut' },
+  DRAGON: { duration: 0.3, ease: [0.32, 0, 0.16, 1] },
 };
 
 /*

@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { toast } from '@/shared/lib/toast';
 
 import { errorMessage } from '@/shared/api/client';
 import { queryKeys } from '@/shared/api/query-keys';

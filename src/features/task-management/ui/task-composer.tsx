@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ImagePlus, Lock, Minus, Plus, Sparkles, X } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/shared/lib/toast';
 
 import type { ProjectRepository, RosterMember } from '@/entities/project/model/types';
 import { previewTaskType } from '@/entities/task/lib/task-type';

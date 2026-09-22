@@ -19,7 +19,9 @@ export type ThemeSkin =
   | 'UNDERWATER'
   | 'VOLCANO'
   | 'HALLOWEEN'
-  | 'VIBECODED';
+  | 'VIBECODED'
+  /** Imperial China: lacquer red, jade and gold, scroll borders, a dragon. */
+  | 'DRAGON';
 
 /** The one place a skin's human name is written down. */
 export const SKIN_LABELS: Record<ThemeSkin, string> = {
@@ -38,6 +40,7 @@ export const SKIN_LABELS: Record<ThemeSkin, string> = {
   VOLCANO: 'Volcano',
   HALLOWEEN: 'Halloween',
   VIBECODED: 'Vibecoded',
+  DRAGON: 'Dragon',
 };
 
 /**

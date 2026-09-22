@@ -1,11 +1,21 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion, useDragControls, useMotionValue } from 'framer-motion';
 import { AlertCircle, Check, Clock3, GripHorizontal, Pin, X } from 'lucide-react';
 
 import { useRealtime } from '@/app/providers/realtime-provider';
 import { chatApi } from '@/entities/chat/api/chat.api';
+import {
+  applyMention,
+  isMentionComplete,
+  matchMembers,
+  mentionQueryAt,
+  mentionedIds,
+  splitMentions,
+} from '@/entities/chat/lib/mentions';
 import type { ChatMessage } from '@/entities/chat/model/types';
+import { useRoster } from '@/entities/project/model/queries';
+import type { RosterMember } from '@/entities/project/model/types';
 import { useCurrentUser } from '@/features/auth/model/session.store';
 import { ChatPin } from '@/features/project-chat-dock/ui/chat-pin';
 import { useT } from '@/shared/i18n';
@@ -19,6 +29,7 @@ import { clampText } from '@/shared/lib/text';
 import { useIsTouchDevice, useLocalStorage } from '@/shared/lib/hooks';
 import { useViewportDragBounds } from '@/shared/lib/use-viewport-drag-bounds';
 import { Avatar, Button, SendGlyph, SkinLoader } from '@/shared/ui';
+import { MentionPicker } from './mention-picker';
 
 interface ProjectChatProps {
   projectId: string;
@@ -71,11 +82,36 @@ export const ProjectChat = ({
 
   const [draft, setDraft] = useState('');
   const [liveMessages, setLiveMessages] = useState<ChatMessage[]>([]);
+  /*
+   * Everything the `@` picker needs, and nothing it does not.
+   *
+   * `caret` is tracked in state rather than read from the DOM at use time
+   * because the mention being typed is derived during render — "is there an
+   * unfinished `@name` immediately behind the cursor" is a question about the
+   * draft *and* the position in it, and only one of those was previously a
+   * React value.
+   *
+   * `picked` is every member chosen while writing this message, which is how
+   * their ids are known at all: the text says `@Ana Ribeiro` and nothing else
+   * in it identifies which Ana. It is filtered against the final text on send
+   * — see `mentionedIds` — so editing a name back out also takes the
+   * notification with it.
+   *
+   * `dismissedAt` is the position of an `@` the reader pressed Escape on, so
+   * the picker stays shut for that one and opens again for the next.
+   */
+  const [caret, setCaret] = useState(0);
+  const [picked, setPicked] = useState<RosterMember[]>([]);
+  const [mentionIndex, setMentionIndex] = useState(0);
+  const [dismissedAt, setDismissedAt] = useState<number | null>(null);
   const [typingUsers, setTypingUsers] = useState<Record<string, number>>({});
   /** The window lights up while the tack is being carried over it. */
   const [isPinTargeted, setIsPinTargeted] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const windowRef = useRef<HTMLElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  /** Where the caret must land once React has drawn an inserted mention. */
+  const pendingCaret = useRef<number | null>(null);
 
   /* The window cannot be carried off the screen — see the hook. */
   const { bounds: dragBounds, measure: measureDragBounds } = useViewportDragBounds(
@@ -115,6 +151,70 @@ export const ProjectChat = ({
     const seen = new Set(history.map((message) => message.id));
     return [...history, ...liveMessages.filter((message) => !seen.has(message.id))];
   }, [history, liveMessages]);
+
+  /*
+   * The roster, for two jobs that look unrelated and are the same one.
+   *
+   * It is the list the `@` picker offers, and it is also the set of names the
+   * renderer will light up in a message that has already been sent. Both need
+   * the same answer to "who is in this conversation", and the query is shared,
+   * cached for a minute and prefetched by the project page — so having the chat
+   * window ask for it costs a request the first time a conversation is opened
+   * from somewhere other than its own project, and nothing after that.
+   */
+  const { data: roster = [] } = useRoster(projectId);
+
+  /** The unfinished `@name` at the caret, if the reader is typing one. */
+  const mention = useMemo(() => mentionQueryAt(draft, caret), [draft, caret]);
+
+  const suggestions = useMemo(
+    () => (mention ? matchMembers(roster, mention.query) : []),
+    [mention, roster],
+  );
+
+  /*
+   * A picker with nothing in it is not open.
+   *
+   * That is what keeps an `@` in ordinary prose — an address, a handle for
+   * somewhere else, a price — from putting a popover over the conversation:
+   * nothing on the roster matches, so there is nothing to show and the keyboard
+   * handler below stands down with it.
+   */
+  const isPickerOpen =
+    mention !== null &&
+    suggestions.length > 0 &&
+    mention.start !== dismissedAt &&
+    // ...and the name at the caret is not already finished. Without this the
+    // picker reopens on the mention it has just inserted — see
+    // `isMentionComplete`.
+    !isMentionComplete(mention.query, roster);
+
+  // A different `@`, or a different query behind the same one, is a different
+  // question — so the highlighted row goes back to the best match.
+  useEffect(() => {
+    setMentionIndex(0);
+  }, [mention?.start, mention?.query]);
+
+  /*
+   * Put the caret back after an insertion.
+   *
+   * A controlled input rewrites its own value on every render, and doing so
+   * drops the selection to the end of the new text — which is only the right
+   * place when the mention was inserted at the end. Insert one mid-sentence and
+   * the caret would jump past everything after it. This runs after the draft is
+   * drawn, so `setSelectionRange` is measuring the text that is actually there.
+   */
+  useEffect(() => {
+    const target = pendingCaret.current;
+    if (target === null) return;
+
+    pendingCaret.current = null;
+    const input = inputRef.current;
+    if (!input) return;
+
+    input.focus();
+    input.setSelectionRange(target, target);
+  }, [draft]);
 
   // A pinned window that moved to another project must not keep the previous
   // conversation's live tail underneath the new history.
@@ -232,6 +332,15 @@ export const ProjectChat = ({
     // See `shared/lib/uid`: `crypto.randomUUID` does not exist on an insecure
     // origin, and this line ran on every message sent.
     const clientId = uid();
+    /*
+     * Whoever is still named in the sentence as it stands.
+     *
+     * Not `picked` itself: that is the log of every row clicked while writing,
+     * and a draft gets rewritten. Somebody whose name was typed and then
+     * deleted must not be pulled into a conversation that no longer mentions
+     * them. See `mentionedIds`.
+     */
+    const mentions = mentionedIds(content, picked);
 
     setLiveMessages((current) => [
       ...current,
@@ -241,6 +350,7 @@ export const ProjectChat = ({
         id: `local:${clientId}`,
         clientId,
         content,
+        mentions,
         createdAt: new Date().toISOString(),
         editedAt: null,
         deletedAt: null,
@@ -251,16 +361,73 @@ export const ProjectChat = ({
       },
     ]);
     setDraft('');
+    setPicked([]);
+    setDismissedAt(null);
+    setCaret(0);
 
     void emitWithAck<{ delivered?: boolean; rateLimited?: boolean }>('chat:send', {
       projectId,
       content,
       clientId,
+      // Omitted entirely when empty, which is most messages — the DTO treats
+      // the field as optional and an empty array is a claim about nobody.
+      ...(mentions.length > 0 ? { mentions } : {}),
     })
       .then((ack) => {
         markDelivery(clientId, ack?.delivered ? undefined : 'failed');
       })
       .catch(() => markDelivery(clientId, 'failed'));
+  };
+
+  /**
+   * Writes the chosen name into the draft and remembers who it was.
+   *
+   * The id is kept here because this is the only moment it is known: after
+   * this, the draft holds a display name and nothing that distinguishes two
+   * people who share one.
+   */
+  const pickMention = (member: RosterMember) => {
+    if (!mention) return;
+
+    const next = applyMention(draft, mention, member.displayName);
+    setDraft(clampText(next.text, TEXT_LIMITS.chatMessage));
+    setCaret(next.caret);
+    pendingCaret.current = next.caret;
+    setPicked((current) =>
+      current.some((entry) => entry.id === member.id) ? current : [...current, member],
+    );
+  };
+
+  /**
+   * The picker's keyboard, handled from the text field so the caret never
+   * leaves it.
+   *
+   * Every branch calls `preventDefault`, and for Enter that is doing two jobs:
+   * it stops the browser's implicit form submission as well as the default key
+   * behaviour. Without it, choosing a name from the list would also send the
+   * half-written message it was going into.
+   *
+   * With the picker closed this returns immediately, so arrows, Tab and Enter
+   * behave exactly as they did before any of this existed.
+   */
+  const handleComposerKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (!isPickerOpen) return;
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setMentionIndex((index) => (index + 1) % suggestions.length);
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setMentionIndex((index) => (index - 1 + suggestions.length) % suggestions.length);
+    } else if (event.key === 'Enter' || event.key === 'Tab') {
+      event.preventDefault();
+      pickMention(suggestions[mentionIndex]);
+    } else if (event.key === 'Escape') {
+      // Shuts this one picker without touching the draft. A new `@` elsewhere
+      // opens a new one, because the dismissal is recorded by position.
+      event.preventDefault();
+      setDismissedAt(mention?.start ?? null);
+    }
   };
 
   const typingCount = Object.keys(typingUsers).length;
@@ -438,7 +605,41 @@ export const ProjectChat = ({
                       {message.user.displayName}
                     </p>
                   )}
-                  <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                  <p className="whitespace-pre-wrap break-words">
+                    {splitMentions(message.content, roster).map((segment, index) =>
+                      segment.member ? (
+                        <mark
+                          key={index}
+                          /*
+                            Three treatments, because a mention means three
+                            different things depending on who is reading it.
+
+                            Being named yourself is the only one that is
+                            *information* rather than decoration — it is the
+                            reason this feature exists — so it gets the full
+                            accent, the one thing in the conversation drawn at
+                            that weight. Somebody else being named is context,
+                            and is tinted rather than filled. Inside your own
+                            bubble the accent is already the background, so the
+                            chip lifts out of it with the label colour instead;
+                            a brand fill there would be invisible.
+                          */
+                          className={cn(
+                            'rounded px-0.5 font-semibold',
+                            isMine
+                              ? 'bg-brand-contrast/25 text-brand-contrast'
+                              : segment.member.id === user?.id
+                                ? 'bg-brand text-brand-contrast'
+                                : 'bg-brand/15 text-brand',
+                          )}
+                        >
+                          {segment.text}
+                        </mark>
+                      ) : (
+                        segment.text
+                      ),
+                    )}
+                  </p>
                   <p className="mt-1 flex items-center gap-1 text-4xs opacity-60">
                     {formatTime(message.createdAt)}
                     {/*
@@ -469,18 +670,43 @@ export const ProjectChat = ({
         </div>
 
         <form
-          className="flex items-center gap-2 border-t border-edge p-2.5"
+          // `relative` so the mention list can hang off the top of this row.
+          className="relative flex items-center gap-2 border-t border-edge p-2.5"
           onSubmit={(event) => {
             event.preventDefault();
             send();
           }}
         >
+          {isPickerOpen && (
+            <MentionPicker
+              members={suggestions}
+              activeIndex={mentionIndex}
+              onActiveIndexChange={setMentionIndex}
+              onPick={pickMention}
+            />
+          )}
+
           <input
+            ref={inputRef}
             value={draft}
             onChange={(event) => {
               setDraft(clampText(event.target.value, TEXT_LIMITS.chatMessage));
+              // Read off the event's own target rather than from a later DOM
+              // read: by the time an effect could look, the value and the
+              // selection have both moved on.
+              setCaret(event.target.selectionStart ?? event.target.value.length);
               socket?.emit('chat:typing', { projectId });
             }}
+            /*
+             * `onSelect` fires for every caret move — clicking into the middle
+             * of the draft, arrowing along it, selecting a word. Each of those
+             * changes the answer to "is there an unfinished mention here", and
+             * `onChange` alone would miss all of them.
+             */
+            onSelect={(event) =>
+              setCaret(event.currentTarget.selectionStart ?? draft.length)
+            }
+            onKeyDown={handleComposerKeyDown}
             placeholder={isConnected ? t('chat.placeholder') : t('chat.offline')}
             maxLength={TEXT_LIMITS.chatMessage}
             disabled={!isConnected}

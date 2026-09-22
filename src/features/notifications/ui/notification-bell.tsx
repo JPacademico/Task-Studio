@@ -42,6 +42,19 @@ const deepLink = (notification: AppNotification): string | null => {
   if (payload?.kind === 'live-room' && payload.projectId && payload.roomId) {
     return `/projects/${payload.projectId}?tab=live&room=${payload.roomId}`;
   }
+  /*
+   * Being mentioned opens the conversation, not the board.
+   *
+   * Same argument as the live room above, and the same trap: a chat mention
+   * carries a `projectId` like every other project notification, so the
+   * fall-through below would land somebody on the task board with no sign of
+   * the sentence that named them — and the chat window is a floating dock they
+   * would then have to know to open. The project page reads this parameter and
+   * opens it for them.
+   */
+  if (payload?.kind === 'chat-mention' && payload.projectId) {
+    return `/projects/${payload.projectId}?chat=open`;
+  }
   // Task notifications open the project board, where the task can be inspected.
   if (payload?.projectId) return `/projects/${payload.projectId}`;
   if (payload?.taskId) return '/tasks';
@@ -70,11 +83,9 @@ export const NotificationBell = () => {
         className={cn(
           'relative grid h-9 w-9 place-items-center rounded-xl transition-colors',
           'text-content-muted hover:bg-surface-sunken hover:text-content',
-          /* Open, the button becomes the top edge of the pane hanging off it —
-             so it takes the pane's material rather than a sunken fill, and the
-             two read as one object instead of a lit card under a pressed
-             button. */
-          isOpen && 'ui-liquid-glass text-content hover:bg-transparent',
+          // Open, the trigger stays pressed so it reads as the thing the pane
+          // is hanging off rather than as a button that lost its state.
+          isOpen && 'bg-surface-sunken text-content',
         )}
       >
         <Bell className="h-4 w-4" />
@@ -99,51 +110,39 @@ export const NotificationBell = () => {
               exit={{ opacity: 0, y: -6, scale: 0.98 }}
               transition={{ type: 'spring', stiffness: 420, damping: 32 }}
               /*
-                Glass rather than `panel`, and the distinction is not decorative.
+                An ordinary panel, not glass.
 
-                A notification pane is the clearest case in the product for the
-                material: it is summoned, it covers a working screen, and the
-                thing it covers is usually the thing the notification is *about*
-                — a board with the task on it, a project page, an organisation's
-                roster. An opaque card hides that; a frosted one keeps it present
-                underneath while the pane is read, which is what a temporary
-                overlay is supposed to do.
+                The frosted material was the most legible thing in the product
+                to argue for and the least comfortable to read: the pane's whole
+                content is 12px labels, 10px bodies and a timestamp in
+                `--content-faint`, composited over whatever colour the board
+                underneath happens to be at that point. Keeping the page visible
+                through it was never worth what it cost the text on top — the
+                page is still there when the pane closes, and the pane is open
+                for a few seconds at a time.
 
-                `rounded-2xl` and the border weight come across from `.panel` so
-                the pane keeps the skin's own geometry; the material replaces the
-                fill, the texture and the shadow. See `.ui-liquid-glass`.
+                `.panel` is the skin's own card: its fill, its border weight, its
+                texture and its shadow, so the pane belongs to whatever theme is
+                on rather than to a material that sits outside all of them.
               */
               className={cn(
-                'gpu ui-liquid-glass absolute right-0 top-11 z-50 w-[21.25rem] overflow-hidden',
-                'rounded-2xl',
-                /*
-                  ...and stops being glass the moment somebody reaches for it.
-
-                  The frost is worth what it costs while the pane is simply
-                  *present* over a board — it keeps the thing a notification is
-                  about visible underneath. It stops being worth it the instant
-                  the reader leans in, because what they are now reading is four
-                  rows of 12px label, 10px body and a timestamp in
-                  `--content-faint`, composited over whatever colour that board
-                  happens to be at that point. Hovering the pane is the signal
-                  that the page behind it no longer matters; the material
-                  answers by resolving. See `.ui-liquid-glass--solid-on-hover`.
-                */
-                'ui-liquid-glass--solid-on-hover',
+                'panel absolute right-0 top-11 z-50 w-[21.25rem] overflow-hidden',
               )}
             >
-              {/* The rule under the header is the light on a facet edge, not a
-                  drawn border: on glass a hard `border-edge` line reads as a
-                  seam between two panes rather than as one pane with a heading
-                  on it. Same treatment as the rows below. */}
-              <header
-                className={cn(
-                  'flex items-center justify-between px-4 py-3',
-                  'shadow-[inset_0_-1px_0_0_rgb(var(--glass-rim)/calc(var(--glass-rim-alpha)*0.35))]',
-                )}
-              >
-                <p className="text-sm font-semibold">{t('nav.notifications')}</p>
-                {unread > 0 && (
+              {/*
+                No heading, and no row where one used to be.
+
+                The pane hangs off a bell, under a badge counting unread items,
+                and every row in it is a notification — "Notifications" was a
+                label for something already named three times over by the time
+                anybody read it. Dropping the word and keeping the bar would
+                have traded a redundant line for an empty one, so the bar itself
+                is now conditional: it exists only when there is an action to
+                put in it, and "mark all read" is an action only when something
+                is unread. With nothing unread the list starts at the top edge.
+              */}
+              {unread > 0 && (
+                <header className="flex items-center justify-end border-b border-edge px-3 py-2">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -153,8 +152,8 @@ export const NotificationBell = () => {
                     <CheckCheck className="h-3.5 w-3.5" />
                     {t('notif.markAllRead')}
                   </Button>
-                )}
-              </header>
+                </header>
+              )}
 
               {/* The opt-in sits above the list, not over it: opening the bell
                   is the moment somebody has shown they care about
@@ -211,24 +210,21 @@ export const NotificationBell = () => {
                         }
                       }}
                       /*
-                        A facet of the pane, not a card in a list.
+                        Rows in a card again, now that the card is opaque.
 
-                        The rows were separated by a drawn `border-edge` rule and
-                        hovered to an opaque `surface-sunken` fill. Neither
-                        survives contact with glass: the rule reads as a crack
-                        across the pane, and a solid hover fill punches an opaque
-                        rectangle through the one surface the reader is looking
-                        at, which makes the pane appear to flicker as the pointer
-                        travels down it.
-
-                        `.ui-liquid-glass-row` does both jobs with light instead:
-                        a hairline of the pane's own specular along the top edge
-                        in place of the border, and a hover that raises the sheen
-                        rather than replacing the material. See `index.css`.
+                        A drawn rule and a solid hover fill are what a list on a
+                        surface is supposed to use; they were only ever wrong
+                        against glass, where the rule read as a crack and the
+                        fill punched a hole through the material. An unread row
+                        hovers to a deeper tint of its own accent rather than to
+                        the neutral fill, so leaning on it does not erase the one
+                        thing it is marked with.
                       */
                       className={cn(
-                        'ui-liquid-glass-row flex w-full gap-3 px-4 py-3 text-left',
-                        !notification.readAt && 'bg-brand/[0.08]',
+                        'flex w-full gap-3 border-b border-edge px-4 py-3 text-left transition-colors last:border-b-0',
+                        notification.readAt
+                          ? 'hover:bg-surface-sunken'
+                          : 'bg-brand/[0.08] hover:bg-brand/[0.14]',
                       )}
                     >
                       <span

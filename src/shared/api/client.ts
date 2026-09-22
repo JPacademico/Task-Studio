@@ -96,6 +96,21 @@ let healthProbeSucceeded = false;
 
 const apiIsWarm = (): boolean => Date.now() - lastResponseAt < WARM_TTL_MS;
 
+/**
+ * The header the service worker stamps on a response it invented.
+ *
+ * Only ever set by the `handlerDidError` plugin in `vite.config.ts`; the API
+ * never sends it. A caller seeing it should read the response as "this request
+ * did not reach the server" rather than as anything the server said.
+ */
+const SW_SYNTHETIC_HEADER = 'x-served-by';
+const SW_SYNTHETIC_VALUE = 'task-studio-sw';
+
+const isServiceWorkerFallback = (response: { headers?: unknown }): boolean => {
+  const headers = response.headers as Record<string, unknown> | undefined;
+  return headers?.[SW_SYNTHETIC_HEADER] === SW_SYNTHETIC_VALUE;
+};
+
 export const api: AxiosInstance = axios.create({
   baseURL: env.apiUrl,
   timeout: COLD_TIMEOUT_MS,
@@ -323,8 +338,21 @@ api.interceptors.response.use(
     const config = error.config as RetriableConfig | undefined;
     const status = error.response?.status;
 
-    // A rejection that carries a response still proves the container answered.
-    if (error.response) lastResponseAt = Date.now();
+    /*
+     * A rejection that carries a response usually proves the container
+     * answered — unless the service worker wrote the response itself.
+     *
+     * The worker turns an unreachable or cancelled API call into a synthetic
+     * 504 rather than letting the `FetchEvent` reject, because a rejected one
+     * is logged by the browser and cannot be caught (see the `handlerDidError`
+     * plugin in `vite.config.ts`). The cost of that is a response object for a
+     * request that never left the machine, and taking it as proof of life
+     * would mark a *sleeping* API warm — after which the next call is given the
+     * short timeout and fails on a container that was only starting up.
+     */
+    if (error.response && !isServiceWorkerFallback(error.response)) {
+      lastResponseAt = Date.now();
+    }
 
     /*
      * A suspended account is not a session to renew — it is one to end.

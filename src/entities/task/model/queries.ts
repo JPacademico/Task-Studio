@@ -4,7 +4,7 @@ import {
   useQueryClient,
   type QueryClient,
 } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { toast } from '@/shared/lib/toast';
 
 import { noteApi } from '@/entities/note/api/note.api';
 import { patchUserOverview } from '@/entities/project/model/queries';

@@ -7,7 +7,7 @@ import {
   RefreshCw,
   Sparkles,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/shared/lib/toast';
 
 import { documentApi } from '@/entities/document/api/document.api';
 import {

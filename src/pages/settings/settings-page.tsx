@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { ImagePlus, Monitor, Moon, Sun, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/shared/lib/toast';
 
 import { useTheme } from '@/app/providers/theme-provider';
 import { uploadImage, userApi } from '@/entities/user/api/user.api';

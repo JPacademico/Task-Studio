@@ -13,7 +13,7 @@ import {
   Sparkles,
   Users,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/shared/lib/toast';
 
 import type { Plan } from '@/entities/billing/model/types';
 import { adminApi, adminTokenStore } from '@/features/admin/api/admin.api';

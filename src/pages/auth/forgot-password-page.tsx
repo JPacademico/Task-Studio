@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { toast } from '@/shared/lib/toast';
 
 import { authApi } from '@/features/auth/api/auth.api';
 import { HumanCheck } from '@/features/auth/ui/human-check';

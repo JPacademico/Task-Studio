@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { toast } from '@/shared/lib/toast';
 
 import { errorMessage } from '@/shared/api/client';
 import { translate } from '@/shared/i18n';

@@ -22,7 +22,7 @@ import {
   UserPlus,
   X,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/shared/lib/toast';
 
 import { MAX_PLAIN_TEXT_CHARS, plainTextToHtml } from '@/entities/document/lib/plain-text';
 import {

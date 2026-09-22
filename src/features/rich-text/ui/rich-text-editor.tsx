@@ -20,7 +20,7 @@ import {
   Unlink,
   X,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/shared/lib/toast';
 
 import { uploadImage } from '@/entities/user/api/user.api';
 import { TEXT_LIMITS } from '@/shared/config/constants';

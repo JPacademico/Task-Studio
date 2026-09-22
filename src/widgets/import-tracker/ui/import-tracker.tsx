@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { AnimatePresence, motion, useDragControls, useMotionValue } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
+import { toast } from '@/shared/lib/toast';
 import {
   AlertTriangle,
   CheckCircle2,

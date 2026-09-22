@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Check, Sparkles } from 'lucide-react';
+import { ArrowRight, Check, Palette } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 import { useTheme } from '@/app/providers/theme-provider';
@@ -104,7 +104,7 @@ export const SkinPicker = () => {
         <span className="absolute inset-0 -translate-x-full skew-x-12 bg-gradient-to-r from-transparent via-brand/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
 
         <span className="relative grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand text-brand-contrast shadow-[0_8px_18px_-10px_rgb(var(--brand))]">
-          <Sparkles className="h-4 w-4" strokeWidth={2.4} />
+          <Palette className="h-4 w-4" strokeWidth={2.4} />
         </span>
 
         <span className="relative min-w-0 flex-1 leading-tight">

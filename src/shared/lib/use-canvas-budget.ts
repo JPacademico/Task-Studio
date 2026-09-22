@@ -108,20 +108,6 @@ export const useCanvasBudget = (
     return () => query.removeEventListener('change', sync);
   }, []);
 
-  useEffect(() => {
-    const element = ref.current;
-    if (!element || !capable || reduceMotion) return;
-    if (typeof IntersectionObserver === 'undefined') return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => setIsOnScreen(entry.isIntersecting),
-      { rootMargin },
-    );
-
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [ref, capable, reduceMotion, rootMargin]);
-
   /*
    * A hidden tab stops too.
    *
@@ -130,6 +116,9 @@ export const useCanvasBudget = (
    * open in a tab they are not looking at is the single most common way one of
    * these ends up running for an hour. `visibilitychange` is the cheapest
    * possible listener and it unmounts the whole scene rather than pausing it.
+   *
+   * Declared above the observer because the observer now depends on it; see the
+   * note there on why waking the tab has to rebuild it.
    */
   const [isTabVisible, setIsTabVisible] = useState(true);
 
@@ -140,6 +129,54 @@ export const useCanvasBudget = (
     document.addEventListener('visibilitychange', sync);
     return () => document.removeEventListener('visibilitychange', sync);
   }, []);
+
+  useEffect(() => {
+    const element = ref.current;
+    if (!element || !capable || reduceMotion) return;
+    if (typeof IntersectionObserver === 'undefined') return;
+
+    const observer = new IntersectionObserver(
+      /*
+       * The *last* record, not the first — and this is a bug fix, not a tidy-up.
+       *
+       * An `IntersectionObserver` callback is handed every record queued since
+       * it last ran, oldest first. Destructuring `([entry])` reads the oldest
+       * and throws the rest away, so whenever two changes coalesce into one
+       * delivery the hook settles on the state the element was in *before* the
+       * batch rather than the one it is in now.
+       *
+       * That is not a rare interleaving. Hiding a tab and showing it again is
+       * the standard way to produce exactly that pair — the element stops
+       * intersecting when the frame stops being rendered and starts again on
+       * return — and both records land in the first callback after the tab
+       * wakes. Read oldest-first, the answer is `false`.
+       *
+       * Which is survivable for something that scrolls, because the next scroll
+       * queues a fresh record and corrects it. It is *not* survivable for the
+       * lava lamp on "New project": that button lives in the sticky header, so
+       * it never intersects anything again for the rest of the session, no
+       * further record is ever queued, and the lamp stays frozen until the page
+       * is reloaded. Which is precisely the reported symptom — come back to an
+       * idle tab and the button is dead.
+       */
+      (entries) => setIsOnScreen(entries[entries.length - 1].isIntersecting),
+      { rootMargin },
+    );
+
+    observer.observe(element);
+    return () => observer.disconnect();
+    /*
+     * `isTabVisible` is a dependency so that waking the tab tears the observer
+     * down and builds a new one, which fires an immediate record describing the
+     * element as it is *now*.
+     *
+     * Belt and braces next to the fix above: that one stops us reading a stale
+     * record, this one stops us depending on a record arriving at all. Between
+     * them there is no path where a tab that was hidden comes back with the
+     * decoration switched off and no event coming to switch it on again. It
+     * costs one observer rebuild per tab switch.
+     */
+  }, [ref, capable, reduceMotion, rootMargin, isTabVisible]);
 
   return capable && !reduceMotion && isOnScreen && isTabVisible;
 };

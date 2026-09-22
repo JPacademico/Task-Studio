@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { toast } from 'sonner';
+import { toast } from '@/shared/lib/toast';
 import { AlertTriangle, FileSpreadsheet, Upload, X } from 'lucide-react';
 
 import { uploadBoardExport } from '@/entities/user/api/user.api';
