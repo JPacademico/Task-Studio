@@ -155,3 +155,47 @@ export interface IceServerConfig {
   username?: string;
   credential?: string;
 }
+
+/**
+ * The ICE list, plus when it stops being usable.
+ *
+ * `expiresAt` is epoch milliseconds, or `null` when nothing in the list can
+ * expire — a STUN-only deployment, or one still on a static TURN credential.
+ * It exists because a relay credential is now minted per request and lives a
+ * few hours (see `LiveController.ice`), and a client that cached one forever
+ * would hand an expired username to `RTCPeerConnection` and lose the relay
+ * exactly when it needed it: on the retry after a direct route failed.
+ */
+export interface IceServerBundle {
+  iceServers: IceServerConfig[];
+  expiresAt: number | null;
+}
+
+/**
+ * How a connection to one peer is doing, as the tile draws it.
+ *
+ * Three states rather than a number, because a number invites the reader to
+ * do arithmetic they have no basis for. What somebody watching a call needs to
+ * know is whether this is fine, whether it is about to get worse, and whether
+ * it is already broken.
+ */
+export type LiveQualityLevel = 'good' | 'weak' | 'bad';
+
+export interface LiveQuality {
+  level: LiveQualityLevel;
+  /** Fraction of packets lost on the inbound stream, 0..1. */
+  loss: number;
+  /** Inbound jitter in milliseconds. */
+  jitter: number;
+  /** What the congestion controller thinks this link can carry, in bits/s. */
+  outgoingBitrate: number | null;
+  /**
+   * Whether the media is going through the relay rather than straight there.
+   *
+   * Not a fault — it is the thing that makes the call work at all behind a
+   * symmetric NAT — but it is the single most useful fact when somebody asks
+   * why a call is worse than usual, and nothing else in the interface can say
+   * it. See `use-live-call`'s stats poll.
+   */
+  isRelayed: boolean;
+}

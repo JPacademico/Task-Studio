@@ -626,3 +626,128 @@ export const ScrollHandle = ({
     </svg>
   );
 };
+
+/**
+ * A hanging paper lantern — 灯笼.
+ *
+ * ## Why this is the fourth object and not a fifth piece of CSS
+ *
+ * The rule at the top of this file is that materials belong in the stylesheet
+ * and *things* belong here, and a lantern is unambiguously a thing: it has a
+ * cap, a body, ribs, a skirt and a tassel, and the relationship between those
+ * five parts is what makes it read as a lantern rather than as a red oval. No
+ * arrangement of gradients on a `<span>` gets there.
+ *
+ * ## Why it is drawn from the top down
+ *
+ * Because that is the order the object is assembled in, and every part below
+ * hangs off the one above it. The cord is what it hangs *from* — one hairline,
+ * because at the 28px this is drawn at, a thicker one reads as a stem and turns
+ * the whole thing into a cherry.
+ *
+ * ## The body, and the one decision that makes it look lit
+ *
+ * A real lantern is paper stretched over a frame with a flame inside, so it is
+ * brightest in the middle and darkest where the paper turns away at the edges.
+ * The radial gradient is off-centre — up and to the left — which puts the hot
+ * spot where a light hanging slightly above and in front of the viewer would
+ * put it, and the deep lacquer at 100% is the paper seen nearly edge-on.
+ *
+ * A flat vermilion fill was the first attempt and it reads as a balloon. The
+ * difference is entirely in that gradient; nothing else about the shape
+ * changed.
+ *
+ * ## The ribs
+ *
+ * Three, not six. They are the bamboo the paper is stretched over, seen
+ * through it, so they are drawn as arcs rather than straight lines — a rib on
+ * a bulging body is a curve in projection — and at low opacity, because what
+ * is being seen is a shadow *inside* a lit paper shell rather than a line on
+ * its surface. Six would be accurate and would also turn the body into a
+ * hatching pattern at this size.
+ *
+ * The two outermost are shorter and closer to the silhouette than even spacing
+ * would put them, which is what foreshortening does to a cylinder and is the
+ * cheapest available cue that the thing is round rather than flat.
+ *
+ * ## The tassel
+ *
+ * Three strands of unequal length, splayed. Equal lengths read as a fringe
+ * printed on the bottom cap; unequal ones read as silk that has been hanging
+ * there. It is also the part that sells the *motion* in `LanternDrift` — the
+ * body barely deforms as the lantern sways, and the tassel is what trails.
+ */
+export const LanternGlyph = ({ className }: GlyphProps) => (
+  <svg viewBox="0 0 28 44" fill="none" aria-hidden className={cn('h-11 w-7', className)}>
+    <defs>
+      {/*
+        The paper, lit from inside and slightly above.
+
+        `fr` is not used — a plain two-stop radial with the focus moved is
+        enough, and `fr` is the one radial-gradient attribute Safari was late
+        to and still renders differently.
+      */}
+      <radialGradient id="ts-lantern-paper" cx="38%" cy="34%" r="72%">
+        <stop offset="0%" stopColor="rgb(var(--dragon-scale-lit))" stopOpacity="0.95" />
+        <stop offset="34%" stopColor="rgb(var(--dragon-vermilion))" />
+        <stop offset="100%" stopColor="rgb(var(--dragon-lacquer))" />
+      </radialGradient>
+
+      {/* The turned wooden caps, which are the same rod the scrolls are wound
+          on — this skin owns exactly one piece of lacquered wood. */}
+      <linearGradient id="ts-lantern-cap" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stopColor="rgb(var(--dragon-scale-deep))" />
+        <stop offset="46%" stopColor="rgb(var(--dragon-scale-lit))" />
+        <stop offset="100%" stopColor="rgb(var(--dragon-scale-deep))" />
+      </linearGradient>
+    </defs>
+
+    {/* The cord it hangs from, and the ring it hangs by. */}
+    <path
+      d="M14 0.5v4"
+      stroke="rgb(var(--dragon-scale))"
+      strokeWidth="1.1"
+      strokeLinecap="round"
+    />
+    <circle cx="14" cy="5.6" r="1.9" stroke="rgb(var(--dragon-scale))" strokeWidth="1.1" />
+
+    {/* Top cap. */}
+    <rect x="8.2" y="7.4" width="11.6" height="3.4" rx="1.4" fill="url(#ts-lantern-cap)" />
+
+    {/* The body. */}
+    <ellipse cx="14" cy="22.5" rx="11.2" ry="10.6" fill="url(#ts-lantern-paper)" />
+
+    {/* The ribs, seen through the paper. */}
+    <g stroke="rgb(var(--dragon-ink))" strokeOpacity="0.2" strokeWidth="0.9" fill="none">
+      <path d="M14 11.9v21.2" />
+      <path d="M8.4 12.9c-1.6 3-1.6 16.2 0 19.2" />
+      <path d="M19.6 12.9c1.6 3 1.6 16.2 0 19.2" />
+    </g>
+
+    {/*
+      The brocade band, which is the one place the object carries writing.
+
+      Left blank on purpose. A real lantern has a character on it, and putting
+      one here would make this a picture of a *specific* lantern saying a
+      specific word — in a product whose interface is English and Portuguese,
+      and in a skin whose whole argument is that it borrows a material rather
+      than a language. The band is the gesture; the reader supplies the rest.
+    */}
+    <path
+      d="M3.4 20.6h21.2M3.4 24.4h21.2"
+      stroke="rgb(var(--dragon-scale))"
+      strokeOpacity="0.55"
+      strokeWidth="1"
+    />
+
+    {/* Bottom cap. */}
+    <rect x="8.2" y="32.1" width="11.6" height="3.4" rx="1.4" fill="url(#ts-lantern-cap)" />
+
+    {/* The tassel. */}
+    <g stroke="rgb(var(--dragon-scale))" strokeWidth="1.2" strokeLinecap="round">
+      <path d="M11.4 35.8 10.6 41.4" strokeOpacity="0.85" />
+      <path d="M14 35.8 14 43.4" />
+      <path d="M16.6 35.8 17.4 40.6" strokeOpacity="0.85" />
+    </g>
+  </svg>
+);

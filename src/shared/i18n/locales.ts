@@ -1413,6 +1413,8 @@ const en = {
   'nav.pinnedShortcuts': 'Pinned shortcuts',
   'nav.hoverHintBar': 'Move the pointer here for the bar',
   'board.clearInk': 'Clear ink',
+  /* The holder of a Post-it whose name the roster has not supplied yet. */
+  'board.someone': 'Someone',
   'board.sharedWall': 'A shared wall',
   'notes.privateDrag': 'Private to you. Drag things anywhere — the layout is saved as you go.',
   'notes.privateOutgrew': 'Private to you. For the things that outgrew a Post-it.',
@@ -2058,6 +2060,19 @@ const en = {
   'live.allowPresent': 'Let them share',
   'live.denyPresent': 'Stop them sharing',
   'live.listenOnly': 'You are listening only. Ask to speak and a moderator can hand you the microphone.',
+
+  /*
+   * The connection readout.
+   *
+   * Both strings lead with what the reader can *do* and put the numbers last,
+   * because the numbers are for the one person in ten who wants to know why
+   * and the advice is for the other nine. Packet loss and jitter are named
+   * rather than rolled into a score: a score would have to be explained, and
+   * these two terms are searchable.
+   */
+  'live.qualityWeak': 'Connection is struggling - {loss}% of packets lost, {jitter}ms jitter. Turning your camera off will help.',
+  'live.qualityBad': 'Connection is bad - {loss}% of packets lost, {jitter}ms jitter. Audio only may be the best this link can do.',
+  'live.relayed': 'Going through the relay rather than directly, which adds a little delay. Usually means one side is behind a strict firewall.',
 
   'live.created': 'Room open.',
   'live.ended': 'Room closed.',
@@ -3815,6 +3830,7 @@ const ptBR: Record<TranslationKey, string> = {
   'nav.pinnedShortcuts': 'Atalhos fixados',
   'nav.hoverHintBar': 'Passe o ponteiro aqui para ver a barra',
   'board.clearInk': 'Apagar traços',
+  'board.someone': 'Alguém',
   'board.sharedWall': 'Um mural compartilhado',
   'notes.privateDrag':
     'Só seu. Arraste as coisas para onde quiser — o layout é salvo conforme você mexe.',
@@ -4430,6 +4446,10 @@ const ptBR: Record<TranslationKey, string> = {
   'live.allowPresent': 'Liberar a tela',
   'live.denyPresent': 'Bloquear a tela',
   'live.listenOnly': 'Você está só ouvindo. Peça para falar e um moderador pode passar o microfone.',
+
+  'live.qualityWeak': 'A conexão está sofrendo - {loss}% dos pacotes perdidos, {jitter}ms de jitter. Desligar sua câmera ajuda.',
+  'live.qualityBad': 'Conexão ruim - {loss}% dos pacotes perdidos, {jitter}ms de jitter. Talvez só o áudio funcione neste link.',
+  'live.relayed': 'Passando pelo retransmissor em vez de ir direto, o que acrescenta um pequeno atraso. Em geral significa que um dos lados está atrás de um firewall restritivo.',
 
   'live.created': 'Sala aberta.',
   'live.ended': 'Sala encerrada.',

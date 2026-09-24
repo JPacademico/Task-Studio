@@ -1,6 +1,16 @@
 import { useEffect, useRef } from 'react';
-import { Hand, Mic, MicOff, MonitorUp, ShieldCheck } from 'lucide-react';
+import {
+  Hand,
+  Mic,
+  MicOff,
+  MonitorUp,
+  ShieldCheck,
+  SignalHigh,
+  SignalLow,
+  SignalMedium,
+} from 'lucide-react';
 
+import type { LiveQuality } from '@/entities/live-room/model/types';
 import type { LivePeer } from '../model/use-live-call';
 import { cn } from '@/shared/lib/cn';
 import { Avatar } from '@/shared/ui';
@@ -15,7 +25,37 @@ interface ParticipantTileProps {
   onGrantSpeak?: () => void;
   onGrantPresent?: () => void;
   canModerate: boolean;
+  /** How this connection is doing. Absent for the local tile, which has none. */
+  quality?: LiveQuality;
+  /**
+   * Called when this tile enters or leaves the viewport.
+   *
+   * The stage passes the peer's id down with it - see `LiveStage`. The tile
+   * only reports what it can see about itself; what to do about that is the
+   * call's business.
+   */
+  onVisibilityChange?: (visible: boolean) => void;
 }
+
+/**
+ * The three states, as an icon and a colour.
+ *
+ * Signal bars rather than a coloured dot, because a dot has to be learned and
+ * bars do not: everybody has read a signal meter, and the *number* of bars
+ * carries the reading even for somebody who cannot tell the amber from the
+ * red. The colour is the second channel, never the only one.
+ */
+const QUALITY_ICON = {
+  good: SignalHigh,
+  weak: SignalMedium,
+  bad: SignalLow,
+} as const;
+
+const QUALITY_TONE = {
+  good: 'text-positive',
+  weak: 'text-warning',
+  bad: 'text-danger',
+} as const;
 
 /**
  * One person in a call.
@@ -42,9 +82,12 @@ export const ParticipantTile = ({
   onGrantSpeak,
   onGrantPresent,
   canModerate,
+  quality,
+  onVisibilityChange,
 }: ParticipantTileProps) => {
   const t = useT();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const tileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const element = videoRef.current;
@@ -66,11 +109,82 @@ export const ParticipantTile = ({
     }
   }, [peer.stream]);
 
+  /*
+   * Whether anybody can actually see this tile.
+   *
+   * ## Why the tile watches itself
+   *
+   * In a mesh the *sender* pays for every stream it sends - one encoder and
+   * one uplink per peer - and the sender cannot know whether the far end is
+   * looking. Only this element knows that it has been scrolled out of the
+   * grid, or that the panel it lives in has been collapsed. So it says so, and
+   * `useLiveCall` tells that one peer, which stops encoding for us alone. See
+   * `setVideoInterest`.
+   *
+   * ## Why the threshold is zero and the margin is generous
+   *
+   * A tile is worth receiving the moment any part of it is on screen - the
+   * question is "can this be seen at all", not "is this prominent". The 200px
+   * root margin resumes a tile *before* it is scrolled into view, so the
+   * stream is flowing by the time it arrives rather than starting from a
+   * frozen frame under the reader's eye.
+   *
+   * ## Why the local tile is skipped
+   *
+   * There is no connection to it - it renders `localStream` directly - so
+   * there is nothing to pause and nobody to tell.
+   *
+   * ## Why an unsupported observer resumes rather than pauses
+   *
+   * `IntersectionObserver` is everywhere that matters, but if it were missing
+   * the safe failure is to keep receiving: a wasted stream is a cost, and a
+   * paused one that never resumes is a participant who appears frozen.
+   */
+  useEffect(() => {
+    if (!onVisibilityChange || isSelf) return;
+
+    const element = tileRef.current;
+    if (!element || typeof IntersectionObserver === 'undefined') {
+      onVisibilityChange(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => onVisibilityChange(entry.isIntersecting),
+      { rootMargin: '200px', threshold: 0 },
+    );
+    observer.observe(element);
+
+    return () => {
+      observer.disconnect();
+      /*
+       * Unmounting is not "invisible", it is "gone".
+       *
+       * Reporting false on the way out would tell a peer to stop sending on a
+       * connection that is about to be closed anyway - a wasted frame - and if
+       * the tile is unmounting because the *layout* changed rather than
+       * because the peer left, the next mount would have to undo it. Saying
+       * "visible" is idempotent on the sender and costs nothing.
+       */
+      onVisibilityChange(true);
+    };
+  }, [isSelf, onVisibilityChange]);
+
   /** A tile shows video when the person has a camera on, or is presenting. */
   const hasPicture = peer.flags.camOn || peer.flags.sharing;
 
+  const QualityIcon = quality ? QUALITY_ICON[quality.level] : null;
+  const qualityLabel =
+    quality && quality.level !== 'good'
+      ? t(quality.level === 'bad' ? 'live.qualityBad' : 'live.qualityWeak', {
+          loss: (quality.loss * 100).toFixed(1),
+          jitter: String(Math.round(quality.jitter)),
+        })
+      : null;
+
   return (
     <div
+      ref={tileRef}
       className={cn(
         'ui-card group relative flex aspect-video min-w-0 items-center justify-center',
         'overflow-hidden rounded-2xl border bg-surface-sunken transition-shadow duration-150',
@@ -138,6 +252,41 @@ export const ParticipantTile = ({
           />
         ) : (
           <MicOff className="h-3 w-3 shrink-0 text-white/50" aria-label={t('live.micOff')} />
+        )}
+
+        {/*
+          The connection meter, and only when it has something to say.
+
+          A `good` connection draws nothing at all, which is the point: every
+          other degradation in a call is silent, so this indicator's whole job
+          is to break that silence when it matters. An icon that is always
+          present is one nobody looks at - the same as no icon, with extra
+          clutter. The title carries the numbers for anybody who wants to know
+          *why*, and the `sr-only` span carries them for anybody who cannot
+          hover a tooltip.
+        */}
+        {QualityIcon && qualityLabel && quality && (
+          <span className={cn('shrink-0', QUALITY_TONE[quality.level])} title={qualityLabel}>
+            <QualityIcon className="h-3 w-3" aria-hidden />
+            <span className="sr-only">{qualityLabel}</span>
+          </span>
+        )}
+
+        {/*
+          Relayed, which is not a fault and is worth saying anyway.
+
+          It is the single most useful fact when somebody asks why one pair in
+          a call is worse than the rest, and nothing else in the interface can
+          surface it. Drawn quietly and in the interface's own muted white:
+          this is an explanation, not a warning.
+        */}
+        {quality?.isRelayed && (
+          <span className="shrink-0 text-white/50" title={t('live.relayed')}>
+            <span aria-hidden className="text-3xs font-bold tracking-wide">
+              TURN
+            </span>
+            <span className="sr-only">{t('live.relayed')}</span>
+          </span>
         )}
       </div>
 

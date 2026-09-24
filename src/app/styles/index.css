@@ -70,39 +70,63 @@
 }
 
 /* ===========================================================================
-   The Dragon skin's face: 乐米曲奇方块体 — LeMi CookieBlock.
+   Dragon Block - the Dragon skin's face.
    ===========================================================================
 
-   A geometric rounded-square face where Latin, numerals and CJK are all built
-   on one square grid with an even stroke and softened corners. It replaces the
-   Kaiti/Georgia pair the skin used to set its type in — see
+   A geometric rounded-square face where every letter is built on the same
+   square grid with an even stroke and softened corners. It replaces the
+   Kaiti/Georgia pair the skin used to set its type in - see
    `custom-font/dragon/README.md` for that argument.
 
-   ## `local()` before `url()`
+   ## What it is, and why it is not the font that was named here before
 
-   Anybody who already has the font installed gets it with no network request
-   at all, which for a CJK face is not a micro-optimisation: even subsetted
-   these are an order of magnitude larger than a Latin face.
+   This slot used to declare 乐米曲奇方块体 (LeMi CookieBlock) and point at a
+   file that was never in the repository, because the licence permitting web
+   embedding had not been established. So the declaration resolved to nothing,
+   every browser fell straight through to the chain behind it, and the skin has
+   been rendering in Verdana on Windows since the day it shipped. A font-face
+   whose file does not exist is not a fallback strategy, it is a skin that is
+   silently not the skin.
 
-   ## The file may not be there, and that is survivable by design
+   Dragon Block is ZCOOL KuaiLe (站酷快乐体) - the same genre, by Liu Bingke,
+   Yang Kang and Wu Shaojie - under the SIL Open Font License 1.1, which
+   permits embedding, serving and modification outright. No licence to chase.
 
-   The `.woff2` is not in the repository — it needs a licence check and a
-   subsetting pass first, both of which are written up in the theme's README.
-   Until it lands, this declaration resolves to nothing and the type falls
-   through to the chain behind it on `--font-display`/`--font-sans`, which ends
-   in faces that ship on every machine. That is the whole reason the chain is
-   five deep rather than one: a skin whose text is unreadable because one file
-   is missing is a skin broken by a CDN hiccup.
+   ## Why it is a *modified* version, and why that mattered
 
-   `swap`, so the fallback is painted immediately and replaced if the real face
-   arrives. Never `block` — invisible text is worse than provisional text.
+   Google serves ZCOOL KuaiLe pre-sliced, and its Latin slice is 5 kB, which is
+   the only reason a CJK-derived face can sit in front of a first paint at all.
+   But that slice is ASCII: no á, ã, ç, é, õ or ü.
+
+   That is the exact failure the Creepster note above warns about. A missing
+   glyph does not render as a missing glyph, it renders as the *next font in
+   the stack* appearing in the middle of a word - and the Portuguese interface
+   needs a cedilla or a tilde in almost every other label (Conexões,
+   Configurações, Ação). So the Latin-1 letters are composed from the font's
+   own marks by `custom-font/dragon/build-dragon-block.py`, which documents
+   every decision it makes. The result is 6 kB and renamed, because a modified
+   font carrying the original's name would let `local()` serve the *unpatched*
+   one to anybody who has it installed - reintroducing the accent bug on
+   exactly the machines most likely to notice it.
+
+   ## No `local()`
+
+   Deliberate, and the same reasoning: `local('Dragon Block')` could only match
+   a font nobody has, and matching the upstream name would defeat the patch.
+   6 kB over the wire is cheaper than the class of bug that saves.
+
+   `swap`, so the fallback is painted immediately and replaced when the real
+   face arrives. Never `block` - invisible text is worse than provisional text.
+
+   ## Licensing
+
+   SIL Open Font License 1.1. The full text and the derivation notes sit in
+   `custom-font/dragon/`. Free to use commercially, to embed, to serve, and to
+   modify, which are the four things this does.
    =========================================================================== */
 @font-face {
-  font-family: 'LeMi CookieBlock';
-  src:
-    local('乐米曲奇方块体'),
-    local('LeMi CookieBlock'),
-    url('/fonts/dragon/lemi-cookie-block.woff2') format('woff2');
+  font-family: 'Dragon Block';
+  src: url('/fonts/dragon/dragon-block.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -3287,19 +3311,20 @@
      *
      * ## The chain behind it
      *
-     * Five deep, because the shipped file is not in the repository yet — see
-     * `custom-font/dragon/README.md`. `Yuanti SC` and `YouYuan` are the system
-     * rounded CJK faces on macOS and Windows; `M PLUS Rounded 1c` is the
-     * archetype for anybody who has it; and `Verdana` is the floor, chosen not
-     * because it is rounded (it is not) but because it is the widest,
-     * squarest, most even-stroked face that exists on every machine — and
-     * proportion is the part that survives at 13px.
+     * Still four deep, even though the shipped file now exists — a 6 kB
+     * download can still fail, and a skin whose text is unreadable because one
+     * request did not land is a skin broken by a CDN hiccup. `Yuanti SC` and
+     * `YouYuan` are the system rounded CJK faces on macOS and Windows;
+     * `M PLUS Rounded 1c` is the archetype for anybody who has it; and
+     * `Verdana` is the floor, chosen not because it is rounded (it is not) but
+     * because it is the widest, squarest, most even-stroked face that exists
+     * on every machine — and proportion is the part that survives at 13px.
      */
-    --font-display: 'LeMi CookieBlock', 'Yuanti SC', YouYuan, 'M PLUS Rounded 1c', Verdana,
+    --font-display: 'Dragon Block', 'Yuanti SC', YouYuan, 'M PLUS Rounded 1c', Verdana,
       'Segoe UI', sans-serif;
-    --font-sans: 'LeMi CookieBlock', 'Yuanti SC', YouYuan, 'M PLUS Rounded 1c', Verdana,
+    --font-sans: 'Dragon Block', 'Yuanti SC', YouYuan, 'M PLUS Rounded 1c', Verdana,
       'Segoe UI', sans-serif;
-    --font-hand: 'LeMi CookieBlock', 'Yuanti SC', YouYuan, 'M PLUS Rounded 1c', Verdana,
+    --font-hand: 'Dragon Block', 'Yuanti SC', YouYuan, 'M PLUS Rounded 1c', Verdana,
       'Segoe UI', sans-serif;
 
     --heading-tracking: 0.02em;
@@ -10730,6 +10755,181 @@ html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='loading'] 
    * inverting the animal.
    */
   filter: drop-shadow(0 0 3px rgb(var(--hw-bat-rim) / 0.55));
+}
+
+/* ---------------------------------------------------------------------------
+   The lanterns that drift off a dialog on the Dragon skin - see
+   `shared/ui/lantern-drift.tsx`.
+
+   ## Why there is a halo at all
+
+   The same problem the bats had, arrived at from the other side. A lantern is
+   a *light*, and a light drawn as a shape is just a red oval: what identifies
+   it is that the air around it is warmer than the air further out. On the
+   light palette the object also has to separate from a wheat-coloured page it
+   is nearly the same value as, and on the dark one it is the only bright thing
+   in a near-black hall. One glow answers both.
+
+   ## Why it is a filter and not a second element
+
+   Seven lanterns, and a halo drawn as a sibling would be seven more nodes,
+   seven more transforms to keep in step with the swing, and a stacking order
+   to get wrong. `drop-shadow` follows the glyph's own alpha - including the
+   gap between the tassel strands - so it is the shape's light rather than a
+   circle behind it.
+
+   Two shadows rather than one: a tight bright core and a wide soft bloom. A
+   single mid-radius shadow reads as a blur on the artwork; the pair reads as
+   something emitting.
+   --------------------------------------------------------------------------- */
+.dragon-lantern {
+  filter:
+    drop-shadow(0 0 3px rgb(var(--dragon-scale-lit) / 0.5))
+    drop-shadow(0 0 11px rgb(var(--dragon-vermilion) / 0.45));
+}
+
+/* ---------------------------------------------------------------------------
+   Somebody else's pointer, on the shared board.
+
+   Every rule here is written against a node that `PresenceCursors` creates by
+   hand rather than a React element, which is deliberate - see that file for
+   why a cursor layer must never touch the render path. The consequence for
+   this stylesheet is that the class names below are a contract with a string
+   in a `.ts` file rather than with JSX, so they are named distinctly enough
+   not to be renamed by accident.
+
+   ## Why the colour arrives as a custom property
+
+   The hue is derived per user in `peer-color.ts` and there are twelve of them,
+   which is eleven more classes than anybody wants to write. One property, set
+   inline on the node, lets every rule below stay static and still be tinted.
+
+   ## Why the whole thing is `will-change: transform` but not `.gpu`
+
+   A pointer moves on almost every frame while its owner is active, so it earns
+   a compositor layer - that is what stops a move repainting the board behind
+   it. But there are at most a handful of these and they are removed when they
+   go stale, which is the difference from the Post-its: those are `.gpu`-free
+   precisely because there can be hundreds of them sitting still.
+   --------------------------------------------------------------------------- */
+.board-cursor {
+  position: absolute;
+  z-index: 1;
+  /* The arrow's point sits on the reported position, not its box's corner. */
+  transform: translate(-2px, -2px);
+  will-change: transform, opacity;
+  /*
+   * A pointer that has gone stale is removed, not faded - the node is torn
+   * out by the sweeper. This transition is for the *arrival*, so a colleague
+   * appearing does not pop into existence at full strength.
+   */
+  transition: opacity 140ms ease-out;
+  opacity: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.board-cursor svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  fill: var(--board-cursor-ink);
+  /*
+   * A hairline of the page's own surface colour around the arrow.
+   *
+   * Without it a pointer whose hue is close to the Post-it under it vanishes,
+   * and there is no single colour that works over a wall of notes in eight
+   * different pastels. An outline in the *background* colour separates the
+   * shape from whatever it is over, which is the same trick a map label uses.
+   */
+  stroke: rgb(var(--surface));
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+  paint-order: stroke fill;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.3));
+}
+
+.board-cursor__name {
+  /*
+   * Hidden when empty, which is the ordinary state for the first moment.
+   *
+   * The roster is a separate query from the socket, so a pointer routinely
+   * arrives before the name behind it - and an empty chip is a small grey
+   * rectangle following somebody's mouse around, which is worse than no chip.
+   */
+  display: none;
+  margin-top: 10px;
+  max-width: 9rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  border-radius: 6px;
+  padding: 1px 5px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  color: #fff;
+  background: var(--board-cursor-ink);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.28);
+}
+
+.board-cursor__name:not(:empty) {
+  display: block;
+}
+
+/*
+ * Reduced motion keeps the pointers and drops the fade.
+ *
+ * This is the one case where the motion is *information* rather than
+ * decoration - a colleague's pointer moving is the whole point of it being
+ * there - so it is not something to suppress. The transition on arrival is
+ * decoration and goes.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .board-cursor {
+    transition: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   A Post-it somebody else is holding.
+
+   Drawn as a ring in that person's own colour plus a name ribbon, and the
+   ribbon is what makes it legible: a coloured outline on its own says "this is
+   different" and leaves the reader to guess how. `--board-hold-ink` is set
+   inline by `PostIt` from the same `peer-color` the pointers use, so the ring
+   round a note and the arrow that is holding it are visibly one person.
+
+   The sheet underneath keeps its own appearance entirely. A held note is not
+   disabled or greyed out - it is somebody's, and it is still perfectly
+   readable, which is the state a reader actually wants to be in.
+   --------------------------------------------------------------------------- */
+.postit--held {
+  cursor: not-allowed;
+}
+
+.postit--held::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  border: 2px dashed var(--board-hold-ink);
+  pointer-events: none;
+}
+
+/*
+ * Brighter in the dark hall, because the room is.
+ *
+ * Not a bigger radius - the same light against less of it. Widening the bloom
+ * here is what turns the object into a smudge; raising the alpha is what makes
+ * it read as the one lit thing on a black page.
+ */
+[data-skin='dragon'].dark .dragon-lantern {
+  filter:
+    drop-shadow(0 0 4px rgb(var(--dragon-scale-lit) / 0.7))
+    drop-shadow(0 0 14px rgb(var(--dragon-vermilion) / 0.6));
 }
 
 /* ---------------------------------------------------------------------------

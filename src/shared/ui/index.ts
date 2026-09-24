@@ -77,7 +77,7 @@ export { BubbleRise } from './underwater-decor';
 export { VibecodedMark } from './vibecoded-icons';
 export { VolcanoMark } from './volcano-icons';
 export { EmberRise } from './volcano-decor';
-export { JadeMark, ScrollHandle } from './dragon-icons';
+export { JadeMark, LanternGlyph, ScrollHandle } from './dragon-icons';
 // Something long crosses the page once a minute, on the dragon skin only.
 export { DragonFlight } from './dragon-decor';
 // The one arrow every surface asks for. `GazeArrow` and `RuneArrow` are the

@@ -2,7 +2,7 @@ import { api } from '@/shared/api/client';
 import type {
   CreateLiveRoomPayload,
   GrantLiveRoomPayload,
-  IceServerConfig,
+  IceServerBundle,
   LiveEntitlements,
   LiveRoom,
   UpdateLiveRoomPayload,
@@ -67,8 +67,16 @@ export const liveRoomApi = {
    * and TURN relays bandwidth — putting one in the bundle publishes it to
    * everybody who loads the marketing page. See the API's `LiveController.ice`.
    */
-  async iceServers(): Promise<IceServerConfig[]> {
-    const { data } = await api.get<{ iceServers: IceServerConfig[] }>('/live/ice');
-    return data.iceServers;
+  /**
+   * The ICE list and its expiry.
+   *
+   * Returns the whole envelope rather than unwrapping to the array, which it
+   * used to do. The expiry is not decoration: a TURN credential is minted per
+   * request now and the caller has to know when to ask for another one. See
+   * `useIceServers`.
+   */
+  async iceServers(): Promise<IceServerBundle> {
+    const { data } = await api.get<IceServerBundle>('/live/ice');
+    return data;
   },
 };

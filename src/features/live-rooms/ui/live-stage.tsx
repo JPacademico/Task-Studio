@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import {
   FileText,
   Hand,
@@ -82,6 +82,36 @@ export const LiveStage = ({ room, onLeave, onOpenDocument }: LiveStageProps) => 
   const roster = call.roster;
   const columns = useMemo(() => gridFor(roster.length), [roster.length]);
 
+  /*
+   * One stable callback for the whole grid, not one arrow function per tile.
+   *
+   * `ParticipantTile`'s visibility effect depends on the handler it is given,
+   * so a fresh closure per render would tear the `IntersectionObserver` down
+   * and build a new one on every render of the stage - and the stage
+   * re-renders whenever anybody mutes, unmutes, raises a hand or changes
+   * connection quality, which in a call of eight is constantly. Rebuilding an
+   * observer fires it again immediately, so that would also emit a
+   * `live:video-interest` frame per tile per re-render.
+   *
+   * The curry is what keeps it stable while still telling the call *which*
+   * peer moved: `visibilityHandlers` memoises one bound function per
+   * participant, created on first use and reused thereafter.
+   */
+  const setVideoInterest = call.setVideoInterest;
+  const visibilityHandlers = useRef(new Map<string, (visible: boolean) => void>());
+
+  const visibilityHandlerFor = useCallback(
+    (participantId: string) => {
+      const existing = visibilityHandlers.current.get(participantId);
+      if (existing) return existing;
+
+      const handler = (visible: boolean) => setVideoInterest(participantId, visible);
+      visibilityHandlers.current.set(participantId, handler);
+      return handler;
+    },
+    [setVideoInterest],
+  );
+
   if (call.status === 'idle' || call.status === 'error') {
     return (
       <div className="flex flex-col items-center gap-3 rounded-2xl border border-edge bg-surface-raised p-8 text-center">
@@ -156,6 +186,15 @@ export const LiveStage = ({ room, onLeave, onOpenDocument }: LiveStageProps) => 
                */
               isSpeaking={call.speaking.has(isSelf ? 'self' : peer.participantId)}
               canModerate={canModerate}
+              /*
+               * No quality on your own tile, because there is no connection to
+               * measure - the local preview is the camera, not a stream that
+               * crossed a network. Reporting "good" there would be a claim
+               * about somebody else's experience of you, which this client
+               * cannot see.
+               */
+              quality={isSelf ? undefined : call.quality[peer.participantId]}
+              onVisibilityChange={isSelf ? undefined : visibilityHandlerFor(peer.participantId)}
               onGrantSpeak={() =>
                 grant.mutate({
                   roomId: room.id,

@@ -33,11 +33,17 @@ import {
   useUpdateProjectNote,
 } from '@/entities/note/model/project-board-queries';
 import { isPendingNoteId } from '@/entities/note/lib/optimistic';
+import { useRoster } from '@/entities/project/model/queries';
 import type { UpdateNotePayload } from '@/entities/note/model/types';
 import { PostIt, type NoteHandle } from '@/entities/note/ui/post-it';
 import { useCurrentUser } from '@/features/auth/model/session.store';
+import { peerColor } from '@/features/notes-board/lib/peer-color';
 import { createPositionBus } from '@/features/notes-board/lib/position-bus';
 import { useBoardHistory } from '@/features/notes-board/lib/use-board-history';
+import {
+  useBoardPresence,
+  type RemoteStroke,
+} from '@/features/notes-board/lib/use-board-presence';
 import { useImageDrop } from '@/features/notes-board/lib/use-image-drop';
 import { groupTintFor, notesInsideRect } from '@/features/notes-board/lib/selection';
 import {
@@ -52,6 +58,7 @@ import {
 } from '@/features/notes-board/ui/board-overlays';
 import { BoardSkeleton } from '@/features/notes-board/ui/board-skeleton';
 import { ConnectorLayer } from '@/features/notes-board/ui/connector-layer';
+import { PresenceCursors } from '@/features/notes-board/ui/presence-cursors';
 import { queryKeys } from '@/shared/api/query-keys';
 import { CONNECTOR_COLORS, NOTE_COLORS, TASK_COLORS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
@@ -151,6 +158,16 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
   const strokesRef = useRef<WhiteboardStrokeData[]>([]);
   const currentRef = useRef<WhiteboardStrokeData | null>(null);
   const isDrawingRef = useRef(false);
+  /**
+   * The stroke being drawn right now, as the room knows it.
+   *
+   * `id` is what lets a receiver append to the right ghost rather than
+   * starting a new one on every frame, and `sent` is how many of this stroke's
+   * points have already gone — so each frame broadcasts only what is new. See
+   * `BoardInkDto` on the API for why re-sending the whole thing would be
+   * quadratic in the stroke's own length.
+   */
+  const liveStrokeRef = useRef<{ id: string; sent: number } | null>(null);
 
   const isInking = tool === 'pen' || tool === 'eraser';
 
@@ -199,6 +216,109 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
   const deleteLink = useDeleteProjectNoteLink(projectId);
   const groupNotes = useGroupProjectNotes(projectId);
   const restoreNote = useRestoreProjectNote(projectId);
+
+  // -------------------------------------------------------------------------
+  // Live collaboration
+  // -------------------------------------------------------------------------
+
+  /**
+   * A teammate's drag, applied straight to the sheet's motion values.
+   *
+   * ## Why this bypasses React entirely
+   *
+   * It is the same path a *group* drag already takes (`handleGroupDrag`) and
+   * for the same reason: a position that arrives sixty times a second has to
+   * reach the element without a render, or one person moving one note
+   * re-renders every Post-it on the wall on every frame. The motion value is
+   * the element's position; writing it is one style update on one node.
+   *
+   * ## Why the connector bus is published to as well
+   *
+   * Because the arrows drawn between notes are glued to coordinates, not to
+   * elements. Without this a note would slide across the board and leave every
+   * connector it was part of pointing at where it used to be until the drag
+   * ended — which is exactly the bug the bus was built to fix for local drags.
+   *
+   * ## Why a missing handle is silently ignored
+   *
+   * A peer can be dragging a note this client has not rendered: one still
+   * arriving in the snapshot, one on a page that has since been deleted, one
+   * that failed to mount. There is nothing to move and nothing to report — the
+   * next full snapshot carries its real position either way.
+   */
+  const applyRemoteDrag = useCallback(
+    (noteId: string, x: number, y: number) => {
+      const handle = handlesRef.current.get(noteId);
+      if (!handle) return;
+
+      handle.x.set(x);
+      handle.y.set(y);
+      bus.publish(noteId, x, y);
+    },
+    [bus],
+  );
+
+  /**
+   * Strokes other people are part-way through, repainted on arrival.
+   *
+   * Held in a ref and painted by `redraw` alongside the committed ones, rather
+   * than being React state: a stroke grows by a few points per frame and the
+   * consumer is a canvas, so a render would be pure overhead between two
+   * imperative operations.
+   */
+  const remoteStrokesRef = useRef<RemoteStroke[]>([]);
+  const redrawRef = useRef<() => void>(() => {});
+
+  const applyRemoteInk = useCallback((strokes: RemoteStroke[]) => {
+    remoteStrokesRef.current = strokes;
+    redrawRef.current();
+  }, []);
+
+  const presence = useBoardPresence({
+    projectId,
+    onRemoteDrag: applyRemoteDrag,
+    onRemoteInk: applyRemoteInk,
+  });
+
+  /*
+   * Names for the pointers and the hold ribbons.
+   *
+   * The roster is already fetched and cached for a minute by the members tab,
+   * so this is free here — and it is the only place a user id can be turned
+   * into a person. A colleague whose row has not arrived yet simply has no
+   * label until it does; see `PresenceCursors`.
+   */
+  const { data: roster } = useRoster(projectId);
+  const names = useMemo(() => {
+    const table: Record<string, string> = {};
+    for (const member of roster ?? []) table[member.id] = member.displayName;
+    return table;
+  }, [roster]);
+
+  /**
+   * Who is holding a given sheet, ready for `PostIt` to draw.
+   *
+   * Falls back to a generic label rather than rendering nothing when the
+   * roster has not landed: the *fact* that somebody has the note is the part
+   * that has to be on screen immediately, because it is what explains why the
+   * sheet is refusing to move. The name catches up a moment later.
+   */
+  /*
+   * Destructured, because `presence` is a new object on every render while the
+   * functions inside it are stable `useCallback`s — the same reason `history`
+   * is destructured above. Depending on the object would rebuild this on every
+   * render and, through it, re-render every held Post-it on the wall.
+   */
+  const lockedBy = presence.lockedBy;
+
+  const heldBy = useCallback(
+    (noteId: string) => {
+      const holder = lockedBy(noteId);
+      if (!holder) return null;
+      return { name: names[holder] ?? t('board.someone'), color: peerColor(holder) };
+    },
+    [lockedBy, names, t],
+  );
 
   /*
    * Ctrl+Z and Ctrl+Y for the shared wall.
@@ -270,12 +390,32 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
     };
 
     strokesRef.current.forEach(paint);
+    /*
+     * Teammates' strokes in progress, between the committed ink and this
+     * client's own current stroke.
+     *
+     * The order is what makes an eraser behave. Every stroke is painted in
+     * sequence and an eraser is `destination-out`, so it can only remove ink
+     * laid down *before* it — putting a remote ghost after the committed
+     * strokes means a colleague rubbing something out is seen to rub it out,
+     * and putting it before the local one means our own pen still draws on
+     * top of what they are doing rather than under it.
+     */
+    remoteStrokesRef.current.forEach(paint);
     if (currentRef.current) paint(currentRef.current);
 
     // Never leave the context in erase mode: the next caller to touch it is
     // usually the next frame's first stroke.
     context.globalCompositeOperation = 'source-over';
   }, []);
+
+  /*
+   * Read through a ref by the presence hook's ink callback, which is created
+   * before `redraw` is and must not depend on it — a callback that changed
+   * identity would re-register every `board:*` listener, dropping frames in
+   * the middle of somebody's stroke.
+   */
+  redrawRef.current = redraw;
 
   // Hydrate from the API, then keep the canvas sized to its container.
   //
@@ -374,6 +514,25 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
       width: isErasing ? eraserWidth : width,
       ...(isErasing ? { erase: true } : {}),
     };
+
+    /*
+     * `crypto.randomUUID` where it exists, and a timestamp-plus-random
+     * fallback where it does not.
+     *
+     * The id only has to be unique among the strokes in flight in one room at
+     * one moment, which is a set of at most a handful — so the fallback's
+     * collision odds are not a real risk, and the consequence of one would be
+     * two ghosts merging for the third of a second before both are replaced by
+     * their committed elements. `randomUUID` is unavailable on a page served
+     * over plain HTTP, which is every developer's LAN testing setup.
+     */
+    liveStrokeRef.current = {
+      id:
+        typeof crypto?.randomUUID === 'function'
+          ? crypto.randomUUID()
+          : `s-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`,
+      sent: 0,
+    };
   };
 
   const handlePointerMove = (event: React.PointerEvent<HTMLCanvasElement>) => {
@@ -404,6 +563,32 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
     }
 
     requestAnimationFrame(redraw);
+
+    /*
+     * Everything drawn since the last frame, to everybody else.
+     *
+     * Unthrottled here on purpose: `handlePointerMove` already fires at most
+     * once per delivered pointer event, and the payload is *only the new
+     * points*, so a burst of coalesced samples is one frame carrying several
+     * rather than several frames. The server meters it silently with the same
+     * bucket it meters cursors with, and a dropped frame costs nothing that is
+     * not resent — the stroke's committed version arrives on pointer-up.
+     */
+    const live = liveStrokeRef.current;
+    const stroke = currentRef.current;
+    if (!live || !stroke) return;
+
+    const fresh = stroke.points.slice(live.sent);
+    if (fresh.length === 0) return;
+    live.sent = stroke.points.length;
+
+    presence.publishInk({
+      strokeId: live.id,
+      points: fresh,
+      color: stroke.color,
+      width: stroke.width,
+      erase: stroke.erase,
+    });
   };
 
   const handlePointerUp = () => {
@@ -411,7 +596,29 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
     isDrawingRef.current = false;
 
     const stroke = currentRef.current;
+    const live = liveStrokeRef.current;
     currentRef.current = null;
+    liveStrokeRef.current = null;
+
+    /*
+     * Told even when the stroke is discarded, and that is the point.
+     *
+     * A tap that never became a line still put a ghost on everybody else's
+     * board if it produced two coalesced samples. Sending `done` regardless
+     * means a ghost is never orphaned by a gesture that turned out not to be a
+     * stroke — the one way a live preview can leave permanent litter.
+     */
+    if (live) {
+      presence.publishInk({
+        strokeId: live.id,
+        points: [],
+        color: stroke?.color ?? '#000',
+        width: stroke?.width ?? 1,
+        erase: stroke?.erase,
+        done: true,
+      });
+    }
+
     if (!stroke || stroke.points.length < 2) return;
 
     strokesRef.current.push(stroke);
@@ -1022,6 +1229,18 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
               canDelete={note.userId === currentUser?.id}
               currentUserId={currentUser?.id}
               canResize
+              /*
+               * The three props that make this wall safe for two hands.
+               *
+               * `heldBy` is somebody *else's* grip — drawn as a ring and a
+               * name, and refusing every gesture. `onHold`/`onRelease` are
+               * how this client takes and gives back its own. See
+               * `useBoardPresence`.
+               */
+              heldBy={heldBy(note.id)}
+              onHold={presence.acquire}
+              onRelease={presence.release}
+              onDragBroadcast={presence.publishDrag}
               onSelect={handleSelect}
               onRegister={registerHandle}
               onDragMove={bus.publish}
@@ -1047,6 +1266,15 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
             </div>
           </div>
         )}
+
+        {/*
+          Everybody else's pointer.
+
+          Last among the layers and on `z-30`, because a pointer is the one
+          thing that is *in front of* the paper rather than on it — and it is
+          `pointer-events-none`, so it is never between a reader and a note.
+        */}
+        <PresenceCursors projectId={projectId} surfaceRef={surfaceRef} names={names} />
 
         <MarqueeBox rect={marquee.rect} />
 

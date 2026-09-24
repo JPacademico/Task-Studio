@@ -147,6 +147,33 @@ interface PostItProps {
    * page, where a Post-it is laid out by the list rather than placed by hand.
    */
   canResize?: boolean;
+
+  // --- Shared-board concurrency (project whiteboard only) -------------------
+  /**
+   * Somebody else is holding this sheet right now.
+   *
+   * Their name and their colour, or `null` when it is free — see
+   * `useBoardPresence`. A held sheet cannot be dragged, resized, typed in or
+   * recoloured by anybody but its holder, which is the whole of the guarantee:
+   * you cannot pick up a piece of paper somebody else has their hand on.
+   *
+   * Deliberately not a boolean. The name is what makes the refusal make sense
+   * — a sheet that simply stopped responding would read as a bug — and the
+   * colour is what ties it to the pointer moving it about.
+   */
+  heldBy?: { name: string; color: string } | null;
+  /**
+   * Asks for exclusive hold before a gesture begins, and gives it back after.
+   *
+   * Asynchronous because the answer comes from the server, and the caller may
+   * say no. The sheet starts moving optimistically and is put back if it does
+   * — see `onPointerDown` below for why that is better than freezing every
+   * drag for a round trip.
+   */
+  onHold?: (id: string) => Promise<boolean>;
+  onRelease?: (id: string) => void;
+  /** Called on every frame of a local drag, so peers can watch it move. */
+  onDragBroadcast?: (id: string, x: number, y: number) => void;
 }
 
 /**
@@ -193,6 +220,10 @@ const PostItBase = ({
   currentUserId,
   showAuthor = true,
   canResize = false,
+  heldBy = null,
+  onHold,
+  onRelease,
+  onDragBroadcast,
 }: PostItProps) => {
   const t = useT();
   const x = useMotionValue(note.positionX);
@@ -227,6 +258,116 @@ const PostItBase = ({
    * ignores incoming values for that field and keeps its own.
    */
   const dirtyRef = useRef({ title: false, content: false });
+
+  /**
+   * Whether *this* client currently holds the sheet, and where it was when it
+   * took hold.
+   *
+   * The position is kept because a refused hold has to put the sheet back: the
+   * drag begins locally the instant the pointer goes down (see the note on
+   * `onPointerDown`), so by the time the server says no it has already moved a
+   * few pixels under somebody's finger.
+   */
+  const holdRef = useRef<{ held: boolean; origin: { x: number; y: number } | null }>({
+    held: false,
+    origin: null,
+  });
+
+  /*
+   * Read through refs, so the gesture handlers below can stay out of the
+   * dependency arrays that keep this component's memo intact. A board hands
+   * these down as stable callbacks, but a sheet must not depend on that being
+   * true — see the note above `PostItProps`.
+   */
+  const holdApi = useRef({ onHold, onRelease, onDragBroadcast });
+  holdApi.current = { onHold, onRelease, onDragBroadcast };
+
+  /**
+   * Take hold, and undo the gesture if the answer is no.
+   *
+   * ## Why the sheet moves before permission arrives
+   *
+   * Because the alternative is worse in the common case to fix the rare one. A
+   * hold is granted in a single map lookup on the server with no database
+   * behind it, so it resolves in a few tens of milliseconds — but blocking on
+   * it would make *every* drag on the board begin with a pause, including the
+   * overwhelming majority where nobody else is anywhere near the sheet.
+   *
+   * Contention is rare; a stutter on every drag is constant. So the gesture
+   * starts, and the handful of pixels it travels before a refusal are undone.
+   *
+   * ## Why the snap-back is to the stored position rather than the pre-drag one
+   *
+   * They are the same thing here and the stored one is the one that is still
+   * true: the local drag has not been persisted, so `note.positionX` is
+   * exactly where the sheet was before the pointer went down. Using the note
+   * rather than a captured origin also means a refusal that arrives *after* a
+   * teammate's own move has landed puts the sheet where *they* put it, which
+   * is the correct answer to "you do not have this".
+   */
+  const claim = useCallback(() => {
+    const request = holdApi.current.onHold;
+    if (!request || holdRef.current.held) return;
+
+    holdRef.current = { held: true, origin: { x: x.get(), y: y.get() } };
+
+    void request(note.id).then((granted) => {
+      if (granted || !holdRef.current.held) return;
+
+      holdRef.current = { held: false, origin: null };
+      isDraggingRef.current = false;
+      x.set(note.positionX);
+      y.set(note.positionY);
+      lastDragRef.current = { x: note.positionX, y: note.positionY };
+    });
+  }, [note.id, note.positionX, note.positionY, x, y]);
+
+  /**
+   * Whether the caret is in one of this sheet's two fields.
+   *
+   * Focus rather than `dirtyRef`, which was the first thing tried and is
+   * wrong: `dirtyRef` only becomes true on the first *keystroke*, so somebody
+   * who clicked into a note and paused to think would have had the sheet taken
+   * out from under them by their own pointer-up.
+   */
+  const focusedRef = useRef(false);
+
+  /**
+   * Give the sheet back, unless it is still in use.
+   *
+   * The two ways a sheet is "in use" are a pointer on it and a caret in it,
+   * and they overlap constantly — clicking into a textarea is a pointer
+   * gesture that ends with the caret still there, and tabbing from the title
+   * to the body is a blur immediately followed by a focus. So every exit
+   * asks this one question rather than deciding for itself, which is what
+   * stops a note being released between two halves of the same interaction.
+   */
+  const maybeRelease = useCallback(() => {
+    if (!holdRef.current.held) return;
+    if (isDraggingRef.current || focusedRef.current) return;
+
+    holdRef.current = { held: false, origin: null };
+    holdApi.current.onRelease?.(note.id);
+  }, [note.id]);
+
+  /** Unconditional, for the one case that overrides everything: unmounting. */
+  const relinquish = useCallback(() => {
+    if (!holdRef.current.held) return;
+    holdRef.current = { held: false, origin: null };
+    holdApi.current.onRelease?.(note.id);
+  }, [note.id]);
+
+  /*
+   * A sheet that goes away while held has to let go of it.
+   *
+   * Switching board pages, collapsing the full-screen stage, or a teammate
+   * deleting the note all unmount this component without any pointer event
+   * ever ending — and without this the note stays locked for everybody else
+   * until the server's TTL expires it.
+   */
+  const relinquishRef = useRef(relinquish);
+  relinquishRef.current = relinquish;
+  useEffect(() => () => relinquishRef.current(), []);
 
   /*
    * The debounce's safety net.
@@ -406,6 +547,14 @@ const PostItBase = ({
    */
   const resizeRef = useRef<HTMLButtonElement>(null);
 
+  /*
+   * Mirrored into a ref because the resize listener is registered natively,
+   * once per note, and must not be re-attached when a lock arrives — doing so
+   * mid-gesture drops the drag. See the effect below.
+   */
+  const heldRef = useRef(heldBy);
+  heldRef.current = heldBy;
+
   // Read through refs so the effect can register once per note rather than on
   // every render: re-attaching a listener mid-gesture would drop the drag.
   const resizeState = useRef({
@@ -431,6 +580,17 @@ const PostItBase = ({
       // Primary button only: a right-click on the corner should open the menu,
       // not silently begin a resize the user cannot see they have started.
       if (event.button !== 0) return;
+      /*
+       * A sheet somebody else is holding cannot be resized, and this is the
+       * guard that matters most of the three.
+       *
+       * A drag that is refused snaps back and nothing is lost. A resize that
+       * is refused *after the fact* would reflow the text under the hand of
+       * the person typing in it — the corner handle writes straight to the
+       * motion values, so there is nothing to snap back to until the gesture
+       * ends. So this one refuses before it starts rather than optimistically.
+       */
+      if (heldRef.current) return;
 
       event.preventDefault();
       event.stopPropagation();
@@ -543,7 +703,9 @@ const PostItBase = ({
 
   return (
     <motion.div
-      drag={!isConnecting}
+      // Held by somebody else: no drag, at the gesture level rather than by
+      // cancelling one that has begun.
+      drag={!isConnecting && !heldBy}
       dragMomentum={false}
       dragElastic={0.04}
       dragConstraints={constraintsRef as React.RefObject<Element>}
@@ -558,17 +720,44 @@ const PostItBase = ({
         backgroundColor: isImage ? '#ffffff' : note.color,
         color: ink,
         zIndex: note.zIndex,
+        // Read by `.postit--held::after`. One property rather than a class per
+        // colleague — see `peer-color.ts` for why there are twelve of them.
+        ...(heldBy ? ({ '--board-hold-ink': heldBy.color } as React.CSSProperties) : {}),
       }}
       whileDrag={{ scale: 1.04, rotate: 0, zIndex: 999 }}
-      whileHover={isConnectTarget ? { scale: 1.05, rotate: 0 } : { scale: 1.015 }}
+      // No lift on a sheet that cannot be picked up. A hover response is a
+      // promise that something will happen on click, and on a held note
+      // nothing will.
+      whileHover={
+        heldBy ? undefined : isConnectTarget ? { scale: 1.05, rotate: 0 } : { scale: 1.015 }
+      }
       transition={{ type: 'spring', stiffness: 420, damping: 30 }}
       onPointerDown={(event) => {
+        // Nothing at all on a sheet somebody else has: not a selection, not a
+        // z-index bump, not a colour picker. The whole object is theirs.
+        if (heldBy) return;
+
+        claim();
         onFocus?.(note.id);
         onSelect?.(
           note.id,
           isPickingMultiple || event.shiftKey || event.ctrlKey || event.metaKey,
         );
       }}
+      /*
+       * A click that never became a drag still took hold, and has to give it
+       * back — this is the exit `onDragEnd` does not cover, because Framer only
+       * fires that once a drag threshold has been passed. Without it, selecting
+       * a note by clicking it would lock the note for everybody else until this
+       * tab closed.
+       *
+       * Ordering works out: the browser runs focus as the default action of
+       * pointer-down, so by the time this fires `focusedRef` is already true
+       * for a click that landed in a text field, and `maybeRelease` keeps the
+       * hold for it.
+       */
+      onPointerUp={maybeRelease}
+      onPointerCancel={maybeRelease}
       onDragStart={() => {
         isDraggingRef.current = true;
       }}
@@ -576,6 +765,9 @@ const PostItBase = ({
         const next = { x: x.get(), y: y.get() };
         onDragMove?.(note.id, next.x, next.y);
         onGroupDrag?.(note.id, next.x - lastDragRef.current.x, next.y - lastDragRef.current.y);
+        // The same coordinates the connector layer gets, to the rest of the
+        // room. Coalesced to one frame by the board — see `publishDrag`.
+        holdApi.current.onDragBroadcast?.(note.id, next.x, next.y);
         lastDragRef.current = next;
       }}
       onDragEnd={() => {
@@ -588,6 +780,20 @@ const PostItBase = ({
          * the current render's and knows the new one.
          */
         onDragEnd(note.id, { positionX: x.get(), positionY: y.get() });
+
+        /*
+         * Let go *after* the position has been handed to the board, never
+         * before. Releasing first opens a window in which a teammate can take
+         * the sheet and start moving it while this client's batched PATCH for
+         * the old gesture is still in flight — and the later write wins, which
+         * is the exact race the hold exists to close.
+         *
+         * Not released when the sheet is also being typed in: focus holds it
+         * for as long as the caret is there, and a drag that ended should not
+         * take somebody's textarea out from under them. `maybeRelease` is the
+         * one place that decides.
+         */
+        maybeRelease();
       }}
       className={cn(
         // The paper's radius, shadow and grain are the skin's to decide.
@@ -606,8 +812,32 @@ const PostItBase = ({
         isSelected && 'ring-2 ring-brand ring-offset-2 ring-offset-surface-sunken',
         isConnectSource && 'ring-2 ring-positive ring-offset-2 ring-offset-surface-sunken',
         isConnectTarget && 'cursor-crosshair',
+        // The dashed ring in the holder's own colour — see `.postit--held`.
+        heldBy && 'postit--held',
       )}
     >
+      {/*
+        Who has it.
+
+        Above the sheet rather than on it, in the same position the connect
+        mode's "from here" chip uses, because that is where this board already
+        puts "something is happening to this note". The name is not optional
+        decoration: a sheet that simply stopped responding reads as a bug, and
+        a sheet with somebody's name on it reads as theirs.
+      */}
+      {heldBy && (
+        <span
+          className={cn(
+            'pointer-events-none absolute -top-3 left-1/2 z-20 -translate-x-1/2',
+            'max-w-[90%] truncate whitespace-nowrap rounded-full px-2 py-0.5',
+            'text-3xs font-bold uppercase tracking-wide text-white shadow-lg',
+          )}
+          style={{ backgroundColor: heldBy.color }}
+        >
+          {heldBy.name}
+        </span>
+      )}
+
       {/* Folded corner. */}
       <span
         aria-hidden
@@ -678,7 +908,31 @@ const PostItBase = ({
 
       <div className="mb-1.5 flex shrink-0 items-center justify-between gap-2">
         <motion.input
+          /*
+           * Read-only rather than disabled while somebody else has the sheet.
+           *
+           * A disabled input is not focusable, is skipped by a screen reader's
+           * form navigation, and is greyed out by the browser — which on a
+           * coloured Post-it looks like the note itself has been deactivated.
+           * `readOnly` keeps the text selectable and copyable, which is what a
+           * reader wants to do with a colleague's note while they are writing
+           * it, and refuses only the typing.
+           */
+          readOnly={Boolean(heldBy)}
           value={titleDraft}
+          /*
+           * Focus is a hold, and this is the second half of the guarantee.
+           *
+           * Typing is not a gesture with a beginning and an end the way a drag
+           * is — somebody can sit in a note for a minute — so the hold is taken
+           * when the caret arrives and given back when it leaves. That is also
+           * what makes "cannot be resized while somebody is typing in it" fall
+           * out for free: it is the same one lock.
+           */
+          onFocus={() => {
+            focusedRef.current = true;
+            claim();
+          }}
           onChange={(event) => {
             const next = clampText(event.target.value, TEXT_LIMITS.noteTitle);
             dirtyRef.current.title = true;
@@ -687,7 +941,20 @@ const PostItBase = ({
           }}
           onBlur={() => {
             dirtyRef.current.title = false;
+            focusedRef.current = false;
             if (titleDraft !== (note.title ?? '')) commit({ title: titleDraft });
+            /*
+             * On the next task, not this one.
+             *
+             * Tabbing from the title to the body is a blur immediately
+             * followed by a focus, and releasing synchronously here would let
+             * go of the sheet in the gap between them — a window of one turn
+             * in which a teammate could take it, which is short enough to be
+             * rare and therefore exactly the kind of bug that only ever
+             * happens to somebody else. A microtask puts the decision after
+             * the focus that follows.
+             */
+            queueMicrotask(maybeRelease);
           }}
           // Explicit, rather than relying on `maxlength` alone: the attribute
           // silently swallows the tail of an over-long paste mid-word, and
@@ -709,7 +976,15 @@ const PostItBase = ({
           }}
         />
 
-        <div className="flex shrink-0 items-center gap-0.5">
+        {/*
+          Every control on the sheet goes with the sheet.
+
+          Pinning, recolouring and deleting are all writes to the same row the
+          holder is editing, so letting them through would be the same
+          last-write-wins race the drag lock closes, arrived at through a
+          different button.
+        */}
+        <div className={cn('flex shrink-0 items-center gap-0.5', heldBy && 'hidden')}>
           <button
             type="button"
             aria-label={t(note.isPinned ? 'notes.unpinNote' : 'notes.pinNote')}
@@ -782,7 +1057,13 @@ const PostItBase = ({
       ) : (
         <motion.textarea
           ref={textareaRef}
+          readOnly={Boolean(heldBy)}
           value={draft}
+          // See the title field: focus takes the hold, blur gives it back.
+          onFocus={() => {
+            focusedRef.current = true;
+            claim();
+          }}
           onChange={(event) => {
             const next = clampText(event.target.value, TEXT_LIMITS.noteContent);
             dirtyRef.current.content = true;
@@ -793,7 +1074,11 @@ const PostItBase = ({
           // the field is a clearer "done" than any timer.
           onBlur={() => {
             dirtyRef.current.content = false;
+            focusedRef.current = false;
             if (draft !== note.content) commit({ content: draft });
+            // Deferred, so tabbing back to the title does not let go in the
+            // gap between the two events. See the title field.
+            queueMicrotask(maybeRelease);
           }}
           onPaste={(event) => clampOnPaste(event, TEXT_LIMITS.noteContent)}
           placeholder={t('notes.writeSomething')}
@@ -849,7 +1134,7 @@ const PostItBase = ({
        * the desktop draws one, and permanently visible on a coarse pointer —
        * where "appears on hover" means "does not exist".
        */}
-      {canResize && (
+      {canResize && !heldBy && (
         <button
           ref={resizeRef}
           type="button"

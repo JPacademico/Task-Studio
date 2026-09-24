@@ -5,7 +5,7 @@ import { X } from 'lucide-react';
 
 import { cn } from '@/shared/lib/cn';
 import { BatSwarm } from './bat-swarm';
-import { FireworkBurst } from './firework-burst';
+import { LanternDrift } from './lantern-drift';
 import { useEscapeKey } from '@/shared/lib/hooks';
 import { Button } from './button';
 import { translate } from '@/shared/i18n';
@@ -255,11 +255,11 @@ export const Modal = ({
           </motion.div>
 
           {/*
-            Bats off the edges of the dialog on one skin, fireworks off them on
-            another, and nothing at all on the other fourteen — see `BatSwarm`
-            and `FireworkBurst`. Each returns `null` before doing any work on a
-            skin that is not its own, so the cost to everybody else is two
-            function calls per dialog opening.
+            Bats off the edges of the dialog on one skin, paper lanterns off
+            them on another, and nothing at all on the other fourteen — see
+            `BatSwarm` and `LanternDrift`. Each returns `null` before doing any
+            work on a skin that is not its own, so the cost to everybody else is
+            two function calls per dialog opening.
 
             Both are siblings of the panel rather than children of it, which is
             the entire reason either effect works: the panel is
@@ -267,7 +267,7 @@ export const Modal = ({
             at exactly the border it was meant to be crossing.
           */}
           <BatSwarm anchor={panelRef} />
-          <FireworkBurst anchor={panelRef} />
+          <LanternDrift anchor={panelRef} />
         </div>
       )}
     </AnimatePresence>,
