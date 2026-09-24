@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useRealtime } from '@/app/providers/realtime-provider';
+import { isPendingNoteId } from '@/entities/note/lib/optimistic';
 import { useCurrentUser } from '@/features/auth/model/session.store';
+import { createThrottledFlush, roundPx } from './live-rate';
 
 /**
  * How often a holder re-asserts a hold it still has.
@@ -12,6 +14,31 @@ import { useCurrentUser } from '@/features/auth/model/session.store';
  * a bad connection must not be indistinguishable from a dead tab.
  */
 const HEARTBEAT_MS = 15_000;
+
+/**
+ * The most points one `board:ink` frame may carry — the API's `BoardInkDto`
+ * cap. A frame is a thirtieth of a second of decimated samples, which is far
+ * below this; the chunking in `publishInk` is for a stalled timer catching up.
+ */
+const INK_POINTS_PER_FRAME = 64;
+
+/**
+ * How long a teammate's ghost stroke survives without news.
+ *
+ * `GHOST_IDLE_MS` is for a stroke still being drawn: a sender that stops
+ * sending without ever saying `done` closed its tab or lost its connection
+ * mid-line, and nothing else will ever remove what it left behind. Before this
+ * the ghost stayed painted on everybody's board until they reloaded.
+ *
+ * `GHOST_SETTLE_MS` is for a stroke that has finished: it is kept on screen
+ * until the saved version arrives to replace it (see `settleInk`), and this is
+ * the ceiling on that wait — long enough for a slow database write, short
+ * enough that a stroke the server refused does not linger as if it had been
+ * kept.
+ */
+const GHOST_IDLE_MS = 5_000;
+const GHOST_SETTLE_MS = 2_500;
+const GHOST_SWEEP_MS = 1_000;
 
 /**
  * A live stroke arriving from somebody else, accumulated by `strokeId`.
@@ -28,6 +55,22 @@ export interface RemoteStroke {
   color: string;
   width: number;
   erase: boolean;
+}
+
+/** A ghost plus the bookkeeping that decides when it goes. Never leaves this hook. */
+interface Ghost extends RemoteStroke {
+  seenAt: number;
+  isDone: boolean;
+}
+
+/** One stroke's points waiting for the next outgoing ink frame. */
+interface PendingInk {
+  strokeId: string;
+  points: [number, number][];
+  color: string;
+  width: number;
+  erase?: boolean;
+  done?: boolean;
 }
 
 interface UseBoardPresenceOptions {
@@ -109,6 +152,26 @@ export const useBoardPresence = ({
   /** What *this* socket holds, so the heartbeat knows what to re-assert. */
   const heldRef = useRef(new Set<string>());
 
+  /**
+   * What this client still *wants*, including requests whose answer has not
+   * arrived yet.
+   *
+   * ## The leak this closes
+   *
+   * `release` used to consult `heldRef` alone, and a note only enters that set
+   * when the server's grant arrives. A click shorter than the round trip — a
+   * pointer down and up inside fifty milliseconds, which is an ordinary click
+   * on an ordinary connection — released *before* the grant, found nothing to
+   * release and sent nothing; then the grant landed, the note went into
+   * `heldRef`, and the heartbeat re-asserted it every fifteen seconds from
+   * then on. The sheet showed as held by this person, on everybody else's
+   * board, until this tab closed.
+   *
+   * Now a release withdraws the want, and a grant that arrives for something
+   * no longer wanted is handed straight back.
+   */
+  const wantedRef = useRef(new Set<string>());
+
   /*
    * Read through refs so the socket effect below can depend on the connection
    * and nothing else.
@@ -132,7 +195,32 @@ export const useBoardPresence = ({
    * imperatively — putting it in React state would re-render the board on
    * every frame of somebody else's pen.
    */
-  const remoteStrokes = useRef(new Map<string, RemoteStroke>());
+  const remoteStrokes = useRef(new Map<string, Ghost>());
+
+  const notifyInk = useCallback(() => {
+    onRemoteInkRef.current([...remoteStrokes.current.values()]);
+  }, []);
+
+  /**
+   * The saved version of a stroke has arrived; its ghost can go.
+   *
+   * ## Why the ghost is not dropped on `done`
+   *
+   * It was, and every finished stroke blinked on everybody else's board. `done`
+   * is relayed the instant the pointer lifts, while the saved element is
+   * broadcast only after its row is written — so between the two, for however
+   * long the insert took, the stroke was on nobody's layer at all. The ghost
+   * now stays until the element that replaces it is actually here, matched by
+   * the stroke id the author sends as `clientId` (see `whiteboard:draw` on the
+   * API).
+   */
+  const settleInk = useCallback(
+    (strokeId: string | null | undefined) => {
+      if (!strokeId || !remoteStrokes.current.delete(strokeId)) return;
+      notifyInk();
+    },
+    [notifyInk],
+  );
 
   // ---------------------------------------------------------------------------
   // Listening
@@ -191,41 +279,81 @@ export const useBoardPresence = ({
     }) => {
       if (payload.projectId !== projectId) return;
 
-      if (payload.done) {
-        /*
-         * The ghost is dropped, and the real stroke takes its place.
-         *
-         * `whiteboard:draw`'s own broadcast arrives at about the same moment
-         * carrying the persisted element, which the board appends to its
-         * committed list. Dropping this one is what stops the stroke being
-         * painted twice — once as a ghost and once for real — which on an
-         * eraser stroke is visible, because two `destination-out` passes rub
-         * out twice as much.
-         */
-        remoteStrokes.current.delete(payload.strokeId);
-      } else {
-        const existing = remoteStrokes.current.get(payload.strokeId);
-        if (existing) {
-          existing.points.push(...payload.points);
-        } else {
-          remoteStrokes.current.set(payload.strokeId, {
-            strokeId: payload.strokeId,
-            userId: payload.userId,
-            points: [...payload.points],
-            color: payload.color,
-            width: payload.width,
-            erase: payload.erase,
-          });
-        }
+      const now = Date.now();
+      let ghost = remoteStrokes.current.get(payload.strokeId);
+
+      if (ghost) {
+        ghost.points.push(...payload.points);
+        ghost.seenAt = now;
+      } else if (!payload.done || payload.points.length > 0) {
+        ghost = {
+          strokeId: payload.strokeId,
+          userId: payload.userId,
+          points: [...payload.points],
+          color: payload.color,
+          width: payload.width,
+          erase: payload.erase,
+          seenAt: now,
+          isDone: false,
+        };
+        remoteStrokes.current.set(payload.strokeId, ghost);
       }
 
-      onRemoteInkRef.current([...remoteStrokes.current.values()]);
+      if (ghost && payload.done) {
+        /*
+         * Finished — but kept on screen until the saved element replaces it
+         * (see `settleInk`), unless it is too short to have been saved at all.
+         *
+         * The author discards anything under two points, so a ghost that
+         * short will never be replaced, and it paints nothing either; waiting
+         * out `GHOST_SETTLE_MS` for it would only hold a dead entry in the map.
+         */
+        if (ghost.points.length < 2) remoteStrokes.current.delete(payload.strokeId);
+        else ghost.isDone = true;
+      }
+
+      notifyInk();
+    };
+
+    /*
+     * Somebody left mid-stroke. Their ghosts go with them rather than waiting
+     * out the idle timeout, which is the difference between a line that
+     * vanishes when its author's tab closes and one that lingers five seconds
+     * after they have visibly gone.
+     */
+    const onLeft = (payload: { projectId: string; userId: string }) => {
+      if (payload.projectId !== projectId) return;
+      let changed = false;
+      for (const [strokeId, ghost] of remoteStrokes.current) {
+        if (ghost.userId !== payload.userId) continue;
+        remoteStrokes.current.delete(strokeId);
+        changed = true;
+      }
+      if (changed) notifyInk();
     };
 
     socket.on('board:locked', onLocked);
     socket.on('board:unlocked', onUnlocked);
     socket.on('board:drag', onDrag);
     socket.on('board:ink', onInk);
+    socket.on('presence:left', onLeft);
+
+    /*
+     * Reaping, on a timer rather than per frame — the same shape as the
+     * pointer layer's sweeper, and for the same reason: nothing sends a
+     * goodbye when a laptop lid closes. See `GHOST_IDLE_MS`.
+     */
+    const sweeper = window.setInterval(() => {
+      const now = Date.now();
+      let changed = false;
+      for (const [strokeId, ghost] of remoteStrokes.current) {
+        const limit = ghost.isDone ? GHOST_SETTLE_MS : GHOST_IDLE_MS;
+        if (now - ghost.seenAt <= limit) continue;
+        remoteStrokes.current.delete(strokeId);
+        changed = true;
+      }
+      if (changed) notifyInk();
+    }, GHOST_SWEEP_MS);
 
     /*
      * What is already held, asked for once on arrival.
@@ -258,8 +386,18 @@ export const useBoardPresence = ({
       socket.off('board:unlocked', onUnlocked);
       socket.off('board:drag', onDrag);
       socket.off('board:ink', onInk);
+      socket.off('presence:left', onLeft);
+      window.clearInterval(sweeper);
+
+      // Nothing will ever finish or reap these once the listeners are gone —
+      // a dropped connection would otherwise freeze every half-drawn line on
+      // screen until it came back.
+      if (remoteStrokes.current.size > 0) {
+        remoteStrokes.current.clear();
+        notifyInk();
+      }
     };
-  }, [isConnected, projectId, socket]);
+  }, [isConnected, notifyInk, projectId, socket]);
 
   // ---------------------------------------------------------------------------
   // Holding
@@ -293,7 +431,9 @@ export const useBoardPresence = ({
       if (heldRef.current.has(noteId)) return true;
       if (!socket || !isConnected) return true;
 
-      const granted = await new Promise<boolean>((resolve) => {
+      wantedRef.current.add(noteId);
+
+      const answer = await new Promise<{ granted: boolean; byServer: boolean }>((resolve) => {
         /*
          * A timeout, because a promise that never settles is a gesture that
          * never starts. Two seconds is far longer than this round trip takes
@@ -301,25 +441,45 @@ export const useBoardPresence = ({
          * board; the fallback is the same "grant it" as being offline, for the
          * same reason.
          */
-        const timer = window.setTimeout(() => resolve(true), 2_000);
+        const timer = window.setTimeout(() => resolve({ granted: true, byServer: false }), 2_000);
         socket.emit(
           'board:lock',
           { projectId, noteId },
-          (response?: { granted?: boolean }) => {
+          (response?: { granted?: boolean; userId?: string }) => {
             window.clearTimeout(timer);
-            resolve(response?.granted ?? true);
+            /*
+             * Only a refusal that names a holder is a refusal.
+             *
+             * The API also answers `{ granted: false }` with nobody attached
+             * when it could not decide at all — the socket has not rejoined
+             * the project room yet after a reconnect, or its lock allowance is
+             * spent. Neither means somebody else has the note, and treating
+             * them as if it did snapped sheets out of people's hands for a
+             * server-side technicality. They get the same answer as a timeout
+             * or a dropped socket: go ahead, locally. See `LIVE_BOARD.md` §4.
+             */
+            const isContended = response?.granted === false && Boolean(response.userId);
+            resolve({ granted: !isContended, byServer: response?.granted === true });
           },
         );
       });
 
-      if (granted) heldRef.current.add(noteId);
-      return granted;
+      // Let go before the answer arrived — see `wantedRef`.
+      if (!wantedRef.current.has(noteId)) {
+        if (answer.byServer) socket.emit('board:unlock', { projectId, noteId });
+        return false;
+      }
+
+      if (answer.granted) heldRef.current.add(noteId);
+      else wantedRef.current.delete(noteId);
+      return answer.granted;
     },
     [isConnected, projectId, socket],
   );
 
   const release = useCallback(
     (noteId: string) => {
+      wantedRef.current.delete(noteId);
       if (!heldRef.current.delete(noteId)) return;
       socket?.emit('board:unlock', { projectId, noteId });
     },
@@ -370,6 +530,8 @@ export const useBoardPresence = ({
   useEffect(
     () => () => {
       for (const noteId of [...heldRef.current]) releaseRef.current(noteId);
+      // And anything still in flight: its grant is handed straight back.
+      wantedRef.current.clear();
     },
     [],
   );
@@ -378,72 +540,140 @@ export const useBoardPresence = ({
   // Publishing
   // ---------------------------------------------------------------------------
 
+  /*
+   * The connection as the outgoing streams see it, read at flush time.
+   *
+   * The throttles below are created once and outlive any single connection,
+   * so they must not close over one — a flush scheduled just before a
+   * reconnect would otherwise emit on the socket that has since gone.
+   */
+  const wireRef = useRef({ socket, isConnected, projectId });
+  wireRef.current = { socket, isConnected, projectId };
+
   /**
-   * Where a note is being dragged to, coalesced to one frame.
+   * Where a note is being dragged to, at `LIVE_FRAME_MS`.
    *
-   * ## Why the throttle is a frame and not a fixed millisecond count
+   * ## Why a fixed rate and not one animation frame
    *
-   * A pointer reports faster than the screen refreshes, so anything more often
-   * than once per frame is information nobody can see — and on a mesh of six
-   * people it is five deliveries each. `requestAnimationFrame` is exactly the
-   * rate at which a change becomes visible, and it self-adjusts on a display
-   * that is not 60Hz.
+   * It was one animation frame, which is the sender's refresh rate — 144 frames
+   * a second on some monitors — and every frame is five deliveries on a board
+   * of six. The server metered it well below that, so most frames were being
+   * thrown away on arrival anyway; now they are simply not sent. Receivers
+   * glide between frames over the same interval (`applyRemoteDrag`), which is
+   * what makes 30 look like 60. See `live-rate.ts`.
    *
    * ## Why the *latest* position is kept rather than every one
    *
    * These are absolute coordinates, not deltas, so an intermediate frame that
    * is never sent is not lost information — the next one supersedes it
-   * completely. That is also what makes the server's silent rate limit safe:
-   * a dropped frame costs nothing because the one 16ms behind it is already
-   * correct.
+   * completely. The throttle's trailing edge is what guarantees the one that
+   * matters most, where the sheet stopped, always goes.
    */
   const pendingDrag = useRef(new Map<string, { x: number; y: number }>());
-  const dragFrame = useRef(0);
+
+  const dragStream = useMemo(
+    () =>
+      createThrottledFlush(() => {
+        const wire = wireRef.current;
+        if (wire.socket && wire.isConnected) {
+          for (const [noteId, point] of pendingDrag.current) {
+            wire.socket.emit('board:drag', {
+              projectId: wire.projectId,
+              noteId,
+              x: roundPx(point.x),
+              y: roundPx(point.y),
+            });
+          }
+        }
+        pendingDrag.current.clear();
+      }),
+    [],
+  );
 
   const publishDrag = useCallback(
     (noteId: string, x: number, y: number) => {
       if (!socket || !isConnected) return;
-
+      // A picture still uploading exists on this screen only — nobody else
+      // has a sheet to move, and the API refuses a drag of an id that is not
+      // a row's.
+      if (isPendingNoteId(noteId)) return;
       pendingDrag.current.set(noteId, { x, y });
-      if (dragFrame.current) return;
-
-      dragFrame.current = requestAnimationFrame(() => {
-        dragFrame.current = 0;
-        for (const [id, point] of pendingDrag.current) {
-          socket.emit('board:drag', { projectId, noteId: id, x: point.x, y: point.y });
-        }
-        pendingDrag.current.clear();
-      });
+      dragStream.request();
     },
-    [isConnected, projectId, socket],
+    [dragStream, isConnected, socket],
+  );
+
+  /**
+   * Strokes in progress, batched to `LIVE_FRAME_MS`.
+   *
+   * The board hands over the points it kept from every pointer event; they are
+   * held here and sent as one frame per interval rather than one per event.
+   * Only the *new* points travel — see `BoardInkDto` on the API for why
+   * re-sending the whole stroke each frame is quadratic in its own length.
+   *
+   * Unlike a drag, nothing here can be dropped: a frame is a run of the line,
+   * not a position, so a lost one is a gap. Batching is what makes that safe —
+   * the old per-event emits ran several times past the server's allowance and
+   * the refusals were exactly those gaps.
+   */
+  const pendingInk = useRef(new Map<string, PendingInk>());
+
+  const inkStream = useMemo(
+    () =>
+      createThrottledFlush(() => {
+        const wire = wireRef.current;
+        if (wire.socket && wire.isConnected) {
+          for (const frame of pendingInk.current.values()) {
+            // Chunked to the API's per-frame cap. In practice one chunk; a
+            // background tab's slowed timer is the only way to get more.
+            let offset = 0;
+            do {
+              const points = frame.points.slice(offset, offset + INK_POINTS_PER_FRAME);
+              offset += INK_POINTS_PER_FRAME;
+              const isLast = offset >= frame.points.length;
+              wire.socket.emit('board:ink', {
+                projectId: wire.projectId,
+                strokeId: frame.strokeId,
+                points,
+                color: frame.color,
+                width: frame.width,
+                ...(frame.erase ? { erase: true } : {}),
+                ...(frame.done && isLast ? { done: true } : {}),
+              });
+            } while (offset < frame.points.length);
+          }
+        }
+        pendingInk.current.clear();
+      }),
+    [],
+  );
+
+  const publishInk = useCallback(
+    (stroke: PendingInk) => {
+      if (!socket || !isConnected) return;
+
+      const pending = pendingInk.current.get(stroke.strokeId);
+      if (pending) {
+        pending.points.push(...stroke.points);
+        pending.done = pending.done || stroke.done;
+      } else {
+        pendingInk.current.set(stroke.strokeId, { ...stroke, points: [...stroke.points] });
+      }
+
+      // The last frame of a stroke goes now: it is what lets everybody else
+      // stop expecting more, and there is nothing behind it to batch with.
+      if (stroke.done) inkStream.flushNow();
+      else inkStream.request();
+    },
+    [inkStream, isConnected, socket],
   );
 
   useEffect(
     () => () => {
-      if (dragFrame.current) cancelAnimationFrame(dragFrame.current);
+      dragStream.cancel();
+      inkStream.cancel();
     },
-    [],
-  );
-
-  /**
-   * A stroke in progress, as points are added to it.
-   *
-   * Only the *new* points travel — see `BoardInkDto` on the API for why
-   * re-sending the whole stroke each frame is quadratic in its own length.
-   */
-  const publishInk = useCallback(
-    (stroke: {
-      strokeId: string;
-      points: [number, number][];
-      color: string;
-      width: number;
-      erase?: boolean;
-      done?: boolean;
-    }) => {
-      if (!socket || !isConnected) return;
-      socket.emit('board:ink', { projectId, ...stroke });
-    },
-    [isConnected, projectId, socket],
+    [dragStream, inkStream],
   );
 
   /**
@@ -463,5 +693,5 @@ export const useBoardPresence = ({
     [currentUser?.id, locks],
   );
 
-  return { locks, acquire, release, publishDrag, publishInk, lockedBy };
+  return { locks, acquire, release, publishDrag, publishInk, settleInk, lockedBy };
 };

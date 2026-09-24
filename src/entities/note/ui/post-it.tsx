@@ -1,5 +1,12 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { motion, useMotionValue, useTransform, type MotionValue } from 'framer-motion';
+import {
+  animate,
+  motion,
+  useMotionValue,
+  useTransform,
+  type AnimationPlaybackControls,
+  type MotionValue,
+} from 'framer-motion';
 import { Check, Link2, Palette, Pin, Trash2, Zap } from 'lucide-react';
 
 import { NOTE_COLORS, TEXT_LIMITS } from '@/shared/config/constants';
@@ -79,6 +86,13 @@ const BASE_PAD = 14;
  */
 const fontFor = (size: number): number =>
   Math.max(11, Math.min(24, BASE_FONT * Math.sqrt(size / BASE_SIZE)));
+
+/**
+ * The sheet's own spring, reused for the one animation it plays on its own: a
+ * refused grab settling back where it came from. Same numbers as the lift, so
+ * the sheet moves like the same object whichever way it is going.
+ */
+const SHEET_SPRING = { type: 'spring', stiffness: 420, damping: 30 } as const;
 
 /**
  * Padding for a sheet of a given size, on the same curve.
@@ -260,18 +274,43 @@ const PostItBase = ({
   const dirtyRef = useRef({ title: false, content: false });
 
   /**
-   * Whether *this* client currently holds the sheet, and where it was when it
-   * took hold.
+   * Whether *this* client currently holds the sheet, and whether the server
+   * has said so yet.
    *
-   * The position is kept because a refused hold has to put the sheet back: the
-   * drag begins locally the instant the pointer goes down (see the note on
-   * `onPointerDown`), so by the time the server says no it has already moved a
-   * few pixels under somebody's finger.
+   * `held` goes true the instant the pointer goes down; `confirmed` only when
+   * the grant arrives. The gap between them is the optimistic window — see
+   * `claim` — and the two are what separate "this sheet is moving under my
+   * hand" from "the rest of the board may now follow it".
    */
-  const holdRef = useRef<{ held: boolean; origin: { x: number; y: number } | null }>({
-    held: false,
-    origin: null,
-  });
+  const holdRef = useRef({ held: false, confirmed: false });
+
+  /** The answer to the current gesture's hold request, for a drag that ends before it arrives. */
+  const claimRef = useRef<Promise<boolean> | null>(null);
+
+  /**
+   * Set when the server refused this gesture; read by the drag handlers so a
+   * refused drag neither moves anything else nor saves anything. Cleared by
+   * the next press.
+   */
+  const refusedRef = useRef(false);
+
+  /**
+   * Stops Framer moving the sheet for the rest of a refused press.
+   *
+   * State, because it has to reach the `drag` prop: Framer reads that prop on
+   * every pointer move of a gesture already in progress, so turning it off
+   * mid-drag is the one way to stop a drag it has started. Before this, a
+   * refused sheet was set back once and then carried on following the pointer
+   * — and its `onDragEnd` saved wherever it was dropped, straight through the
+   * lock that had just said no.
+   */
+  const [isRefused, setIsRefused] = useState(false);
+  const isPressedRef = useRef(false);
+  const settleRef = useRef<AnimationPlaybackControls[]>([]);
+
+  /** Where the sheet lives as far as the board knows. Read by async answers that outlive a render. */
+  const homeRef = useRef({ x: note.positionX, y: note.positionY });
+  homeRef.current = { x: note.positionX, y: note.positionY };
 
   /*
    * Read through refs, so the gesture handlers below can stay out of the
@@ -279,8 +318,67 @@ const PostItBase = ({
    * these down as stable callbacks, but a sheet must not depend on that being
    * true — see the note above `PostItProps`.
    */
-  const holdApi = useRef({ onHold, onRelease, onDragBroadcast });
-  holdApi.current = { onHold, onRelease, onDragBroadcast };
+  const holdApi = useRef({ onHold, onRelease, onDragBroadcast, onDragMove, onGroupDrag });
+  holdApi.current = { onHold, onRelease, onDragBroadcast, onDragMove, onGroupDrag };
+
+  /** Whether dependants may follow this sheet: always on a board without holds. */
+  const isConfirmed = () => !holdApi.current.onHold || holdRef.current.confirmed;
+
+  /**
+   * Tells everything that follows this sheet where it now is: the connector
+   * arrows, the rest of its group, and the rest of the room.
+   *
+   * Measured against `lastDragRef`, so a call after a pause — the first one
+   * once a hold is confirmed — carries the whole distance travelled since, and
+   * the group catches up in one step rather than being left behind.
+   */
+  const propagate = () => {
+    const next = { x: x.get(), y: y.get() };
+    const api = holdApi.current;
+    api.onDragMove?.(note.id, next.x, next.y);
+    api.onGroupDrag?.(note.id, next.x - lastDragRef.current.x, next.y - lastDragRef.current.y);
+    // The same coordinates the connector layer gets, to the rest of the
+    // room. Throttled by the board — see `publishDrag`.
+    api.onDragBroadcast?.(note.id, next.x, next.y);
+    lastDragRef.current = next;
+  };
+  const propagateRef = useRef(propagate);
+  propagateRef.current = propagate;
+
+  /**
+   * A refused grab, undone gracefully.
+   *
+   * The sheet springs back to where the board says it lives rather than being
+   * teleported there — the jump used to read as a glitch, the spring reads as
+   * "somebody else has this" — and Framer is told to stop moving it for the
+   * rest of the press.
+   *
+   * Nothing else needs undoing, and that is by design: while the answer was
+   * pending, only the sheet itself moved (see `onDrag`). Its group, its
+   * connectors and the room never heard about the gesture, so a refusal has
+   * exactly one thing to put back.
+   *
+   * ## Why home is the stored position rather than the pre-drag one
+   *
+   * They are the same thing here and the stored one is the one that is still
+   * true: the local drag has not been persisted, so the note's position is
+   * exactly where the sheet was before the pointer went down. Using the note
+   * rather than a captured origin also means a refusal that arrives *after* a
+   * teammate's own move has landed puts the sheet where *they* put it, which
+   * is the correct answer to "you do not have this".
+   */
+  const refuse = () => {
+    refusedRef.current = true;
+    isDraggingRef.current = false;
+    if (isPressedRef.current) setIsRefused(true);
+
+    const home = homeRef.current;
+    lastDragRef.current = home;
+    for (const controls of settleRef.current) controls.stop();
+    settleRef.current = [animate(x, home.x, SHEET_SPRING), animate(y, home.y, SHEET_SPRING)];
+  };
+  const refuseRef = useRef(refuse);
+  refuseRef.current = refuse;
 
   /**
    * Take hold, and undo the gesture if the answer is no.
@@ -293,34 +391,58 @@ const PostItBase = ({
    * it would make *every* drag on the board begin with a pause, including the
    * overwhelming majority where nobody else is anywhere near the sheet.
    *
-   * Contention is rare; a stutter on every drag is constant. So the gesture
-   * starts, and the handful of pixels it travels before a refusal are undone.
-   *
-   * ## Why the snap-back is to the stored position rather than the pre-drag one
-   *
-   * They are the same thing here and the stored one is the one that is still
-   * true: the local drag has not been persisted, so `note.positionX` is
-   * exactly where the sheet was before the pointer went down. Using the note
-   * rather than a captured origin also means a refusal that arrives *after* a
-   * teammate's own move has landed puts the sheet where *they* put it, which
-   * is the correct answer to "you do not have this".
+   * Contention is rare; a stutter on every drag is constant. So the sheet
+   * moves under the pointer at once, the rest of the board follows the moment
+   * the grant arrives, and a refusal is undone by `refuse`.
    */
   const claim = useCallback(() => {
     const request = holdApi.current.onHold;
     if (!request || holdRef.current.held) return;
 
-    holdRef.current = { held: true, origin: { x: x.get(), y: y.get() } };
+    holdRef.current = { held: true, confirmed: false };
 
-    void request(note.id).then((granted) => {
-      if (granted || !holdRef.current.held) return;
+    claimRef.current = request(note.id).then((granted) => {
+      // Let go of before the answer came: nothing to confirm or undo.
+      if (!holdRef.current.held) return granted;
 
-      holdRef.current = { held: false, origin: null };
-      isDraggingRef.current = false;
-      x.set(note.positionX);
-      y.set(note.positionY);
-      lastDragRef.current = { x: note.positionX, y: note.positionY };
+      if (granted) {
+        holdRef.current.confirmed = true;
+        // A drag already under way catches its dependants up now, rather
+        // than on the next pointer move — which never comes if the hand has
+        // paused.
+        if (isDraggingRef.current) propagateRef.current();
+        return true;
+      }
+
+      holdRef.current = { held: false, confirmed: false };
+      refuseRef.current();
+      return false;
     });
-  }, [note.id, note.positionX, note.positionY, x, y]);
+  }, [note.id]);
+
+  /*
+   * The end of a press, wherever the pointer happens to be when it lifts.
+   *
+   * On `window`, because a drag routinely ends off the sheet, and a refused
+   * press has to hand the `drag` prop back or the sheet could not be picked
+   * up again. A stable function, so registering it on every press cannot
+   * stack duplicates: the browser ignores a listener it already has.
+   */
+  const endPress = useCallback(() => {
+    window.removeEventListener('pointerup', endPress);
+    window.removeEventListener('pointercancel', endPress);
+    isPressedRef.current = false;
+    setIsRefused(false);
+  }, []);
+
+  useEffect(
+    () => () => {
+      window.removeEventListener('pointerup', endPress);
+      window.removeEventListener('pointercancel', endPress);
+      for (const controls of settleRef.current) controls.stop();
+    },
+    [endPress],
+  );
 
   /**
    * Whether the caret is in one of this sheet's two fields.
@@ -346,14 +468,14 @@ const PostItBase = ({
     if (!holdRef.current.held) return;
     if (isDraggingRef.current || focusedRef.current) return;
 
-    holdRef.current = { held: false, origin: null };
+    holdRef.current = { held: false, confirmed: false };
     holdApi.current.onRelease?.(note.id);
   }, [note.id]);
 
   /** Unconditional, for the one case that overrides everything: unmounting. */
   const relinquish = useCallback(() => {
     if (!holdRef.current.held) return;
-    holdRef.current = { held: false, origin: null };
+    holdRef.current = { held: false, confirmed: false };
     holdApi.current.onRelease?.(note.id);
   }, [note.id]);
 
@@ -446,7 +568,20 @@ const PostItBase = ({
     x.set(note.positionX);
     y.set(note.positionY);
     lastDragRef.current = { x: note.positionX, y: note.positionY };
-  }, [note.positionX, note.positionY, x, y]);
+
+    /*
+     * And the connector layer, which prefers a live override to the stored
+     * position whenever it has one.
+     *
+     * A teammate's live drag publishes overrides for the sheet it moves, and
+     * nothing ever withdrew them — so when that sheet later moved by any other
+     * route (their undo, a group move, a position fixed up by the server) the
+     * arrows stayed pinned to wherever the last live frame had left them.
+     * Publishing the stored position here keeps any override equal to the
+     * truth; for a sheet with none, it is a value the layer already had.
+     */
+    holdApi.current.onDragMove?.(note.id, note.positionX, note.positionY);
+  }, [note.id, note.positionX, note.positionY, x, y]);
 
   // Same guard as the position: a resize is a drag too, and an echo landing
   // mid-gesture would snap the corner back under the pointer.
@@ -704,8 +839,10 @@ const PostItBase = ({
   return (
     <motion.div
       // Held by somebody else: no drag, at the gesture level rather than by
-      // cancelling one that has begun.
-      drag={!isConnecting && !heldBy}
+      // cancelling one that has begun. `isRefused` is the one exception — a
+      // grab the server turned down mid-gesture — and it is why this is read
+      // live by Framer rather than once at the start.
+      drag={!isConnecting && !heldBy && !isRefused}
       dragMomentum={false}
       dragElastic={0.04}
       dragConstraints={constraintsRef as React.RefObject<Element>}
@@ -737,6 +874,12 @@ const PostItBase = ({
         // z-index bump, not a colour picker. The whole object is theirs.
         if (heldBy) return;
 
+        // A new press: whatever the last one was refused, this one has not been.
+        refusedRef.current = false;
+        isPressedRef.current = true;
+        window.addEventListener('pointerup', endPress);
+        window.addEventListener('pointercancel', endPress);
+
         claim();
         onFocus?.(note.id);
         onSelect?.(
@@ -759,41 +902,74 @@ const PostItBase = ({
       onPointerUp={maybeRelease}
       onPointerCancel={maybeRelease}
       onDragStart={() => {
+        if (refusedRef.current) return;
         isDraggingRef.current = true;
+        // A settle still running from an earlier refusal would fight the hand.
+        for (const controls of settleRef.current) controls.stop();
+        settleRef.current = [];
       }}
       onDrag={() => {
-        const next = { x: x.get(), y: y.get() };
-        onDragMove?.(note.id, next.x, next.y);
-        onGroupDrag?.(note.id, next.x - lastDragRef.current.x, next.y - lastDragRef.current.y);
-        // The same coordinates the connector layer gets, to the rest of the
-        // room. Coalesced to one frame by the board — see `publishDrag`.
-        holdApi.current.onDragBroadcast?.(note.id, next.x, next.y);
-        lastDragRef.current = next;
+        /*
+         * Only the sheet moves until the hold is confirmed.
+         *
+         * Its group, its arrows and the rest of the room wait for the grant —
+         * a few tens of milliseconds, and `claim` catches them all up in one
+         * step when it lands. That is what keeps a refusal cheap: the sheet is
+         * the only thing that ever moved, so it is the only thing to put back,
+         * and nobody else's board ever saw a drag that did not happen.
+         */
+        if (refusedRef.current || !isConfirmed()) return;
+        propagate();
       }}
       onDragEnd={() => {
-        isDraggingRef.current = false;
-        lastDragRef.current = { x: x.get(), y: y.get() };
-        /*
-         * `note.id` is read at call time, so a sheet whose placeholder id was
-         * swapped for the server's mid-drag persists under the *real* id — the
-         * element survived the swap (see `Note.clientKey`), so this closure is
-         * the current render's and knows the new one.
-         */
-        onDragEnd(note.id, { positionX: x.get(), positionY: y.get() });
+        // Refused: `refuse` has already sent it home, and there is nothing to save.
+        if (refusedRef.current) return;
+
+        const finish = () => {
+          isDraggingRef.current = false;
+          // Anything the confirmed drag has not yet told its dependants.
+          propagateRef.current();
+          lastDragRef.current = { x: x.get(), y: y.get() };
+          /*
+           * `note.id` is read at call time, so a sheet whose placeholder id was
+           * swapped for the server's mid-drag persists under the *real* id — the
+           * element survived the swap (see `Note.clientKey`), so this closure is
+           * the current render's and knows the new one.
+           */
+          onDragEnd(note.id, { positionX: x.get(), positionY: y.get() });
+
+          /*
+           * Let go *after* the position has been handed to the board, never
+           * before. Releasing first opens a window in which a teammate can take
+           * the sheet and start moving it while this client's batched PATCH for
+           * the old gesture is still in flight — and the later write wins, which
+           * is the exact race the hold exists to close.
+           *
+           * Not released when the sheet is also being typed in: focus holds it
+           * for as long as the caret is there, and a drag that ended should not
+           * take somebody's textarea out from under them. `maybeRelease` is the
+           * one place that decides.
+           */
+          maybeRelease();
+        };
+
+        if (isConfirmed()) {
+          finish();
+          return;
+        }
 
         /*
-         * Let go *after* the position has been handed to the board, never
-         * before. Releasing first opens a window in which a teammate can take
-         * the sheet and start moving it while this client's batched PATCH for
-         * the old gesture is still in flight — and the later write wins, which
-         * is the exact race the hold exists to close.
+         * A flick that ended before the answer arrived.
          *
-         * Not released when the sheet is also being typed in: focus holds it
-         * for as long as the caret is there, and a drag that ended should not
-         * take somebody's textarea out from under them. `maybeRelease` is the
-         * one place that decides.
+         * Nothing is saved until the server has said yes — saving first is the
+         * last-write-wins race again, arrived at by being quick. The sheet
+         * keeps its authority over its own position meanwhile
+         * (`isDraggingRef` stays up), and a refusal lands in `refuse` exactly
+         * as it would have mid-drag.
          */
-        maybeRelease();
+        void claimRef.current?.then((granted) => {
+          if (granted && !refusedRef.current) finish();
+        });
       }}
       className={cn(
         // The paper's radius, shadow and grain are the skin's to decide.

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, animate, type AnimationPlaybackControls } from 'framer-motion';
 import {
   Eraser,
   ImagePlus,
@@ -37,6 +37,14 @@ import { useRoster } from '@/entities/project/model/queries';
 import type { UpdateNotePayload } from '@/entities/note/model/types';
 import { PostIt, type NoteHandle } from '@/entities/note/ui/post-it';
 import { useCurrentUser } from '@/features/auth/model/session.store';
+import {
+  isFarEnough,
+  quantizePoint,
+  simplifyPoints,
+  type InkPoint,
+} from '@/features/notes-board/lib/ink-geometry';
+import { createInkLayers } from '@/features/notes-board/lib/ink-layers';
+import { LIVE_FRAME_MS } from '@/features/notes-board/lib/live-rate';
 import { peerColor } from '@/features/notes-board/lib/peer-color';
 import { createPositionBus } from '@/features/notes-board/lib/position-bus';
 import { useBoardHistory } from '@/features/notes-board/lib/use-board-history';
@@ -116,13 +124,43 @@ const adoptStroke = (stroke: WhiteboardStrokeData): WhiteboardStrokeData =>
     ? { ...stroke, erase: true }
     : stroke;
 
+/**
+ * How long after its last frame a remote drag counts as over.
+ *
+ * Frames arrive every `LIVE_FRAME_MS`; a gap several times that long is a
+ * hand that has let go, and the next frame for the same sheet is a new
+ * gesture that must start from where the sheet actually is rather than from
+ * the last target of the old one.
+ */
+const REMOTE_DRAG_IDLE_MS = 250;
+
+/**
+ * Retries for a stroke the API turned away for arriving too fast.
+ *
+ * `whiteboard:draw` is metered per socket (it writes a row), and fast
+ * handwriting — several short strokes a second, sustained — can outrun the
+ * allowance. The acknowledgement says so, and nothing listened: the stroke
+ * stayed on the author's screen and was on nobody else's, and gone after a
+ * reload. The bucket refills continuously, so a short, growing wait is enough.
+ */
+const DRAW_RETRIES = 4;
+const DRAW_RETRY_MS = 400;
+
+/** One sheet a teammate's drag is carrying, and where its current glide is going. */
+interface RemoteMotion {
+  controls: AnimationPlaybackControls;
+  target: { x: number; y: number };
+  at: number;
+}
+
 
 /**
  * The project's shared canvas.
  *
  * Two surfaces on one wall. Underneath: collaborative ink, drawn imperatively
- * into a single <canvas> with the in-progress stroke held in a ref, so pointer
- * movement never triggers a React render. On top: the same Post-it objects the
+ * into two stacked canvases — committed ink below, strokes in progress above
+ * (see `createInkLayers`) — with the in-progress stroke held in a ref, so
+ * pointer movement never triggers a React render. On top: the same Post-it objects the
  * personal notes board uses — draggable, colourable, groupable and wired
  * together with connectors — except these belong to the project, so everybody
  * on the roster sees the same wall and every change arrives over the socket.
@@ -133,7 +171,8 @@ const adoptStroke = (stroke: WhiteboardStrokeData): WhiteboardStrokeData =>
 export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
   const t = useT();
   const isTouch = useIsTouchDevice();
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const baseCanvasRef = useRef<HTMLCanvasElement>(null);
+  const liveCanvasRef = useRef<HTMLCanvasElement>(null);
   const surfaceRef = useRef<HTMLDivElement>(null);
   const handlesRef = useRef(new Map<string, NoteHandle>());
   const bus = useMemo(createPositionBus, []);
@@ -155,8 +194,17 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
   // moment the <canvas> below is a different element.
   const [surfaceMount, setSurfaceMount] = useState(0);
 
-  const strokesRef = useRef<WhiteboardStrokeData[]>([]);
+  /** Owns every pixel of ink on the wall. Plain object, not React: see `createInkLayers`. */
+  const layers = useMemo(createInkLayers, []);
+  useEffect(() => () => layers.dispose(), [layers]);
+
   const currentRef = useRef<WhiteboardStrokeData | null>(null);
+  /**
+   * The newest pointer sample that was too close to the last kept point to
+   * keep (see `MIN_SAMPLE_GAP_PX`). Held so the stroke still ends exactly
+   * where the pointer lifted, not up to a pixel and a quarter short of it.
+   */
+  const tailRef = useRef<InkPoint | null>(null);
   const isDrawingRef = useRef(false);
   /**
    * The stroke being drawn right now, as the room knows it.
@@ -245,40 +293,122 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
    * arriving in the snapshot, one on a page that has since been deleted, one
    * that failed to mount. There is nothing to move and nothing to report — the
    * next full snapshot carries its real position either way.
+   *
+   * ## Why each frame is a glide, not a jump
+   *
+   * Frames arrive at `LIVE_FRAME_MS` — thirty a second — and a sheet set to
+   * each one as it lands visibly steps across the board. Each frame instead
+   * starts a linear tween from wherever the sheet is *now* to the new position,
+   * lasting exactly one frame interval. One arriving on time takes over as the
+   * last glide finishes, which reads as continuous motion; one arriving late
+   * finds the sheet resting at the last target instead of mid-stutter; one
+   * that never arrives costs nothing, because the next is absolute. The glide
+   * still runs on the motion values, so it is still no render.
+   *
+   * ## Why the rest of the group moves too
+   *
+   * Dragging one member of a group carries the whole group on the dragger's
+   * screen (`handleGroupDrag`), but only the grabbed sheet is broadcast — the
+   * others are not held, and the server relays drags only for a held object.
+   * So everybody else saw one sheet leave its group and the rest jump after it
+   * once the drop was saved. The group is on this client too, so the same
+   * delta is applied to it here, which is exactly what the dragger sees.
    */
+  const remoteMotionRef = useRef(new Map<string, RemoteMotion>());
+
   const applyRemoteDrag = useCallback(
     (noteId: string, x: number, y: number) => {
       const handle = handlesRef.current.get(noteId);
       if (!handle) return;
 
-      handle.x.set(x);
-      handle.y.set(y);
-      bus.publish(noteId, x, y);
+      const motions = remoteMotionRef.current;
+      const now = performance.now();
+
+      /** Where a sheet's last glide was headed, or where it is if that glide is old news. */
+      const origin = (id: string, fallback: { x: number; y: number }) => {
+        const previous = motions.get(id);
+        return previous && now - previous.at <= REMOTE_DRAG_IDLE_MS ? previous.target : fallback;
+      };
+
+      const anchor = origin(noteId, { x: handle.x.get(), y: handle.y.get() });
+      const deltaX = x - anchor.x;
+      const deltaY = y - anchor.y;
+
+      const movers = [{ id: noteId, handle, to: { x, y } }];
+      const groupId = notesRef.current.find((note) => note.id === noteId)?.groupId;
+
+      if (groupId && (deltaX !== 0 || deltaY !== 0)) {
+        for (const note of notesRef.current) {
+          if (note.id === noteId || note.groupId !== groupId) continue;
+          const sibling = handlesRef.current.get(note.id);
+          if (!sibling) continue;
+          const from = origin(note.id, { x: sibling.x.get(), y: sibling.y.get() });
+          movers.push({ id: note.id, handle: sibling, to: { x: from.x + deltaX, y: from.y + deltaY } });
+        }
+      }
+
+      const starts = movers.map((mover) => {
+        motions.get(mover.id)?.controls.stop();
+        return { x: mover.handle.x.get(), y: mover.handle.y.get() };
+      });
+
+      // One tween drives the whole group, so its members cannot drift apart.
+      const controls = animate(0, 1, {
+        duration: LIVE_FRAME_MS / 1000,
+        ease: 'linear',
+        onUpdate: (progress) => {
+          movers.forEach((mover, index) => {
+            const start = starts[index];
+            const nextX = start.x + (mover.to.x - start.x) * progress;
+            const nextY = start.y + (mover.to.y - start.y) * progress;
+            mover.handle.x.set(nextX);
+            mover.handle.y.set(nextY);
+            bus.publish(mover.id, nextX, nextY);
+          });
+        },
+      });
+
+      for (const mover of movers) motions.set(mover.id, { controls, target: mover.to, at: now });
     },
     [bus],
   );
 
   /**
-   * Strokes other people are part-way through, repainted on arrival.
+   * Strokes other people are part-way through, handed to the live layer.
    *
-   * Held in a ref and painted by `redraw` alongside the committed ones, rather
-   * than being React state: a stroke grows by a few points per frame and the
-   * consumer is a canvas, so a render would be pure overhead between two
-   * imperative operations.
+   * The layer repaints at most once per frame however many of these arrive
+   * inside it; before, each incoming frame of somebody's pen repainted the
+   * entire board synchronously.
    */
-  const remoteStrokesRef = useRef<RemoteStroke[]>([]);
-  const redrawRef = useRef<() => void>(() => {});
-
-  const applyRemoteInk = useCallback((strokes: RemoteStroke[]) => {
-    remoteStrokesRef.current = strokes;
-    redrawRef.current();
-  }, []);
+  const applyRemoteInk = useCallback(
+    (strokes: RemoteStroke[]) => layers.setRemote(strokes),
+    [layers],
+  );
 
   const presence = useBoardPresence({
     projectId,
     onRemoteDrag: applyRemoteDrag,
     onRemoteInk: applyRemoteInk,
   });
+
+  /*
+   * Taking hold of a sheet stops any glide a teammate's last frame left
+   * running on it. Their hold has ended by the time ours can be granted, but a
+   * tween started by their final frame can still have a frame or two to run —
+   * and it would drag the sheet back under our own pointer while it did.
+   */
+  const acquire = presence.acquire;
+  const handleHold = useCallback(
+    (noteId: string) => {
+      const motion = remoteMotionRef.current.get(noteId);
+      if (motion) {
+        motion.controls.stop();
+        remoteMotionRef.current.delete(noteId);
+      }
+      return acquire(noteId);
+    },
+    [acquire],
+  );
 
   /*
    * Names for the pointers and the hold ribbons.
@@ -304,21 +434,27 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
    * sheet is refusing to move. The name catches up a moment later.
    */
   /*
-   * Destructured, because `presence` is a new object on every render while the
-   * functions inside it are stable `useCallback`s — the same reason `history`
-   * is destructured above. Depending on the object would rebuild this on every
-   * render and, through it, re-render every held Post-it on the wall.
+   * Built once per change of the lock table rather than once per note per
+   * render.
+   *
+   * It used to be a function called inline for every sheet, returning a fresh
+   * object each time — so every held sheet on the wall failed its memo check on
+   * every render of the board, which in connect mode is every animation frame.
+   * A table means a held sheet's `heldBy` keeps its identity until the hold
+   * itself changes.
+   *
+   * Never this client's own holds: those are the ordinary state of a note it
+   * is using, not a reason to refuse anything — see `lockedBy`.
    */
-  const lockedBy = presence.lockedBy;
-
-  const heldBy = useCallback(
-    (noteId: string) => {
-      const holder = lockedBy(noteId);
-      if (!holder) return null;
-      return { name: names[holder] ?? t('board.someone'), color: peerColor(holder) };
-    },
-    [lockedBy, names, t],
-  );
+  const locks = presence.locks;
+  const holds = useMemo(() => {
+    const table: Record<string, { name: string; color: string }> = {};
+    for (const [noteId, holder] of Object.entries(locks)) {
+      if (holder === currentUser?.id) continue;
+      table[noteId] = { name: names[holder] ?? t('board.someone'), color: peerColor(holder) };
+    }
+    return table;
+  }, [currentUser?.id, locks, names, t]);
 
   /*
    * Ctrl+Z and Ctrl+Y for the shared wall.
@@ -340,132 +476,90 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
    */
   const recordHistory = history.record;
 
-  const persistPositions = useDebouncedCallback(
-    (moves: { id: string; positionX: number; positionY: number }[]) =>
-      savePositions.mutate(moves),
-    350,
+  /*
+   * Positions waiting for the debounced save, merged by note.
+   *
+   * The debounce used to be handed each gesture's moves directly, and a
+   * debounce keeps only its *last* call — so dropping one sheet and picking up
+   * another inside 350ms saved the second and silently discarded the first.
+   * The first sheet looked moved on this screen and was back where it started
+   * on everybody else's, and on this one after a reload. Merging by id means
+   * the save carries every sheet that moved since the last one went, and the
+   * latest position of each.
+   */
+  const pendingMovesRef = useRef(new Map<string, { id: string; positionX: number; positionY: number }>());
+  const saveMovesRef = useRef(savePositions.mutate);
+  saveMovesRef.current = savePositions.mutate;
+
+  const flushMoves = useCallback(() => {
+    const moves = [...pendingMovesRef.current.values()];
+    pendingMovesRef.current.clear();
+    if (moves.length > 0) saveMovesRef.current(moves);
+  }, []);
+
+  const flushMovesDebounced = useDebouncedCallback(flushMoves, 350);
+
+  const persistPositions = useCallback(
+    (moves: { id: string; positionX: number; positionY: number }[]) => {
+      for (const move of moves) pendingMovesRef.current.set(move.id, move);
+      flushMovesDebounced();
+    },
+    [flushMovesDebounced],
   );
+
+  // And on the way out: the debounce cancels its timer on unmount, which would
+  // throw away a drop made in the last 350ms before leaving the board.
+  useEffect(() => flushMoves, [flushMoves]);
 
   const registerHandle = useCallback((id: string, handle: NoteHandle | null) => {
     if (handle) handlesRef.current.set(id, handle);
     else handlesRef.current.delete(id);
   }, []);
 
-  /**
-   * Repaints the whole scene. Cheap: strokes are plain point arrays.
-   *
-   * Erasing is `destination-out` rather than a stroke in the background colour:
-   * the canvas is transparent and sits over the board's own grid, its notes and
-   * whatever the active skin paints behind them, so "the background colour" is
-   * not a colour this component knows — and painting one would have punched an
-   * opaque hole in the wall instead of rubbing ink off it.
-   *
-   * Because the whole scene is repainted in order every frame, an eraser stroke
-   * only ever removes the ink laid down before it, which is what makes it
-   * behave like a rubber rather than like a hole in the canvas.
-   */
-  const redraw = useCallback(() => {
-    const canvas = canvasRef.current;
-    const context = canvas?.getContext('2d');
-    if (!canvas || !context) return;
+  // Hydrate from the API. The layers keep the committed list themselves, so a
+  // remount of the canvases (below) repaints from it without refetching.
+  useEffect(() => {
+    layers.setCommitted(scene.filter(isStroke).map((element) => adoptStroke(element.data)));
+  }, [layers, scene]);
 
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    context.lineCap = 'round';
-    context.lineJoin = 'round';
-
-    const paint = (stroke: WhiteboardStrokeData) => {
-      if (stroke.points.length < 2) return;
-
-      context.globalCompositeOperation = stroke.erase ? 'destination-out' : 'source-over';
-      context.beginPath();
-      // Any opaque colour erases; the alpha is what does the work.
-      context.strokeStyle = stroke.erase ? '#000' : stroke.color;
-      context.lineWidth = stroke.width;
-      context.moveTo(stroke.points[0][0] * canvas.width, stroke.points[0][1] * canvas.height);
-
-      for (const [px, py] of stroke.points.slice(1)) {
-        context.lineTo(px * canvas.width, py * canvas.height);
-      }
-      context.stroke();
-    };
-
-    strokesRef.current.forEach(paint);
-    /*
-     * Teammates' strokes in progress, between the committed ink and this
-     * client's own current stroke.
-     *
-     * The order is what makes an eraser behave. Every stroke is painted in
-     * sequence and an eraser is `destination-out`, so it can only remove ink
-     * laid down *before* it — putting a remote ghost after the committed
-     * strokes means a colleague rubbing something out is seen to rub it out,
-     * and putting it before the local one means our own pen still draws on
-     * top of what they are doing rather than under it.
-     */
-    remoteStrokesRef.current.forEach(paint);
-    if (currentRef.current) paint(currentRef.current);
-
-    // Never leave the context in erase mode: the next caller to touch it is
-    // usually the next frame's first stroke.
-    context.globalCompositeOperation = 'source-over';
-  }, []);
-
-  /*
-   * Read through a ref by the presence hook's ink callback, which is created
-   * before `redraw` is and must not depend on it — a callback that changed
-   * identity would re-register every `board:*` listener, dropping frames in
-   * the middle of somebody's stroke.
-   */
-  redrawRef.current = redraw;
-
-  // Hydrate from the API, then keep the canvas sized to its container.
+  // Point the layers at the canvases, then keep them sized to their container.
   //
-  // Both effects depend on `surfaceMount`: going full screen portals the
-  // surface, which mounts a brand-new <canvas>. Without re-running, the
-  // ResizeObserver would still be watching the discarded element and the new
-  // one would never be sized or painted.
+  // Depends on `surfaceMount`: going full screen portals the surface, which
+  // mounts brand-new <canvas> elements. Without re-running, the ResizeObserver
+  // would still be watching the discarded ones and the new pair would never be
+  // sized or painted.
   //
   // It is the stage's own remount signal rather than `isExpanded` so the
   // repaint is tied to the host actually swapping, not to the flag that asks
   // for the swap.
   useEffect(() => {
-    strokesRef.current = scene.filter(isStroke).map((element) => adoptStroke(element.data));
-    redraw();
-  }, [redraw, scene, surfaceMount]);
+    const base = baseCanvasRef.current;
+    if (!base) return;
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const resize = () => {
-      const rect = canvas.getBoundingClientRect();
-      const ratio = window.devicePixelRatio || 1;
-      canvas.width = rect.width * ratio;
-      canvas.height = rect.height * ratio;
-      redraw();
-    };
-
-    resize();
-    const observer = new ResizeObserver(resize);
-    observer.observe(canvas);
+    layers.attach(base, liveCanvasRef.current);
+    const observer = new ResizeObserver(() => layers.resize());
+    observer.observe(base);
     return () => observer.disconnect();
-  }, [redraw, surfaceMount]);
+  }, [layers, surfaceMount]);
 
   // Peer deltas.
+  const settleInk = presence.settleInk;
   useEffect(() => {
     if (!socket) return;
 
-    const handleElement = (element: WhiteboardElement) => {
+    const handleElement = (element: WhiteboardElement & { clientId?: string | null }) => {
+      const { clientId } = element;
       if (element.projectId !== projectId || !isStroke(element)) return;
-      strokesRef.current.push(adoptStroke(element.data));
-      redraw();
+      // Painted onto the committed layer on its own — never a full repaint.
+      layers.commit(adoptStroke(element.data));
+      // And the ghost it replaces goes in the same breath, so the stroke is
+      // never on neither layer. See `settleInk`.
+      settleInk(clientId);
     };
 
     const handleErased = (payload: { elementIds: string[] | null }) => {
       // A full clear wipes locally; targeted erases are re-fetched on next load.
-      if (!payload.elementIds) {
-        strokesRef.current = [];
-        redraw();
-      }
+      if (!payload.elementIds) layers.setCommitted([]);
     };
 
     socket.on('whiteboard:element', handleElement);
@@ -475,21 +569,41 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
       socket.off('whiteboard:element', handleElement);
       socket.off('whiteboard:erased', handleErased);
     };
-  }, [projectId, redraw, socket]);
+  }, [layers, projectId, settleInk, socket]);
 
   /** Client coordinates to the normalised 0..1 space a stroke is stored in. */
   const pointFromClient = (
-    canvas: HTMLCanvasElement,
+    rect: DOMRect,
     point: { clientX: number; clientY: number },
-  ): [number, number] => {
-    const rect = canvas.getBoundingClientRect();
+  ): InkPoint => {
     if (rect.width === 0 || rect.height === 0) return [0, 0];
     // Normalised 0..1 so the drawing survives different viewport sizes.
     return [(point.clientX - rect.left) / rect.width, (point.clientY - rect.top) / rect.height];
   };
 
-  const pointFromEvent = (event: React.PointerEvent<HTMLCanvasElement>): [number, number] =>
-    pointFromClient(event.currentTarget, event);
+  /**
+   * Saves a finished stroke, and tries again if it arrived too fast.
+   *
+   * `clientId` is the stroke's live id: the API echoes it on the broadcast
+   * element, which is how every other board knows which ghost the saved
+   * stroke replaces. See `DRAW_RETRIES` for the retry.
+   */
+  const saveStroke = useCallback(
+    (stroke: WhiteboardStrokeData, clientId: string | undefined) => {
+      const attempt = (tries: number) => {
+        socket?.emit(
+          'whiteboard:draw',
+          { projectId, type: 'STROKE', data: stroke, ...(clientId ? { clientId } : {}) },
+          (response?: { rateLimited?: boolean }) => {
+            if (!response?.rateLimited || tries >= DRAW_RETRIES) return;
+            window.setTimeout(() => attempt(tries + 1), DRAW_RETRY_MS * (tries + 1));
+          },
+        );
+      };
+      attempt(0);
+    },
+    [projectId, socket],
+  );
 
   const handlePointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
     if (!isInking) return;
@@ -506,14 +620,16 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
     }
 
     isDrawingRef.current = true;
+    tailRef.current = null;
 
     const isErasing = tool === 'eraser';
     currentRef.current = {
-      points: [pointFromEvent(event)],
+      points: [pointFromClient(event.currentTarget.getBoundingClientRect(), event)],
       color: isErasing ? '#000' : color,
       width: isErasing ? eraserWidth : width,
       ...(isErasing ? { erase: true } : {}),
     };
+    layers.setLocal(currentRef.current);
 
     /*
      * `crypto.randomUUID` where it exists, and a timestamp-plus-random
@@ -536,7 +652,8 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
   };
 
   const handlePointerMove = (event: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!isDrawingRef.current || !currentRef.current) return;
+    const stroke = currentRef.current;
+    if (!isDrawingRef.current || !stroke) return;
 
     /*
      * Every sample the browser took, not only the one it delivered.
@@ -547,39 +664,51 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
      * segments rather than a curve. How much is thrown away is per-engine,
      * which is why a fast flick looked smooth in one browser and angular in
      * another.
+     *
+     * The box is measured once per event rather than once per sample — it
+     * used to be one layout query for each of the dozen samples a fast mouse
+     * packs into a frame.
      */
-    const canvas = event.currentTarget;
+    const rect = event.currentTarget.getBoundingClientRect();
     const samples =
       typeof event.nativeEvent.getCoalescedEvents === 'function'
         ? event.nativeEvent.getCoalescedEvents()
         : [];
 
-    if (samples.length > 0) {
-      for (const sample of samples) {
-        currentRef.current.points.push(pointFromClient(canvas, sample));
+    /*
+     * Decimated as they arrive: a sample within `MIN_SAMPLE_GAP_PX` of the
+     * last kept point adds nothing the smoothing cannot draw without it, so it
+     * is set aside as the tail rather than painted and broadcast. A thousand-
+     * hertz mouse drawing slowly produces mostly those.
+     */
+    let hasNew = false;
+    for (const sample of samples.length > 0 ? samples : [event]) {
+      const point = pointFromClient(rect, sample);
+      if (isFarEnough(stroke.points[stroke.points.length - 1], point, rect)) {
+        stroke.points.push(point);
+        tailRef.current = null;
+        hasNew = true;
+      } else {
+        tailRef.current = point;
       }
-    } else {
-      currentRef.current.points.push(pointFromEvent(event));
     }
 
-    requestAnimationFrame(redraw);
+    if (!hasNew) return;
+    layers.touchLocal();
 
     /*
-     * Everything drawn since the last frame, to everybody else.
+     * Everything kept since the last event, to everybody else.
      *
-     * Unthrottled here on purpose: `handlePointerMove` already fires at most
-     * once per delivered pointer event, and the payload is *only the new
-     * points*, so a burst of coalesced samples is one frame carrying several
-     * rather than several frames. The server meters it silently with the same
-     * bucket it meters cursors with, and a dropped frame costs nothing that is
-     * not resent — the stroke's committed version arrives on pointer-up.
+     * Handed to the presence hook, which batches it into one frame per
+     * `LIVE_FRAME_MS` — only the *new* points, rounded for the wire. A dropped
+     * frame would be a gap in the ghost until the committed stroke replaces it
+     * on pointer-up, which is why the batching exists: the old per-event
+     * emits outran the server's allowance and the refusals were those gaps.
      */
     const live = liveStrokeRef.current;
-    const stroke = currentRef.current;
-    if (!live || !stroke) return;
+    if (!live) return;
 
-    const fresh = stroke.points.slice(live.sent);
-    if (fresh.length === 0) return;
+    const fresh = stroke.points.slice(live.sent).map(quantizePoint);
     live.sent = stroke.points.length;
 
     presence.publishInk({
@@ -597,8 +726,15 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
 
     const stroke = currentRef.current;
     const live = liveStrokeRef.current;
+    const tail = tailRef.current;
     currentRef.current = null;
     liveStrokeRef.current = null;
+    tailRef.current = null;
+    layers.setLocal(null);
+
+    // The stroke ends where the pointer did, even if that last stretch was
+    // too short to keep on the way.
+    if (stroke && tail) stroke.points.push(tail);
 
     /*
      * Told even when the stroke is discarded, and that is the point.
@@ -611,7 +747,7 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
     if (live) {
       presence.publishInk({
         strokeId: live.id,
-        points: [],
+        points: tail ? [quantizePoint(tail)] : [],
         color: stroke?.color ?? '#000',
         width: stroke?.width ?? 1,
         erase: stroke?.erase,
@@ -621,18 +757,31 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
 
     if (!stroke || stroke.points.length < 2) return;
 
-    strokesRef.current.push(stroke);
-    redraw();
+    /*
+     * Simplified once, at the end, then rounded for storage.
+     *
+     * The live stroke is only decimated by distance, which is cheap enough to
+     * run per sample; Ramer–Douglas–Peucker needs the whole line and removes
+     * far more — every point on a straight run — so it runs here, on the
+     * version that is saved, sent and painted for good. Within a fraction of a
+     * pixel of what was drawn: see `SIMPLIFY_TOLERANCE_PX`.
+     */
+    const rect = liveCanvasRef.current?.getBoundingClientRect();
+    const finished: WhiteboardStrokeData = {
+      ...stroke,
+      points: (rect ? simplifyPoints(stroke.points, rect) : stroke.points).map(quantizePoint),
+    };
+
+    layers.commit(finished);
 
     // One write per stroke — never per pointer sample.
-    socket?.emit('whiteboard:draw', { projectId, type: 'STROKE', data: stroke });
+    saveStroke(finished, live?.id);
   };
 
   const handleClear = async () => {
     try {
       await whiteboardApi.clear(projectId);
-      strokesRef.current = [];
-      redraw();
+      layers.setCommitted([]);
       socket?.emit('whiteboard:erase', { projectId });
       toast.success(t('board.inkCleared'));
     } catch {
@@ -681,16 +830,31 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
     });
   };
 
+  /*
+   * The tool and the connect source, readable from `handleSelect` without
+   * being dependencies of it — the same reason `notesRef` exists. This handler
+   * used to depend on both and on the whole `history` object, which is a new
+   * object every render; so it was a new function on every render of the
+   * board, every Post-it's `onSelect` changed with it, and the memo on
+   * `PostIt` never held. Every note on the wall re-rendered whenever anything
+   * did — a lock arriving, a teammate's edit to some other note, and every
+   * frame of a lasso or of a connector being aimed.
+   */
+  const selectStateRef = useRef({ tool, connectFrom });
+  selectStateRef.current = { tool, connectFrom };
+
   const handleSelect = useCallback(
     (id: string, additive: boolean) => {
-      if (tool === 'connect') {
-        if (!connectFrom) {
+      const { tool: activeTool, connectFrom: source } = selectStateRef.current;
+
+      if (activeTool === 'connect') {
+        if (!source) {
           setConnectFrom(id);
           return;
         }
-        if (connectFrom !== id) {
+        if (source !== id) {
           const payload = {
-            sourceId: connectFrom,
+            sourceId: source,
             targetId: id,
             style: 'ARROW' as const,
             color: CONNECTOR_COLORS[0],
@@ -698,7 +862,7 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
 
           createLink.mutate(payload, {
             onSuccess: (link) =>
-              history.record({
+              recordHistory({
                 label: t('board.history.connect'),
                 undo: () => deleteLink.mutate(link.id),
                 redo: () => createLink.mutate(payload),
@@ -714,15 +878,15 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
         return current.includes(id) ? current.filter((entry) => entry !== id) : [...current, id];
       });
     },
-    [connectFrom, createLink.mutate, deleteLink.mutate, history, t, tool],
+    [createLink.mutate, deleteLink.mutate, recordHistory, t],
   );
 
   const commitMarquee = useCallback(
     (rect: { left: number; top: number; width: number; height: number }, additive: boolean) => {
-      const hits = notesInsideRect(notes, rect);
+      const hits = notesInsideRect(notesRef.current, rect);
       setSelection((current) => (additive ? [...new Set([...current, ...hits])] : hits));
     },
-    [notes],
+    [],
   );
 
   /*
@@ -766,8 +930,17 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
     return () => window.removeEventListener('keydown', handleKey);
   }, []);
 
+  /*
+   * The gesture handlers below read `notesRef` rather than depending on
+   * `notes`. Depending on it recreated them — and so re-rendered every Post-it
+   * on the wall, including the one under the pointer — every time any note
+   * changed anywhere, which on a shared board is every incoming `note:*` event
+   * from every teammate. The note being dragged is the last one that should
+   * be reconciled because somebody else edited a different sheet.
+   */
   const handleGroupDrag = useCallback(
     (id: string, deltaX: number, deltaY: number) => {
+      const notes = notesRef.current;
       const dragged = notes.find((note) => note.id === id);
       if (!dragged?.groupId || (deltaX === 0 && deltaY === 0)) return;
 
@@ -784,13 +957,15 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
         bus.publish(note.id, nextX, nextY);
       }
     },
-    [bus, notes],
+    [bus],
   );
 
   const handleDragEnd = useCallback(
     (id: string, position: { positionX: number; positionY: number }) => {
       bus.release(id);
 
+      // Read before `patchPositions` below: this is still the pre-drag render.
+      const notes = notesRef.current;
       const note = notes.find((entry) => entry.id === id);
       const moves = [{ id, ...position }];
 
@@ -812,7 +987,7 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
       if (saveable.length > 0) persistPositions(saveable);
 
       /*
-       * Where the sheets came from, read off this render's `notes` — which
+       * Where the sheets came from, read off the last render's `notes` — which
        * still holds the pre-drag coordinates even though the cache no longer
        * does. A drag that ended where it began records nothing.
        */
@@ -836,13 +1011,13 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
         persistPositions(positions);
       };
 
-      history.record({
+      recordHistory({
         label: t('board.history.move'),
         undo: () => apply(before),
         redo: () => apply(saveable),
       });
     },
-    [bus, history, notes, patchPositions, persistPositions, t],
+    [bus, patchPositions, persistPositions, recordHistory, t],
   );
 
   /*
@@ -905,6 +1080,7 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
     (id: string) => {
       if (isPendingNoteId(id)) return;
 
+      const notes = notesRef.current;
       const note = notes.find((entry) => entry.id === id);
       if (!note) return;
 
@@ -912,7 +1088,7 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
       if (note.zIndex >= highest) return;
       updateNote.mutate({ noteId: id, payload: { zIndex: highest + 1 } });
     },
-    [notes, updateNote.mutate],
+    [updateNote.mutate],
   );
 
   const fileRef = useRef<HTMLInputElement>(null);
@@ -953,6 +1129,14 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
       isExpanded={isExpanded}
       onCollapse={() => setIsExpanded(false)}
       title={t('board.projectWhiteboard')}
+      /*
+       * The skin's decorative cursor stays off the whole board. Here the
+       * pointer is a tool — crosshair for the pen, cell for the rubber, a grab
+       * hand on a sheet, a resize arrow on its corner — and the skin was
+       * repainting it on every press and every hover, so it changed shape
+       * constantly while somebody drew. See `[data-native-cursor]`.
+       */
+      nativeCursor
     >
       <div className="ui-textured flex flex-wrap items-center gap-2 rounded-2xl border border-edge bg-surface-raised p-2 sm:gap-3 sm:p-3">
         <div className="ui-segment inline-flex items-center gap-1 rounded-xl border border-edge bg-surface-sunken p-1">
@@ -1170,15 +1354,33 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
           tool === 'select' && !isTouch && 'cursor-crosshair',
         )}
       >
+        {/*
+          The ink, in two layers — see `createInkLayers`.
+
+          Committed ink below, never touching the pointer. Strokes in progress
+          above it, on the canvas that takes the pointer while a pen is out;
+          otherwise the Post-its and the lasso underneath would never see an
+          event. Both share one position and one z-order, so the pair sits
+          exactly where the single canvas used to.
+        */}
         <canvas
-          ref={canvasRef}
+          ref={baseCanvasRef}
+          aria-hidden
+          className={cn(
+            'pointer-events-none absolute inset-0 h-full w-full',
+            isInking && 'z-20',
+          )}
+        />
+        <canvas
+          ref={liveCanvasRef}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerLeave={handlePointerUp}
+          // A cancelled pointer — the OS claiming a pen for a gesture, a palm
+          // rejected — ends the stroke too, rather than leaving it drawing.
+          onPointerCancel={handlePointerUp}
           // touch-none stops the browser from scrolling while drawing on mobile.
-          // The canvas only takes the pointer while a pen is out; otherwise the
-          // Post-its and the lasso underneath it would never see an event.
           className={cn(
             'absolute inset-0 h-full w-full',
             isInking ? 'z-20 touch-none' : 'pointer-events-none',
@@ -1237,8 +1439,8 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
                * how this client takes and gives back its own. See
                * `useBoardPresence`.
                */
-              heldBy={heldBy(note.id)}
-              onHold={presence.acquire}
+              heldBy={holds[note.id] ?? null}
+              onHold={handleHold}
               onRelease={presence.release}
               onDragBroadcast={presence.publishDrag}
               onSelect={handleSelect}

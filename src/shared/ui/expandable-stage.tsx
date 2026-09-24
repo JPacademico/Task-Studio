@@ -67,6 +67,15 @@ interface ExpandableStageProps {
    * to re-run its setup against the new element.
    */
   onSurfaceRemount?: () => void;
+  /**
+   * Keep the system pointer over this stage, whatever the skin draws.
+   *
+   * For a surface whose pointer is a tool — the whiteboard's crosshair, rubber
+   * and grab hands — where a skin's decorative cursor would override the one
+   * thing the pointer is there to say. Set on both hosts, so full screen keeps
+   * it too. See `[data-native-cursor]` in `index.css`.
+   */
+  nativeCursor?: boolean;
 }
 
 /**
@@ -94,6 +103,7 @@ export const ExpandableStage = ({
   children,
   className,
   onSurfaceRemount,
+  nativeCursor = false,
 }: ExpandableStageProps) => {
   const t = useT();
   const remountRef = useRef(onSurfaceRemount);
@@ -129,7 +139,15 @@ export const ExpandableStage = ({
     return () => window.removeEventListener('keydown', handleKey, true);
   }, [isExpanded, onCollapse]);
 
-  if (!isExpanded) return <div className={cn('space-y-3', className)}>{children}</div>;
+  const cursorAttribute = nativeCursor ? { 'data-native-cursor': '' } : {};
+
+  if (!isExpanded) {
+    return (
+      <div className={cn('space-y-3', className)} {...cursorAttribute}>
+        {children}
+      </div>
+    );
+  }
 
   return createPortal(
     <section
@@ -138,6 +156,7 @@ export const ExpandableStage = ({
         // Edge to edge means under the notch and the home indicator too.
         'safe-t safe-b safe-l safe-r',
       )}
+      {...cursorAttribute}
     >
       {/* No collapse control of its own: the surface's own toolbar carries the
           shrink toggle, and two buttons for one gesture is one too many. */}

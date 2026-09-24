@@ -10815,15 +10815,23 @@ html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='loading'] 
 .board-cursor {
   position: absolute;
   z-index: 1;
-  /* The arrow's point sits on the reported position, not its box's corner. */
-  transform: translate(-2px, -2px);
+  left: 0;
+  top: 0;
+  /* Positioned by `PresenceCursors`, which writes a `translate3d` per frame. */
   will-change: transform, opacity;
   /*
    * A pointer that has gone stale is removed, not faded - the node is torn
-   * out by the sweeper. This transition is for the *arrival*, so a colleague
-   * appearing does not pop into existence at full strength.
+   * out by the sweeper. The opacity transition is for the *arrival*, so a
+   * colleague appearing does not pop into existence at full strength.
+   *
+   * The transform transition is the glide between two network frames. Its
+   * length is the send interval (`LIVE_FRAME_MS`, set on the layer as
+   * `--board-cursor-glide`), and linear because each glide ends where the next
+   * begins: an ease would slow the pointer down thirty times a second.
    */
-  transition: opacity 140ms ease-out;
+  transition:
+    opacity 140ms ease-out,
+    transform var(--board-cursor-glide, 33ms) linear;
   opacity: 0;
   display: flex;
   align-items: flex-start;
@@ -11596,27 +11604,49 @@ html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='loading'] 
 
    Text fields, disabled controls and drag handles are left alone: an I-beam,
    `not-allowed` and `grab` each say something no paper plane can say.
+
+   ## Surfaces that keep the system pointer: `[data-native-cursor]`
+
+   Every rule in this skin — and in the three other skins that draw a cursor —
+   excludes anything inside a `[data-native-cursor]` element, and that element
+   resets the inherited pointer to `auto` below. The project whiteboard is the
+   one surface that sets it, and for a reason no drawing can fix: its pointer
+   is a *tool*. The canvas says crosshair for the pen and cell for the rubber,
+   a Post-it says grab, its corner says resize, and the skin was overriding
+   those — most visibly with the bare `:active` rule, which swapped the pen's
+   crosshair for a paper plane the moment the button went down and back when
+   it came up, on every stroke. Crossing a board full of notes and controls
+   flipped between four drawings a second.
+
+   A selector exclusion rather than a class toggled from script, so there is
+   no state to leave stuck when the pointer leaves an element that unmounted
+   under it. It is also one attribute check per candidate element, only on
+   the selectors that already matched.
    --------------------------------------------------------------------------- */
+
+[data-native-cursor] {
+  cursor: auto;
+}
 
 html:not([data-cursor='off'])[data-skin='paper'] {
   cursor: url("data:image/png;base64,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") 3 3, auto;
 }
 
-html:not([data-cursor='off'])[data-skin='paper'] a[href],
-html:not([data-cursor='off'])[data-skin='paper'] button:not(:disabled),
-html:not([data-cursor='off'])[data-skin='paper'] summary,
-html:not([data-cursor='off'])[data-skin='paper'] select:not(:disabled),
-html:not([data-cursor='off'])[data-skin='paper'] label[for],
-html:not([data-cursor='off'])[data-skin='paper'] [role='button']:not([aria-disabled='true']),
-html:not([data-cursor='off'])[data-skin='paper'] [role='tab'],
-html:not([data-cursor='off'])[data-skin='paper'] [role='menuitem'],
-html:not([data-cursor='off'])[data-skin='paper'] [role='option'],
-html:not([data-cursor='off'])[data-skin='paper'] [role='switch'],
-html:not([data-cursor='off'])[data-skin='paper'] input[type='checkbox']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='paper'] input[type='radio']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='paper'] input[type='submit']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='paper'] input[type='button']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='paper'] .cursor-pointer {
+html:not([data-cursor='off'])[data-skin='paper'] a[href]:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] button:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] summary:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] select:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] label[for]:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] [role='button']:not([aria-disabled='true']):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] [role='tab']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] [role='menuitem']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] [role='option']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] [role='switch']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] input[type='checkbox']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] input[type='radio']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] input[type='submit']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] input[type='button']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] .cursor-pointer:not([data-native-cursor], [data-native-cursor] *) {
   cursor: url("data:image/png;base64,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") 13 3, pointer;
 }
 
@@ -11626,40 +11656,40 @@ html:not([data-cursor='off'])[data-skin='paper'] .cursor-pointer {
    so that a held button keeps the upright plane rather than reverting to the
    diagonal one; without it the specificity of the bare `:active` rule below
    would win on a link and the plane would flip mid-press. */
-html:not([data-cursor='off'])[data-skin='paper'] :active {
+html:not([data-cursor='off'])[data-skin='paper'] :active:not([data-native-cursor], [data-native-cursor] *) {
   cursor: url("data:image/png;base64,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") 3 3, auto;
 }
 
-html:not([data-cursor='off'])[data-skin='paper'] a[href]:active,
-html:not([data-cursor='off'])[data-skin='paper'] button:not(:disabled):active,
-html:not([data-cursor='off'])[data-skin='paper'] summary:active,
-html:not([data-cursor='off'])[data-skin='paper'] select:not(:disabled):active,
-html:not([data-cursor='off'])[data-skin='paper'] label[for]:active,
-html:not([data-cursor='off'])[data-skin='paper'] [role='button']:not([aria-disabled='true']):active,
-html:not([data-cursor='off'])[data-skin='paper'] [role='tab']:active,
-html:not([data-cursor='off'])[data-skin='paper'] [role='menuitem']:active,
-html:not([data-cursor='off'])[data-skin='paper'] [role='option']:active,
-html:not([data-cursor='off'])[data-skin='paper'] [role='switch']:active,
-html:not([data-cursor='off'])[data-skin='paper'] input[type='checkbox']:not(:disabled):active,
-html:not([data-cursor='off'])[data-skin='paper'] input[type='radio']:not(:disabled):active,
-html:not([data-cursor='off'])[data-skin='paper'] input[type='submit']:not(:disabled):active,
-html:not([data-cursor='off'])[data-skin='paper'] input[type='button']:not(:disabled):active,
-html:not([data-cursor='off'])[data-skin='paper'] .cursor-pointer:active {
+html:not([data-cursor='off'])[data-skin='paper'] a[href]:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] button:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] summary:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] select:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] label[for]:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] [role='button']:not([aria-disabled='true']):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] [role='tab']:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] [role='menuitem']:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] [role='option']:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] [role='switch']:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] input[type='checkbox']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] input[type='radio']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] input[type='submit']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] input[type='button']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] .cursor-pointer:active:not([data-native-cursor], [data-native-cursor] *) {
   cursor: url("data:image/png;base64,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") 13 3, pointer;
 }
 
-html:not([data-cursor='off'])[data-skin='paper'] input:not([type='checkbox']):not([type='radio']):not([type='submit']):not([type='button']),
-html:not([data-cursor='off'])[data-skin='paper'] textarea,
-html:not([data-cursor='off'])[data-skin='paper'] [contenteditable='true'] {
+html:not([data-cursor='off'])[data-skin='paper'] input:not([type='checkbox']):not([type='radio']):not([type='submit']):not([type='button']):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] textarea:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] [contenteditable='true']:not([data-native-cursor], [data-native-cursor] *) {
   cursor: text;
 }
 
-html:not([data-cursor='off'])[data-skin='paper'] .cursor-grab {
+html:not([data-cursor='off'])[data-skin='paper'] .cursor-grab:not([data-native-cursor], [data-native-cursor] *) {
   cursor: grab;
 }
 
-html:not([data-cursor='off'])[data-skin='paper'] .cursor-grabbing,
-html:not([data-cursor='off'])[data-skin='paper'] .cursor-grab:active {
+html:not([data-cursor='off'])[data-skin='paper'] .cursor-grabbing:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='paper'] .cursor-grab:active:not([data-native-cursor], [data-native-cursor] *) {
   cursor: grabbing;
 }
 
@@ -11816,50 +11846,50 @@ html:not([data-cursor='off'])[data-skin='halloween'].dark {
   cursor: url("data:image/png;base64,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") 6 4, auto;
 }
 
-html:not([data-cursor='off'])[data-skin='halloween'] a[href],
-html:not([data-cursor='off'])[data-skin='halloween'] button:not(:disabled),
-html:not([data-cursor='off'])[data-skin='halloween'] summary,
-html:not([data-cursor='off'])[data-skin='halloween'] select:not(:disabled),
-html:not([data-cursor='off'])[data-skin='halloween'] label[for],
-html:not([data-cursor='off'])[data-skin='halloween'] [role='button']:not([aria-disabled='true']),
-html:not([data-cursor='off'])[data-skin='halloween'] [role='tab'],
-html:not([data-cursor='off'])[data-skin='halloween'] [role='menuitem'],
-html:not([data-cursor='off'])[data-skin='halloween'] [role='option'],
-html:not([data-cursor='off'])[data-skin='halloween'] [role='switch'],
-html:not([data-cursor='off'])[data-skin='halloween'] input[type='checkbox']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='halloween'] input[type='radio']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='halloween'] input[type='submit']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='halloween'] input[type='button']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='halloween'] .cursor-pointer {
+html:not([data-cursor='off'])[data-skin='halloween'] a[href]:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] button:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] summary:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] select:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] label[for]:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] [role='button']:not([aria-disabled='true']):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] [role='tab']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] [role='menuitem']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] [role='option']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] [role='switch']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] input[type='checkbox']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] input[type='radio']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] input[type='submit']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] input[type='button']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] .cursor-pointer:not([data-native-cursor], [data-native-cursor] *) {
   cursor: url("data:image/png;base64,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") 6 4, pointer;
 }
 
-html:not([data-cursor='off'])[data-skin='halloween'].dark a[href],
-html:not([data-cursor='off'])[data-skin='halloween'].dark button:not(:disabled),
-html:not([data-cursor='off'])[data-skin='halloween'].dark summary,
-html:not([data-cursor='off'])[data-skin='halloween'].dark select:not(:disabled),
-html:not([data-cursor='off'])[data-skin='halloween'].dark label[for],
-html:not([data-cursor='off'])[data-skin='halloween'].dark [role='button']:not([aria-disabled='true']),
-html:not([data-cursor='off'])[data-skin='halloween'].dark [role='tab'],
-html:not([data-cursor='off'])[data-skin='halloween'].dark [role='menuitem'],
-html:not([data-cursor='off'])[data-skin='halloween'].dark [role='option'],
-html:not([data-cursor='off'])[data-skin='halloween'].dark [role='switch'],
-html:not([data-cursor='off'])[data-skin='halloween'].dark input[type='checkbox']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='halloween'].dark input[type='radio']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='halloween'].dark input[type='submit']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='halloween'].dark input[type='button']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='halloween'].dark .cursor-pointer {
+html:not([data-cursor='off'])[data-skin='halloween'].dark a[href]:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'].dark button:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'].dark summary:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'].dark select:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'].dark label[for]:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'].dark [role='button']:not([aria-disabled='true']):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'].dark [role='tab']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'].dark [role='menuitem']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'].dark [role='option']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'].dark [role='switch']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'].dark input[type='checkbox']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'].dark input[type='radio']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'].dark input[type='submit']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'].dark input[type='button']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'].dark .cursor-pointer:not([data-native-cursor], [data-native-cursor] *) {
   cursor: url("data:image/png;base64,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") 6 4, pointer;
 }
 
 /* The stab. `:active` rather than a class, so it covers everything a pointer
    can be held down on — including the page itself, where half the clicks in any
    application land. */
-html:not([data-cursor='off'])[data-skin='halloween'] :active {
+html:not([data-cursor='off'])[data-skin='halloween'] :active:not([data-native-cursor], [data-native-cursor] *) {
   cursor: url("data:image/png;base64,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") 6 4, auto;
 }
 
-html:not([data-cursor='off'])[data-skin='halloween'].dark :active {
+html:not([data-cursor='off'])[data-skin='halloween'].dark :active:not([data-native-cursor], [data-native-cursor] *) {
   cursor: url("data:image/png;base64,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") 6 4, auto;
 }
 
@@ -11868,55 +11898,55 @@ html:not([data-cursor='off'])[data-skin='halloween'].dark :active {
    one surface where a stab matters most — a link somebody is clicking — the
    hover rule would otherwise outrank the stab and the blade would never lunge.
    Repeating the list with `:active` on each selector puts it back on top. */
-html:not([data-cursor='off'])[data-skin='halloween'] a[href]:active,
-html:not([data-cursor='off'])[data-skin='halloween'] button:not(:disabled):active,
-html:not([data-cursor='off'])[data-skin='halloween'] summary:active,
-html:not([data-cursor='off'])[data-skin='halloween'] select:not(:disabled):active,
-html:not([data-cursor='off'])[data-skin='halloween'] label[for]:active,
-html:not([data-cursor='off'])[data-skin='halloween'] [role='button']:not([aria-disabled='true']):active,
-html:not([data-cursor='off'])[data-skin='halloween'] [role='tab']:active,
-html:not([data-cursor='off'])[data-skin='halloween'] [role='menuitem']:active,
-html:not([data-cursor='off'])[data-skin='halloween'] [role='option']:active,
-html:not([data-cursor='off'])[data-skin='halloween'] [role='switch']:active,
-html:not([data-cursor='off'])[data-skin='halloween'] input[type='checkbox']:not(:disabled):active,
-html:not([data-cursor='off'])[data-skin='halloween'] input[type='radio']:not(:disabled):active,
-html:not([data-cursor='off'])[data-skin='halloween'] input[type='submit']:not(:disabled):active,
-html:not([data-cursor='off'])[data-skin='halloween'] input[type='button']:not(:disabled):active,
-html:not([data-cursor='off'])[data-skin='halloween'] .cursor-pointer:active {
+html:not([data-cursor='off'])[data-skin='halloween'] a[href]:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] button:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] summary:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] select:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] label[for]:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] [role='button']:not([aria-disabled='true']):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] [role='tab']:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] [role='menuitem']:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] [role='option']:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] [role='switch']:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] input[type='checkbox']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] input[type='radio']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] input[type='submit']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] input[type='button']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] .cursor-pointer:active:not([data-native-cursor], [data-native-cursor] *) {
   cursor: url("data:image/png;base64,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") 6 4, pointer;
 }
 
-html:not([data-cursor='off'])[data-skin='halloween'].dark a[href]:active,
-html:not([data-cursor='off'])[data-skin='halloween'].dark button:not(:disabled):active,
-html:not([data-cursor='off'])[data-skin='halloween'].dark summary:active,
-html:not([data-cursor='off'])[data-skin='halloween'].dark select:not(:disabled):active,
-html:not([data-cursor='off'])[data-skin='halloween'].dark label[for]:active,
-html:not([data-cursor='off'])[data-skin='halloween'].dark [role='button']:not([aria-disabled='true']):active,
-html:not([data-cursor='off'])[data-skin='halloween'].dark [role='tab']:active,
-html:not([data-cursor='off'])[data-skin='halloween'].dark [role='menuitem']:active,
-html:not([data-cursor='off'])[data-skin='halloween'].dark [role='option']:active,
-html:not([data-cursor='off'])[data-skin='halloween'].dark [role='switch']:active,
-html:not([data-cursor='off'])[data-skin='halloween'].dark input[type='checkbox']:not(:disabled):active,
-html:not([data-cursor='off'])[data-skin='halloween'].dark input[type='radio']:not(:disabled):active,
-html:not([data-cursor='off'])[data-skin='halloween'].dark input[type='submit']:not(:disabled):active,
-html:not([data-cursor='off'])[data-skin='halloween'].dark input[type='button']:not(:disabled):active,
-html:not([data-cursor='off'])[data-skin='halloween'].dark .cursor-pointer:active {
+html:not([data-cursor='off'])[data-skin='halloween'].dark a[href]:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'].dark button:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'].dark summary:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'].dark select:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'].dark label[for]:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'].dark [role='button']:not([aria-disabled='true']):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'].dark [role='tab']:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'].dark [role='menuitem']:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'].dark [role='option']:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'].dark [role='switch']:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'].dark input[type='checkbox']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'].dark input[type='radio']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'].dark input[type='submit']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'].dark input[type='button']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'].dark .cursor-pointer:active:not([data-native-cursor], [data-native-cursor] *) {
   cursor: url("data:image/png;base64,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") 6 4, pointer;
 }
 
 /* The three the knife must not swallow. */
-html:not([data-cursor='off'])[data-skin='halloween'] input:not([type='checkbox']):not([type='radio']):not([type='submit']):not([type='button']),
-html:not([data-cursor='off'])[data-skin='halloween'] textarea,
-html:not([data-cursor='off'])[data-skin='halloween'] [contenteditable='true'] {
+html:not([data-cursor='off'])[data-skin='halloween'] input:not([type='checkbox']):not([type='radio']):not([type='submit']):not([type='button']):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] textarea:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] [contenteditable='true']:not([data-native-cursor], [data-native-cursor] *) {
   cursor: text;
 }
 
-html:not([data-cursor='off'])[data-skin='halloween'] .cursor-grab {
+html:not([data-cursor='off'])[data-skin='halloween'] .cursor-grab:not([data-native-cursor], [data-native-cursor] *) {
   cursor: grab;
 }
 
-html:not([data-cursor='off'])[data-skin='halloween'] .cursor-grabbing,
-html:not([data-cursor='off'])[data-skin='halloween'] .cursor-grab:active {
+html:not([data-cursor='off'])[data-skin='halloween'] .cursor-grabbing:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='halloween'] .cursor-grab:active:not([data-native-cursor], [data-native-cursor] *) {
   cursor: grabbing;
 }
 
@@ -12647,50 +12677,50 @@ html:not([data-cursor='off'])[data-skin='dragon'].dark {
   cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAFjElEQVR42u1ZbWxTZRg9z3vvbbtutOsWyhwS8SsCi0OECUETEqIONQ5lsoQYv1FRfmBixIiggPGHiX/8iPrDBKPG6PhQgYCK3/4RAeNH0CFGGKPb2Mbasq61vfe+xx+9RSQkgHRbl/Akzb1pm/Y57znv+zznucD5GEVB0hjNyZvedT7Ja717NdJ5mWfwHSGpRMQhede77298W+nAvMJnpQ6gkLxLcsX+g7Hn+5JpDPa1ZUpFGep0mveSf6G7L/l8f3LQ7uiIcdk990jJAyBperJZGTsSX06I/fvv+5TP75OuTKaipAF4K++QvOlAR/dzhDg9Pb3mkd4+BAIBxGL9kVLZA+oUyQsATbL64KGutyxfgNlsRh0bSEk68zf9/gB6+o9OKGUGlIgQwFPhqupoKpVyDWWoRPIYXNeBYVro6k1MKhUA5smr723asX+1H37QsAIktUEA2WwOJIUkEv19Uz35uKXGQKHS3jImVBnK5XJaRAQACIKkchwbg+n05Mz27Rd5TKlSPIXmmpaPJFh4w2dZ+bqgtRuKVPmOTJ49u1AnSgmABoDe3v6o1lpInV99aoRCFVBKQWsXPn8A27/esQgAvVfJABAAcJ2cWzggRQSuq1EVqURZwA/H1cq2c+w41H49yYn5rUODHJkj9ZQAai6o2WcoRRFFAHBdF2MqKjBhfC0c2xFo7YYi1YF1721+XES0iLgiI8PEyQAKSaw/loiLaRrHV1VrjSmTLodlmXBc19CujX37D9zNrpVLufeB7SQvISHk8G7q//yZd4QqEdlpgN9Ho1FDazpKKTiOg+pIJa6qn4K/s1lxbBv+8jGhta/0vrr7h4PzAITyLLAkWgmOH19zX6yj/ei4cVETgA2A2VwO9VMmob5uEtKZLHyG65hjG7i7+9LPReQnrwXRIwrAS0BEpO2KyybOG0z2d9SMi1plZUGxLMvVgDP7mulOw9X1biaTEduxnQ49dSbJJo9BczgByOlaaQBRkss7u/vuzNp2TaAsCKUM+Hw+xDq78ePPvyI+kMZP333Zs27O4Tly39a2Qic7ogAKlvEESURIzgEwM94Xv6R/YKCarhsMR6pSL65aMS3X8VXk1pvH23MfeaJFpHELSRMiWrzaMpIhpzPzby+t27DnnZv59Zs3Op/c2dBOxm4oRV8v+YJF07uqf+/3NH712g3xdxZM42tXXsxXGy5P8eXlT5KcRsLgEPoGKdJvkEDtL3PrN7WX+2f+EevJjjWsPXf/8M0TQO33EMFQSUkVZ+JCU4DO+osbFh85mkxcUFPt74I7e/OM65ZBxEC+KVSlykChhJsCOJxVt3idH49ZZVbdn8lj8Ad9W1d80baAhJMnorhMFBOAeHyEcf30xp3R4Py2owOLdqVTiJZZW57d0baAhFtsEDJEUzwREdW6cOYHe5MDzYl0FpEya/PqHW3NxQYxNLoUAUndsn5nS224fFM46Ec8YzetaZy8QQQGi7gnhqpzpIgIST68flfLhVXlH4aDfvQP5uavbpyyXgSqWCCG2oQo5vWk3miZsaEzkb4tmc4iEvR/tPqz3+4goc9VTkPdu2uPCb2kdfcdF1YGPwoHfYins7etvrE4TAyH+TgO4qHW3Qtrw+Ufh8t8iKezt69trGs9VxDD6WMLcjJeb5mxsSsx2JRM51BdHtj4zKd7W0gCEIicnZyG24gfB/FGS8OmzkTq1mQ6h2gosPHpbXsXepZWzmbSMdwznYKc3CWtu5prKyu2VJb7cbh3sPnl+6dvITmB+cZKSpWBk5kwX2q6elPczN3S1DxRcrb+Y9a9264k6XhTvxGdOZ0p+8Fv37zpwK8fNJFc9Sjz4BQwKh4c5kGQqXpyzSKcpXxKxiidaGGBUfkIF2pUP4M+H+fjfPz/+AfeS/7U0k4AygAAAABJRU5ErkJggg==") 11 4, auto;
 }
 
-html:not([data-cursor='off'])[data-skin='dragon'] a[href],
-html:not([data-cursor='off'])[data-skin='dragon'] button:not(:disabled),
-html:not([data-cursor='off'])[data-skin='dragon'] summary,
-html:not([data-cursor='off'])[data-skin='dragon'] select:not(:disabled),
-html:not([data-cursor='off'])[data-skin='dragon'] label[for],
-html:not([data-cursor='off'])[data-skin='dragon'] [role='button']:not([aria-disabled='true']),
-html:not([data-cursor='off'])[data-skin='dragon'] [role='tab'],
-html:not([data-cursor='off'])[data-skin='dragon'] [role='menuitem'],
-html:not([data-cursor='off'])[data-skin='dragon'] [role='option'],
-html:not([data-cursor='off'])[data-skin='dragon'] [role='switch'],
-html:not([data-cursor='off'])[data-skin='dragon'] input[type='checkbox']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='dragon'] input[type='radio']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='dragon'] input[type='submit']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='dragon'] input[type='button']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='dragon'] .cursor-pointer {
+html:not([data-cursor='off'])[data-skin='dragon'] a[href]:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] button:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] summary:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] select:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] label[for]:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] [role='button']:not([aria-disabled='true']):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] [role='tab']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] [role='menuitem']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] [role='option']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] [role='switch']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] input[type='checkbox']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] input[type='radio']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] input[type='submit']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] input[type='button']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] .cursor-pointer:not([data-native-cursor], [data-native-cursor] *) {
   cursor: url("data:image/png;base64,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") 11 4, pointer;
 }
 
-html:not([data-cursor='off'])[data-skin='dragon'].dark a[href],
-html:not([data-cursor='off'])[data-skin='dragon'].dark button:not(:disabled),
-html:not([data-cursor='off'])[data-skin='dragon'].dark summary,
-html:not([data-cursor='off'])[data-skin='dragon'].dark select:not(:disabled),
-html:not([data-cursor='off'])[data-skin='dragon'].dark label[for],
-html:not([data-cursor='off'])[data-skin='dragon'].dark [role='button']:not([aria-disabled='true']),
-html:not([data-cursor='off'])[data-skin='dragon'].dark [role='tab'],
-html:not([data-cursor='off'])[data-skin='dragon'].dark [role='menuitem'],
-html:not([data-cursor='off'])[data-skin='dragon'].dark [role='option'],
-html:not([data-cursor='off'])[data-skin='dragon'].dark [role='switch'],
-html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='checkbox']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='radio']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='submit']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='button']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='dragon'].dark .cursor-pointer {
+html:not([data-cursor='off'])[data-skin='dragon'].dark a[href]:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'].dark button:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'].dark summary:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'].dark select:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'].dark label[for]:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'].dark [role='button']:not([aria-disabled='true']):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'].dark [role='tab']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'].dark [role='menuitem']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'].dark [role='option']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'].dark [role='switch']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='checkbox']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='radio']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='submit']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='button']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'].dark .cursor-pointer:not([data-native-cursor], [data-native-cursor] *) {
   cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAFkklEQVR42u1ZW2xUVRRd+5wzczuvdsqrCLG1VkLaQopINEggQgJGFAMGigaMPzbBGPyEHzQREk0kRgO+lQ8T/RGwGCUaSPtBeZXQlsYWqC0UoaWUUtrpvDoz957tx502lcSktnPrYDg/M8mde2evvdde+3GBB+c+P8wsmFn9w7UCp/9fTNJwQUSaiEwABjM/zszbmPmLU2cafj965Ogr6d/KbPO6HPO9gpn3dXRe72hubeOu3rtc39zOO99+rweAh5kJADlli5qI8URkMXMZgN3tnTfW5+VPkx5fLli4cOL0+WRjU7OaXzhzO4A4AAnAygoAY4x/o/tW317DE/AxBEKhIZO1FrUnTvPt/kG3IXRTVVXV4TTFrKzIgTHG7+kPxT5LmvD19/ebWmsIInXq7HnR1dML0hYWlZd9CIAnk2MZBTDG+Nd6+gZ2RWNxc3g4zsxaGYYbl9o68MeVTp0bCMihwf7uTZvW/cjM5LT3xwuAAGgAwfMNTXuVO0dHo1EhhCApJcLhCJpbLiInJ0eDgeLix6rHcJ//cwBp7zMzv1xYXDIzFAppIYRgZiil0NbRiWg0DpdSIhIO4YXVS39Kg+apUMR/w9GlbsPD2tJ2WIiQSCRwvesmpJJMQojhWGygqKioAQATkc4WABYAxOKJEtM0CWBiZigpERoKIxyOwKWUllKhYM6cBgADzCyyKQIEAFrrv3mUhEA0FodpWRCCGADKysovTbbCOwFAAIDf52mWUjBgG0sATNMEmEFE0JaFh2bMvupk1Z0ogBEqHI1GwiSkGDVQEI0GybJMTJ/uG5wq6owbABHpdEWtIa2b8oNBycyWZobf74OUckSucOV2MGLfA52NEUjNnTPr9Tt9t5J5wSClUkmdl5cLv98H00zJWJL5Tl3VTq6vrGGGwQyaCjqNK9nSUZBE1Di/5JGtfT3dwh/IFV5Pjjl71kyYZoo0JJup+JLhRMoPwI0p4tK41SLdSigiOlixsPSlrmtXBwKBXLVwQamlpCvlz5FikOfVeFZUP01EIRBA2VCJ7wFhpiNR3fhV1ZP9t7p/8bqVfGJxhUtIQjxQLpnZzpkpTubJDDQbWi62n9rz/j7esmXbtRH6TJWcTqjgpOkkmNlFRNUd7y77MlJ/gJfPqM9jPvA8A5Suxo4fNdEbR+SVmWX3r5UvFkVipKQKhk8e35ALVPMURUBNlk12NA59e2HHx8/1tAx4gt7gw+k5mLOWQvdQiYg2/vzouciFQAT0w5Wbz+DSwcr0NZnVAEbaOmaIlKGHXLkGolYqhI++X8HMxURkOU2lyQMgu3UoGTZb7iZNHfAYubG+mz0ANHOWzMTjaTV8wnvZS3TN4zfoWFf/IiL6026LnM0FkZmywAJrK08smxX8za0UaoS1nAcGgkSwkO0Usj1MgnbsaC96dsGRsGkh5ZKzcODNp9JNqsj2CIAIdrJu/eRcr9S9+W6Fr+svrRlR2qwHAIBhzwyh4un+024lcbk3vNJ+fpZs5sY5O9NzpYXHQUAkYZZz8655RM5u6DL3YHuNwnPXb65NmDrpN5S77vO6VQDIyTwQGXS/ZgZRRWV7vtdo9boUaq/2rbFllvl+oBAAlgD04sJgrZSEW0Pxpcycl96R0n0AwF65rF654FjSYghBBdi/1VE5zehDR7cRGz+tl0L0BgyFb05edFROReaHNZZEFCrM954xlMTFnvAqAAIOrdqdCCsBoLXlRcdAQCSZllOHXnhkHsCInL6zuTZh6WTAUO6z39WtYnZGToUD7rfllCrbp/mMVq+SOFzXtdouaJmXU4cKjC2npQV5NcgROn+ef/nogJPhKCg4eNbtX9ZZWN0q8vOMGbj71qsAdgMsAJqy3emE3+Lbn4NL2g6tb+Qb2z9g5vJ0W0F4cP5H5y8AV8aLgwoTfAAAAABJRU5ErkJggg==") 11 4, pointer;
 }
 
 /* The slash. `:active` rather than a class, so it covers everything a pointer
    can be held down on — including the page itself, where half the clicks in any
    application land. */
-html:not([data-cursor='off'])[data-skin='dragon'] :active {
+html:not([data-cursor='off'])[data-skin='dragon'] :active:not([data-native-cursor], [data-native-cursor] *) {
   cursor: url("data:image/png;base64,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") 11 4, auto;
 }
 
-html:not([data-cursor='off'])[data-skin='dragon'].dark :active {
+html:not([data-cursor='off'])[data-skin='dragon'].dark :active:not([data-native-cursor], [data-native-cursor] *) {
   cursor: url("data:image/png;base64,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") 11 4, auto;
 }
 
@@ -12699,55 +12729,55 @@ html:not([data-cursor='off'])[data-skin='dragon'].dark :active {
    one surface where a slash matters most — a link somebody is clicking — the
    raised rule would otherwise outrank it and the blade would never swing.
    Repeating the list with `:active` on each selector puts it back on top. */
-html:not([data-cursor='off'])[data-skin='dragon'] a[href]:active,
-html:not([data-cursor='off'])[data-skin='dragon'] button:not(:disabled):active,
-html:not([data-cursor='off'])[data-skin='dragon'] summary:active,
-html:not([data-cursor='off'])[data-skin='dragon'] select:not(:disabled):active,
-html:not([data-cursor='off'])[data-skin='dragon'] label[for]:active,
-html:not([data-cursor='off'])[data-skin='dragon'] [role='button']:not([aria-disabled='true']):active,
-html:not([data-cursor='off'])[data-skin='dragon'] [role='tab']:active,
-html:not([data-cursor='off'])[data-skin='dragon'] [role='menuitem']:active,
-html:not([data-cursor='off'])[data-skin='dragon'] [role='option']:active,
-html:not([data-cursor='off'])[data-skin='dragon'] [role='switch']:active,
-html:not([data-cursor='off'])[data-skin='dragon'] input[type='checkbox']:not(:disabled):active,
-html:not([data-cursor='off'])[data-skin='dragon'] input[type='radio']:not(:disabled):active,
-html:not([data-cursor='off'])[data-skin='dragon'] input[type='submit']:not(:disabled):active,
-html:not([data-cursor='off'])[data-skin='dragon'] input[type='button']:not(:disabled):active,
-html:not([data-cursor='off'])[data-skin='dragon'] .cursor-pointer:active {
+html:not([data-cursor='off'])[data-skin='dragon'] a[href]:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] button:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] summary:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] select:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] label[for]:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] [role='button']:not([aria-disabled='true']):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] [role='tab']:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] [role='menuitem']:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] [role='option']:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] [role='switch']:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] input[type='checkbox']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] input[type='radio']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] input[type='submit']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] input[type='button']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] .cursor-pointer:active:not([data-native-cursor], [data-native-cursor] *) {
   cursor: url("data:image/png;base64,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") 11 4, pointer;
 }
 
-html:not([data-cursor='off'])[data-skin='dragon'].dark a[href]:active,
-html:not([data-cursor='off'])[data-skin='dragon'].dark button:not(:disabled):active,
-html:not([data-cursor='off'])[data-skin='dragon'].dark summary:active,
-html:not([data-cursor='off'])[data-skin='dragon'].dark select:not(:disabled):active,
-html:not([data-cursor='off'])[data-skin='dragon'].dark label[for]:active,
-html:not([data-cursor='off'])[data-skin='dragon'].dark [role='button']:not([aria-disabled='true']):active,
-html:not([data-cursor='off'])[data-skin='dragon'].dark [role='tab']:active,
-html:not([data-cursor='off'])[data-skin='dragon'].dark [role='menuitem']:active,
-html:not([data-cursor='off'])[data-skin='dragon'].dark [role='option']:active,
-html:not([data-cursor='off'])[data-skin='dragon'].dark [role='switch']:active,
-html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='checkbox']:not(:disabled):active,
-html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='radio']:not(:disabled):active,
-html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='submit']:not(:disabled):active,
-html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='button']:not(:disabled):active,
-html:not([data-cursor='off'])[data-skin='dragon'].dark .cursor-pointer:active {
+html:not([data-cursor='off'])[data-skin='dragon'].dark a[href]:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'].dark button:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'].dark summary:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'].dark select:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'].dark label[for]:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'].dark [role='button']:not([aria-disabled='true']):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'].dark [role='tab']:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'].dark [role='menuitem']:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'].dark [role='option']:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'].dark [role='switch']:active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='checkbox']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='radio']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='submit']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='button']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'].dark .cursor-pointer:active:not([data-native-cursor], [data-native-cursor] *) {
   cursor: url("data:image/png;base64,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") 11 4, pointer;
 }
 
 /* The three the blade must not swallow. */
-html:not([data-cursor='off'])[data-skin='dragon'] input:not([type='checkbox']):not([type='radio']):not([type='submit']):not([type='button']),
-html:not([data-cursor='off'])[data-skin='dragon'] textarea,
-html:not([data-cursor='off'])[data-skin='dragon'] [contenteditable='true'] {
+html:not([data-cursor='off'])[data-skin='dragon'] input:not([type='checkbox']):not([type='radio']):not([type='submit']):not([type='button']):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] textarea:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] [contenteditable='true']:not([data-native-cursor], [data-native-cursor] *) {
   cursor: text;
 }
 
-html:not([data-cursor='off'])[data-skin='dragon'] .cursor-grab {
+html:not([data-cursor='off'])[data-skin='dragon'] .cursor-grab:not([data-native-cursor], [data-native-cursor] *) {
   cursor: grab;
 }
 
-html:not([data-cursor='off'])[data-skin='dragon'] .cursor-grabbing,
-html:not([data-cursor='off'])[data-skin='dragon'] .cursor-grab:active {
+html:not([data-cursor='off'])[data-skin='dragon'] .cursor-grabbing:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='dragon'] .cursor-grab:active:not([data-native-cursor], [data-native-cursor] *) {
   cursor: grabbing;
 }
 
@@ -12824,54 +12854,54 @@ html:not([data-cursor='off'])[data-skin='pixel'].dark {
    the one place a reader looks hardest at the cursor is the place it would
    stop being pixel art. The fallback keyword is still `pointer`, so a machine
    that refuses the image gets the hand rather than the plain arrow. */
-html:not([data-cursor='off'])[data-skin='pixel'] a[href],
-html:not([data-cursor='off'])[data-skin='pixel'] button:not(:disabled),
-html:not([data-cursor='off'])[data-skin='pixel'] summary,
-html:not([data-cursor='off'])[data-skin='pixel'] select:not(:disabled),
-html:not([data-cursor='off'])[data-skin='pixel'] label[for],
-html:not([data-cursor='off'])[data-skin='pixel'] [role='button']:not([aria-disabled='true']),
-html:not([data-cursor='off'])[data-skin='pixel'] [role='tab'],
-html:not([data-cursor='off'])[data-skin='pixel'] [role='menuitem'],
-html:not([data-cursor='off'])[data-skin='pixel'] [role='option'],
-html:not([data-cursor='off'])[data-skin='pixel'] [role='switch'],
-html:not([data-cursor='off'])[data-skin='pixel'] input[type='checkbox']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='pixel'] input[type='radio']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='pixel'] input[type='submit']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='pixel'] input[type='button']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='pixel'] .cursor-pointer {
+html:not([data-cursor='off'])[data-skin='pixel'] a[href]:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] button:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] summary:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] select:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] label[for]:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] [role='button']:not([aria-disabled='true']):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] [role='tab']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] [role='menuitem']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] [role='option']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] [role='switch']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] input[type='checkbox']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] input[type='radio']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] input[type='submit']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] input[type='button']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] .cursor-pointer:not([data-native-cursor], [data-native-cursor] *) {
   cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAA5CAYAAABeSIndAAAAvElEQVR42u3ZQQ6DIBCFYTAeQmWv9z+O3bf1FnbTNG9jKgrMLP63ggUJyceQCcRpmPfwzWt7xGCcLjiLuw1FJdNY8UH2L71Onu/1N07jYlJ9kGWReeCD7DKZFR9kRcha8kFWnKw2H2RVyWrwQdaMrBQfZCZkd/ggMyfL5YPMFdkZPsiakaVxubyWKitOphxaHWcIaPKbkSmTEuglpnw0+SZkR0y85HvKLRb9uDm6MHOPAWRsiI6xRscIWU4+C/9pLIqt2XkAAAAASUVORK5CYII=") 1 1, pointer;
 }
 
-html:not([data-cursor='off'])[data-skin='pixel'].dark a[href],
-html:not([data-cursor='off'])[data-skin='pixel'].dark button:not(:disabled),
-html:not([data-cursor='off'])[data-skin='pixel'].dark summary,
-html:not([data-cursor='off'])[data-skin='pixel'].dark select:not(:disabled),
-html:not([data-cursor='off'])[data-skin='pixel'].dark label[for],
-html:not([data-cursor='off'])[data-skin='pixel'].dark [role='button']:not([aria-disabled='true']),
-html:not([data-cursor='off'])[data-skin='pixel'].dark [role='tab'],
-html:not([data-cursor='off'])[data-skin='pixel'].dark [role='menuitem'],
-html:not([data-cursor='off'])[data-skin='pixel'].dark [role='option'],
-html:not([data-cursor='off'])[data-skin='pixel'].dark [role='switch'],
-html:not([data-cursor='off'])[data-skin='pixel'].dark input[type='checkbox']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='pixel'].dark input[type='radio']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='pixel'].dark input[type='submit']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='pixel'].dark input[type='button']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='pixel'].dark .cursor-pointer {
+html:not([data-cursor='off'])[data-skin='pixel'].dark a[href]:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'].dark button:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'].dark summary:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'].dark select:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'].dark label[for]:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'].dark [role='button']:not([aria-disabled='true']):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'].dark [role='tab']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'].dark [role='menuitem']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'].dark [role='option']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'].dark [role='switch']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'].dark input[type='checkbox']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'].dark input[type='radio']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'].dark input[type='submit']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'].dark input[type='button']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'].dark .cursor-pointer:not([data-native-cursor], [data-native-cursor] *) {
   cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAA5CAYAAABeSIndAAAAu0lEQVR42u3ZsQ6DIBSFYTBOKpu+/wPara2rXZrmLKaiwL3DfyYYSEg+LrmBOA3zHr55bY8YjNMFZ3G3oahkGis+yP6l18nzvf7GaVxMqg+yLDIPfJBdJrPig6wIWUs+yIqT1eaDrCpZDT7ImpGV4oPMhOwOH2TmZLl8kLkiO8MHWTOyNC6X11JlxcmUQ6vjDAFNfjMyZVICvcSUjybfhOyIiZd8T7nFoh83Rxdm7jGAjA3RMdboGCHLyQcvl2r4xyJFhQAAAABJRU5ErkJggg==") 1 1, pointer;
 }
 
 /* The three the arrow must not swallow. */
-html:not([data-cursor='off'])[data-skin='pixel'] input:not([type='checkbox']):not([type='radio']):not([type='submit']):not([type='button']),
-html:not([data-cursor='off'])[data-skin='pixel'] textarea,
-html:not([data-cursor='off'])[data-skin='pixel'] [contenteditable='true'] {
+html:not([data-cursor='off'])[data-skin='pixel'] input:not([type='checkbox']):not([type='radio']):not([type='submit']):not([type='button']):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] textarea:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] [contenteditable='true']:not([data-native-cursor], [data-native-cursor] *) {
   cursor: text;
 }
 
-html:not([data-cursor='off'])[data-skin='pixel'] .cursor-grab {
+html:not([data-cursor='off'])[data-skin='pixel'] .cursor-grab:not([data-native-cursor], [data-native-cursor] *) {
   cursor: grab;
 }
 
-html:not([data-cursor='off'])[data-skin='pixel'] .cursor-grabbing,
-html:not([data-cursor='off'])[data-skin='pixel'] .cursor-grab:active {
+html:not([data-cursor='off'])[data-skin='pixel'] .cursor-grabbing:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] .cursor-grab:active:not([data-native-cursor], [data-native-cursor] *) {
   cursor: grabbing;
 }

@@ -1,7 +1,8 @@
-import { useEffect, useRef, type RefObject } from 'react';
+import { useEffect, useRef, type CSSProperties, type RefObject } from 'react';
 
 import { useRealtime } from '@/app/providers/realtime-provider';
 import { useCurrentUser } from '@/features/auth/model/session.store';
+import { createThrottledFlush, LIVE_FRAME_MS } from '../lib/live-rate';
 import { peerColor } from '../lib/peer-color';
 
 /**
@@ -31,7 +32,12 @@ interface PresenceCursorsProps {
 interface Cursor {
   node: HTMLDivElement;
   seenAt: number;
+  /** Where the pointer is, as fractions of the surface. Kept so a resize can re-place it. */
+  x: number;
+  y: number;
 }
+
+const clampUnit = (value: number) => (Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0);
 
 /**
  * Everybody else's pointer, on the shared board.
@@ -52,6 +58,20 @@ interface Cursor {
  * Writing `transform` on a node the component already owns costs one style
  * recalculation on one composited element. There is no reconciliation, nothing
  * upstream re-renders, and the board does not know this is happening.
+ *
+ * ## Why a pointer glides rather than jumps
+ *
+ * Positions arrive at `LIVE_FRAME_MS` — thirty a second, not the display's
+ * sixty or more — so placing each one where it lands would draw a pointer that
+ * steps. Each move is instead a CSS transition on `transform`, lasting exactly
+ * one frame interval: a position that arrives on time lands as the previous
+ * glide ends, and one that arrives late or not at all leaves the arrow resting
+ * where it was going rather than stuttering. The transition runs on the
+ * compositor, so the smoothing costs the main thread nothing.
+ *
+ * `transform` rather than `left`/`top`, which this used to write: those are
+ * layout properties, and a transition on them would lay the pointer out again
+ * on every frame of every glide.
  *
  * ## Why it subscribes to the socket itself
  *
@@ -99,7 +119,30 @@ export const PresenceCursors = ({
 
     const live = cursors.current;
 
-    const ensure = (userId: string): Cursor => {
+    /*
+     * The layer's size, measured when it changes rather than on every
+     * position: reading `clientWidth` from inside a socket handler forces a
+     * synchronous layout whenever anything else on the page has touched the
+     * DOM since the last frame, and these arrive thirty times a second per
+     * colleague.
+     */
+    const size = { width: layer.clientWidth, height: layer.clientHeight };
+
+    const place = (cursor: Cursor) => {
+      // -2px so the arrow's point, not its box's corner, sits on the position.
+      cursor.node.style.transform = `translate3d(${cursor.x * size.width - 2}px, ${
+        cursor.y * size.height - 2
+      }px, 0)`;
+    };
+
+    const resizer = new ResizeObserver(() => {
+      size.width = layer.clientWidth;
+      size.height = layer.clientHeight;
+      for (const cursor of live.values()) place(cursor);
+    });
+    resizer.observe(layer);
+
+    const ensure = (userId: string, x: number, y: number): Cursor => {
       const existing = live.get(userId);
       if (existing) return existing;
 
@@ -125,8 +168,11 @@ export const PresenceCursors = ({
       const label = node.querySelector<HTMLSpanElement>('.board-cursor__name');
       if (label) label.textContent = namesRef.current[userId] ?? '';
 
+      const cursor: Cursor = { node, seenAt: Date.now(), x, y };
+      // Placed before it is attached, so its first appearance is where the
+      // colleague actually is — not a glide in from the corner.
+      place(cursor);
       layer.appendChild(node);
-      const cursor: Cursor = { node, seenAt: Date.now() };
       live.set(userId, cursor);
       return cursor;
     };
@@ -143,17 +189,13 @@ export const PresenceCursors = ({
       // worse than not seeing it at all.
       if (payload.userId === currentUser?.id) return;
 
-      const cursor = ensure(payload.userId);
+      const x = clampUnit(payload.x);
+      const y = clampUnit(payload.y);
+      const cursor = ensure(payload.userId, x, y);
       cursor.seenAt = Date.now();
-      /*
-       * Percentages rather than pixels, so the node needs no knowledge of the
-       * surface's measured size and nothing has to be recomputed when the
-       * board is resized or the stage goes full screen. `translate` on top of
-       * that is what puts the arrow's point — rather than its box's corner —
-       * under the reported position.
-       */
-      cursor.node.style.left = `${payload.x * 100}%`;
-      cursor.node.style.top = `${payload.y * 100}%`;
+      cursor.x = x;
+      cursor.y = y;
+      place(cursor);
       cursor.node.style.opacity = '1';
     };
 
@@ -180,6 +222,7 @@ export const PresenceCursors = ({
     return () => {
       socket.off('whiteboard:cursor', onCursor);
       window.clearInterval(sweeper);
+      resizer.disconnect();
       for (const cursor of live.values()) cursor.node.remove();
       live.clear();
     };
@@ -209,18 +252,21 @@ export const PresenceCursors = ({
     const surface = surfaceRef.current;
     if (!surface) return;
 
-    let frame = 0;
-    let pending: { x: number; y: number } | null = null;
+    let pending: { clientX: number; clientY: number } | null = null;
 
-    const flush = () => {
-      frame = 0;
+    /*
+     * At `LIVE_FRAME_MS`, and measured at send time.
+     *
+     * The surface's box used to be read on every `pointermove`, which a
+     * high-rate mouse delivers several times per frame — a layout query per
+     * sample for a position of which only one in several was ever sent.
+     * Reading it once per outgoing frame gives the same answer.
+     */
+    const stream = createThrottledFlush(() => {
       if (!pending) return;
-      socket.emit('whiteboard:cursor', { projectId, x: pending.x, y: pending.y });
-      pending = null;
-    };
-
-    const onMove = (event: PointerEvent) => {
       const box = surface.getBoundingClientRect();
+      const point = pending;
+      pending = null;
       if (box.width === 0 || box.height === 0) return;
 
       /*
@@ -229,15 +275,22 @@ export const PresenceCursors = ({
        * the frame — leaves a colleague's arrow frozen wherever it happened to
        * cross the border, which reads as a stuck cursor rather than as
        * somebody having moved away.
+       *
+       * Rounded to four places — a ten-thousandth of the surface, far below a
+       * pixel — because the raw fractions are fifteen digits of JSON each.
        */
-      pending = {
-        x: Math.min(1, Math.max(0, (event.clientX - box.left) / box.width)),
-        y: Math.min(1, Math.max(0, (event.clientY - box.top) / box.height)),
-      };
+      const x = Math.min(1, Math.max(0, (point.clientX - box.left) / box.width));
+      const y = Math.min(1, Math.max(0, (point.clientY - box.top) / box.height));
+      socket.emit('whiteboard:cursor', {
+        projectId,
+        x: Math.round(x * 10_000) / 10_000,
+        y: Math.round(y * 10_000) / 10_000,
+      });
+    });
 
-      // One frame is exactly the rate at which a move becomes visible, and it
-      // self-adjusts on a display that is not 60Hz. See `publishDrag`.
-      if (!frame) frame = requestAnimationFrame(flush);
+    const onMove = (event: PointerEvent) => {
+      pending = { clientX: event.clientX, clientY: event.clientY };
+      stream.request();
     };
 
     /*
@@ -251,7 +304,7 @@ export const PresenceCursors = ({
 
     return () => {
       surface.removeEventListener('pointermove', onMove);
-      if (frame) cancelAnimationFrame(frame);
+      stream.cancel();
     };
   }, [enabled, isConnected, projectId, socket, surfaceRef]);
 
@@ -266,6 +319,8 @@ export const PresenceCursors = ({
       ref={layerRef}
       aria-hidden
       className="pointer-events-none absolute inset-0 z-30 overflow-hidden"
+      // The glide is one send interval long — see the note on the component.
+      style={{ '--board-cursor-glide': `${LIVE_FRAME_MS}ms` } as CSSProperties}
     />
   );
 };
