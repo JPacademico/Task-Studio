@@ -1,4 +1,5 @@
 import { api } from '@/shared/api/client';
+import { translate } from '@/shared/i18n';
 import { prepareImage } from '@/shared/lib/prepare-image';
 import type { CurrentUser, ThemePreference, ThemeSkin, UserSummary } from '../model/types';
 
@@ -92,13 +93,32 @@ const putObject = async (
     sizeBytes: blob.size,
   });
 
-  const response = await fetch(presigned.uploadUrl, {
-    method: 'PUT',
-    body: blob,
-    headers: { 'Content-Type': blob.type },
-  });
+  let response: Response;
+  try {
+    response = await fetch(presigned.uploadUrl, {
+      method: 'PUT',
+      body: blob,
+      headers: { 'Content-Type': blob.type },
+    });
+  } catch {
+    /*
+     * The PUT never produced a response at all.
+     *
+     * With a presign already in hand — so the API is reachable and this
+     * session is fine — that is almost always the *bucket* refusing the
+     * preflight: its CORS policy does not list the site this page is served
+     * from. The API never sees this request, so nothing appears in its logs,
+     * and "could not upload" alone sent people looking in the wrong place.
+     * The console line names the origin to add; the toast stays human.
+     */
+    console.error(
+      `[task-studio] Object storage refused an upload from ${window.location.origin}. ` +
+        "Add this origin to the R2 bucket's CORS policy (methods PUT and GET, header content-type).",
+    );
+    throw new Error(translate('upload.storageBlocked'));
+  }
 
-  if (!response.ok) throw new Error('Upload to storage failed.');
+  if (!response.ok) throw new Error(translate('upload.storageFailed'));
 
   return { key: presigned.key, publicUrl: presigned.publicUrl };
 };

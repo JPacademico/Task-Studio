@@ -150,6 +150,10 @@ const DISCONNECT_GRACE_MS = 5_000;
 /** How often every connection's stats are read. See `pollQuality`. */
 const STATS_INTERVAL_MS = 2_000;
 
+/** The outbound label stream, made on first use. See `outboundLabel`. */
+const labelOf = (ref: { current: MediaStream | null }): MediaStream =>
+  (ref.current ??= new MediaStream());
+
 interface Connection {
   pc: RTCPeerConnection;
   /** The sender the camera *or* the screen occupies. See `startShare`. */
@@ -161,6 +165,14 @@ interface Connection {
    * of "it works on my machine" in a mesh.
    */
   pending: RTCIceCandidateInit[];
+  /**
+   * What this peer is sending us, assembled by hand.
+   *
+   * Only used when the far side's sender carried no stream id (`a=msid:-`),
+   * in which case `ontrack` delivers a bare track with `event.streams` empty.
+   * See `ontrack`.
+   */
+  remote: MediaStream | null;
   /**
    * The seat this connection is to, kept so the recovery ladder can rebuild
    * it without the roster.
@@ -223,10 +235,11 @@ interface UseLiveCallOptions {
  * ## Two transceivers, created once, never renegotiated
  *
  * This is the design decision that matters most for how the call *feels*, so
- * it is worth stating plainly. Every connection is built with exactly one
- * audio and one video transceiver, in that order, on both sides — before any
- * offer is made and whether or not this client has a camera. Everything
- * afterwards is `replaceTrack`:
+ * it is worth stating plainly. Every connection carries exactly one audio and
+ * one video transceiver, whether or not this client has a camera. The caller
+ * creates them before its offer; the answerer adopts the pair that offer
+ * creates on its side (see `adoptOfferedTransceivers` — building its own was
+ * the bug that made calls one-way). Everything afterwards is `replaceTrack`:
  *
  *   - turning the camera on swaps a track into a sender that already exists;
  *   - sharing a screen swaps the screen track into the *same* sender;
@@ -323,6 +336,27 @@ export const useLiveCall = ({
    */
   const allowedRef = useRef({ canSpeak, canPresent });
   const detector = useRef<SpeakingDetector | null>(null);
+  /**
+   * The stream id every outbound sender is labelled with.
+   *
+   * Never played and never given a track: it exists so the SDP carries an
+   * `a=msid` naming one stream for both of this client's tracks. Without it
+   * the far side's `ontrack` fires with `event.streams` empty — which the
+   * handler used to treat as "nothing to show", so nobody ever heard or saw
+   * anybody.
+   */
+  const outboundLabel = useRef<MediaStream | null>(null);
+  /**
+   * Signals from a peer this client has no connection to *yet*.
+   *
+   * The joiner answers everybody already in the room, but it only builds
+   * those connections once its own `live:join` is acknowledged — and the
+   * peers are told about the joiner at the same moment, so on a fast link an
+   * offer can land first. It used to be dropped (`handleSignal` found no
+   * connection), leaving that pair silent for the whole call. It is held here
+   * and replayed the moment the connection exists.
+   */
+  const earlySignals = useRef(new Map<string, { from: string; data: Record<string, unknown> }[]>());
   const iceRef = useRef<IceServerConfig[]>(FALLBACK_ICE);
   /** Guards the teardown against a join that is still in flight. */
   const leftRef = useRef(false);
@@ -530,6 +564,59 @@ export const useLiveCall = ({
   }, []);
 
   /**
+   * Put whatever this client has into a connection's two senders.
+   *
+   * Null is fine and is the ordinary case for somebody who joined muted with
+   * the camera off. Video respects the peer's last word on whether it wants
+   * any — see `live:video-interest`.
+   */
+  const fillSenders = useCallback(async (connection: Connection) => {
+    const audio = localRef.current?.getAudioTracks()[0] ?? null;
+    const video = connection.wantsVideo
+      ? (screenTrack.current ?? cameraTrack.current ?? null)
+      : null;
+    await connection.audioSender?.replaceTrack(audio).catch(() => undefined);
+    await connection.videoSender?.replaceTrack(video).catch(() => undefined);
+  }, []);
+
+  /**
+   * The answerer's half of the transceiver pair: take the ones the offer made.
+   *
+   * Applying the caller's offer creates one audio and one video transceiver
+   * here, `recvonly`. Turning those to `sendrecv` and filling their senders —
+   * before the answer is written — is what makes the answer say this side
+   * sends too. Idempotent: an ICE-restart offer finds both senders already in
+   * place and changes nothing.
+   */
+  const adoptOfferedTransceivers = useCallback(
+    async (connection: Connection) => {
+      if (connection.audioSender && connection.videoSender) return;
+
+      const label = labelOf(outboundLabel);
+
+      for (const transceiver of connection.pc.getTransceivers()) {
+        const kind = transceiver.receiver.track.kind;
+        const isFree =
+          (kind === 'audio' && !connection.audioSender) ||
+          (kind === 'video' && !connection.videoSender);
+        if (!isFree || transceiver.currentDirection === 'stopped') continue;
+
+        transceiver.direction = 'sendrecv';
+        // Labels this side's tracks, for the same reason the caller passes
+        // `streams` — see `openConnection`. Missing on some engines, which the
+        // far side's `ontrack` fallback covers.
+        transceiver.sender.setStreams?.(label);
+
+        if (kind === 'audio') connection.audioSender = transceiver.sender;
+        else connection.videoSender = transceiver.sender;
+      }
+
+      await fillSenders(connection);
+    },
+    [fillSenders],
+  );
+
+  /**
    * Build the connection to one peer.
    *
    * `isCaller` decides who offers and comes from the arrival numbers — see the
@@ -571,14 +658,36 @@ export const useLiveCall = ({
         ...(relayOnly ? { iceTransportPolicy: 'relay' as const } : {}),
       });
 
-      const audioTx = pc.addTransceiver('audio', { direction: 'sendrecv' });
-      const videoTx = pc.addTransceiver('video', { direction: 'sendrecv' });
+      /*
+       * Only the caller builds transceivers up front.
+       *
+       * Both sides used to, and that was why calls were one-way: when an offer
+       * is applied, the browser pairs its m-sections only with transceivers
+       * that `addTrack` created (JSEP §5.10 — Chrome checks
+       * `created_by_addtrack`). One made by `addTransceiver` is never reused;
+       * a fresh *recvonly* pair is created beside it instead. So the answerer
+       * ended up sending into a pair nobody had negotiated, its answer said
+       * "recvonly", and the person who joined second was never heard or seen.
+       * The answerer now adopts the pair the offer creates — see
+       * `adoptOfferedTransceivers`.
+       *
+       * `streams` is the other half of the fix. Without it the SDP names no
+       * stream and the far side's `ontrack` receives an empty `event.streams`.
+       */
+      const label = labelOf(outboundLabel);
+      const audioTx = isCaller
+        ? pc.addTransceiver('audio', { direction: 'sendrecv', streams: [label] })
+        : null;
+      const videoTx = isCaller
+        ? pc.addTransceiver('video', { direction: 'sendrecv', streams: [label] })
+        : null;
 
       const connection: Connection = {
         pc,
-        audioSender: audioTx.sender,
-        videoSender: videoTx.sender,
+        audioSender: audioTx?.sender ?? null,
+        videoSender: videoTx?.sender ?? null,
         pending: [],
+        remote: null,
         peer,
         isCaller,
         relayOnly,
@@ -589,12 +698,7 @@ export const useLiveCall = ({
       };
       connections.current.set(peer.participantId, connection);
 
-      // Whatever this client currently has. Null is fine and is the ordinary
-      // case for somebody who joined muted with the camera off.
-      const audio = localRef.current?.getAudioTracks()[0] ?? null;
-      const video = screenTrack.current ?? cameraTrack.current ?? null;
-      await audioTx.sender.replaceTrack(audio).catch(() => undefined);
-      await videoTx.sender.replaceTrack(video).catch(() => undefined);
+      if (isCaller) await fillSenders(connection);
 
       pc.onicecandidate = (event) => {
         if (!event.candidate || !roomId) return;
@@ -607,17 +711,27 @@ export const useLiveCall = ({
 
       pc.ontrack = (event) => {
         /*
-         * The stream the browser assembled, not one built from the track.
+         * The stream the browser assembled, where there is one.
          *
          * `event.streams[0]` holds both the audio and the video of this peer
          * as one object, which is what an `<audio>`/`<video>` element wants
-         * and what the speaking detector analyses. Constructing a
-         * `new MediaStream([event.track])` per event — the obvious-looking
-         * alternative — gives two separate single-track streams and a tile
-         * that plays video with no sound.
+         * and what the speaking detector analyses.
+         *
+         * Where there is not — a far side whose browser could not label its
+         * sender (`setStreams` is missing on some engines) — the tracks are
+         * gathered into one stream per peer by hand. This used to `return`,
+         * which silently dropped the peer's audio and video on the floor. A
+         * new object each time rather than `addTrack` on the old one, so the
+         * tile's effect re-attaches it and calls `play()` again.
          */
-        const [stream] = event.streams;
-        if (!stream) return;
+        let [stream] = event.streams;
+        if (!stream) {
+          const kept = (connection.remote?.getTracks() ?? []).filter(
+            (track) => track.kind !== event.track.kind,
+          );
+          stream = new MediaStream([...kept, event.track]);
+          connection.remote = stream;
+        }
 
         patchPeer(peer.participantId, { stream });
         detector.current?.add(peer.participantId, stream);
@@ -686,7 +800,12 @@ export const useLiveCall = ({
         if (pc.connectionState === 'failed') recoverRef.current(peer.participantId);
       };
 
-      if (!isCaller) return;
+      if (!isCaller) {
+        const early = earlySignals.current.get(peer.participantId);
+        earlySignals.current.delete(peer.participantId);
+        for (const signal of early ?? []) await handleSignalRef.current(signal);
+        return;
+      }
 
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
@@ -697,7 +816,7 @@ export const useLiveCall = ({
         data: { description: pc.localDescription?.toJSON() },
       }).catch(() => undefined);
     },
-    [applyPlayoutHint, patchPeer, roomId],
+    [applyPlayoutHint, fillSenders, patchPeer, roomId],
   );
 
   /**
@@ -764,6 +883,13 @@ export const useLiveCall = ({
        * simply not reachable. That is when the tile goes.
        */
       if (relayOnly) {
+        /*
+         * Said out loud, once, because it is the one failure somebody can do
+         * something about: a network that blocks both direct media and the
+         * relay is almost always a workplace or campus firewall, and the fix
+         * is on their side of it — another network, or a word with IT.
+         */
+        toast.warning(translate('live.mediaBlocked', { name: peer.user.displayName }));
         closeConnection(participantId);
         return;
       }
@@ -995,7 +1121,13 @@ export const useLiveCall = ({
   const handleSignal = useCallback(
     async (payload: { from: string; data: Record<string, unknown> }) => {
       const connection = connections.current.get(payload.from);
-      if (!connection) return;
+      if (!connection) {
+        // Ahead of our own join acknowledgement. See `earlySignals`.
+        const queue = earlySignals.current.get(payload.from) ?? [];
+        if (queue.length < 64) queue.push(payload);
+        earlySignals.current.set(payload.from, queue);
+        return;
+      }
 
       const { pc } = connection;
       const description = payload.data.description as RTCSessionDescriptionInit | undefined;
@@ -1011,8 +1143,15 @@ export const useLiveCall = ({
           }
 
           if (description.type === 'offer') {
+            // Before the answer is written, or the answer says "recvonly" and
+            // this side is never heard. See `adoptOfferedTransceivers`.
+            await adoptOfferedTransceivers(connection);
+
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
+            // The senders have encodings to tune only now that the answer is
+            // set; the pass `join` made found none.
+            applyBitrates(connections.current.size);
             if (!roomId) return;
             await emitWithAck('live:signal', {
               roomId,
@@ -1039,8 +1178,12 @@ export const useLiveCall = ({
          */
       }
     },
-    [roomId],
+    [adoptOfferedTransceivers, applyBitrates, roomId],
   );
+
+  /* Read through a ref by `openConnection`, which is defined first — same reason as `recoverRef`. */
+  const handleSignalRef = useRef(handleSignal);
+  handleSignalRef.current = handleSignal;
 
   // -------------------------------------------------------------------------
   // Devices
@@ -1108,6 +1251,7 @@ export const useLiveCall = ({
 
     detector.current?.close();
     detector.current = null;
+    earlySignals.current.clear();
 
     if (roomId) void emitWithAck('live:leave', { roomId }).catch(() => undefined);
 
@@ -1384,6 +1528,7 @@ export const useLiveCall = ({
     };
 
     const onPeerLeft = ({ participantId }: { participantId: string }) => {
+      earlySignals.current.delete(participantId);
       closeConnection(participantId);
       applyBitrates(Math.max(0, connections.current.size));
     };

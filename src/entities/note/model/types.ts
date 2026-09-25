@@ -96,11 +96,28 @@ export interface BoardSnapshot {
   strokes: BoardStroke[];
 }
 
-/** The project whiteboard's Post-it layer: one shared wall, no pages. */
+/**
+ * The project whiteboard's Post-it layer, one page of it.
+ *
+ * `pageLimit` is the project *owner's* plan ceiling — the same number for
+ * everybody on the roster, whatever their own plan is.
+ */
 export interface ProjectBoardSnapshot {
   projectId: string;
+  pageIndex: number;
+  pages: BoardPage[];
+  pageLimit: number;
   notes: Note[];
   links: NoteLink[];
+}
+
+/** What every page route returns, and what `whiteboard:pages` carries. */
+export interface ProjectBoardPages {
+  projectId: string;
+  pages: BoardPage[];
+  pageLimit: number;
+  /** Set when a page was removed, so a board showing it can leave. */
+  removedIndex?: number;
 }
 
 export interface CreateNotePayload {

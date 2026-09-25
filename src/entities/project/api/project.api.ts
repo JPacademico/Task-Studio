@@ -149,6 +149,19 @@ export const projectApi = {
     return data;
   },
 
+  /**
+   * Empty the project bin: every binned project this account owns, behind the
+   * account's password — asked once for the lot. `POST` with a body for the
+   * reason `purge` gives.
+   */
+  async purgeAll(password: string): Promise<{ purged: number; filesDeleted: number }> {
+    const { data } = await api.post<{ purged: number; filesDeleted: number }>(
+      '/projects/recycle-bin/purge',
+      { password },
+    );
+    return data;
+  },
+
   async setPinned(projectId: string, pinned: boolean): Promise<void> {
     if (pinned) await api.put(`/projects/${projectId}/pin`);
     else await api.delete(`/projects/${projectId}/pin`);

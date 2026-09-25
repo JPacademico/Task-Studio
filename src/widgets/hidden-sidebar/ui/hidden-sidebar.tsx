@@ -242,7 +242,9 @@ const SidebarLink = ({ item, badge, isTouch, onNavigate, onTearingChange }: Side
 
             <span
               className={cn(
-                'relative grid h-8 w-8 shrink-0 place-items-center rounded-xl transition-colors duration-150',
+                // `nav-glyph-socket`: the icon's own box, which a skin may
+                // animate (eldritch closes a lid over it). See `index.css`.
+                'nav-glyph-socket relative grid h-8 w-8 shrink-0 place-items-center rounded-xl transition-colors duration-150',
                 isActive
                   ? 'bg-brand text-brand-contrast shadow-[0_6px_16px_-8px_rgb(var(--brand)/0.9)]'
                   : 'bg-surface-sunken text-content-faint group-hover:text-content',

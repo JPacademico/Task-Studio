@@ -9,12 +9,26 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { Check, Palette } from 'lucide-react';
 
 import { useTheme } from '@/app/providers/theme-provider';
+import type { ThemeSkin } from '@/entities/user/model/types';
 import { SKIN_CATALOG } from '@/features/theme-toggle/model/skin-catalog';
 import { CursorToggle } from '@/features/theme-toggle/ui/cursor-toggle';
 import { SkinMock } from '@/features/theme-toggle/ui/skin-mock';
 import { cn } from '@/shared/lib/cn';
-import { useT } from '@/shared/i18n';
+import { useT, type TranslationKey } from '@/shared/i18n';
 import { SkinAmbience } from './skin-ambience';
+
+/**
+ * Descriptions this section writes for itself instead of the catalogue's.
+ *
+ * The catalogue's copy is shared with the in-app gallery, where it describes
+ * what a skin does to the screens somebody works in. Here a skin is being
+ * introduced, and for the Dragon that introduction is a verse rather than a
+ * spec sheet — so it is overridden on this page only, and the gallery keeps
+ * its own.
+ */
+const SHOWCASE_DESCRIPTIONS: Partial<Record<ThemeSkin, TranslationKey>> = {
+  DRAGON: 'landing.themes.dragonVerse',
+};
 
 /**
  * How far off centre a name is still drawn.
@@ -112,13 +126,27 @@ const WHEEL_STEP = 60;
 export const ThemeShowcase = () => {
   const t = useT();
   const reduceMotion = useReducedMotion();
-  const { skin: activeSkin, setSkin } = useTheme();
+  const { skin: activeSkin, setSkin, previewSkin, canWearSkin } = useTheme();
 
   const [index, setIndex] = useState(0);
   const wheelRef = useRef<HTMLDivElement>(null);
 
   const skin = SKIN_CATALOG[index];
   const isApplied = activeSkin === skin.value;
+
+  /*
+   * A skin this visitor may keep is worn for good; any other is a preview.
+   *
+   * Every skin but Studio and Paper is part of the paid plans, and a visitor
+   * who is not on one can still try them all here — that is what this section
+   * is for. But a preview is only a preview: nothing is stored, and it ends
+   * when they leave this page, so it never follows them into sign-in or the
+   * studio wearing a theme their account does not include.
+   */
+  const isKeepable = canWearSkin(skin.value);
+
+  // The preview ends with the page.
+  useEffect(() => () => previewSkin(null), [previewSkin]);
 
   const move = useCallback((delta: number) => {
     setIndex((current) =>
@@ -343,8 +371,9 @@ export const ThemeShowcase = () => {
         >
           <h3 className="text-2xl font-bold tracking-tight sm:text-3xl">{skin.name}</h3>
           <p className="text-sm font-medium text-brand">{t(skin.tagline)}</p>
-          <p className="max-w-prose text-sm leading-relaxed text-content-muted">
-            {t(skin.description)}
+          {/* `pre-line` so a description written as verse keeps its lines. */}
+          <p className="max-w-prose whitespace-pre-line text-sm leading-relaxed text-content-muted">
+            {t(SHOWCASE_DESCRIPTIONS[skin.value] ?? skin.description)}
           </p>
         </motion.div>
 
@@ -357,12 +386,13 @@ export const ThemeShowcase = () => {
           standing on — the nav, the belt, the Post-its, this panel — which is
           the claim, performed, in the only way that settles it.
 
-          It writes through the app's own `setSkin`, not a local preview state.
-          That is the difference between a toy and the real control: the choice
-          is stored exactly where the settings screen stores it, so it survives
-          a reload, follows the reader into sign-up, and lands on their account
-          the moment they have one. A preview that evaporated on navigation
-          would teach them the feature does not stick.
+          Two behaviours, decided by the plan. A skin the reader's account may
+          keep — Studio and Paper for everybody, every skin on a paid plan — is
+          worn through the app's own `setSkin`, stored exactly where the
+          settings screen stores it. Any other skin is a *preview*
+          (`previewSkin`): the whole page repaints just the same, but nothing
+          is stored and it ends when they leave this page, so a paid look never
+          follows a free account into sign-in or the studio.
         */}
         {/* Set apart from the description above it: the paragraph is something
             to read and this is something to press, and a button tucked directly
@@ -370,7 +400,7 @@ export const ThemeShowcase = () => {
         <div className="pt-3">
           <button
             type="button"
-            onClick={() => setSkin(skin.value)}
+            onClick={() => (isKeepable ? setSkin(skin.value) : previewSkin(skin.value))}
             disabled={isApplied}
             className={cn(
               'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold',
@@ -387,11 +417,19 @@ export const ThemeShowcase = () => {
             ) : (
               <Palette aria-hidden className="h-4 w-4" />
             )}
-            {t(isApplied ? 'landing.themes.applied' : 'landing.themes.apply')}
+            {t(
+              isApplied
+                ? isKeepable
+                  ? 'landing.themes.applied'
+                  : 'landing.themes.previewing'
+                : isKeepable
+                  ? 'landing.themes.apply'
+                  : 'landing.themes.preview',
+            )}
           </button>
 
           <p className="mt-2 max-w-xs text-2xs leading-snug text-content-faint">
-            {t('landing.themes.applyHint')}
+            {t(isKeepable ? 'landing.themes.applyHint' : 'landing.themes.previewHint')}
           </p>
         </div>
       </div>

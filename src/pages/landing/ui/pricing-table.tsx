@@ -91,7 +91,7 @@ const useFocusedPlan = () => {
  * ## Why six lines and not the whole table
  *
  * A card is read in about four seconds and a landing page is not a
- * specification. These are the six a small team actually chooses on; the
+ * specification. These are the rows a small team actually chooses on; the
  * complete comparison, including the rows nobody has ever picked a plan over,
  * is one screen away in Settings once somebody has an account.
  */
@@ -117,6 +117,10 @@ const featuresOf = (limits: PlanLimits, t: Translate): string[] => [
   allowsFlavour(limits.broadcastFlavours, 'slack') && allowsFlavour(limits.broadcastFlavours, 'generic')
     ? t('landing.pricing.feat.connectionsAll')
     : t('landing.pricing.feat.connectionsFree'),
+  // The looks: every skin on a paid plan, the default and Paper on free.
+  limits.customThemes
+    ? t('landing.pricing.feat.themesAll')
+    : t('landing.pricing.feat.themesFree'),
 ];
 
 /**
@@ -467,14 +471,6 @@ export const PricingTable = () => {
           );
         })}
       </ul>
-
-      {/* The sentence that stops the table being read as a feature matrix.
-          Every plan is the whole product; what differs is how much of it you
-          can hold. Worth saying once, under the cards, where somebody who has
-          just compared three columns of numbers is looking. */}
-      <p className="mx-auto max-w-2xl text-balance text-center text-xs leading-relaxed text-content-faint">
-        {t('landing.pricing.footnote')}
-      </p>
     </div>
   );
 };

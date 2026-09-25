@@ -65,6 +65,16 @@ export const taskApi = {
     await api.delete(`/tasks/${taskId}/purge`);
   },
 
+  /**
+   * Empty the task bin. `skipped` counts binned tasks this account can see but
+   * may not destroy — a colleague's, in a project where only its author or an
+   * admin may.
+   */
+  async purgeAll(): Promise<{ purged: number; skipped: number }> {
+    const { data } = await api.delete<{ purged: number; skipped: number }>('/tasks/recycle-bin');
+    return data;
+  },
+
   async recycleBin(projectId?: string): Promise<Task[]> {
     const { data } = await api.get<Task[]>('/tasks/recycle-bin', {
       params: projectId ? { projectId } : undefined,

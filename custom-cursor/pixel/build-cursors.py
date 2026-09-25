@@ -29,10 +29,12 @@ This one is the opposite of all three, and the inversion is the whole point:
     fights for antialiasing. This one must not have any: a single soft pixel
     anywhere on the edge is the difference between a retro pointer and a
     slightly blurry modern one, and it is the first thing anybody notices.
-  - **It has one state.** The others change on hover and on press. This skin's
-    entire argument is that it is a 1987 machine, and a 1987 machine had one
-    pointer - the arrow, plus the system's own I-beam over text. Adding a hover
-    frame would be a modern affordance wearing a pixel costume.
+  - **It has two states: the arrow and the pointing hand.** It used to have
+    one, on the argument that a 1987 machine had one pointer. That was wrong in
+    the way that matters: every system since has turned the arrow into a hand
+    over something clickable, and a pixel skin that kept the arrow over every
+    button took away the one cue that says "this can be pressed". The hand is
+    the system hand, redrawn on the same grid, exactly as the arrow is.
 
 ## Why this skin gets a cursor at all
 
@@ -58,16 +60,16 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 # How many screen pixels one drawn pixel becomes.
 #
-# Three, and the number is the whole of "a bit bigger". The grid below is 12x19
-# - near enough the proportions of the system arrow - so at 3x the pointer is
-# 36x57, against a system arrow that is typically 32px tall. That reads as
-# noticeably chunkier without becoming a cursor that covers what it is pointing
-# at, which is where a 4x version (48x76) lands.
+# Two. It was three, which made the arrow 36x57 - chunky, and in use simply
+# too big: it covered the thing it pointed at, and next to a 12px label it read
+# as a toy rather than as a pointer. At 2x the arrow is 24x38, still visibly a
+# grid of fat pixels, and close enough to the system arrow's footprint that it
+# never gets in the way of what it is pointing at.
 #
 # An integer factor is not negotiable. At 2.5x, NEAREST gives alternating one-
 # and two-pixel-wide columns, and a pixel-art arrow with uneven pixels is worse
 # than no pixel art at all.
-PIXEL = 3
+PIXEL = 2
 
 # ---------------------------------------------------------------------------
 # The drawing
@@ -85,7 +87,7 @@ PIXEL = 3
 # which is the only honest way to draw one at this resolution.
 # ---------------------------------------------------------------------------
 
-ART = """
+ARROW = """
 #...........
 ##..........
 #+#.........
@@ -105,6 +107,35 @@ ART = """
 .....#++#...
 .....#++#...
 .....####...
+"""
+
+# The pointing hand, over anything that can be pressed.
+#
+# The system hand's anatomy, one decision per pixel: an index finger two pixels
+# wide standing four pixels proud of the others, three knuckles stepping down
+# to the right, a thumb tucked on the left, and a palm that closes into a cuff.
+# The outline between the fingers stops where the palm begins, which is what
+# makes it read as one hand rather than four sticks.
+HAND = """
+.....##..........
+....#+*#.........
+....#+*#.........
+....#+*#.........
+....#+*#.........
+....#+*###.......
+....#+*#+*###....
+....#+*#+*#+*##..
+.##.#+*#+*#+*#+*#
+#+*##+*#+*#+*#+*#
+#+**#+**********#
+.#+*************#
+..#+************#
+..#+************#
+...#+**********#.
+...#+**********#.
+....#+********#..
+....#+********#..
+....###########..
 """
 
 # ---------------------------------------------------------------------------
@@ -135,39 +166,51 @@ PALETTES = {
 }
 
 
-def grid() -> list[str]:
+def grid(art: str) -> list[str]:
     """The art as a rectangular list of rows, padded to the widest one."""
-    rows = [row for row in ART.splitlines() if row]
+    rows = [row for row in art.splitlines() if row]
     width = max(len(row) for row in rows)
     return [row.ljust(width, '.') for row in rows]
 
 
-ROWS = grid()
-WIDTH = len(ROWS[0])
-HEIGHT = len(ROWS)
-
-
-def draw(palette: dict[str, tuple[int, int, int, int]]) -> Image.Image:
-    """One arrow, at one drawn pixel per image pixel, then blown up NEAREST."""
-    small = Image.new('RGBA', (WIDTH, HEIGHT), (0, 0, 0, 0))
+def draw(rows: list[str], palette: dict[str, tuple[int, int, int, int]]) -> Image.Image:
+    """One drawing, at one drawn pixel per image pixel, then blown up NEAREST."""
+    width, height = len(rows[0]), len(rows)
+    small = Image.new('RGBA', (width, height), (0, 0, 0, 0))
     pixels = small.load()
 
-    for y, row in enumerate(ROWS):
+    for y, row in enumerate(rows):
         for x, mark in enumerate(row):
             if mark in palette:
                 pixels[x, y] = palette[mark]
 
-    return small.resize((WIDTH * PIXEL, HEIGHT * PIXEL), Image.NEAREST)
+    return small.resize((width * PIXEL, height * PIXEL), Image.NEAREST)
 
 
-FRAMES = {name: draw(palette) for name, palette in PALETTES.items()}
+ARROW_ROWS = grid(ARROW)
+HAND_ROWS = grid(HAND)
+WIDTH = len(ARROW_ROWS[0])
+HEIGHT = len(ARROW_ROWS)
+HAND_WIDTH = len(HAND_ROWS[0])
+HAND_HEIGHT = len(HAND_ROWS)
 
-# The hotspot is the arrow's point: the top-left drawn pixel, which the grid
+FRAMES = {}
+for name, palette in PALETTES.items():
+    FRAMES[f'arrow-{name}'] = draw(ARROW_ROWS, palette)
+    FRAMES[f'hand-{name}'] = draw(HAND_ROWS, palette)
+
+# The arrow's hotspot is its point: the top-left drawn pixel, which the grid
 # puts at (0, 0) by construction. Stated as the *centre* of that pixel rather
-# than its corner, because at 3x the pixel is three screen pixels wide and
-# hotspotting on its corner puts every click a pixel and a half off the point
-# somebody aimed with.
+# than its corner, because at 2x the pixel is two screen pixels wide and
+# hotspotting on its corner puts every click a pixel off the point somebody
+# aimed with.
 HOTSPOT = (PIXEL // 2, PIXEL // 2)
+
+# The hand's is the middle of the fingertip: the index finger's cap is the two
+# drawn pixels at the top of the grid, so the hotspot is the centre of that
+# pair, half a drawn pixel down.
+_tip = HAND_ROWS[0].index('#')
+HAND_HOTSPOT = (_tip * PIXEL + PIXEL, PIXEL // 2)
 
 built = f'{HERE}/built'
 os.makedirs(built, exist_ok=True)
@@ -180,9 +223,45 @@ for name, image in FRAMES.items():
     uris[name] = base64.b64encode(buffer.getvalue()).decode()
 
 point = f'{HOTSPOT[0]} {HOTSPOT[1]}'
+hand_point = f'{HAND_HOTSPOT[0]} {HAND_HOTSPOT[1]}'
 
 GATE = "html:not([data-cursor='off'])[data-skin='pixel']"
 GATE_DARK = "html:not([data-cursor='off'])[data-skin='pixel'].dark"
+
+# Every rule that targets something *inside* the page leaves the surfaces that
+# keep the system pointer alone - the project whiteboard, whose pointer is a
+# tool. See `[data-native-cursor]` in `index.css`. Appended to the subject of
+# each selector by `inside()`, so a re-run can never drop it.
+NATIVE = ":not([data-native-cursor], [data-native-cursor] *)"
+
+
+def inside(gate: str, selectors: list[str]) -> str:
+    return ',\n'.join(f'{gate} {selector}{NATIVE}' for selector in selectors)
+
+
+PRESSABLE = [
+    'a[href]',
+    'button:not(:disabled)',
+    'summary',
+    'select:not(:disabled)',
+    'label[for]',
+    "[role='button']:not([aria-disabled='true'])",
+    "[role='tab']",
+    "[role='menuitem']",
+    "[role='option']",
+    "[role='switch']",
+    "input[type='checkbox']:not(:disabled)",
+    "input[type='radio']:not(:disabled)",
+    "input[type='submit']:not(:disabled)",
+    "input[type='button']:not(:disabled)",
+    '.cursor-pointer',
+]
+
+TEXT = [
+    "input:not([type='checkbox']):not([type='radio']):not([type='submit']):not([type='button'])",
+    'textarea',
+    "[contenteditable='true']",
+]
 
 css = f'''
 /* ===========================================================================
@@ -203,20 +282,17 @@ css = f'''
    draw it: a {WIDTH}x{HEIGHT} grid, scaled {PIXEL}x with no interpolation, every
    diagonal a staircase.
 
-   It is also a little larger than the system arrow - about {WIDTH * PIXEL}x{HEIGHT * PIXEL} against
-   a typical 32px - which is the other half of the effect. A pixel arrow at
-   exactly system size reads as a slightly broken cursor; one that is visibly
-   chunkier reads as a deliberate one.
+   {WIDTH * PIXEL}x{HEIGHT * PIXEL} on screen. It was drawn at 3x, which was chunky and in use
+   too big - it covered what it pointed at. At {PIXEL}x it is still plainly a grid
+   of fat pixels and sits close to the system arrow's footprint.
 
-   ## One state, deliberately
+   ## Two states: the arrow, and the hand
 
-   No hover frame and no press frame. The other three skins change on both, and
-   they are right to: they are showing you an object being aimed and used. A
-   1987 machine had one pointer and the system's own I-beam over text, and a
-   pixel arrow that grew or tilted under the mouse would be a modern
-   affordance wearing a costume. The `pointer` fallback keyword still applies
-   everywhere the browser would normally use it, so nothing about hit-testing
-   or accessibility changes.
+   Over anything that can be pressed, the arrow becomes the system's pointing
+   hand, redrawn on the same grid ({HAND_WIDTH}x{HAND_HEIGHT}, {HAND_WIDTH * PIXEL}x{HAND_HEIGHT * PIXEL} on screen). It
+   used to stay an arrow everywhere, which took away the one cue that says
+   "this can be clicked". No press frame: a 1987 machine did not animate its
+   pointer, and the hand already says everything a press would.
 
    ## Two palettes
 
@@ -232,81 +308,49 @@ css = f'''
    Every selector is gated on `html:not([data-cursor='off'])`. The switch in the
    theme picker writes `data-cursor="off"` onto the root element, which drops
    this whole block and hands back the system pointer - no second stylesheet,
-   and no JavaScript that has to know which skins draw a cursor.
+   and no JavaScript that has to know which skins draw a cursor. Anything inside
+   a `[data-native-cursor]` surface is left alone too; see that rule.
 
-   ## Hotspot
+   ## Hotspots
 
-   `{point}` - the centre of the arrow's point. The tip is the top-left drawn
-   pixel by construction, and at {PIXEL}x that pixel is {PIXEL} screen pixels across, so
-   hotspotting on its corner would put every click off the point somebody
-   aimed with.
+   `{point}` for the arrow - the centre of its point, which is the top-left drawn
+   pixel by construction. `{hand_point}` for the hand - the middle of the
+   fingertip. Both are pixel centres rather than corners, because at {PIXEL}x a
+   drawn pixel is {PIXEL} screen pixels across and a corner puts every click off
+   the point somebody aimed with.
 
    Text fields, disabled controls and drag handles are left alone: an I-beam,
    `not-allowed` and `grab` each say something no arrow can say.
    --------------------------------------------------------------------------- */
 
 {GATE} {{
-  cursor: url("data:image/png;base64,{uris['light']}") {point}, auto;
+  cursor: url("data:image/png;base64,{uris['arrow-light']}") {point}, auto;
 }}
 
 {GATE_DARK} {{
-  cursor: url("data:image/png;base64,{uris['dark']}") {point}, auto;
+  cursor: url("data:image/png;base64,{uris['arrow-dark']}") {point}, auto;
 }}
 
-/* The same arrow over anything pressable, and that is not redundant: without
-   it the browser's own `pointer` hand takes over on every link and button, and
-   the one place a reader looks hardest at the cursor is the place it would
-   stop being pixel art. The fallback keyword is still `pointer`, so a machine
-   that refuses the image gets the hand rather than the plain arrow. */
-{GATE} a[href],
-{GATE} button:not(:disabled),
-{GATE} summary,
-{GATE} select:not(:disabled),
-{GATE} label[for],
-{GATE} [role='button']:not([aria-disabled='true']),
-{GATE} [role='tab'],
-{GATE} [role='menuitem'],
-{GATE} [role='option'],
-{GATE} [role='switch'],
-{GATE} input[type='checkbox']:not(:disabled),
-{GATE} input[type='radio']:not(:disabled),
-{GATE} input[type='submit']:not(:disabled),
-{GATE} input[type='button']:not(:disabled),
-{GATE} .cursor-pointer {{
-  cursor: url("data:image/png;base64,{uris['light']}") {point}, pointer;
+/* The hand over anything pressable. The fallback keyword is `pointer`, so a
+   machine that refuses the image still gets a hand. */
+{inside(GATE, PRESSABLE)} {{
+  cursor: url("data:image/png;base64,{uris['hand-light']}") {hand_point}, pointer;
 }}
 
-{GATE_DARK} a[href],
-{GATE_DARK} button:not(:disabled),
-{GATE_DARK} summary,
-{GATE_DARK} select:not(:disabled),
-{GATE_DARK} label[for],
-{GATE_DARK} [role='button']:not([aria-disabled='true']),
-{GATE_DARK} [role='tab'],
-{GATE_DARK} [role='menuitem'],
-{GATE_DARK} [role='option'],
-{GATE_DARK} [role='switch'],
-{GATE_DARK} input[type='checkbox']:not(:disabled),
-{GATE_DARK} input[type='radio']:not(:disabled),
-{GATE_DARK} input[type='submit']:not(:disabled),
-{GATE_DARK} input[type='button']:not(:disabled),
-{GATE_DARK} .cursor-pointer {{
-  cursor: url("data:image/png;base64,{uris['dark']}") {point}, pointer;
+{inside(GATE_DARK, PRESSABLE)} {{
+  cursor: url("data:image/png;base64,{uris['hand-dark']}") {hand_point}, pointer;
 }}
 
 /* The three the arrow must not swallow. */
-{GATE} input:not([type='checkbox']):not([type='radio']):not([type='submit']):not([type='button']),
-{GATE} textarea,
-{GATE} [contenteditable='true'] {{
+{inside(GATE, TEXT)} {{
   cursor: text;
 }}
 
-{GATE} .cursor-grab {{
+{inside(GATE, ['.cursor-grab'])} {{
   cursor: grab;
 }}
 
-{GATE} .cursor-grabbing,
-{GATE} .cursor-grab:active {{
+{inside(GATE, ['.cursor-grabbing', '.cursor-grab:active'])} {{
   cursor: grabbing;
 }}
 '''
@@ -318,5 +362,6 @@ css = f'''
 css = css.replace(' - ', f' {chr(0x2014)} ')
 
 io.open(f'{built}/cursor.css', 'w', encoding='utf-8', newline='').write(css)
-print(f'wrote {built}/cursor.css - {len(css)} chars, hotspot {point}')
-print(f'grid {WIDTH}x{HEIGHT}, delivered {WIDTH * PIXEL}x{HEIGHT * PIXEL}')
+print(f'wrote {built}/cursor.css - {len(css)} chars, hotspots {point} / {hand_point}')
+print(f'arrow {WIDTH}x{HEIGHT} -> {WIDTH * PIXEL}x{HEIGHT * PIXEL}')
+print(f'hand {HAND_WIDTH}x{HAND_HEIGHT} -> {HAND_WIDTH * PIXEL}x{HAND_HEIGHT * PIXEL}')

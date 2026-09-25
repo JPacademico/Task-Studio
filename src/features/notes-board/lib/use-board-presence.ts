@@ -76,6 +76,12 @@ interface PendingInk {
 interface UseBoardPresenceOptions {
   projectId: string;
   /**
+   * The whiteboard page on screen. Live ink is stamped with it on the way out
+   * and filtered by it on the way in — a teammate drawing on page 3 must not
+   * paint ghost strokes across page 1.
+   */
+  pageIndex?: number;
+  /**
    * Moves one note on screen without a render, on behalf of a remote dragger.
    *
    * A callback rather than state returned from here, because the only correct
@@ -140,6 +146,7 @@ interface UseBoardPresenceOptions {
  */
 export const useBoardPresence = ({
   projectId,
+  pageIndex = 0,
   onRemoteDrag,
   onRemoteInk,
 }: UseBoardPresenceOptions) => {
@@ -276,8 +283,10 @@ export const useBoardPresence = ({
       width: number;
       erase: boolean;
       done: boolean;
+      pageIndex?: number;
     }) => {
       if (payload.projectId !== projectId) return;
+      if ((payload.pageIndex ?? 0) !== pageIndex) return;
 
       const now = Date.now();
       let ghost = remoteStrokes.current.get(payload.strokeId);
@@ -397,7 +406,9 @@ export const useBoardPresence = ({
         notifyInk();
       }
     };
-  }, [isConnected, notifyInk, projectId, socket]);
+    // `pageIndex` too: changing page tears the listeners down, and the teardown
+    // above clears the old page's ghosts on the way.
+  }, [isConnected, notifyInk, pageIndex, projectId, socket]);
 
   // ---------------------------------------------------------------------------
   // Holding
@@ -547,8 +558,8 @@ export const useBoardPresence = ({
    * so they must not close over one — a flush scheduled just before a
    * reconnect would otherwise emit on the socket that has since gone.
    */
-  const wireRef = useRef({ socket, isConnected, projectId });
-  wireRef.current = { socket, isConnected, projectId };
+  const wireRef = useRef({ socket, isConnected, projectId, pageIndex });
+  wireRef.current = { socket, isConnected, projectId, pageIndex };
 
   /**
    * Where a note is being dragged to, at `LIVE_FRAME_MS`.
@@ -633,6 +644,7 @@ export const useBoardPresence = ({
               const isLast = offset >= frame.points.length;
               wire.socket.emit('board:ink', {
                 projectId: wire.projectId,
+                pageIndex: wire.pageIndex,
                 strokeId: frame.strokeId,
                 points,
                 color: frame.color,

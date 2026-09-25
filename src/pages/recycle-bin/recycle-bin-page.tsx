@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   CheckCircle2,
   FolderOpen,
@@ -9,22 +10,28 @@ import {
   Trash2,
 } from 'lucide-react';
 
+import { noteApi } from '@/entities/note/api/note.api';
 import { useDeletedNotes, usePurgeNote, useRestoreNote } from '@/entities/note/model/queries';
+import { projectApi } from '@/entities/project/api/project.api';
 import {
   useBinnedProjects,
   usePurgeProject,
   useRestoreProject,
 } from '@/entities/project/model/queries';
 import type { BinnedProject } from '@/entities/project/model/types';
+import { taskApi } from '@/entities/task/api/task.api';
 import { usePurgeTask, useRecycleBin, useRestoreTask } from '@/entities/task/model/queries';
+import { errorMessage } from '@/shared/api/client';
 import { TASK_TYPE_META, TEXT_LIMITS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
 import { formatDeadlineDate, formatRelative } from '@/shared/lib/dates';
 import { clampText } from '@/shared/lib/text';
 import { readableInk } from '@/shared/lib/colors';
+import { toast } from '@/shared/lib/toast';
 import {
   Badge,
   Button,
+  ConfirmDialog,
   EmptyState,
   Modal,
   PageLoader,
@@ -137,6 +144,35 @@ const RecycleBinPage = () => {
     if (!purgeTarget) setPassword('');
   }, [purgeTarget]);
 
+  /*
+   * The single task or note awaiting "delete forever".
+   *
+   * These used to go through `window.confirm`, the one dialog the product
+   * cannot dress — see `ConfirmDialog` for the whole list of what is wrong with
+   * it. One piece of state for both, so only one confirmation can ever be open.
+   */
+  const [confirmTarget, setConfirmTarget] = useState<
+    { kind: 'task'; id: string; title: string } | { kind: 'note'; id: string } | null
+  >(null);
+
+  /*
+   * "Empty bin": everything in all three tabs at once.
+   *
+   * Projects need the account's password to be destroyed, individually or in
+   * bulk, so the field appears only when there are binned projects — and
+   * leaving it empty still empties the other two tabs, with the projects left
+   * where they are. A password field that blocked deleting a stale task would
+   * be a lock on the wrong door.
+   */
+  const [isEmptying, setIsEmptying] = useState(false);
+  const [emptyPassword, setEmptyPassword] = useState('');
+  const [isEmptyBusy, setIsEmptyBusy] = useState(false);
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!isEmptying) setEmptyPassword('');
+  }, [isEmptying]);
+
   if (tasksLoading && notesLoading && projectsLoading) {
     return <PageLoader label={t('bin.opening')} />;
   }
@@ -164,14 +200,90 @@ const RecycleBinPage = () => {
         ? notes.length === 0
         : projects.length === 0;
 
+  const totalBinned = tasks.length + notes.length + projects.length;
+
+  const confirmPurge = () => {
+    if (!confirmTarget) return;
+    const options = { onSettled: () => setConfirmTarget(null) };
+    if (confirmTarget.kind === 'task') purgeTask.mutate(confirmTarget.id, options);
+    else purgeNote.mutate(confirmTarget.id, options);
+  };
+
+  /**
+   * Every tab, one request each, side by side.
+   *
+   * The API does the work in bulk (`DELETE /tasks/recycle-bin`, and the like)
+   * rather than this looping single deletes: a full bin is hundreds of rows,
+   * and one round trip per row is both slow and a burst the rate limiter is
+   * right to refuse. The three are independent, so one failing does not stop
+   * the others — the toast reports what actually went.
+   */
+  const handleEmptyBin = async () => {
+    setIsEmptyBusy(true);
+    const includeProjects = projects.length > 0 && emptyPassword.length > 0;
+
+    const [taskResult, noteResult, projectResult] = await Promise.allSettled([
+      tasks.length > 0 ? taskApi.purgeAll() : Promise.resolve({ purged: 0, skipped: 0 }),
+      notes.length > 0 ? noteApi.purgeAll() : Promise.resolve({ purged: 0 }),
+      includeProjects
+        ? projectApi.purgeAll(emptyPassword)
+        : Promise.resolve({ purged: 0, filesDeleted: 0 }),
+    ]);
+
+    setEmptyPassword('');
+    setIsEmptyBusy(false);
+    // A purged project takes rows with it from every cache in the app.
+    void queryClient.invalidateQueries();
+
+    if (projectResult.status === 'rejected') {
+      // Almost always a wrong password; keep the dialog open to try again.
+      toast.error(errorMessage(projectResult.reason));
+      return;
+    }
+
+    const purged =
+      (taskResult.status === 'fulfilled' ? taskResult.value.purged : 0) +
+      (noteResult.status === 'fulfilled' ? noteResult.value.purged : 0) +
+      projectResult.value.purged;
+    const skipped = taskResult.status === 'fulfilled' ? taskResult.value.skipped : 0;
+
+    if (taskResult.status === 'rejected' || noteResult.status === 'rejected') {
+      toast.error(
+        errorMessage(
+          taskResult.status === 'rejected' ? taskResult.reason : (noteResult as PromiseRejectedResult).reason,
+        ),
+      );
+    } else {
+      toast.success(
+        skipped > 0
+          ? t('bin.emptiedWithSkipped', { count: String(purged), skipped: String(skipped) })
+          : t('bin.emptied', { count: String(purged) }),
+      );
+    }
+    setIsEmptying(false);
+  };
+
   return (
     <div className="space-y-6">
       <header className="space-y-3">
-        <div className="space-y-1">
-          <p className="text-xs uppercase tracking-[0.18em] text-content-faint">{t('bin.title')}</p>
-          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-            {t('bin.deletedItems')}
-          </h1>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div className="space-y-1">
+            <p className="text-xs uppercase tracking-[0.18em] text-content-faint">{t('bin.title')}</p>
+            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+              {t('bin.deletedItems')}
+            </h1>
+          </div>
+
+          {/* Everything, in every tab — the tabs are three views of one bin. */}
+          <Button
+            size="sm"
+            variant="danger"
+            onClick={() => setIsEmptying(true)}
+            disabled={totalBinned === 0}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            {t('bin.emptyBin')}
+          </Button>
         </div>
 
         <Segmented
@@ -302,11 +414,7 @@ const RecycleBinPage = () => {
                   <Button
                     size="sm"
                     variant="danger"
-                    onClick={() => {
-                      if (window.confirm(t('bin.confirmPurgeTask', { title: task.title }))) {
-                        purgeTask.mutate(task.id);
-                      }
-                    }}
+                    onClick={() => setConfirmTarget({ kind: 'task', id: task.id, title: task.title })}
                     isLoading={purgeTask.isPending && purgeTask.variables === task.id}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -378,11 +486,7 @@ const RecycleBinPage = () => {
                     <Button
                       size="sm"
                       variant="danger"
-                      onClick={() => {
-                        if (window.confirm(t('bin.confirmPurgeNote'))) {
-                          purgeNote.mutate(note.id);
-                        }
-                      }}
+                      onClick={() => setConfirmTarget({ kind: 'note', id: note.id })}
                       isLoading={purgeNote.isPending && purgeNote.variables === note.id}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -472,14 +576,61 @@ const RecycleBinPage = () => {
         </ul>
       )}
 
+      {/* One task or note, for good. */}
+      <ConfirmDialog
+        isOpen={confirmTarget !== null}
+        onClose={() => setConfirmTarget(null)}
+        onConfirm={confirmPurge}
+        title={t(confirmTarget?.kind === 'note' ? 'bin.purgeNoteTitle' : 'bin.purgeTaskTitle')}
+        description={
+          confirmTarget?.kind === 'task'
+            ? t('bin.confirmPurgeTask', { title: confirmTarget.title })
+            : t('bin.confirmPurgeNote')
+        }
+        confirmLabel={t('bin.deleteForever')}
+        isLoading={purgeTask.isPending || purgeNote.isPending}
+      />
+
+      {/* The whole bin. */}
+      <ConfirmDialog
+        isOpen={isEmptying}
+        onClose={() => (isEmptyBusy ? undefined : setIsEmptying(false))}
+        onConfirm={() => void handleEmptyBin()}
+        title={t('bin.emptyBinTitle')}
+        description={t('bin.emptyBinBody', {
+          tasks: String(tasks.length),
+          notes: String(notes.length),
+          projects: String(projects.length),
+        })}
+        confirmLabel={t('bin.emptyBin')}
+        isLoading={isEmptyBusy}
+      >
+        {projects.length > 0 && (
+          <div className="space-y-2 text-left">
+            <p className="text-xs leading-relaxed text-content-muted">
+              {t('bin.emptyBinProjects')}
+            </p>
+            <PasswordInput
+              name="emptyBinPassword"
+              autoComplete="current-password"
+              value={emptyPassword}
+              onChange={(event) =>
+                setEmptyPassword(clampText(event.target.value, TEXT_LIMITS.password))
+              }
+              maxLength={TEXT_LIMITS.password}
+              label={t('bin.purgeProjectLabel')}
+            />
+          </div>
+        )}
+      </ConfirmDialog>
+
       {/*
         Permanent deletion, behind a password.
 
-        A dialog rather than `window.confirm`, unlike the task and note rows
-        above, and the difference is the size of what is being destroyed: a
+        Its own dialog rather than the `ConfirmDialog` the task and note rows
+        use, and the difference is the size of what is being destroyed: a
         project is everything under it, there is no copy anywhere afterwards,
         and the API asks for the account's password for exactly that reason.
-        A browser confirm cannot collect one.
       */}
       <Modal
         isOpen={purgeTarget !== null}

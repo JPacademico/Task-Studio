@@ -6,6 +6,7 @@ import { cn } from '@/shared/lib/cn';
 import { useIsTouchDevice } from '@/shared/lib/hooks';
 import { useRevealOnScroll } from '@/shared/lib/use-reveal-on-scroll';
 import { useT, type TranslationKey } from '@/shared/i18n';
+import { LucyCursor } from './lucy-cursor';
 
 /**
  * Where each note is pinned, as a percentage of the board.
@@ -150,6 +151,10 @@ export const FeatureNotes = () => {
         'lg:h-[44rem]',
       )}
     >
+      {/* A teammate at work on the wall — first in the board so the heading,
+          every note and anything being dragged paint over it. See `LucyCursor`. */}
+      <LucyCursor boardRef={boardRef} />
+
       {/* --- The claim, pinned in the middle ---------------------------------
 
           Centred absolutely on the desktop board and simply first in the flow
@@ -209,6 +214,8 @@ export const FeatureNotes = () => {
               // rather than in a class because the values are per-note data.
               { left: `${note.x}%`, top: `${note.y}%` } as React.CSSProperties
             }
+            // The note Lucy's arrow points at: the top-right one.
+            data-lucy-target={note.key === 'landing.note.notes' ? '' : undefined}
             className={cn(
               'gpu relative lg:absolute lg:w-[13.5rem]',
               isDraggable && 'cursor-grab touch-none',

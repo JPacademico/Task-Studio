@@ -19,6 +19,7 @@ import type {
   CreateNoteLinkPayload,
   Note,
   NoteLink,
+  ProjectBoardPages,
   ProjectBoardSnapshot,
   UpdateNotePayload,
 } from './types';
@@ -31,10 +32,13 @@ import { translate } from '@/shared/i18n';
  * on the next frame — with one addition the personal board does not need:
  * everything a teammate does arrives over the socket and is merged into the
  * same snapshot, so two people rearranging the wall see one wall.
+ *
+ * Every hook here is for one *page* of the wall: the cache is keyed by it, a
+ * create lands on it, and a teammate's note from another page is not drawn.
  */
-const useProjectBoardCache = (projectId: string) => {
+const useProjectBoardCache = (projectId: string, pageIndex: number) => {
   const queryClient = useQueryClient();
-  const key = queryKeys.notes.projectBoard(projectId);
+  const key = queryKeys.notes.projectBoard(projectId, pageIndex);
 
   return {
     key,
@@ -46,23 +50,29 @@ const useProjectBoardCache = (projectId: string) => {
         ),
       // The key array is rebuilt each render; its contents are what matter.
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      [projectId, queryClient],
+      [pageIndex, projectId, queryClient],
     ),
   };
 };
 
-export const useProjectBoard = (projectId: string) =>
+export const useProjectBoard = (projectId: string, pageIndex = 0) =>
   useQuery({
-    queryKey: queryKeys.notes.projectBoard(projectId),
-    queryFn: () => boardApi.projectSnapshot(projectId),
+    queryKey: queryKeys.notes.projectBoard(projectId, pageIndex),
+    queryFn: () => boardApi.projectSnapshot(projectId, pageIndex),
     enabled: Boolean(projectId),
     staleTime: 20_000,
+    // Switching pages keeps the pager and the old wall on screen until the
+    // new one lands, rather than flashing the skeleton on every tab click.
+    placeholderData: (previous) =>
+      previous && previous.projectId === projectId
+        ? { ...previous, pageIndex, notes: [], links: [] }
+        : undefined,
   });
 
 /** Applies every teammate's board event to the cached snapshot. */
-export const useProjectBoardRealtime = (projectId: string) => {
+export const useProjectBoardRealtime = (projectId: string, pageIndex = 0) => {
   const { socket } = useRealtime();
-  const { patch } = useProjectBoardCache(projectId);
+  const { patch } = useProjectBoardCache(projectId, pageIndex);
 
   useEffect(() => {
     if (!socket || !projectId) return;
@@ -79,6 +89,18 @@ export const useProjectBoardRealtime = (projectId: string) => {
      */
     const upsertNote = (note: Note) => {
       if (note.projectId !== projectId) return;
+
+      // A note on another page — or one just moved to another page — is not
+      // on this wall.
+      if ((note.pageIndex ?? 0) !== pageIndex) {
+        patch((snapshot) =>
+          snapshot.notes.some((entry) => entry.id === note.id)
+            ? { ...snapshot, notes: snapshot.notes.filter((entry) => entry.id !== note.id) }
+            : snapshot,
+        );
+        return;
+      }
+
       patch((snapshot) => ({
         ...snapshot,
         notes: snapshot.notes.some((entry) => entry.id === note.id)
@@ -154,7 +176,81 @@ export const useProjectBoardRealtime = (projectId: string) => {
       socket.off('note:unlinked', removeLink);
       socket.off('note:grouped', applyGroup);
     };
-  }, [patch, projectId, socket]);
+  }, [pageIndex, patch, projectId, socket]);
+};
+
+/**
+ * The wall's pages: add, rename, remove — and everybody else's doing so.
+ *
+ * The page list rides on every page's snapshot, so a change is written into
+ * all of them at once (`setQueriesData` on the project prefix) rather than
+ * refetching each. `whiteboard:pages` is the same change arriving from a
+ * teammate; the server sends it to the whole room, this client included, so
+ * the local write and the echo simply agree.
+ */
+export const useProjectBoardPages = (projectId: string) => {
+  const queryClient = useQueryClient();
+  const { socket } = useRealtime();
+
+  const apply = useCallback(
+    (payload: ProjectBoardPages) => {
+      if (payload.projectId !== projectId) return;
+
+      queryClient.setQueriesData<ProjectBoardSnapshot>(
+        { queryKey: queryKeys.notes.projectBoardAll(projectId) },
+        (snapshot) =>
+          snapshot
+            ? { ...snapshot, pages: payload.pages, pageLimit: payload.pageLimit }
+            : snapshot,
+      );
+
+      // The removed page's Post-its and ink went to the bin with it; its
+      // caches are wrong now, and a later page may reuse the index.
+      if (payload.removedIndex !== undefined) {
+        queryClient.removeQueries({
+          queryKey: queryKeys.notes.projectBoard(projectId, payload.removedIndex),
+        });
+        queryClient.removeQueries({
+          queryKey: queryKeys.whiteboard.scene(projectId, payload.removedIndex),
+        });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.notes.recycleBin });
+      }
+    },
+    [projectId, queryClient],
+  );
+
+  useEffect(() => {
+    if (!socket || !projectId) return;
+    socket.on('whiteboard:pages', apply);
+    return () => {
+      socket.off('whiteboard:pages', apply);
+    };
+  }, [apply, projectId, socket]);
+
+  return {
+    add: useMutation({
+      mutationFn: () => boardApi.addProjectPage(projectId),
+      onSuccess: (payload) => {
+        apply(payload);
+        toast.success(translate('toast.pageAdded'));
+      },
+      onError: (error) => toast.error(errorMessage(error, translate('toast.pageAddFailed'))),
+    }),
+    rename: useMutation({
+      mutationFn: ({ index, name }: { index: number; name: string }) =>
+        boardApi.renameProjectPage(projectId, index, name),
+      onSuccess: apply,
+      onError: (error) => toast.error(errorMessage(error)),
+    }),
+    remove: useMutation({
+      mutationFn: (index: number) => boardApi.removeProjectPage(projectId, index),
+      onSuccess: (payload) => {
+        apply(payload);
+        toast.success(translate('toast.pageRemoved'));
+      },
+      onError: (error) => toast.error(errorMessage(error)),
+    }),
+  };
 };
 
 /**
@@ -172,12 +268,21 @@ export const useProjectBoardRealtime = (projectId: string) => {
  * the corner. Without it a note would be un-deletable by its author for as long
  * as the request took.
  */
-export const useCreateProjectNote = (projectId: string, currentUserId?: string) => {
-  const { patch } = useProjectBoardCache(projectId);
+export const useCreateProjectNote = (
+  projectId: string,
+  currentUserId?: string,
+  pageIndex = 0,
+) => {
+  const { patch } = useProjectBoardCache(projectId, pageIndex);
 
   return useMutation({
     mutationFn: (request: CreateNoteRequest) =>
-      noteApi.create({ ...splitCreateRequest(request).payload, scope: 'PROJECT', projectId }),
+      noteApi.create({
+        ...splitCreateRequest(request).payload,
+        scope: 'PROJECT',
+        projectId,
+        pageIndex,
+      }),
 
     onMutate: (request) => {
       const { payload, replacesId } = splitCreateRequest(request);
@@ -206,6 +311,7 @@ export const useCreateProjectNote = (projectId: string, currentUserId?: string) 
             userId: currentUserId,
             scope: 'PROJECT',
             projectId,
+            pageIndex,
           }),
         ],
       }));
@@ -279,8 +385,8 @@ export const useCreateProjectNote = (projectId: string, currentUserId?: string) 
   });
 };
 
-export const useUpdateProjectNote = (projectId: string) => {
-  const { queryClient, patch } = useProjectBoardCache(projectId);
+export const useUpdateProjectNote = (projectId: string, pageIndex = 0) => {
+  const { queryClient, patch, key } = useProjectBoardCache(projectId, pageIndex);
 
   return useMutation({
     mutationFn: ({ noteId, payload }: { noteId: string; payload: UpdateNotePayload }) =>
@@ -297,7 +403,7 @@ export const useUpdateProjectNote = (projectId: string) => {
        * merge below and `markLocalNoteEdit` are what settle that argument.
        */
       const previous = queryClient
-        .getQueryData<ProjectBoardSnapshot>(queryKeys.notes.projectBoard(projectId))
+        .getQueryData<ProjectBoardSnapshot>(key)
         ?.notes.find((note) => note.id === noteId);
 
       // This client now owns these fields until the server catches up.
@@ -336,8 +442,8 @@ export const useUpdateProjectNote = (projectId: string) => {
   });
 };
 
-export const useDeleteProjectNote = (projectId: string) => {
-  const { key, queryClient, patch } = useProjectBoardCache(projectId);
+export const useDeleteProjectNote = (projectId: string, pageIndex = 0) => {
+  const { key, queryClient, patch } = useProjectBoardCache(projectId, pageIndex);
 
   return useMutation({
     mutationFn: (noteId: string) => noteApi.remove(noteId),
@@ -378,22 +484,25 @@ export const useDeleteProjectNote = (projectId: string) => {
  * more than it does on a private one — a re-created note would break somebody
  * else's link, not just your own.
  */
-export const useRestoreProjectNote = (projectId: string) => {
-  const { patch } = useProjectBoardCache(projectId);
+export const useRestoreProjectNote = (projectId: string, pageIndex = 0) => {
+  const { patch } = useProjectBoardCache(projectId, pageIndex);
 
   return useMutation({
     mutationFn: (noteId: string) => noteApi.restore(noteId),
+    // A note whose page has since gone comes back on page 0 (see
+    // `NotesService.restore`), so it only lands here if this is its page.
     onSuccess: (note) =>
-      patch((snapshot) => ({
-        ...snapshot,
-        notes: [...snapshot.notes.filter((entry) => entry.id !== note.id), note],
-      })),
+      patch((snapshot) =>
+        (note.pageIndex ?? 0) === pageIndex
+          ? { ...snapshot, notes: [...snapshot.notes.filter((entry) => entry.id !== note.id), note] }
+          : snapshot,
+      ),
     onError: (error) => toast.error(errorMessage(error)),
   });
 };
 
-export const usePatchProjectNotes = (projectId: string) => {
-  const { patch } = useProjectBoardCache(projectId);
+export const usePatchProjectNotes = (projectId: string, pageIndex = 0) => {
+  const { patch } = useProjectBoardCache(projectId, pageIndex);
 
   return useCallback(
     (update: (notes: Note[]) => Note[]) =>
@@ -403,8 +512,8 @@ export const usePatchProjectNotes = (projectId: string) => {
 };
 
 /** Writes drag coordinates into the cache without touching the network. */
-export const usePatchProjectPositions = (projectId: string) => {
-  const { patch } = useProjectBoardCache(projectId);
+export const usePatchProjectPositions = (projectId: string, pageIndex = 0) => {
+  const { patch } = useProjectBoardCache(projectId, pageIndex);
 
   return useCallback(
     (moves: { id: string; positionX: number; positionY: number }[]) => {
@@ -422,8 +531,8 @@ export const usePatchProjectPositions = (projectId: string) => {
   );
 };
 
-export const useSaveProjectPositions = (projectId: string) => {
-  const { key, queryClient } = useProjectBoardCache(projectId);
+export const useSaveProjectPositions = (projectId: string, pageIndex = 0) => {
+  const { key, queryClient } = useProjectBoardCache(projectId, pageIndex);
 
   return useMutation({
     mutationFn: noteApi.savePositions,
@@ -434,8 +543,8 @@ export const useSaveProjectPositions = (projectId: string) => {
   });
 };
 
-export const useCreateProjectNoteLink = (projectId: string) => {
-  const { patch } = useProjectBoardCache(projectId);
+export const useCreateProjectNoteLink = (projectId: string, pageIndex = 0) => {
+  const { patch } = useProjectBoardCache(projectId, pageIndex);
 
   return useMutation({
     mutationFn: (payload: CreateNoteLinkPayload) => boardApi.createLink(payload),
@@ -448,8 +557,8 @@ export const useCreateProjectNoteLink = (projectId: string) => {
   });
 };
 
-export const useDeleteProjectNoteLink = (projectId: string) => {
-  const { patch } = useProjectBoardCache(projectId);
+export const useDeleteProjectNoteLink = (projectId: string, pageIndex = 0) => {
+  const { patch } = useProjectBoardCache(projectId, pageIndex);
 
   return useMutation({
     mutationFn: (linkId: string) => boardApi.removeLink(linkId),
@@ -462,8 +571,8 @@ export const useDeleteProjectNoteLink = (projectId: string) => {
   });
 };
 
-export const useGroupProjectNotes = (projectId: string) => {
-  const { patch } = useProjectBoardCache(projectId);
+export const useGroupProjectNotes = (projectId: string, pageIndex = 0) => {
+  const { patch } = useProjectBoardCache(projectId, pageIndex);
 
   return useMutation({
     mutationFn: ({ noteIds, groupId }: { noteIds: string[]; groupId?: string | null }) =>

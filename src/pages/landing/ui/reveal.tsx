@@ -51,10 +51,20 @@ import { useRevealOnScroll } from '@/shared/lib/use-reveal-on-scroll';
  *
  * ## Why the movement is this small
  *
- * 16px over half a second. A section that slides half a screen is a section the
- * reader watches instead of reads, and it fights the scroll they are already
- * performing — they are moving the page down while the content moves up. Enough
- * to register, not enough to argue with.
+ * 24px over about two thirds of a second, on a curve that does nearly all of
+ * its travel early. A section that slides half a screen is a section the reader
+ * watches instead of reads, and it fights the scroll they are already
+ * performing — they are moving the page down while the content moves up. It
+ * was 16px over half a second, which on a fast scroll finished before the eye
+ * landed on it; this is enough to register, not enough to argue with.
+ *
+ * ## Why `will-change` only while hidden
+ *
+ * Promoting the block to its own layer before it moves is what keeps the first
+ * frame of the entrance from stuttering, and it is only needed for that one
+ * transition. Left on afterwards, every revealed section on a long page would
+ * hold a compositor layer — and its texture memory — for as long as the page
+ * is open.
  */
 export const Reveal = ({
   children,
@@ -83,8 +93,9 @@ export const Reveal = ({
     <div
       ref={ref}
       className={cn(
-        'motion-safe:transition-[opacity,transform] motion-safe:duration-500 motion-safe:ease-studio',
-        isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0',
+        'motion-safe:transition-[opacity,transform] motion-safe:duration-700',
+        'motion-safe:[transition-timing-function:cubic-bezier(0.16,1,0.3,1)]',
+        isVisible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0 will-change-transform',
         className,
       )}
       // Applied unconditionally: the delay is what staggers the reveal, so it

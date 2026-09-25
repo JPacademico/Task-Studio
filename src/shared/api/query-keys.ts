@@ -83,7 +83,10 @@ export const queryKeys = {
     list: (params?: object) => ['notes', 'list', params ?? {}] as const,
     board: (pageIndex: number) => ['notes', 'board', pageIndex] as const,
     /** The project whiteboard's shared Post-it layer. */
-    projectBoard: (projectId: string) => ['notes', 'board', 'project', projectId] as const,
+    /** One page of a project's shared wall. The prefix without a page is every page. */
+    projectBoard: (projectId: string, pageIndex = 0) =>
+      ['notes', 'board', 'project', projectId, pageIndex] as const,
+    projectBoardAll: (projectId: string) => ['notes', 'board', 'project', projectId] as const,
     /** Soft-deleted personal notes, restorable from the recycle bin. */
     recycleBin: ['notes', 'recycle-bin'] as const,
   },
@@ -93,7 +96,7 @@ export const queryKeys = {
   },
 
   whiteboard: {
-    scene: (projectId: string) => ['whiteboard', projectId] as const,
+    scene: (projectId: string, pageIndex = 0) => ['whiteboard', projectId, pageIndex] as const,
   },
 
   documents: {

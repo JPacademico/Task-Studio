@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 
 /**
- * How long the reveal waits for the observer before giving up on it.
+ * How long the reveal waits to hear from the observer at all before giving up
+ * on it.
  *
- * Long enough that a working `IntersectionObserver` always wins the race on
- * content below the fold — it fires within a frame of the element being
- * observed — and short enough that a reader who arrives at a broken one never
- * sees an empty section.
+ * A working `IntersectionObserver` reports every element it is given within a
+ * frame of being asked — `isIntersecting: false` for one below the fold — so
+ * silence for this long means the observer is not going to report anything.
  */
 const FALLBACK_MS = 700;
 
@@ -35,6 +35,21 @@ const FALLBACK_MS = 700;
  * underneath guarantees the content arrives regardless. The animation is an
  * enhancement; being readable is not.
  *
+ * ## Why the timer only covers a *silent* observer
+ *
+ * It used to reveal the element 700ms after mount whatever the observer said.
+ * That was the safety net firing on every page load: every section of the
+ * landing page, including the ones three screens down, had quietly revealed
+ * itself before anybody scrolled, so the entrance played to nobody and the
+ * page read as having no scroll animation at all. The first callback from the
+ * observer — which arrives almost at once, in or out of view — now disarms the
+ * timer, and from then on only actual intersection reveals.
+ *
+ * A tab opened in the background is the other case worth handling: nothing is
+ * being scrolled, timers still run, and the observer may not report until the
+ * tab is shown. The timer is only armed once the document is visible, so a
+ * page opened with a middle click still animates when its reader gets to it.
+ *
  * ## Why it is one-way
  *
  * Once revealed, always revealed. Content that faded out again on scroll would
@@ -53,9 +68,20 @@ export const useRevealOnScroll = (
     const node = target.current;
     if (isRevealed) return;
 
+    let hasHeard = false;
+
     // The safety net, armed before the observer so a browser that throws while
-    // constructing one is covered too.
-    timerRef.current = window.setTimeout(() => setIsRevealed(true), FALLBACK_MS);
+    // constructing one is covered too — but only against an observer that has
+    // said nothing, and only while somebody can see the page.
+    const arm = () => {
+      if (hasHeard || document.visibilityState === 'hidden') return;
+      window.clearTimeout(timerRef.current);
+      timerRef.current = window.setTimeout(() => {
+        if (!hasHeard) setIsRevealed(true);
+      }, FALLBACK_MS);
+    };
+    arm();
+    document.addEventListener('visibilitychange', arm);
 
     let observer: IntersectionObserver | undefined;
 
@@ -63,6 +89,9 @@ export const useRevealOnScroll = (
       try {
         observer = new IntersectionObserver(
           (entries) => {
+            // Alive and reporting: from here on it decides, not the timer.
+            hasHeard = true;
+            window.clearTimeout(timerRef.current);
             if (entries.some((entry) => entry.isIntersecting)) setIsRevealed(true);
           },
           { rootMargin },
@@ -75,6 +104,7 @@ export const useRevealOnScroll = (
 
     return () => {
       window.clearTimeout(timerRef.current);
+      document.removeEventListener('visibilitychange', arm);
       observer?.disconnect();
     };
   }, [target, rootMargin, isRevealed]);

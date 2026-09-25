@@ -9,6 +9,7 @@ import type {
   ListNotesParams,
   Note,
   NoteLink,
+  ProjectBoardPages,
   ProjectBoardSnapshot,
   UpdateNotePayload,
 } from '../model/types';
@@ -65,6 +66,12 @@ export const noteApi = {
   async purge(noteId: string): Promise<void> {
     await api.delete(`/notes/${noteId}/purge`);
   },
+
+  /** Empty the note bin: every binned note this account wrote. */
+  async purgeAll(): Promise<{ purged: number }> {
+    const { data } = await api.delete<{ purged: number }>('/notes/recycle-bin');
+    return data;
+  },
 };
 
 /**
@@ -78,8 +85,38 @@ export const boardApi = {
   },
 
   /** The project whiteboard's shared Post-it layer. */
-  async projectSnapshot(projectId: string): Promise<ProjectBoardSnapshot> {
-    const { data } = await api.get<ProjectBoardSnapshot>(`/notes/board/project/${projectId}`);
+  async projectSnapshot(projectId: string, pageIndex = 0): Promise<ProjectBoardSnapshot> {
+    const { data } = await api.get<ProjectBoardSnapshot>(`/notes/board/project/${projectId}`, {
+      params: { pageIndex },
+    });
+    return data;
+  },
+
+  // --- The project whiteboard's pages ----------------------------------------
+  // Adding and renaming take write access; removing is an admin's, because it
+  // bins every teammate's Post-its on the page. See `BoardService` on the API.
+
+  async addProjectPage(projectId: string): Promise<ProjectBoardPages> {
+    const { data } = await api.post<ProjectBoardPages>(`/notes/board/project/${projectId}/pages`);
+    return data;
+  },
+
+  async renameProjectPage(
+    projectId: string,
+    index: number,
+    name: string,
+  ): Promise<ProjectBoardPages> {
+    const { data } = await api.patch<ProjectBoardPages>(
+      `/notes/board/project/${projectId}/pages/${index}`,
+      { name },
+    );
+    return data;
+  },
+
+  async removeProjectPage(projectId: string, index: number): Promise<ProjectBoardPages> {
+    const { data } = await api.delete<ProjectBoardPages>(
+      `/notes/board/project/${projectId}/pages/${index}`,
+    );
     return data;
   },
 
@@ -123,6 +160,11 @@ export const boardApi = {
 
   async clearStrokes(pageIndex: number): Promise<void> {
     await api.delete('/notes/board/strokes', { params: { pageIndex } });
+  },
+
+  /** One stroke off the desk — what Ctrl+Z does to a line just drawn. */
+  async removeStroke(strokeId: string): Promise<void> {
+    await api.delete(`/notes/board/strokes/${strokeId}`);
   },
 
   async group(

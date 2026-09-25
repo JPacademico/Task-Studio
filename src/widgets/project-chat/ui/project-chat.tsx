@@ -1,10 +1,23 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, useDragControls, useMotionValue } from 'framer-motion';
-import { AlertCircle, Check, Clock3, GripHorizontal, Pin, X } from 'lucide-react';
+import { AlertCircle, Check, Clock3, GripHorizontal, Pin, RotateCcw, X } from 'lucide-react';
 
 import { useRealtime } from '@/app/providers/realtime-provider';
-import { chatApi } from '@/entities/chat/api/chat.api';
+import {
+  CHAT_PAGE,
+  loadConversation,
+  loadEarlierMessages,
+  setLocalDelivery,
+  upsertChatMessages,
+} from '@/entities/chat/model/chat-cache';
 import {
   applyMention,
   isMentionComplete,
@@ -17,9 +30,13 @@ import type { ChatMessage } from '@/entities/chat/model/types';
 import { useRoster } from '@/entities/project/model/queries';
 import type { RosterMember } from '@/entities/project/model/types';
 import { useCurrentUser } from '@/features/auth/model/session.store';
+import { enqueueChatMessage } from '@/features/project-chat-dock/model/chat-outbox';
+import {
+  TYPING_VISIBLE_MS,
+  useTypingSignal,
+} from '@/features/project-chat-dock/model/use-typing-signal';
 import { ChatPin } from '@/features/project-chat-dock/ui/chat-pin';
 import { useT } from '@/shared/i18n';
-import { emitWithAck } from '@/shared/api/socket';
 import { queryKeys } from '@/shared/api/query-keys';
 import { cn } from '@/shared/lib/cn';
 import { uid } from '@/shared/lib/uid';
@@ -80,8 +97,13 @@ export const ProjectChat = ({
   const y = useMotionValue(storedPosition.y);
   const dragControls = useDragControls();
 
+  const queryClient = useQueryClient();
+  const typingSignal = useTypingSignal(projectId);
+
   const [draft, setDraft] = useState('');
-  const [liveMessages, setLiveMessages] = useState<ChatMessage[]>([]);
+  /** Whether "load earlier" has anything left to load. Unknown until a short page says no. */
+  const [hasEarlier, setHasEarlier] = useState(true);
+  const [isLoadingEarlier, setIsLoadingEarlier] = useState(false);
   /*
    * Everything the `@` picker needs, and nothing it does not.
    *
@@ -139,18 +161,33 @@ export const ProjectChat = ({
    * against: a dropped connection is the one situation where events were
    * genuinely missed and the history really is behind.
    */
-  const { data: history = [], isLoading: isLoadingHistory } = useQuery({
+  /*
+   * `refetchOnMount: 'always'` is the other half of the fix for messages
+   * vanishing on reopen. The cached list is drawn at once, and the fetch that
+   * follows asks only for what arrived after its newest message — the part
+   * that was never delivered while the window was shut and the room left.
+   * See `loadConversation`.
+   */
+  const { data: messages = [], isLoading: isLoadingHistory } = useQuery({
     queryKey: queryKeys.chat.history(projectId),
-    queryFn: () => chatApi.history(projectId, { limit: 50 }),
+    queryFn: () => loadConversation(queryClient, projectId),
     enabled: Boolean(projectId),
-    staleTime: 5 * 60_000,
+    staleTime: 30_000,
     gcTime: 30 * 60_000,
+    refetchOnMount: 'always',
   });
 
-  const messages = useMemo(() => {
-    const seen = new Set(history.map((message) => message.id));
-    return [...history, ...liveMessages.filter((message) => !seen.has(message.id))];
-  }, [history, liveMessages]);
+  /*
+   * A socket that dropped and came back missed whatever was said meanwhile —
+   * Socket.io replays nothing. Catching up is one small `after` request.
+   */
+  const wasConnected = useRef(isConnected);
+  useEffect(() => {
+    if (isConnected && !wasConnected.current) {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.chat.history(projectId) });
+    }
+    wasConnected.current = isConnected;
+  }, [isConnected, projectId, queryClient]);
 
   /*
    * The roster, for two jobs that look unrelated and are the same one.
@@ -216,48 +253,42 @@ export const ProjectChat = ({
     input.setSelectionRange(target, target);
   }, [draft]);
 
-  // A pinned window that moved to another project must not keep the previous
-  // conversation's live tail underneath the new history.
-  useEffect(() => setLiveMessages([]), [projectId]);
+  // A pinned window that moved to another project starts not knowing whether
+  // that conversation has an older page.
+  useEffect(() => setHasEarlier(true), [projectId]);
 
   // Incoming messages + typing indicators.
   useEffect(() => {
     if (!socket) return;
 
+    /*
+     * Into the cache, not into component state — which is what made messages
+     * survive the window closing. Our own message coming back retires the
+     * optimistic bubble with the same `clientId`; see `mergeMessages`.
+     */
     const handleMessage = (message: ChatMessage) => {
       if (message.projectId !== projectId) return;
-
-      setLiveMessages((current) => {
-        if (current.some((entry) => entry.id === message.id)) return current;
-
-        /*
-         * Our own message coming back.
-         *
-         * The optimistic copy drawn by `send` is already on screen under a
-         * local id, so appending this would show the same sentence twice for a
-         * moment and then leave two entries that never merge. `clientId` is the
-         * only thing tying the two together — the server id did not exist when
-         * we drew ours — so it is matched on, and the server's version replaces
-         * ours in place. Replacing rather than removing-and-appending keeps it
-         * where the reader is already looking, and carries over the real id,
-         * timestamp and any server-side edit to the content.
-         */
-        if (message.clientId) {
-          const mine = current.findIndex((entry) => entry.clientId === message.clientId);
-          if (mine !== -1) {
-            const next = [...current];
-            next[mine] = message;
-            return next;
-          }
-        }
-
-        return [...current, message];
+      upsertChatMessages(queryClient, projectId, [message]);
+      // A sentence arriving is the end of that person's typing.
+      setTypingUsers((current) => {
+        if (!(message.userId in current)) return current;
+        const next = { ...current };
+        delete next[message.userId];
+        return next;
       });
     };
 
-    const handleTyping = (payload: { projectId: string; userId: string }) => {
+    const handleTyping = (payload: { projectId: string; userId: string; isTyping?: boolean }) => {
       if (payload.projectId !== projectId || payload.userId === user?.id) return;
-      setTypingUsers((current) => ({ ...current, [payload.userId]: Date.now() }));
+      setTypingUsers((current) => {
+        if (payload.isTyping === false) {
+          if (!(payload.userId in current)) return current;
+          const next = { ...current };
+          delete next[payload.userId];
+          return next;
+        }
+        return { ...current, [payload.userId]: Date.now() };
+      });
     };
 
     socket.on('chat:message', handleMessage);
@@ -267,13 +298,15 @@ export const ProjectChat = ({
       socket.off('chat:message', handleMessage);
       socket.off('chat:typing', handleTyping);
     };
-  }, [projectId, socket, user?.id]);
+  }, [projectId, queryClient, socket, user?.id]);
 
-  // Typing badges expire on their own.
+  // Typing badges expire on their own — the backstop for a lost "stopped" frame.
   useEffect(() => {
     const interval = setInterval(() => {
       setTypingUsers((current) => {
-        const fresh = Object.entries(current).filter(([, at]) => Date.now() - at < 2600);
+        const fresh = Object.entries(current).filter(
+          ([, at]) => Date.now() - at < TYPING_VISIBLE_MS,
+        );
         return fresh.length === Object.keys(current).length ? current : Object.fromEntries(fresh);
       });
     }, 1200);
@@ -284,25 +317,60 @@ export const ProjectChat = ({
   // The window is only ever mounted while it is open, so anything arriving
   // here has by definition been seen — counting what was missed is the closed
   // case, and that belongs to `useProjectChatUnread`.
+  /*
+   * Follow the conversation's *end*, not its length.
+   *
+   * Keyed on the length, loading an older page — which grows the list at the
+   * top — yanked the reader from the message they had scrolled up to read
+   * straight back to the bottom.
+   */
+  const lastMessageKey = messages.length > 0
+    ? (messages[messages.length - 1].clientId ?? messages[messages.length - 1].id)
+    : null;
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages.length]);
+  }, [lastMessageKey]);
 
-  /**
-   * Marks one of our own in-flight messages, found by `clientId`.
-   *
-   * A no-op if it is already gone — the broadcast can beat the acknowledgement,
-   * in which case the message has been replaced by the server's copy and there
-   * is nothing left to annotate.
+  /*
+   * Older messages go in *above* the reader, so the scroll offset is moved by
+   * exactly the height they added — the line being read stays under the eye.
    */
-  const markDelivery = (clientId: string, delivery: ChatMessage['delivery']) => {
-    setLiveMessages((current) => {
-      const index = current.findIndex((entry) => entry.clientId === clientId);
-      if (index === -1) return current;
+  const heightBeforePrepend = useRef<number | null>(null);
+  useLayoutEffect(() => {
+    const element = scrollRef.current;
+    const before = heightBeforePrepend.current;
+    if (!element || before === null) return;
+    heightBeforePrepend.current = null;
+    element.scrollTop += element.scrollHeight - before;
+  }, [messages]);
 
-      const next = [...current];
-      next[index] = { ...next[index], delivery };
-      return next;
+  const loadEarlier = async () => {
+    if (isLoadingEarlier || !hasEarlier) return;
+    setIsLoadingEarlier(true);
+    heightBeforePrepend.current = scrollRef.current?.scrollHeight ?? null;
+    try {
+      const count = await loadEarlierMessages(queryClient, projectId);
+      if (count < CHAT_PAGE) setHasEarlier(false);
+      if (count === 0) heightBeforePrepend.current = null;
+    } catch {
+      heightBeforePrepend.current = null;
+    } finally {
+      setIsLoadingEarlier(false);
+    }
+  };
+
+  /** A failed bubble, back into the outbox with a fresh count. */
+  const retry = (message: ChatMessage) => {
+    if (!user || !message.clientId) return;
+    setLocalDelivery(queryClient, projectId, message.clientId, 'pending');
+    enqueueChatMessage(user.id, {
+      clientId: message.clientId,
+      projectId,
+      content: message.content,
+      mentions: message.mentions ?? [],
+      user: message.user,
+      queuedAt: message.createdAt,
+      attempts: 0,
     });
   };
 
@@ -324,10 +392,15 @@ export const ProjectChat = ({
    * back. A message that vanishes reads as a message that was never typed; one
    * with a warning on it reads as something to send again, which is what
    * actually happened.
+   *
+   * The send itself goes through the outbox (`useChatOutbox`), which is what
+   * lets the composer work offline: the bubble goes up as "sending", sits in a
+   * queue that survives a reload, and goes out in order the moment the socket
+   * is back. A resend carries the same `clientId`, and the API writes it once.
    */
   const send = () => {
     const content = draft.trim();
-    if (!content || !socket || !isConnected || !user) return;
+    if (!content || !user) return;
 
     // See `shared/lib/uid`: `crypto.randomUUID` does not exist on an insecure
     // origin, and this line ran on every message sent.
@@ -342,8 +415,9 @@ export const ProjectChat = ({
      */
     const mentions = mentionedIds(content, picked);
 
-    setLiveMessages((current) => [
-      ...current,
+    const createdAt = new Date().toISOString();
+
+    upsertChatMessages(queryClient, projectId, [
       {
         // Namespaced so it can never collide with a server uuid, and so a
         // stray local id is obvious if one ever escapes into a cache.
@@ -351,7 +425,7 @@ export const ProjectChat = ({
         clientId,
         content,
         mentions,
-        createdAt: new Date().toISOString(),
+        createdAt,
         editedAt: null,
         deletedAt: null,
         projectId,
@@ -364,19 +438,17 @@ export const ProjectChat = ({
     setPicked([]);
     setDismissedAt(null);
     setCaret(0);
+    typingSignal.stop();
 
-    void emitWithAck<{ delivered?: boolean; rateLimited?: boolean }>('chat:send', {
+    enqueueChatMessage(user.id, {
+      clientId,
       projectId,
       content,
-      clientId,
-      // Omitted entirely when empty, which is most messages — the DTO treats
-      // the field as optional and an empty array is a claim about nobody.
-      ...(mentions.length > 0 ? { mentions } : {}),
-    })
-      .then((ack) => {
-        markDelivery(clientId, ack?.delivered ? undefined : 'failed');
-      })
-      .catch(() => markDelivery(clientId, 'failed'));
+      mentions,
+      user,
+      queuedAt: createdAt,
+      attempts: 0,
+    });
   };
 
   /**
@@ -579,13 +651,42 @@ export const ProjectChat = ({
             </p>
           )}
 
+          {/*
+            Older history, on request. Only offered once there is a full page
+            on screen — a conversation shorter than that is already all here.
+          */}
+          {hasEarlier && messages.length >= CHAT_PAGE && (
+            <div className="flex justify-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => void loadEarlier()}
+                disabled={isLoadingEarlier}
+                className="text-2xs"
+              >
+                {isLoadingEarlier ? t('chat.loadingEarlier') : t('chat.loadEarlier')}
+              </Button>
+            </div>
+          )}
+
           {messages.map((message) => {
             const isMine = message.userId === user?.id;
 
             return (
               <div
-                key={message.id}
-                className={cn('flex items-end gap-2', isMine && 'flex-row-reverse')}
+                // The client id where there is one, so a bubble keeps its
+                // element when the server's copy replaces it.
+                key={message.clientId ?? message.id}
+                /*
+                 * `content-visibility` rather than a virtualised list: rows
+                 * scrolled out of view skip layout and paint, which is the
+                 * cost a long history actually has, without taking over the
+                 * scroll container or measuring variable-height bubbles.
+                 */
+                className={cn(
+                  'flex items-end gap-2 [contain-intrinsic-size:auto_3.5rem] [content-visibility:auto]',
+                  isMine && 'flex-row-reverse',
+                )}
               >
                 <Avatar name={message.user.displayName} src={message.user.avatarUrl} size="xs" />
                 <div
@@ -657,12 +758,16 @@ export const ProjectChat = ({
                   </p>
                 </div>
                 {message.delivery === 'failed' && (
-                  <span
+                  <button
+                    type="button"
+                    onClick={() => retry(message)}
                     title={t('chat.notSentHelp')}
-                    className="flex items-center text-danger"
+                    aria-label={t('chat.retry')}
+                    className="group/retry flex items-center rounded-full p-0.5 text-danger hover:bg-danger/10"
                   >
-                    <AlertCircle className="h-3.5 w-3.5" aria-label={t('chat.notSent')} />
-                  </span>
+                    <AlertCircle className="h-3.5 w-3.5 group-hover/retry:hidden" />
+                    <RotateCcw className="hidden h-3.5 w-3.5 group-hover/retry:block" />
+                  </button>
                 )}
               </div>
             );
@@ -695,7 +800,8 @@ export const ProjectChat = ({
               // read: by the time an effect could look, the value and the
               // selection have both moved on.
               setCaret(event.target.selectionStart ?? event.target.value.length);
-              socket?.emit('chat:typing', { projectId });
+              // Throttled and stopped on idle — see `useTypingSignal`.
+              if (isConnected) typingSignal.keystroke();
             }}
             /*
              * `onSelect` fires for every caret move — clicking into the middle
@@ -707,15 +813,16 @@ export const ProjectChat = ({
               setCaret(event.currentTarget.selectionStart ?? draft.length)
             }
             onKeyDown={handleComposerKeyDown}
-            placeholder={isConnected ? t('chat.placeholder') : t('chat.offline')}
+            // Offline no longer disables the field: what is written goes into
+            // the outbox and is sent on reconnect. See `send`.
+            placeholder={isConnected ? t('chat.placeholder') : t('chat.offlineQueued')}
             maxLength={TEXT_LIMITS.chatMessage}
-            disabled={!isConnected}
             className="field h-9 text-xs"
           />
           <Button
             type="submit"
             size="icon"
-            disabled={!draft.trim() || !isConnected}
+            disabled={!draft.trim()}
             aria-label={t('chat.send')}
           >
             <SendGlyph />

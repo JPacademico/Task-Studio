@@ -145,7 +145,7 @@ const ShortcutPill = ({ shortcut }: { shortcut: FloatingShortcut }) => {
           }
         >
           <span
-            className="grid h-6 w-6 shrink-0 place-items-center rounded-lg"
+            className="nav-glyph-socket relative grid h-6 w-6 shrink-0 place-items-center rounded-lg"
             style={
               shortcut.color
                 ? { backgroundColor: `${shortcut.color}26`, color: shortcut.color }

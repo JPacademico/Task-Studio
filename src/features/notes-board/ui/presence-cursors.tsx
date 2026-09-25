@@ -21,6 +21,8 @@ const SWEEP_MS = 2_000;
 
 interface PresenceCursorsProps {
   projectId: string;
+  /** The page on screen: pointers on other pages are not drawn here. */
+  pageIndex?: number;
   /** The board surface. Coordinates are normalised against its box. */
   surfaceRef: RefObject<HTMLElement | null>;
   /** Display names, so a pointer can say whose it is. */
@@ -92,6 +94,7 @@ const clampUnit = (value: number) => (Number.isFinite(value) ? Math.min(1, Math.
  */
 export const PresenceCursors = ({
   projectId,
+  pageIndex = 0,
   surfaceRef,
   names,
   enabled = true,
@@ -182,8 +185,22 @@ export const PresenceCursors = ({
       userId: string;
       x: number;
       y: number;
+      pageIndex?: number;
     }) => {
       if (payload.projectId !== projectId) return;
+      /*
+       * A pointer on another page is somebody who has moved away from this
+       * one: their arrow comes down now rather than hanging where they left
+       * it until the sweeper notices.
+       */
+      if ((payload.pageIndex ?? 0) !== pageIndex) {
+        const gone = live.get(payload.userId);
+        if (gone) {
+          gone.node.remove();
+          live.delete(payload.userId);
+        }
+        return;
+      }
       // The gateway excludes the sender, but the same account in another tab
       // is another socket — and watching your own pointer lag behind itself is
       // worse than not seeing it at all.
@@ -226,7 +243,7 @@ export const PresenceCursors = ({
       for (const cursor of live.values()) cursor.node.remove();
       live.clear();
     };
-  }, [currentUser?.id, enabled, isConnected, projectId, socket]);
+  }, [currentUser?.id, enabled, isConnected, pageIndex, projectId, socket]);
 
   /*
    * Names arriving late.
@@ -283,6 +300,7 @@ export const PresenceCursors = ({
       const y = Math.min(1, Math.max(0, (point.clientY - box.top) / box.height));
       socket.emit('whiteboard:cursor', {
         projectId,
+        pageIndex,
         x: Math.round(x * 10_000) / 10_000,
         y: Math.round(y * 10_000) / 10_000,
       });
@@ -306,7 +324,7 @@ export const PresenceCursors = ({
       surface.removeEventListener('pointermove', onMove);
       stream.cancel();
     };
-  }, [enabled, isConnected, projectId, socket, surfaceRef]);
+  }, [enabled, isConnected, pageIndex, projectId, socket, surfaceRef]);
 
   /*
    * `inset-0` and `pointer-events-none`: this layer covers the whole board and

@@ -16,6 +16,24 @@ interface BoardPagerProps {
   onRemove: (index: number) => void;
   onRename: (index: number, name: string) => void;
   isAdding: boolean;
+  /**
+   * How many pages this account's plan allows — three on the free tier, ten
+   * on a paid one. The pager used to show a fixed `/10` to everybody, so a free
+   * account saw room for seven more pages that the API would refuse.
+   */
+  max?: number;
+  /** Shown when the free tier's ceiling is what stopped the add. */
+  isPlanLimited?: boolean;
+  /**
+   * Whether this reader may add and rename pages. A shared wall on a project
+   * they can only read, or one that is archived, draws the tabs and nothing
+   * that would be refused.
+   */
+  canEdit?: boolean;
+  /** Whether this reader may remove pages — an admin's call on a shared wall. */
+  canRemove?: boolean;
+  /** Replaces the "full" tooltip, for a ceiling that is not the reader's own plan. */
+  fullLabel?: string;
 }
 
 const MAX_NAME = TEXT_LIMITS.boardPageName;
@@ -29,9 +47,14 @@ export const BoardPager = ({
   onRemove,
   onRename,
   isAdding,
+  max = MAX_BOARD_PAGES,
+  isPlanLimited = false,
+  canEdit = true,
+  canRemove = true,
+  fullLabel,
 }: BoardPagerProps) => {
   const t = useT();
-  const isFull = pages.length >= MAX_BOARD_PAGES;
+  const isFull = pages.length >= max;
 
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [draft, setDraft] = useState('');
@@ -60,7 +83,7 @@ export const BoardPager = ({
     <div className="flex flex-wrap items-center gap-1.5">
       <span className="mr-1 inline-flex items-center gap-1.5 text-2xs text-content-faint">
         <PageStack className="h-3.5 w-3.5" />
-        {pages.length}/{MAX_BOARD_PAGES}
+        {pages.length}/{max}
       </span>
 
       {pages.map((page) => {
@@ -117,8 +140,8 @@ export const BoardPager = ({
             <button
               type="button"
               onClick={() => onSelect(page.index)}
-              onDoubleClick={() => startRename(page)}
-              title={t('notes.doubleClickRename')}
+              onDoubleClick={canEdit ? () => startRename(page) : undefined}
+              title={canEdit ? t('notes.doubleClickRename') : page.name}
               className="max-w-[10rem] truncate px-3 py-1.5 text-xs font-medium"
             >
               {page.name}
@@ -126,21 +149,23 @@ export const BoardPager = ({
 
             {/* The visible way in. Double-click still works for anyone who
                 already knows it, but a rename must not be a hidden gesture. */}
-            <button
-              type="button"
-              aria-label={t('common.renameNamed', { name: page.name })}
-              title={t('notes.renamePage')}
-              onClick={() => startRename(page)}
-              className={cn(
-                'rounded-lg p-1 opacity-0 transition-opacity hover:text-brand',
-                'group-hover:opacity-100 focus-visible:opacity-100',
-                isActive && 'opacity-70',
-              )}
-            >
-              <Pencil className="h-3 w-3" />
-            </button>
+            {canEdit && (
+              <button
+                type="button"
+                aria-label={t('common.renameNamed', { name: page.name })}
+                title={t('notes.renamePage')}
+                onClick={() => startRename(page)}
+                className={cn(
+                  'rounded-lg p-1 opacity-0 transition-opacity hover:text-brand',
+                  'group-hover:opacity-100 focus-visible:opacity-100',
+                  isActive && 'opacity-70',
+                )}
+              >
+                <Pencil className="h-3 w-3" />
+              </button>
+            )}
 
-            {pages.length > 1 && (
+            {canRemove && pages.length > 1 && (
               <button
                 type="button"
                 aria-label={t('common.removeNamed', { name: page.name })}
@@ -160,25 +185,28 @@ export const BoardPager = ({
         );
       })}
 
-      <button
-        type="button"
-        onClick={onAdd}
-        disabled={isFull || isAdding}
-        title={
-          isFull
-            ? t('board.pagesFull', { max: String(MAX_BOARD_PAGES) })
-            : t('board.addPage')
-        }
-        className={cn(
-          'inline-flex items-center gap-1 rounded-xl border border-dashed px-2.5 py-1.5 text-xs transition-colors',
-          isFull
-            ? 'cursor-not-allowed border-edge text-content-faint opacity-50'
-            : 'border-edge text-content-muted hover:border-brand hover:text-brand',
-        )}
-      >
-        <Plus className="h-3.5 w-3.5" strokeWidth={2.6} />
-        {t('notes.addPageAction')}
-      </button>
+      {canEdit && (
+        <button
+          type="button"
+          onClick={onAdd}
+          disabled={isFull || isAdding}
+          title={
+            isFull
+              ? (fullLabel ??
+                t(isPlanLimited ? 'board.pagesFullFree' : 'board.pagesFull', { max: String(max) }))
+              : t('board.addPage')
+          }
+          className={cn(
+            'inline-flex items-center gap-1 rounded-xl border border-dashed px-2.5 py-1.5 text-xs transition-colors',
+            isFull
+              ? 'cursor-not-allowed border-edge text-content-faint opacity-50'
+              : 'border-edge text-content-muted hover:border-brand hover:text-brand',
+          )}
+        >
+          <Plus className="h-3.5 w-3.5" strokeWidth={2.6} />
+          {t('notes.addPageAction')}
+        </button>
+      )}
     </div>
   );
 };

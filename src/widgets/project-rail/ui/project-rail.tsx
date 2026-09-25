@@ -355,7 +355,7 @@ export const ProjectRail = ({ onCreateProject }: ProjectRailProps) => {
 
         <header className="space-y-2.5 px-4 pb-3 pt-5">
           <div className="flex items-center gap-2">
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-brand/12 text-brand">
+            <span className="nav-glyph-socket relative grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-brand/12 text-brand">
               {isProjects ? (
                 <NavGlyph glyph="project" fallback={FolderKanban} className="h-4 w-4" />
               ) : (

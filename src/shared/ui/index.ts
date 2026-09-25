@@ -20,6 +20,7 @@ export { LavaButton, type LavaButtonProps } from './lava-button';
 export { LavaSurface } from './lava-surface';
 export { Input, PasswordInput, Textarea, type PasswordInputProps } from './input';
 export { Modal } from './modal';
+export { ConfirmDialog } from './confirm-dialog';
 export { Avatar, AvatarStack } from './avatar';
 export {
   Badge,

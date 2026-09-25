@@ -8,13 +8,46 @@ import {
 } from '@/entities/note/lib/optimistic';
 import type { Note } from '@/entities/note/model/types';
 import { uploadImage } from '@/entities/user/api/user.api';
+import { errorMessage } from '@/shared/api/client';
 import { translate } from '@/shared/i18n';
 
-/** Keeps an image note inside a sane box whatever the source resolution is. */
+/** The caption strip under the picture. */
+const CAPTION_HEIGHT = 28;
+
+/**
+ * The box the API accepts for any note — `@Min(80) @Max(900)` on both sides of
+ * `CreateNoteDto`. An image note is a note, so it has to land inside it too.
+ */
+const NOTE_MIN = 80;
+const NOTE_MAX = 900;
+
+const clampSide = (value: number) => Math.round(Math.min(NOTE_MAX, Math.max(NOTE_MIN, value)));
+
+/**
+ * Keeps an image note inside a sane box whatever the source resolution is.
+ *
+ * It used to scale by width alone, which is right for an ordinary photo and
+ * wrong at both extremes: a long screenshot came out taller than the API's
+ * 900px ceiling and a panorama shorter than its 80px floor, and either one
+ * made the create fail *after* the upload had finished — the picture went up
+ * on the wall, then came down again with an error. Tall pictures are now
+ * narrowed until they fit, and the result is clamped to the note limits; the
+ * image itself is `object-cover`, so a clamp crops a sliver rather than
+ * distorting anything.
+ */
 export const fitImage = (naturalWidth: number, naturalHeight: number) => {
-  const width = Math.min(320, Math.max(140, naturalWidth));
-  const scale = width / (naturalWidth || width);
-  return { width: Math.round(width), height: Math.round((naturalHeight || width) * scale) + 28 };
+  const sourceWidth = naturalWidth || 240;
+  const sourceHeight = naturalHeight || sourceWidth;
+
+  let width = Math.min(320, Math.max(140, sourceWidth));
+  let pictureHeight = sourceHeight * (width / sourceWidth);
+
+  if (pictureHeight + CAPTION_HEIGHT > NOTE_MAX) {
+    pictureHeight = NOTE_MAX - CAPTION_HEIGHT;
+    width = sourceWidth * (pictureHeight / sourceHeight);
+  }
+
+  return { width: clampSide(width), height: clampSide(pictureHeight + CAPTION_HEIGHT) };
 };
 
 interface ImageDropOptions {
@@ -166,10 +199,13 @@ export const useImageDrop = ({
           },
           { onSettled: () => release(previewUrl) },
         );
-      } catch {
+      } catch (error) {
         drop();
         release(previewUrl);
-        toast.error(translate('editor.uploadFailed'));
+        // The reason, where there is one worth reading — a blocked bucket, a
+        // file the API refused, the upload rate limit — rather than the same
+        // sentence for all of them.
+        toast.error(errorMessage(error, translate('editor.uploadFailed')));
       } finally {
         setPendingCount((count) => Math.max(0, count - 1));
       }

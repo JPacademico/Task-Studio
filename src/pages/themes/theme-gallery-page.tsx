@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft,
   ArrowRight,
   Check,
+  Lock,
   Moon,
   Palette,
   Search,
@@ -43,6 +45,8 @@ interface GalleryCardProps {
   isActive: boolean;
   isSelected: boolean;
   isDark: boolean;
+  /** Part of the paid plans, and this account is not on one. */
+  isLocked: boolean;
   onSelect: () => void;
 }
 
@@ -56,7 +60,14 @@ interface GalleryCardProps {
  * exactly one Apply in the room, in the preview box, next to the full-size
  * picture of what it will do.
  */
-const GalleryCard = ({ skin, isActive, isSelected, isDark, onSelect }: GalleryCardProps) => {
+const GalleryCard = ({
+  skin,
+  isActive,
+  isSelected,
+  isDark,
+  isLocked,
+  onSelect,
+}: GalleryCardProps) => {
   const t = useT();
   const preview = isDark ? skin.dark : skin.light;
 
@@ -95,6 +106,15 @@ const GalleryCard = ({ skin, isActive, isSelected, isDark, onSelect }: GalleryCa
                   {t('themes.inUse')}
                 </span>
               )}
+              {isLocked && (
+                <span
+                  className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-brand/12 px-1.5 py-px text-4xs font-bold uppercase tracking-wide text-brand"
+                  title={t('themes.lockedHint')}
+                >
+                  <Lock aria-hidden className="h-2.5 w-2.5" strokeWidth={2.6} />
+                  {t('themes.paidBadge')}
+                </span>
+              )}
             </span>
             <span className="mt-0.5 block truncate text-2xs text-content-faint">
               {t(skin.tagline)}
@@ -126,7 +146,7 @@ const GalleryCard = ({ skin, isActive, isSelected, isDark, onSelect }: GalleryCa
  */
 const ThemeGalleryPage = () => {
   const t = useT();
-  const { skin, setSkin, isDark } = useTheme();
+  const { skin, setSkin, isDark, canWearSkin } = useTheme();
   const motionSpec = useSkinMotion();
 
   const [query, setQuery] = useState('');
@@ -239,6 +259,7 @@ const ThemeGalleryPage = () => {
                     isActive={skin === entry.value}
                     isSelected={selected === entry.value}
                     isDark={previewDark}
+                    isLocked={!canWearSkin(entry.value)}
                     onSelect={() => setSelected(entry.value)}
                   />
                 ))}
@@ -354,23 +375,43 @@ const ThemeGalleryPage = () => {
                   {t(detail.description)}
                 </p>
 
-                <Button
-                  className="w-full"
-                  disabled={skin === detail.value}
-                  onClick={() => apply(detail.value, detail.name)}
-                >
-                  {skin === detail.value ? (
-                    <>
-                      <Check className="h-3.5 w-3.5" strokeWidth={3} />
-                      {t('themes.currentlyApplied')}
-                    </>
-                  ) : (
-                    <>
-                      <Palette className="h-3.5 w-3.5" />
-                      Apply {detail.name}
-                    </>
-                  )}
-                </Button>
+                {/*
+                  A paid skin on a free account: the preview above is the whole
+                  of the look, and the button says where to get it rather than
+                  pretending to apply it. The plan panel is on the settings
+                  page.
+                */}
+                {!canWearSkin(detail.value) ? (
+                  <Link
+                    to="/settings"
+                    className={cn(
+                      'inline-flex w-full items-center justify-center gap-2 rounded-xl border border-brand/40',
+                      'bg-brand/10 px-4 py-2 text-sm font-semibold text-brand transition-colors',
+                      'hover:bg-brand/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
+                    )}
+                  >
+                    <Lock className="h-3.5 w-3.5" />
+                    {t('themes.upgradeToWear', { name: detail.name })}
+                  </Link>
+                ) : (
+                  <Button
+                    className="w-full"
+                    disabled={skin === detail.value}
+                    onClick={() => apply(detail.value, detail.name)}
+                  >
+                    {skin === detail.value ? (
+                      <>
+                        <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                        {t('themes.currentlyApplied')}
+                      </>
+                    ) : (
+                      <>
+                        <Palette className="h-3.5 w-3.5" />
+                        Apply {detail.name}
+                      </>
+                    )}
+                  </Button>
+                )}
 
                 <p className="text-center text-3xs leading-relaxed text-content-faint">
                   {t('themes.bothModes')}

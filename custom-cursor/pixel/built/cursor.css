@@ -14,23 +14,20 @@
    The interface is the same interface, drawn by a machine with a small
    framebuffer and sixteen colours. The right pointer for that machine is the
    pointer everybody already has, drawn the way that machine would have had to
-   draw it: a 12x19 grid, scaled 3x with no interpolation, every
+   draw it: a 12x19 grid, scaled 2x with no interpolation, every
    diagonal a staircase.
 
-   It is also a little larger than the system arrow — about 36x57 against
-   a typical 32px — which is the other half of the effect. A pixel arrow at
-   exactly system size reads as a slightly broken cursor; one that is visibly
-   chunkier reads as a deliberate one.
+   24x38 on screen. It was drawn at 3x, which was chunky and in use
+   too big — it covered what it pointed at. At 2x it is still plainly a grid
+   of fat pixels and sits close to the system arrow's footprint.
 
-   ## One state, deliberately
+   ## Two states: the arrow, and the hand
 
-   No hover frame and no press frame. The other three skins change on both, and
-   they are right to: they are showing you an object being aimed and used. A
-   1987 machine had one pointer and the system's own I-beam over text, and a
-   pixel arrow that grew or tilted under the mouse would be a modern
-   affordance wearing a costume. The `pointer` fallback keyword still applies
-   everywhere the browser would normally use it, so nothing about hit-testing
-   or accessibility changes.
+   Over anything that can be pressed, the arrow becomes the system's pointing
+   hand, redrawn on the same grid (17x19, 34x38 on screen). It
+   used to stay an arrow everywhere, which took away the one cue that says
+   "this can be clicked". No press frame: a 1987 machine did not animate its
+   pointer, and the hand already says everything a press would.
 
    ## Two palettes
 
@@ -46,80 +43,79 @@
    Every selector is gated on `html:not([data-cursor='off'])`. The switch in the
    theme picker writes `data-cursor="off"` onto the root element, which drops
    this whole block and hands back the system pointer — no second stylesheet,
-   and no JavaScript that has to know which skins draw a cursor.
+   and no JavaScript that has to know which skins draw a cursor. Anything inside
+   a `[data-native-cursor]` surface is left alone too; see that rule.
 
-   ## Hotspot
+   ## Hotspots
 
-   `1 1` — the centre of the arrow's point. The tip is the top-left drawn
-   pixel by construction, and at 3x that pixel is 3 screen pixels across, so
-   hotspotting on its corner would put every click off the point somebody
-   aimed with.
+   `1 1` for the arrow — the centre of its point, which is the top-left drawn
+   pixel by construction. `12 1` for the hand — the middle of the
+   fingertip. Both are pixel centres rather than corners, because at 2x a
+   drawn pixel is 2 screen pixels across and a corner puts every click off
+   the point somebody aimed with.
 
    Text fields, disabled controls and drag handles are left alone: an I-beam,
    `not-allowed` and `grab` each say something no arrow can say.
    --------------------------------------------------------------------------- */
 
 html:not([data-cursor='off'])[data-skin='pixel'] {
-  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAA5CAYAAABeSIndAAAAvElEQVR42u3ZQQ6DIBCFYTAeQmWv9z+O3bf1FnbTNG9jKgrMLP63ggUJyceQCcRpmPfwzWt7xGCcLjiLuw1FJdNY8UH2L71Onu/1N07jYlJ9kGWReeCD7DKZFR9kRcha8kFWnKw2H2RVyWrwQdaMrBQfZCZkd/ggMyfL5YPMFdkZPsiakaVxubyWKitOphxaHWcIaPKbkSmTEuglpnw0+SZkR0y85HvKLRb9uDm6MHOPAWRsiI6xRscIWU4+C/9pLIqt2XkAAAAASUVORK5CYII=") 1 1, auto;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAmCAYAAADeB1slAAAAnUlEQVR42tXXOQ6AIBAF0K/xECw93P842rvcAquxICGgMjBQUZDMf0AmAKNcMMoFMI0ZzOMpwCVhFyw02c8VAGC1DwBwXNs0loBL0l5QW9JPUEvSX/BXIkfwVSJP8FYiV1AqkS/IScYRpCTyBFb7onX9z4CS0p6mEsrrppScEtJtIIncbhonH+ZtWpyWXt7xrcrJ2/0Phi3A1ouaCW71i2ZiTfVxIgAAAABJRU5ErkJggg==") 1 1, auto;
 }
 
 html:not([data-cursor='off'])[data-skin='pixel'].dark {
-  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAA5CAYAAABeSIndAAAAu0lEQVR42u3ZsQ6DIBSFYTBOKpu+/wPara2rXZrmLKaiwL3DfyYYSEg+LrmBOA3zHr55bY8YjNMFZ3G3oahkGis+yP6l18nzvf7GaVxMqg+yLDIPfJBdJrPig6wIWUs+yIqT1eaDrCpZDT7ImpGV4oPMhOwOH2TmZLl8kLkiO8MHWTOyNC6X11JlxcmUQ6vjDAFNfjMyZVICvcSUjybfhOyIiZd8T7nFoh83Rxdm7jGAjA3RMdboGCHLyQcvl2r4xyJFhQAAAABJRU5ErkJggg==") 1 1, auto;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAmCAYAAADeB1slAAAAnElEQVR42tXXuw6AIAwF0Ktx4rHB/3+gbj5WnOpAQkClUJgYSHoPkAZglAtGuQCmMYN5PAW4JOyChSb7uQIArPYBAI5rm8YScEnaC2pL+glqSfoL/krkCL5K5AneSuQKSiXyBTnJOIKURJ7Aal+0rv8ZUFLa01RCed2UklNCug0kkdtN4+TDvE2L09LLO75VOXm7/8GwBdh6UTPBDcgQZ3YAXnl6AAAAAElFTkSuQmCC") 1 1, auto;
 }
 
-/* The same arrow over anything pressable, and that is not redundant: without
-   it the browser's own `pointer` hand takes over on every link and button, and
-   the one place a reader looks hardest at the cursor is the place it would
-   stop being pixel art. The fallback keyword is still `pointer`, so a machine
-   that refuses the image gets the hand rather than the plain arrow. */
-html:not([data-cursor='off'])[data-skin='pixel'] a[href],
-html:not([data-cursor='off'])[data-skin='pixel'] button:not(:disabled),
-html:not([data-cursor='off'])[data-skin='pixel'] summary,
-html:not([data-cursor='off'])[data-skin='pixel'] select:not(:disabled),
-html:not([data-cursor='off'])[data-skin='pixel'] label[for],
-html:not([data-cursor='off'])[data-skin='pixel'] [role='button']:not([aria-disabled='true']),
-html:not([data-cursor='off'])[data-skin='pixel'] [role='tab'],
-html:not([data-cursor='off'])[data-skin='pixel'] [role='menuitem'],
-html:not([data-cursor='off'])[data-skin='pixel'] [role='option'],
-html:not([data-cursor='off'])[data-skin='pixel'] [role='switch'],
-html:not([data-cursor='off'])[data-skin='pixel'] input[type='checkbox']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='pixel'] input[type='radio']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='pixel'] input[type='submit']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='pixel'] input[type='button']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='pixel'] .cursor-pointer {
-  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAA5CAYAAABeSIndAAAAvElEQVR42u3ZQQ6DIBCFYTAeQmWv9z+O3bf1FnbTNG9jKgrMLP63ggUJyceQCcRpmPfwzWt7xGCcLjiLuw1FJdNY8UH2L71Onu/1N07jYlJ9kGWReeCD7DKZFR9kRcha8kFWnKw2H2RVyWrwQdaMrBQfZCZkd/ggMyfL5YPMFdkZPsiakaVxubyWKitOphxaHWcIaPKbkSmTEuglpnw0+SZkR0y85HvKLRb9uDm6MHOPAWRsiI6xRscIWU4+C/9pLIqt2XkAAAAASUVORK5CYII=") 1 1, pointer;
+/* The hand over anything pressable. The fallback keyword is `pointer`, so a
+   machine that refuses the image still gets a hand. */
+html:not([data-cursor='off'])[data-skin='pixel'] a[href]:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] button:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] summary:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] select:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] label[for]:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] [role='button']:not([aria-disabled='true']):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] [role='tab']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] [role='menuitem']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] [role='option']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] [role='switch']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] input[type='checkbox']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] input[type='radio']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] input[type='submit']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] input[type='button']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] .cursor-pointer:not([data-native-cursor], [data-native-cursor] *) {
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACIAAAAmCAYAAACh1knUAAAAtUlEQVR42u2YSQ6AIAxFf42HcNga3Xj/u+je4QKuXODKxBAcgVixf0cgpHkt5QPhorKkVNtxP7YEh4rARHSVRDc0AIBpmgEAZVE7JcOGiAQigUggdxXbbuCq44ZDxNBxlWndGalwiDwlpRPiR8S33zCQUttbnA+RA7+hftlZaY/IqjWHe/O2YlcjdOZNfYvfqdH7Rp5Wr5ARY/S9l57vU6S/FCU14f0GuKoNSU04Lj5Pq38QWQAKNmuQJ9FWWQAAAABJRU5ErkJggg==") 12 1, pointer;
 }
 
-html:not([data-cursor='off'])[data-skin='pixel'].dark a[href],
-html:not([data-cursor='off'])[data-skin='pixel'].dark button:not(:disabled),
-html:not([data-cursor='off'])[data-skin='pixel'].dark summary,
-html:not([data-cursor='off'])[data-skin='pixel'].dark select:not(:disabled),
-html:not([data-cursor='off'])[data-skin='pixel'].dark label[for],
-html:not([data-cursor='off'])[data-skin='pixel'].dark [role='button']:not([aria-disabled='true']),
-html:not([data-cursor='off'])[data-skin='pixel'].dark [role='tab'],
-html:not([data-cursor='off'])[data-skin='pixel'].dark [role='menuitem'],
-html:not([data-cursor='off'])[data-skin='pixel'].dark [role='option'],
-html:not([data-cursor='off'])[data-skin='pixel'].dark [role='switch'],
-html:not([data-cursor='off'])[data-skin='pixel'].dark input[type='checkbox']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='pixel'].dark input[type='radio']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='pixel'].dark input[type='submit']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='pixel'].dark input[type='button']:not(:disabled),
-html:not([data-cursor='off'])[data-skin='pixel'].dark .cursor-pointer {
-  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAA5CAYAAABeSIndAAAAu0lEQVR42u3ZsQ6DIBSFYTBOKpu+/wPara2rXZrmLKaiwL3DfyYYSEg+LrmBOA3zHr55bY8YjNMFZ3G3oahkGis+yP6l18nzvf7GaVxMqg+yLDIPfJBdJrPig6wIWUs+yIqT1eaDrCpZDT7ImpGV4oPMhOwOH2TmZLl8kLkiO8MHWTOyNC6X11JlxcmUQ6vjDAFNfjMyZVICvcSUjybfhOyIiZd8T7nFoh83Rxdm7jGAjA3RMdboGCHLyQcvl2r4xyJFhQAAAABJRU5ErkJggg==") 1 1, pointer;
+html:not([data-cursor='off'])[data-skin='pixel'].dark a[href]:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'].dark button:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'].dark summary:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'].dark select:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'].dark label[for]:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'].dark [role='button']:not([aria-disabled='true']):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'].dark [role='tab']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'].dark [role='menuitem']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'].dark [role='option']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'].dark [role='switch']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'].dark input[type='checkbox']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'].dark input[type='radio']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'].dark input[type='submit']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'].dark input[type='button']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'].dark .cursor-pointer:not([data-native-cursor], [data-native-cursor] *) {
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACIAAAAmCAYAAACh1knUAAAAtElEQVR42u2Yuw6AIAxFb42Tj03/wBj//5+cdDE+VpxMDME3xIq9G4GQ5rSUC4STSqJMrcfD1BIsKgAT0VkS/dgAAOq6AwBUZWGVDBsiEogEIoFcVfh0A1sd1x8iho6rTOuOSPlD5C4pnRA/Iq79hoGUWt/ifIjs+A31y85KW0QWLTncmn8qdjVCR97UtfidGr1vpHH+ChkxRt976bk+RfpLUVLj32+ArdqQ1Pjj4tM4/weRGVtZazj3lgS2AAAAAElFTkSuQmCC") 12 1, pointer;
 }
 
 /* The three the arrow must not swallow. */
-html:not([data-cursor='off'])[data-skin='pixel'] input:not([type='checkbox']):not([type='radio']):not([type='submit']):not([type='button']),
-html:not([data-cursor='off'])[data-skin='pixel'] textarea,
-html:not([data-cursor='off'])[data-skin='pixel'] [contenteditable='true'] {
+html:not([data-cursor='off'])[data-skin='pixel'] input:not([type='checkbox']):not([type='radio']):not([type='submit']):not([type='button']):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] textarea:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] [contenteditable='true']:not([data-native-cursor], [data-native-cursor] *) {
   cursor: text;
 }
 
-html:not([data-cursor='off'])[data-skin='pixel'] .cursor-grab {
+html:not([data-cursor='off'])[data-skin='pixel'] .cursor-grab:not([data-native-cursor], [data-native-cursor] *) {
   cursor: grab;
 }
 
-html:not([data-cursor='off'])[data-skin='pixel'] .cursor-grabbing,
-html:not([data-cursor='off'])[data-skin='pixel'] .cursor-grab:active {
+html:not([data-cursor='off'])[data-skin='pixel'] .cursor-grabbing:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='pixel'] .cursor-grab:active:not([data-native-cursor], [data-native-cursor] *) {
   cursor: grabbing;
 }

@@ -65,6 +65,8 @@ export interface WhiteboardElement {
   data: WhiteboardStrokeData | Record<string, unknown>;
   projectId: string;
   createdById: string;
+  /** Which page of the whiteboard the ink is on. Absent from an older API: page 0. */
+  pageIndex?: number;
   createdAt: string;
   deletedAt: string | null;
 }

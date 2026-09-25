@@ -4,12 +4,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import { AnimatePresence } from 'framer-motion';
 
 import { useProjectRoom, useRealtime } from '@/app/providers/realtime-provider';
-import { chatApi } from '@/entities/chat/api/chat.api';
+import { loadConversation, upsertChatMessages } from '@/entities/chat/model/chat-cache';
 import type { ChatMessage } from '@/entities/chat/model/types';
 import { useCurrentUser } from '@/features/auth/model/session.store';
 import { queryKeys } from '@/shared/api/query-keys';
 import { ProjectChat } from '@/widgets/project-chat/ui/project-chat';
 import { useChatDock } from '../model/chat-dock.store';
+import { useChatOutbox } from '../model/chat-outbox';
 
 /**
  * Mounts the project conversation for the whole app.
@@ -29,6 +30,32 @@ export const ChatDock = () => {
   const isPinned = useChatDock((state) => state.isPinned);
   const close = useChatDock((state) => state.close);
   const setPinned = useChatDock((state) => state.setPinned);
+
+  // The unsent-message queue drains from here: the one component that is
+  // always mounted, so a message typed offline goes out on reconnect even if
+  // its window has since been closed.
+  useChatOutbox();
+
+  /*
+   * Every open is a catch-up, said explicitly.
+   *
+   * The window's own `refetchOnMount` covers the ordinary reopen, but not all
+   * of them: reopening while the close animation is still running hands
+   * `AnimatePresence` back the *same* instance, which never remounts — and
+   * whatever was said while the room had been left (the project page closed,
+   * the window shut) was never delivered over the socket. Invalidating on
+   * open asks for exactly that gap, with one small `after` request.
+   */
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    if (!isOpen || !projectId) return;
+    // `cancelRefetch: false`: if the window's own mount fetch is already out,
+    // join it rather than cancel it and send the same request again.
+    void queryClient.invalidateQueries(
+      { queryKey: queryKeys.chat.history(projectId) },
+      { cancelRefetch: false },
+    );
+  }, [isOpen, projectId, queryClient]);
 
   // Reference-counted, so this and the project page can both hold the room
   // open without either one's cleanup evicting the other.
@@ -95,10 +122,12 @@ export const usePrefetchProjectChat = (projectId: string | undefined): void => {
   useEffect(() => {
     if (!projectId) return;
 
+    // The same loader the window uses, so the prefetch seeds the cache the
+    // window's catch-up then builds on. See `loadConversation`.
     void queryClient.prefetchQuery({
       queryKey: queryKeys.chat.history(projectId),
-      queryFn: () => chatApi.history(projectId, { limit: 50 }),
-      staleTime: 5 * 60_000,
+      queryFn: () => loadConversation(queryClient, projectId),
+      staleTime: 30_000,
     });
   }, [projectId, queryClient]);
 };
@@ -112,6 +141,7 @@ export const usePrefetchProjectChat = (projectId: string | undefined): void => {
  */
 export const useProjectChatUnread = (projectId: string | undefined): number => {
   const { socket } = useRealtime();
+  const queryClient = useQueryClient();
   const user = useCurrentUser();
   const isShowing = useChatDock(
     (state) => state.isOpen && state.projectId === projectId,
@@ -127,7 +157,12 @@ export const useProjectChatUnread = (projectId: string | undefined): number => {
     if (!socket || !projectId || isShowing) return;
 
     const handleMessage = (message: ChatMessage) => {
-      if (message.projectId !== projectId || message.userId === user?.id) return;
+      if (message.projectId !== projectId) return;
+      // Kept in the conversation while its window is shut, so opening it has
+      // nothing to catch up on. See `upsertChatMessages` for why this never
+      // creates a conversation that was not loaded.
+      upsertChatMessages(queryClient, projectId, [message]);
+      if (message.userId === user?.id) return;
       setUnread((count) => count + 1);
     };
 
@@ -135,7 +170,7 @@ export const useProjectChatUnread = (projectId: string | undefined): number => {
     return () => {
       socket.off('chat:message', handleMessage);
     };
-  }, [isShowing, projectId, socket, user?.id]);
+  }, [isShowing, projectId, queryClient, socket, user?.id]);
 
   return isShowing ? 0 : unread;
 };

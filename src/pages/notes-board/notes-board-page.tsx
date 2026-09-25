@@ -15,6 +15,7 @@ import {
   useGroupNotes,
   usePatchBoardNotes,
   usePatchBoardPositions,
+  useRemoveBoardStroke,
   useRestoreBoardNote,
   useSaveBoardPositions,
   useUpdateBoardNote,
@@ -41,11 +42,13 @@ import { BoardPager } from '@/features/notes-board/ui/board-pager';
 import { NibCursor } from '@/shared/ui';
 import { BoardToolbar, type BoardTool } from '@/features/notes-board/ui/board-toolbar';
 import { BoardSkeleton } from '@/features/notes-board/ui/board-skeleton';
+import { useBillingSummary } from '@/entities/billing/model/queries';
 import { ConnectorLayer } from '@/features/notes-board/ui/connector-layer';
 import { InkLayer } from '@/features/notes-board/ui/ink-layer';
 import {
   BOARD_INK_COLORS,
   CONNECTOR_COLORS,
+  MAX_BOARD_PAGES,
   NOTE_COLORS,
   STORAGE_KEYS,
 } from '@/shared/config/constants';
@@ -119,11 +122,20 @@ const NotesBoardPage = () => {
   const createLink = useCreateNoteLink(pageIndex);
   const deleteLink = useDeleteNoteLink(pageIndex);
   const addStroke = useAddBoardStroke(pageIndex);
+  const removeStroke = useRemoveBoardStroke(pageIndex);
   const clearInk = useClearBoardStrokes(pageIndex);
   const clearBoard = useClearBoard(pageIndex);
   const groupNotes = useGroupNotes(pageIndex);
   const restoreNote = useRestoreBoardNote(pageIndex);
   const pages = useBoardPages(pageIndex);
+
+  /*
+   * The page ceiling is the plan's, not a constant: three pages on the free
+   * tier, ten on a paid one. The structural ceiling stands in while the
+   * summary loads, and for a plan with no limit at all.
+   */
+  const { data: billing } = useBillingSummary();
+  const pageLimit = billing?.limits.boardPagesPerUser ?? MAX_BOARD_PAGES;
 
   /*
    * Ctrl+Z and Ctrl+Y for the wall.
@@ -158,6 +170,70 @@ const NotesBoardPage = () => {
   const recordHistory = history.record;
   const links = board?.links ?? [];
   const strokes = board?.strokes ?? [];
+  const strokesRef = useRef(strokes);
+  strokesRef.current = strokes;
+
+  /*
+   * Ink joins the same undo stack as the notes.
+   *
+   * Ctrl+Z used to reach every change on this page except the one a hand
+   * makes most often, a line. Each stroke now records its own pair: undo
+   * removes it, redo draws it again (under a new id, which `ink.id` follows).
+   *
+   * `mutateAsync` rather than `mutate` with an `onSuccess`, and it matters:
+   * TanStack only runs a per-call `onSuccess` for the *latest* call, so three
+   * quick strokes would have left the first two with no id to undo by. And an
+   * undo that beats the server removes the stroke the moment its id arrives.
+   */
+  const addStrokeAsync = addStroke.mutateAsync;
+  const removeStrokeNow = removeStroke.mutate;
+
+  const handleInkCommit = useCallback(
+    (points: [number, number][]) => {
+      const payload = { points, color: inkColor, width: inkWidth };
+      const ink = { id: null as string | null, isUndone: false };
+
+      const save = () =>
+        void addStrokeAsync(payload)
+          .then((stroke) => {
+            ink.id = stroke.id;
+            if (ink.isUndone) removeStrokeNow(stroke.id);
+          })
+          .catch(() => undefined);
+
+      save();
+
+      recordHistory({
+        label: t('board.history.draw'),
+        undo: () => {
+          ink.isUndone = true;
+          if (ink.id) removeStrokeNow(ink.id);
+        },
+        redo: () => {
+          ink.isUndone = false;
+          ink.id = null;
+          save();
+        },
+      });
+    },
+    [addStrokeAsync, inkColor, inkWidth, recordHistory, removeStrokeNow, t],
+  );
+
+  /** "Erase ink" is undoable too: the page's lines come back as they were. */
+  const clearInkNow = clearInk.mutate;
+  const handleClearInk = useCallback(() => {
+    const snapshot = strokesRef.current.map(({ points, color, width }) => ({ points, color, width }));
+    if (snapshot.length === 0) return;
+
+    clearInkNow();
+    recordHistory({
+      label: t('board.history.clearInk'),
+      undo: () => {
+        for (const stroke of snapshot) void addStrokeAsync(stroke).catch(() => undefined);
+      },
+      redo: () => clearInkNow(),
+    });
+  }, [addStrokeAsync, clearInkNow, recordHistory, t]);
 
   const persistPositions = useDebouncedCallback(
     (moves: { id: string; positionX: number; positionY: number }[]) =>
@@ -529,6 +605,8 @@ const NotesBoardPage = () => {
   const pager = (
     <BoardPager
       pages={boardPages}
+      max={pageLimit}
+      isPlanLimited={billing?.plan === 'FREE'}
       activeIndex={pageIndex}
       onSelect={goToPage}
       onAdd={() => pages.add.mutate()}
@@ -612,7 +690,7 @@ const NotesBoardPage = () => {
            * cannot doodle on.
            */
           showInkTools={!isTouch}
-          onClearInk={() => clearInk.mutate()}
+          onClearInk={handleClearInk}
           onClearAll={() => {
             if (window.confirm(t('notes.confirmClearPage'))) {
               clearBoard.mutate();
@@ -674,7 +752,7 @@ const NotesBoardPage = () => {
           isDrawing={tool === 'draw'}
           color={inkColor}
           width={inkWidth}
-          onCommit={(points) => addStroke.mutate({ points, color: inkColor, width: inkWidth })}
+          onCommit={handleInkCommit}
         />
 
         {/* The nib, at the size it will actually mark. Only with the pen out,

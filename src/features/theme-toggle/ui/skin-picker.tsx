@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Check, Palette } from 'lucide-react';
+import { ArrowRight, Check, Lock, Palette } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 import { useTheme } from '@/app/providers/theme-provider';
 import { cn } from '@/shared/lib/cn';
+import { toast } from '@/shared/lib/toast';
 import { SETTINGS_SKIN_LIMIT, SKIN_CATALOG } from '../model/skin-catalog';
 import { CursorToggle } from './cursor-toggle';
 import { SkinMock } from './skin-mock';
@@ -24,7 +25,7 @@ import { useT } from '@/shared/i18n';
  */
 export const SkinPicker = () => {
   const t = useT();
-  const { skin, setSkin, isDark } = useTheme();
+  const { skin, setSkin, isDark, canWearSkin } = useTheme();
 
   const active = SKIN_CATALOG.find((option) => option.value === skin);
   const rest = SKIN_CATALOG.filter((option) => option.value !== skin);
@@ -37,13 +38,23 @@ export const SkinPicker = () => {
         {shown.map((option) => {
           const isActive = skin === option.value;
           const preview = isDark ? option.dark : option.light;
+          /*
+           * Every skin but Studio and Paper is part of the paid plans. A locked
+           * tile still shows the look — that is what sells it — but choosing
+           * it says where to get it rather than silently doing nothing. The
+           * plan section is directly above this one on the settings page.
+           */
+          const isLocked = !canWearSkin(option.value);
 
           return (
             <button
               key={option.value}
               type="button"
-              onClick={() => setSkin(option.value)}
+              onClick={() =>
+                isLocked ? toast.info(t('themes.lockedToast')) : setSkin(option.value)
+              }
               aria-pressed={isActive}
+              aria-disabled={isLocked || undefined}
               className={cn(
                 'group relative overflow-hidden rounded-2xl border p-2 text-left transition-all duration-200 ease-studio',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
@@ -60,6 +71,15 @@ export const SkinPicker = () => {
                   {option.value === 'STUDIO' && (
                     <span className="shrink-0 rounded-full bg-surface-sunken px-1.5 py-px text-4xs font-medium uppercase tracking-wide text-content-faint">
                       {t('themes.defaultSkin')}
+                    </span>
+                  )}
+                  {isLocked && (
+                    <span
+                      className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-brand/12 px-1.5 py-px text-4xs font-bold uppercase tracking-wide text-brand"
+                      title={t('themes.lockedHint')}
+                    >
+                      <Lock aria-hidden className="h-2.5 w-2.5" strokeWidth={2.6} />
+                      {t('themes.paidBadge')}
                     </span>
                   )}
                 </p>

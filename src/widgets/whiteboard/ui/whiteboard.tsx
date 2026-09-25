@@ -28,6 +28,7 @@ import {
   usePatchProjectNotes,
   usePatchProjectPositions,
   useProjectBoard,
+  useProjectBoardPages,
   useProjectBoardRealtime,
   useSaveProjectPositions,
   useUpdateProjectNote,
@@ -43,7 +44,7 @@ import {
   simplifyPoints,
   type InkPoint,
 } from '@/features/notes-board/lib/ink-geometry';
-import { createInkLayers } from '@/features/notes-board/lib/ink-layers';
+import { createInkLayers, type InkEntry } from '@/features/notes-board/lib/ink-layers';
 import { LIVE_FRAME_MS } from '@/features/notes-board/lib/live-rate';
 import { peerColor } from '@/features/notes-board/lib/peer-color';
 import { createPositionBus } from '@/features/notes-board/lib/position-bus';
@@ -64,6 +65,7 @@ import {
   MarqueeBox,
   SelectionBar,
 } from '@/features/notes-board/ui/board-overlays';
+import { BoardPager } from '@/features/notes-board/ui/board-pager';
 import { BoardSkeleton } from '@/features/notes-board/ui/board-skeleton';
 import { ConnectorLayer } from '@/features/notes-board/ui/connector-layer';
 import { PresenceCursors } from '@/features/notes-board/ui/presence-cursors';
@@ -93,6 +95,13 @@ type Tool = 'select' | 'connect' | 'pen' | 'eraser';
 const isStroke = (element: WhiteboardElement): element is WhiteboardElement & {
   data: WhiteboardStrokeData;
 } => Array.isArray((element.data as WhiteboardStrokeData).points);
+
+/** A saved element as the ink layers hold it: its id, its place in the drawing order, its ink. */
+const toInkEntry = (element: WhiteboardElement & { data: WhiteboardStrokeData }): InkEntry => ({
+  id: element.id,
+  at: Date.parse(element.createdAt) || Date.now(),
+  stroke: adoptStroke(element.data),
+});
 
 /** The width the eraser rubs at. Its own constant because two places need it. */
 const ERASER_WIDTH = 26;
@@ -190,6 +199,15 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
   const [isPickingMultiple, setIsPickingMultiple] = useState(false);
   const [connectFrom, setConnectFrom] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
+  /*
+   * Which page of the wall is on screen.
+   *
+   * The personal board's pager, on the shared wall. Local to this viewer — a
+   * teammate on page 3 does not drag everybody else there — and back to the
+   * first page when the project changes.
+   */
+  const [pageIndex, setPageIndex] = useState(0);
+  useEffect(() => setPageIndex(0), [projectId]);
   // Bumped by the stage whenever the surface changes host, which is the
   // moment the <canvas> below is a different element.
   const [surfaceMount, setSurfaceMount] = useState(0);
@@ -220,15 +238,20 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
   const isInking = tool === 'pen' || tool === 'eraser';
 
   const { data: scene = [], isLoading: isSceneLoading } = useQuery({
-    queryKey: queryKeys.whiteboard.scene(projectId),
-    queryFn: () => whiteboardApi.scene(projectId),
+    queryKey: queryKeys.whiteboard.scene(projectId, pageIndex),
+    queryFn: () => whiteboardApi.scene(projectId, pageIndex),
     enabled: Boolean(projectId),
   });
 
   // --- Post-it layer --------------------------------------------------------
 
-  const { data: board, isLoading: isBoardLoading } = useProjectBoard(projectId);
-  useProjectBoardRealtime(projectId);
+  const {
+    data: board,
+    isLoading: isBoardLoading,
+    isPlaceholderData: isBoardSwitching,
+  } = useProjectBoard(projectId, pageIndex);
+  useProjectBoardRealtime(projectId, pageIndex);
+  const pages = useProjectBoardPages(projectId);
 
   /*
    * The wall is two requests — the ink scene and the Post-it snapshot — and it
@@ -236,7 +259,7 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
    * state at all: an arriving user got an empty grid with "Stick up a Post-it"
    * written in the middle of it, which is not "loading", it is the wrong answer.
    */
-  const isBoardPending = isBoardLoading || isSceneLoading;
+  const isBoardPending = isBoardLoading || isBoardSwitching || isSceneLoading;
 
   const notes = useMemo(() => board?.notes ?? [], [board?.notes]);
 
@@ -254,16 +277,39 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
 
   const links = board?.links ?? [];
 
-  const createNote = useCreateProjectNote(projectId, currentUser?.id);
-  const updateNote = useUpdateProjectNote(projectId);
-  const deleteNote = useDeleteProjectNote(projectId);
-  const patchPositions = usePatchProjectPositions(projectId);
-  const patchNotes = usePatchProjectNotes(projectId);
-  const savePositions = useSaveProjectPositions(projectId);
-  const createLink = useCreateProjectNoteLink(projectId);
-  const deleteLink = useDeleteProjectNoteLink(projectId);
-  const groupNotes = useGroupProjectNotes(projectId);
-  const restoreNote = useRestoreProjectNote(projectId);
+  const createNote = useCreateProjectNote(projectId, currentUser?.id, pageIndex);
+  const updateNote = useUpdateProjectNote(projectId, pageIndex);
+  const deleteNote = useDeleteProjectNote(projectId, pageIndex);
+  const patchPositions = usePatchProjectPositions(projectId, pageIndex);
+  const patchNotes = usePatchProjectNotes(projectId, pageIndex);
+  const savePositions = useSaveProjectPositions(projectId, pageIndex);
+  const createLink = useCreateProjectNoteLink(projectId, pageIndex);
+  const deleteLink = useDeleteProjectNoteLink(projectId, pageIndex);
+  const groupNotes = useGroupProjectNotes(projectId, pageIndex);
+  const restoreNote = useRestoreProjectNote(projectId, pageIndex);
+
+  /*
+   * The pages, and where this viewer is among them.
+   *
+   * The list rides on every page's snapshot. Until the first one lands there
+   * is always at least page 0, which every project has had all along.
+   */
+  const boardPages = board?.pages?.length ? board.pages : [{ index: 0, name: 'Page 1' }];
+  const pageLimit = board?.pageLimit ?? boardPages.length;
+
+  const goToPage = useCallback((index: number) => {
+    setPageIndex(index);
+    setSelection([]);
+    setConnectFrom(null);
+  }, []);
+
+  // The page on screen can be removed by an admin elsewhere; follow the wall
+  // back to its first page rather than drawing a page that is gone.
+  useEffect(() => {
+    if (!board || isBoardSwitching || !board.pages) return;
+    if (board.pages.some((page) => page.index === pageIndex)) return;
+    goToPage(board.pages[0]?.index ?? 0);
+  }, [board, goToPage, isBoardSwitching, pageIndex]);
 
   // -------------------------------------------------------------------------
   // Live collaboration
@@ -387,6 +433,7 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
 
   const presence = useBoardPresence({
     projectId,
+    pageIndex,
     onRemoteDrag: applyRemoteDrag,
     onRemoteInk: applyRemoteInk,
   });
@@ -468,7 +515,9 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
    * that there is the project changelog, which is server-side, attributed, and
    * lasts thirty days.
    */
-  const history = useBoardHistory(projectId);
+  // Per page as well as per project: an undo must never reach back into a
+  // page that is not on screen and change something the reader cannot see.
+  const history = useBoardHistory(`${projectId}:${pageIndex}`);
   /*
    * Destructured, because `history` is a new object on every render while the
    * functions inside it are stable `useCallback`s. Depending on the object
@@ -519,7 +568,7 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
   // Hydrate from the API. The layers keep the committed list themselves, so a
   // remount of the canvases (below) repaints from it without refetching.
   useEffect(() => {
-    layers.setCommitted(scene.filter(isStroke).map((element) => adoptStroke(element.data)));
+    layers.setCommitted(scene.filter(isStroke).map(toInkEntry));
   }, [layers, scene]);
 
   // Point the layers at the canvases, then keep them sized to their container.
@@ -550,26 +599,60 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
     const handleElement = (element: WhiteboardElement & { clientId?: string | null }) => {
       const { clientId } = element;
       if (element.projectId !== projectId || !isStroke(element)) return;
+      // Somebody else's page: nothing to paint, but the ghost it replaces
+      // never reached this page either.
+      if ((element.pageIndex ?? 0) !== pageIndex) return;
       // Painted onto the committed layer on its own — never a full repaint.
-      layers.commit(adoptStroke(element.data));
+      layers.commit(toInkEntry(element));
       // And the ghost it replaces goes in the same breath, so the stroke is
       // never on neither layer. See `settleInk`.
       settleInk(clientId);
     };
 
-    const handleErased = (payload: { elementIds: string[] | null }) => {
-      // A full clear wipes locally; targeted erases are re-fetched on next load.
-      if (!payload.elementIds) layers.setCommitted([]);
+    /*
+     * Strokes taken off the wall: a full clear, or somebody's undo.
+     *
+     * Targeted erases used to be ignored here ("re-fetched on next load"),
+     * which was harmless while nothing sent one. Undo does, constantly, and a
+     * teammate's Ctrl+Z has to take the stroke off everybody's board at once.
+     * The payload names its project because a client can sit in several rooms.
+     */
+    const handleErased = (payload: {
+      projectId?: string;
+      pageIndex?: number;
+      elementIds: string[] | null;
+    }) => {
+      if (payload.projectId && payload.projectId !== projectId) return;
+      // A whole-page wipe names its page; an undo names strokes by id, and
+      // removing an id that is not on this page is a no-op.
+      if (!payload.elementIds) {
+        if ((payload.pageIndex ?? 0) === pageIndex) layers.setCommitted([]);
+      } else if (payload.elementIds.length > 0) {
+        layers.remove({ ids: payload.elementIds });
+      }
+    };
+
+    // Redo, from somebody else: their strokes come back, in drawing order.
+    const handleRestored = (payload: { projectId: string; elements: WhiteboardElement[] }) => {
+      if (payload.projectId !== projectId) return;
+      layers.restore(
+        payload.elements
+          .filter((element) => (element.pageIndex ?? 0) === pageIndex)
+          .filter(isStroke)
+          .map(toInkEntry),
+      );
     };
 
     socket.on('whiteboard:element', handleElement);
     socket.on('whiteboard:erased', handleErased);
+    socket.on('whiteboard:restored', handleRestored);
 
     return () => {
       socket.off('whiteboard:element', handleElement);
       socket.off('whiteboard:erased', handleErased);
+      socket.off('whiteboard:restored', handleRestored);
     };
-  }, [layers, projectId, settleInk, socket]);
+  }, [layers, pageIndex, projectId, settleInk, socket]);
 
   /** Client coordinates to the normalised 0..1 space a stroke is stored in. */
   const pointFromClient = (
@@ -589,12 +672,26 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
    * stroke replaces. See `DRAW_RETRIES` for the retry.
    */
   const saveStroke = useCallback(
-    (stroke: WhiteboardStrokeData, clientId: string | undefined) => {
+    (
+      stroke: WhiteboardStrokeData,
+      clientId: string | undefined,
+      onSaved: (elementId: string) => void,
+    ) => {
       const attempt = (tries: number) => {
         socket?.emit(
           'whiteboard:draw',
-          { projectId, type: 'STROKE', data: stroke, ...(clientId ? { clientId } : {}) },
-          (response?: { rateLimited?: boolean }) => {
+          {
+            projectId,
+            pageIndex,
+            type: 'STROKE',
+            data: stroke,
+            ...(clientId ? { clientId } : {}),
+          },
+          (response?: { rateLimited?: boolean; elementId?: string | null }) => {
+            if (response?.elementId) {
+              onSaved(response.elementId);
+              return;
+            }
             if (!response?.rateLimited || tries >= DRAW_RETRIES) return;
             window.setTimeout(() => attempt(tries + 1), DRAW_RETRY_MS * (tries + 1));
           },
@@ -602,7 +699,54 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
       };
       attempt(0);
     },
-    [projectId, socket],
+    [pageIndex, projectId, socket],
+  );
+
+  /**
+   * Ctrl+Z for a stroke — pen or rubber alike.
+   *
+   * ## Why the entry is recorded before the server has answered
+   *
+   * The history is a stack of what the hand did, in the order it did it; a
+   * stroke that only joined the stack once its row came back would land after
+   * a Post-it moved in the meantime, and Ctrl+Z would undo them out of order.
+   * So the entry goes on at pointer-up, and the element id it needs to erase
+   * the stroke for everybody else arrives later into `ink.id`.
+   *
+   * An undo that beats the acknowledgement takes the stroke off this board at
+   * once and remembers it was undone; the moment the id arrives, the erase is
+   * sent. A redo in the same window simply puts it back, and nothing is sent at
+   * all, because as far as the room knows nothing happened.
+   *
+   * Undoing a rubber stroke is the same operation as undoing a pen stroke —
+   * the erase stroke itself is taken off, and the ink it had rubbed out
+   * reappears, exactly as it does on paper when you take back the rubbing.
+   */
+  const recordStroke = useCallback(
+    (entry: InkEntry, clientId: string | undefined) => {
+      const ink = { id: null as string | null, isUndone: false };
+
+      saveStroke(entry.stroke, clientId, (elementId) => {
+        ink.id = elementId;
+        entry.id = elementId;
+        if (ink.isUndone) socket?.emit('whiteboard:erase', { projectId, elementIds: [elementId] });
+      });
+
+      recordHistory({
+        label: t(entry.stroke.erase ? 'board.history.erase' : 'board.history.draw'),
+        undo: () => {
+          ink.isUndone = true;
+          layers.remove({ entry });
+          if (ink.id) socket?.emit('whiteboard:erase', { projectId, elementIds: [ink.id] });
+        },
+        redo: () => {
+          ink.isUndone = false;
+          layers.restore([entry]);
+          if (ink.id) socket?.emit('whiteboard:restore', { projectId, elementIds: [ink.id] });
+        },
+      });
+    },
+    [layers, projectId, recordHistory, saveStroke, socket, t],
   );
 
   const handlePointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
@@ -772,17 +916,18 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
       points: (rect ? simplifyPoints(stroke.points, rect) : stroke.points).map(quantizePoint),
     };
 
-    layers.commit(finished);
+    const entry: InkEntry = { id: null, at: Date.now(), stroke: finished };
+    layers.commit(entry);
 
-    // One write per stroke — never per pointer sample.
-    saveStroke(finished, live?.id);
+    // One write per stroke — never per pointer sample — and one undo step.
+    recordStroke(entry, live?.id);
   };
 
   const handleClear = async () => {
     try {
-      await whiteboardApi.clear(projectId);
+      await whiteboardApi.clear(projectId, pageIndex);
       layers.setCommitted([]);
-      socket?.emit('whiteboard:erase', { projectId });
+      socket?.emit('whiteboard:erase', { projectId, pageIndex });
       toast.success(t('board.inkCleared'));
     } catch {
       toast.error(t('board.adminsOnlyClear'));
@@ -1138,6 +1283,34 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
        */
       nativeCursor
     >
+      {/*
+        The wall's pages. Inside the stage rather than above it, so it follows
+        the board into full screen — the pager is how you move around a wall.
+        Removing a page bins every teammate's Post-its on it, so only an admin
+        is offered that; the ceiling is the project owner's plan.
+      */}
+      <BoardPager
+        pages={boardPages}
+        activeIndex={pageIndex}
+        onSelect={goToPage}
+        onAdd={() =>
+          pages.add.mutate(undefined, {
+            onSuccess: (payload) => {
+              const added = payload.pages.find(
+                (page) => !boardPages.some((existing) => existing.index === page.index),
+              );
+              if (added) goToPage(added.index);
+            },
+          })
+        }
+        onRemove={(index) => pages.remove.mutate(index)}
+        onRename={(index, name) => pages.rename.mutate({ index, name })}
+        isAdding={pages.add.isPending}
+        max={pageLimit}
+        canRemove={canClear}
+        fullLabel={t('board.projectPagesFull', { max: String(pageLimit) })}
+      />
+
       <div className="ui-textured flex flex-wrap items-center gap-2 rounded-2xl border border-edge bg-surface-raised p-2 sm:gap-3 sm:p-3">
         <div className="ui-segment inline-flex items-center gap-1 rounded-xl border border-edge bg-surface-sunken p-1">
           {TOOLS.map(({ value, label, icon: Icon, hint }) => (
@@ -1476,7 +1649,12 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
           thing that is *in front of* the paper rather than on it — and it is
           `pointer-events-none`, so it is never between a reader and a note.
         */}
-        <PresenceCursors projectId={projectId} surfaceRef={surfaceRef} names={names} />
+        <PresenceCursors
+          projectId={projectId}
+          pageIndex={pageIndex}
+          surfaceRef={surfaceRef}
+          names={names}
+        />
 
         <MarqueeBox rect={marquee.rect} />
 

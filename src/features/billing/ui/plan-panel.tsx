@@ -96,6 +96,10 @@ const FEATURES: FeatureRow[] = [
    */
   { key: 'billing.feature.boardPages', render: (l, t) => count(l.boardPagesPerUser, t) },
   {
+    key: 'billing.feature.whiteboardPages',
+    render: (l, t) => count(l.whiteboardPagesPerProject ?? l.boardPagesPerUser, t),
+  },
+  {
     key: 'billing.feature.documentBoard',
     render: (l, t) =>
       l.documentBoardBytes === null
@@ -121,6 +125,11 @@ const FEATURES: FeatureRow[] = [
       allowsFlavour(l.broadcastFlavours, 'generic'),
   },
   { key: 'billing.feature.figma', render: (l) => l.figmaConnections },
+  /*
+   * A tick or a dash, like the other capabilities: the free tier keeps Studio
+   * and Paper, and every other skin in the catalogue is what this row sells.
+   */
+  { key: 'billing.feature.customThemes', render: (l) => l.customThemes },
 ];
 
 const count = (limit: Limit, t: Translate): string =>

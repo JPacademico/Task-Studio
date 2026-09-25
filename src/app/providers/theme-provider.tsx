@@ -8,7 +8,12 @@ import {
   type ReactNode,
 } from 'react';
 
-import { normaliseSkin, type ThemePreference, type ThemeSkin } from '@/entities/user/model/types';
+import {
+  isFreeSkin,
+  normaliseSkin,
+  type ThemePreference,
+  type ThemeSkin,
+} from '@/entities/user/model/types';
 import { userApi } from '@/entities/user/api/user.api';
 import { useSessionStore } from '@/features/auth/model/session.store';
 import { STORAGE_KEYS } from '@/shared/config/constants';
@@ -18,9 +23,23 @@ interface ThemeContextValue {
   isDark: boolean;
   setPreference: (preference: ThemePreference) => void;
   toggle: () => void;
-  /** The visual language the whole app is drawn in. */
+  /** The visual language the whole app is drawn in — a preview's, while one is on. */
   skin: ThemeSkin;
+  /** Wears a skin for good: stored on this device and on the profile. */
   setSkin: (skin: ThemeSkin) => void;
+  /**
+   * Wears a skin *for now*, or stops (`null`).
+   *
+   * For the landing page's theme section, where anybody may try any skin.
+   * Nothing is stored — not on the device, not on the profile — so a preview
+   * ends where it was started and never follows the reader into sign-in or the
+   * studio. See `ThemeShowcase`.
+   */
+  previewSkin: (skin: ThemeSkin | null) => void;
+  /** Whether this account may *keep* a skin, as opposed to preview it. */
+  canWearSkin: (skin: ThemeSkin) => boolean;
+  /** Whether the signed-in account is on a paid plan, which unlocks every skin. */
+  hasCustomThemes: boolean;
   /** Whether a skin that draws its own pointer is allowed to. */
   hasCustomCursor: boolean;
   setHasCustomCursor: (enabled: boolean) => void;
@@ -101,10 +120,30 @@ const SKIN_ATTRIBUTE: Record<ThemeSkin, string> = {
  */
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const user = useSessionStore((state) => state.user);
+  const status = useSessionStore((state) => state.status);
   const [preference, setPreferenceState] = useState<ThemePreference>(readStored);
   const [isDark, setIsDark] = useState(() => resolveIsDark(readStored()));
   const [skin, setSkinState] = useState<ThemeSkin>(readStoredSkin);
+  const [preview, setPreview] = useState<ThemeSkin | null>(null);
   const [hasCustomCursor, setCursorState] = useState<boolean>(readStoredCursor);
+
+  /*
+   * Every skin but Studio and Paper is a paid look.
+   *
+   * The server is the authority — it will not store a paid skin for a free
+   * account and reports the default in its place (`effectiveThemeSkin`) — so
+   * this is only what the interface offers. An anonymous visitor is not
+   * entitled to anything beyond the free pair either: what they try on the
+   * landing page is a preview, and the preview ends there.
+   */
+  const hasCustomThemes = status === 'authenticated' && Boolean(user?.plan) && user?.plan !== 'FREE';
+  const canWearSkin = useCallback(
+    (candidate: ThemeSkin) => isFreeSkin(candidate) || hasCustomThemes,
+    [hasCustomThemes],
+  );
+
+  /** What is actually on the document: a preview while one is running. */
+  const shown = preview ?? skin;
 
   const apply = useCallback((next: ThemePreference) => {
     const dark = resolveIsDark(next);
@@ -132,7 +171,29 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
   // Both attributes are set pre-paint by index.html; re-assert them on mount so
   // a storage read that failed there (private mode) still lands.
-  useEffect(() => applySkin(skin), [applySkin, skin]);
+  useEffect(() => applySkin(shown), [applySkin, shown]);
+
+  /*
+   * Nobody keeps a skin their plan does not cover.
+   *
+   * Two ways to arrive here with one. A visitor who is not signed in with a
+   * paid skin stored on this device — from before previews stopped being
+   * stored, or left behind by a paid account that signed out — and a free
+   * account whose stored skin the profile has not yet corrected. Either way
+   * the default goes on and is written back, so the next first paint is right
+   * too. A signed-in account's own profile is adopted by the effect below.
+   */
+  useEffect(() => {
+    if (status === 'loading') return;
+    if (canWearSkin(skin)) return;
+
+    setSkinState('STUDIO');
+    try {
+      localStorage.setItem(STORAGE_KEYS.themeSkin, 'STUDIO');
+    } catch {
+      /* ignore */
+    }
+  }, [canWearSkin, skin, status]);
   useEffect(() => applyCursor(hasCustomCursor), [applyCursor, hasCustomCursor]);
 
   // Adopt the server-side preferences once the session resolves.
@@ -194,6 +255,11 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
   const setSkin = useCallback(
     (next: ThemeSkin) => {
+      // A locked skin is a preview at most; the pickers never offer this path
+      // for one, and the API would refuse it anyway.
+      if (!canWearSkin(next)) return;
+
+      setPreview(null);
       setSkinState(next);
       try {
         localStorage.setItem(STORAGE_KEYS.themeSkin, next);
@@ -206,8 +272,10 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
         void userApi.updateProfile({ themeSkin: next }).catch(() => undefined);
       }
     },
-    [applySkin],
+    [applySkin, canWearSkin],
   );
+
+  const previewSkin = useCallback((next: ThemeSkin | null) => setPreview(next), []);
 
   const setHasCustomCursor = useCallback(
     (enabled: boolean) => {
@@ -228,12 +296,26 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
       isDark,
       setPreference,
       toggle: () => setPreference(isDark ? 'LIGHT' : 'DARK'),
-      skin,
+      skin: shown,
       setSkin,
+      previewSkin,
+      canWearSkin,
+      hasCustomThemes,
       hasCustomCursor,
       setHasCustomCursor,
     }),
-    [hasCustomCursor, isDark, preference, setHasCustomCursor, setPreference, setSkin, skin],
+    [
+      canWearSkin,
+      hasCustomCursor,
+      hasCustomThemes,
+      isDark,
+      preference,
+      previewSkin,
+      setHasCustomCursor,
+      setPreference,
+      setSkin,
+      shown,
+    ],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

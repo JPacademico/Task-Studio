@@ -44,15 +44,41 @@ import { paintStroke } from './ink-geometry';
  * rubber lifts, so a board costs its third canvas's memory only while somebody
  * is actually erasing.
  */
+/**
+ * One committed stroke, as the layers keep it.
+ *
+ * `id` is the saved element's id — `null` for this client's own stroke until
+ * the server acknowledges it — and `at` is when it was drawn. Both exist for
+ * undo: a stroke taken back is found by its id (or, before the id arrives, by
+ * this very object), and a stroke put back again has to return to its place
+ * in the drawing order, because an eraser only rubs out what came before it.
+ */
+export interface InkEntry {
+  id: string | null;
+  at: number;
+  stroke: WhiteboardStrokeData;
+}
+
 export interface InkLayers {
   /** Points the renderer at the current canvases. The stage swaps them on full screen. */
   attach: (base: HTMLCanvasElement | null, live: HTMLCanvasElement | null) => void;
   /** Re-measures the canvases; a changed size repaints the committed layer once. */
   resize: () => void;
   /** Replaces the committed ink wholesale: a scene load, a refetch, a clear. */
-  setCommitted: (strokes: WhiteboardStrokeData[]) => void;
+  setCommitted: (entries: InkEntry[]) => void;
   /** Appends one committed stroke, painting only that stroke. */
-  commit: (stroke: WhiteboardStrokeData) => void;
+  commit: (entry: InkEntry) => void;
+  /**
+   * Takes strokes off the wall — undo, or a teammate's undo arriving.
+   *
+   * By id, or by the entry itself for a stroke whose id has not come back
+   * yet. The one operation here that repaints the committed layer from the
+   * list, since pixels cannot be un-painted; it happens once per undo, not per
+   * frame.
+   */
+  remove: (target: { ids?: readonly string[]; entry?: InkEntry }) => void;
+  /** Puts strokes back in drawing order — redo. Also a full repaint, once. */
+  restore: (entries: InkEntry[]) => void;
   /** Teammates' strokes in progress. */
   setRemote: (strokes: readonly WhiteboardStrokeData[]) => void;
   /** This client's own stroke in progress, or `null` when the pointer is up. */
@@ -77,7 +103,7 @@ export const createInkLayers = (): InkLayers => {
   let cache: HTMLCanvasElement | null = null;
 
   let ratio = 1;
-  let committed: WhiteboardStrokeData[] = [];
+  let committed: InkEntry[] = [];
   let remote: readonly WhiteboardStrokeData[] = [];
   let local: WhiteboardStrokeData | null = null;
 
@@ -115,10 +141,10 @@ export const createInkLayers = (): InkLayers => {
     cache = null;
   };
 
-  /** Repaints the base from the stroke list. The slow path, taken on load and resize only. */
+  /** Repaints the base from the stroke list. The slow path: load, resize, undo and redo only. */
   const rebuildBase = () => {
     releaseCache();
-    if (base) paintAll(base, committed);
+    if (base) paintAll(base, committed.map((entry) => entry.stroke));
     isBaseClean = true;
   };
 
@@ -151,7 +177,7 @@ export const createInkLayers = (): InkLayers => {
       if (isBaseClean) {
         cache.getContext('2d')?.drawImage(base, 0, 0);
       } else {
-        paintAll(cache, committed);
+        paintAll(cache, committed.map((entry) => entry.stroke));
       }
     }
 
@@ -220,13 +246,37 @@ export const createInkLayers = (): InkLayers => {
       resize(true);
     },
     resize: () => resize(false),
-    setCommitted: (strokes) => {
-      committed = strokes;
+    setCommitted: (entries) => {
+      committed = entries;
       rebuildBase();
       schedule({ base: true, live: true });
     },
-    commit: (stroke) => {
-      committed.push(stroke);
+    remove: ({ ids, entry }) => {
+      const drop = new Set(ids ?? []);
+      const before = committed.length;
+      committed = committed.filter(
+        (candidate) => candidate !== entry && !(candidate.id !== null && drop.has(candidate.id)),
+      );
+      if (committed.length === before) return;
+      rebuildBase();
+      schedule({ base: true });
+    },
+    restore: (entries) => {
+      const present = new Set(committed);
+      const presentIds = new Set(committed.map((candidate) => candidate.id).filter(Boolean));
+      const fresh = entries.filter(
+        (candidate) =>
+          !present.has(candidate) && !(candidate.id !== null && presentIds.has(candidate.id)),
+      );
+      if (fresh.length === 0) return;
+      // Stable by `at`, so strokes drawn in the same millisecond keep their order.
+      committed = [...committed, ...fresh].sort((left, right) => left.at - right.at);
+      rebuildBase();
+      schedule({ base: true });
+    },
+    commit: (entry) => {
+      committed.push(entry);
+      const { stroke } = entry;
 
       if (cache) {
         // A rubber is being composited over the base, so the settled pixels

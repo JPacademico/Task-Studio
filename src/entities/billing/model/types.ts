@@ -36,8 +36,14 @@ export interface PlanLimits {
   tasksPerProject: Limit;
   documentsPerProject: Limit;
   documentsPerUser: Limit;
-  /** Pages on the personal Post-it board. 3 / 10 / 20 across the tiers. */
+  /** Pages on the personal Post-it board: 3 on the free tier, 10 on any paid plan. */
   boardPagesPerUser: Limit;
+  /**
+   * Pages on a project's shared whiteboard — the same 3 / 10, counted against
+   * the project *owner's* plan. Optional only so a summary from an API that
+   * predates project pages still parses.
+   */
+  whiteboardPagesPerProject?: Limit;
   teamsPerScope: Limit;
   /** Bytes. Rendered with `formatFileSize`. */
   documentBoardBytes: Limit;
@@ -52,6 +58,11 @@ export interface PlanLimits {
    */
   broadcastFlavours: readonly BroadcastFlavour[] | null;
   figmaConnections: boolean;
+  /**
+   * Every skin beyond Studio and Paper. Free accounts may preview them on the
+   * landing page; only a paid plan may wear them. See `FREE_SKINS`.
+   */
+  customThemes: boolean;
 }
 
 /** The destinations a project can broadcast to. Mirrors the API's own union. */

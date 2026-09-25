@@ -680,7 +680,19 @@ const PostItBase = ({
    * below. At zero rotation both terms vanish and nothing is compensated,
    * which is correct: an unrotated absolute box already grows right and down.
    */
-  const resizeRef = useRef<HTMLButtonElement>(null);
+  /*
+   * The handle element itself, as state rather than a ref.
+   *
+   * The listener below is registered natively on this exact element, and the
+   * handle is not permanent: it is unmounted while somebody else holds the
+   * sheet and mounted again when they let go. With a ref and an effect that
+   * ran once per note, the handle that came back was a new element with no
+   * listener on it — so after any teammate had touched a sheet, pulling its
+   * corner fell through to the note and dragged the whole thing instead. A
+   * callback ref into state re-runs the effect for every element the handle
+   * is ever drawn as.
+   */
+  const [resizeHandle, setResizeHandle] = useState<HTMLButtonElement | null>(null);
 
   /*
    * Mirrored into a ref because the resize listener is registered natively,
@@ -706,7 +718,7 @@ const PostItBase = ({
   };
 
   useEffect(() => {
-    const handle = resizeRef.current;
+    const handle = resizeHandle;
     if (!handle || !canResize) return;
 
     const clamp = (value: number) => Math.round(Math.min(MAX_SIZE, Math.max(MIN_SIZE, value)));
@@ -834,7 +846,7 @@ const PostItBase = ({
      */
     handle.addEventListener('pointerdown', onPointerDown, { passive: false });
     return () => handle.removeEventListener('pointerdown', onPointerDown);
-  }, [canResize, height, isImage, width, x, y]);
+  }, [canResize, height, isImage, resizeHandle, width, x, y]);
 
   return (
     <motion.div
@@ -1312,7 +1324,7 @@ const PostItBase = ({
        */}
       {canResize && !heldBy && (
         <button
-          ref={resizeRef}
+          ref={setResizeHandle}
           type="button"
           aria-label={t('notes.resizeNote')}
           title={t('notes.resizeNote')}

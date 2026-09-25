@@ -48,6 +48,17 @@ export const SKIN_LABELS: Record<ThemeSkin, string> = {
  * and in profiles written by an older client, so every entry point that reads
  * a skin normalises through here rather than trusting the string.
  */
+/**
+ * The skins every plan may wear: the default look and Paper.
+ *
+ * Mirrors `FREE_THEME_SKINS` on the API, which is the authority — it refuses
+ * to store any other skin for a free account and reports the default in its
+ * place. This copy only decides what the pickers offer and lock.
+ */
+export const FREE_SKINS: readonly ThemeSkin[] = ['STUDIO', 'PAPER'];
+
+export const isFreeSkin = (skin: ThemeSkin): boolean => FREE_SKINS.includes(skin);
+
 export const normaliseSkin = (value: string | null | undefined): ThemeSkin => {
   if (value === 'STEAMPUNK') return 'VINTAGE';
   return value && value in SKIN_LABELS ? (value as ThemeSkin) : 'STUDIO';
@@ -62,6 +73,12 @@ export interface CurrentUser {
   isVerified: boolean;
   theme: ThemePreference;
   themeSkin: ThemeSkin;
+  /**
+   * The account's plan, sent with the profile so the pickers know which skins
+   * to lock without a second request. Optional only so a cached profile from
+   * before the field existed still parses; absent reads as the free tier.
+   */
+  plan?: 'FREE' | 'STARTUP' | 'BARON';
   createdAt: string;
 }
 

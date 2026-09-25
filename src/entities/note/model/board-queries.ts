@@ -418,6 +418,30 @@ export const useAddBoardStroke = (pageIndex: number) => {
   });
 };
 
+/**
+ * Takes one stroke off the page — undo for a line.
+ *
+ * Optimistic, because undo has to feel instant: the line leaves the page on
+ * the keystroke, and the request confirms it. A failure puts the page back as
+ * the server has it rather than guessing what to restore.
+ */
+export const useRemoveBoardStroke = (pageIndex: number) => {
+  const { patch, queryClient, key } = useBoardCache(pageIndex);
+
+  return useMutation({
+    mutationFn: (strokeId: string) => boardApi.removeStroke(strokeId),
+    onMutate: (strokeId) =>
+      patch((snapshot) => ({
+        ...snapshot,
+        strokes: snapshot.strokes.filter((stroke) => stroke.id !== strokeId),
+      })),
+    onError: (error) => {
+      void queryClient.invalidateQueries({ queryKey: key });
+      toast.error(errorMessage(error));
+    },
+  });
+};
+
 export const useClearBoardStrokes = (pageIndex: number) => {
   const { patch } = useBoardCache(pageIndex);
 

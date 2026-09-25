@@ -132,6 +132,39 @@
   font-display: swap;
 }
 
+/* ===========================================================================
+   Studio Pixel — the Pixel skin's face.
+   ===========================================================================
+
+   Drawn for this product on a 5x7 grid by `custom-font/pixel/build-studio-
+   pixel.py`, the same grid the skin's pointer is drawn on. The skin used to
+   name three pixel faces that were never loaded and fell through to the same
+   monospace the Terminal skin uses; see the script's notes.
+
+   Two files rather than one: the bold is a real pixel bold (stems doubled on
+   the grid), not the browser's synthetic smear. The weight ranges put 500 on
+   the regular and 600 and up on the bold, which is how the interface's
+   `font-medium` / `font-semibold` split reads on every other skin.
+
+   About 3.5 kB each, and only fetched when the Pixel skin actually renders
+   text in them — an unused @font-face costs nothing.
+   =========================================================================== */
+@font-face {
+  font-family: 'Studio Pixel';
+  src: url('/fonts/pixel/studio-pixel.woff2') format('woff2');
+  font-weight: 100 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Studio Pixel';
+  src: url('/fonts/pixel/studio-pixel-bold.woff2') format('woff2');
+  font-weight: 600 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 /*
  * Theme tokens.
  *
@@ -957,9 +990,10 @@
     --radius-2xl: 0px;
     --radius-3xl: 0px;
 
-    --font-display: 'Press Start 2P', 'Silkscreen', 'Pixelify Sans', 'VT323', 'Small Fonts',
-      'Cascadia Mono', Consolas, monospace;
-    --font-sans: 'Silkscreen', 'Pixelify Sans', 'VT323', 'Cascadia Mono', Consolas, monospace;
+    /* The skin's own face — see `Studio Pixel` at the top of this file. The
+       monospace behind it is only ever seen for a character the face lacks. */
+    --font-display: 'Studio Pixel', 'Cascadia Mono', Consolas, monospace;
+    --font-sans: 'Studio Pixel', 'Cascadia Mono', Consolas, monospace;
     --font-hand: var(--font-sans);
 
     --panel-border-width: 4px;
@@ -8183,6 +8217,18 @@
   filter:
     drop-shadow(0 0 1.5px rgb(var(--eldritch-glow) / 0.8))
     drop-shadow(0 0 14px rgb(var(--eldritch-glow) / 0.4));
+  /*
+   * The curl is allowed out of the drawing's box, and has to be.
+   *
+   * An inline <svg> clips to its viewport by default, and the viewport is the
+   * arm at rest: 64 units wide. At the far end of its sway the tip has rotated
+   * about eighteen degrees round two stacked joints, and the hook at its end
+   * reaches about x=69 — so for the last part of every swing the top of the
+   * arm was sliced off along a straight vertical line. The arm is
+   * `pointer-events-none` and `fixed`, so letting it paint past its own box
+   * costs nothing and changes no layout.
+   */
+  overflow: visible;
 }
 
 /*
@@ -10253,29 +10299,86 @@ html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='loading'] 
 }
 
 /* --- Eldritch: something blinking ---------------------------------------- */
-[data-skin='eldritch'] .nav-glyph {
-  animation: nav-glyph-blink 11s steps(1, end) infinite;
+/*
+   The icon's own tile, and a lid that closes over it diagonally.
+
+   It used to squash the icon itself — `scaleY(0.08)` for two frames of a
+   `steps(1)` cycle — which read as the icon *vanishing* and popping back, not
+   as anything blinking: there was no lid, only an absence. An eye blinks
+   because something closes *over* it.
+
+   So the lid closes over the icon's own box — `.nav-glyph-socket`, the small
+   rounded square each glyph already sits in, never the whole row it belongs
+   to — sweeping corner to corner, top-left to bottom-right, with a lit
+   lash-line on its leading edge. At the bottom of the blink the lid covers the
+   box completely, so the icon is genuinely gone for a beat; then it draws back
+   the way it came.
+
+   Painted as a gradient on a pseudo-element three times the tile's size and
+   moved with `background-position`, rather than a clip-path: the edge of a
+   135° gradient *is* a diagonal line, the lash is two colour stops on it, and
+   the whole effect is one small repaint of a 32px box for a fraction of a
+   second every eleven.
+*/
+[data-skin='eldritch'] .nav-glyph-socket {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgb(var(--eldritch-glow) / 0.22);
+}
+
+[data-skin='eldritch'] .nav-glyph-socket::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-image: linear-gradient(
+    135deg,
+    rgb(var(--eldritch-ichor)) 0 46%,
+    rgb(var(--eldritch-glow)) 46% 50%,
+    transparent 50%
+  );
+  background-size: 300% 300%;
+  background-position: 100% 100%;
+  animation: nav-glyph-lid 11s linear infinite;
 }
 
 /*
-   `steps(1, end)` rather than an eased scale, and that is the whole character
-   of it. A lid closes and opens — it does not ease — and a smooth squash reads
-   as a UI element pulsing rather than as an eye. Two frames of scaleY at 12%
-   of an eleven-second cycle is roughly one blink every eleven seconds, which
-   is a slow human blink and exactly unsettling enough.
+   Open for nine and a half seconds; then a third of a second to close, a
+   held beat shut, and a slower draw back open. Eased in on the way down and
+   out on the way up, because a lid falls and then lifts.
 */
-@keyframes nav-glyph-blink {
+@keyframes nav-glyph-lid {
   0%,
-  92%,
+  87% {
+    background-position: 100% 100%;
+    animation-timing-function: cubic-bezier(0.55, 0, 0.9, 0.45);
+  }
+  90% {
+    background-position: 0% 0%;
+    animation-timing-function: linear;
+  }
+  91.6% {
+    background-position: 0% 0%;
+    animation-timing-function: cubic-bezier(0.15, 0.55, 0.4, 1);
+  }
+  96%,
   100% {
-    transform: scaleY(1);
+    background-position: 100% 100%;
   }
-  94% {
-    transform: scaleY(0.08);
-  }
-  96% {
-    transform: scaleY(1);
-  }
+}
+
+/* Different rows, different moments: a rail where every eye shuts at once is
+   a light switch, not a watcher. */
+[data-skin='eldritch'] :nth-child(3n + 2) > .nav-glyph-socket::after,
+[data-skin='eldritch'] :nth-child(3n + 2) > * > .nav-glyph-socket::after {
+  animation-delay: -3.7s;
+}
+
+[data-skin='eldritch'] :nth-child(3n + 3) > .nav-glyph-socket::after,
+[data-skin='eldritch'] :nth-child(3n + 3) > * > .nav-glyph-socket::after {
+  animation-delay: -7.3s;
 }
 
 /* --- Underwater: filling and draining ------------------------------------ */
@@ -12796,23 +12899,20 @@ html:not([data-cursor='off'])[data-skin='dragon'] .cursor-grab:active:not([data-
    The interface is the same interface, drawn by a machine with a small
    framebuffer and sixteen colours. The right pointer for that machine is the
    pointer everybody already has, drawn the way that machine would have had to
-   draw it: a 12x19 grid, scaled 3x with no interpolation, every
+   draw it: a 12x19 grid, scaled 2x with no interpolation, every
    diagonal a staircase.
 
-   It is also a little larger than the system arrow — about 36x57 against
-   a typical 32px — which is the other half of the effect. A pixel arrow at
-   exactly system size reads as a slightly broken cursor; one that is visibly
-   chunkier reads as a deliberate one.
+   24x38 on screen. It was drawn at 3x, which was chunky and in use
+   too big — it covered what it pointed at. At 2x it is still plainly a grid
+   of fat pixels and sits close to the system arrow's footprint.
 
-   ## One state, deliberately
+   ## Two states: the arrow, and the hand
 
-   No hover frame and no press frame. The other three skins change on both, and
-   they are right to: they are showing you an object being aimed and used. A
-   1987 machine had one pointer and the system's own I-beam over text, and a
-   pixel arrow that grew or tilted under the mouse would be a modern
-   affordance wearing a costume. The `pointer` fallback keyword still applies
-   everywhere the browser would normally use it, so nothing about hit-testing
-   or accessibility changes.
+   Over anything that can be pressed, the arrow becomes the system's pointing
+   hand, redrawn on the same grid (17x19, 34x38 on screen). It
+   used to stay an arrow everywhere, which took away the one cue that says
+   "this can be clicked". No press frame: a 1987 machine did not animate its
+   pointer, and the hand already says everything a press would.
 
    ## Two palettes
 
@@ -12828,32 +12928,31 @@ html:not([data-cursor='off'])[data-skin='dragon'] .cursor-grab:active:not([data-
    Every selector is gated on `html:not([data-cursor='off'])`. The switch in the
    theme picker writes `data-cursor="off"` onto the root element, which drops
    this whole block and hands back the system pointer — no second stylesheet,
-   and no JavaScript that has to know which skins draw a cursor.
+   and no JavaScript that has to know which skins draw a cursor. Anything inside
+   a `[data-native-cursor]` surface is left alone too; see that rule.
 
-   ## Hotspot
+   ## Hotspots
 
-   `1 1` — the centre of the arrow's point. The tip is the top-left drawn
-   pixel by construction, and at 3x that pixel is 3 screen pixels across, so
-   hotspotting on its corner would put every click off the point somebody
-   aimed with.
+   `1 1` for the arrow — the centre of its point, which is the top-left drawn
+   pixel by construction. `12 1` for the hand — the middle of the
+   fingertip. Both are pixel centres rather than corners, because at 2x a
+   drawn pixel is 2 screen pixels across and a corner puts every click off
+   the point somebody aimed with.
 
    Text fields, disabled controls and drag handles are left alone: an I-beam,
    `not-allowed` and `grab` each say something no arrow can say.
    --------------------------------------------------------------------------- */
 
 html:not([data-cursor='off'])[data-skin='pixel'] {
-  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAA5CAYAAABeSIndAAAAvElEQVR42u3ZQQ6DIBCFYTAeQmWv9z+O3bf1FnbTNG9jKgrMLP63ggUJyceQCcRpmPfwzWt7xGCcLjiLuw1FJdNY8UH2L71Onu/1N07jYlJ9kGWReeCD7DKZFR9kRcha8kFWnKw2H2RVyWrwQdaMrBQfZCZkd/ggMyfL5YPMFdkZPsiakaVxubyWKitOphxaHWcIaPKbkSmTEuglpnw0+SZkR0y85HvKLRb9uDm6MHOPAWRsiI6xRscIWU4+C/9pLIqt2XkAAAAASUVORK5CYII=") 1 1, auto;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAmCAYAAADeB1slAAAAnUlEQVR42tXXOQ6AIBAF0K/xECw93P842rvcAquxICGgMjBQUZDMf0AmAKNcMMoFMI0ZzOMpwCVhFyw02c8VAGC1DwBwXNs0loBL0l5QW9JPUEvSX/BXIkfwVSJP8FYiV1AqkS/IScYRpCTyBFb7onX9z4CS0p6mEsrrppScEtJtIIncbhonH+ZtWpyWXt7xrcrJ2/0Phi3A1ouaCW71i2ZiTfVxIgAAAABJRU5ErkJggg==") 1 1, auto;
 }
 
 html:not([data-cursor='off'])[data-skin='pixel'].dark {
-  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAA5CAYAAABeSIndAAAAu0lEQVR42u3ZsQ6DIBSFYTBOKpu+/wPara2rXZrmLKaiwL3DfyYYSEg+LrmBOA3zHr55bY8YjNMFZ3G3oahkGis+yP6l18nzvf7GaVxMqg+yLDIPfJBdJrPig6wIWUs+yIqT1eaDrCpZDT7ImpGV4oPMhOwOH2TmZLl8kLkiO8MHWTOyNC6X11JlxcmUQ6vjDAFNfjMyZVICvcSUjybfhOyIiZd8T7nFoh83Rxdm7jGAjA3RMdboGCHLyQcvl2r4xyJFhQAAAABJRU5ErkJggg==") 1 1, auto;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAmCAYAAADeB1slAAAAnElEQVR42tXXuw6AIAwF0Ktx4rHB/3+gbj5WnOpAQkClUJgYSHoPkAZglAtGuQCmMYN5PAW4JOyChSb7uQIArPYBAI5rm8YScEnaC2pL+glqSfoL/krkCL5K5AneSuQKSiXyBTnJOIKURJ7Aal+0rv8ZUFLa01RCed2UklNCug0kkdtN4+TDvE2L09LLO75VOXm7/8GwBdh6UTPBDcgQZ3YAXnl6AAAAAElFTkSuQmCC") 1 1, auto;
 }
 
-/* The same arrow over anything pressable, and that is not redundant: without
-   it the browser's own `pointer` hand takes over on every link and button, and
-   the one place a reader looks hardest at the cursor is the place it would
-   stop being pixel art. The fallback keyword is still `pointer`, so a machine
-   that refuses the image gets the hand rather than the plain arrow. */
+/* The hand over anything pressable. The fallback keyword is `pointer`, so a
+   machine that refuses the image still gets a hand. */
 html:not([data-cursor='off'])[data-skin='pixel'] a[href]:not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='pixel'] button:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='pixel'] summary:not([data-native-cursor], [data-native-cursor] *),
@@ -12869,7 +12968,7 @@ html:not([data-cursor='off'])[data-skin='pixel'] input[type='radio']:not(:disabl
 html:not([data-cursor='off'])[data-skin='pixel'] input[type='submit']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='pixel'] input[type='button']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='pixel'] .cursor-pointer:not([data-native-cursor], [data-native-cursor] *) {
-  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAA5CAYAAABeSIndAAAAvElEQVR42u3ZQQ6DIBCFYTAeQmWv9z+O3bf1FnbTNG9jKgrMLP63ggUJyceQCcRpmPfwzWt7xGCcLjiLuw1FJdNY8UH2L71Onu/1N07jYlJ9kGWReeCD7DKZFR9kRcha8kFWnKw2H2RVyWrwQdaMrBQfZCZkd/ggMyfL5YPMFdkZPsiakaVxubyWKitOphxaHWcIaPKbkSmTEuglpnw0+SZkR0y85HvKLRb9uDm6MHOPAWRsiI6xRscIWU4+C/9pLIqt2XkAAAAASUVORK5CYII=") 1 1, pointer;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACIAAAAmCAYAAACh1knUAAAAtUlEQVR42u2YSQ6AIAxFf42HcNga3Xj/u+je4QKuXODKxBAcgVixf0cgpHkt5QPhorKkVNtxP7YEh4rARHSVRDc0AIBpmgEAZVE7JcOGiAQigUggdxXbbuCq44ZDxNBxlWndGalwiDwlpRPiR8S33zCQUttbnA+RA7+hftlZaY/IqjWHe/O2YlcjdOZNfYvfqdH7Rp5Wr5ARY/S9l57vU6S/FCU14f0GuKoNSU04Lj5Pq38QWQAKNmuQJ9FWWQAAAABJRU5ErkJggg==") 12 1, pointer;
 }
 
 html:not([data-cursor='off'])[data-skin='pixel'].dark a[href]:not([data-native-cursor], [data-native-cursor] *),
@@ -12887,7 +12986,7 @@ html:not([data-cursor='off'])[data-skin='pixel'].dark input[type='radio']:not(:d
 html:not([data-cursor='off'])[data-skin='pixel'].dark input[type='submit']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='pixel'].dark input[type='button']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='pixel'].dark .cursor-pointer:not([data-native-cursor], [data-native-cursor] *) {
-  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAA5CAYAAABeSIndAAAAu0lEQVR42u3ZsQ6DIBSFYTBOKpu+/wPara2rXZrmLKaiwL3DfyYYSEg+LrmBOA3zHr55bY8YjNMFZ3G3oahkGis+yP6l18nzvf7GaVxMqg+yLDIPfJBdJrPig6wIWUs+yIqT1eaDrCpZDT7ImpGV4oPMhOwOH2TmZLl8kLkiO8MHWTOyNC6X11JlxcmUQ6vjDAFNfjMyZVICvcSUjybfhOyIiZd8T7nFoh83Rxdm7jGAjA3RMdboGCHLyQcvl2r4xyJFhQAAAABJRU5ErkJggg==") 1 1, pointer;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACIAAAAmCAYAAACh1knUAAAAtElEQVR42u2Yuw6AIAxFb42Tj03/wBj//5+cdDE+VpxMDME3xIq9G4GQ5rSUC4STSqJMrcfD1BIsKgAT0VkS/dgAAOq6AwBUZWGVDBsiEogEIoFcVfh0A1sd1x8iho6rTOuOSPlD5C4pnRA/Iq79hoGUWt/ifIjs+A31y85KW0QWLTncmn8qdjVCR97UtfidGr1vpHH+ChkxRt976bk+RfpLUVLj32+ArdqQ1Pjj4tM4/weRGVtZazj3lgS2AAAAAElFTkSuQmCC") 12 1, pointer;
 }
 
 /* The three the arrow must not swallow. */
