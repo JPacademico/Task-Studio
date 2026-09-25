@@ -13,7 +13,7 @@ import {
 import type { ListTasksParams, Task } from '@/entities/task/model/types';
 import { TaskCard } from '@/entities/task/ui/task-card';
 import { useCurrentUser } from '@/features/auth/model/session.store';
-import { TaskBoard } from '@/features/dnd-board/ui/task-board';
+import { AddTaskSlot, TaskBoard } from '@/features/dnd-board/ui/task-board';
 import { TaskComposer } from '@/features/task-management/ui/task-composer';
 import { TaskDetailModal } from '@/features/task-management/ui/task-detail-modal';
 import { TaskFilters } from '@/features/task-management/ui/task-filters';
@@ -305,6 +305,10 @@ const TaskMenuPage = () => {
             {t('agenda.everythingSlotted')}
           </p>
         )}
+
+        {/* The last item on the list, always: the same empty card the boards
+            end To do with, so "and one more" is where the eye already is. */}
+        <AddTaskSlot onClick={() => openPersonalComposer(null)} isAlone={false} />
       </div>
       )}
 

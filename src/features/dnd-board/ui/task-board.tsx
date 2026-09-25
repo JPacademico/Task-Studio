@@ -105,7 +105,7 @@ const COLUMNS: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'COMPLETED'];
  * the list. On an empty To do it stretches to fill the column, which is both
  * the empty state and the way out of it.
  */
-const AddTaskSlot = ({ onClick, isAlone }: { onClick: () => void; isAlone: boolean }) => {
+export const AddTaskSlot = ({ onClick, isAlone }: { onClick: () => void; isAlone: boolean }) => {
   const t = useT();
 
   return (
