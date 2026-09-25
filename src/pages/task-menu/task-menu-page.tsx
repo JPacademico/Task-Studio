@@ -220,6 +220,9 @@ const TaskMenuPage = () => {
           completionBlock={(task) =>
             completionBlockedReason(task, { currentUserId: currentUser?.id })
           }
+          // A personal task, like the header's button — this board has no
+          // project to file one under.
+          onAddTask={() => openPersonalComposer(null)}
           {...handlers}
         />
       )}

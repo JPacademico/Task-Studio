@@ -43,7 +43,7 @@ export { ScrollProgress } from './scroll-progress';
 export { EdgeAffordance, NavPinButton } from './edge-affordance';
 export { ExpandToggle, ExpandableStage } from './expandable-stage';
 export { HoverHint } from './hover-hint';
-export { ZoomableImage } from './zoomable-image';
+export { ImageViewer, ZoomableImage } from './zoomable-image';
 export { FileAttachmentField, FileAttachmentRow, formatFileSize } from './file-attachment';
 export { PageStack, PostItGlyph, PostItMark, PushPin, SendGlyph, StudioMark } from './studio-icons';
 export { GoogleCalendarMark } from './google-calendar-mark';

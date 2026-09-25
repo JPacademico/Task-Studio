@@ -656,7 +656,7 @@ export const SKIN_CATALOG: SkinDefinition[] = [
       brand: '#8c2e1a',
       content: '#3e180c',
       radius: 0,
-      font: "'Bahnschrift', 'DIN Condensed', 'Segoe UI', system-ui, sans-serif",
+      font: "'Studio Runic', 'Bahnschrift', 'DIN Condensed', 'Segoe UI', system-ui, sans-serif",
       border: 2,
       rune: '#7e1e0e',
     },
@@ -667,7 +667,7 @@ export const SKIN_CATALOG: SkinDefinition[] = [
       brand: '#e28e60',
       content: '#f0e2c7',
       radius: 0,
-      font: "'Bahnschrift', 'DIN Condensed', 'Segoe UI', system-ui, sans-serif",
+      font: "'Studio Runic', 'Bahnschrift', 'DIN Condensed', 'Segoe UI', system-ui, sans-serif",
       border: 2,
       rune: '#f6a05c',
     },
@@ -911,7 +911,17 @@ export const SKIN_CATALOG: SkinDefinition[] = [
     value: 'DRAGON',
     name: 'Dragon',
     tagline: 'skin.DRAGON.tagline',
-    description: 'skin.DRAGON.body',
+    /*
+     * A verse rather than a spec sheet, everywhere the skin is described.
+     *
+     * It used to be the landing page's alone, overridden there while the
+     * in-app gallery kept a paragraph about lacquer and scroll rods — so the
+     * theme introduced itself one way to a visitor and another to the person
+     * who had just bought it. One description, in the catalogue, means the
+     * two can no longer drift. It is written in lines, so every surface that
+     * prints a description sets it `whitespace-pre-line`.
+     */
+    description: 'landing.themes.dragonVerse',
     tags: [
       'dragon',
       'china',

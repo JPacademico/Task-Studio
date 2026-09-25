@@ -13,6 +13,7 @@ import {
   FileArchive,
   FileText,
   FileWarning,
+  Images,
   ImageIcon,
   Pencil,
   Plus,
@@ -77,6 +78,7 @@ import { BoardGauge } from './board-gauge';
 import { DocumentAccessDialog } from './document-access-dialog';
 import { DocumentDownloadMenu } from './download-menu';
 import { FigmaDocument } from './figma-document';
+import { FolderDocument } from './folder-document';
 import { ImportedDocument, formatBadge } from './imported-document';
 
 interface TextBoardProps {
@@ -161,6 +163,9 @@ const NO_ROSTER: RosterMember[] = [];
  */
 const rowGlyph = (entry: ProjectDocument) => {
   if (entry.figma) return <FigmaMark className="h-3 w-2 shrink-0" />;
+  // In the brand colour: the one kind of page the app writes by itself, and
+  // the row somebody arriving from the whiteboard is looking for.
+  if (entry.folder) return <Images aria-hidden className="h-3 w-3 shrink-0 text-brand" />;
 
   const mime = entry.source?.mime ?? '';
   if (mime.startsWith('image/')) {
@@ -732,7 +737,9 @@ export const TextBoard = ({
           </span>
         )}
         <span className="truncate">
-          {entry.figma
+          {entry.folder
+            ? t('folder.rowCount', { count: String(entry.folder.itemCount) })
+            : entry.figma
             ? t('figma.design')
             : entry.source && !entry.source.hasBody
               ? t('doc.uploadedFile')
@@ -1005,6 +1012,19 @@ export const TextBoard = ({
                     {t('common.cancel')}
                   </Button>
                 </>
+              ) : open.folder ? (
+                /*
+                  A folder, not a page: the whiteboard writes it, so there is
+                  nothing here to edit. Its name follows the whiteboard page's,
+                  and its pictures are managed from the grid below.
+                */
+                <span
+                  title={t('folder.chipHint')}
+                  className="ui-chip inline-flex items-center gap-1.5 rounded-full border border-edge px-2.5 py-1 text-3xs text-content-muted"
+                >
+                  <Images className="h-3 w-3 shrink-0" />
+                  {t('folder.chip')}
+                </span>
               ) : open.figma ? (
                 /*
                   A design, not a page — so no Edit button either, and for a
@@ -1098,7 +1118,8 @@ export const TextBoard = ({
                 *frame*, and that download is on the card the frame is drawn
                 on, where the thing being downloaded can be named.
               */}
-              {!open.figma && (
+              {/* A folder carries its own "download all" above its grid. */}
+              {!open.figma && !open.folder && (
                 <DocumentDownloadMenu
                   documentId={open.id}
                   title={title}
@@ -1336,7 +1357,13 @@ export const TextBoard = ({
                   </div>
                 )}
 
-                {open.figma ? (
+                {open.folder ? (
+                  /*
+                    The page is a folder of the whiteboard's pictures. See
+                    `FolderDocument`, and `BoardFoldersService` on the API.
+                  */
+                  <FolderDocument documentId={open.id} folder={open.folder} title={open.title} />
+                ) : open.figma ? (
                   /*
                     The page is a file in Figma, read through the project's own
                     connection.

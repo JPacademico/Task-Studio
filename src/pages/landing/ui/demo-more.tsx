@@ -9,7 +9,7 @@ import {
   Undo2,
 } from 'lucide-react';
 
-import { GoogleCalendarMark, PushPin } from '@/shared/ui';
+import { GoogleCalendarMark, PushPin, RunicText } from '@/shared/ui';
 import { cn } from '@/shared/lib/cn';
 import { useT, type TranslationKey } from '@/shared/i18n';
 import { useDemoClock } from './demo-frame';
@@ -96,7 +96,7 @@ export const DemoNotes = () => {
           animate={{ opacity: 1, scale: 1, rotate: note.tilt, y: 0 }}
           transition={{ type: 'spring', stiffness: 420, damping: 24 }}
           style={{ left: note.x, top: note.y, backgroundColor: note.colour }}
-          className="gpu absolute w-[7.5rem] rounded-[3px] p-2 pt-3.5 shadow-postit"
+          className="gpu group absolute w-[7.5rem] rounded-[3px] p-2 pt-3.5 shadow-postit"
         >
           <span
             aria-hidden
@@ -104,7 +104,11 @@ export const DemoNotes = () => {
           >
             <PushPin isPinned className="h-3.5 w-3.5" />
           </span>
-          <p className="font-hand text-3xs leading-snug text-[#1a1a22]">{t(note.key)}</p>
+          {/* Carved on the runic skin until pointed at, like every Post-it
+              on this page. See `RunicText`. */}
+          <p className="font-hand text-3xs leading-snug text-[#1a1a22]">
+            <RunicText wrap>{t(note.key)}</RunicText>
+          </p>
           {/* The link handle, on the two notes the string joins. */}
           {isLinked && index !== 1 && (
             <Link2 aria-hidden className="absolute bottom-1 right-1 h-2.5 w-2.5 text-brand" />

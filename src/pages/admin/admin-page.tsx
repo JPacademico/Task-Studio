@@ -199,6 +199,15 @@ const ReportSheet = ({ userId, count }: { userId: string; count: number }) => {
   );
 };
 
+/**
+ * The account list: one column where the console is a column, a grid where it
+ * is a screen. Two across from 1600px and three from 2400px — each row is an
+ * avatar, a name and a handful of actions, and at those widths a single row
+ * was spreading that across a metre of glass.
+ */
+const ACCOUNT_GRID =
+  'space-y-2 min-[1600px]:grid min-[1600px]:grid-cols-2 min-[1600px]:items-start min-[1600px]:gap-2 min-[1600px]:space-y-0 min-[2400px]:grid-cols-3';
+
 const AdminPage = () => {
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [token, setToken] = useState<string | null>(() => adminTokenStore.get());
@@ -512,7 +521,18 @@ const AdminPage = () => {
   // ---- The console ---------------------------------------------------------
   return (
     <div className={shell}>
-      <div className="mx-auto max-w-3xl space-y-5">
+      {/*
+        The console's column, and what it does on a big screen.
+
+        `max-w-3xl` everywhere below 1600px, which is where this page is
+        normally read and where nothing moves. Above it the column follows the
+        window — the same `max(rem, vw)` shape the app shell uses — and the
+        account list below becomes a grid, because a 3xl column on a 2560 or
+        ultrawide panel was a narrow stripe of rows with most of the screen
+        empty on either side, which is the one layout a directory should never
+        be when there is room to show more of it at once.
+      */}
+      <div className="mx-auto w-full max-w-3xl space-y-5 min-[1600px]:max-w-[min(120rem,max(48rem,64vw))]">
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="flex items-center gap-1.5 text-3xs uppercase tracking-[0.18em] text-danger">
@@ -652,8 +672,8 @@ const AdminPage = () => {
         </div>
 
         {isLoading && !rows && (
-          <div className="space-y-2">
-            {Array.from({ length: 5 }, (_, index) => (
+          <div className={ACCOUNT_GRID}>
+            {Array.from({ length: 6 }, (_, index) => (
               <Skeleton key={index} className="h-16" />
             ))}
           </div>
@@ -667,7 +687,7 @@ const AdminPage = () => {
           />
         )}
 
-        <ul className="space-y-2">
+        <ul className={ACCOUNT_GRID}>
           {rows?.map((user) => (
             <li
               key={user.id}

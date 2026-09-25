@@ -165,6 +165,54 @@
   font-display: swap;
 }
 
+/* ===========================================================================
+   Studio Runic — the Runic skin's face.
+   ===========================================================================
+
+   A carved Latin: every stroke straight, every curve cut into facets, and
+   every stroke that meets a guide line cut flat along it. Three runes lend
+   their shapes to the Latin letters that already look like them — ᛒ to B,
+   ᚱ to R, ᚹ to P — and O is the long pointed hexagon a carver makes of a
+   circle. Drawn for this product by `custom-font/runic/build-studio-runic.py`;
+   see the README beside it.
+
+   ## Why the skin needed one
+
+   Its stacks named 'Norse' first, and no file for it ever existed — so the
+   skin set every word in Bahnschrift, a DIN-style engineering sans, under a
+   parchment palette and carved ornaments. The runes that `RunicText` draws
+   were never the issue (they have `--font-rune`); the Latin was. And the
+   carved display faces that exist come with personal-use or unclear web
+   licences, which `custom-font/README.md` rules out whatever they look like.
+
+   ## Why it is also the body face
+
+   Because it was drawn to be. It has a real lowercase with the ordinary
+   skeleton people read by, UI proportions (cap height 0.70 em and x-height
+   0.51 em, within a hundredth of the Bahnschrift it replaces, so nothing that
+   fitted before overflows), an `l` with a foot so it is never an `I`, equal-
+   width figures, and every Latin-1 accent the Portuguese interface needs.
+
+   Two files, like the Pixel face: a real bold (a wider blade, the same cuts)
+   rather than the browser's smear. About 6 kB each, fetched only when the
+   Runic skin renders text in them.
+   =========================================================================== */
+@font-face {
+  font-family: 'Studio Runic';
+  src: url('/fonts/runic/studio-runic.woff2') format('woff2');
+  font-weight: 100 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Studio Runic';
+  src: url('/fonts/runic/studio-runic-bold.woff2') format('woff2');
+  font-weight: 600 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 /*
  * Theme tokens.
  *
@@ -2040,11 +2088,18 @@
     --radius-2xl: 2px;
     --radius-3xl: 2px;
 
-    --font-display: 'Norse', 'Beowulf', 'Cinzel Decorative', 'Bahnschrift SemiBold Condensed',
-      'Bahnschrift', 'Trajan Pro', 'Perpetua Titling MT', Georgia, serif;
-    --font-sans: 'Bahnschrift', 'DIN Condensed', 'Segoe UI Semibold', 'Segoe UI', system-ui,
-      sans-serif;
-    --font-hand: 'Norse', 'Beowulf', 'Segoe Script', cursive;
+    /*
+     * The skin's own carved face, in all three roles — see `Studio Runic` at
+     * the top of this file. The chains behind it are the old stacks, kept as
+     * the fallback for a request that does not land: a condensed engineering
+     * sans is the nearest thing every machine already has.
+     */
+    --font-display: 'Studio Runic', 'Bahnschrift SemiBold Condensed', 'Bahnschrift',
+      'DIN Condensed', 'Segoe UI Semibold', 'Segoe UI', system-ui, sans-serif;
+    --font-sans: 'Studio Runic', 'Bahnschrift', 'DIN Condensed', 'Segoe UI Semibold', 'Segoe UI',
+      system-ui, sans-serif;
+    --font-hand: 'Studio Runic', 'Bahnschrift SemiBold Condensed', 'Bahnschrift', 'Segoe UI',
+      system-ui, sans-serif;
 
     --panel-border-width: 2px;
     /* The bevel: light along the top edge where the sheet lifts, shadow under
@@ -8918,6 +8973,32 @@ button:focus-visible .rune-swap__latin,
 }
 
 /*
+ * The swap, for sentences rather than labels.
+ *
+ * Everything above is built for a nav row: one line, clipped with an ellipsis,
+ * because a rail that wraps is a rail that reflows. A Post-it is the opposite
+ * case — it is *made* of wrapped lines, and an ellipsis on one would cut the
+ * note off mid-thought. So the two copies still share one grid cell (the box
+ * is as tall as the taller of the two, and hovering still cannot reflow the
+ * sheet), but each one wraps like the paragraph it is.
+ *
+ * `display: grid` rather than `inline-grid`, so the note's own centring and
+ * `text-balance` apply to the lines inside it as they did to the plain text.
+ */
+.rune-swap--wrap {
+  display: grid;
+  width: 100%;
+}
+
+.rune-swap--wrap > * {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+/*
  * One rune catching light.
  *
  * Individual glyphs, never the whole string: a word that pulses as a unit is a
@@ -10656,6 +10737,18 @@ html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='loading'] 
 .sa-flare {
   width: calc(5cqmin * var(--sa-size, 1));
   height: calc(7.5cqmin * var(--sa-size, 1));
+  /*
+   * Wholly inside the box, whatever the box.
+   *
+   * The position was a bare percentage and the glyph's size is in `cqmin`, so
+   * a rune placed 92% of the way down a band hung its own height off the
+   * bottom edge — cropped to a sliver, which reads as a rendering fault rather
+   * than as a carving. Clamping by the glyph's own extent keeps the whole
+   * mark on the wall, with a margin, at every aspect ratio. The same for the
+   * eyes below.
+   */
+  top: clamp(4cqh, var(--sa-top, 50cqh), calc(100cqh - 7.5cqmin * var(--sa-size, 1) - 4cqh));
+  left: clamp(2cqw, var(--sa-left, 50cqw), calc(100cqw - 5cqmin * var(--sa-size, 1) - 2cqw));
   animation: sa-flare var(--sa-life) ease-in-out var(--sa-delay) infinite;
 }
 
@@ -10680,6 +10773,8 @@ html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='loading'] 
 .sa-blink {
   width: calc(9cqmin * var(--sa-size, 1));
   height: calc(5.5cqmin * var(--sa-size, 1));
+  top: clamp(4cqh, var(--sa-top, 50cqh), calc(100cqh - 5.5cqmin * var(--sa-size, 1) - 4cqh));
+  left: clamp(2cqw, var(--sa-left, 50cqw), calc(100cqw - 9cqmin * var(--sa-size, 1) - 2cqw));
   animation: sa-watch var(--sa-life) ease-in-out var(--sa-delay) infinite;
 }
 

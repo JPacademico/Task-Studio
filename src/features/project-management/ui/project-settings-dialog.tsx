@@ -7,6 +7,7 @@ import {
   Building2,
   CheckCircle2,
   FolderMinus,
+  LogOut,
   RotateCcw,
   Trash2,
 } from 'lucide-react';
@@ -15,6 +16,7 @@ import { useDetachProject } from '@/entities/organization/model/queries';
 import {
   useCompleteProject,
   useDeleteProject,
+  useLeaveProject,
   useReopenProject,
   useUpdateProject,
 } from '@/entities/project/model/queries';
@@ -23,7 +25,16 @@ import { useTasks } from '@/entities/task/model/queries';
 import { TASK_COLORS, TEXT_LIMITS } from '@/shared/config/constants';
 import { fromDateInput, toDateInput } from '@/shared/lib/dates';
 import { clampText } from '@/shared/lib/text';
-import { Button, ColorPicker, Input, Modal, PasswordInput, Textarea } from '@/shared/ui';
+import { useCurrentUser } from '@/features/auth/model/session.store';
+import {
+  Button,
+  ColorPicker,
+  Input,
+  Modal,
+  PasswordInput,
+  Select,
+  Textarea,
+} from '@/shared/ui';
 import { ProjectWindowFields } from './project-window-fields';
 import { useT } from '@/shared/i18n';
 
@@ -42,6 +53,16 @@ interface ProjectSettingsDialogProps {
    * refused.
    */
   isOwner?: boolean;
+  /**
+   * Whether the project's name, colour and dates can be changed here.
+   *
+   * The dialog used to open for owners and admins only, which left a member
+   * with no way out of a project at all: leaving has always worked on the API
+   * and had no button. It now opens for everybody on the roster, and this is
+   * what keeps the editing half to the people the API lets edit — a member
+   * sees the one section that is theirs, leaving.
+   */
+  canEdit?: boolean;
 }
 
 /**
@@ -88,9 +109,12 @@ export const ProjectSettingsDialog = ({
   onClose,
   project,
   isOwner = false,
+  canEdit = false,
 }: ProjectSettingsDialogProps) => {
   const t = useT();
   const navigate = useNavigate();
+  const currentUser = useCurrentUser();
+  const leaveProject = useLeaveProject();
 
   const updateProject = useUpdateProject(project.id);
   const deleteProject = useDeleteProject();
@@ -145,6 +169,27 @@ export const ProjectSettingsDialog = ({
    * anything that gets logged.
    */
   const [password, setPassword] = useState('');
+  /** Two-step, like unfiling: the first press arms it, the second leaves. */
+  const [isConfirmingLeave, setIsConfirmingLeave] = useState(false);
+  /**
+   * Who takes the project over when its owner leaves.
+   *
+   * Admins first, then by name: an admin is already running the project
+   * alongside the owner, so they are the successor people almost always mean.
+   * Pre-selected so the common case is two clicks, never a hunt.
+   */
+  const successors = [...project.roster]
+    .filter((member) => member.id !== currentUser?.id)
+    .sort((left, right) =>
+      left.role === right.role
+        ? left.displayName.localeCompare(right.displayName)
+        : left.role === 'ADMIN'
+          ? -1
+          : right.role === 'ADMIN'
+            ? 1
+            : 0,
+    );
+  const [successorId, setSuccessorId] = useState(successors[0]?.id ?? '');
 
   const isFinished = Boolean(project.completedAt);
 
@@ -164,6 +209,13 @@ export const ProjectSettingsDialog = ({
     setIsConfirmingFinish(false);
     setIsConfirmingUnfile(false);
     setPassword('');
+    setIsConfirmingLeave(false);
+    setSuccessorId((current) =>
+      successors.some((member) => member.id === current) ? current : (successors[0]?.id ?? ''),
+    );
+    // `successors` is derived from the roster on every render; re-seeding on
+    // its identity would reset the picker mid-choice.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, project.color, project.description, project.endsAt, project.name, project.startsAt]);
 
   const trimmedName = name.trim();
@@ -276,6 +328,24 @@ export const ProjectSettingsDialog = ({
     }
   };
 
+  /**
+   * Leave, and go somewhere that still exists for you.
+   *
+   * An owner hands the project to `successorId` on the way out — the API will
+   * not let a project be left without one. Navigating before the lists have
+   * refetched is deliberate: this page is about to be a 404 for this reader.
+   */
+  const handleLeave = async () => {
+    if (isOwner && !successorId) return;
+
+    await leaveProject.mutateAsync({
+      projectId: project.id,
+      successorId: isOwner ? successorId : undefined,
+    });
+    onClose();
+    navigate('/', { replace: true });
+  };
+
   const handleDelete = async () => {
     if (!canDelete) return;
 
@@ -290,71 +360,81 @@ export const ProjectSettingsDialog = ({
       isOpen={isOpen}
       onClose={onClose}
       title={t('project.settingsTitle')}
-      description={t('project.settingsSubtitle')}
+      description={t(canEdit ? 'project.settingsSubtitle' : 'project.settingsSubtitleMember')}
       flat
       footer={
-        <>
+        canEdit ? (
+          <>
+            <Button variant="ghost" onClick={onClose}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              onClick={() => void handleSave()}
+              isLoading={updateProject.isPending}
+              disabled={!canSave}
+            >
+              {t('project.saveChanges')}
+            </Button>
+          </>
+        ) : (
           <Button variant="ghost" onClick={onClose}>
-            {t('common.cancel')}
+            {t('common.close')}
           </Button>
-          <Button
-            onClick={() => void handleSave()}
-            isLoading={updateProject.isPending}
-            disabled={!canSave}
-          >
-            {t('project.saveChanges')}
-          </Button>
-        </>
+        )
       }
     >
       <form
         className="space-y-4"
         onSubmit={(event) => {
           event.preventDefault();
-          void handleSave();
+          if (canEdit) void handleSave();
         }}
       >
-        <Input
-          label={t('project.name')}
-          name="name"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          placeholder={t('project.namePlaceholder')}
-          maxLength={TEXT_LIMITS.projectName}
-          autoFocus
-        />
+        {canEdit && (
+          <>
+            <Input
+              label={t('project.name')}
+              name="name"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder={t('project.namePlaceholder')}
+              maxLength={TEXT_LIMITS.projectName}
+              autoFocus
+            />
 
-        <Textarea
-          label={t('project.description')}
-          name="description"
-          value={description}
-          onChange={(event) => setDescription(event.target.value)}
-          placeholder={t('project.descriptionPlaceholder')}
-          maxLength={TEXT_LIMITS.projectDescription}
-        />
+            <Textarea
+              label={t('project.description')}
+              name="description"
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder={t('project.descriptionPlaceholder')}
+              maxLength={TEXT_LIMITS.projectDescription}
+            />
 
-        <ColorPicker
-          label={t('project.accentColour')}
-          value={color}
-          onChange={setColor}
-          options={TASK_COLORS}
-        />
+            <ColorPicker
+              label={t('project.accentColour')}
+              value={color}
+              onChange={setColor}
+              options={TASK_COLORS}
+            />
 
-        {/*
-          The latest deadline on the board is passed in so the finish field can
-          object *before* the API does. The API refuses a finish date pulled
-          back over work that already exists — it has to, since nothing stops a
-          client posting one — and being told the same thing while the form is
-          still open, with the offending date named, is the difference between
-          a rule and an obstacle.
-        */}
-        <ProjectWindowFields
-          startsAt={startsAt}
-          endsAt={endsAt}
-          onStartChange={setStartsAt}
-          onEndChange={setEndsAt}
-          latestTaskDue={latestTaskDue}
-        />
+            {/*
+              The latest deadline on the board is passed in so the finish field can
+              object *before* the API does. The API refuses a finish date pulled
+              back over work that already exists — it has to, since nothing stops a
+              client posting one — and being told the same thing while the form is
+              still open, with the offending date named, is the difference between
+              a rule and an obstacle.
+            */}
+            <ProjectWindowFields
+              startsAt={startsAt}
+              endsAt={endsAt}
+              onStartChange={setStartsAt}
+              onEndChange={setEndsAt}
+              latestTaskDue={latestTaskDue}
+            />
+          </>
+        )}
 
         {/* --- Where this project is filed ----------------------------------
 
@@ -439,6 +519,80 @@ export const ProjectSettingsDialog = ({
             </Button>
           </section>
         )}
+
+        {/* --- Leaving -----------------------------------------------------
+
+            Everybody's section, and the only one a member sees. Not in the
+            danger zone: nothing is destroyed — the project, its work and its
+            history carry on without you, and an invitation brings you back.
+
+            The owner's version asks one more thing, because a project always
+            has an owner: who takes it over. With nobody else on the roster
+            there is nobody to hand it to, and the section says what is left —
+            finishing or deleting it, below. */}
+        <section className="space-y-2.5 rounded-xl border border-edge bg-surface-sunken/50 p-3.5">
+          <header className="flex items-center gap-2">
+            <LogOut className="h-3.5 w-3.5 shrink-0 text-content-faint" />
+            <h3 className="text-xs font-semibold">{t('project.leaveTitle')}</h3>
+          </header>
+
+          {isOwner && successors.length === 0 ? (
+            <p className="text-2xs leading-relaxed text-content-muted">
+              {t('project.leaveOnlyMember')}
+            </p>
+          ) : (
+            <>
+              <p className="text-2xs leading-relaxed text-content-muted">
+                {t(isOwner ? 'project.leaveExplainOwner' : 'project.leaveExplain')}
+              </p>
+
+              {isOwner && (
+                <Select
+                  label={t('project.leaveSuccessor')}
+                  value={successorId}
+                  onChange={(next) => {
+                    setSuccessorId(next);
+                    setIsConfirmingLeave(false);
+                  }}
+                  size="md"
+                  className="w-full"
+                  options={successors.map((member) => ({
+                    value: member.id,
+                    label: member.displayName,
+                    hint: t(member.role === 'ADMIN' ? 'roster.roleAdmin' : 'roster.roleMember'),
+                  }))}
+                />
+              )}
+
+              <Button
+                type="button"
+                variant={isConfirmingLeave ? 'danger' : 'secondary'}
+                size="sm"
+                onClick={() =>
+                  isConfirmingLeave ? void handleLeave() : setIsConfirmingLeave(true)
+                }
+                onBlur={() => setIsConfirmingLeave(false)}
+                isLoading={leaveProject.isPending}
+                disabled={isOwner && !successorId}
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                {t(
+                  isConfirmingLeave
+                    ? isOwner
+                      ? 'project.leaveConfirmOwner'
+                      : 'project.leaveConfirm'
+                    : isOwner
+                      ? 'project.leaveOwner'
+                      : 'project.leave',
+                  {
+                    name:
+                      successors.find((member) => member.id === successorId)?.displayName ?? '',
+                  },
+                )}
+              </Button>
+            </>
+          )}
+        </section>
 
         {/* --- The dangerous half ------------------------------------------
             Below a rule and behind its own disclosure, so it cannot be reached

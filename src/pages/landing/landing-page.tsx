@@ -6,7 +6,7 @@ import { ArrowRight, Github, Instagram } from 'lucide-react';
 import { wakeApi } from '@/shared/api/client';
 import { cn } from '@/shared/lib/cn';
 import { useCanvasBudget, useCanvasPixelRatio } from '@/shared/lib/use-canvas-budget';
-import { buttonClasses, StudioMark } from '@/shared/ui';
+import { buttonClasses, RunicText, StudioMark } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 import { FeatureCarousel } from './ui/feature-carousel';
 import { FeatureNotes } from './ui/feature-notes';
@@ -20,6 +20,7 @@ import { PricingTable } from './ui/pricing-table';
 import { Reveal } from './ui/reveal';
 import { RotatingWord } from './ui/rotating-word';
 import { ThemeShowcase } from './ui/theme-showcase';
+import { COLUMN, COLUMN_NARROW, COLUMN_WIDE } from './ui/columns';
 
 /*
  * The two WebGL surfaces on this page, split out of its chunk.
@@ -264,7 +265,7 @@ const LandingPage = () => {
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(75%_60%_at_35%_45%,rgb(var(--surface)/0.62),transparent_75%)]"
         />
 
-        <div className="relative mx-auto w-full max-w-6xl px-4 pb-16 pt-14 sm:px-6 sm:pb-24 sm:pt-20">
+        <div className={cn('relative mx-auto w-full px-4 pb-16 pt-14 sm:px-6 sm:pb-24 sm:pt-20', COLUMN)}>
           {/*
             No pill above the headline.
 
@@ -417,7 +418,7 @@ const LandingPage = () => {
          */
         className="scroll-mt-20 overflow-x-clip border-t border-edge/70 bg-surface-raised/40"
       >
-        <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
+        <div className={cn('mx-auto w-full px-4 py-16 sm:px-6 sm:py-24', COLUMN)}>
           <Reveal>
             <FeatureCarousel />
           </Reveal>
@@ -438,7 +439,7 @@ const LandingPage = () => {
             and it is the one place on the page that earns the exception: the
             board *is* the section, so every pixel of column it does not use is
             a pixel of empty wall around a wall. See `FeatureNotes`. */}
-        <div className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
+        <div className={cn('mx-auto w-full px-4 py-16 sm:px-6 sm:py-24', COLUMN_WIDE)}>
           <Reveal>
             <FeatureNotes />
           </Reveal>
@@ -458,7 +459,7 @@ const LandingPage = () => {
         id="themes"
         className="scroll-mt-20 border-t border-edge/70"
       >
-        <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
+        <div className={cn('mx-auto w-full px-4 py-16 sm:px-6 sm:py-24', COLUMN)}>
           {/*
             A heading and nothing else.
 
@@ -509,7 +510,7 @@ const LandingPage = () => {
           reasons given there.
       */}
       <section id="pricing" className="scroll-mt-20 border-t border-edge/70">
-        <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
+        <div className={cn('mx-auto w-full px-4 py-16 sm:px-6 sm:py-24', COLUMN)}>
           <Reveal>
             <header className="mx-auto max-w-2xl text-center">
               <h2 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl">
@@ -579,7 +580,10 @@ const LandingPage = () => {
           pressable. `density` is low because this band is wide: the field is
           meant to be noticed on the second look, not the first.
         */}
-        <SkinAmbience skin={activeSkin} density={0.55} className="z-0" />
+        {/* `span`: the band is about three times as wide as it is tall, so
+            the runes and eyes — which stay where they appear rather than
+            crossing it — need that many more to fill it. */}
+        <SkinAmbience skin={activeSkin} density={0.55} span={3} className="z-0" />
 
         <div className="relative z-10 mx-auto w-full max-w-3xl px-4 py-20 text-center sm:px-6 sm:py-28">
           <Reveal>
@@ -657,7 +661,7 @@ const LandingPage = () => {
         unreadable on yellow paper. Everything else here is a token.
       */}
       <footer className="relative border-t border-edge/70 bg-surface-raised/50 pb-16 pt-14">
-        <div className="mx-auto w-full max-w-6xl px-4 pb-32 sm:px-6">
+        <div className={cn('mx-auto w-full px-4 pb-32 sm:px-6', COLUMN)}>
           <div className="flex flex-col gap-10 md:flex-row md:justify-between">
             {/* ---------- Left: the invitation ---------- */}
             <div className="flex-1 space-y-7">
@@ -779,7 +783,7 @@ const LandingPage = () => {
           the reference does, for the same reason.
         */}
         <div className="relative z-10 -mt-24 px-4 sm:px-6">
-          <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-5 sm:grid-cols-3">
+          <div className={cn('mx-auto grid w-full grid-cols-1 gap-5 sm:grid-cols-3', COLUMN_NARROW)}>
             {FOOTER_NOTES.map((note) => (
               <a
                 key={note.href}
@@ -803,17 +807,23 @@ const LandingPage = () => {
                     <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-white/40" />
                   </span>
 
+                  {/*
+                    The note's words are carved on the runic skin until the
+                    sheet is pointed at (the whole card is the `group`). The
+                    address under them is not: it is the one line somebody may
+                    need to copy, and it stays legible on every skin.
+                  */}
                   <span
                     className="mb-1.5 block pt-1 font-hand text-2xl font-bold"
                     style={{ color: note.ink }}
                   >
-                    {t(note.title)}
+                    <RunicText wrap>{t(note.title)}</RunicText>
                   </span>
                   <p
                     className="font-hand text-base leading-snug"
                     style={{ color: note.ink, opacity: 0.85 }}
                   >
-                    {t(note.body)}
+                    <RunicText wrap>{t(note.body)}</RunicText>
                   </p>
                   <p
                     className="mt-3 break-all text-sm font-semibold tracking-tight"

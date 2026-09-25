@@ -167,6 +167,32 @@ export const useUpdateProject = (projectId: string) => {
  * The recycle bin is invalidated explicitly: it is the one list where the
  * project has just *appeared* rather than disappeared.
  */
+/**
+ * Leaving a project, from its settings.
+ *
+ * Afterwards the project is somebody else's entirely, so it leaves this
+ * client the way a deleted one does: its detail is dropped rather than
+ * invalidated (a refetch would only 404), and every list, the agenda and the
+ * plan meters that counted it are refreshed. The caller navigates away.
+ */
+export const useLeaveProject = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ projectId, successorId }: { projectId: string; successorId?: string }) =>
+      projectApi.leave(projectId, successorId),
+    onSuccess: (_result, { projectId }) => {
+      queryClient.removeQueries({ queryKey: queryKeys.projects.detail(projectId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.meetings.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.billing.summary });
+      toast.success(translate('project.leftToast'));
+    },
+    onError: (error) => toast.error(errorMessage(error, translate('project.leaveFailed'))),
+  });
+};
+
 export const useDeleteProject = () => {
   const queryClient = useQueryClient();
 

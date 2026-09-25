@@ -45,6 +45,12 @@ interface RunicTextProps {
    * do not click.
    */
   mode?: 'swap' | 'always';
+  /**
+   * Lets the swap wrap onto several lines, for text that is a sentence rather
+   * than a label — a Post-it, say. Without it the swap is one clipped line,
+   * which is right for a nav row and would cut a note off mid-thought.
+   */
+  wrap?: boolean;
   className?: string;
 }
 
@@ -52,7 +58,7 @@ interface RunicTextProps {
 const seedOf = (text: string): number =>
   text.split('').reduce((total, character) => total + character.charCodeAt(0), 0);
 
-export const RunicText = ({ children, mode = 'swap', className }: RunicTextProps) => {
+export const RunicText = ({ children, mode = 'swap', wrap = false, className }: RunicTextProps) => {
   const isRunic = useSkin() === 'RUNIC';
 
   const carved = useMemo(() => {
@@ -86,7 +92,7 @@ export const RunicText = ({ children, mode = 'swap', className }: RunicTextProps
   }
 
   return (
-    <span className={cn('rune-swap', className)} title={children}>
+    <span className={cn('rune-swap', wrap && 'rune-swap--wrap', className)} title={children}>
       <span className="rune-swap__carved" aria-hidden>
         {carved}
       </span>

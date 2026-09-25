@@ -36,6 +36,16 @@ const AMBIENCE = {
 
 export type AmbientSkin = keyof typeof AMBIENCE;
 
+/**
+ * The kinds that happen *in place* rather than travelling.
+ *
+ * A leaf or an ember covers the box by crossing it, so a handful is enough
+ * however wide the box is. A rune or an eye stays where it appears — so it
+ * covers only the spot it is in, and a count that suits a square preview
+ * leaves a wide band almost empty. These are the two that scale with `span`.
+ */
+const PLACED_KINDS: ReadonlySet<string> = new Set(['runes', 'eyes']);
+
 /** Whether this skin has an ambience the landing page knows how to draw. */
 export const hasAmbience = (skin: ThemeSkin): skin is AmbientSkin => skin in AMBIENCE;
 
@@ -64,7 +74,7 @@ interface Particle {
   top: number;
 }
 
-const buildField = (count: number, offset: number): Particle[] =>
+const buildField = (count: number, offset: number, isPlaced = false): Particle[] =>
   Array.from({ length: count }, (_, index) => {
     const a = noise(index + offset);
     const b = noise(index * 3.7 + offset);
@@ -74,7 +84,16 @@ const buildField = (count: number, offset: number): Particle[] =>
       // Spread across the width on a jittered grid rather than at random: pure
       // noise clumps, and a gap of a third of the box reads as a bug.
       left: ((index + 0.5) / count) * 100 + (a - 0.5) * (60 / count),
-      top: b * 100,
+      /*
+       * Down the height, the same argument for the things that stay put.
+       *
+       * Pure noise put two of three runes in the bottom fifth of the band on
+       * the landing page — where, once their own height was added, they hung
+       * off the edge. The golden-ratio walk spreads any count evenly down the
+       * box with a little noise so it never reads as a lattice; the CSS then
+       * keeps every one of them wholly inside (see `.sa-flare`).
+       */
+      top: isPlaced ? ((index * 0.618_034 + b * 0.25) % 1) * 100 : b * 100,
       size: 0.6 + c * 0.9,
       duration: 7 + a * 9,
       // Negative, so the field is already mid-flight on the first frame. A
@@ -159,6 +178,14 @@ interface SkinAmbienceProps {
    * reads as an infestation across a 1200px band.
    */
   density?: number;
+  /**
+   * How much wider than tall the box is, roughly.
+   *
+   * Only the kinds that stay in place use it (see `PLACED_KINDS`): three eyes
+   * are a watchful preview in a square box and three dots lost in a band four
+   * times as wide as it is tall. The travelling kinds ignore it.
+   */
+  span?: number;
   className?: string;
 }
 
@@ -193,11 +220,14 @@ interface SkinAmbienceProps {
  * so the honest reduced-motion answer is to leave it out rather than to show a
  * still frame of it.
  */
-export const SkinAmbience = ({ skin, density = 1, className }: SkinAmbienceProps) => {
+export const SkinAmbience = ({ skin, density = 1, span = 1, className }: SkinAmbienceProps) => {
   const reduceMotion = useReducedMotion();
   const spec = hasAmbience(skin) ? AMBIENCE[skin] : null;
+  const isPlaced = spec ? PLACED_KINDS.has(spec.kind) : false;
 
-  const count = spec ? Math.max(3, Math.round(spec.count * density)) : 0;
+  const count = spec
+    ? Math.max(3, Math.round(spec.count * density * (isPlaced ? Math.max(1, span) : 1)))
+    : 0;
 
   /*
    * Keyed on the skin so turning the barrel rebuilds the field rather than
@@ -206,8 +236,8 @@ export const SkinAmbience = ({ skin, density = 1, className }: SkinAmbienceProps
    * reshuffle a field that is mid-flight.
    */
   const field = useMemo(
-    () => (spec ? buildField(count, spec.kind.length * 11) : []),
-    [spec, count],
+    () => (spec ? buildField(count, spec.kind.length * 11, isPlaced) : []),
+    [spec, count, isPlaced],
   );
 
   if (!spec || reduceMotion) return null;
@@ -308,12 +338,23 @@ export const SkinAmbience = ({ skin, density = 1, className }: SkinAmbienceProps
               </span>
             );
 
+          /*
+           * The two that stay put are placed through `--sa-top`/`--sa-left`
+           * rather than `top`/`left`: the stylesheet clamps them by the glyph's
+           * own size, which is in container units a percentage cannot see.
+           */
           case 'runes':
             return (
               <span
                 key={index}
                 className="sa-flare"
-                style={{ ...style, top: `${p.top}%`, filter: `drop-shadow(0 0 6px ${toneB})` }}
+                style={{
+                  ...style,
+                  left: undefined,
+                  '--sa-left': `${p.left}cqw`,
+                  '--sa-top': `${p.top}cqh`,
+                  filter: `drop-shadow(0 0 6px ${toneB})`,
+                } as CSSProperties}
               >
                 <RuneGlyph fill={fill} />
               </span>
@@ -321,7 +362,16 @@ export const SkinAmbience = ({ skin, density = 1, className }: SkinAmbienceProps
 
           case 'eyes':
             return (
-              <span key={index} className="sa-blink" style={{ ...style, top: `${p.top}%` }}>
+              <span
+                key={index}
+                className="sa-blink"
+                style={{
+                  ...style,
+                  left: undefined,
+                  '--sa-left': `${p.left}cqw`,
+                  '--sa-top': `${p.top}cqh`,
+                } as CSSProperties}
+              >
                 <EyeGlyph fill={toneA} pupil={toneB} />
               </span>
             );

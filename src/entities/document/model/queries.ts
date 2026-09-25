@@ -10,6 +10,7 @@ import type {
   CreateDocumentPayload,
   CreateFigmaPagePayload,
   DocumentBroadcast,
+  FolderContents,
   ImportDocumentPayload,
   ProjectDocument,
   UpdateDocumentPayload,
@@ -303,6 +304,64 @@ export const useDocumentAssets = (documentId: string | undefined, enabled: boole
     retry: false,
   });
 
+/**
+ * A folder page's pictures.
+ *
+ * Fetched when the folder is opened, never with the table of contents — a
+ * whiteboard page can hold dozens of pictures, and the list only needs the
+ * count it already has. Kept fresh by `document:folder` (see the realtime hook
+ * below) rather than by polling.
+ */
+export const useDocumentFolder = (documentId: string | undefined, enabled: boolean) =>
+  useQuery({
+    queryKey: queryKeys.documents.folder(documentId ?? ''),
+    queryFn: () => documentApi.folder(documentId as string),
+    enabled: Boolean(documentId) && enabled,
+    staleTime: 15_000,
+  });
+
+/**
+ * Takes a picture out of a folder.
+ *
+ * Optimistic, because it is a pruning gesture — "clear what I do not need" is
+ * usually several clicks in a row, and waiting out a round trip between each
+ * makes it a chore. The gauge and the row's count follow from the refetch.
+ */
+export const useRemoveFolderItem = (documentId: string) => {
+  const queryClient = useQueryClient();
+  const key = queryKeys.documents.folder(documentId);
+
+  return useMutation({
+    mutationFn: (itemId: string) => documentApi.removeFolderItem(documentId, itemId),
+    onMutate: async (itemId) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<FolderContents>(key);
+
+      queryClient.setQueryData<FolderContents>(key, (current) =>
+        current
+          ? {
+              ...current,
+              items: current.items.filter((item) => item.id !== itemId),
+              totalBytes:
+                current.totalBytes -
+                (current.items.find((item) => item.id === itemId)?.size ?? 0),
+            }
+          : current,
+      );
+
+      return { previous };
+    },
+    onError: (error, _itemId, context) => {
+      if (context?.previous) queryClient.setQueryData(key, context.previous);
+      toast.error(errorMessage(error, translate('folder.removeFailed')));
+    },
+    onSettled: () => {
+      // The list's picture count and the board's gauge both moved.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.documents.all });
+    },
+  });
+};
+
 /** Puts a Figma file on a project's board as a page. */
 export const useCreateFigmaPage = () => {
   const { upsertRow, refreshUsage } = useDocumentListCache();
@@ -512,14 +571,34 @@ export const useProjectDocumentsRealtime = (
 
     const handleDelete = ({ documentId }: { documentId: string }) => removeRow(documentId);
 
+    /*
+     * A picture went up on the whiteboard and was filed on this board.
+     *
+     * The one event here that carries no row: the folder is written by the
+     * whiteboard's side of the API, which does not shape documents (see
+     * `BoardFoldersService.announce`). So this is the one place the hook
+     * refetches rather than patches — the table of contents for the new row or
+     * its count, the gauge for the bytes, and the folder for its pictures.
+     */
+    const handleFolder = (event: { projectId: string; documentId: string }) => {
+      if (event.projectId !== projectId) return;
+      void queryClient.invalidateQueries({ queryKey: ['documents', 'list', projectId] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.documents.usage(projectId) });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.documents.folder(event.documentId),
+      });
+    };
+
     socket.on('document:created', handleUpsert);
     socket.on('document:updated', handleUpsert);
     socket.on('document:deleted', handleDelete);
+    socket.on('document:folder', handleFolder);
 
     return () => {
       socket.off('document:created', handleUpsert);
       socket.off('document:updated', handleUpsert);
       socket.off('document:deleted', handleDelete);
+      socket.off('document:folder', handleFolder);
     };
   }, [onRemoteEdit, openDocumentId, projectId, queryClient, removeRow, socket, upsertRow]);
 };

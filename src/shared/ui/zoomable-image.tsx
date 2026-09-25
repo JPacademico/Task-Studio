@@ -91,17 +91,11 @@ export const ZoomableImage = ({
   className,
   variant = 'thumb',
 }: ZoomableImageProps) => {
-  const reduceMotion = useReducedMotion();
   const [isOpen, setIsOpen] = useState(false);
-  const [zoom, setZoom] = useState(MIN_ZOOM);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [isFullLoaded, setIsFullLoaded] = useState(false);
-  const [isPanning, setIsPanning] = useState(false);
 
   // Set once, on the first hover or open, and never unset: the browser cache
   // does the rest, and re-requesting on every hover would defeat the point.
   const warmedRef = useRef(false);
-  const dragRef = useRef<{ pointerId: number; x: number; y: number } | null>(null);
 
   const warm = useCallback(() => {
     if (warmedRef.current) return;
@@ -111,21 +105,137 @@ export const ZoomableImage = ({
     probe.src = src;
   }, [src]);
 
+  const inlineSrc = thumbSrc ?? src;
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => {
+          warm();
+          setIsOpen(true);
+        }}
+        onPointerEnter={warm}
+        onFocus={warm}
+        title={translate('image.expand')}
+        aria-label={translate('image.expand')}
+        className={cn(
+          'group/image relative block w-full overflow-hidden rounded-xl border border-edge bg-surface-sunken',
+          'transition-colors duration-150 hover:border-brand/50',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
+          variant === 'fill' && 'h-full',
+          className,
+        )}
+      >
+        {/* `object-contain`, not `-cover`: the whole picture, letterboxed. A
+            crop on a thumbnail is a crop on the only version most people see. */}
+        <img
+          src={inlineSrc}
+          alt={alt}
+          loading="lazy"
+          decoding="async"
+          className={cn(
+            'mx-auto w-full object-contain',
+            variant === 'fill' ? 'h-full' : 'max-h-40',
+          )}
+        />
+
+        <span
+          aria-hidden
+          className={cn(
+            'pointer-events-none absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full',
+            'bg-black/55 text-white opacity-0 transition-opacity duration-150',
+            'group-hover/image:opacity-100',
+          )}
+        >
+          <Expand className="h-3.5 w-3.5" />
+        </span>
+      </button>
+
+      <ImageViewer
+        src={src}
+        thumbSrc={thumbSrc}
+        alt={alt}
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+      />
+    </>
+  );
+};
+
+interface ImageViewerProps {
+  /** Full-resolution source. Only requested while the viewer is open. */
+  src: string;
+  /** Drawn blurred underneath until `src` has decoded. */
+  thumbSrc?: string | null;
+  alt: string;
+  isOpen: boolean;
+  onClose: () => void;
+  /**
+   * Extra controls for the header, beside the zoom group — a download button,
+   * on a folder of pictures. The viewer does not decide what a picture can be
+   * done *with*; the surface that opened it does.
+   */
+  actions?: React.ReactNode;
+}
+
+/**
+ * The full-screen half of `ZoomableImage`, on its own.
+ *
+ * ## Why it was split out
+ *
+ * Because not every picture that should open this way can be a button. A
+ * Post-it on a board is a *draggable object*: it is picked up, moved and
+ * dropped by the same pointer that would click it, so the board has to decide
+ * whether a press was a click or the start of a drag before anything opens —
+ * and it cannot wrap the paper in a `<button>` that would swallow the drag.
+ * The board keeps its own element and simply asks for this viewer when a press
+ * turns out to have been a click. `ZoomableImage` is now this plus a thumbnail
+ * button, which is what it always was.
+ *
+ * Opened, it takes the screen: the real picture at its real resolution, with
+ * the thumbnail scaled up underneath it so there is something to look at while
+ * the full one decodes rather than a black rectangle. It can be zoomed with the
+ * buttons, the wheel or `+`/`-`, panned by dragging once it is bigger than the
+ * viewport, and closed with the return arrow, Escape, or a click on the
+ * backdrop.
+ *
+ * Zoom and pan are one `transform` on one element, so none of it costs a layout
+ * pass no matter how large the image is.
+ */
+export const ImageViewer = ({
+  src,
+  thumbSrc,
+  alt,
+  isOpen,
+  onClose,
+  actions,
+}: ImageViewerProps) => {
+  const reduceMotion = useReducedMotion();
+  const [zoom, setZoom] = useState(MIN_ZOOM);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [isFullLoaded, setIsFullLoaded] = useState(false);
+  const [isPanning, setIsPanning] = useState(false);
+
+  const dragRef = useRef<{ pointerId: number; x: number; y: number } | null>(null);
+
   const reset = useCallback(() => {
     setZoom(MIN_ZOOM);
     setOffset({ x: 0, y: 0 });
   }, []);
 
-  const close = useCallback(() => {
-    setIsOpen(false);
-    reset();
-  }, [reset]);
+  // Every opening starts framed, whatever the last one was zoomed to.
+  useEffect(() => {
+    if (isOpen) reset();
+  }, [isOpen, reset]);
 
-  const open = useCallback(() => {
-    warm();
+  // A different picture has not been decoded yet, whatever the last one was.
+  useEffect(() => setIsFullLoaded(false), [src]);
+
+  const close = useCallback(() => {
+    onClose();
     reset();
-    setIsOpen(true);
-  }, [reset, warm]);
+  }, [onClose, reset]);
 
   /** Zooming back to 1 has to recentre, or the picture is parked off-screen. */
   const zoomBy = useCallback((delta: number) => {
@@ -205,50 +315,8 @@ export const ZoomableImage = ({
     setIsPanning(false);
   };
 
-  const inlineSrc = thumbSrc ?? src;
-
   return (
     <>
-      <button
-        type="button"
-        onClick={open}
-        onPointerEnter={warm}
-        onFocus={warm}
-        title={translate('image.expand')}
-        aria-label={translate('image.expand')}
-        className={cn(
-          'group/image relative block w-full overflow-hidden rounded-xl border border-edge bg-surface-sunken',
-          'transition-colors duration-150 hover:border-brand/50',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
-          variant === 'fill' && 'h-full',
-          className,
-        )}
-      >
-        {/* `object-contain`, not `-cover`: the whole picture, letterboxed. A
-            crop on a thumbnail is a crop on the only version most people see. */}
-        <img
-          src={inlineSrc}
-          alt={alt}
-          loading="lazy"
-          decoding="async"
-          className={cn(
-            'mx-auto w-full object-contain',
-            variant === 'fill' ? 'h-full' : 'max-h-40',
-          )}
-        />
-
-        <span
-          aria-hidden
-          className={cn(
-            'pointer-events-none absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full',
-            'bg-black/55 text-white opacity-0 transition-opacity duration-150',
-            'group-hover/image:opacity-100',
-          )}
-        >
-          <Expand className="h-3.5 w-3.5" />
-        </span>
-      </button>
-
       {createPortal(
         <AnimatePresence>
           {isOpen && (
@@ -275,7 +343,14 @@ export const ZoomableImage = ({
                   <span className="hidden sm:inline">{translate('image.collapse')}</span>
                 </button>
 
-                <span className="ml-auto flex items-center gap-1 rounded-xl bg-white/10 p-1">
+                {actions && <span className="ml-auto flex items-center gap-1.5">{actions}</span>}
+
+                <span
+                  className={cn(
+                    'flex items-center gap-1 rounded-xl bg-white/10 p-1',
+                    !actions && 'ml-auto',
+                  )}
+                >
                   <button
                     type="button"
                     onClick={() => zoomBy(-ZOOM_STEP)}

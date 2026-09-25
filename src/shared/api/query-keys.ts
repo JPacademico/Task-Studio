@@ -115,6 +115,8 @@ export const queryKeys = {
      */
     usage: (projectId: string | undefined) =>
       ['documents', 'usage', projectId ?? 'personal'] as const,
+    /** A folder page's pictures. Under the prefix for the same reason. */
+    folder: (documentId: string) => ['documents', documentId, 'folder'] as const,
   },
 
   /**

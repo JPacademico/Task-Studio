@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 
-import { PushPin } from '@/shared/ui';
+import { PushPin, RunicText } from '@/shared/ui';
 import { cn } from '@/shared/lib/cn';
 import { useIsTouchDevice } from '@/shared/lib/hooks';
 import { useRevealOnScroll } from '@/shared/lib/use-reveal-on-scroll';
@@ -222,7 +222,9 @@ export const FeatureNotes = () => {
             )}
           >
             <motion.div
-              className="relative"
+              // `group`: hovering the sheet is what turns its runes back into
+              // Latin on the runic skin — see `RunicText`.
+              className="group relative"
               initial={reduceMotion ? false : { opacity: 0, y: -18, scale: 0.86, rotate: 0 }}
               animate={isRevealed ? { opacity: 1, y: 0, scale: 1, rotate: note.tilt } : undefined}
               transition={{
@@ -260,8 +262,14 @@ export const FeatureNotes = () => {
                   style={{ clipPath: 'polygon(100% 0, 0 0, 100% 100%)' }}
                 />
 
+                {/*
+                  Carved on the runic skin until the sheet is picked up or
+                  pointed at — the same trade the app's own rail makes, shown
+                  where a visitor deciding on a theme will meet it. A
+                  pass-through on every other skin.
+                */}
                 <h3 className="text-balance text-center font-hand text-lg font-semibold leading-tight">
-                  {t(note.key)}
+                  <RunicText wrap>{t(note.key)}</RunicText>
                 </h3>
               </div>
             </motion.div>

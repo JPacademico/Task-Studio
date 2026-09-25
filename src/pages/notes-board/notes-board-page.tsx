@@ -281,10 +281,21 @@ const NotesBoardPage = () => {
    * for the length of a downscale plus a round trip to object storage, which on
    * a phone photograph is the whole interaction spent looking at nothing.
    */
+  /*
+   * The board as it is drawn right now, so a dropped picture is sized to land
+   * inside it rather than off its bottom edge. `client*` rather than the
+   * bounding box: a note's position is measured inside the border.
+   */
+  const boardSize = useCallback(() => {
+    const element = boardRef.current;
+    return element ? { width: element.clientWidth, height: element.clientHeight } : null;
+  }, []);
+
   const { addImage, isUploading } = useImageDrop({
     patchNotes,
-    createNote: createNote.mutate,
+    createNote: createNote.mutateAsync,
     dropPoint,
+    boardSize,
     currentUserId: currentUser?.id,
   });
 

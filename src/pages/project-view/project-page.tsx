@@ -539,18 +539,17 @@ const ProjectPage = () => {
             </Button>
 
             {/* Next to the pin, because both are things you do *to* the project
-                rather than inside it. */}
-            {canManage && (
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={t('project.settingsTitle')}
-                title={t('project.settingsTitle')}
-                onClick={() => setIsSettingsOpen(true)}
-              >
-                <Settings2 className="h-4 w-4" />
-              </Button>
-            )}
+                rather than inside it. Everybody on the roster gets it: a member
+                sees the one section that is theirs, leaving. */}
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={t('project.settingsTitle')}
+              title={t('project.settingsTitle')}
+              onClick={() => setIsSettingsOpen(true)}
+            >
+              <Settings2 className="h-4 w-4" />
+            </Button>
 
             {/* A finished project takes no new work — the API refuses the
                 write either way, so the button is absent rather than present
@@ -688,6 +687,16 @@ const ProjectPage = () => {
                   currentUserId: currentUser?.id,
                 })
               }
+              // The same rule as the header's "New task": whoever may add work,
+              // on a project that still takes it.
+              onAddTask={
+                canManage && !isFinished
+                  ? () => {
+                      setComposerTask(null);
+                      setIsComposerOpen(true);
+                    }
+                  : undefined
+              }
             />
           )}
           {layout === 'sprint' && <TaskSprintView tasks={tasks} {...taskHandlers} />}
@@ -807,14 +816,13 @@ const ProjectPage = () => {
         repository={project.repository}
       />
 
-      {canManage && (
-        <ProjectSettingsDialog
-          isOpen={isSettingsOpen}
-          onClose={() => setIsSettingsOpen(false)}
-          project={project}
-          isOwner={isOwner}
-        />
-      )}
+      <ProjectSettingsDialog
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        project={project}
+        isOwner={isOwner}
+        canEdit={canManage}
+      />
 
       <TaskDetailModal
         taskId={detailTaskId}

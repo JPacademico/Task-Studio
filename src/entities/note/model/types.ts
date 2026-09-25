@@ -1,3 +1,4 @@
+import type { FolderFiling } from '@/entities/document/model/types';
 import type { UserSummary } from '@/entities/user/model/types';
 
 export type NoteScope = 'PERSONAL' | 'TASK' | 'PROJECT';
@@ -45,6 +46,16 @@ export interface Note {
    * shared surface is part of the note, not an extra lookup per card.
    */
   author?: UserSummary;
+
+  /**
+   * Where the Documents board filed this picture — on the response to
+   * creating a picture note on a project whiteboard, and nowhere else.
+   *
+   * Never on a note read back or broadcast: it describes the person's own
+   * action, and the whiteboard reads it once to decide whether to tell them
+   * the Documents board was full. See `FolderFiling`.
+   */
+  folder?: FolderFiling;
 
   /**
    * The id this sheet was *first* drawn under, which is not always its id.

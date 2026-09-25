@@ -64,7 +64,7 @@ const PASSTHROUGH_MIME: Partial<Record<DocumentExportFormat, string>> = {
  * `blob:` URL is — so this works where a link straight to the storage host
  * would silently navigate instead.
  */
-const saveBlob = (blob: Blob, fileName: string): void => {
+export const saveBlob = (blob: Blob, fileName: string): void => {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
 

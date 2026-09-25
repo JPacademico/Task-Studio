@@ -2323,8 +2323,6 @@ const en = {
   'skin.VOLCANO.body':
     'Ash-grey plates crazed with fractures, a hot seam under every edge where the melt shows through, type struck rather than set — and embers going up off all of it.',
   'skin.DRAGON.tagline': 'Something long passes the window',
-  'skin.DRAGON.body':
-    'Lacquer red and imperial gold behind jade, every panel bordered like a hanging scroll and rolled open on its own handles. Once a minute a dragon crosses the hall, end to end, and is gone.',
 
   'theme.light': 'Light',
   'theme.dark': 'Dark',
@@ -2533,6 +2531,68 @@ const en = {
   'billing.feature.yes': 'Included',
   'billing.feature.no': 'Not on this plan',
   'billing.currency': 'Currency',
+  // Whiteboard picture folders on the Documents board — see `FolderDocument`.
+  'folder.rowCount': '{count} pictures · from the whiteboard',
+  'folder.chip': 'Whiteboard folder',
+  'folder.chipHint': 'Filled automatically with every picture pinned to this whiteboard page.',
+  'folder.summary': '{count} pictures · {size}',
+  'folder.explain':
+    'Every picture pinned to this whiteboard page lands here too. Open one to view it, or save one or all of them.',
+  'folder.detached':
+    'Its whiteboard page was removed. The pictures stay here, and new ones go to a new folder.',
+  'folder.downloadAll': 'Download all (.zip)',
+  'folder.download': 'Download',
+  'folder.downloadOne': 'Download {name}',
+  'folder.remove': 'Remove {name} from this folder',
+  'folder.removeHint':
+    'Remove from folder — frees space on the Documents board. A picture still pinned on the whiteboard stays there.',
+  'folder.removeConfirm': 'Remove?',
+  'folder.removeFailed': 'Could not remove that picture.',
+  'folder.saveFailed': 'Could not download that.',
+  'folder.zipPartial':
+    'Saved {count} of {total} pictures — the rest were too large for one zip or are no longer in storage.',
+  'folder.empty': 'No pictures in this folder',
+  'folder.emptyBody': 'Pictures pinned to its whiteboard page will appear here.',
+  'folder.loadFailed': 'Could not open this folder',
+  'folder.loadFailedBody': 'Check your connection and try again.',
+  'folder.filed': 'Also saved to Documents › {title}',
+  'folder.full.title': 'Documents board is full',
+  'folder.full.subtitle': 'Your picture is on the whiteboard — only its Documents copy is missing.',
+  'folder.full.bodyBytes':
+    'This project\'s Documents board has no room left to file this picture in the whiteboard page\'s folder.',
+  'folder.full.bodyPages':
+    'This project\'s Documents board has reached its page limit, so a new folder for this whiteboard page could not be created.',
+  'folder.full.storageLabel': 'Storage',
+  'folder.full.pagesLabel': 'Pages',
+  'folder.full.pictureSize': 'This picture: {size}',
+  'folder.full.hintTitle': 'Clear unused assets',
+  'folder.full.hintBody':
+    'Open the Documents board and remove pictures, folders or pages you no longer need. Removing a picture from a folder never takes it off the whiteboard.',
+  'folder.full.askOwner':
+    'The board\'s size follows the project owner\'s plan — ask them to upgrade for more room.',
+  'folder.full.onBaron':
+    'This project is already on Baron, the largest plan — clearing space is the way to make room.',
+  'folder.full.openDocuments': 'Open Documents board',
+  'folder.full.upgrade': 'Upgrade plan',
+  // Leaving a project from its settings — see `ProjectSettingsDialog`.
+  'project.settingsSubtitleMember':
+    'You are a member of this project. Only its owner and admins can change it.',
+  'project.leaveTitle': 'Leave this project',
+  'project.leaveExplain':
+    'You will lose access to its board, pages and chat, and your assignments go back to the team. Nothing is deleted — an invitation brings you back.',
+  'project.leaveExplainOwner':
+    'A project always has an owner, so choose who takes it over. They become the owner — and its limits follow their plan — and you leave.',
+  'project.leaveOnlyMember':
+    'You are the only person on this project, so there is nobody to hand it to. Invite someone first, or finish or delete it below.',
+  'project.leaveSuccessor': 'New owner',
+  'project.leave': 'Leave project',
+  'project.leaveConfirm': 'Click again to leave',
+  'project.leaveOwner': 'Hand over and leave',
+  'project.leaveConfirmOwner': 'Give it to {name} and leave',
+  'project.leftToast': 'You left the project.',
+  'project.leaveFailed': 'Could not leave the project.',
+  // The empty card at the foot of To do — see `AddTaskSlot`.
+  'board.addTask': 'Add a task',
 } as const;
 
 export type TranslationKey = keyof typeof en;
@@ -4721,8 +4781,6 @@ const ptBR: Record<TranslationKey, string> = {
   'skin.VOLCANO.body':
     'Placas cinza-cinza rachadas por fraturas, uma costura quente sob cada borda onde o magma aparece, tipografia golpeada em vez de composta — e brasas subindo de tudo isso.',
   'skin.DRAGON.tagline': 'Algo comprido passa pela janela',
-  'skin.DRAGON.body':
-    'Vermelho laca e ouro imperial atrás do jade, cada painel emoldurado como um pergaminho suspenso e aberto pelos próprios cilindros. Uma vez por minuto um dragão atravessa o salão, de ponta a ponta, e some.',
 
   'theme.light': 'Claro',
   'theme.dark': 'Escuro',
@@ -4924,6 +4982,69 @@ const ptBR: Record<TranslationKey, string> = {
   'billing.feature.yes': 'Incluído',
   'billing.feature.no': 'Fora deste plano',
   'billing.currency': 'Moeda',
+  // Whiteboard picture folders on the Documents board — see `FolderDocument`.
+  'folder.rowCount': '{count} imagens · do quadro branco',
+  'folder.chip': 'Pasta do quadro branco',
+  'folder.chipHint':
+    'Preenchida automaticamente com cada imagem fixada nesta página do quadro branco.',
+  'folder.summary': '{count} imagens · {size}',
+  'folder.explain':
+    'Toda imagem fixada nesta página do quadro branco também chega aqui. Abra uma para ver, ou salve uma ou todas.',
+  'folder.detached':
+    'A página do quadro branco foi removida. As imagens ficam aqui, e as novas vão para uma nova pasta.',
+  'folder.downloadAll': 'Baixar tudo (.zip)',
+  'folder.download': 'Baixar',
+  'folder.downloadOne': 'Baixar {name}',
+  'folder.remove': 'Remover {name} desta pasta',
+  'folder.removeHint':
+    'Remover da pasta — libera espaço no quadro de documentos. Uma imagem ainda fixada no quadro branco continua lá.',
+  'folder.removeConfirm': 'Remover?',
+  'folder.removeFailed': 'Não foi possível remover essa imagem.',
+  'folder.saveFailed': 'Não foi possível baixar isso.',
+  'folder.zipPartial':
+    'Salvas {count} de {total} imagens — o resto era grande demais para um zip ou não está mais no armazenamento.',
+  'folder.empty': 'Nenhuma imagem nesta pasta',
+  'folder.emptyBody': 'As imagens fixadas na página do quadro branco aparecerão aqui.',
+  'folder.loadFailed': 'Não foi possível abrir esta pasta',
+  'folder.loadFailedBody': 'Verifique sua conexão e tente novamente.',
+  'folder.filed': 'Também salva em Documentos › {title}',
+  'folder.full.title': 'O quadro de documentos está cheio',
+  'folder.full.subtitle': 'Sua imagem está no quadro branco — só falta a cópia em Documentos.',
+  'folder.full.bodyBytes':
+    'O quadro de documentos deste projeto não tem mais espaço para guardar esta imagem na pasta da página do quadro branco.',
+  'folder.full.bodyPages':
+    'O quadro de documentos deste projeto atingiu o limite de páginas, então não foi possível criar uma nova pasta para esta página do quadro branco.',
+  'folder.full.storageLabel': 'Armazenamento',
+  'folder.full.pagesLabel': 'Páginas',
+  'folder.full.pictureSize': 'Esta imagem: {size}',
+  'folder.full.hintTitle': 'Limpe arquivos sem uso',
+  'folder.full.hintBody':
+    'Abra o quadro de documentos e remova imagens, pastas ou páginas de que não precisa mais. Remover uma imagem de uma pasta nunca a tira do quadro branco.',
+  'folder.full.askOwner':
+    'O tamanho do quadro segue o plano do dono do projeto — peça a ele um upgrade para ter mais espaço.',
+  'folder.full.onBaron':
+    'Este projeto já está no Baron, o maior plano — liberar espaço é o caminho para abrir lugar.',
+  'folder.full.openDocuments': 'Abrir quadro de documentos',
+  'folder.full.upgrade': 'Fazer upgrade do plano',
+  // Leaving a project from its settings — see `ProjectSettingsDialog`.
+  'project.settingsSubtitleMember':
+    'Você é integrante deste projeto. Só o dono e os administradores podem alterá-lo.',
+  'project.leaveTitle': 'Sair deste projeto',
+  'project.leaveExplain':
+    'Você perde o acesso ao quadro, às páginas e ao chat, e suas atribuições voltam para a equipe. Nada é apagado — um convite traz você de volta.',
+  'project.leaveExplainOwner':
+    'Um projeto sempre tem um dono, então escolha quem assume. Essa pessoa vira a dona — e os limites passam a seguir o plano dela — e você sai.',
+  'project.leaveOnlyMember':
+    'Você é a única pessoa neste projeto, então não há para quem passá-lo. Convide alguém antes, ou finalize ou exclua abaixo.',
+  'project.leaveSuccessor': 'Novo dono',
+  'project.leave': 'Sair do projeto',
+  'project.leaveConfirm': 'Clique de novo para sair',
+  'project.leaveOwner': 'Passar e sair',
+  'project.leaveConfirmOwner': 'Passar para {name} e sair',
+  'project.leftToast': 'Você saiu do projeto.',
+  'project.leaveFailed': 'Não foi possível sair do projeto.',
+  // The empty card at the foot of To do — see `AddTaskSlot`.
+  'board.addTask': 'Adicionar uma tarefa',
 };
 
 export const DICTIONARIES: Record<Locale, Record<TranslationKey, string>> = {

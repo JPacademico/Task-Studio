@@ -1,6 +1,7 @@
 import { api } from '@/shared/api/client';
 import { translate } from '@/shared/i18n';
 import { prepareImage } from '@/shared/lib/prepare-image';
+import { md5OfBlob } from '@/shared/lib/md5';
 import type { CurrentUser, ThemePreference, ThemeSkin, UserSummary } from '../model/types';
 
 export interface PresignedUpload {
@@ -139,6 +140,19 @@ export interface UploadedImage {
 export interface UploadImageOptions {
   /** Also upload a small rendition. Costs a second object and a second presign. */
   thumbnail?: boolean;
+  /**
+   * Asks whether these exact bytes are already stored, before sending them.
+   *
+   * Handed the MD5 of the *prepared* file — the WebP that would be uploaded,
+   * not the original — which is the fingerprint the bucket keeps for every
+   * object it holds. A match is used as the upload's result and nothing is
+   * sent: no presign, no PUT, no second copy of a picture that is already on
+   * the board. `null` means "not here", and the upload goes ahead as usual.
+   *
+   * Only offered where the API can answer it — the project whiteboard, whose
+   * pictures are filed and fingerprinted. See `boardFolderApi.lookup`.
+   */
+  reuse?: (md5: string) => Promise<{ key: string; publicUrl: string } | null>;
 }
 
 /**
@@ -161,9 +175,32 @@ export interface UploadImageOptions {
 export const uploadImage = async (
   file: File,
   scope: UploadScope,
-  { thumbnail = false }: UploadImageOptions = {},
+  { thumbnail = false, reuse }: UploadImageOptions = {},
 ): Promise<UploadedImage> => {
   const prepared = await prepareImage(file, { thumbnail });
+
+  /*
+   * Already stored? Then it is already uploaded.
+   *
+   * A failed lookup is not an error: it only means we could not find out, and
+   * the answer to that is the ordinary upload rather than no picture at all.
+   */
+  if (reuse && !thumbnail) {
+    const existing = await md5OfBlob(prepared.display)
+      .then(reuse)
+      .catch(() => null);
+
+    if (existing) {
+      return {
+        key: existing.key,
+        publicUrl: existing.publicUrl,
+        thumbKey: null,
+        thumbUrl: null,
+        width: prepared.width,
+        height: prepared.height,
+      };
+    }
+  }
 
   const display = await putObject(prepared.display, scope);
   const thumb = prepared.thumb ? await putObject(prepared.thumb, scope) : null;

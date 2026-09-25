@@ -67,7 +67,18 @@ export interface RuneToken {
  * Callers that only want the text can join the glyphs.
  */
 export const runeTokens = (text: string): RuneToken[] => {
-  const lower = text.toLowerCase();
+  /*
+   * Accents folded to their letter first: `ã` carves as ᚨ, `ç` as ᚲ.
+   *
+   * The alphabet has no diacritics, and without this every accented vowel
+   * stayed Latin in the middle of a carved word — "ᛊó", "ᚨçᚨᛟ" — which in the
+   * Portuguese interface is a Latin letter in almost every label. One code
+   * unit in, one out (a lone surrogate normalises to itself), so the indices
+   * still line up with `text` for the characters that are not runes.
+   */
+  const lower = text
+    .toLowerCase()
+    .replace(/[^\u0000-\u007f]/g, (character) => character.normalize('NFD')[0] ?? character);
   const tokens: RuneToken[] = [];
 
   for (let index = 0; index < lower.length; index += 1) {

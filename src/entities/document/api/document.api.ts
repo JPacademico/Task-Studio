@@ -9,6 +9,7 @@ import type {
   CreateFigmaPagePayload,
   DocumentExportFormat,
   FigmaBrief,
+  FolderContents,
   FigmaExportFormat,
   ImportDocumentPayload,
   ProjectDocument,
@@ -175,6 +176,75 @@ export const documentApi = {
       blob: response.data,
       count: header !== undefined && Number.isFinite(count) ? count : null,
     };
+  },
+
+  /** A folder page's pictures, in the order they were pinned. */
+  async folder(documentId: string): Promise<FolderContents> {
+    const { data } = await api.get<FolderContents>(`/documents/${documentId}/folder`);
+    return data;
+  },
+
+  /**
+   * One picture out of a folder, as a blob to save.
+   *
+   * Fetched through the API for the same reason `asset` is: the bucket is
+   * another origin, and a cross-origin `download` attribute is ignored.
+   */
+  async folderItem(documentId: string, itemId: string): Promise<Blob> {
+    const { data } = await api
+      .get<Blob>(`/documents/${documentId}/folder/${itemId}`, { responseType: 'blob' })
+      .catch(rethrowWithReadableBody);
+    return data;
+  },
+
+  /**
+   * The whole folder as one `.zip`, built by the API on request.
+   *
+   * Two numbers come back with it — how many pictures made it in and how many
+   * the folder holds — because a zip that stopped at its size budget, or lost
+   * a picture the bucket no longer has, should say so rather than pass for
+   * the whole folder.
+   */
+  async folderArchive(
+    documentId: string,
+  ): Promise<{ blob: Blob; count: number | null; total: number | null }> {
+    const response = await api
+      .get<Blob>(`/documents/${documentId}/folder.zip`, {
+        responseType: 'blob',
+        timeout: SLOW_ROUTE_TIMEOUT_MS,
+      })
+      .catch(rethrowWithReadableBody);
+
+    const read = (header: unknown) => {
+      const value = Number(header);
+      return header !== undefined && Number.isFinite(value) ? value : null;
+    };
+
+    return {
+      blob: response.data,
+      count: read(response.headers['x-asset-count']),
+      total: read(response.headers['x-asset-total']),
+    };
+  },
+
+  /** Takes a picture out of a folder — the board's weight drops at once. */
+  async removeFolderItem(documentId: string, itemId: string): Promise<void> {
+    await api.delete(`/documents/${documentId}/folder/${itemId}`);
+  },
+
+  /**
+   * "Is this picture already on this project's boards?", asked with the MD5
+   * of the prepared file before uploading it. A match is used instead of the
+   * upload. See `UploadImageOptions.reuse`.
+   */
+  async lookupBoardAsset(
+    projectId: string,
+    md5: string,
+  ): Promise<{ key: string; publicUrl: string } | null> {
+    const { data } = await api.get<{ match: { key: string; publicUrl: string } | null }>(
+      `/projects/${projectId}/board-assets/${md5}`,
+    );
+    return data.match;
   },
 
   /** Puts a Figma file on a project's board as a page. */

@@ -7,13 +7,14 @@ import {
   type AnimationPlaybackControls,
   type MotionValue,
 } from 'framer-motion';
-import { Check, Link2, Palette, Pin, Trash2, Zap } from 'lucide-react';
+import { Check, Expand, Link2, Palette, Pin, Trash2, Zap } from 'lucide-react';
 
 import { NOTE_COLORS, TEXT_LIMITS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
 import { readableInk, withAlpha } from '@/shared/lib/colors';
 import { useDebouncedCallback } from '@/shared/lib/hooks';
 import { clampOnPaste, clampText } from '@/shared/lib/text';
+import { ImageViewer } from '@/shared/ui/zoomable-image';
 import type { Note, UpdateNotePayload } from '../model/types';
 import { NoteAuthorStamp } from './note-author';
 import { useT } from '@/shared/i18n';
@@ -250,6 +251,8 @@ const PostItBase = ({
 
 
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+  /** The picture on an IMAGE note, opened full-screen. See `openViewer`. */
+  const [isViewing, setIsViewing] = useState(false);
   const [draft, setDraft] = useState(note.content);
   const [titleDraft, setTitleDraft] = useState(note.title ?? '');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -631,6 +634,38 @@ const PostItBase = ({
   const isSelectable = Boolean(onSelect) && !isConnecting;
   const showCheckbox = isSelectable && (isPickingMultiple || isSelected);
 
+  /**
+   * Where the last press on the picture began, in client pixels.
+   *
+   * The picture is on a sheet that is dragged by the same pointer that clicks
+   * it, and the browser fires `click` after a drag exactly as it does after a
+   * tap — the sheet travels with the pointer, so the press and the release
+   * land on the same element either way. The distance between the two is the
+   * only reliable way to tell "looked at it" from "moved it".
+   */
+  const picturePressRef = useRef<{ x: number; y: number } | null>(null);
+
+  /**
+   * Opens the picture the way a task's attachment opens: full-screen, zoomable.
+   *
+   * Refused whenever a click on the sheet already means something else — the
+   * board is joining notes, picking several, or the click carried a modifier
+   * that adds to the selection — so the viewer never steals a gesture the
+   * board was built around. Four pixels of travel is a drag, not a click.
+   */
+  const openViewer = (event: React.MouseEvent) => {
+    const press = picturePressRef.current;
+    picturePressRef.current = null;
+    if (!press || !note.imageUrl) return;
+
+    const travel = Math.hypot(event.clientX - press.x, event.clientY - press.y);
+    if (travel > 4 || isDraggingRef.current) return;
+    if (isConnecting || isPickingMultiple) return;
+    if (event.shiftKey || event.ctrlKey || event.metaKey) return;
+
+    setIsViewing(true);
+  };
+
   /*
    * Corner drag, wired natively rather than through React.
    *
@@ -849,6 +884,7 @@ const PostItBase = ({
   }, [canResize, height, isImage, resizeHandle, width, x, y]);
 
   return (
+    <>
     <motion.div
       // Held by somebody else: no drag, at the gesture level rather than by
       // cancelling one that has begun. `isRefused` is the one exception — a
@@ -1227,21 +1263,64 @@ const PostItBase = ({
       )}
 
       {isImage ? (
-        <motion.img
-          src={note.imageUrl ?? ''}
-          alt={note.title ?? t('notes.boardImage')}
-          draggable={false}
-          // Decoded off the main thread and fetched only once it is worth
-          // fetching: a board can pin dozens of photographs, and the ones below
-          // the fold should not compete with the ones on screen.
-          loading="lazy"
-          decoding="async"
-          // The board stores the box; the picture fits inside it. `motion.img`
-          // rather than a plain one so the corner handle's live height — a
-          // motion value — can drive it without a render per frame.
-          className="pointer-events-none block w-full rounded-[2px] object-cover"
-          style={{ maxHeight: height }}
-        />
+        /*
+         * The picture, and the click that opens it.
+         *
+         * A wrapper rather than the `<img>` itself, because the image stays
+         * `pointer-events-none` (a dragged `<img>` starts the browser's own
+         * image drag) and the press still has to bubble up to the sheet, which
+         * owns the drag. See `openViewer` for how a click is told from a move.
+         */
+        <div
+          className="group/picture relative"
+          onPointerDown={(event) => {
+            picturePressRef.current = { x: event.clientX, y: event.clientY };
+          }}
+          onClick={openViewer}
+        >
+          <motion.img
+            src={note.imageUrl ?? ''}
+            alt={note.title ?? t('notes.boardImage')}
+            draggable={false}
+            // Decoded off the main thread and fetched only once it is worth
+            // fetching: a board can pin dozens of photographs, and the ones below
+            // the fold should not compete with the ones on screen.
+            loading="lazy"
+            decoding="async"
+            // The board stores the box; the picture fits inside it. `motion.img`
+            // rather than a plain one so the corner handle's live height — a
+            // motion value — can drive it without a render per frame.
+            className="pointer-events-none block w-full rounded-[2px] object-cover"
+            style={{ maxHeight: height }}
+          />
+
+          {/*
+            The same corner affordance a task's attachment shows, for the same
+            reason: a picture that opens on click should say so before it is
+            clicked. A button of its own, so keyboard users have a way in too;
+            it swallows the press so reaching for it never starts a drag.
+          */}
+          {note.imageUrl && (
+            <button
+              type="button"
+              aria-label={t('image.expand')}
+              title={t('image.expand')}
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={(event) => {
+                event.stopPropagation();
+                setIsViewing(true);
+              }}
+              className={cn(
+                'absolute right-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-full',
+                'bg-black/55 text-white opacity-0 transition-opacity duration-150',
+                'focus-visible:opacity-100 group-hover/picture:opacity-100',
+                '[@media(pointer:coarse)]:opacity-70',
+              )}
+            >
+              <Expand className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
       ) : (
         <motion.textarea
           ref={textareaRef}
@@ -1351,6 +1430,25 @@ const PostItBase = ({
         </button>
       )}
     </motion.div>
+
+    {/*
+      A sibling of the sheet, not a child of it.
+
+      The viewer is portalled to the body, but React still bubbles a portal's
+      events through the tree it was *declared* in — so inside the sheet, every
+      click on the viewer's backdrop would reach the sheet's own handlers:
+      selecting the note, taking a hold on it, and re-opening the viewer it had
+      just closed. Out here it belongs to nothing that listens.
+    */}
+    {isImage && note.imageUrl && (
+      <ImageViewer
+        src={note.imageUrl}
+        alt={note.title?.trim() || t('notes.boardImage')}
+        isOpen={isViewing}
+        onClose={() => setIsViewing(false)}
+      />
+    )}
+    </>
   );
 };
 

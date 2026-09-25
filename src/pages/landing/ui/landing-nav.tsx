@@ -8,6 +8,7 @@ import { ThemeToggle } from '@/features/theme-toggle/ui/theme-toggle';
 import { cn } from '@/shared/lib/cn';
 import { buttonClasses, ScrollProgress, StudioMark } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
+import { COLUMN } from './columns';
 import { LavaLink } from './lava-link';
 
 /**
@@ -99,7 +100,9 @@ export const LandingNav = () => {
         {t('landing.nav.skip')}
       </a>
 
-      <nav className="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
+      {/* The same column as the sections under it, so the brand and the last
+          link line up with the page's edges at every width. See `columns`. */}
+      <nav className={cn('mx-auto flex w-full items-center gap-3 px-4 py-3 sm:px-6', COLUMN)}>
         {/*
           The wordmark, which on this page is a "back to the top" control.
 

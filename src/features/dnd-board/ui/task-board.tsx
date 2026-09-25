@@ -12,7 +12,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
-import { Lock } from 'lucide-react';
+import { Lock, Plus } from 'lucide-react';
 import { toast } from '@/shared/lib/toast';
 
 import { TaskCard } from '@/entities/task/ui/task-card';
@@ -69,9 +69,72 @@ interface TaskBoardProps {
    * `0` — the default — draws nothing and lets the empty state through.
    */
   pendingPerColumn?: number;
+  /**
+   * Opens the composer for a new task, from inside the To do column.
+   *
+   * Absent where the reader cannot add work — a finished project, a member
+   * without the rights — and the slot is simply not drawn, the same rule the
+   * page's own "New task" button follows.
+   */
+  onAddTask?: () => void;
 }
 
 const COLUMNS: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'COMPLETED'];
+
+/**
+ * The empty card at the foot of To do.
+ *
+ * ## Why a second way to add a task
+ *
+ * The page's "New task" button is at the top of the screen, and the place a
+ * reader is looking when they think "and one more" is the bottom of the list
+ * they are reading. A card-shaped gap there is the board saying where the next
+ * one goes — which is also why it only lives in To do: new work starts there,
+ * and a slot in Completed would be an invitation to log work as already done.
+ *
+ * ## Why it is drawn with nothing but tokens
+ *
+ * It has to sit in every skin's column without looking pasted in: the edge
+ * colour, the corner radius and the brand tint all come from the skin, so on
+ * the runic board it is a square-cut dashed frame, on Studio a soft one, and
+ * on a dark palette it is as quiet as the column around it. The only fixed
+ * thing is the dash, which is what reads as "empty" on every one of them.
+ *
+ * Always last in the column — below the overflow toggle and the loading
+ * placeholders — so opening a capped column never moves it into the middle of
+ * the list. On an empty To do it stretches to fill the column, which is both
+ * the empty state and the way out of it.
+ */
+const AddTaskSlot = ({ onClick, isAlone }: { onClick: () => void; isAlone: boolean }) => {
+  const t = useT();
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={t('board.addTask')}
+      title={t('board.addTask')}
+      className={cn(
+        'task-add-slot group/add grid w-full shrink-0 place-items-center rounded-2xl',
+        'border-2 border-dashed border-edge text-content-faint',
+        'transition-colors duration-150 ease-studio',
+        'hover:border-brand/60 hover:bg-brand/[0.05] hover:text-brand',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
+        isAlone ? 'min-h-[7.5rem] flex-1' : 'min-h-[4.5rem]',
+      )}
+    >
+      <span
+        aria-hidden
+        className={cn(
+          'grid h-9 w-9 place-items-center rounded-full border-2 border-dashed border-current',
+          'transition-transform duration-200 ease-studio group-hover/add:scale-110',
+        )}
+      >
+        <Plus className="h-4 w-4" strokeWidth={2.6} />
+      </span>
+    </button>
+  );
+};
 
 /** Why a card refuses to be picked up. Read at render, so it follows the
  *  language the reader has chosen. */
@@ -205,6 +268,7 @@ export const TaskBoard = ({
   canChangeStatus,
   completionBlock,
   pendingPerColumn = 0,
+  onAddTask,
 }: TaskBoardProps) => {
   const t = useT();
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -377,12 +441,22 @@ export const TaskBoard = ({
             ))}
 
             {/* "Nothing here" is a claim, and it cannot be made while cards
-                are still arriving. */}
-            {grouped[status].length === 0 && pendingPerColumn === 0 && (
-              <EmptyState
-                className="flex-1 border-none px-3 py-5 lg:py-8"
-                title={t('board.nothingHere')}
-                description={t('board.dropHere')}
+                are still arriving. An empty To do that can take a new task
+                says so with the slot below instead. */}
+            {grouped[status].length === 0 &&
+              pendingPerColumn === 0 &&
+              !(status === 'TODO' && onAddTask) && (
+                <EmptyState
+                  className="flex-1 border-none px-3 py-5 lg:py-8"
+                  title={t('board.nothingHere')}
+                  description={t('board.dropHere')}
+                />
+              )}
+
+            {status === 'TODO' && onAddTask && (
+              <AddTaskSlot
+                onClick={onAddTask}
+                isAlone={grouped.TODO.length === 0 && pendingPerColumn === 0}
               />
             )}
           </Column>

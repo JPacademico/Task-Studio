@@ -371,7 +371,9 @@ const ThemeGalleryPage = () => {
                     second, worse description of the same theme sitting under
                     the first one — they still earn their keep as search terms,
                     which is where they now live and nowhere else. */}
-                <p className="text-xs leading-relaxed text-content-muted">
+                {/* `pre-line`: a description written as verse keeps its
+                    lines — the Dragon's is. See its catalogue entry. */}
+                <p className="whitespace-pre-line text-xs leading-relaxed text-content-muted">
                   {t(detail.description)}
                 </p>
 

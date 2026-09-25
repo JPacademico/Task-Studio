@@ -9,26 +9,12 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { Check, Palette } from 'lucide-react';
 
 import { useTheme } from '@/app/providers/theme-provider';
-import type { ThemeSkin } from '@/entities/user/model/types';
 import { SKIN_CATALOG } from '@/features/theme-toggle/model/skin-catalog';
 import { CursorToggle } from '@/features/theme-toggle/ui/cursor-toggle';
 import { SkinMock } from '@/features/theme-toggle/ui/skin-mock';
 import { cn } from '@/shared/lib/cn';
-import { useT, type TranslationKey } from '@/shared/i18n';
+import { useT } from '@/shared/i18n';
 import { SkinAmbience } from './skin-ambience';
-
-/**
- * Descriptions this section writes for itself instead of the catalogue's.
- *
- * The catalogue's copy is shared with the in-app gallery, where it describes
- * what a skin does to the screens somebody works in. Here a skin is being
- * introduced, and for the Dragon that introduction is a verse rather than a
- * spec sheet — so it is overridden on this page only, and the gallery keeps
- * its own.
- */
-const SHOWCASE_DESCRIPTIONS: Partial<Record<ThemeSkin, TranslationKey>> = {
-  DRAGON: 'landing.themes.dragonVerse',
-};
 
 /**
  * How far off centre a name is still drawn.
@@ -373,7 +359,7 @@ export const ThemeShowcase = () => {
           <p className="text-sm font-medium text-brand">{t(skin.tagline)}</p>
           {/* `pre-line` so a description written as verse keeps its lines. */}
           <p className="max-w-prose whitespace-pre-line text-sm leading-relaxed text-content-muted">
-            {t(SHOWCASE_DESCRIPTIONS[skin.value] ?? skin.description)}
+            {t(skin.description)}
           </p>
         </motion.div>
 

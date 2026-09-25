@@ -156,6 +156,64 @@ export interface DocumentFigma {
   snapshot?: FigmaSnapshot | null;
 }
 
+/**
+ * A page that is a folder of pictures — the whiteboard's, filed.
+ *
+ * Every picture pinned to a page of a project's whiteboard is filed by the API
+ * into a folder page named after that whiteboard page. The folder points at
+ * the same objects the Post-its do, so it costs no storage of its own; see
+ * `BoardFoldersService` on the API.
+ */
+export interface DocumentFolder {
+  /** The whiteboard page it is still filling; null once that page is gone. */
+  pageIndex: number | null;
+  itemCount: number;
+}
+
+/** One picture in a folder page. */
+export interface FolderItem {
+  id: string;
+  /** What the file is called when saved: the Post-it's caption, and its type. */
+  name: string;
+  mime: string;
+  size: number;
+  url: string;
+  createdAt: string;
+  /** The person who filed it, or a project admin. Answered by the API. */
+  canRemove: boolean;
+}
+
+export interface FolderContents {
+  documentId: string;
+  pageIndex: number | null;
+  totalBytes: number;
+  items: FolderItem[];
+}
+
+/**
+ * What the Documents board did with a picture just pinned to the whiteboard.
+ *
+ * Only ever on the create response to the person who pinned it. `full` is the
+ * case the whiteboard answers with a dialog: the picture is on the wall, but
+ * the Documents board had no room to file it.
+ */
+export type FolderFiling =
+  | { status: 'saved' | 'exists'; documentId: string; title: string }
+  | {
+      status: 'full';
+      reason: 'bytes' | 'pages';
+      usage: {
+        usedBytes: number;
+        limitBytes: number | null;
+        documents: number;
+        documentLimit: number | null;
+      };
+      incomingBytes: number;
+      isOwner: boolean;
+      ownerPlan: 'FREE' | 'STARTUP' | 'BARON';
+    }
+  | { status: 'skipped' };
+
 /** What a single object in a design can be pulled out as. */
 export type FigmaExportFormat = 'png' | 'jpg' | 'svg' | 'pdf';
 
@@ -241,6 +299,13 @@ export interface ProjectDocument {
    * anybody clicks it, with `snapshot` omitted there. See `DocumentFigma`.
    */
   figma: DocumentFigma | null;
+  /**
+   * Set when the page is a folder of whiteboard pictures, null otherwise.
+   *
+   * Optional only so a row from an API that predates folders still types; a
+   * missing field reads as "not a folder", which is what it was.
+   */
+  folder?: DocumentFolder | null;
   /**
    * Everybody the author has handed the pen to.
    *

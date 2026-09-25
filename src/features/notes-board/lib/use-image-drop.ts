@@ -7,7 +7,7 @@ import {
   type CreateNoteRequest,
 } from '@/entities/note/lib/optimistic';
 import type { Note } from '@/entities/note/model/types';
-import { uploadImage } from '@/entities/user/api/user.api';
+import { uploadImage, type UploadedImage } from '@/entities/user/api/user.api';
 import { errorMessage } from '@/shared/api/client';
 import { translate } from '@/shared/i18n';
 
@@ -24,6 +24,22 @@ const NOTE_MAX = 900;
 const clampSide = (value: number) => Math.round(Math.min(NOTE_MAX, Math.max(NOTE_MIN, value)));
 
 /**
+ * What an image sheet spends around its picture: `p-2` on either side, and the
+ * caption row plus the padding above and below it.
+ */
+const SHEET_PAD_X = 16;
+const SHEET_PAD_Y = 16 + CAPTION_HEIGHT;
+
+/** Clear space kept between a dropped picture and the board's own edge. */
+const BOARD_EDGE = 16;
+
+/** The visible board, in the same pixels a note's position is stored in. */
+export interface BoardSize {
+  width: number;
+  height: number;
+}
+
+/**
  * Keeps an image note inside a sane box whatever the source resolution is.
  *
  * It used to scale by width alone, which is right for an ordinary photo and
@@ -35,7 +51,7 @@ const clampSide = (value: number) => Math.round(Math.min(NOTE_MAX, Math.max(NOTE
  * image itself is `object-cover`, so a clamp crops a sliver rather than
  * distorting anything.
  */
-export const fitImage = (naturalWidth: number, naturalHeight: number) => {
+export const fitImage = (naturalWidth: number, naturalHeight: number, board?: BoardSize | null) => {
   const sourceWidth = naturalWidth || 240;
   const sourceHeight = naturalHeight || sourceWidth;
 
@@ -47,7 +63,61 @@ export const fitImage = (naturalWidth: number, naturalHeight: number) => {
     width = sourceWidth * (pictureHeight / sourceHeight);
   }
 
+  /*
+   * And then inside the board that is actually on screen.
+   *
+   * The API's 900px ceiling is not the board's. A desk is `78dvh` tall — about
+   * 560px on a laptop — so a long screenshot could arrive a perfectly valid
+   * 320×900 and still hang off the bottom of the wall, cropped by the board's
+   * own border, leaving the reader to hunt for a corner handle they could not
+   * see in order to shrink it back into view. Scaling it down here means every
+   * picture lands whole, whatever its shape.
+   *
+   * Measured against what the sheet really draws: the picture fills the width
+   * inside the sheet's padding, and the caption row sits above it. The scale
+   * is applied to the picture alone, so the chrome keeps its size and the
+   * aspect ratio is untouched.
+   */
+  if (board && board.width > 0 && board.height > 0) {
+    const room = {
+      width: board.width - BOARD_EDGE * 2 - SHEET_PAD_X,
+      height: board.height - BOARD_EDGE * 2 - SHEET_PAD_Y,
+    };
+    const pictureWidth = width - SHEET_PAD_X;
+    const drawnHeight = sourceHeight * (pictureWidth / sourceWidth);
+    const scale = Math.min(1, room.width / pictureWidth, room.height / drawnHeight);
+
+    if (scale < 1) {
+      width = pictureWidth * scale + SHEET_PAD_X;
+      pictureHeight = drawnHeight * scale;
+    }
+  }
+
   return { width: clampSide(width), height: clampSide(pictureHeight + CAPTION_HEIGHT) };
+};
+
+/**
+ * Nudges a drop point so the whole sheet is on the board.
+ *
+ * The drop point is chosen before anybody knows how big the picture is — near
+ * the top, near the middle — and a tall picture dropped 180px down a 560px
+ * board would still run off the bottom even at a size that fits. Moving the
+ * point is cheaper than shrinking the picture further.
+ */
+const placeInside = (
+  point: { positionX: number; positionY: number },
+  size: { width: number; height: number },
+  board: BoardSize | null,
+) => {
+  if (!board) return point;
+
+  const within = (value: number, extent: number, limit: number) =>
+    Math.round(Math.max(BOARD_EDGE, Math.min(value, limit - extent - BOARD_EDGE)));
+
+  return {
+    positionX: within(point.positionX, size.width, board.width),
+    positionY: within(point.positionY, size.height, board.height),
+  };
 };
 
 interface ImageDropOptions {
@@ -56,18 +126,36 @@ interface ImageDropOptions {
   /**
    * Persists the real note once the file is in object storage.
    *
-   * Typed against React Query's `mutate`, per-call callbacks included: this
-   * hook holds a `blob:` URL that must not be revoked until the request that
-   * replaces it has settled, and `onSettled` is where it knows.
+   * Typed against React Query's `mutateAsync`, not `mutate`. This hook holds a
+   * `blob:` URL that must not be revoked until the request that replaces it
+   * has settled, and it hands the server's note to `onCreated` — and TanStack
+   * only runs `mutate`'s per-call callbacks for the *latest* call. Three
+   * pictures dropped together were three calls, so the first two never heard
+   * back: their previews stayed pinned in memory until the board unmounted,
+   * and anything they had to report was lost. A promise per call answers each
+   * one. Failures are the mutation's own business (it takes the placeholder
+   * down and says why), so they are swallowed here.
    */
-  createNote: (
-    request: CreateNoteRequest,
-    options?: { onSettled?: () => void },
-  ) => void;
+  createNote: (request: CreateNoteRequest) => Promise<Note>;
   /** Where on the board a new object lands. */
   dropPoint: () => { positionX: number; positionY: number };
+  /**
+   * The board's visible size, read at the moment of the drop.
+   *
+   * A picture is scaled and placed to land wholly inside it — see `fitImage`.
+   * Null (or absent) keeps the API's own limits as the only bound.
+   */
+  boardSize?: () => BoardSize | null;
   /** Whose sheet this is, for the attribution stamp on a shared wall. */
   currentUserId: string | undefined;
+  /**
+   * How the file reaches the bucket. `uploadImage` into the `notes` scope by
+   * default; the project whiteboard passes one that first asks whether the
+   * picture is already stored — see `UploadImageOptions.reuse`.
+   */
+  upload?: (file: File) => Promise<UploadedImage>;
+  /** Called with the server's note once the picture is really on the wall. */
+  onCreated?: (note: Note) => void;
 }
 
 /**
@@ -106,7 +194,10 @@ export const useImageDrop = ({
   patchNotes,
   createNote,
   dropPoint,
+  boardSize,
   currentUserId,
+  upload,
+  onCreated,
 }: ImageDropOptions) => {
   const [pendingCount, setPendingCount] = useState(0);
   const objectUrls = useRef(new Set<string>());
@@ -132,7 +223,9 @@ export const useImageDrop = ({
 
       const title = file.name.replace(/\.[^.]+$/, '').slice(0, 60);
       const rotation = Math.round((Math.random() * 5 - 2.5) * 10) / 10;
-      const position = dropPoint();
+      // Read once: the board the picture was dropped on is the one it is
+      // fitted to, even if the window is resized while it uploads.
+      const board = boardSize?.() ?? null;
 
       setPendingCount((count) => count + 1);
 
@@ -148,10 +241,19 @@ export const useImageDrop = ({
        */
       const measured = await new Promise<{ width: number; height: number }>((resolve) => {
         const probe = new Image();
-        probe.onload = () => resolve(fitImage(probe.naturalWidth, probe.naturalHeight));
-        probe.onerror = () => resolve(fitImage(240, 240));
+        probe.onload = () => resolve(fitImage(probe.naturalWidth, probe.naturalHeight, board));
+        probe.onerror = () => resolve(fitImage(240, 240, board));
         probe.src = previewUrl;
       });
+
+      /*
+       * Placed by the sheet as drawn, not by the stored box: a note's `height`
+       * is the picture plus its caption, and the sheet adds its own padding
+       * around both. Measured against the stored box, a picture fitted to the
+       * board landed with its bottom edge on the border instead of inside it.
+       */
+      const drawn = { width: measured.width, height: measured.height + SHEET_PAD_Y - CAPTION_HEIGHT };
+      const position = placeInside(dropPoint(), drawn, board);
 
       /*
        * Built through the shared placeholder factory, with the two fields an
@@ -172,7 +274,7 @@ export const useImageDrop = ({
       const drop = () => patchNotes((notes) => notes.filter((note) => note.id !== placeholderId));
 
       try {
-        const uploaded = await uploadImage(file, 'notes');
+        const uploaded = await (upload ? upload(file) : uploadImage(file, 'notes'));
 
         /*
          * The sheet stays exactly where it is; the create adopts it.
@@ -183,22 +285,22 @@ export const useImageDrop = ({
          * this used to do — put a hole in the wall for the length of the
          * create request, right after the upload had finally finished.
          *
-         * The object URL is released on `onSettled` rather than now, because
-         * until the swap happens it is still the thing being drawn.
+         * The object URL is released once the create settles rather than now,
+         * because until the swap happens it is still the thing being drawn.
          */
-        createNote(
-          {
-            content: '',
-            kind: 'IMAGE',
-            imageKey: uploaded.key,
-            title,
-            rotation,
-            ...fitImage(uploaded.width, uploaded.height),
-            ...position,
-            replacesId: placeholderId,
-          },
-          { onSettled: () => release(previewUrl) },
-        );
+        void createNote({
+          content: '',
+          kind: 'IMAGE',
+          imageKey: uploaded.key,
+          title,
+          rotation,
+          ...fitImage(uploaded.width, uploaded.height, board),
+          ...position,
+          replacesId: placeholderId,
+        })
+          .then((note) => onCreated?.(note))
+          .catch(() => undefined)
+          .finally(() => release(previewUrl));
       } catch (error) {
         drop();
         release(previewUrl);
@@ -210,7 +312,7 @@ export const useImageDrop = ({
         setPendingCount((count) => Math.max(0, count - 1));
       }
     },
-    [currentUserId, dropPoint, createNote, patchNotes, release],
+    [boardSize, currentUserId, dropPoint, createNote, onCreated, patchNotes, release, upload],
   );
 
   return { addImage, isUploading: pendingCount > 0, pendingCount };

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AnimatePresence, animate, type AnimationPlaybackControls } from 'framer-motion';
 import {
   Eraser,
@@ -18,6 +18,8 @@ import { toast } from '@/shared/lib/toast';
 import { useRealtime } from '@/app/providers/realtime-provider';
 import { whiteboardApi } from '@/entities/chat/api/chat.api';
 import type { WhiteboardElement, WhiteboardStrokeData } from '@/entities/chat/model/types';
+import { documentApi } from '@/entities/document/api/document.api';
+import type { FolderFiling } from '@/entities/document/model/types';
 import {
   useCreateProjectNote,
   useCreateProjectNoteLink,
@@ -35,7 +37,8 @@ import {
 } from '@/entities/note/model/project-board-queries';
 import { isPendingNoteId } from '@/entities/note/lib/optimistic';
 import { useRoster } from '@/entities/project/model/queries';
-import type { UpdateNotePayload } from '@/entities/note/model/types';
+import type { Note, UpdateNotePayload } from '@/entities/note/model/types';
+import { uploadImage } from '@/entities/user/api/user.api';
 import { PostIt, type NoteHandle } from '@/entities/note/ui/post-it';
 import { useCurrentUser } from '@/features/auth/model/session.store';
 import {
@@ -66,6 +69,7 @@ import {
   SelectionBar,
 } from '@/features/notes-board/ui/board-overlays';
 import { BoardPager } from '@/features/notes-board/ui/board-pager';
+import { BoardFullDialog } from '@/features/notes-board/ui/board-full-dialog';
 import { BoardSkeleton } from '@/features/notes-board/ui/board-skeleton';
 import { ConnectorLayer } from '@/features/notes-board/ui/connector-layer';
 import { PresenceCursors } from '@/features/notes-board/ui/presence-cursors';
@@ -944,14 +948,72 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
     };
   }, []);
 
+  /** The wall as drawn, so a dropped picture is fitted inside it. */
+  const boardSize = useCallback(() => {
+    const element = surfaceRef.current;
+    return element ? { width: element.clientWidth, height: element.clientHeight } : null;
+  }, []);
+
+  /*
+   * Every picture pinned here is also filed on the project's Documents board,
+   * by the API, in a folder named after this page — see `BoardFoldersService`.
+   *
+   * Two things on this side of that. The upload first asks whether the exact
+   * bytes are already on this project's boards, and reuses them when they are,
+   * so the same picture is never stored twice (`UploadImageOptions.reuse`).
+   * And the create answers with where the picture was filed, which is how the
+   * person who pinned it learns the Documents board was out of room.
+   */
+  const queryClient = useQueryClient();
+  const [fullFiling, setFullFiling] = useState<Extract<FolderFiling, { status: 'full' }> | null>(
+    null,
+  );
+  /** Folders already announced this session, so a toast is news, not noise. */
+  const announcedFolders = useRef(new Set<string>());
+
+  const uploadToWall = useCallback(
+    (file: File) =>
+      uploadImage(file, 'notes', {
+        reuse: (md5) => documentApi.lookupBoardAsset(projectId, md5),
+      }),
+    [projectId],
+  );
+
+  const handlePictureFiled = useCallback(
+    (note: Note) => {
+      const filing = note.folder;
+      if (!filing) return;
+
+      if (filing.status === 'full') {
+        setFullFiling(filing);
+        return;
+      }
+      if (filing.status === 'skipped') return;
+
+      void queryClient.invalidateQueries({ queryKey: ['documents', 'list', projectId] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.documents.usage(projectId) });
+
+      // Said once per folder per session: the first picture is when somebody
+      // needs to learn this happens; the twentieth is when they do not.
+      if (filing.status === 'saved' && !announcedFolders.current.has(filing.documentId)) {
+        announcedFolders.current.add(filing.documentId);
+        toast.success(t('folder.filed', { title: filing.title }));
+      }
+    },
+    [projectId, queryClient, t],
+  );
+
   // Optimistic on a shared wall too — the placeholder is local to whoever
   // dropped the file, and the roster sees the real note when it is created.
   // See `useImageDrop`.
   const { addImage, isUploading } = useImageDrop({
     patchNotes,
-    createNote: createNote.mutate,
+    createNote: createNote.mutateAsync,
     dropPoint,
+    boardSize,
     currentUserId: currentUser?.id,
+    upload: uploadToWall,
+    onCreated: handlePictureFiled,
   });
 
   const handleAddNote = () => {
@@ -1715,6 +1777,12 @@ export const Whiteboard = ({ projectId, canClear }: WhiteboardProps) => {
           show={tool === 'select' && selection.length === 0 && notes.length > 1 && !marquee.rect}
         />
       </div>
+
+      <BoardFullDialog
+        projectId={projectId}
+        filing={fullFiling}
+        onClose={() => setFullFiling(null)}
+      />
     </ExpandableStage>
   );
 };

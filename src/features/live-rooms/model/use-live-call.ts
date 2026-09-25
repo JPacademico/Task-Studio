@@ -279,6 +279,17 @@ export const useLiveCall = ({
   const [self, setSelf] = useState<LiveSeat | null>(null);
   const [peers, setPeers] = useState<LivePeer[]>([]);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  /**
+   * What the presenter sees on their own tile while they share.
+   *
+   * A share swaps the screen into the *peers'* video sender (see
+   * `startShare`) and never touches `localStream`, which is the camera. The
+   * local tile rendered `localStream` regardless, so the presenter saw their
+   * disabled camera — a black tile — for as long as everybody else saw the
+   * screen. It was not a device problem; the presenter was simply never shown
+   * what they were sending. This is that stream, for the length of the share.
+   */
+  const [screenPreview, setScreenPreview] = useState<MediaStream | null>(null);
   const [flags, setFlags] = useState<LiveFlags>({
     micOn: false,
     camOn: false,
@@ -1248,6 +1259,7 @@ export const useLiveCall = ({
     localRef.current = null;
     cameraTrack.current = null;
     screenTrack.current = null;
+    setScreenPreview(null);
 
     detector.current?.close();
     detector.current = null;
@@ -1435,6 +1447,9 @@ export const useLiveCall = ({
       if (!track) return;
 
       screenTrack.current = track;
+      // The presenter's own tile shows what is going out. `display` holds the
+      // one video track and no audio, so it is exactly that and nothing more.
+      setScreenPreview(display);
       for (const connection of connections.current.values()) {
         await connection.videoSender?.replaceTrack(track).catch(() => undefined);
       }
@@ -1467,6 +1482,7 @@ export const useLiveCall = ({
     track.onended = null;
     track.stop();
     screenTrack.current = null;
+    setScreenPreview(null);
 
     // Back to the camera, or to nothing if there never was one. Its `enabled`
     // is false, so the peers see the tile go dark rather than the camera come
@@ -1700,9 +1716,11 @@ export const useLiveCall = ({
 
   /** Everybody on the call, this client included, in arrival order. */
   const roster = useMemo(() => {
-    const entries = self ? [{ ...self, stream: localStream, flags }, ...peers] : peers;
+    // While sharing, the local tile is the screen — see `screenPreview`.
+    const ownStream = screenPreview ?? localStream;
+    const entries = self ? [{ ...self, stream: ownStream, flags }, ...peers] : peers;
     return entries.sort((a, b) => a.seq - b.seq);
-  }, [flags, localStream, peers, self]);
+  }, [flags, localStream, peers, screenPreview, self]);
 
   return {
     status,

@@ -216,6 +216,14 @@ export const projectApi = {
     await api.delete(`/projects/${projectId}/members/${memberId}`);
   },
 
+  /**
+   * Leave a project. The owner names who takes it over — a project is never
+   * left without one — and everybody else sends nothing.
+   */
+  async leave(projectId: string, successorId?: string): Promise<void> {
+    await api.post(`/projects/${projectId}/leave`, successorId ? { successorId } : {});
+  },
+
   // --- Invitations addressed to me -----------------------------------------
 
   async myInvitations(): Promise<ProjectInvitation[]> {
