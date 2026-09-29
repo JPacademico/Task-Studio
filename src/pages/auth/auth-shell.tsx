@@ -105,7 +105,9 @@ export const AuthShell = ({ title, subtitle, children, footer }: AuthShellProps)
 
       {/* Language before theme: it is the choice that has to be made *first*,
           because a reader who cannot read the page cannot find anything else. */}
-      <div className="absolute right-4 top-4 z-40 flex items-center gap-1">
+      {/* Swaps palette with the switch in it; the wave still starts at the top
+          edge, since this is not a bar. See `theme-wave.ts`. */}
+      <div data-theme-header className="absolute right-4 top-4 z-40 flex items-center gap-1">
         <LanguageToggle withLabel />
         <ThemeToggle />
       </div>

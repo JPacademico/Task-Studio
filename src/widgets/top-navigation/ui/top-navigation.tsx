@@ -54,6 +54,9 @@ export const TopNavigation = ({ onOpenMobileMenu, onCreateProject }: TopNavigati
       )}
 
       <motion.header
+        // Swaps palette at once and the light/dark wave starts under it, when it
+        // is revealed. See `theme-wave.ts`.
+        data-theme-header
         onMouseEnter={isTouch ? undefined : pin}
         onMouseLeave={
           isTouch

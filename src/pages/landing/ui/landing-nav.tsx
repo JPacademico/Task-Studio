@@ -54,7 +54,11 @@ export const LandingNav = () => {
   const isOnLanding = pathname === '/welcome';
 
   return (
-    <header className="sticky top-0 z-40 border-b border-edge/70 bg-surface/80 backdrop-blur">
+    <header
+      // Swaps palette at once and the light/dark wave starts under it. See `theme-wave.ts`.
+      data-theme-header
+      className="sticky top-0 z-40 border-b border-edge/70 bg-surface/80 backdrop-blur"
+    >
       {/*
         How far down the page you are, on the header's own bottom edge.
 

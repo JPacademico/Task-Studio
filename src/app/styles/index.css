@@ -10315,13 +10315,13 @@ html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='loading'] 
  * comes out washed towards white. `normal` blending with no animation leaves
  * two plain layers and the clip decides which one shows.
  *
- * ## Why the new picture starts clipped away
+ * ## Why the new pictures start clipped away
  *
  * The wave's keyframes are attached when the transition reports `ready`,
- * which is a microtask after the pseudo-elements exist. Starting the new
- * layer hidden means that gap can never show the new theme all at once, and
- * if the script fails to attach anything the transition ends immediately,
- * because nothing is animating, and the page is simply in its new palette.
+ * which is a microtask after the pseudo-elements exist. Starting hidden means
+ * that gap can never show the new theme all at once, and if the script fails
+ * to attach anything the transition ends immediately, because nothing is
+ * animating, and the page is simply in its new palette.
  * ========================================================================== */
 html.theme-wave::view-transition-old(root),
 html.theme-wave::view-transition-new(root) {
@@ -10334,22 +10334,67 @@ html.theme-wave::view-transition-new(root) {
 }
 
 /*
- * The crest: a blurred band of the new accent riding behind the front. The
- * host is blurred and the band inside it is clipped, so the blur is applied
- * after the shape. The other order would blur a rectangle and then cut it.
+ * The headers (`data-theme-header`): swapped on the first frame.
+ *
+ * The old picture is dropped rather than faded and the new one shown at once,
+ * so the bar the switch lives on answers the press immediately. Raised above
+ * the crest and the page, because the wave starts under their bottom border.
+ * One rule per name, because `theme-wave.ts` hands out numbered names and a
+ * pseudo-element selector cannot match a pattern.
+ */
+html.theme-wave::view-transition-group(theme-header-0),
+html.theme-wave::view-transition-group(theme-header-1),
+html.theme-wave::view-transition-group(theme-header-2),
+html.theme-wave::view-transition-group(theme-header-3) {
+  animation: none;
+  z-index: 3;
+}
+
+html.theme-wave::view-transition-old(theme-header-0),
+html.theme-wave::view-transition-old(theme-header-1),
+html.theme-wave::view-transition-old(theme-header-2),
+html.theme-wave::view-transition-old(theme-header-3) {
+  display: none;
+}
+
+html.theme-wave::view-transition-new(theme-header-0),
+html.theme-wave::view-transition-new(theme-header-1),
+html.theme-wave::view-transition-new(theme-header-2),
+html.theme-wave::view-transition-new(theme-header-3) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/*
+ * The crest: a band of the new accent riding behind the front.
+ *
+ * A static, full-screen element in a layer of its own, so nothing in the live
+ * page changes while it moves; only its pseudo-element's clip is animated.
+ * The blur is on the group, which applies it *after* that clip, so the band's
+ * edges soften rather than the blur being cut back to a hard shape.
  */
 .theme-wave-crest {
+  display: none;
+}
+
+html.theme-wave .theme-wave-crest {
+  display: block;
   position: fixed;
   inset: 0;
-  z-index: 2147483647;
   pointer-events: none;
+  background: rgb(var(--brand) / 0.38);
+  view-transition-name: theme-wave-crest;
+}
+
+html.theme-wave::view-transition-group(theme-wave-crest) {
+  animation: none;
+  z-index: 2;
   filter: blur(7px);
 }
 
-.theme-wave-crest__band {
-  position: absolute;
-  inset: 0;
-  background: rgb(var(--brand) / 0.38);
+html.theme-wave::view-transition-new(theme-wave-crest) {
+  animation: none;
+  clip-path: inset(0 0 100% 0);
 }
 
 /* ==========================================================================
