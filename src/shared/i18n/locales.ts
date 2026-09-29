@@ -2322,7 +2322,7 @@ const en = {
   'skin.VOLCANO.tagline': 'The crust is a lid',
   'skin.VOLCANO.body':
     'Ash-grey plates crazed with fractures, a hot seam under every edge where the melt shows through, type struck rather than set — and embers going up off all of it.',
-  'skin.DRAGON.tagline': 'Something long passes the window',
+  'skin.DRAGON.tagline': 'the legend says...',
 
   'theme.light': 'Light',
   'theme.dark': 'Dark',
@@ -4780,7 +4780,7 @@ const ptBR: Record<TranslationKey, string> = {
   'skin.VOLCANO.tagline': 'A crosta é uma tampa',
   'skin.VOLCANO.body':
     'Placas cinza-cinza rachadas por fraturas, uma costura quente sob cada borda onde o magma aparece, tipografia golpeada em vez de composta — e brasas subindo de tudo isso.',
-  'skin.DRAGON.tagline': 'Algo comprido passa pela janela',
+  'skin.DRAGON.tagline': 'diz a lenda...',
 
   'theme.light': 'Claro',
   'theme.dark': 'Escuro',

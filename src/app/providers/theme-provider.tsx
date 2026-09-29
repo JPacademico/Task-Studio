@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -128,6 +129,15 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [hasCustomCursor, setCursorState] = useState<boolean>(readStoredCursor);
 
   /*
+   * Whether a theme-change overlay is currently animating.
+   *
+   * Only one may run at a time — a second toggle during the animation would
+   * stack two overlays and the second would capture the first, so the guard
+   * falls back to the instant swap for rapid toggling.
+   */
+  const isTransitioning = useRef(false);
+
+  /*
    * Every skin but Studio and Paper is a paid look.
    *
    * The server is the authority — it will not store a paid skin for a free
@@ -145,10 +155,98 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   /** What is actually on the document: a preview while one is running. */
   const shown = preview ?? skin;
 
+  /**
+   * Smooth theme-change animation.
+   *
+   * ## How it works
+   *
+   * 1. A full-viewport `<div>` is placed over everything and filled with the
+   *    *current* (old) surface colour. Its `clip-path` starts as a full circle
+   *    that covers the viewport.
+   *
+   * 2. The real `dark` class is toggled on `<html>` immediately, so the page
+   *    underneath has already repainted into the new palette.
+   *
+   * 3. The overlay's `clip-path` shrinks from `circle(150vmax …)` down to
+   *    `circle(0% …)` over 500ms, centred on the top-right area of the header
+   *    where the theme toggle sits. This reveals the new colours expanding
+   *    outward from that point, with an ease-out curve that starts fast and
+   *    decelerates — which reads as a physical surface receding.
+   *
+   * ## Why an overlay rather than View Transitions
+   *
+   * `document.startViewTransition` would be the right primitive, but it is
+   * Chrome-only as of mid-2026 and this product ships to Safari. The overlay
+   * is four DOM operations, no screenshot, no compositing change, and no
+   * dependency on a nascent API — and it degrades gracefully: if
+   * `prefers-reduced-motion` is on or a toggle fires while one is already
+   * running, the class is toggled instantly with zero visual penalty.
+   *
+   * ## Why `pointer-events: none` matters
+   *
+   * Without it the overlay would eat every click for half a second. With it
+   * the toggle itself is still interactive, so somebody mashing it rapidly
+   * hits the `isTransitioning` guard and gets instant swaps after the first.
+   */
   const apply = useCallback((next: ThemePreference) => {
     const dark = resolveIsDark(next);
+
+    // Determine whether we are *changing* or just re-asserting the current
+    // value (e.g. on mount, on system media change). Only animate a real flip.
+    const wasAlreadyDark = document.documentElement.classList.contains('dark');
+    const shouldAnimate =
+      dark !== wasAlreadyDark &&
+      !isTransitioning.current &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (!shouldAnimate) {
+      document.documentElement.classList.toggle('dark', dark);
+      setIsDark(dark);
+      return;
+    }
+
+    isTransitioning.current = true;
+
+    // --- capture the old surface colour before the class flips ---
+    const oldBg = getComputedStyle(document.documentElement)
+      .getPropertyValue('background-color')
+      .trim() || (wasAlreadyDark ? '#0f0f12' : '#f6f6f8');
+
+    // --- build the overlay ---
+    const overlay = document.createElement('div');
+    overlay.setAttribute('aria-hidden', 'true');
+    Object.assign(overlay.style, {
+      position: 'fixed',
+      inset: '0',
+      zIndex: '99999',
+      pointerEvents: 'none',
+      backgroundColor: oldBg,
+      clipPath: 'circle(150vmax at calc(100% - 5rem) 1.75rem)',
+      transition: 'clip-path 500ms cubic-bezier(0.4, 0, 0, 1)',
+      willChange: 'clip-path',
+    });
+    document.body.appendChild(overlay);
+
+    // --- flip the real theme while the overlay hides the seam ---
     document.documentElement.classList.toggle('dark', dark);
     setIsDark(dark);
+
+    // Force a style recalc so the starting clip-path is committed before the
+    // transition target is set.
+    overlay.getBoundingClientRect();
+
+    // --- shrink the overlay, revealing the new theme ---
+    overlay.style.clipPath = 'circle(0% at calc(100% - 5rem) 1.75rem)';
+
+    const cleanup = () => {
+      overlay.remove();
+      isTransitioning.current = false;
+    };
+
+    overlay.addEventListener('transitionend', cleanup, { once: true });
+    // Safety net: if transitionend never fires (tab hidden, GPU stall), clean
+    // up after the duration plus a generous margin.
+    setTimeout(cleanup, 650);
   }, []);
 
   const applySkin = useCallback((next: ThemeSkin) => {
