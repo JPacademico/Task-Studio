@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FileText,
   Hand,
@@ -17,6 +17,7 @@ import type { LiveRoom } from '@/entities/live-room/model/types';
 import { cn } from '@/shared/lib/cn';
 import { Button, SkinLoader } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
+import { FULLSCREEN_EVENTS, fullscreenElement } from '../lib/fullscreen';
 import { useLiveCall } from '../model/use-live-call';
 import { ParticipantTile } from './participant-tile';
 
@@ -100,17 +101,91 @@ export const LiveStage = ({ room, onLeave, onOpenDocument }: LiveStageProps) => 
   const setVideoInterest = call.setVideoInterest;
   const visibilityHandlers = useRef(new Map<string, (visible: boolean) => void>());
 
+  /*
+   * What each tile last said about itself, and which one fills the screen.
+   *
+   * Interest is now two questions rather than one: can this tile be seen, and
+   * is somebody else's tile covering everything. Both are kept here so either
+   * can change and the answer sent is always the pair of them together.
+   */
+  const tileVisible = useRef(new Map<string, boolean>());
+  const [fullscreenId, setFullscreenId] = useState<string | null>(null);
+  const fullscreenRef = useRef<string | null>(null);
+
+  const wantsVideoFrom = useCallback((participantId: string) => {
+    const focused = fullscreenRef.current;
+    return (
+      (tileVisible.current.get(participantId) ?? true) &&
+      (focused === null || focused === participantId)
+    );
+  }, []);
+
   const visibilityHandlerFor = useCallback(
     (participantId: string) => {
       const existing = visibilityHandlers.current.get(participantId);
       if (existing) return existing;
 
-      const handler = (visible: boolean) => setVideoInterest(participantId, visible);
+      const handler = (visible: boolean) => {
+        tileVisible.current.set(participantId, visible);
+        setVideoInterest(participantId, wantsVideoFrom(participantId));
+      };
       visibilityHandlers.current.set(participantId, handler);
       return handler;
     },
-    [setVideoInterest],
+    [setVideoInterest, wantsVideoFrom],
   );
+
+  /*
+   * One tile full screen, and every other stream paused while it is.
+   *
+   * ## Why the stage listens rather than the tile
+   *
+   * A tile knows when *it* goes full screen, but what matters is what that
+   * does to every other tile: they are all still mounted and still intersecting
+   * the viewport underneath, so their observers would keep saying "visible" to
+   * peers whose video nobody can see. Only the stage has all of them in hand.
+   *
+   * It also catches the exits nobody pressed a button for: Escape, the
+   * browser's own gesture, and the tile being unmounted because its peer left,
+   * which takes the fullscreen element out of the document and ends it.
+   *
+   * ## What pausing buys the person watching
+   *
+   * Each paused peer stops encoding for us (see `setVideoInterest`), so the
+   * downlink and the decoder that were spread over the grid are left to the one
+   * stream on screen. On a home connection that is the difference between a
+   * shared document being readable at full size and smearing every time somebody
+   * else in the call moves. It is also a saving for the paused peers, who send
+   * one fewer stream.
+   *
+   * ## Why the matching is by attribute
+   *
+   * `data-participant-id` is on each tile, so the element that went full screen
+   * names its own peer. There is no map of elements to keep in step with the
+   * roster.
+   */
+  useEffect(() => {
+    const sync = () => {
+      const element = fullscreenElement();
+      const id =
+        element instanceof HTMLElement ? (element.dataset.participantId ?? null) : null;
+      if (id === fullscreenRef.current) return;
+
+      fullscreenRef.current = id;
+      setFullscreenId(id);
+
+      const selfId = call.self?.participantId;
+      for (const peer of call.roster) {
+        if (peer.participantId === selfId) continue;
+        setVideoInterest(peer.participantId, wantsVideoFrom(peer.participantId));
+      }
+    };
+
+    for (const name of FULLSCREEN_EVENTS) document.addEventListener(name, sync);
+    return () => {
+      for (const name of FULLSCREEN_EVENTS) document.removeEventListener(name, sync);
+    };
+  }, [call.roster, call.self?.participantId, setVideoInterest, wantsVideoFrom]);
 
   if (call.status === 'idle' || call.status === 'error') {
     return (
@@ -195,6 +270,7 @@ export const LiveStage = ({ room, onLeave, onOpenDocument }: LiveStageProps) => 
                */
               quality={isSelf ? undefined : call.quality[peer.participantId]}
               onVisibilityChange={isSelf ? undefined : visibilityHandlerFor(peer.participantId)}
+              isFullscreen={fullscreenId === peer.participantId}
               onGrantSpeak={() =>
                 grant.mutate({
                   roomId: room.id,

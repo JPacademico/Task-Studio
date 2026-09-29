@@ -200,10 +200,13 @@ export const MAX_BOARD_PAGES = 10;
 /**
  * How many notes one task's note checklist holds. Mirrored from the API's
  * `MAX_TASK_NOTES`, which is the authority — this is what lets the sheet grey
- * the "+" out *before* somebody writes a fourth note and is told it will not
- * fit.
+ * the "+" out *before* somebody writes one note too many and is told it will
+ * not fit.
+ *
+ * Not the assistant's ceiling, which is still one to three steps per press.
+ * The model proposes a few; this is how many the task can carry in total.
  */
-export const MAX_TASK_NOTES = 3;
+export const MAX_TASK_NOTES = 20;
 
 /**
  * How many columns one project's grouping board may hold. Mirrored from the

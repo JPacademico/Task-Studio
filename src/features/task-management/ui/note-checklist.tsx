@@ -14,6 +14,17 @@ import { clampText, clampOnPaste } from '@/shared/lib/text';
 import { Avatar, Button, ColorPicker, Modal } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
+/**
+ * How many steps are still drawn as Post-its.
+ *
+ * Three fit side by side on one row of the sheet, and at that size a Post-it
+ * is the nicer way to read a step. Past that the wall wraps into rows of paper
+ * that have to be scanned in two dimensions, and at twenty it is taller than
+ * the dialog. So from the fourth step on the same notes are drawn as a plain
+ * checklist, one line each, still in their paper colour, still openable.
+ */
+const WALL_MAX_NOTES = 3;
+
 interface NoteChecklistProps {
   task: Task;
   /** Whether the AI button should be offered at all — see `AiPanel`. */
@@ -44,7 +55,7 @@ interface NoteChecklistProps {
  *   input at the bottom of a section cannot offer either without becoming a
  *   form. Capped at `MAX_TASK_NOTES`, which the API enforces independently.
  * - **Tap a note** opens it at reading size — the same idea as
- *   `ZoomableImage`, for the same reason: three notes side by side is a
+ *   `ZoomableImage`, for the same reason: a wall of notes side by side is a
  *   summary, and a summary has to be openable when the thing it summarises is
  *   longer than the box.
  * - **The checkbox** is on the note itself and never opens it. Ticking is the
@@ -66,6 +77,7 @@ export const NoteChecklist = ({ task, isAiEnabled }: NoteChecklistProps) => {
   const [draftColor, setDraftColor] = useState<string>(NOTE_COLORS[0]);
 
   const isFull = task.notes.length >= MAX_TASK_NOTES;
+  const isWall = task.notes.length <= WALL_MAX_NOTES;
   const done = task.noteProgress.done;
   const total = task.noteProgress.total;
 
@@ -97,9 +109,10 @@ export const NoteChecklist = ({ task, isAiEnabled }: NoteChecklistProps) => {
    * Deliberately not a two-step "suggest, then review, then accept". That flow
    * exists on the project's assistant tab, where the model is proposing *whole
    * tasks* and getting one wrong is expensive. Here it is proposing at most
-   * three short lines onto a list capped at three, every one of which can be
-   * torn up with one click — so a review step would be a dialog asking
-   * permission for something cheaper to undo than to confirm.
+   * three short lines onto a capped list, every one of which can be torn up
+   * with one click — so a review step would be a dialog asking permission for
+   * something cheaper to undo than to confirm. Only as many as there is room
+   * for are filed; the API trims the rest.
    */
   const handleSuggest = async () => {
     try {
@@ -170,31 +183,41 @@ export const NoteChecklist = ({ task, isAiEnabled }: NoteChecklistProps) => {
 
       {task.notes.length === 0 ? (
         <p className="rounded-xl border border-dashed border-edge px-3 py-4 text-center text-2xs leading-relaxed text-content-faint">
-          {t('task.noteChecklistEmpty')}
+          {t('task.noteChecklistEmpty', { max: String(MAX_TASK_NOTES) })}
         </p>
       ) : (
-        <ul className="flex flex-wrap gap-2.5">
+        <ul
+          // Keyed by layout: crossing the threshold swaps the whole list at
+          // once, rather than fading Post-its out inside a checklist.
+          key={isWall ? 'wall' : 'list'}
+          className={cn(
+            isWall ? 'flex flex-wrap gap-2.5' : 'divide-y divide-edge rounded-xl border border-edge',
+          )}
+        >
           <AnimatePresence initial={false}>
-            {task.notes.map((note) => (
-              <motion.li
-                key={note.id}
-                layout
-                initial={{ opacity: 0, scale: 0.94 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.94 }}
-                className="gpu"
-              >
-                <NoteCard
-                  note={note}
-                  isMine={note.userId === currentUser?.id}
-                  onOpen={() => setReading(note)}
-                  onToggle={() =>
-                    notes.toggle.mutate({ noteId: note.id, isCompleted: !note.isCompleted })
-                  }
-                  onDelete={() => notes.remove.mutate(note.id)}
-                />
-              </motion.li>
-            ))}
+            {task.notes.map((note) => {
+              const handlers = {
+                note,
+                isMine: note.userId === currentUser?.id,
+                onOpen: () => setReading(note),
+                onToggle: () =>
+                  notes.toggle.mutate({ noteId: note.id, isCompleted: !note.isCompleted }),
+                onDelete: () => notes.remove.mutate(note.id),
+              };
+
+              return (
+                <motion.li
+                  key={note.id}
+                  layout
+                  initial={{ opacity: 0, scale: isWall ? 0.94 : 1 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: isWall ? 0.94 : 1 }}
+                  className="gpu"
+                >
+                  {isWall ? <NoteCard {...handlers} /> : <NoteRow {...handlers} />}
+                </motion.li>
+              );
+            })}
           </AnimatePresence>
         </ul>
       )}
@@ -434,6 +457,67 @@ const NoteCard = ({ note, isMine, onOpen, onToggle, onDelete }: NoteCardProps) =
             onDelete();
           }}
           className="absolute right-1.5 top-1.5 rounded p-0.5 opacity-0 transition-opacity hover:text-danger focus-visible:opacity-100 group-hover/note:opacity-70"
+        >
+          <Trash2 className="h-3 w-3" />
+        </button>
+      )}
+    </div>
+  );
+};
+
+/**
+ * One step, as a checklist row: what a note becomes once there are more than
+ * `WALL_MAX_NOTES` of them.
+ *
+ * Same three gestures as the Post-it, in the same places relative to the text:
+ * the box ticks, the text opens the note at reading size, and the bin (the
+ * author's only) tears it up. The paper colour survives as a strip on the
+ * leading edge, so a step somebody wrote on pink is still the pink one.
+ */
+const NoteRow = ({ note, isMine, onOpen, onToggle, onDelete }: NoteCardProps) => {
+  const t = useT();
+
+  return (
+    <div className="group/row flex items-center gap-2.5 px-2.5 py-2">
+      <span
+        aria-hidden
+        className="h-5 w-1 shrink-0 rounded-full"
+        style={{ backgroundColor: note.color }}
+      />
+
+      <button
+        type="button"
+        aria-label={t(note.isCompleted ? 'task.markPending' : 'task.markDone')}
+        aria-pressed={note.isCompleted}
+        onClick={onToggle}
+        className={cn(
+          'grid h-4 w-4 shrink-0 place-items-center rounded border transition-colors',
+          note.isCompleted
+            ? 'border-positive bg-positive text-white'
+            : 'border-check bg-surface hover:border-brand',
+        )}
+      >
+        {note.isCompleted && <Check className="h-2.5 w-2.5" strokeWidth={3} />}
+      </button>
+
+      <button
+        type="button"
+        onClick={onOpen}
+        title={t('task.noteBy', { name: note.author.displayName })}
+        className={cn(
+          'min-w-0 flex-1 text-left text-xs leading-snug transition-colors hover:text-content',
+          note.isCompleted ? 'text-content-faint line-through' : 'text-content',
+        )}
+      >
+        <span className="line-clamp-2 break-words">{note.content}</span>
+      </button>
+
+      {isMine && (
+        <button
+          type="button"
+          aria-label={t('task.deleteNote')}
+          onClick={onDelete}
+          className="shrink-0 rounded p-1 text-content-faint opacity-0 transition-opacity hover:text-danger focus-visible:opacity-100 group-hover/row:opacity-100 [@media(hover:none)]:opacity-100"
         >
           <Trash2 className="h-3 w-3" />
         </button>

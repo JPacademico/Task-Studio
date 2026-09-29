@@ -1,8 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Hand,
+  Maximize2,
   Mic,
   MicOff,
+  Minimize2,
   MonitorUp,
   ShieldCheck,
   SignalHigh,
@@ -11,6 +13,7 @@ import {
 } from 'lucide-react';
 
 import type { LiveQuality } from '@/entities/live-room/model/types';
+import { canFullscreen, enterFullscreen, exitFullscreen } from '../lib/fullscreen';
 import type { LivePeer } from '../model/use-live-call';
 import { cn } from '@/shared/lib/cn';
 import { Avatar } from '@/shared/ui';
@@ -35,7 +38,17 @@ interface ParticipantTileProps {
    * call's business.
    */
   onVisibilityChange?: (visible: boolean) => void;
+  /**
+   * Whether this tile is the one filling the screen.
+   *
+   * Owned by the stage rather than read here, because the stage is the one
+   * that has to act on it for every *other* tile too. See `LiveStage`.
+   */
+  isFullscreen?: boolean;
 }
+
+/** How long the pointer can rest before a fullscreen tile hides its chrome. */
+const CHROME_IDLE_MS = 2_500;
 
 /**
  * The three states, as an icon and a colour.
@@ -84,10 +97,13 @@ export const ParticipantTile = ({
   canModerate,
   quality,
   onVisibilityChange,
+  isFullscreen = false,
 }: ParticipantTileProps) => {
   const t = useT();
   const videoRef = useRef<HTMLVideoElement>(null);
   const tileRef = useRef<HTMLDivElement>(null);
+  /** In fullscreen, whether the name plate and buttons have faded out. */
+  const [isChromeHidden, setChromeHidden] = useState(false);
 
   useEffect(() => {
     const element = videoRef.current;
@@ -173,6 +189,73 @@ export const ParticipantTile = ({
   /** A tile shows video when the person has a camera on, or is presenting. */
   const hasPicture = peer.flags.camOn || peer.flags.sharing;
 
+  /*
+   * Fullscreen is offered on somebody else's picture, and only there.
+   *
+   * Not on your own tile: while you present, that tile *is* your screen, and
+   * filling the screen with a capture of the screen is a hall of mirrors. Not
+   * on an avatar either, because there is nothing there to see better.
+   */
+  const offersFullscreen = !isSelf && hasPicture && canFullscreen();
+
+  const toggleFullscreen = () => {
+    if (isFullscreen) {
+      void exitFullscreen();
+      return;
+    }
+    const tile = tileRef.current;
+    if (tile && offersFullscreen) void enterFullscreen(tile, videoRef.current);
+  };
+
+  /*
+   * Out of fullscreen when the picture goes.
+   *
+   * A presenter who stops sharing with their camera off leaves an avatar
+   * behind, and an avatar the size of a monitor is a screen somebody has to
+   * work out how to leave. The picture is what they came in for, so the room
+   * comes back when it ends.
+   */
+  useEffect(() => {
+    if (isFullscreen && !hasPicture) void exitFullscreen();
+  }, [hasPicture, isFullscreen]);
+
+  /*
+   * The chrome fades when nobody is pointing at it.
+   *
+   * The name plate and the buttons sit over the picture, which is fine in a
+   * grid and in the way on a full screen, most of all over the bottom line of a
+   * shared document. They come back on any movement, press or key, the same
+   * rule every video player uses, so there is nothing to learn. Keyboard focus
+   * on a button also holds them in view, but only keyboard focus
+   * (`:focus-visible` below): the fullscreen button keeps focus after the click
+   * that pressed it, and `focus-within` would pin the chrome up for good.
+   */
+  useEffect(() => {
+    const tile = tileRef.current;
+    if (!isFullscreen || !tile) {
+      setChromeHidden(false);
+      return;
+    }
+
+    let timer: number | undefined;
+    const wake = () => {
+      setChromeHidden(false);
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => setChromeHidden(true), CHROME_IDLE_MS);
+    };
+
+    wake();
+    tile.addEventListener('pointermove', wake);
+    tile.addEventListener('pointerdown', wake);
+    tile.addEventListener('keydown', wake);
+    return () => {
+      window.clearTimeout(timer);
+      tile.removeEventListener('pointermove', wake);
+      tile.removeEventListener('pointerdown', wake);
+      tile.removeEventListener('keydown', wake);
+    };
+  }, [isFullscreen]);
+
   const QualityIcon = quality ? QUALITY_ICON[quality.level] : null;
   const qualityLabel =
     quality && quality.level !== 'good'
@@ -185,10 +268,25 @@ export const ParticipantTile = ({
   return (
     <div
       ref={tileRef}
+      data-participant-id={peer.participantId}
+      // The quick way in, the way every video player has taught people. The
+      // button below is the way that can be found and reached by keyboard.
+      onDoubleClick={offersFullscreen || isFullscreen ? toggleFullscreen : undefined}
       className={cn(
-        'ui-card group relative flex aspect-video min-w-0 items-center justify-center',
-        'overflow-hidden rounded-2xl border bg-surface-sunken transition-shadow duration-150',
-        isSpeaking ? 'border-positive shadow-glow' : 'border-edge',
+        'group relative flex min-w-0 items-center justify-center overflow-hidden',
+        isFullscreen
+          ? /*
+             * The browser sizes a fullscreen element to the screen, but the
+             * card's rounding, border and skin surface would still be drawn
+             * around the picture. On a full screen the letterbox is black,
+             * whatever the skin, the way every player draws it.
+             */
+            'h-full w-full rounded-none border-0 bg-black'
+          : cn(
+              'ui-card aspect-video rounded-2xl border bg-surface-sunken transition-shadow duration-150',
+              isSpeaking ? 'border-positive shadow-glow' : 'border-edge',
+            ),
+        isFullscreen && isChromeHidden && 'cursor-none',
       )}
     >
       <video
@@ -206,7 +304,9 @@ export const ParticipantTile = ({
            * `contain` on a webcam letterboxes a face, which looks broken. The
            * two want opposite rules and the flag already distinguishes them.
            */
-          peer.flags.sharing ? 'object-contain' : 'object-cover',
+          // On a full screen a face is contained too: cropping somebody's
+          // head to fit an ultrawide monitor is not seeing them better.
+          peer.flags.sharing || isFullscreen ? 'object-contain' : 'object-cover',
           // Mirrored, but only your own camera and never a shared screen:
           // reading a mirrored screen is impossible.
           isSelf && !peer.flags.sharing && 'scale-x-[-1]',
@@ -228,8 +328,20 @@ export const ParticipantTile = ({
       )}
 
       {/* --- The name plate ------------------------------------------------ */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-1.5 bg-gradient-to-t from-black/70 to-transparent px-2.5 py-1.5">
-        <span className="min-w-0 flex-1 truncate text-2xs font-medium text-white">
+      <div
+        className={cn(
+          'pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-1.5',
+          'bg-gradient-to-t from-black/70 to-transparent transition-opacity duration-300',
+          isFullscreen ? 'px-5 pb-4 pt-10' : 'px-2.5 py-1.5',
+          isFullscreen && isChromeHidden && 'opacity-0',
+        )}
+      >
+        <span
+          className={cn(
+            'min-w-0 flex-1 truncate font-medium text-white',
+            isFullscreen ? 'text-sm' : 'text-2xs',
+          )}
+        >
           {isSelf ? t('live.you') : peer.user.displayName}
         </span>
 
@@ -291,21 +403,43 @@ export const ParticipantTile = ({
       </div>
 
       {/*
-        The moderator's controls, revealed on hover and on focus.
+        The tile's own buttons: fullscreen for anybody watching, and the
+        moderator's two grants. Revealed on hover and on focus.
 
-        Hidden by default because a call of eight would otherwise carry sixteen
-        buttons nobody is looking at, and always reachable by keyboard because
-        `group-focus-within` is what stops "hover to reveal" from meaning
-        "mouse only".
+        Hidden by default because a call of eight would otherwise carry two
+        dozen buttons nobody is looking at, and always reachable by keyboard
+        because `group-focus-within` is what stops "hover to reveal" from
+        meaning "mouse only".
       */}
-      {canModerate && !isSelf && (
+      {((canModerate && !isSelf) || offersFullscreen || isFullscreen) && (
         <div
           className={cn(
-            'absolute right-1.5 top-1.5 flex gap-1 opacity-0 transition-opacity',
-            'group-hover:opacity-100 group-focus-within:opacity-100',
+            'absolute flex gap-1 transition-opacity duration-300',
+            isFullscreen ? 'right-4 top-4' : 'right-1.5 top-1.5',
+            /*
+             * In a grid, revealed on hover and on focus, and always shown where
+             * there is no hover to reveal it with: a phone has no pointer
+             * resting over a tile, and the fullscreen button is most wanted on
+             * the smallest screen.
+             *
+             * On a full screen, shown until the pointer rests (see above).
+             */
+            isFullscreen
+              ? isChromeHidden
+                ? 'opacity-0 group-has-[:focus-visible]:opacity-100'
+                : 'opacity-100'
+              : cn(
+                  'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100',
+                  '[@media(hover:none)]:opacity-100',
+                ),
           )}
         >
-          {onGrantSpeak && (
+          {/*
+            The moderator's two grants stay out of the fullscreen view. Handing
+            somebody the microphone is room management, which belongs on the
+            stage with the rest of the room in sight.
+          */}
+          {canModerate && !isSelf && !isFullscreen && onGrantSpeak && (
             <button
               type="button"
               onClick={onGrantSpeak}
@@ -320,7 +454,7 @@ export const ParticipantTile = ({
               {peer.canSpeak ? <MicOff className="h-3 w-3" /> : <Mic className="h-3 w-3" />}
             </button>
           )}
-          {onGrantPresent && (
+          {canModerate && !isSelf && !isFullscreen && onGrantPresent && (
             <button
               type="button"
               onClick={onGrantPresent}
@@ -334,6 +468,27 @@ export const ParticipantTile = ({
               )}
             >
               <MonitorUp className="h-3 w-3" />
+            </button>
+          )}
+
+          {(offersFullscreen || isFullscreen) && (
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              title={isFullscreen ? t('live.exitFullscreen') : t('live.fullscreen')}
+              aria-label={isFullscreen ? t('live.exitFullscreen') : t('live.fullscreen')}
+              className={cn(
+                'grid place-items-center rounded-lg bg-black/60 text-white',
+                'transition-colors hover:bg-black/80 focus-visible:outline-none',
+                'focus-visible:ring-2 focus-visible:ring-brand',
+                isFullscreen ? 'h-10 w-10' : 'h-6 w-6',
+              )}
+            >
+              {isFullscreen ? (
+                <Minimize2 className="h-4 w-4" />
+              ) : (
+                <Maximize2 className="h-3 w-3" />
+              )}
             </button>
           )}
         </div>

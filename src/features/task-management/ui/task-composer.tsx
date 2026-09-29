@@ -523,9 +523,9 @@ export const TaskComposer = ({
    * One more starting step, if there is room for it.
    *
    * The cap is `MAX_TASK_NOTES`, which is what `CreateTaskDto` accepts — this
-   * field had none at all, so typing a fourth step produced a form that looked
-   * complete and a save the API rejected with a validation error naming a field
-   * called `checklist` that nothing on screen is called.
+   * field had none at all, so typing one step too many produced a form that
+   * looked complete and a save the API rejected with a validation error naming
+   * a field called `checklist` that nothing on screen is called.
    */
   const addStep = () => {
     const step = checklistDraft.trim();
@@ -926,6 +926,7 @@ export const TaskComposer = ({
                             : canSuggestSteps
                               ? 'task.suggestStepsHint'
                               : 'ai.needsTitleAndBody',
+                          { max: String(MAX_TASK_NOTES) },
                         )
                   }
                 >
@@ -965,7 +966,9 @@ export const TaskComposer = ({
                   event.preventDefault();
                   addStep();
                 }}
-                placeholder={t(checklistIsFull ? 'task.stepsFull' : 'task.addStep')}
+                placeholder={t(checklistIsFull ? 'task.stepsFull' : 'task.addStep', {
+                  max: String(MAX_TASK_NOTES),
+                })}
                 maxLength={TEXT_LIMITS.checklistItem}
                 disabled={checklistIsFull}
                 className="field disabled:opacity-60"

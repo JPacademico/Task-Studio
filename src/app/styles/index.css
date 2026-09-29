@@ -10300,6 +10300,59 @@ html [data-sonner-toaster][data-theme] [data-sonner-toast][data-type='loading'] 
 }
 
 /* ==========================================================================
+ * The light/dark wave.
+ *
+ * The motion is in `theme-wave.ts`; these rules set the stage for it, and
+ * only while `html.theme-wave` is on, so they cannot touch any other view
+ * transition added later.
+ *
+ * ## Why the default animation has to go
+ *
+ * The browser's own transition is a crossfade, drawn with `plus-lighter`
+ * blending so the two halves add up to one opaque picture. Under a clip that
+ * is the wrong maths: the old picture stays fully opaque underneath, the
+ * blend adds the new one on top of it, and the part the wave has crossed
+ * comes out washed towards white. `normal` blending with no animation leaves
+ * two plain layers and the clip decides which one shows.
+ *
+ * ## Why the new picture starts clipped away
+ *
+ * The wave's keyframes are attached when the transition reports `ready`,
+ * which is a microtask after the pseudo-elements exist. Starting the new
+ * layer hidden means that gap can never show the new theme all at once, and
+ * if the script fails to attach anything the transition ends immediately,
+ * because nothing is animating, and the page is simply in its new palette.
+ * ========================================================================== */
+html.theme-wave::view-transition-old(root),
+html.theme-wave::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+html.theme-wave::view-transition-new(root) {
+  clip-path: inset(0 0 100% 0);
+}
+
+/*
+ * The crest: a blurred band of the new accent riding behind the front. The
+ * host is blurred and the band inside it is clipped, so the blur is applied
+ * after the shape. The other order would blur a rectangle and then cut it.
+ */
+.theme-wave-crest {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  pointer-events: none;
+  filter: blur(7px);
+}
+
+.theme-wave-crest__band {
+  position: absolute;
+  inset: 0;
+  background: rgb(var(--brand) / 0.38);
+}
+
+/* ==========================================================================
  * A dialog that gives up the skin's pattern.
  *
  * `.ui-modal` already went flat on the underwater and volcano skins, for a

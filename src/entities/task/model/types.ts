@@ -201,8 +201,8 @@ export interface CreateTaskPayload {
    * Starting steps for the note checklist, as plain lines.
    *
    * Still `checklist` on the wire: the composer sends a list of steps, which is
-   * what it has always meant, and the API turns them into Post-its. Capped at
-   * three by `MAX_TASK_NOTES`.
+   * what it has always meant, and the API turns them into Post-its. Capped by
+   * `MAX_TASK_NOTES`.
    */
   checklist?: string[];
   /** Which grouping-board column to file it under. Projects only. */

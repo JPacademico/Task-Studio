@@ -2088,6 +2088,8 @@ const en = {
   'live.denySpeak': 'Mute them',
   'live.allowPresent': 'Let them share',
   'live.denyPresent': 'Stop them sharing',
+  'live.fullscreen': 'Watch full screen',
+  'live.exitFullscreen': 'Exit full screen',
   'live.listenOnly': 'You are listening only. Ask to speak and a moderator can hand you the microphone.',
 
   /*
@@ -2187,7 +2189,7 @@ const en = {
   // ---- Note checklist (task sheet) ---------------------------------------
   'task.noteChecklist': 'Note checklist',
   'task.noteChecklistEmpty':
-    'No steps yet. Press + to write one on a Post-it — up to three per task.',
+    'No steps yet. Press + to write one on a Post-it — up to {max} per task.',
   'task.noteChecklistFull': 'A task holds at most {max} notes. Tear one up to make room.',
   'task.note': 'Note',
   'task.newNote': 'New note',
@@ -2198,7 +2200,7 @@ const en = {
   'task.tickedBy': 'Done by {name}',
   'task.suggestSteps': 'Suggest',
   'task.suggestStepsHint': 'Ask the assistant for up to three steps for this task.',
-  'task.stepsFull': 'A task holds three starting steps.',
+  'task.stepsFull': 'A task holds up to {max} starting steps.',
   'task.lateOpen': 'Past its deadline and still open',
   'task.lateDone': 'Finished after the deadline',
   'task.pin': 'Pin task',
@@ -4568,6 +4570,8 @@ const ptBR: Record<TranslationKey, string> = {
   'live.denySpeak': 'Tirar o microfone',
   'live.allowPresent': 'Liberar a tela',
   'live.denyPresent': 'Bloquear a tela',
+  'live.fullscreen': 'Assistir em tela cheia',
+  'live.exitFullscreen': 'Sair da tela cheia',
   'live.listenOnly': 'Você está só ouvindo. Peça para falar e um moderador pode passar o microfone.',
 
   'live.qualityWeak': 'A conexão está sofrendo - {loss}% dos pacotes perdidos, {jitter}ms de jitter. Desligar sua câmera ajuda.',
@@ -4648,7 +4652,7 @@ const ptBR: Record<TranslationKey, string> = {
   'bin.confirmPurgeTask': 'Excluir "{title}" definitivamente?',
   'task.noteChecklist': 'Lista de notas',
   'task.noteChecklistEmpty':
-    'Nenhum passo ainda. Toque em + para escrever um num post-it — até três por tarefa.',
+    'Nenhum passo ainda. Toque em + para escrever um num post-it — até {max} por tarefa.',
   'task.noteChecklistFull': 'Uma tarefa guarda no máximo {max} notas. Apague uma para abrir espaço.',
   'task.note': 'Nota',
   'task.newNote': 'Nova nota',
@@ -4659,7 +4663,7 @@ const ptBR: Record<TranslationKey, string> = {
   'task.tickedBy': 'Concluído por {name}',
   'task.suggestSteps': 'Sugerir',
   'task.suggestStepsHint': 'Peça ao assistente até três passos para esta tarefa.',
-  'task.stepsFull': 'Uma tarefa comporta três passos iniciais.',
+  'task.stepsFull': 'Uma tarefa comporta até {max} passos iniciais.',
   'task.lateOpen': 'Passou do prazo e ainda está aberta',
   'task.lateDone': 'Concluída depois do prazo',
   'task.pin': 'Fixar tarefa',

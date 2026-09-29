@@ -98,6 +98,18 @@ export const PushPin = ({ isPinned, className }: PushPinProps) => {
 };
 
 /**
+ * The type size for a count on a note, which has to fit two digits now.
+ *
+ * A task holds up to twenty notes, so two digits are an ordinary count, not an
+ * overflow. It used to fall back to the ruled-lines glyph above nine, which
+ * meant the one number that says "this list is full" was the one never shown.
+ * Two digits are drawn at four fifths of the size and still fit inside every
+ * paper below. Past 99, which nothing produces, the ruled lines come back.
+ */
+const countSize = (size: number, count: number): number =>
+  count > 9 ? Math.round(size * 0.8 * 10) / 10 : size;
+
+/**
  * The arcade's own square of paper: a 16×16 sprite, staircase peel, one lit
  * square where the smooth version has a highlight.
  */
@@ -112,7 +124,7 @@ const PixelPaper = ({ count }: { count?: number }) => (
     {/* Top-left lit square. */}
     <rect x="3" y="3" width="3" height="3" fill="currentColor" fillOpacity="0.55" />
 
-    {count === undefined || count > 9 ? (
+    {count === undefined || count > 99 ? (
       <g fill="rgb(var(--surface-raised))">
         <rect x="6" y="7" width="12" height="2" />
         <rect x="6" y="11" width="8" height="2" />
@@ -122,7 +134,7 @@ const PixelPaper = ({ count }: { count?: number }) => (
         x="12"
         y="14"
         textAnchor="middle"
-        fontSize="10"
+        fontSize={countSize(10, count)}
         fontWeight="700"
         fill="rgb(var(--surface-raised))"
         style={{ fontFamily: 'var(--font-display)' }}
@@ -163,7 +175,7 @@ const SlatePaper = ({ count }: { count?: number }) => (
       strokeLinejoin="round"
     />
 
-    {count === undefined || count > 9 ? (
+    {count === undefined || count > 99 ? (
       <g stroke="rgb(var(--surface-raised))" strokeWidth="1.2" strokeLinecap="round">
         <line x1="7" y1="9.2" x2="17" y2="9.2" />
         <line x1="7" y1="12.4" x2="14.6" y2="12.4" />
@@ -173,7 +185,7 @@ const SlatePaper = ({ count }: { count?: number }) => (
         x="12"
         y="14.2"
         textAnchor="middle"
-        fontSize="9"
+        fontSize={countSize(9, count)}
         fontWeight="700"
         fill="rgb(var(--surface-raised))"
       >
@@ -205,7 +217,7 @@ const LabelPaper = ({ count }: { count?: number }) => (
     {/* The tape across the header. */}
     <rect x="3.6" y="4" width="16.8" height="3.4" fill="rgb(var(--hazard-sludge))" opacity="0.85" />
 
-    {count === undefined || count > 9 ? (
+    {count === undefined || count > 99 ? (
       <g stroke="rgb(var(--surface-raised))" strokeWidth="1.5" strokeLinecap="butt">
         <line x1="6.4" y1="11.4" x2="17.6" y2="11.4" />
         <line x1="6.4" y1="15" x2="14" y2="15" />
@@ -215,7 +227,7 @@ const LabelPaper = ({ count }: { count?: number }) => (
         x="12"
         y="16.4"
         textAnchor="middle"
-        fontSize="9.5"
+        fontSize={countSize(9.5, count)}
         fontWeight="800"
         fill="rgb(var(--surface-raised))"
       >
@@ -246,7 +258,7 @@ const ClippingPaper = ({ count }: { count?: number }) => (
     {/* The headline. */}
     <rect x="6.2" y="6.2" width="11.6" height="2.2" fill="rgb(var(--surface-raised))" />
 
-    {count === undefined || count > 9 ? (
+    {count === undefined || count > 99 ? (
       <g stroke="rgb(var(--surface-raised))" strokeWidth="1.2" strokeLinecap="butt" opacity="0.85">
         <line x1="6.2" y1="11.4" x2="11.2" y2="11.4" />
         <line x1="6.2" y1="14.2" x2="11.2" y2="14.2" />
@@ -258,7 +270,7 @@ const ClippingPaper = ({ count }: { count?: number }) => (
         x="12"
         y="15.6"
         textAnchor="middle"
-        fontSize="9"
+        fontSize={countSize(9, count)}
         fontWeight="900"
         fill="rgb(var(--surface-raised))"
       >
@@ -295,7 +307,7 @@ const LeafPaper = ({ count }: { count?: number }) => (
       strokeLinejoin="round"
     />
 
-    {count === undefined || count > 9 ? (
+    {count === undefined || count > 99 ? (
       <>
         <line
           x1="6.6"
@@ -324,7 +336,7 @@ const LeafPaper = ({ count }: { count?: number }) => (
         x="12"
         y="14"
         textAnchor="middle"
-        fontSize="9"
+        fontSize={countSize(9, count)}
         fontWeight="700"
         fill="rgb(var(--surface-raised))"
       >
@@ -357,7 +369,7 @@ const DrawnPaper = ({ count }: { count?: number }) => (
       strokeWidth="1.1"
       strokeLinejoin="round"
     />
-    {count === undefined || count > 9 ? (
+    {count === undefined || count > 99 ? (
       // Ruled lines stand in for the text when there is no number to show.
       <g stroke="rgb(var(--surface-raised))" strokeWidth="1.2" strokeLinecap="round">
         <line x1="7" y1="8" x2="17" y2="8" />
@@ -368,7 +380,7 @@ const DrawnPaper = ({ count }: { count?: number }) => (
         x="12"
         y="13.6"
         textAnchor="middle"
-        fontSize="9"
+        fontSize={countSize(9, count)}
         fontWeight="700"
         fill="rgb(var(--surface-raised))"
       >
@@ -407,7 +419,7 @@ const AutumnLeafPaper = ({ count }: { count?: number }) => (
       strokeLinecap="round"
     />
 
-    {count === undefined || count > 9 ? (
+    {count === undefined || count > 99 ? (
       <g stroke="rgb(var(--surface-raised))" strokeWidth="1.2" strokeLinecap="round" opacity="0.9">
         <path d="M10.4 12.6c2.2-2.4 4.2-4 6.6-5" />
         <path d="M11.8 15.2c1.6-1.2 3-2.2 4.6-3" />
@@ -417,7 +429,7 @@ const AutumnLeafPaper = ({ count }: { count?: number }) => (
         x="13"
         y="13.4"
         textAnchor="middle"
-        fontSize="8.5"
+        fontSize={countSize(8.5, count)}
         fontWeight="700"
         fill="rgb(var(--surface-raised))"
       >

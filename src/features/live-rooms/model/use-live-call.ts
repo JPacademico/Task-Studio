@@ -1718,7 +1718,12 @@ export const useLiveCall = ({
   const roster = useMemo(() => {
     // While sharing, the local tile is the screen — see `screenPreview`.
     const ownStream = screenPreview ?? localStream;
-    const entries = self ? [{ ...self, stream: ownStream, flags }, ...peers] : peers;
+    /*
+     * Always a fresh array. `sort` works in place, and without a seat of our
+     * own `entries` used to *be* `peers` — so this sorted React state directly,
+     * behind the back of the render that owned it.
+     */
+    const entries = self ? [{ ...self, stream: ownStream, flags }, ...peers] : [...peers];
     return entries.sort((a, b) => a.seq - b.seq);
   }, [flags, localStream, peers, screenPreview, self]);
 
