@@ -2,6 +2,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { Moon, Sun } from 'lucide-react';
 
 import { useTheme } from '@/app/providers/theme-provider';
+import { prepareWave } from '@/app/providers/theme-wave';
 import { useT } from '@/shared/i18n';
 import { cn } from '@/shared/lib/cn';
 
@@ -54,6 +55,10 @@ export const ThemeToggle = ({ className }: { className?: string }) => {
       role="switch"
       aria-checked={isDark}
       onClick={toggle}
+      // The wave's keyframes are built while the pointer is on its way to the
+      // press rather than inside it. See `prepareWave`.
+      onPointerEnter={prepareWave}
+      onFocus={prepareWave}
       aria-label={t('theme.switchLabel')}
       title={isDark ? t('theme.toLight') : t('theme.toDark')}
       className={cn(

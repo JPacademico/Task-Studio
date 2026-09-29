@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { startTransition, useEffect, useState } from 'react';
 
 /**
  * The active skin's palette, as hex, for things that cannot read a CSS variable.
@@ -98,7 +98,32 @@ export const useThemePalette = (): ThemePalette => {
   const [palette, setPalette] = useState<ThemePalette>(readPalette);
 
   useEffect(() => {
-    const observer = new MutationObserver(() => setPalette(readPalette()));
+    /*
+     * Only the two changes that can move a token: the `dark` class and the
+     * skin. `<html>` carries other classes that come and go (the light/dark
+     * wave adds `theme-wave` for the length of its animation), and each of
+     * those used to cost a full `getComputedStyle` of the root plus a
+     * re-render of every canvas reading this. The removal lands in the very
+     * frame the wave ends, where it showed as a stutter.
+     */
+    const signature = () =>
+      `${document.documentElement.classList.contains('dark')}|${document.documentElement.dataset.skin ?? ''}`;
+    let last = signature();
+
+    const observer = new MutationObserver(() => {
+      const next = signature();
+      if (next === last) return;
+      last = next;
+
+      const read = readPalette();
+      // Non-urgent: a canvas catching up a frame later is invisible, a canvas
+      // re-render blocking the frame the palette wave is drawing is not.
+      startTransition(() =>
+        setPalette((current) =>
+          TOKENS.every((token) => current[token] === read[token]) ? current : read,
+        ),
+      );
+    });
 
     observer.observe(document.documentElement, {
       attributes: true,

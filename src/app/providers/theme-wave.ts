@@ -161,19 +161,70 @@ const framesOf = (draw: (progress: number) => string): Keyframe[] =>
   }));
 
 /**
+ * The last run's keyframes, keyed by the geometry they were drawn for.
+ *
+ * Somebody flipping back and forth to compare the two palettes asks for the
+ * same wave every time: same screen, same header. Building it is some 2,300
+ * vertices of trigonometry and string formatting, all of it in the click that
+ * starts the transition, so the second press onwards reuses the first.
+ */
+let cached: { key: string; revealed: Keyframe[]; crest: Keyframe[] } | null = null;
+
+const keyframesFor = (shape: WaveShape) => {
+  const key = `${window.innerWidth}x${shape.bottom}@${shape.top}`;
+  if (cached?.key !== key) {
+    cached = {
+      key,
+      revealed: framesOf((progress) => revealedAt(progress, shape)),
+      crest: framesOf((progress) => crestAt(progress, shape)),
+    };
+  }
+  return cached;
+};
+
+/**
+ * Runs `task` once the page has nothing better to do.
+ *
+ * For clean-up that is not free but has no deadline. Safari has no
+ * `requestIdleCallback`, so there it is simply a short delay; either way the
+ * work lands after the frames that matter rather than inside them.
+ */
+const whenIdle = (task: () => void) => {
+  if (typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(task, { timeout: 500 });
+  } else {
+    window.setTimeout(task, 120);
+  }
+};
+
+/**
  * Turns every CSS transition off, and returns the switch to turn them back on.
  *
  * Several surfaces fade their colours over 110 to 260ms, which is right for a
  * hover and wrong here: the part the wave has crossed would spend its first
  * fifth of a second between palettes. The rule has to be *on* when the new
- * colours are computed. Taking it off again restyles every element, so the
- * wave keeps it until it has finished, where that costs nothing anybody sees.
+ * colours are computed.
+ *
+ * ## Why turning it back on waits for idle
+ *
+ * Removing a rule that matches `*` restyles every element on the page: 12 to
+ * 15ms measured on a board of 650 nodes, and it grows with the page. Done
+ * when the wave finishes, it landed in the same frame as the browser tearing
+ * the transition down and repainting the real page, which is where the
+ * stutter at the end came from. Nothing is moving once the wave is over, so
+ * the same work at the next idle moment is invisible. Adding the rule costs
+ * nothing extra: it rides the restyle the palette flip needs anyway.
  */
 const suspendTransitions = (): (() => void) => {
   const style = document.createElement('style');
   style.textContent = '*,*::before,*::after{transition:none!important}';
   document.head.appendChild(style);
-  return () => style.remove();
+  let isResumed = false;
+  return () => {
+    if (isResumed) return;
+    isResumed = true;
+    whenIdle(() => style.remove());
+  };
 };
 
 /** The same, for a swap with no wave: off, change, commit, back on. */
@@ -181,7 +232,7 @@ const withoutTransitions = (change: () => void) => {
   const resume = suspendTransitions();
   change();
   void document.documentElement.offsetHeight;
-  window.setTimeout(resume, 1);
+  resume();
 };
 
 /**
@@ -208,6 +259,27 @@ const measureHeaders = (): { elements: HTMLElement[]; top: number } => {
 
   // A bar that somehow covers most of the screen is not a header to start under.
   return { elements, top: Math.min(Math.round(top), window.innerHeight / 3) };
+};
+
+/** The wave's size for the screen and headers as they are right now. */
+const currentShape = (top: number): WaveShape => ({
+  amplitude: Math.min(34, Math.max(12, window.innerHeight * 0.036)),
+  cycles: Math.min(3, Math.max(1.1, window.innerWidth / 560)),
+  top,
+  bottom: window.innerHeight,
+});
+
+/**
+ * Builds the keyframes before they are needed.
+ *
+ * The switch calls this when the pointer arrives on it or it takes focus,
+ * which is a good tenth of a second before any press, so even the first press
+ * finds its wave already drawn. Harmless to call often: an unchanged screen is
+ * a cache hit.
+ */
+export const prepareWave = () => {
+  if (!canWave()) return;
+  keyframesFor(currentShape(measureHeaders().top));
 };
 
 /** Whatever the last switch left named or mounted. Idempotent. */
@@ -264,14 +336,7 @@ export const switchPalette = ({ flip, commit, animate }: WaveOptions) => {
 
   const root = document.documentElement;
   const { elements: headers, top } = measureHeaders();
-  const shape: WaveShape = {
-    amplitude: Math.min(34, Math.max(12, window.innerHeight * 0.036)),
-    cycles: Math.min(3, Math.max(1.1, window.innerWidth / 560)),
-    top,
-    bottom: window.innerHeight,
-  };
-  const revealed = framesOf((progress) => revealedAt(progress, shape));
-  const crestFrames = framesOf((progress) => crestAt(progress, shape));
+  const { revealed, crest: crestFrames } = keyframesFor(currentShape(top));
   const mine = (generation += 1);
 
   headers.forEach((element, index) => {

@@ -1,5 +1,6 @@
 import {
   createContext,
+  startTransition,
   useCallback,
   useContext,
   useEffect,
@@ -47,6 +48,19 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
+
+/**
+ * The skin on its own, in a context of its own.
+ *
+ * Most of the app asks only "which skin": every loader, every Post-it icon on
+ * every task card, the decor layers, the motion presets. Reading that out of
+ * `ThemeContext` tied them to its whole value, which changes on every light and
+ * dark flip, so each flip re-rendered all of them at once, in the same frames
+ * the palette wave was trying to draw. A string that only changes when the
+ * skin does keeps them out of it. The default is the fallback `useSkin` has
+ * always promised outside the provider.
+ */
+const SkinContext = createContext<ThemeSkin>('STUDIO');
 
 const readStored = (): ThemePreference => {
   try {
@@ -168,7 +182,13 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
     switchPalette({
       flip: () => root.classList.toggle('dark', dark),
-      commit: () => setIsDark(dark),
+      /*
+       * Non-urgent, so React renders the few components that read `isDark` in
+       * slices it can yield between, rather than as one task that blocks the
+       * frames the wave is being drawn in. The colours are already right the
+       * moment the class flips; this only catches the JavaScript up.
+       */
+      commit: () => startTransition(() => setIsDark(dark)),
       animate,
     });
   }, []);
@@ -340,7 +360,11 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     ],
   );
 
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+  return (
+    <ThemeContext.Provider value={value}>
+      <SkinContext.Provider value={shown}>{children}</SkinContext.Provider>
+    </ThemeContext.Provider>
+  );
 };
 
 export const useTheme = (): ThemeContextValue => {
@@ -356,4 +380,4 @@ export const useTheme = (): ThemeContextValue => {
  * fully mounted — a Suspense fallback, an error boundary — so asking for the
  * skin must never be the thing that throws. Falls back to the default look.
  */
-export const useSkin = (): ThemeSkin => useContext(ThemeContext)?.skin ?? 'STUDIO';
+export const useSkin = (): ThemeSkin => useContext(SkinContext);

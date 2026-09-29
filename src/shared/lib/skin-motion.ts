@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { Transition } from 'framer-motion';
 
-import { useTheme } from '@/app/providers/theme-provider';
+import { useSkin } from '@/app/providers/theme-provider';
 import type { ThemeSkin } from '@/entities/user/model/types';
 
 /**
@@ -97,7 +97,8 @@ const MARKER: Record<ThemeSkin, Transition> = {
  */
 
 export const useSkinMotion = () => {
-  const { skin } = useTheme();
+  // The skin alone: a light/dark flip changes nothing here. See `SkinContext`.
+  const skin = useSkin();
 
   return useMemo(
     () => ({
