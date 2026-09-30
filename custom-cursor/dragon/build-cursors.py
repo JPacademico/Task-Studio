@@ -63,11 +63,15 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # frames now sweep a much wider arc (see PIVOT), so one crop box covering all
 # three is larger than it used to be and the weapon inside it reduces further.
 # 48 keeps the blade at roughly the size it was on screen.
-BOX = 48
+#
+# 32 since 2026-09-30, down from 48: every custom pointer now sits in the
+# system cursor's own 32px box (see the Paper script). The swing arc still has
+# to fit, so the weapon comes down in proportion with it.
+BOX = 32
 # The composition's long side inside that box.
-WEAPON = 44
+WEAPON = 30
 # Where the whole composition sits, leaving room for the swing arc.
-REST = 2
+REST = 1
 
 # Supersampling factor. Everything below is drawn at this scale and reduced at
 # the end, which is the entire antialiasing strategy.

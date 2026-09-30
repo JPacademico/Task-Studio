@@ -10,6 +10,7 @@ import {
   SignalHigh,
   SignalLow,
   SignalMedium,
+  Video,
 } from 'lucide-react';
 
 import type { LiveQuality } from '@/entities/live-room/model/types';
@@ -186,8 +187,20 @@ export const ParticipantTile = ({
     };
   }, [isSelf, onVisibilityChange]);
 
-  /** A tile shows video when the person has a camera on, or is presenting. */
-  const hasPicture = peer.flags.camOn || peer.flags.sharing;
+  /**
+   * The camera is on but held back to keep this person's voice clear. See
+   * `watchUplink`. Never during a share, which is not held.
+   */
+  const isCameraHeld = peer.flags.camOn && !peer.flags.sharing && Boolean(peer.videoHeld);
+
+  /**
+   * A tile shows video when the person has a camera on, or is presenting.
+   *
+   * Not a held camera on somebody else's tile: nothing is arriving, and the
+   * last frame that did would sit there frozen as if they had stopped moving.
+   * Your own tile keeps its preview, since your camera is still running.
+   */
+  const hasPicture = peer.flags.sharing || (peer.flags.camOn && (isSelf || !isCameraHeld));
 
   /*
    * Fullscreen is offered on somebody else's picture, and only there.
@@ -356,6 +369,23 @@ export const ParticipantTile = ({
         )}
         {peer.flags.handRaised && (
           <Hand className="h-3 w-3 shrink-0 text-warning" aria-label={t('live.handRaised')} />
+        )}
+        {isCameraHeld && (
+          <span
+            className="relative shrink-0 text-warning"
+            title={isSelf ? t('live.cameraHeld') : t('live.peerCameraHeld')}
+          >
+            <Video className="h-3 w-3" aria-hidden />
+            <span
+              aria-hidden
+              className="absolute -right-1 -top-1 grid h-2.5 w-2.5 place-items-center rounded-full bg-warning text-5xs font-bold leading-none text-black"
+            >
+              !
+            </span>
+            <span className="sr-only">
+              {isSelf ? t('live.cameraHeld') : t('live.peerCameraHeld')}
+            </span>
+          </span>
         )}
         {peer.flags.micOn ? (
           <Mic

@@ -2105,6 +2105,27 @@ const en = {
   'live.qualityBad': 'Connection is bad - {loss}% of packets lost, {jitter}ms jitter. Audio only may be the best this link can do.',
   'live.relayed': 'Going through the relay rather than directly, which adds a little delay. Usually means one side is behind a strict firewall.',
 
+  /*
+   * The camera held back for the voice. Said as what happened and that it
+   * will undo itself, because the reader's first question is whether they
+   * have to do something, and the answer is no.
+   */
+  'live.cameraHeld': 'Your connection is weak, so your camera is paused for some people to keep your voice clear. It comes back on its own.',
+  'live.peerCameraHeld': 'Their connection is weak, so their camera is paused to keep their voice clear.',
+  'live.stopShareWithAudio': 'Stop sharing (screen and sound)',
+
+  /*
+   * Leaving the project mid-call. The title is the question, the body names
+   * the call and the consequence, and the hint says what is still allowed,
+   * because the reader's next thought is "so where can I go".
+   */
+  'live.guardTitle': 'Leave the live call?',
+  'live.guardBody': 'You are in "{room}". Going outside this project hangs up the call.',
+  'live.guardHint': "The project's own tabs are fine: the board, the text board and the rest keep you in the call.",
+  'live.guardStay': 'Stay in the call',
+  'live.guardLeave': 'Leave call and go',
+  'live.inCall': 'In a call',
+
   'live.created': 'Room open.',
   'live.ended': 'Room closed.',
   'live.removed': 'Room deleted.',
@@ -4577,6 +4598,15 @@ const ptBR: Record<TranslationKey, string> = {
   'live.qualityWeak': 'A conexão está sofrendo - {loss}% dos pacotes perdidos, {jitter}ms de jitter. Desligar sua câmera ajuda.',
   'live.qualityBad': 'Conexão ruim - {loss}% dos pacotes perdidos, {jitter}ms de jitter. Talvez só o áudio funcione neste link.',
   'live.relayed': 'Passando pelo retransmissor em vez de ir direto, o que acrescenta um pequeno atraso. Em geral significa que um dos lados está atrás de um firewall restritivo.',
+  'live.cameraHeld': 'Sua conexão está fraca, então sua câmera foi pausada para algumas pessoas e sua voz continua clara. Ela volta sozinha.',
+  'live.peerCameraHeld': 'A conexão dessa pessoa está fraca, então a câmera dela foi pausada para manter a voz clara.',
+  'live.stopShareWithAudio': 'Parar de compartilhar (tela e som)',
+  'live.guardTitle': 'Sair da chamada ao vivo?',
+  'live.guardBody': 'Você está em "{room}". Sair deste projeto encerra a chamada.',
+  'live.guardHint': 'As abas do próprio projeto estão liberadas: o quadro, o quadro de texto e as demais mantêm você na chamada.',
+  'live.guardStay': 'Continuar na chamada',
+  'live.guardLeave': 'Sair da chamada e ir',
+  'live.inCall': 'Em chamada',
 
   'live.created': 'Sala aberta.',
   'live.ended': 'Sala encerrada.',

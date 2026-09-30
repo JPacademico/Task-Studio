@@ -13,6 +13,7 @@ import type {
 import { emitWithAck, getSocket } from '@/shared/api/socket';
 import { translate } from '@/shared/i18n';
 import { SpeakingDetector } from '../lib/audio-levels';
+import { DISPLAY_MEDIA_OPTIONS, ScreenAudioMix } from '../lib/screen-share';
 
 /**
  * Where a call is, from the button being pressed to the first voice.
@@ -26,6 +27,16 @@ export type LiveCallStatus = 'idle' | 'devices' | 'joining' | 'live' | 'ended' |
 /** One peer, as the stage draws it: who they are, plus what we are receiving. */
 export interface LivePeer extends LiveSeat {
   stream: MediaStream | null;
+  /**
+   * Whether this person's camera is on but held back, because their uplink
+   * cannot carry it and their voice at once. See `watchUplink`.
+   *
+   * On somebody else's tile it means their camera is paused *for us*, as they
+   * told us over `live:signal`, and the tile shows their avatar rather than
+   * the frozen last frame. On your own tile it means it is paused for at least
+   * one person in the room.
+   */
+  videoHeld?: boolean;
 }
 
 /**
@@ -97,7 +108,7 @@ const screenCeiling = (peerCount: number): number => {
 };
 
 /**
- * And what the microphone costs, which does not vary.
+ * And what the microphone costs, which does not vary with the room.
  *
  * Opus is transparent for speech at 32 kbps and the difference between seven
  * of those and seven of anything cheaper is not worth the words being harder
@@ -105,6 +116,84 @@ const screenCeiling = (peerCount: number): number => {
  * conversation survives frozen video and does not survive broken sound.
  */
 const AUDIO_BITRATE = 32_000;
+
+/**
+ * What the audio sender may use while it carries a shared screen's sound.
+ *
+ * Speech is a narrow, forgiving signal and music is neither: at 32 kbps a
+ * soundtrack comes out underwater. 96 kbps is where mono Opus stops being
+ * the thing anybody notices, and it is still a fraction of the picture it
+ * arrives with. Back to `AUDIO_BITRATE` the moment the share ends.
+ */
+const SCREEN_AUDIO_BITRATE = 96_000;
+
+/*
+ * How many frames a second a shared screen is sent at, by what else the
+ * presenter is doing.
+ *
+ * `FOCUSED` is a presenter who is muted, with the camera necessarily off (a
+ * share occupies the camera's sender). The screen is the only thing going
+ * out, so it gets the capture's full rate and its sender is told to keep the
+ * motion smooth. `BESIDE_VOICE` is somebody talking over their share: the
+ * voice comes first, so the screen steps down to 480p (see
+ * `SHARE_VOICE_WIDTH`) and keeps a film's frame rate. `STRAINED` is the same
+ * with an uplink that is already losing packets, and the one case allowed
+ * under 24, because every frame not sent is room for the voice. See
+ * `planFor`.
+ */
+const SHARE_FPS_FOCUSED = 27;
+const SHARE_FPS_BESIDE_VOICE = 24;
+const SHARE_FPS_STRAINED = 12;
+
+/** The largest picture a share is sent at. See `DISPLAY_MEDIA_OPTIONS`. */
+const SHARE_MAX_WIDTH = 1280;
+const SHARE_MAX_HEIGHT = 720;
+
+/**
+ * And the largest while the presenter's microphone is on.
+ *
+ * 480p is what leaves the voice room: it is under half the pixels of 720p,
+ * so the same ceiling buys the encoder far more bits per pixel and the frame
+ * rate holds at 24 without the screen crowding the uplink the voice is on.
+ */
+const SHARE_VOICE_WIDTH = 854;
+const SHARE_VOICE_HEIGHT = 480;
+
+/*
+ * When an uplink counts as struggling. See `watchUplink`.
+ *
+ * Loss is what the *peer* reports receiving from us (RTCP receiver reports),
+ * so it measures our uplink and not theirs. 5% on the voice is where it starts
+ * to sound clipped; video tolerates twice that before it is worse than no
+ * video. Half a second of round trip is well past any route that is merely
+ * long, relays included. 100 kbps is below the smallest camera tier the room
+ * ever asks for, so a link estimated under it cannot carry a picture at all.
+ */
+const STRAIN_AUDIO_LOSS = 0.05;
+const STRAIN_VIDEO_LOSS = 0.1;
+const STRAIN_RTT_S = 0.5;
+const CAMERA_FLOOR_BPS = 100_000;
+
+/** And when a held camera may be tried again: the voice has to be clean. */
+const CLEAR_AUDIO_LOSS = 0.02;
+const CLEAR_RTT_S = 0.35;
+
+/** Consecutive struggling polls before the camera is held back: four seconds. */
+const HOLD_AFTER_SAMPLES = 2;
+
+/*
+ * How long a held camera waits before it is tried again.
+ *
+ * The congestion controller cannot tell us the link has recovered while the
+ * camera is off it, since there is no video left to measure with, so the
+ * only way to find out is to try. Ten seconds first; each time the camera
+ * trips again within `RELAPSE_MS` of coming back, the wait doubles, up to a
+ * minute, so a link that genuinely cannot carry video is not made to prove it
+ * every ten seconds with a burst of frozen frames.
+ */
+const RETRY_BASE_MS = 10_000;
+const RETRY_MAX_MS = 60_000;
+const RELAPSE_MS = 20_000;
 
 /**
  * What the camera is asked for.
@@ -153,6 +242,76 @@ const STATS_INTERVAL_MS = 2_000;
 /** The outbound label stream, made on first use. See `outboundLabel`. */
 const labelOf = (ref: { current: MediaStream | null }): MediaStream =>
   (ref.current ??= new MediaStream());
+
+/**
+ * What one sender should be set to. Every field is stated on every plan, so
+ * moving from a screen back to the camera can never leave the screen's frame
+ * rate behind on the camera.
+ */
+interface SenderPlan {
+  maxBitrate: number;
+  /**
+   * How the browser splits a connection's bandwidth between its senders, and
+   * how the packets are marked for the network. Voice is always `high` and
+   * the camera always `low`: the order the call gives things up in.
+   */
+  priority: RTCPriorityType;
+  /** Video only. */
+  maxFramerate?: number;
+  scaleResolutionDownBy?: number;
+  degradationPreference?: RTCDegradationPreference;
+}
+
+/** How far a shared picture has to shrink to fit within `maxWidth` x `maxHeight`. */
+const shareScale = (track: MediaStreamTrack, maxWidth: number, maxHeight: number): number => {
+  const { width, height } = track.getSettings();
+  if (!width || !height) return 1;
+  const scale = Math.max(1, width / maxWidth, height / maxHeight);
+  // Two decimals, so a window being dragged a pixel does not count as a change.
+  return Math.round(scale * 100) / 100;
+};
+
+/**
+ * Hands a sender its plan.
+ *
+ * `degradationPreference` is the one field an engine may refuse outright
+ * rather than ignore, and one refused field fails the whole call, bitrate
+ * ceiling included. So a refusal is retried once without it: the ceiling is
+ * the part that protects the room, and it must not be lost to the part that
+ * only shapes how the picture degrades.
+ *
+ * Resolves false when there was nothing to tune yet (a sender that has not
+ * negotiated has no encodings) or the engine refused, so the caller knows to
+ * try again on its next pass.
+ */
+const applyPlan = async (sender: RTCRtpSender, plan: SenderPlan): Promise<boolean> => {
+  const attempt = async (withPreference: boolean) => {
+    const parameters = sender.getParameters();
+    const encoding = parameters.encodings?.[0];
+    if (!encoding) return false;
+
+    encoding.maxBitrate = plan.maxBitrate;
+    encoding.priority = plan.priority;
+    encoding.networkPriority = plan.priority;
+    if (plan.maxFramerate !== undefined) encoding.maxFramerate = plan.maxFramerate;
+    if (plan.scaleResolutionDownBy !== undefined) {
+      encoding.scaleResolutionDownBy = plan.scaleResolutionDownBy;
+    }
+    if (withPreference && plan.degradationPreference) {
+      parameters.degradationPreference = plan.degradationPreference;
+    }
+
+    await sender.setParameters(parameters);
+    return true;
+  };
+
+  try {
+    return await attempt(true);
+  } catch {
+    if (!plan.degradationPreference) return false;
+    return attempt(false).catch(() => false);
+  }
+};
 
 interface Connection {
   pc: RTCPeerConnection;
@@ -210,6 +369,36 @@ interface Connection {
    * previous reading.
    */
   lastStats: { packets: number; lost: number } | null;
+  /**
+   * Every track swap and parameter change on this connection, one at a time.
+   *
+   * `getParameters` and `setParameters` are a pair that must not interleave
+   * with another pair on the same sender, and a mute, a share and a stats
+   * pass can all want to touch the senders within the same few milliseconds.
+   * Chaining them here is what lets every caller just ask for a sync.
+   */
+  syncing: Promise<void>;
+  /**
+   * What each sender was last successfully set to, as a signature of its plan
+   * and track. A pass whose plan has not changed costs a string comparison
+   * and no calls into the engine. See `syncConnection`.
+   */
+  tuned: { audio: string | null; video: string | null };
+  /** Whether the camera is held back from this peer. See `watchUplink`. */
+  cameraHeld: boolean;
+  /** The bookkeeping behind `cameraHeld`. */
+  uplink: {
+    /** Whether the last poll found the uplink struggling. */
+    strained: boolean;
+    /** Consecutive struggling polls while the camera was being sent. */
+    run: number;
+    /** When a held camera may next be tried. */
+    retryAt: number;
+    /** The wait that produced `retryAt`, doubled on a relapse. */
+    backoffMs: number;
+    /** When the camera last came back, to tell a relapse from a new problem. */
+    resumedAt: number;
+  };
 }
 
 interface UseLiveCallOptions {
@@ -242,8 +431,13 @@ interface UseLiveCallOptions {
  * the bug that made calls one-way). Everything afterwards is `replaceTrack`:
  *
  *   - turning the camera on swaps a track into a sender that already exists;
- *   - sharing a screen swaps the screen track into the *same* sender;
- *   - stopping either swaps back to null.
+ *   - sharing a screen swaps the screen track into the *same* sender, and
+ *     its sound into the microphone's (see `ScreenAudioMix`);
+ *   - muting swaps the microphone out, and unmuting swaps it back in;
+ *   - stopping any of them swaps back to null.
+ *
+ * What goes into which sender, and at what cost, is decided in one place:
+ * see "The media plan" below.
  *
  * `replaceTrack` does not renegotiate. The alternative — `addTrack` when you
  * unmute, `removeTrack` when you stop — fires `negotiationneeded` on every
@@ -306,6 +500,10 @@ export const useLiveCall = ({
    * identity is kept stable when nothing has moved.
    */
   const [quality, setQuality] = useState<Record<string, LiveQuality>>({});
+  /** Whether the camera is held back from anybody. See `watchUplink`. */
+  const [cameraHeld, setCameraHeld] = useState(false);
+  /** Whether the current share is carrying sound. */
+  const [sharingAudio, setSharingAudio] = useState(false);
 
   /*
    * Everything below lives in refs rather than state, and the rule is simple:
@@ -331,6 +529,10 @@ export const useLiveCall = ({
   const localRef = useRef<MediaStream | null>(null);
   const cameraTrack = useRef<MediaStreamTrack | null>(null);
   const screenTrack = useRef<MediaStreamTrack | null>(null);
+  /** The shared screen's sound, when the presenter chose to share it. */
+  const screenAudio = useRef<MediaStreamTrack | null>(null);
+  /** Voice and screen sound together. See `ScreenAudioMix`. */
+  const screenMix = useRef<ScreenAudioMix | null>(null);
   const selfRef = useRef<LiveSeat | null>(null);
   /**
    * What this client may do *right now*.
@@ -371,6 +573,18 @@ export const useLiveCall = ({
   const iceRef = useRef<IceServerConfig[]>(FALLBACK_ICE);
   /** Guards the teardown against a join that is still in flight. */
   const leftRef = useRef(false);
+  /**
+   * The room the gateway has seated this client in, until it is told
+   * otherwise.
+   *
+   * Set when the join is acknowledged and cleared when `leave` says goodbye.
+   * The unmount path reads it, because the component can go without `leave`
+   * ever being called — the reader leaving the project, the tab closing the
+   * panel — and before this nothing told the room. The seat stayed on the
+   * server, every peer kept a connection to nobody until its recovery ladder
+   * gave up, and the person was still listed as present.
+   */
+  const seatedRoom = useRef<string | null>(null);
 
   /*
    * The newest ICE list, held in a ref so a renewal never re-renders the call.
@@ -412,80 +626,203 @@ export const useLiveCall = ({
     );
   }, []);
 
-  /**
-   * The bitrate ceiling, applied to every connection this client sends on.
+  // -------------------------------------------------------------------------
+  // The media plan: what each sender carries, and what it may cost
+  // -------------------------------------------------------------------------
+
+  /*
+   * ## Why one plan rather than a handler per button
    *
-   * Re-run whenever the room's size changes, because the ceiling is a function
-   * of it — somebody joining a call of three has to make the other three send
-   * less, and nothing else in WebRTC will tell them to.
+   * The senders used to be filled in five places (join, mute, camera, share,
+   * a peer's interest) and tuned in a sixth, each deciding for itself. That
+   * held while there was one question per sender. There are now several, and
+   * they interact: whether the voice is live decides whether the screen may
+   * run smooth, whether the uplink is struggling decides whether the camera
+   * goes at all, and whether the share has sound decides what the audio sender
+   * carries and at what bitrate. So every one of those places now changes its
+   * own piece of state and asks for a sync, and the answer is worked out here,
+   * from everything at once, in priority order:
+   *
+   *   1. the voice, which is never held back and always goes `high`;
+   *   2. the shared screen and its sound;
+   *   3. the camera, which is the first thing given up and the last restored.
+   *
+   * What is not being used is not sent. A muted microphone empties the audio
+   * sender, rather than sending fifty packets a second of encoded silence to
+   * every peer; with a camera off during a share, that leaves the uplink to
+   * the screen alone.
    */
-  const applyBitrates = useCallback((peerCount: number) => {
-    /*
-     * Which table applies is decided by what is in the sender right now, not
-     * by a flag — see `screenCeiling`. `screenTrack` is the single source of
-     * truth for that on this client, and it is the same ref `startShare` sets.
-     */
-    const isSharing = screenTrack.current !== null;
-    const ceiling = isSharing ? screenCeiling(peerCount) : videoCeiling(peerCount);
 
-    for (const connection of connections.current.values()) {
-      const tune = (
-        sender: RTCRtpSender | null,
-        maxBitrate: number,
-        degradationPreference?: RTCDegradationPreference,
-      ) => {
-        if (!sender) return;
-        const parameters = sender.getParameters();
-        // A sender that has not negotiated yet has no encodings to edit. It
-        // will be tuned by the next call to this, after somebody joins or
-        // leaves — and until then the browser's own default applies.
-        if (!parameters.encodings || parameters.encodings.length === 0) return;
+  /** What the audio sender carries. See `ScreenAudioMix` for the three cases. */
+  const outboundAudio = useCallback((): MediaStreamTrack | null => {
+    const microphone = localRef.current?.getAudioTracks()[0] ?? null;
+    const voice = microphone?.enabled ? microphone : null;
+    const sound = screenAudio.current;
+    if (voice && sound) return screenMix.current?.track ?? voice;
+    return voice ?? sound;
+  }, []);
 
-        parameters.encodings[0].maxBitrate = maxBitrate;
+  /**
+   * What one peer's video sender carries.
+   *
+   * Nothing, if they have said they cannot see us (`live:video-interest`).
+   * The screen, whenever there is one. Otherwise the camera, unless it is
+   * held back from this peer to keep the voice clear (`watchUplink`).
+   *
+   * A camera that is merely switched off stays in the sender, disabled. It
+   * costs one black frame a second, and it means the last frame the peer
+   * received is black rather than whatever the camera saw before it went off,
+   * which is what they would otherwise glimpse the next time it comes on.
+   */
+  const outboundVideo = useCallback((connection: Connection): MediaStreamTrack | null => {
+    if (!connection.wantsVideo) return null;
+    if (screenTrack.current) return screenTrack.current;
+    if (connection.cameraHeld) return null;
+    return cameraTrack.current;
+  }, []);
 
-        /*
-         * What to give up first when the link cannot carry the stream.
-         *
-         * The browser has to sacrifice either frame rate or resolution and its
-         * default guess is `balanced`, which is right for a face and wrong for
-         * a screen. Text at half resolution is unreadable, and unreadable at
-         * 30 fps is strictly worse than readable at 5 — a share is something
-         * people *read*, and a reader would rather the scroll stuttered than
-         * that the words dissolved.
-         *
-         * A camera keeps the default. Faces survive being soft and do not
-         * survive being slow: a talking head at 8 fps is unsettling in a way
-         * a slightly blurry one at 24 is not.
-         *
-         * Assigned rather than compared first, because reading the current
-         * value back is not reliable across engines — some report the default
-         * as `undefined` even after it has been set.
-         */
-        if (degradationPreference) parameters.degradationPreference = degradationPreference;
+  /**
+   * The bitrate ceiling and the rest of each sender's parameters.
+   *
+   * The ceiling is a function of the room's size (see `videoCeiling`), so
+   * somebody joining a call of three has to make the other three send less,
+   * and nothing else in WebRTC will tell them to.
+   *
+   * ## What a share gives up first
+   *
+   * With the presenter talking, the screen is sent at 480p and 24 fps, and
+   * under pressure it sheds frames rather than resolution
+   * (`maintain-resolution`): 480p is already the floor for reading, and text
+   * below it is unreadable, which is strictly worse than readable at 12 fps.
+   * The browser's own default guesses `balanced`, which is right for a face
+   * and wrong here.
+   *
+   * With the presenter muted it is the only thing going out, so it is sent
+   * the way they asked for: 27 fps, `balanced`, top priority, and hinted as
+   * motion so the encoder stops treating it as a slide.
+   *
+   * A camera keeps `balanced`. Faces survive being soft and do not survive
+   * being slow: a talking head at 8 fps is unsettling in a way a slightly
+   * blurry one at 24 is not.
+   */
+  const planFor = useCallback(
+    (connection: Connection, kind: 'audio' | 'video', track: MediaStreamTrack): SenderPlan => {
+      if (kind === 'audio') {
+        return {
+          maxBitrate: screenAudio.current ? SCREEN_AUDIO_BITRATE : AUDIO_BITRATE,
+          priority: 'high',
+        };
+      }
 
-        // Ignored rather than reported: `setParameters` rejects if the
-        // transceiver changed underneath us, which is a race with a peer
-        // leaving and is corrected on the next pass.
-        void sender.setParameters(parameters).catch(() => undefined);
+      const peerCount = connections.current.size;
+
+      if (track !== screenTrack.current) {
+        return {
+          maxBitrate: videoCeiling(peerCount),
+          priority: 'low',
+          maxFramerate: 30,
+          scaleResolutionDownBy: 1,
+          degradationPreference: 'balanced',
+        };
+      }
+
+      const isFocused = localRef.current?.getAudioTracks()[0]?.enabled !== true;
+      return {
+        maxBitrate: screenCeiling(peerCount),
+        priority: isFocused ? 'high' : 'medium',
+        maxFramerate: isFocused
+          ? SHARE_FPS_FOCUSED
+          : connection.uplink.strained
+            ? SHARE_FPS_STRAINED
+            : SHARE_FPS_BESIDE_VOICE,
+        scaleResolutionDownBy: isFocused
+          ? shareScale(track, SHARE_MAX_WIDTH, SHARE_MAX_HEIGHT)
+          : shareScale(track, SHARE_VOICE_WIDTH, SHARE_VOICE_HEIGHT),
+        degradationPreference: isFocused ? 'balanced' : 'maintain-resolution',
+      };
+    },
+    [],
+  );
+
+  /**
+   * Bring one connection's senders in line with the plan.
+   *
+   * Queued behind whatever that connection is already doing (see `syncing`)
+   * and cheap to call often: a sender whose track is already right is not
+   * touched, and one whose plan has not changed since it was last applied is
+   * not tuned. That is what makes it safe to run on every stats pass, which in
+   * turn is what corrects a `setParameters` that lost a race with a peer
+   * leaving, or a shared window that was resized past 720p.
+   *
+   * A sender with nothing in it is left untuned. It has nothing to encode, and
+   * the plan goes on with the track that fills it.
+   */
+  const syncConnection = useCallback(
+    (connection: Connection): Promise<void> => {
+      const run = async () => {
+        if (connection.pc.signalingState === 'closed') return;
+
+        const senders = [
+          ['audio', connection.audioSender, outboundAudio()],
+          ['video', connection.videoSender, outboundVideo(connection)],
+        ] as const;
+
+        for (const [, sender, track] of senders) {
+          if (sender && sender.track !== track) {
+            await sender.replaceTrack(track).catch(() => undefined);
+          }
+        }
+
+        for (const [kind, sender, track] of senders) {
+          if (!sender || !track) {
+            connection.tuned[kind] = null;
+            continue;
+          }
+          const plan = planFor(connection, kind, track);
+          const signature = `${track.id}|${JSON.stringify(plan)}`;
+          if (connection.tuned[kind] === signature) continue;
+          connection.tuned[kind] = (await applyPlan(sender, plan)) ? signature : null;
+        }
       };
 
-      /*
-       * A sender the peer has paused is left alone entirely.
-       *
-       * Its track is null (see `live:video-interest`), so there are no
-       * encodings to tune and `setParameters` would be a wasted call per peer
-       * per roster change. It is tuned when the track goes back in.
-       */
-      if (connection.wantsVideo) {
-        tune(
-          connection.videoSender,
-          ceiling,
-          isSharing ? 'maintain-resolution' : 'balanced',
-        );
-      }
-      tune(connection.audioSender, AUDIO_BITRATE);
+      connection.syncing = connection.syncing.then(run).catch(() => undefined);
+      return connection.syncing;
+    },
+    [outboundAudio, outboundVideo, planFor],
+  );
+
+  /**
+   * Bring every connection in line, after anything that changes the plan.
+   *
+   * The two pieces that are not per connection are settled first: whether the
+   * voice-and-screen mix is needed (built on first use, asleep while unused),
+   * and which kind of content the screen's encoder should expect.
+   */
+  const syncAll = useCallback(async () => {
+    const microphone = localRef.current?.getAudioTracks()[0] ?? null;
+    const isVoiceLive = microphone?.enabled === true;
+    const sound = screenAudio.current;
+
+    if (sound && microphone && isVoiceLive && !screenMix.current) {
+      screenMix.current = new ScreenAudioMix(sound, microphone);
     }
-  }, []);
+    screenMix.current?.setRunning(Boolean(sound && isVoiceLive));
+
+    const screen = screenTrack.current;
+    if (screen) {
+      /*
+       * `detail` is how a browser treats a screen by default: resolution
+       * first, frames dropped freely. `motion` is how it treats a camera.
+       * A muted presenter asked for smoothness, so the screen is sent as
+       * motion for exactly as long as nothing else is going out. Changing it
+       * mid-stream reconfigures the encoder in place; nothing renegotiates.
+       */
+      const hint = isVoiceLive ? 'detail' : 'motion';
+      if (screen.contentHint !== hint) screen.contentHint = hint;
+    }
+
+    await Promise.all([...connections.current.values()].map(syncConnection));
+  }, [syncConnection]);
 
   /**
    * Tear one connection down.
@@ -575,22 +912,6 @@ export const useLiveCall = ({
   }, []);
 
   /**
-   * Put whatever this client has into a connection's two senders.
-   *
-   * Null is fine and is the ordinary case for somebody who joined muted with
-   * the camera off. Video respects the peer's last word on whether it wants
-   * any — see `live:video-interest`.
-   */
-  const fillSenders = useCallback(async (connection: Connection) => {
-    const audio = localRef.current?.getAudioTracks()[0] ?? null;
-    const video = connection.wantsVideo
-      ? (screenTrack.current ?? cameraTrack.current ?? null)
-      : null;
-    await connection.audioSender?.replaceTrack(audio).catch(() => undefined);
-    await connection.videoSender?.replaceTrack(video).catch(() => undefined);
-  }, []);
-
-  /**
    * The answerer's half of the transceiver pair: take the ones the offer made.
    *
    * Applying the caller's offer creates one audio and one video transceiver
@@ -622,9 +943,9 @@ export const useLiveCall = ({
         else connection.videoSender = transceiver.sender;
       }
 
-      await fillSenders(connection);
+      await syncConnection(connection);
     },
-    [fillSenders],
+    [syncConnection],
   );
 
   /**
@@ -706,10 +1027,27 @@ export const useLiveCall = ({
         graceTimer: undefined,
         wantsVideo: true,
         lastStats: null,
+        syncing: Promise.resolve(),
+        tuned: { audio: null, video: null },
+        cameraHeld: false,
+        uplink: { strained: false, run: 0, retryAt: 0, backoffMs: RETRY_BASE_MS, resumedAt: 0 },
       };
       connections.current.set(peer.participantId, connection);
 
-      if (isCaller) await fillSenders(connection);
+      /*
+       * A new connection starts with both cameras flowing, whatever the old
+       * one to this peer had held back (see `recover`). So if they had been
+       * holding theirs back from us, that is over as of now.
+       */
+      setPeers((current) =>
+        current.some((entry) => entry.participantId === peer.participantId && entry.videoHeld)
+          ? current.map((entry) =>
+              entry.participantId === peer.participantId ? { ...entry, videoHeld: false } : entry,
+            )
+          : current,
+      );
+
+      if (isCaller) await syncConnection(connection);
 
       pc.onicecandidate = (event) => {
         if (!event.candidate || !roomId) return;
@@ -827,7 +1165,7 @@ export const useLiveCall = ({
         data: { description: pc.localDescription?.toJSON() },
       }).catch(() => undefined);
     },
-    [applyPlayoutHint, fillSenders, patchPeer, roomId],
+    [applyPlayoutHint, patchPeer, roomId, syncConnection],
   );
 
   /**
@@ -962,6 +1300,115 @@ export const useLiveCall = ({
   );
 
   // -------------------------------------------------------------------------
+  // Holding the camera back for the voice
+  // -------------------------------------------------------------------------
+
+  /**
+   * Take the camera out of one peer's sender, or put it back, and say so.
+   *
+   * The peer is told over `live:signal`, the addressed channel the negotiation
+   * already uses, because a hold is per pair: my uplink to one person can be
+   * saturated while my route to the rest is fine. The gateway relays `data`
+   * as it is, so nothing on the server had to learn about this, and a client
+   * that predates it ignores a signal with no description and no candidate.
+   * Without the notice their tile would sit on a frozen frame; with it, it
+   * shows my avatar and why.
+   */
+  const setHold = useCallback(
+    (connection: Connection, held: boolean) => {
+      if (connection.cameraHeld === held) return;
+      connection.cameraHeld = held;
+      void syncConnection(connection);
+      if (!roomId) return;
+      void emitWithAck('live:signal', {
+        roomId,
+        to: connection.peer.participantId,
+        data: { videoHeld: held },
+      }).catch(() => undefined);
+    },
+    [roomId, syncConnection],
+  );
+
+  /**
+   * Decide, from one stats pass, whether this peer should get the camera.
+   *
+   * ## The rule
+   *
+   * The camera is the last priority. When somebody is talking with their
+   * camera on and the route to a peer starts losing their voice, the camera
+   * is what goes, for that peer, so the voice has the link to itself. It
+   * applies only while both are live: with the microphone muted the camera
+   * is not competing with anything, and during a share the camera is not
+   * being sent at all.
+   *
+   * ## What counts as struggling
+   *
+   * What the peer says it is losing of what we send (RTCP receiver reports,
+   * so this is our uplink, where the inbound figures on the tile are theirs),
+   * the round trip, and what the congestion controller thinks the route can
+   * carry. Two passes in a row, so one lost burst does not turn a camera off.
+   *
+   * ## Coming back
+   *
+   * Once the camera is off the link there is no video left to measure
+   * whether the link could carry it, so the only test is to try. After the
+   * wait (see `RETRY_BASE_MS`), and only if the voice is clean at that
+   * moment, the camera goes back in; tripping again soon after doubles the
+   * wait before the next try.
+   */
+  const watchUplink = useCallback(
+    (
+      connection: Connection,
+      sample: {
+        audioLoss: number | null;
+        videoLoss: number | null;
+        rtt: number | null;
+        outgoingBitrate: number | null;
+      },
+    ) => {
+      const { uplink } = connection;
+      const now = Date.now();
+
+      uplink.strained =
+        (sample.audioLoss ?? 0) > STRAIN_AUDIO_LOSS ||
+        (sample.videoLoss ?? 0) > STRAIN_VIDEO_LOSS ||
+        (sample.rtt ?? 0) > STRAIN_RTT_S ||
+        (sample.outgoingBitrate !== null && sample.outgoingBitrate < CAMERA_FLOOR_BPS);
+
+      const isVoiceLive = localRef.current?.getAudioTracks()[0]?.enabled === true;
+      const isCameraLive = cameraTrack.current?.enabled === true && !screenTrack.current;
+      if (!isVoiceLive || !isCameraLive) {
+        uplink.run = 0;
+        setHold(connection, false);
+        return;
+      }
+
+      if (!connection.cameraHeld) {
+        // Only a camera actually on the wire can be blamed for the strain.
+        uplink.run = uplink.strained && connection.wantsVideo ? uplink.run + 1 : 0;
+        if (uplink.run < HOLD_AFTER_SAMPLES) return;
+
+        uplink.run = 0;
+        uplink.backoffMs =
+          now - uplink.resumedAt < RELAPSE_MS
+            ? Math.min(uplink.backoffMs * 2, RETRY_MAX_MS)
+            : RETRY_BASE_MS;
+        uplink.retryAt = now + uplink.backoffMs;
+        setHold(connection, true);
+        return;
+      }
+
+      const isVoiceClear =
+        (sample.audioLoss ?? 0) < CLEAR_AUDIO_LOSS && (sample.rtt ?? 0) < CLEAR_RTT_S;
+      if (now >= uplink.retryAt && isVoiceClear) {
+        uplink.resumedAt = now;
+        setHold(connection, false);
+      }
+    },
+    [setHold],
+  );
+
+  // -------------------------------------------------------------------------
   // Connection quality
   // -------------------------------------------------------------------------
 
@@ -1029,8 +1476,17 @@ export const useLiveCall = ({
         let jitter = 0;
         let outgoingBitrate: number | null = null;
         let isRelayed = false;
+        // Our side of the link, as the peer reports it. See `watchUplink`.
+        let audioLoss: number | null = null;
+        let videoLoss: number | null = null;
+        let rtt: number | null = null;
 
         report.forEach((entry) => {
+          if (entry.type === 'remote-inbound-rtp') {
+            if (entry.kind === 'audio') audioLoss = entry.fractionLost ?? null;
+            if (entry.kind === 'video') videoLoss = entry.fractionLost ?? null;
+          }
+
           if (entry.type === 'inbound-rtp' && !entry.isRemote) {
             packets += entry.packetsReceived ?? 0;
             lost += entry.packetsLost ?? 0;
@@ -1056,6 +1512,8 @@ export const useLiveCall = ({
            */
           if (entry.type === 'candidate-pair' && entry.state === 'succeeded' && entry.nominated) {
             outgoingBitrate = entry.availableOutgoingBitrate ?? null;
+            // From the connectivity checks, so it is there even when no media is.
+            rtt = entry.currentRoundTripTime ?? null;
             const local = report.get(entry.localCandidateId);
             const remote = report.get(entry.remoteCandidateId);
             isRelayed =
@@ -1092,8 +1550,20 @@ export const useLiveCall = ({
           outgoingBitrate,
           isRelayed,
         };
+
+        watchUplink(connection, { audioLoss, videoLoss, rtt, outgoingBitrate });
       }),
     );
+
+    // A boolean, so a steady call sets the same value and React bails out.
+    setCameraHeld([...connections.current.values()].some((connection) => connection.cameraHeld));
+    /*
+     * And the plan, re-checked on every pass. A share's frame rate follows
+     * the uplink, a resized window can need a new scale, and a
+     * `setParameters` that lost a race with a leaving peer is retried here.
+     * A pass with nothing to change touches nothing (see `syncConnection`).
+     */
+    void syncAll();
 
     setQuality((current) => {
       const keys = Object.keys(next);
@@ -1116,7 +1586,7 @@ export const useLiveCall = ({
       }
       return next;
     });
-  }, []);
+  }, [syncAll, watchUplink]);
 
   /**
    * One leg of somebody else's negotiation.
@@ -1131,6 +1601,19 @@ export const useLiveCall = ({
    */
   const handleSignal = useCallback(
     async (payload: { from: string; data: Record<string, unknown> }) => {
+      /*
+       * Not negotiation: the peer holding their camera back from us, or
+       * giving it back. See `setHold`. Dropped rather than queued when there
+       * is no connection, because it describes one that no longer exists and
+       * the next one starts with the camera flowing.
+       */
+      if (typeof payload.data.videoHeld === 'boolean') {
+        if (connections.current.has(payload.from)) {
+          patchPeer(payload.from, { videoHeld: payload.data.videoHeld });
+        }
+        return;
+      }
+
       const connection = connections.current.get(payload.from);
       if (!connection) {
         // Ahead of our own join acknowledgement. See `earlySignals`.
@@ -1162,13 +1645,16 @@ export const useLiveCall = ({
             await pc.setLocalDescription(answer);
             // The senders have encodings to tune only now that the answer is
             // set; the pass `join` made found none.
-            applyBitrates(connections.current.size);
+            void syncAll();
             if (!roomId) return;
             await emitWithAck('live:signal', {
               roomId,
               to: payload.from,
               data: { description: pc.localDescription?.toJSON() },
             }).catch(() => undefined);
+          } else {
+            // The caller's half: the answer is what settles the encodings.
+            void syncConnection(connection);
           }
           return;
         }
@@ -1189,7 +1675,7 @@ export const useLiveCall = ({
          */
       }
     },
-    [adoptOfferedTransceivers, applyBitrates, roomId],
+    [adoptOfferedTransceivers, patchPeer, roomId, syncAll, syncConnection],
   );
 
   /* Read through a ref by `openConnection`, which is defined first — same reason as `recoverRef`. */
@@ -1256,16 +1742,23 @@ export const useLiveCall = ({
     // `MediaStreamTrack` keeps the camera light on until something calls this.
     localRef.current?.getTracks().forEach((track) => track.stop());
     screenTrack.current?.stop();
+    screenAudio.current?.stop();
+    screenMix.current?.close();
     localRef.current = null;
     cameraTrack.current = null;
     screenTrack.current = null;
+    screenAudio.current = null;
+    screenMix.current = null;
     setScreenPreview(null);
+    setSharingAudio(false);
+    setCameraHeld(false);
 
     detector.current?.close();
     detector.current = null;
     earlySignals.current.clear();
 
     if (roomId) void emitWithAck('live:leave', { roomId }).catch(() => undefined);
+    seatedRoom.current = null;
 
     setLocalStream(null);
     setPeers([]);
@@ -1313,7 +1806,16 @@ export const useLiveCall = ({
 
     try {
       const result = await emitWithAck<LiveJoinResult>('live:join', { roomId });
-      if (leftRef.current) return;
+      /*
+       * Seated from this moment, whatever happens next — including the reader
+       * having already left while the acknowledgement was in flight, in which
+       * case the room is told straight away rather than never.
+       */
+      if (leftRef.current) {
+        void emitWithAck('live:leave', { roomId }).catch(() => undefined);
+        return;
+      }
+      seatedRoom.current = roomId;
 
       setSelf(result.self);
       selfRef.current = result.self;
@@ -1329,7 +1831,7 @@ export const useLiveCall = ({
        * speaks. See the hook's note.
        */
       await Promise.all(result.peers.map((peer) => openConnection(peer, false)));
-      applyBitrates(result.peers.length);
+      void syncAll();
 
       /*
        * The stats poll runs for the life of the call, not the life of the
@@ -1358,7 +1860,7 @@ export const useLiveCall = ({
       localRef.current = null;
       setLocalStream(null);
     }
-  }, [acquireDevices, applyBitrates, openConnection, pollQuality, roomId]);
+  }, [acquireDevices, openConnection, pollQuality, roomId, syncAll]);
 
   // -------------------------------------------------------------------------
   // Controls
@@ -1393,17 +1895,22 @@ export const useLiveCall = ({
     }
 
     /*
-     * `enabled`, not `stop()` and not `replaceTrack(null)`.
+     * `enabled` first, then the sender.
      *
-     * A disabled track keeps the connection and the encoder alive and sends
-     * silence, so unmuting is instantaneous. Removing the track would make
-     * every unmute a round trip through the sender — and stopping it would
-     * release the microphone, so the *next* unmute would raise the browser's
-     * permission prompt again in the middle of a conversation.
+     * The track is never stopped: that would release the microphone, and the
+     * next unmute would raise the browser's permission prompt again in the
+     * middle of a conversation. Disabling it silences it on this very line.
+     *
+     * The sender is then emptied (see `outboundAudio`). A disabled track
+     * still goes out as encoded silence, fifty packets a second to every
+     * peer, which is uplink a muted presenter's screen can use instead.
+     * `replaceTrack` does not renegotiate and the encoder starts on the first
+     * packet, so unmuting is as quick as it was.
      */
     track.enabled = !track.enabled;
     publish({ micOn: track.enabled, handRaised: false });
-  }, [publish]);
+    void syncAll();
+  }, [publish, syncAll]);
 
   const toggleCam = useCallback(() => {
     const track = cameraTrack.current;
@@ -1418,7 +1925,30 @@ export const useLiveCall = ({
 
     track.enabled = !track.enabled;
     publish({ camOn: track.enabled });
-  }, [publish]);
+    void syncAll();
+  }, [publish, syncAll]);
+
+  /**
+   * Stop sending the shared screen's sound, and let go of the mix.
+   *
+   * Called when the share ends, and on its own if the browser ends the sound
+   * before the picture, which it is free to do.
+   */
+  const dropScreenAudio = useCallback(async () => {
+    const sound = screenAudio.current;
+    if (!sound) return;
+
+    screenAudio.current = null;
+    setSharingAudio(false);
+    // The senders move off the mix before it is closed, so nobody is sent a
+    // track that has just been stopped.
+    await syncAll();
+
+    sound.onended = null;
+    sound.stop();
+    screenMix.current?.close();
+    screenMix.current = null;
+  }, [syncAll]);
 
   /**
    * Share a screen, by swapping it into the sender the camera was using.
@@ -1426,7 +1956,9 @@ export const useLiveCall = ({
    * This is the payoff for building the transceivers up front: no new track,
    * no `negotiationneeded`, no seven simultaneous renegotiations. The peers
    * see the same video stream change content, which is exactly what a viewer
-   * wants and is one `replaceTrack` per connection.
+   * wants and is one `replaceTrack` per connection. Its sound, if the
+   * presenter ticked the box for it, goes the same way into the audio sender
+   * (see `ScreenAudioMix`).
    */
   const startShare = useCallback(async () => {
     if (!allowedRef.current.canPresent) {
@@ -1434,46 +1966,69 @@ export const useLiveCall = ({
       return;
     }
 
+    let display: MediaStream;
     try {
-      const display = await navigator.mediaDevices.getDisplayMedia({
-        video: { frameRate: { ideal: 12, max: 15 } },
-        // Deliberately not requesting the tab's audio. It is the commonest way
-        // to put a second copy of the call into the call, and nothing in a
-        // project review needs it.
-        audio: false,
-      });
-
-      const track = display.getVideoTracks()[0];
-      if (!track) return;
-
-      screenTrack.current = track;
-      // The presenter's own tile shows what is going out. `display` holds the
-      // one video track and no audio, so it is exactly that and nothing more.
-      setScreenPreview(display);
-      for (const connection of connections.current.values()) {
-        await connection.videoSender?.replaceTrack(track).catch(() => undefined);
-      }
-
+      display = await navigator.mediaDevices.getDisplayMedia(DISPLAY_MEDIA_OPTIONS);
+    } catch (cause) {
       /*
-       * The browser's own "stop sharing" bar ends the share too.
-       *
-       * Without this the bar stops the track and every peer is left looking at
-       * a frozen final frame, with this client's UI still saying it is
-       * sharing.
+       * Dismissing the picker is the ordinary way to change your mind about
+       * which window to show, and says nothing. So does a capture the system
+       * refused. What is worth one more try is an engine that choked on one
+       * of the newer options, which should not cost anybody the share: it is
+       * asked again with the plainest request there is, and the encoder
+       * still holds the result to 720p and 27 fps.
        */
-      track.onended = () => void stopShare();
-
-      // The camera is off for the duration whether or not it was on: there is
-      // one video sender and the screen is in it.
-      publish({ sharing: true, camOn: false });
-    } catch {
-      // The picker was dismissed. Not an error — it is the ordinary way to
-      // change your mind about which window to show.
+      const isOptionsProblem =
+        cause instanceof TypeError ||
+        (cause instanceof DOMException && cause.name === 'OverconstrainedError');
+      if (!isOptionsProblem) return;
+      try {
+        display = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+      } catch {
+        return;
+      }
     }
+
+    const track = display.getVideoTracks()[0];
+    if (!track) {
+      display.getTracks().forEach((each) => each.stop());
+      return;
+    }
+    const sound = display.getAudioTracks()[0] ?? null;
+
+    screenTrack.current = track;
+    screenAudio.current = sound;
+    setSharingAudio(sound !== null);
+    // The presenter's own tile shows what is going out, and only the picture:
+    // the tile is muted anyway, and the sound is not the tile's to play.
+    setScreenPreview(new MediaStream([track]));
+
+    /*
+     * The camera stops capturing for the length of the share, not just
+     * sending. It could not be sent anyway (there is one video sender and the
+     * screen is in it), so leaving it on was a light and a capture pipeline
+     * running for nothing.
+     */
+    const camera = cameraTrack.current;
+    if (camera) camera.enabled = false;
+
+    await syncAll();
+
+    /*
+     * The browser's own "stop sharing" bar ends the share too.
+     *
+     * Without this the bar stops the track and every peer is left looking at
+     * a frozen final frame, with this client's UI still saying it is
+     * sharing.
+     */
+    track.onended = () => void stopShare();
+    if (sound) sound.onended = () => void dropScreenAudio();
+
+    publish({ sharing: true, camOn: false });
     // `stopShare` is defined below and is stable; referencing it here would
     // need a forward declaration for no benefit.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [publish]);
+  }, [dropScreenAudio, publish, syncAll]);
 
   const stopShare = useCallback(async () => {
     const track = screenTrack.current;
@@ -1489,12 +2044,11 @@ export const useLiveCall = ({
     // on unannounced.
     const camera = cameraTrack.current;
     if (camera) camera.enabled = false;
-    for (const connection of connections.current.values()) {
-      await connection.videoSender?.replaceTrack(camera ?? null).catch(() => undefined);
-    }
+    await dropScreenAudio();
+    await syncAll();
 
     publish({ sharing: false, camOn: false });
-  }, [publish]);
+  }, [dropScreenAudio, publish, syncAll]);
 
   const raiseHand = useCallback(() => {
     if (!roomId) return;
@@ -1538,15 +2092,13 @@ export const useLiveCall = ({
        * the caller. The newcomer runs the other branch for us and waits.
        */
       const mine = selfRef.current?.seq ?? 0;
-      void openConnection(peer, mine < peer.seq).then(() =>
-        applyBitrates(connections.current.size),
-      );
+      void openConnection(peer, mine < peer.seq).then(() => syncAll());
     };
 
     const onPeerLeft = ({ participantId }: { participantId: string }) => {
       earlySignals.current.delete(participantId);
       closeConnection(participantId);
-      applyBitrates(Math.max(0, connections.current.size));
+      void syncAll();
     };
 
     const onPeerState = ({
@@ -1592,18 +2144,9 @@ export const useLiveCall = ({
       if (!connection || connection.wantsVideo === wanted) return;
 
       connection.wantsVideo = wanted;
-
-      const track = wanted ? (screenTrack.current ?? cameraTrack.current ?? null) : null;
-      void connection.videoSender?.replaceTrack(track).catch(() => undefined);
-
-      /*
-       * A resumed sender has never been tuned — `applyBitrates` skips paused
-       * ones, and a track put back into a sender comes with the browser's
-       * default ceiling rather than the one this room requires. Re-running it
-       * for the whole map is cheaper than tracking which senders are dirty,
-       * and it happens at most once per tile scrolling into view.
-       */
-      if (wanted) applyBitrates(connections.current.size);
+      // The track goes in or out, and a track put back is tuned to the plan
+      // on the same pass. See `outboundVideo`.
+      void syncConnection(connection);
     };
 
     /** A moderator changed what this client may do, mid-call. */
@@ -1627,6 +2170,7 @@ export const useLiveCall = ({
         const track = localRef.current?.getAudioTracks()[0];
         if (track) track.enabled = false;
         setFlags((current) => ({ ...current, micOn: false }));
+        void syncAll();
         toast.info(translate('live.muteByModerator'));
       }
       if (!payload.canPresent && screenTrack.current) void stopShare();
@@ -1675,7 +2219,6 @@ export const useLiveCall = ({
       socket.off('live:displaced', onDisplaced);
     };
   }, [
-    applyBitrates,
     applyPlayoutHint,
     closeConnection,
     handleSignal,
@@ -1684,6 +2227,8 @@ export const useLiveCall = ({
     openConnection,
     patchPeer,
     stopShare,
+    syncAll,
+    syncConnection,
   ]);
 
   /*
@@ -1697,6 +2242,10 @@ export const useLiveCall = ({
   useEffect(
     () => () => {
       leftRef.current = true;
+      // Goodbye to the room, if nobody has said it yet. See `seatedRoom`.
+      const seated = seatedRoom.current;
+      seatedRoom.current = null;
+      if (seated) void emitWithAck('live:leave', { roomId: seated }).catch(() => undefined);
       if (statsTimer.current !== undefined) window.clearInterval(statsTimer.current);
       for (const participantId of [...connections.current.keys()]) {
         const connection = connections.current.get(participantId);
@@ -1709,6 +2258,8 @@ export const useLiveCall = ({
       connections.current.clear();
       localRef.current?.getTracks().forEach((track) => track.stop());
       screenTrack.current?.stop();
+      screenAudio.current?.stop();
+      screenMix.current?.close();
       detector.current?.close();
     },
     [],
@@ -1723,9 +2274,11 @@ export const useLiveCall = ({
      * own `entries` used to *be* `peers` — so this sorted React state directly,
      * behind the back of the render that owned it.
      */
-    const entries = self ? [{ ...self, stream: ownStream, flags }, ...peers] : [...peers];
+    const entries = self
+      ? [{ ...self, stream: ownStream, flags, videoHeld: cameraHeld }, ...peers]
+      : [...peers];
     return entries.sort((a, b) => a.seq - b.seq);
-  }, [flags, localStream, peers, screenPreview, self]);
+  }, [cameraHeld, flags, localStream, peers, screenPreview, self]);
 
   return {
     status,
@@ -1739,6 +2292,13 @@ export const useLiveCall = ({
     speaking,
     /** How each connection is doing, keyed by participant id. See `pollQuality`. */
     quality,
+    /**
+     * Whether the camera is on but held back from somebody to keep the voice
+     * clear. See `watchUplink`.
+     */
+    cameraHeld,
+    /** Whether the screen being shared is carrying its sound. */
+    sharingAudio,
     join,
     leave,
     toggleMic,

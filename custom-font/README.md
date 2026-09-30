@@ -20,7 +20,7 @@ in here is served. It is the folder somebody opens when they want to know where
 a typeface came from or whether the product is allowed to use it.
 
 The two are kept in step by hand, which is deliberate at this size — there are
-four faces. `pixel/` and `runic/` are the two drawn here rather than sourced;
+five faces. `pixel/` and `runic/` are the two drawn here rather than sourced;
 each one's build script writes both copies. See "Adding a font" below.
 
 ## Layout

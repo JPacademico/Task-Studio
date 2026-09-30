@@ -1,3 +1,5 @@
+import { RuneClickGlow } from '@/shared/ui';
+
 import { MobileGate } from './layouts/mobile-gate';
 import { AppProviders } from './providers';
 import { AppRouter } from './router';
@@ -13,6 +15,10 @@ import { AppRouter } from './router';
  */
 export const App = () => (
   <AppProviders>
+    {/* Here rather than in the app shell, because the rune pointer is drawn on
+        every page the skin is worn on, the landing page and sign-in included,
+        and its click should glow wherever it does. Renders nothing. */}
+    <RuneClickGlow />
     <MobileGate>
       <AppRouter />
     </MobileGate>

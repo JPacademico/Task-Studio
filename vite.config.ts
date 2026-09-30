@@ -161,7 +161,14 @@ export default defineConfig(({ mode }) => {
            * who *does* see the effects still gets them from the cache on their
            * second visit.
            */
-          globIgnores: ['**/webgl-*.js', '**/shaders-*.js'],
+          /*
+           * The Volcano display face goes the same way, for the same reason.
+           * Every other theme face is 3–28 kB and rides the precache; Frijole
+           * is 92 kB and is only ever drawn on one skin, so it is cached the
+           * first time that skin asks for it (see the runtime rule below)
+           * rather than handed to every visitor at install.
+           */
+          globIgnores: ['**/webgl-*.js', '**/shaders-*.js', '**/fonts/volcano/**'],
           // SPA fallback so a deep link opens offline from the app shell.
           navigateFallback: '/index.html',
           navigateFallbackDenylist: [/^\/api/],
@@ -313,6 +320,22 @@ export default defineConfig(({ mode }) => {
               options: {
                 cacheName: 'task-studio-webgl',
                 expiration: { maxEntries: 6, maxAgeSeconds: 60 * 60 * 24 * 30 },
+                cacheableResponse: { statuses: [200] },
+              },
+            },
+            {
+              /*
+               * The Volcano face, cached on first use. See `globIgnores`.
+               *
+               * `StaleWhileRevalidate` rather than `CacheFirst`: the filename
+               * is not hashed, so a replaced file has to be able to reach a
+               * reader who already has the old one, one visit later.
+               */
+              urlPattern: ({ url }) => url.pathname.startsWith('/fonts/volcano/'),
+              handler: 'StaleWhileRevalidate',
+              options: {
+                cacheName: 'task-studio-fonts',
+                expiration: { maxEntries: 4, maxAgeSeconds: 60 * 60 * 24 * 365 },
                 cacheableResponse: { statuses: [200] },
               },
             },

@@ -213,6 +213,43 @@
   font-display: swap;
 }
 
+/* ===========================================================================
+   Frijole — the Volcano skin's display face.
+   ===========================================================================
+
+   Heavy capitals whose edges have crumbled: every stroke is solid, and every
+   outline is chipped, the way a block of cooled basalt breaks. Chosen for the
+   skin as the closest open-licence face to the brief's reference (a cracked,
+   chunky dungeon lettering whose own licence is personal-use only, which
+   `custom-font/README.md` rules out whatever it looks like).
+
+   ## Where it is used, and where it deliberately is not
+
+   Page titles (`h1`) and the large display lines — anywhere a heading has the
+   room a wide face needs. It runs at about 0.94em a character, nearly twice
+   the width of the Impact these headings had been falling back to, so the
+   14px section and card headings (`h2`–`h4`) keep a solid black face instead:
+   there, the chips in the outline turn into noise and the width turns a title
+   into an ellipsis. See the Volcano heading rules near the foot of this file.
+
+   ## Licensing
+
+   SIL Open Font License 1.1, Sideshow (Font Diner). Reserved Font Name
+   "Frijole", so the file ships exactly as Google Fonts serves it — unsubset
+   and unrenamed. 92 kB, fetched only when the Volcano skin renders a heading.
+   The licence and the upstream file sit in `custom-font/volcano/`.
+
+   `swap`, like every face here: a title briefly in the fallback is better than
+   a title briefly not there.
+   =========================================================================== */
+@font-face {
+  font-family: 'Frijole';
+  src: url('/fonts/volcano/frijole.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 /*
  * Theme tokens.
  *
@@ -3037,141 +3074,145 @@
 
   [data-skin='volcano'] {
     /*
-     * Ash and pumice, not white.
+     * Pumice in daylight: pale, warm and clean.
      *
-     * The light palette is deliberately the darkest "light" mode in the
-     * catalogue. A volcanic field in daylight is a mid-grey world — everything
-     * is covered in the same ash — and a bright white version of this skin
-     * would have nothing for the incandescence to read against. Every surface
-     * is pulled warm, because the ash is iron-rich and rusts.
+     * This used to be the darkest "light" mode in the catalogue — a mid-grey
+     * ash world with dark 2px outlines, on the argument that incandescence
+     * needs something dim to read against. In use it read as muddy, and every
+     * surface was the same brown-grey as the one next to it. The heat does not
+     * need a dark page; it needs to be *rare*. So the stone is pale and warm,
+     * the lines are thin, and the orange appears only where something is hot:
+     * the seam under a panel, a filled control, a fissure along a rail.
+     *
+     * Every text pairing clears AA against all three surfaces (measured:
+     * content 12:1 at worst, muted 5.4:1, faint 3.7:1 on the sunken tone
+     * and 4.3:1 or better on the other two, brand as text 4.9:1).
      */
-    --surface: 206 195 187;
-    --surface-raised: 228 219 211;
-    --surface-sunken: 172 159 150;
-    --edge: 92 74 64;
+    --surface: 238 231 224;
+    --surface-raised: 250 246 242;
+    --surface-sunken: 225 215 205;
+    /* 3.2:1 on the page — enough to find a field by its outline — without the
+       near-black rules that made every panel look cut out with a marker. */
+    --edge: 150 124 110;
     --check-edge: var(--edge);
-    --content: 32 22 18;
-    --content-muted: 96 76 66;
-    --content-faint: 136 116 104;
-    /* Fresh flow. Deep enough that pale lettering on a filled control clears
-       7:1 — the brighter oranges in this skin are all light *sources* and are
-       never asked to sit behind text. */
-    --brand: 142 44 10;
-    --brand-soft: 250 218 194;
-    --brand-contrast: 255 246 236;
-    --positive: 55 90 47;
+    --content: 38 24 20;
+    --content-muted: 100 78 68;
+    --content-faint: 126 104 92;
+    /* Fresh flow. The pale label on a filled control is 6.6:1; the brighter
+       oranges in this skin are all light *sources* and never sit behind text. */
+    --brand: 164 50 12;
+    --brand-soft: 252 226 208;
+    --brand-contrast: 255 248 240;
+    --positive: 38 104 46;
     /* Sulphur, which is the one thing on a volcano that is genuinely yellow. */
-    --warning: 158 112 8;
+    --warning: 128 88 4;
     /* Separated from the brand by hue rather than by lightness: the brand is
        an orange flow, this is arterial. Next to each other they never read as
        the same signal. */
-    --danger: 158 24 32;
+    --danger: 176 30 38;
 
-    /* Crust cracks square. */
-    --radius-sm: 1px;
-    --radius-md: 2px;
-    --radius-lg: 2px;
-    --radius-xl: 3px;
-    --radius-2xl: 4px;
-    --radius-3xl: 4px;
+    /* Rock, broken and weathered: square, but not razor-cut. */
+    --radius-sm: 2px;
+    --radius-md: 3px;
+    --radius-lg: 4px;
+    --radius-xl: 5px;
+    --radius-2xl: 6px;
+    --radius-3xl: 8px;
 
-    --font-display: 'Archivo Black', 'Anton', 'Impact', 'Haettenschweiler', 'Franklin Gothic Heavy',
-      sans-serif;
+    --font-display: 'Frijole', 'Archivo Black', 'Anton', 'Impact', 'Haettenschweiler',
+      'Franklin Gothic Heavy', sans-serif;
+    /* The solid black for headings too small for the chipped face. See the
+       `@font-face` for Frijole at the top of this file. */
+    --font-display-small: 'Archivo Black', 'Anton', 'Impact', 'Haettenschweiler',
+      'Franklin Gothic Heavy', sans-serif;
     --font-sans: 'Archivo', 'Roboto Condensed', 'Franklin Gothic Medium', 'Segoe UI', system-ui,
       sans-serif;
     --font-hand: 'Rock Salt', 'Segoe Print', cursive;
 
-    --panel-border-width: 2px;
+    --panel-border-width: 1px;
     /*
-     * The signature of the whole skin, in three shadows.
+     * The signature of the whole skin, now in two shadows rather than three.
      *
-     * A cold rim along the top where the crust has set, then the hot line
-     * underneath — that is the melt showing at the bottom seam, and it is why a
-     * panel here reads as a lid rather than as a rectangle. The cast shadow is
-     * hard and short, because everything is sitting *on* the ground rather than
-     * floating over it.
+     * The hot line along the bottom edge stays — that is the melt showing
+     * under the crust, and it is why a panel here reads as a lid over
+     * something rather than as a rectangle. The cold white rim along the top
+     * went, and with it the bevel: it made every panel a raised 3D tile, and a
+     * page of raised tiles around a lava lamp looked like two different
+     * products. The cast shadow is short and soft, and its blur is small on
+     * purpose: `hover:shadow-panel` animates this on every task card, and a
+     * 20px blur repainted per frame across a board is what made hovering lag.
      */
     --shadow-panel:
-      inset 0 2px 0 rgb(255 250 242 / 0.5),
-      inset 0 -3px 0 rgb(var(--lava-flow) / 0.5),
-      0 10px 20px -12px rgb(var(--lava-crust) / 0.9);
-    --press-travel: 2px;
+      inset 0 -2px 0 rgb(var(--lava-flow) / 0.4),
+      0 1px 2px rgb(var(--lava-crust) / 0.12),
+      0 6px 12px -8px rgb(var(--lava-crust) / 0.4);
+    --press-travel: 1px;
 
     /*
-     * Basalt, at three scales.
+     * Pumice: pores and a little heat, and no lines.
      *
-     *   1. The crazing — three repeating gradients at 23°, 97° and 151°, each
-     *      with one thin line and a long gap. No two of those angles are
-     *      related and none of the periods share a factor, so the overlap never
-     *      closes into a lattice; it reads as a fracture network, which is
-     *      exactly what it is standing in for.
-     *   2. Vesicles — the gas bubbles frozen into the rock as it set, at two
-     *      sizes so the surface has pores rather than a dot screen.
-     *   3. The heat bloom coming up from the bottom edge of every panel, which
-     *      is the same claim the bottom-edge shadow makes, at a larger scale.
-     *
-     * Periods are 31px, 43px and 59px. All prime.
+     * It used to be basalt crazing — three repeating one-pixel lines at 23°,
+     * 97° and 151° — and on a pale page that read as a net of triangles laid
+     * over every card: polygonal, loud, and directly behind the text. What is
+     * left is what the rock is actually made of at this scale: vesicles, the
+     * gas bubbles frozen in as it set, at two sizes on co-prime tiles so they
+     * never line up into a screen; and the faint heat bloom rising from the
+     * bottom edge, which is the seam's claim at a larger scale.
      */
     --panel-texture:
-      repeating-linear-gradient(
-        23deg,
-        transparent 0 30px,
-        rgb(var(--lava-crust) / 0.16) 30px 31px
-      ),
-      repeating-linear-gradient(
-        97deg,
-        transparent 0 42px,
-        rgb(var(--lava-crust) / 0.13) 42px 43px
-      ),
-      repeating-linear-gradient(
-        151deg,
-        transparent 0 58px,
-        rgb(var(--lava-crust) / 0.1) 58px 59px
-      ),
-      radial-gradient(rgb(var(--lava-crust) / 0.14) 1.1px, transparent 1.2px),
-      radial-gradient(rgb(var(--lava-crust) / 0.1) 0.5px, transparent 0.6px),
-      linear-gradient(0deg, rgb(var(--lava-flow) / 0.12), transparent 34%);
-    --panel-texture-size: auto, auto, auto, 17px 17px, 6px 6px, auto;
+      radial-gradient(rgb(var(--lava-crust) / 0.07) 1px, transparent 1.4px),
+      radial-gradient(rgb(var(--lava-crust) / 0.05) 0.6px, transparent 1px),
+      linear-gradient(0deg, rgb(var(--lava-flow) / 0.07), transparent 30%);
+    --panel-texture-size: 23px 23px, 9px 9px, auto;
 
     /*
      * The caldera is below you and it is lit.
      *
      * The glow is anchored *under* the bottom edge of the viewport rather than
      * inside it, so the page reads as standing on something rather than as
-     * having an orange gradient at the bottom. The ash cloud closes the top.
+     * having an orange gradient at the bottom. The ash cloud that used to close
+     * the top is gone: on the pale stone it was a grey film over the header.
      */
     --page-wash:
-      radial-gradient(110% 60% at 50% 118%, rgb(var(--lava-flow) / 0.3), transparent 64%),
-      radial-gradient(80% 40% at 14% 108%, rgb(var(--lava-core) / 0.16), transparent 58%),
-      linear-gradient(180deg, rgb(var(--lava-crust) / 0.14), transparent 30%);
+      radial-gradient(110% 55% at 50% 120%, rgb(var(--lava-flow) / 0.2), transparent 64%),
+      radial-gradient(70% 36% at 12% 110%, rgb(var(--lava-core) / 0.16), transparent 60%);
 
-    --btn-overlay:
-      linear-gradient(180deg, rgb(255 250 242 / 0.45), rgb(var(--lava-crust) / 0.2));
-    --btn-shadow:
-      inset 0 2px 0 rgb(255 250 242 / 0.55),
-      inset 0 -2px 0 rgb(var(--lava-flow) / 0.45);
-    /* Pressed, the crust gives and you see straight down into it. */
+    /*
+     * Controls: flat, with a molten rim — the lava lamp's own language.
+     *
+     * The bevel (a white-to-crust gradient, a white top line and a hot bottom
+     * line) was the 3D this skin's buttons were drawn in, and it never matched
+     * the lava lamp beside them: the lamp is a flat dark tube with a one-pixel
+     * accent edge. So the primary button *is* that tube now, at rest — see the
+     * obsidian rule near the foot of this file — and every other control is
+     * flat with a hairline rim that turns hot on hover. No blur anywhere: the
+     * old hover was a 22px glow, repainted on every frame of its transition.
+     */
+    --btn-overlay: none;
+    --btn-shadow: inset 0 0 0 1px rgb(var(--edge) / 0.7);
+    --btn-shadow-hover: inset 0 0 0 1px rgb(var(--brand) / 0.75);
+    /* Pressed, the crust gives a little. */
     --btn-shadow-active:
-      inset 0 3px 8px rgb(var(--lava-crust) / 0.7),
-      inset 0 -1px 0 rgb(var(--lava-core) / 0.5);
-    --btn-tracking: 0.1em;
+      inset 0 0 0 1px rgb(var(--brand) / 0.75),
+      inset 0 2px 3px rgb(var(--lava-crust) / 0.28);
+    --btn-tracking: 0.08em;
     --btn-transform: uppercase;
     --btn-weight: 700;
-    --control-border-width: 2px;
-    --field-shadow: inset 0 2px 7px rgb(var(--lava-crust) / 0.4);
+    --control-border-width: 1px;
+    --field-shadow: inset 0 1px 2px rgb(var(--lava-crust) / 0.14);
+    /* A crisp ring rather than a 24px halo: the same signal, and nothing to
+       blur while somebody types. */
     --field-shadow-focus:
-      inset 0 2px 7px rgb(var(--lava-crust) / 0.3),
-      0 0 0 2px rgb(var(--lava-flow) / 0.6),
-      0 0 24px -4px rgb(var(--lava-core) / 0.8);
+      inset 0 1px 2px rgb(var(--lava-crust) / 0.1),
+      0 0 0 2px rgb(var(--lava-flow) / 0.55);
 
     /* A note is a flake of crust that broke off and cooled where it landed. */
-    --postit-radius: 1px;
+    --postit-radius: 3px;
     --postit-shadow:
-      inset 0 2px 0 rgb(255 250 242 / 0.4),
-      inset 0 -2px 0 rgb(var(--lava-flow) / 0.4),
-      0 12px 22px -12px rgb(var(--lava-crust) / 0.95);
-    --postit-texture: radial-gradient(rgb(var(--lava-crust) / 0.12) 1.1px, transparent 1.2px);
-    --postit-texture-size: 17px 17px;
+      inset 0 -2px 0 rgb(var(--lava-flow) / 0.35),
+      0 8px 14px -10px rgb(var(--lava-crust) / 0.55);
+    --postit-texture: radial-gradient(rgb(var(--lava-crust) / 0.07) 1px, transparent 1.4px);
+    --postit-texture-size: 23px 23px;
 
     /* Pressure, then failure — see the note on the curve in `skin-motion.ts`. */
     --ease-ui: cubic-bezier(0.85, 0, 0.12, 1);
@@ -3234,53 +3275,40 @@
        below and behind. So the cold highlight goes away entirely and the hot
        line under the panel gets stronger, which is the whole scene in two
        declarations. */
+    /* The hot seam is the light here, so it stays strong; the cast shadow is
+       kept short for the same reason as the light palette's. */
     --shadow-panel:
-      inset 0 1px 0 rgb(var(--lava-flow) / 0.16),
-      inset 0 -3px 0 rgb(var(--lava-flow) / 0.7),
-      0 14px 26px -14px rgb(0 0 0);
+      inset 0 -2px 0 rgb(var(--lava-flow) / 0.62),
+      0 8px 14px -10px rgb(0 0 0 / 0.9);
 
+    /* The same pumice as the day palette — pores and heat, no crazing — with
+       the pores dark on dark rock and the bloom a little stronger, because at
+       night the heat is the only thing lighting the stone. */
     --panel-texture:
-      repeating-linear-gradient(
-        23deg,
-        transparent 0 30px,
-        rgb(var(--lava-flow) / 0.14) 30px 31px
-      ),
-      repeating-linear-gradient(
-        97deg,
-        transparent 0 42px,
-        rgb(var(--lava-flow) / 0.1) 42px 43px
-      ),
-      repeating-linear-gradient(
-        151deg,
-        transparent 0 58px,
-        rgb(var(--lava-flow) / 0.07) 58px 59px
-      ),
-      radial-gradient(rgb(0 0 0 / 0.5) 1.1px, transparent 1.2px),
-      radial-gradient(rgb(255 255 255 / 0.04) 0.5px, transparent 0.6px),
-      linear-gradient(0deg, rgb(var(--lava-flow) / 0.16), transparent 34%);
+      radial-gradient(rgb(0 0 0 / 0.35) 1px, transparent 1.4px),
+      radial-gradient(rgb(255 255 255 / 0.03) 0.6px, transparent 1px),
+      linear-gradient(0deg, rgb(var(--lava-flow) / 0.12), transparent 32%);
 
     --page-wash:
-      radial-gradient(110% 60% at 50% 118%, rgb(var(--lava-flow) / 0.34), transparent 62%),
-      radial-gradient(80% 40% at 14% 108%, rgb(var(--lava-core) / 0.14), transparent 56%),
-      radial-gradient(90% 60% at 50% -10%, rgb(0 0 0 / 0.7), transparent 60%);
+      radial-gradient(110% 60% at 50% 118%, rgb(var(--lava-flow) / 0.3), transparent 62%),
+      radial-gradient(80% 40% at 14% 108%, rgb(var(--lava-core) / 0.12), transparent 56%),
+      radial-gradient(90% 60% at 50% -10%, rgb(0 0 0 / 0.6), transparent 60%);
 
-    --btn-overlay: linear-gradient(180deg, rgb(var(--lava-flow) / 0.14), rgb(0 0 0 / 0.45));
-    --btn-shadow:
-      inset 0 1px 0 rgb(var(--lava-flow) / 0.24),
-      inset 0 -2px 0 rgb(var(--lava-flow) / 0.6);
+    /* Flat with a molten rim, as in the day palette. See `--btn-overlay` there. */
+    --btn-overlay: none;
+    --btn-shadow: inset 0 0 0 1px rgb(var(--edge) / 0.9);
+    --btn-shadow-hover: inset 0 0 0 1px rgb(var(--lava-flow) / 0.85);
     --btn-shadow-active:
-      inset 0 3px 9px rgb(0 0 0 / 0.9),
-      inset 0 -1px 0 rgb(var(--lava-core) / 0.7);
-    --field-shadow: inset 0 2px 7px rgb(0 0 0 / 0.8);
+      inset 0 0 0 1px rgb(var(--lava-flow) / 0.85),
+      inset 0 2px 4px rgb(0 0 0 / 0.7);
+    --field-shadow: inset 0 1px 3px rgb(0 0 0 / 0.6);
     --field-shadow-focus:
-      inset 0 2px 7px rgb(0 0 0 / 0.7),
-      0 0 0 2px rgb(var(--lava-flow) / 0.7),
-      0 0 28px -4px rgb(var(--lava-core) / 0.85);
+      inset 0 1px 3px rgb(0 0 0 / 0.5),
+      0 0 0 2px rgb(var(--lava-flow) / 0.65);
     --postit-shadow:
-      inset 0 1px 0 rgb(var(--lava-flow) / 0.2),
-      inset 0 -2px 0 rgb(var(--lava-flow) / 0.55),
-      0 14px 24px -14px rgb(0 0 0);
-    --postit-texture: radial-gradient(rgb(0 0 0 / 0.45) 1.1px, transparent 1.2px);
+      inset 0 -2px 0 rgb(var(--lava-flow) / 0.5),
+      0 8px 14px -10px rgb(0 0 0);
+    --postit-texture: radial-gradient(rgb(0 0 0 / 0.35) 1px, transparent 1.4px);
 
     --lava-vent: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='260' viewBox='0 0 300 260'%3E%3Cpath d='M0 260 118 44l38 66 34-40 110 190Z' fill='none' stroke='%23472a22' stroke-width='9' stroke-linejoin='round'/%3E%3Cpath d='M118 44l-26 60 34 22-20 48' fill='none' stroke='%23ff701a' stroke-width='7' stroke-linecap='round'/%3E%3Cpath d='M190 70l14 46-30 20 22 40' fill='none' stroke='%23ff701a' stroke-width='6' stroke-linecap='round' stroke-opacity='.7'/%3E%3C/svg%3E");
 
@@ -4243,15 +4271,21 @@
     --vent-high: 0.4;
   }
 
+  /*
+   * Opacity only.
+   *
+   * This used to pulse a `drop-shadow` as well, and a filter animated on a
+   * 300x260 fixed element is a repaint of that element on every frame for as
+   * long as the page is open — the one volcano effect that never stopped
+   * costing. Opacity is composited: the vent brightens and dims for free.
+   */
   @keyframes vent-throb {
     0%,
     100% {
       opacity: var(--vent-low);
-      filter: none;
     }
     50% {
       opacity: var(--vent-high);
-      filter: drop-shadow(0 0 16px rgb(var(--lava-flow) / 0.6));
     }
   }
 
@@ -4275,22 +4309,20 @@
     text-shadow: 0 0 10px rgb(var(--tide-glow) / 0.35);
   }
 
-  /* Volcanic headings are struck into crust: a cold highlight above the stroke
-     and the melt showing under it. */
-  [data-skin='volcano'] h1,
-  [data-skin='volcano'] h2,
-  [data-skin='volcano'] h3 {
-    text-shadow:
-      0 -1px 0 rgb(255 250 242 / 0.45),
-      0 2px 0 rgb(var(--lava-crust) / 0.35);
-  }
-
+  /*
+   * Volcanic headings, by daylight, carry no shadow at all.
+   *
+   * They used to be embossed — a white line above the stroke and a crust line
+   * below — which on the chipped display face doubles every broken edge into
+   * a smear, and on the pale stone read as the same 3D the buttons dropped.
+   * At night the melt still lights them from below, with a tighter glow.
+   */
   [data-skin='volcano'].dark h1,
   [data-skin='volcano'].dark h2,
   [data-skin='volcano'].dark h3 {
     text-shadow:
       0 1px 0 rgb(0 0 0 / 0.9),
-      0 0 12px rgb(var(--lava-flow) / 0.4);
+      0 0 8px rgb(var(--lava-flow) / 0.3);
   }
 
   @keyframes stave-breathe {
@@ -6946,25 +6978,32 @@
    * VOLCANO — cooled crust, and the melt at every seam.
    * ------------------------------------------------------------------- */
 
-  [data-skin='volcano'] .ui-btn,
+  /*
+   * The rim goes on the controls that have a surface of their own: the
+   * secondary button, the filter chips and the tags. The primary button is
+   * the obsidian tube (see the rule near the foot of this file), the ghost and
+   * outline buttons are only a label until pointed at, and the lava lamp is
+   * left entirely alone — this rule used to reach it too, painting a bevel
+   * gradient under the tube and a 22px glow round it on hover, which is most
+   * of why the lamp never looked like it belonged here.
+   */
+  [data-skin='volcano'] .ui-btn--secondary,
   [data-skin='volcano'] .ui-filter,
   [data-skin='volcano'] .ui-chip {
     background-image: var(--btn-overlay);
     box-shadow: var(--btn-shadow);
   }
 
-  [data-skin='volcano'] .ui-btn:active,
-  [data-skin='volcano'] .ui-filter:active {
-    box-shadow: var(--btn-shadow-active);
+  /* Touch it and the rim gets hot. A line, not a glow: the same signal, with
+     nothing to blur on every frame of the transition. */
+  [data-skin='volcano'] .ui-btn--secondary:hover,
+  [data-skin='volcano'] .ui-filter:hover {
+    box-shadow: var(--btn-shadow-hover);
   }
 
-  /* Touch it and it gets hotter. Not brighter — hotter: the glow it throws is
-     light the control is making, which is why it spills past its own edge. */
-  [data-skin='volcano'] .ui-btn:hover,
-  [data-skin='volcano'] .ui-filter:hover {
-    box-shadow:
-      inset 0 -2px 0 rgb(var(--lava-core) / 0.8),
-      0 0 22px -4px rgb(var(--lava-flow) / 0.85);
+  [data-skin='volcano'] .ui-btn--secondary:active,
+  [data-skin='volcano'] .ui-filter:active {
+    box-shadow: var(--btn-shadow-active);
   }
 
   [data-skin='volcano'] .ui-chip {
@@ -6987,9 +7026,9 @@
   [data-skin='volcano'] .ui-segment {
     background-image: var(--panel-texture);
     background-size: var(--panel-texture-size);
-    box-shadow:
-      inset 0 2px 0 rgb(255 250 242 / 0.45),
-      inset 0 -3px 0 rgb(var(--lava-flow) / 0.45);
+    /* The seam alone. The white top rim that used to sit above it was the
+       bevel, and it went with the buttons' — see `--shadow-panel`. */
+    box-shadow: inset 0 -2px 0 rgb(var(--lava-flow) / 0.38);
   }
 
   [data-skin='volcano'].dark .panel,
@@ -6997,9 +7036,7 @@
   [data-skin='volcano'].dark .ui-card,
   [data-skin='volcano'].dark .ui-accordion,
   [data-skin='volcano'].dark .ui-segment {
-    box-shadow:
-      inset 0 1px 0 rgb(var(--lava-flow) / 0.18),
-      inset 0 -3px 0 rgb(var(--lava-flow) / 0.65);
+    box-shadow: inset 0 -2px 0 rgb(var(--lava-flow) / 0.6);
   }
 
   [data-skin='volcano'] .ui-accordion {
@@ -7024,7 +7061,8 @@
       rgb(var(--lava-crust) / 0.6) 88%,
       transparent
     );
-    box-shadow: 0 0 14px -2px rgb(var(--lava-flow) / 0.7);
+    /* No halo. The gradient is already hot in the middle; a 14px glow on
+       every section head was blur for the page to paint and nothing to read. */
   }
 
   [data-skin='volcano'] .nav-rail {
@@ -7046,37 +7084,61 @@
     z-index: -1;
   }
 
+  /*
+   * Narrower than it was (6px, down from 14px) and cooler at its edge. On
+   * the pale day palette the old band was a stripe of orange as wide as a
+   * scrollbar down the side of every menu — the loudest thing on the screen,
+   * next to the labels you are trying to read. A crack is a line.
+   */
   [data-skin='volcano'] .nav-rail--left::after {
-    inset: 0 -14px 0 auto;
-    width: 14px;
+    inset: 0 -6px 0 auto;
+    width: 6px;
     background: linear-gradient(
       to right,
-      rgb(var(--lava-crust) / 0.5),
-      rgb(var(--lava-flow) / 0.85) 40%,
-      rgb(var(--lava-core) / 0.9) 58%,
+      rgb(var(--lava-crust) / 0.35),
+      rgb(var(--lava-flow) / 0.7) 45%,
       transparent
     );
   }
 
   [data-skin='volcano'] .nav-rail--right::after {
-    inset: 0 auto 0 -14px;
-    width: 14px;
+    inset: 0 auto 0 -6px;
+    width: 6px;
     background: linear-gradient(
       to left,
-      rgb(var(--lava-crust) / 0.5),
-      rgb(var(--lava-flow) / 0.85) 40%,
-      rgb(var(--lava-core) / 0.9) 58%,
+      rgb(var(--lava-crust) / 0.35),
+      rgb(var(--lava-flow) / 0.7) 45%,
       transparent
     );
   }
 
   [data-skin='volcano'] .nav-rail--top::after {
-    inset: auto 0 -10px 0;
-    height: 10px;
+    inset: auto 0 -5px 0;
+    height: 5px;
     background: linear-gradient(
       to bottom,
-      rgb(var(--lava-core) / 0.85),
-      rgb(var(--lava-flow) / 0.7) 40%,
+      rgb(var(--lava-flow) / 0.6),
+      transparent
+    );
+  }
+
+  /* At night the crack is the light source, and it gets its core back. */
+  [data-skin='volcano'].dark .nav-rail--left::after {
+    background: linear-gradient(
+      to right,
+      rgb(var(--lava-crust) / 0.5),
+      rgb(var(--lava-flow) / 0.85) 40%,
+      rgb(var(--lava-core) / 0.7) 58%,
+      transparent
+    );
+  }
+
+  [data-skin='volcano'].dark .nav-rail--right::after {
+    background: linear-gradient(
+      to left,
+      rgb(var(--lava-crust) / 0.5),
+      rgb(var(--lava-flow) / 0.85) 40%,
+      rgb(var(--lava-core) / 0.7) 58%,
       transparent
     );
   }
@@ -7303,30 +7365,20 @@
   }
 
   /*
-   * A cooled flow field: the crust broken into plates.
+   * A cooled flow field, without the plates.
    *
-   * Coarse and irregular — the plates are large, the cracks between them are
-   * hot, and the three angles are the same primes the panel texture uses so the
-   * board reads as the same rock the cards are cut from.
+   * It was three sets of hot cracks at 23°, 97° and 151° — the crust broken
+   * into plates — and across a whole board that is a lattice of triangles
+   * behind every column: the most polygonal surface in the product. What
+   * stays is the pumice the cards are cut from, at a larger scale, and two
+   * slow pools of heat under the floor.
    */
   [data-skin='volcano'] .board-grid {
     background-image:
-      repeating-linear-gradient(
-        23deg,
-        transparent 0 86px,
-        rgb(var(--lava-flow) / 0.16) 86px 88px
-      ),
-      repeating-linear-gradient(
-        97deg,
-        transparent 0 118px,
-        rgb(var(--lava-flow) / 0.12) 118px 120px
-      ),
-      repeating-linear-gradient(
-        151deg,
-        transparent 0 142px,
-        rgb(var(--lava-crust) / 0.16) 142px 143px
-      );
-    background-size: auto, auto, auto;
+      radial-gradient(rgb(var(--lava-crust) / 0.06) 1.2px, transparent 1.6px),
+      radial-gradient(60% 40% at 20% 100%, rgb(var(--lava-flow) / 0.07), transparent 70%),
+      radial-gradient(50% 36% at 85% 100%, rgb(var(--lava-core) / 0.07), transparent 70%);
+    background-size: 29px 29px, auto, auto;
   }
 
   /* A galley: column rules on the baseline grid the type would have sat on. */
@@ -8665,28 +8717,42 @@
   width: var(--ember-size);
   height: var(--ember-size);
   border-radius: 50%;
+  /* Painted once: the hot body and its glow never change. */
+  background: rgb(var(--lava-core));
+  box-shadow: 0 0 6px 1px rgb(var(--lava-flow) / 0.75);
   animation: lava-ember-rise var(--ember-life) cubic-bezier(0.35, 0, 0.7, 1) infinite;
   animation-delay: var(--ember-delay);
-  will-change: transform;
+  will-change: transform, opacity;
+}
+
+/* The cooling, as a layer of crust over the ember that fades *in*. */
+.lava-ember::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgb(var(--lava-crust));
+  opacity: 0;
+  animation: lava-ember-cool var(--ember-life) linear infinite;
+  animation-delay: var(--ember-delay);
 }
 
 /*
  * The climb, and the cooling.
  *
  * Two things travel at once and they are the whole effect: the ember rises and
- * shrinks, and its colour walks *down* the temperature ramp — core, flow,
- * danger, crust. That is the only reason this is not the autumn fall in orange.
+ * shrinks, and it cools on the way — hot at the vent, crust by the time it
+ * dies. That is the only reason this is not the autumn fall in orange.
  *
- * `background` and `box-shadow` both animate here, which is a rule this file
- * otherwise avoids. It is affordable for exactly one reason: these are ten
- * 4px elements on a fixed, isolated layer, so the repaint is a few hundred
- * pixels rather than a surface. Do not copy the pattern onto anything larger.
+ * It used to walk `background` and `box-shadow` down the temperature ramp,
+ * which repaints each ember on every frame. Now the colour is painted once and
+ * the cooling is a crust-coloured layer over it whose *opacity* rises — the
+ * same journey from bright to dark, and every property that moves is one the
+ * compositor handles without a repaint.
  */
 @keyframes lava-ember-rise {
   0% {
     transform: translate3d(0, 0, 0) scale(1);
-    background: rgb(var(--lava-core));
-    box-shadow: 0 0 10px 1px rgb(var(--lava-core) / 0.9);
     opacity: 0;
   }
   9% {
@@ -8694,20 +8760,24 @@
   }
   38% {
     transform: translate3d(var(--ember-drift), -34vh, 0) scale(0.82);
-    background: rgb(var(--lava-flow));
-    box-shadow: 0 0 8px 1px rgb(var(--lava-flow) / 0.7);
   }
   71% {
     transform: translate3d(calc(var(--ember-drift) * -0.7), -68vh, 0) scale(0.58);
-    background: rgb(var(--danger));
-    box-shadow: 0 0 5px 0 rgb(var(--danger) / 0.45);
     opacity: calc(var(--ember-opacity) * 0.7);
   }
   100% {
     transform: translate3d(var(--ember-drift), -104vh, 0) scale(0.3);
-    background: rgb(var(--lava-crust));
-    box-shadow: none;
     opacity: 0;
+  }
+}
+
+@keyframes lava-ember-cool {
+  0%,
+  30% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0.85;
   }
 }
 
@@ -9717,11 +9787,9 @@ button:focus-visible .rune-swap__latin,
   --avatar-radius: 2px;
   --avatar-frame:
     0 0 0 2px rgb(var(--surface-raised)),
-    0 0 0 4px rgb(var(--edge)),
-    0 6px 14px -6px rgb(var(--lava-crust) / 0.9);
-  --avatar-inner:
-    inset 0 2px 0 rgb(255 250 242 / 0.3),
-    inset 0 -3px 0 rgb(var(--lava-flow) / 0.65);
+    0 0 0 3px rgb(var(--edge)),
+    0 4px 8px -4px rgb(var(--lava-crust) / 0.6);
+  --avatar-inner: inset 0 -2px 0 rgb(var(--lava-flow) / 0.6);
 }
 
 /* RUNIC — a portrait tipped into the page and ruled around.
@@ -9873,8 +9941,26 @@ svg.lucide[stroke-width='2'] {
   font-synthesis: none;
 }
 
+/* Frijole is wide and open already; it wants word space, not letter space. */
 [data-skin='volcano'] h1 {
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
+  word-spacing: 0.1em;
+}
+
+/*
+ * The small headings keep a solid black face.
+ *
+ * `--font-display` is the chipped display face now (see its `@font-face` at
+ * the top of this file), which is right for a page title and wrong at 14px:
+ * the broken edges turn to noise and the width, nearly double Impact's, turns
+ * section titles into ellipses. `.font-display` is excluded so a heading that
+ * asked for the display face by name — the landing page's big lines — keeps
+ * it at any level.
+ */
+[data-skin='volcano'] h2:not(.font-display),
+[data-skin='volcano'] h3:not(.font-display),
+[data-skin='volcano'] h4:not(.font-display) {
+  font-family: var(--font-display-small);
 }
 
 [data-skin='volcano'] h2,
@@ -9882,6 +9968,43 @@ svg.lucide[stroke-width='2'] {
 [data-skin='volcano'] h4 {
   letter-spacing: 0.085em;
   word-spacing: 0.06em;
+}
+
+/*
+ * The primary button, as obsidian: the lava lamp at rest, without the wax.
+ *
+ * ## Why
+ *
+ * The skin's buttons were bevelled slabs — a white-to-crust gradient, a white
+ * top line, a hot bottom line — sitting next to the lava lamp, which is a flat
+ * dark tube with a one-pixel accent edge that fills with the accent when you
+ * point at it. Two languages for the same kind of control. So the ordinary
+ * primary button now speaks the lamp's: the same tube (`--lava-body`), the
+ * same pale label (`--lava-ink`), the same hairline edge, and on hover the
+ * same fill. The lamp is still the only one with wax moving in it, which is
+ * what keeps "New project" the loudest thing on its screen.
+ *
+ * Unlayered because the button carries `bg-brand` and `shadow-sm` as
+ * utilities, which outrank anything in a layer. The focus ring is restated
+ * for the same reason: a box-shadow here would otherwise replace it.
+ * `.ui-lava` is excluded; it draws itself.
+ */
+[data-skin='volcano'] .ui-btn.bg-brand:not(.ui-lava) {
+  background-color: var(--lava-body);
+  color: var(--lava-ink);
+  box-shadow: inset 0 0 0 1px rgb(var(--brand) / 0.6);
+}
+
+[data-skin='volcano'] .ui-btn.bg-brand:not(.ui-lava):hover {
+  background-color: rgb(var(--brand));
+  color: rgb(var(--brand-contrast));
+}
+
+[data-skin='volcano'] .ui-btn.bg-brand:not(.ui-lava):focus-visible {
+  box-shadow:
+    inset 0 0 0 1px rgb(var(--brand) / 0.6),
+    0 0 0 2px rgb(var(--surface)),
+    0 0 0 4px rgb(var(--brand) / 0.55);
 }
 
 /* ==========================================================================
@@ -10370,8 +10493,15 @@ html.theme-wave::view-transition-new(theme-header-3) {
  *
  * A static, full-screen element in a layer of its own, so nothing in the live
  * page changes while it moves; only its pseudo-element's clip is animated.
- * The blur is on the group, which applies it *after* that clip, so the band's
- * edges soften rather than the blur being cut back to a hard shape.
+ *
+ * ## Why the edge is solid
+ *
+ * It used to be blurred (`filter: blur(7px)` on the group), which softened the
+ * band and cost a full-screen blur on the graphics card for every frame of
+ * the run, re-done each time because the clip under it had moved. On an
+ * integrated or older GPU that blur was the part of the wave that dropped
+ * frames. A thin solid band reads as the same glowing edge at the speed it
+ * travels, and costs nothing beyond the clip.
  */
 .theme-wave-crest {
   display: none;
@@ -10382,14 +10512,13 @@ html.theme-wave .theme-wave-crest {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background: rgb(var(--brand) / 0.38);
+  background: rgb(var(--brand) / 0.45);
   view-transition-name: theme-wave-crest;
 }
 
 html.theme-wave::view-transition-group(theme-wave-crest) {
   animation: none;
   z-index: 2;
-  filter: blur(7px);
 }
 
 html.theme-wave::view-transition-new(theme-wave-crest) {
@@ -10817,6 +10946,77 @@ html.theme-wave::view-transition-new(theme-wave-crest) {
   }
   100% {
     transform: translate3d(120cqw, 0, 0);
+    opacity: 0;
+  }
+}
+
+/* ---- Across, fast: shooting stars --------------------------------------- */
+
+/*
+ * The preview's version of `ShootingStar`. The same drawing — a tail that is
+ * the element's background, anchored and rotated at its head, which is the
+ * `::after` — in container units, so it crosses a 300px preview and a page
+ * band alike.
+ *
+ * `.sa-field > .sa-meteor` rather than `.sa-meteor`, because the common
+ * particle rule above is `.sa-field > span` and sizes every particle square;
+ * a streak has to win that on specificity.
+ *
+ * The travel is all in `cqw`, both axes: a rotated streak has to move along
+ * its own slope, and a slope written as `cqw` against `cqh` would change with
+ * the box's aspect ratio. 150cqw across at 12 degrees is 31.9cqw down, which
+ * is the tangent worked out once.
+ */
+.sa-field > .sa-meteor {
+  top: var(--sa-top, 20cqh);
+  left: 0;
+  width: 26cqw;
+  height: max(1.5px, 0.45cqmin);
+  border-radius: 999px;
+  transform-origin: 100% 50%;
+  background: linear-gradient(90deg, transparent, var(--sa-tail) 75%, var(--sa-head));
+  opacity: 0;
+  animation: sa-meteor var(--sa-life) linear var(--sa-delay) infinite;
+}
+
+.sa-field > .sa-meteor::after {
+  content: '';
+  position: absolute;
+  right: calc(-0.9cqmin);
+  top: 50%;
+  width: 1.8cqmin;
+  height: 1.8cqmin;
+  min-width: 4px;
+  min-height: 4px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: var(--sa-head);
+  box-shadow: 0 0 1.6cqmin 0.4cqmin var(--sa-tail);
+}
+
+/*
+ * The crossing is the first ninth of the cycle; the rest is waiting. The
+ * last stop repeats the first on purpose, so the invisible jump back to the
+ * start happens while nothing is showing.
+ */
+@keyframes sa-meteor {
+  0% {
+    transform: translate3d(-30cqw, -6.4cqw, 0) rotate(12deg);
+    opacity: 0;
+  }
+  1.2% {
+    opacity: 1;
+  }
+  9% {
+    opacity: 1;
+  }
+  11% {
+    transform: translate3d(120cqw, 25.5cqw, 0) rotate(12deg);
+    opacity: 0;
+  }
+  11.01%,
+  100% {
+    transform: translate3d(-30cqw, -6.4cqw, 0) rotate(12deg);
     opacity: 0;
   }
 }
@@ -11863,8 +12063,8 @@ html.theme-wave::view-transition-new(theme-wave-crest) {
 
    The two drawings in `custom-cursor/paper/` are the design team's, and they
    are not redrawn here: this block is generated by `build-cursors.py` in that
-   folder, which turns each onto its angle, scales it to 30px and changes
-   nothing else. Re-run it after any change to the artwork and paste the result
+   folder, which turns each onto its angle, scales it to 24px inside the
+   system cursor's own 32px box and changes nothing else. Re-run it after any change to the artwork and paste the result
    over this block.
 
    ## Why this skin gets a cursor
@@ -11882,7 +12082,7 @@ html.theme-wave::view-transition-new(theme-wave-crest) {
      — **over anything pressable**, the upright plane — the same fold seen
        nose-on, which is the drawing that reads as *aimed at this*;
      — **while the button is held**, whichever of the two is current, flown
-       3px further along its own axis. The hotspot does not follow it, so the
+       2px further along its own axis. The hotspot does not follow it, so the
        plane visibly leaves the pointer and springs back on release.
 
    ## Hotspots
@@ -11925,7 +12125,7 @@ html.theme-wave::view-transition-new(theme-wave-crest) {
 }
 
 html:not([data-cursor='off'])[data-skin='paper'] {
-  cursor: url("data:image/png;base64,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") 3 3, auto;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAE1ElEQVR42u2WW2wUVRzGvzMz2+0uvWy7bZciF601EG4S0KDErFUshRaNQeAFjanRoInSGI1gFDb7YDAEijeUFEIoEgXKAyS1CKK2tJRW6I1tt90CtttSlna77HZvM7szZ44P7Bo0sAXCg4n9kkkmZ2bO+f2/zP87B/i/i4/fpOg1p03Z+lJ/IDoFAAXgBSDf+vKaNeDtdvAAyIMC+Hui1FRN1f7tBau1yQLqm12srWu073yHu9XrizQAaABgByD+G6iqCgSACoDFrvsDADBjTUlex5EfSyaNXPYJOp0AWVZRe+4aGluG0dbpGeh0eC6MeKRaAI0PCugfVhKC8t8OrXw/Lz9Dqdjfyc/KN6ivrpvNAAihURGDriDsl7w4e34Y7V2jzk6Ht3nEI9YBaIoBSQmA1IQAjDFCCJmyomCao/pgsf7aUBDvbm4gA0NBbC5bhELzQ2pKqpZRmTKmMiEqqxi6HkK73YOzF67D1n2jz9bjaXbfiNTf4lD0XhwQACiEkO0nKpd/UFQwTZEVVdiwpRG7D9rxUuF0vFL8KEqWTkfaJA38waiqEXiWkiIwAiKIkoJBVwhtXaNoah1Gh91zpcXmPh8IKr8DqAXQOx4Ax27aYCoyT+05tq8oze+XkZOjIzt2d6B8TzsKFpsQVQiKCmZg7co8pOgFeLwRKFRFkoZTdTpB1Wt5MBDBH4hCjFDs+aEb1i9a6ill5oRtCIBZrVYeQOCK05+6ZOFk89xZmXTEHeaWPTsNRoMOp+uHsLZkKmw9Huw60A1KGebNzIQxIxlShBJRolxYopw/EGXZOTq59aKbL6+42BAaU0sjlHrH/QkBEMYYCCHG55dMcdRUrsgIhGRQlRFTth7HTvZj09YmfP7RfORm6/DNgV6M+hSsWpGH1cV5MKQl4YYvwoxZybTysENY//GZ45GIug5AaNwgiivmQqhvMKB74vGc5xbMMVIpQrlgSMaiuVl4aqEJb21shClLiy1l82AyanHqzCD2H72MsEgxb46R7Piug9tgafyaUvZ6LMy4O7Xk7RIt7oLBvDjX8fP3xVlhUWaEEE5WVGSka3FtJIyX3ziJxQsMsJTNhyhR9PaN4Uj1gNrS5YvYeryfAii3WMBZrYnzgLvNGCOE8AC8Z5pdO6t/dRKjIVmllCFJ4ODzR5GdmYzaqhdxySnh7U+aIUoKHpuRrmwoncUNXA38EltcGG/xOwEAAGWMEQDf7txrc4Ukhed5qAyAwBOERQWEADWVy2EwpODDz9ogRSn6rwYhyawPAF9rvVnMeDlwJ4C4C2PnWoa3Hz/ZTzINyapCb84n8ASiqEAjEHXrxifZqYZhHK7uh6oCkQh1AqB1d7kXcAmeUcYsHICKL/fZBoMhmRd4ogJAVFYxOUdPWzs93PpNdWTze7NZ758B4hwKAYDzXjajRACMECsHIPhHu3vb0Zo+kpmuZVKEwpStp3VNLn7Zuppuj08MvbbqEUIZw7lWNwAMxb9/INs1YxYuNxf6BXON/WP2UpW53oke2rWUTdIJJwDoALxQ+IwpVFY6k6WlasIAHr6L4u7r0PLm3m1mtmebmQGoiEV3vI2fzjQkjcYOMfoELX6/LoDk50ObnqZxAPgKACwWCxerUohDAPhpnIyZ0IQmNKEJ/ff0FxSVR9iqs9ElAAAAAElFTkSuQmCC") 2 2, auto;
 }
 
 html:not([data-cursor='off'])[data-skin='paper'] a[href]:not([data-native-cursor], [data-native-cursor] *),
@@ -11943,7 +12143,7 @@ html:not([data-cursor='off'])[data-skin='paper'] input[type='radio']:not(:disabl
 html:not([data-cursor='off'])[data-skin='paper'] input[type='submit']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='paper'] input[type='button']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='paper'] .cursor-pointer:not([data-native-cursor], [data-native-cursor] *) {
-  cursor: url("data:image/png;base64,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") 13 3, pointer;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAEpElEQVR42u2WW2xURRzGv//M7Nnupe12W9ouvSgpUGyLUAoFQagFU7ElTTWsUYMREqMkRAyJeEnUhihEX3jhxcRng0nDi088qAGJaSWimDQmQg2Wy2632+t2d3vO2TMzPuzBqEHbbYAX+V7+5+RMMt/8vv/MHOCBFi/m1s8AnHCf+f2anNwa7ty6PN3VUSsBNGut6S/G7qmEW/ee7H9MX7nwvPYViW8AIBq9PxQ4AAhBpy+c6dU69bp15JW1GsC++xHFbfwlm9YvS0wP79fDX0WdiZ9fVg0Pl8RLS1GmdT9bahSsgDHbu7bXVobKvPKLL0d4wC/Ux2+3V8/O4kOiY+peGsgz5vRM145aDUBfvJzE0E/jbO+zq2X3zrqDANoBOEuJgi0CvwTgb1oV2t3SGKacJdmNWBrnh2IERvjoaDsvDnpOad3PotGld/d/GZQAtj75eG1NOGSo2bkcY4xwfigOc9rkrU3l8s3X1rUTHXsVwKcuBXk3CYAIvU/vrIdUUJmsg4b6IEzTxshoClnTocMHWtTaxvBxABGt+3Uh0bIFJncAGGtWlnVvaK5AJptjdk4hGPBg9Yogzg3FYRic+YqEPvFOexjAJ25D0t0wcPtbe8fmSEN5yFCOo5mUGvOWg21tyzB4aQwEYGrG5Ht21csX+lbuA9DpRsDvBgEA6O3urIOjoDgj5BwF05TY0BJGfDyNazfm4C8SyGQdHDvSRhXholO7d6/0RvMdSUs1QFprCYA3PFTSs7m1EnNpm3FOsHMSSmlUlvtQXeHFdz8kUBw0kErbfFVDyHn30Prms2dHDg8MDCyKwr8ZYESkAazr2BJZU1Hu07atGGME21bgPL+wjWvD+Pb7GIgAzhkmJ+f5wZea1ObWyg8ArHAXwZZEwK19T3XUMQYtQQAjgmlJCJ6vbS1hjN5MYSyZheFhUArkEVwfP7opKASdJCIdXSCGOxpwndPy6kDv1rYqpDL5vU8MsGwJIQiOVKiu9CFULHDxchIBvwARMD1j8l07auWB5xr7APQMLNCQdzTg4n/kiS2RluVVfm1aklE+F1i2hEcQGOUXtr4phHODMXg8HErno0ilLHr/jTZdEwmcqqpCwD0bCt4F3d2ddZwxkuRSJAJMS8IjGDgnZOclNj1ajl+uTmF6xoLglB9jKlYXCaj3Dm9YkUjgLfdsKMxARdjbt21jNdLZHDFG0Hkyf/YAEcE0JeprAmBQ+HF4Al6DI5dTmhj0xLSFgy+ucbp21BwB0FSogcZtGyNttZEAMhmHK6XhOBpKaWSyOS0E04xBeTwkQyWGs6W13Bm8NOYEaoKqLOSl0mKDvAbjGVOKQ/tbir1e/nmhl1FPz876IhE0ciVSM5/BIZUmXuFjhodTMCDAGFE662D411l4vRxnzv4OIsLVa7OYmDLnUhl7NjFpjs+lrLiUenCh0+4f+IuGvz69p9nvE7geS2N8ch634hkkp01cGIrbt+LpyVCpkUwk58cmZqyY4+gbAG4C+A1ADMAkgDkA84v93fqbgn4xXFcTLE0ks1enZuwrAK4DGAUwBmDCfZ8BoBeaIBoFHxgACrmiH+iB/l/6A+Eo0ztxKSKRAAAAAElFTkSuQmCC") 12 2, pointer;
 }
 
 /* The throw. `:active` rather than a class, so it covers everything a pointer
@@ -11953,7 +12153,7 @@ html:not([data-cursor='off'])[data-skin='paper'] .cursor-pointer:not([data-nativ
    diagonal one; without it the specificity of the bare `:active` rule below
    would win on a link and the plane would flip mid-press. */
 html:not([data-cursor='off'])[data-skin='paper'] :active:not([data-native-cursor], [data-native-cursor] *) {
-  cursor: url("data:image/png;base64,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") 3 3, auto;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAEy0lEQVR42u2WWWxUVRjHf+feW9oZugwd2gFk0VoDYZOABiWmVhEKLRqDwAsaU6NBE6UxGsEoTPpgMASKG0qAEIpEgfIASQVB1JaWQoW2lJZCWWxLKaXL0GVmOuu5xwemCWmQTR586D+5yclJ7j2/75/z/b+rx1qjjjiSrNm97uAoQAJdQIhbtHgxel0dOiB4yBJxcVEF29elL4qOMSgpb1VVZzsbTlZ3VHZ1B0qBUqAO8A0EKihAACagIs+DAQDjFmelVO/5OWto+6Vuw2IxCIVMio5fo6yijapa15Xaetepdpe/CCh72EACQAjy/ti14MOU1GHhzdtr9QmpNvP1pRMVYHg7fTS3eqi72MWxk22cPtvZVFvfVd7u8hUDJyJA/jsAmXcEUEoJIcSo+elj6gt3ZlqvtXh4f1WpuNLiYVXODOakPWLGxkUrGZJKmcoIhkxarns5Xefi2Knr1Jy70VBz3lXecSNQcotDwftxwADCQoh1B/PnfZSRPiYcCpvG8tVlbNpZxytzxvJa5uNkzR5L/NAoej1BM8rQVWysoQTC8PnDNLd6qTrbyYnKNqrrXJcrajpOuj3hP4Ei4MLdADR10wZHRtro8/u2ZcT39oZITraI9ZuqydtymvSZDoJhQUb6OJYsSCHWauDqChCWJkOiNNNiMUxrtI5CGL3uIL6AZMtP58j9qqJESpV2JwAdULm5uTrgvtzUGzdr+oi0yRMSZXtHnzb3+THYbRaOlLSwJGs0NeddbNxxDikVU8YnYh8Wgz8ghc8vtT6/1HrdQZWUbAlVnunQ8zafKfX2mNkBKbvuegkjdwEhhP3FWaPqD+TPH+b2hpCmEo4kK/sONbJyzQm+/GQqI5MsfLfjAp3dYRbOT2FRZgq2+CHc6A4o+/AYmb+73lj26dH9gYC5FPDe7Q7o/YuIC96GZrflqSeTX5g2yS79Aal5vCFmTB7OM9MdvLOiDMfwaFbnTMFhj+bw0Wa2771En08yZZJdrP+hWlvuLPtWSvVmJMy0u7WkGNARCCFsaTNH1v/6Y+bwPl9ICSG0UNhkWEI019r7ePWtQ8ycZsOZMxWfX3KhoYc9hVfMirPdgZrzXZ8DeU4nWm7uveWBdstaCSF0oOtoeeuGwt+bhN0WY0qpGGJodPcGSUqMoajgZS42+Xn3s3J8/jBPjEsIL8+eoF256v4tcrhxr4cPBACQSikBfL9ha02r1x/WdR1TAYYu6POFEQIO5M/DZovl4y+q8AcljVc9+EOqAdCLcm8Wc685MBCg34We4xVt6/YfahSJthgzLG9+z9AFPl+YKEOYa1Y8rQ6XtrG7sBHThEBANgGy+D5ngXabPamUUwM2f72tptnjDemGLkyAYMhkRLJVVta6tGUri8WqDyaqC3+7RVOLF6DpQYbR7QCUELka4PnrdMfavQcaRGJCtPIHJI4kqyw+0arPXXrgnKvb531j4WNCKsXxyg6Alv73H8qYVsqpjRyJddpke2NPXbapWt8L7to4Ww21GAcBC/DSnOcc3pzs8So+LqoPePQORT2Q+jPi7a1r09SWtWkK2ByJ7v72fTbRNqQz8hNjvU1r/1cXEKmpRCfER9UD3wA4nU4tUqXRDwH88i/ZMqhBDWpQgxrU/1//AL15R9hvI5ESAAAAAElFTkSuQmCC") 2 2, auto;
 }
 
 html:not([data-cursor='off'])[data-skin='paper'] a[href]:active:not([data-native-cursor], [data-native-cursor] *),
@@ -11971,7 +12171,7 @@ html:not([data-cursor='off'])[data-skin='paper'] input[type='radio']:not(:disabl
 html:not([data-cursor='off'])[data-skin='paper'] input[type='submit']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='paper'] input[type='button']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='paper'] .cursor-pointer:active:not([data-native-cursor], [data-native-cursor] *) {
-  cursor: url("data:image/png;base64,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") 13 3, pointer;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAEpElEQVR42u2WW2xURRzGv//M7Nnupe12W9ouvSgpUGyLUAoFQagFU7ElTTWsUYMREqMkRAyJeEnUhihEX3jhxcRng0nDi088qAGJaSWimDQmQg2Wy2632+t2d3vO2TMzPuzBqEHbbYAX+V7+5+RMMt/8vv/MHGDxYm79DMAJ95njPoncGu7cujzd1VErATRrrekvxu6phFv3nux/TF+58Lz2FYlvACAavT8UOAAIQacvnOnVOvW6deSVtRrAvvsRxW38JZvWL0tMD+/Xw19FnYmfX1YND5fES0tRpnU/W2oUrIAx27u211aGyrzyiy9HeMAv1Mdvt1fPzuJDomPqXhrIM+b0TNeOWg1AX7ycxNBP42zvs6tl9866gwDaAThLiYItAr8E4G9aFdrd0himnCXZjVga54diBEb46Gg7Lw56Tmndz6LRpXf3fxmUALY++XhtTThkqNm5HGOMcH4oDnPa5K1N5fLN19a1Ex17FcCnLgV5NwmACL1P76yHVFCZrIOG+iBM08bIaApZ06HDB1rU2sbwcQARrft1IdGyBSZ3ABhrVpZ1b2iuQCabY3ZOIRjwYPWKIM4NxWEYnPmKhD7xTnsYwCduQ9LdMHD7W3vH5khDechQjqOZlBrzloNtbcsweGkMBGBqxuR7dtXLF/pW7gPQ6UbA7wYBAOjt7qyDo6A4I+QcBdOU2NASRnw8jWs35uAvEshkHRw70kYV4aJTu3ev9EbzHUlLNUBaawmANzxU0rO5tRJzaZtxTrBzEkppVJb7UF3hxXc/JFAcNJBK23xVQ8h599D65rNnRw4PDAwsisK/GWBEpAGs69gSWVNR7tO2rRhjBNtW4Dy/sI1rw/j2+xiIAM4ZJifn+cGXmtTm1soPAKxwF8GWRMCtfU911DEGLUEAI4JpSQier20tYYzeTGEsmYXhYVAK5BFcHz+6KSgEnSQiHV0ghjsacJ3T8upA79a2KqQy+b1PDLBsCSEIjlSorvQhVCxw8XISAb8AETA9Y/JdO2rlgeca+wD0DCzQkHc04OJ/5IktkZblVX5tWpJRPhdYtoRHEBjlF7a+KYRzgzF4PBxK56NIpSx6/402XRMJnKqqQsA9GwreBd3dnXWcMZLkUiQCTEvCIxg4J2TnJTY9Wo5frk5hesaC4JQfYypWFwmo9w5vWJFI4C33bCjMQEXY27dtYzXS2RwxRtB5Mn/2ABHBNCXqawJgUPhxeAJegyOXU5oY9MS0hYMvrnG6dtQcAdBUqIHGbRsjbbWRADIZhyul4TgaSmlksjktBNOMQXk8JEMlhrOltdwZvDTmBGqCqizkpdJig7wG4xlTikP7W4q9Xv55oZdRT8/O+iIRNHIlUjOfwSGVJl7hY4aHUzAgwBhROutg+NdZeL0cZ87+DiLC1WuzmJgy51IZezYxaY7Ppay4lHpwodPuH/iLhr8+vafZ7xO4HktjfHIet+IZJKdNXBiK27fi6clQqZFMJOfHJmasmOPoGwBuAvgNQAzAJIA5APOL/d36m4J+MVxXEyxNJLNXp2bsKwCuAxgFMAZgwn2fAaAXmiAaBR8YAAq5oh/ogR7o/6U/AM4X0zv1dLFMAAAAAElFTkSuQmCC") 12 2, pointer;
 }
 
 html:not([data-cursor='off'])[data-skin='paper'] input:not([type='checkbox']):not([type='radio']):not([type='submit']):not([type='button']):not([data-native-cursor], [data-native-cursor] *),
@@ -12095,7 +12295,7 @@ html:not([data-cursor='off'])[data-skin='paper'] .cursor-grab:active:not([data-n
      — **at rest**, the clean knife;
      — **over anything pressable**, the bloodied one — the theme saying the
        thing under the point can be stabbed;
-     — **while the button is held**, the same drawing driven 4px further along
+     — **while the button is held**, the same drawing driven 3px further along
        its own axis. The hotspot does not move with it, so the blade visibly
        lunges past the pointer and snaps back on release. One frame each way, no
        loop, because a cursor cannot tween and does not need to.
@@ -12135,11 +12335,11 @@ html:not([data-cursor='off'])[data-skin='paper'] .cursor-grab:active:not([data-n
    --------------------------------------------------------------------------- */
 
 html:not([data-cursor='off'])[data-skin='halloween'] {
-  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAAGaElEQVR42u2YXWhU+RnGf2c+ksjmQ7NNpCWxaqTgR5OKoNGlmoDEVBQUClG3lGpX8aKiFJRSvBipUkkpYi8kghYKEaEfN9pBsxLBddFiY7BOm8a220ZromRmMnMyyWTOnI+nN2dCWo1uu5Pqxb4wN8M57zzz/J/3ed/3D5/H5/H2RRgwgA+BfwLf/o/v32xEIpEAsGP16tXesWPHBEwCncB8oAwIvA0sDkejUeVyOV26dEkLFixwfEa/4jP5RkHuWL9+vWdZluLxuBzH0cOHD7Vq1SoBfwU2+c+F3tSRf9jZ2SnXdZVMJpVMJmVZlhKJhHbt2iUgGQ6HP/CZfCO6HO7p6ZHjOEqlUjJNU2NjY8pkMnIcR6dOnRKQA84B7/7fdRkOhzN9fX2yLGsaoGmaSqVSSqVSsm1b0WhUNTU1LvAxsGoudflCUtd1A5JefDAQIBAIMD4+zpYtW7h161agubn5PSAKtALeXBz5CwA9z8vF43GCweBLXwiFQpimydKlS+np6WHfvn2LgF8Bh/18pcVk82WJnsZisQLYWUFms1kAzp8/z9mzZyvD4fBPgJ/7uiyZS13+cO3atZ5lWRobG5vW4Ms+6XRayWRStm3rxo0bqq+v94B7wNd8G5oTkLXA+JUrV2TbthKJxCtBmqapRCIhx3E0NDSk1tZWAcPA9jlpkZKMQCBwbsWKFdP28jomTdNUMplUNptVNpvVoUOHBGSA48A7xbaiMPBF4C/t7e2amppSNptVMpl8LchUKqV0Oi3btnXhwgWVlZXZwG+ARcVk0vCTbQQet7S0aGhoSI7jfKrjnqnLu3fvqqGhwQNiwDqfzVAxQbYBf6irq/N6e3tl27aSyaTS6fSnOvJ8Pq94PK5t27bJMIxnwI4ZxWP8rzYDIMABPgL2Pn369Lft7e32uXPnqKysxDAMXNd9ZeJgMMjExETB/GUYhgUcDwaD7/t/XsXyyTLgS8CPAXP//v0yTVO5XO6VukylUsrn87p+/brKyspcINHY2CjgKfA+8NUZnml8VpAhH+he4Elzc7MGBwdfq8tUKiVJampqUmtrq0zT1MqVK71wOOyEQqE4sKeYhVPQ5Rbg9wsXLnSvXr0q27anB4lCkRQKRZKOHDmimpoaPXv2TLlcTgMDA4rFYlq8eLEH/CMUCv0U+HKxqtzwmVwFXAas06dPy7btab8cHx+XaZpyHEeXL18WoDt37shxHCWTSWUyGbmuqzNnzmjnzp0qLS2dAPbPIKEougwDXwiFQseBsY6Ojn+r2pGREQ0PDysQCKirq0uSpqWQTqeVSqU0OTkp27a1bt06ATnDMO4D7xWTydCaNWvCvuA/aWxs1ODgoI4ePaply5Zp+/bt2rx5syS9tJgKXSoWi6mnp0fV1dUu8LPFixeXzYUuW4Bb5eXlbjAYtIFHgBuNRmXb9qytMp1OK5PJyLIsRSIRGYbxuLS0tA2YV7DAz+LqBR9zgN8B352YmPhRMBgcraio+GVDQ8NHmzZtYnJyctbZEsC2bUpKSujr60NSqWVZBVx5itR25CcbAr7num4+k8n8uqOjI1BaWoplWYRCL/8Z13Wprq5m79699Pf3U1tb++7o6OhB4G/A34u+zvhLf1tdXZ3z5MkTZTKZWdtiIpGQJJ04cUJVVVV6/vy5Hjx4oPr6es8wjCv+wFK0MCKRSCASiYSA9LVr1+Q4zqzaGxsbkyRdvHhR5eXlisViyuVyyufz6u7uLoxqHxSVvQMHDoSBP3d2diqfz2t0dHTaE2dOOYlEQrlcTjdv3lRtba16e3slSfF4XBMTExoYGNC8efNs4AcUcYh0Y7FYyDCMBYODg2QyGebPn08+n5/ebQKBAFVVVVRVVeF5Hnv27GH37t20tLQwOjoKQElJCY8fPyaXy7nAWLE1GAS+A3zS1NSk+/fvy7ZtxeNxTU1NaWRkRCdPnlQ0GpVpmrp3756WL1+urq4ueZ4nz/P06NEjNTU1Fa5Yls7V1V0L8HFlZaXT3d09vdds3LixcFM2sWTJEretrU01NTUe4GzYsEFbt25VRUWFC4wA35hptkUtFn8vXgR8H/jW4cOH3+nv7+f27dtpf2QbAZr95WwESPij1wLgj8AvgD8BbrFmxtl6dQVwEBj1gRwEyv2xfx5Q5cvC8O8ea2e8O+d3PTNP5pvA12foNPBfvPv2x78AuWccZ98ngJcAAAAASUVORK5CYII=") 6 4, auto;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAEqUlEQVR42u2WXWhTdxjGf0lOav2obTEqBWsdSN2HpWgorFRK1gsnSEFww8FgvdA69EbLGLtwYzikMpHBLgIF0d5W6AbroKUw8IMVcSIIipOyji1q1649OUlOmyY95+TZzWlpXRlbUsWL/SFX5+S8z/s+H+8f/j8v4XkLMIFeoAYoB4IvrPrGjRsTg4OD2r9/vwf8BOyJxWLGiwJx8tSpU3JdV7Ozs+rq6hIwDrT7z8NA4LlVD4VCD0ZGRpTL5ZRMJuV5nq5cuaJ169bZwGfA+udKyfbt2zNPnz6VbduyLEumacpxHN26dUv19fUO8C1Q54MIrTqA3bt3503TVDqdXvxNT0/LcRxNTEzo4MGDBeA+8Kavi9WlpLa2Njs+Pi7btpVKpRZBJJNJzczMyHEcnTlzRsCfwLt+8dUDYRjGH7dv31Y+n5dlWcsmYVmWksmkXNdVX1+fqqqqssCXQGUpulj2J9d1rw0MDGAYBp7nLX8xGCQYDJJOpzl8+DDXrl1b29jY+BHQB2yLRqOhksVZVlb2RiQSmUskEspms3pWD0t1kc/nZZqmjhw5ImAUaJUUAIxSKAkAl9va2grZbPYfQSSTSWUyGbmuq+7ubvnp2eG7o2gQYT9+f2xrayskEgk5jqPp6ekVQSxY1XVdDQwMaOvWrXNAD7C5WBALqn4V+K6urm7++vXrchxHpmkuc8azlMzPz+vBgweKRCKOYRhfb968eUOx4gwsmUR3WVlZJh6Py/O8xdGvREcul1M8Hlc4HJ4B0sD3wGv+t/6zVRfEtAY4CiQ6Ozs1MzOjubm5v+liwZ5DQ0MKh8OFq1evqr6+3gWs8vLyz4GKYqYRAALRaDQMvA3cbWlp8UZHR5fpwjRNWZYlx3HU2tqqc+fOyfM8PXr0SD09PQIyfoS/XqwwAz76BqCvpqYmPzg4KMdxFjv3PE/Hjh1Te3u7CoXCMpteunRJO3fudIFvIpFIvT/ZogKrHNgCfBoIBJIXLlxQPp/XxYsXFY/H1djYqHQ6rUwmo1QqtSw5+/v7deDAgYW8aC5WnEEfvQG8D/zS1NQkYBbI9/b2yvM8rbTM5ubm5Hme9u7d6waDwa927dpVUQodAX8TtgJDwAe1tbWpycnJxe6fFWg2m9XY2Jg2bdpUAC4Da0vdWwFgA7ANOHn69OkVu7csS7OzszJNU3v27NHx48dVXV1tAx/7DisJQAjYsmPHjuzCJWZp96lUSrZtK5fLKRaL6ezZsyoUCurv75dhGCbwXtHVY7GY0dzcvLaysvLxnTt3FpNygQLTNDU1NSXbttXZ2amuri5J0uTkpGzbVkNDgwd8QZHrMxCLxQr379/f4Hne+nv37hEMBjEMA8dxMAyDiooKIpEIDx8+5ObNm5w/fx7XdamqqmJqaoqJiYmCv7xKoiAMfAgkjh49qkwmI8dx9OTJEx06dEgnTpzQ8PCwOjo61NLSopGREd24cUP79u0rAD/7d8vSzpKUvN3U1OQODw8rGo0WgF+BH4DfQqHQY7/gODAJXAcal3ZS6iTWAK8AnwDvAGPAMeB3fxk5gOU7BuCuH88eoNW4Si7oqNqnZNu/BP5ynL8AzcOY6FLbWisAAAAASUVORK5CYII=") 5 3, auto;
 }
 
 html:not([data-cursor='off'])[data-skin='halloween'].dark {
-  cursor: url("data:image/png;base64,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") 6 4, auto;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAESklEQVR42u2WT2hUVxTGv1EzYVoJpGFkkPyhwoRpapoEBqVjCI40mEW0ILiwG4sxbagLE4qrLKaCZKHSTZmQEtBVW1OSUlwkDFIx0EFQqVAixIApBLUJeff9yZuXybz77nzdzIRR00UzoxTaC2/xeLx7vnO/3zn3AP+vf+F6F8BtAC2F911vNHpdXd3E9PQ0e3t7lwF8DACJRGIHAN+biP/h+fPnSdJzHIdDQ0ME8FXJ952vNXpVVdXX6XSaUkrPNE1FUl27do01NTWTAN557ZY0NzfffvbsGR3HUYZhUAhBkvLu3btsbW19BKCjRETlLYlGo78LIWjbtrIsi5ZlUdM0kpTLy8s8fvx4BsAnJVzsqKiAcDj86/Pnz+k4jjJNk0URuq5zfX1dSSk5PDxMAFdKTqByXPj9/uS9e/fynud5hmFsCrAsi4Zh0DCMPEnvxo0b3LNnzwyAUKW5iA8PD5Ok0jTtBQGWZdE0zU0uHj58yAMHDjwBEAOAkydP7iybi0QisWPv3r2/LC0t0XVdKYR4RUSRC6WUFELw1KlTOQCfAQBJXyW4iHR3d9vr6+vM5XLe34nQdZ2ZTEYppfIjIyMEMFpixbZFFIE6cvToUbG0tESScis7ilzoup4n6d28eZMNDQ2zAPZVSsR7zc3Nv925c4ckpa7r+dLKeNkSku7c3BxDodBcY2NjbcGOXeWKeDsQCHyXTCZJUtm2rXRd39IO13XV6OioCgQCVwDcAhAv2Wtbp1H604X+/n5mMhm6rvsKF7qu0/M8zszMsKqqypqYmOD+/fvnAfzQ3t4eLKdUfYXyAoCeeDz+58LCwgtcCCFoGAallOzq6uKlS5dIUs3Pz3NsbIwAvgfwUXG/7VpSVL+vqakpPT09TZKy2JhIqrNnz/LYsWMkmdc0jVJKZdt2bnx8nC0tLQsAPkgkEv5KiPD7fL5vL1++zFwux6tXrzKZTLKtrY2WZXFtbY2maRYrhCS9qakp1dPTQwCflts5S7n4/ODBg9nCvHDr+vXrJKle5kPTNLqu6ymlGIvFHgeDwd0ky2pWvsJNCADvA0AkEvl5ZWWFjuN4L5eqruvMZrP5xcXFfDAY1ADUVOzuKk5Rg4ODW2ZvGAYdx6EQgh0dHWpgYMANhUI/AthdbvAiSG+Fw+FHxSGmNHvTNGnbNjc2Nnj48GFevHiRJPOTk5P0+/3flH1pJRKJXXV1dT/dv3+fJKUQYhNAXdfzmqblbdtmf38/h4aGSJKrq6sqm83KaDT6uKzsSfrq6+sDtbW1U+Pj45tdUghBx3HyruuSJB88eCAjkYh0XVeRlCRzi4uLrK+vT1XKAgC40NfXx7W1NZKUT58+5YkTJzbOnTvnplIpnj59mocOHWI6nebs7Czj8fgqgGhFKCzpkkc6OzufpFIpxmKxPwC0AQgD+KK6uvoMgG4AXxaepkrPssWm0gBgshD8n/ST//j6C4eFrGDHcadUAAAAAElFTkSuQmCC") 5 3, auto;
 }
 
 html:not([data-cursor='off'])[data-skin='halloween'] a[href]:not([data-native-cursor], [data-native-cursor] *),
@@ -12157,7 +12357,7 @@ html:not([data-cursor='off'])[data-skin='halloween'] input[type='radio']:not(:di
 html:not([data-cursor='off'])[data-skin='halloween'] input[type='submit']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='halloween'] input[type='button']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='halloween'] .cursor-pointer:not([data-native-cursor], [data-native-cursor] *) {
-  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAAHJklEQVR42u2YXWwVeRnGfzNzvub09LRLy2mXNqEWt8pHdvGCokixQi0GEFYNTdigGBuVBC+EIFzUCAmssjG4GBIR7YIBa1gW3doVNd0aJCDhowVTN63AekFLw6Gcjznn9IM5M2deLxiQr7IsFLjhTeZqJnOe+T/v8zzve+B5Pa9nW9oD7nkBLRAITLZt+1/AJ4GzgA04gDxr8Ip79W7evFlmzJiRA04AL7vg1WcFzAOoeS+88DLQv3jRIrEsS65evSpLly4VYABYfNspK08boA9Qwpp2qUzT5N333hMrm5VUKiWmacqmTZsEyABNQB4QeNqnqQCzZ3k8zoJJk+R8X5+MDA9LIpEQwzDEsiw5dOiQFBUVWcAfgckuSO3pQVTVN77u8cjSWbMkMTQkacOQVColqVRK4vG4WJYlPT09Ul1d7QA9wOdFRHHbY1wpH4uaVyYAwXAYv8+HI/8XrMfjIZ1OU1lZSXt7u9LY2DgVaFUUZYWr7HEFeX+AIpFir5dhw8DMZlHUOx/zeDyMjIygKAq7d+9mx44dxV6v9y3g50A+4B+vvhwLoL9E1xm+coWrsRg+jweRO21P0zREhHQ6zZo1a2hvbw9UVFR8H3gXqHTfrT4piskPBAhHo5zs7CSg6ziOc6+aFAVN00ilUtTU1HD06FF14cKF84C/AF90Df2xrGgsgLlREWp1nd/s2nUjMmTs4PB6vaRSKYqLi2lra2P9+vWTgUPAD1x1PzLlY1nDhq+GQoVfnjCB1q4u4iUl1M2bRyaTQdO0MYSvYts2lmWxaNEipk6d6u/o6FhgmuangX8Cpiuix4/Iiao69MuSEllZUCDrCgulMhCQfS0tYtv2LT+8aTt3X4Zh3LKic+fOycyZMx3gHDDrNp99rHq1Phh06vLyBIihKANlmpZTQX6ybZs4jiOpVEoSicSYIFOplMRiMclms5JMJmX58uUCRL1e7zddupXHofi33yooKO81Tem37T+ocDgN5Yqqejref1+7fPmyVl9fj67rmKaJqt6/tTRNu3V/xYoVXLt2LXTmzJnP6bp+wbbtD12gH5/yAlUd+Vt5uSwIBgVoyVOUyyFVdRRF+SuwFjhfXV3t9PT0iGVZEo/HH0j38PCwdHd3S0VFRQ74EEj5fL4fu5n/kZTf8/lhVfUXahqRG2KYHFZV36uhkCIinwpAN/Dt06dPd9TU1NhtbW2Ew2Ecx7mvDQHYtk0kEiEQCCiRSOQTW7ZsCWez2bXAKa/X+x0g9KD0uYfiYcf54Wxd903QNNpHRmyfquqrCgqC/xgZ0UdvDKwdwN9HR0e1gwcPTldV1Td//nwALMu6g3LHcQgGg/T19bFr1y6lublZaWxsRFXVQGlpaWl3d/dngDTw39sG4Y+sHaWaZn0jHBYgWqJp6cPl5fKS15sDfuZOLgH3y78LDCxbtkyi0ajYti2xWEwMwxDDMCSdTksikZBIJCJNTU3iOI4MDg6KbdsyMDAgVVVVEgqFbL/f/wu3Jx8qx4uAXwP9wK9e1LTs2YoKmX+jJw8DE93+Ud2UWAycraqqyp04cUIsy5JMJiPJZFIcx5G6ujpZsmSJiMgt5cfjcUkkEpJOp2Xnzp0CDAGdQO3DAFSAAuBLwAQFLs3WdSlSVRt4s+LOAVVxT/MV4B1d1819+/bJhQsXZM6cObJu3TqZMmWKJBIJyWQyd/inYRhy/fp16e/vl5aWFqmpqRGgHXjxYeJRuW0I/Yo7mP7UnaCV+wgtAJQAPwKSpaWlAgwCI1u3br1F/d0qTyaTkkwmxTRNOXbsmPj9/ozX6119u1d6xgAoQNZt2j+7UZV2G/nuctxn48A24FI0Gn0NeCMcDrc2NDTopmni8XjuG4+WZaFpGqdOncI0TZ97KPJIi9RDboEBoAxY3dDQILlcbkyvjMViIiKyZ88emThxotTX1zuuouseZU95qOemT5/uA0pCodBQV1eXjI6OSjKZvAdcPB4XEZEjR45IKBSS48ePi4jIypUrBfgP8Nknsc14AdXn833Q3Nwstm3fc3qGYUgikZBcLie9vb1SUFAgbW1tIiIyNDQkFy9elHA4bLn9PP7ggNfnzp0rWXdVvWktN70xk8lIOp2W3t5eqayslAMHDoiISDQaFcMw5MqVK1JWVpYDtjDO+2wOUP1+//GTJ09eW7VqFZZlEQqFsCwLRVHw+XwMDg6Sn59Pfn4+xcXFWJaFiFBUVEReXh6tra0MDAxc50asPpGdWge+Bnwwbdo0p7OzU2zbFsdxpKmpSQoLC3O1tbXO9u3bZePGjQLI6tWrZf/+/bJ27Vrx+/2Wqqpvu+95Yot/wB1Q/xQMBs29e/fKhg0bBBgBfg/8Dvg3cF5RlFNAF9DniuP1JwnubvOe5P5FkgGGgTdra2s9blLNdBOoDHgJ+AIwbbym7o+zkGnA94DXnuaPP6/nNV71PzwdG1ln1o5eAAAAAElFTkSuQmCC") 6 4, pointer;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAFHklEQVR42u2XX2hU6RnGf+ffzMQ404wbYa1SZ0e0dNlubI20VXc6WwNhoRSspRYiKZpdlILbEi+y7U1x64VQCUqJBHZzseR2FwuF7YK2pFV7UZSaCDawpbuk6JpxzsycmMy/c+Y8vehJappqu5tIKewD5+Z8nO885/2e93neA5/ifwzr39xzAAEvAleADuAGYAJhtPbEYETX5zs7O2d//e672rt3rw/8CtiWyWQSjyC9dgRSW7Zsd6D2k9deU7PZlOd5OnLkiIBpYJ8kA7AjomuPpGm+81Xb1m8mJtRsNFQqlSRJw8PDsiyrCPRFx+E8ERLPmObfDj79tCbff1+NalXlclmu6yoIAl26dEmbN2+uAcORNhIRmU+MFQ8nDaNjfTyObduEEoZhYNs2lUqFfD7PlStXErlc7lXgbWBrJpOJraku9iQStYENG/S769flNxoql8vyPE+e58l1XdVqNS0sLOj48eMC/hJ1C59UFysqYNg2nQ8eMDU5iR2LEYbh0ppt29TrdXzf58KFC4yMjGyLx+NvA0dXQ2IZnm9rq/4yndZLL7ygBd9XpVxWpVJZqoLneapUKioWi/J9XxMTE9q6dWsduAA8tVpdfGZfW5s/lc3qqGXp1OnTarVacovFFSQ8z1siMTMzo/3797eA3wPPrqYSR7+bTOq5eLz1rOP4m0GnXn9dkuR5nkql0goSrutqYWFBtVpNJ06cEPAB0LNr1y7nY1ciaZp/+mE6LeAj4C0MYxbwX37lFc3Pz6tWq8l13RUkyuWyyuWyWq2WRkdH5TjOLHAwIvFYv1jG8Ll4/Atd8ThAvd0wvrzeMFLApTffeOMPvb294Z07d0ilUvi+v3wT00QSQRBw//59fN+PA7+4ceNGHxAA8UdVY9lNW3I+5zjEDCOVNM2O3vb2BBADhq5du/ZWLperX758mY6ODoIgQPpnLoVhSCzqmmw2mxodHd1kGMaIYRh/BL4S7RN7rDZihnH3Z52d2mbbjQ2WVfj5xo0C/grkI+cbtCyrcPbs2WW6cF1X8/Pzunv3rrq6ujQxMSHf9zU1NaVcLhcCM8A3Hwq7R+LbFhTihvHhM47jvbdli1Km+QD4/kZYH53pd4Dp/v7+0PM8NRoN1et1SVJPT4/OnDmjMAxVKBQUBIGmp6c1NDSkiMSPgI3/SRcHgRcThjH59UQiTPxDiN9Y7O8okvcCv929e3dw69YtDQ4O6vDhwzp06JAkLQnVdV01m00Vi0WdO3dOmzZtqgKD27dvjz+OwKJye4A3gZcemhUWdZMAssBIIpGoRl0zd/XqVTWiBH24QwqFgnzf19DQkAzDeG/dunWf/W+GEgNoewTTxTheD7wKdO/Zs6f6ry9f1Eiz2dTNmzeVyWQE/Bno/jgT0uPWFm33nfHxcQVBsOLrq9Wq7t27p507d+rixYs6efKkgJvAl1YbnHYUw8ePHTsWNpvNpbOvVCpyXVeVSkW1Wk09PT0aGxtTq9XS3Nycurq6AuDU4iarmR9bsVjsp319fYYkJNFqtXAch2QySRiGDAwMkM/n6e/vp1QqkU6nSaVSZuQJq4KZz+dt0zRPp9PpB+Pj45K0FE7Dw8OanJzU2NiYDhw4oNu3b6tarer8+fOyLGsO6F2L+cUEksDLwMzg4KCmp6fV3d0dAh9ZljW7Y8eOBaDS3t4+l81m68Bs5AdrN0lHBtULXE8mk81IZPuiFh4AvgV8D/gB8LUn9T8B8EXgx5HbfYr/D/wd6IkIXlZyBAMAAAAASUVORK5CYII=") 5 3, pointer;
 }
 
 html:not([data-cursor='off'])[data-skin='halloween'].dark a[href]:not([data-native-cursor], [data-native-cursor] *),
@@ -12175,18 +12375,18 @@ html:not([data-cursor='off'])[data-skin='halloween'].dark input[type='radio']:no
 html:not([data-cursor='off'])[data-skin='halloween'].dark input[type='submit']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='halloween'].dark input[type='button']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='halloween'].dark .cursor-pointer:not([data-native-cursor], [data-native-cursor] *) {
-  cursor: url("data:image/png;base64,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") 6 4, pointer;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAEz0lEQVR42u1XXWgUZxQ987O7SUZrsonWpCpp4kNosSsUTPIQpWGS0lAqoZX0QdCmVlFbbYUk0lJERas0BgNNG0tDKVIo5KGRUg2kgRhDBSmiawmRFqH7EMRkZmeS7G4yM9+cvmxkbaymdi198L58DPN9M+fee+6cM8CT+B+Gkl6fBdAL4On0tfpfvFxKr4UlJSU/Xjh/nnV1daMAqgBg06ZNasaexwNgVVVVOAj89uHBgyTp2LbNHTt2zAJoBgCSEgD5sSFYrqq7q1SVF0dGHGdujpZlCZLs6OhgIBDozGiR8lgARBTlmzdWrhS/3rrlziWTjMfjNE3TJ+kNDAywvLx8EEBJtnixoJRLJGm1FgrJiqpKPglJkqAoimQYhqLrujcwMFBbV1d3GcBGAF7WefFyXt6Vt8NhDl+9Kty5Ocbjcdq2Tdu2aRgGHcfxEokE9+zZ4wDY/aBkHqkCciDAoulpRK9dgxoMwvf9u/dUVUUikVCEEH5XV5fa1dX1uaZpXwAIAvCzwotqTfv5XEGBaNi40Um4Lq14nJZl3a2Cbdu0LIuGYfgk3aGhIVZUVFwCsCYbvAjpeXm/R8vK2KwoPHzsmE9SmIbh/xWEbducnJwkSTcWi7GhoWEcgP5v2gEALzYtXepuyMm5uiEUuvQMwMNHjpAkp6enhWmaC0AYhsHZ2VkvlUpx3759AsAHALBlyxblH5OzSFFO7i8oIIBGAEWQpGMALu/ctcuZmZmh4zieYRgLQKSJKkiK7u5u5ubmnswAIS+ahC+EQq9FQiEAWFIgSfuXSdJLAKq/PHOmbvPmzX/EYjElHA57ruve+xBZhhBC9jwPlmUlU6lUAMDXvb29Ik1OdXFTQBaVBgJCk6Tni1VV0jWtGsA6ABcHBwer6+vrf+rv71cLCwuFEIIk7x71fR+qqsqO44TWrl37Vnd393ZZln+QZXknAC8N4sHc0CTpk6NFRYwEgxfWBALtp5Yv9wC8k3FQDgQCp9rb2+/hhWma/szMDMfHxxmJRDg0NESSbjQaZW1trQHg4/sI3v3FKAB8+pQsv7cuFPq+f9UqrlCUHgB4DgimhQgAtjc3Nyds26YQwp2dnSVJ6rrOEydOkKR/584dkvTGxsbY1tZGAK0AVqeTefiULJPl9/Xc3Il8Wd6fIT5S+tMLABtqampu3rhxgwcOHODWrVvZ1NREkpwnqmEYdF3Xn5qamjt9+jTLysr6Achpcj7QkMwjzP+bPfMgCjVN6wfwJoCvRkZG6Hmelzmu8XicExMTPkm3ra3NDwaDFRmVXJQ5kR7inAAA9fX1v8yl5TtzRE3TpOM4jEajorS01AXQ9CgOCQ+pxLtnz54lyQXZJ5NJ3r59m+vXr/f7+vr8lpYWB8Dr2RDO+TZV7t27d8bzPGGapp+hFbQsi6lUirqus6enhyTF1NQUKysrx7IGICcnp294eJgk5yYnJ2maJhOJhCApSLrbtm1zjx8/7pJ0LctySHq6rsey4h8PHToka5q2ori4+Lt0CyiEELFYjB0dHbx+/Tp7enrY2NjI0dFRJpNJdnZ2MhgMtmXbRQNAS2tra2psbIw1NTU3AbwSDAY/qq6u/hbA0XA4/FkkEjkHYHvWnXTGXL+an59/BUD5k9+rJ7HY+BM6Pw0AYgfY4AAAAABJRU5ErkJggg==") 5 3, pointer;
 }
 
 /* The stab. `:active` rather than a class, so it covers everything a pointer
    can be held down on — including the page itself, where half the clicks in any
    application land. */
 html:not([data-cursor='off'])[data-skin='halloween'] :active:not([data-native-cursor], [data-native-cursor] *) {
-  cursor: url("data:image/png;base64,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") 6 4, auto;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAFE0lEQVR42u2XX2hU6RnGf+ffzMQ404yNsFapsyNaumwbWyNt1Z3O1kBYKAVrqYVIimYXpeC2xItse1PceiFUglIigd1cLLndxUJhu6AtadVeFKUmgg1saUuKrhnnzJwTk/l3zpynF3uSurVrFeOdD5yr75zvPOf9nvd53mPxMRxAwMvAJaALuAaYQBSvPTUY8fWF7u7u+d++/752794dAL8BtuRyuRRgPVUCmU2btjpQ/9kbb6jVasn3fR06dEjALLBHkgHYMdHVR9o03/u6bet3U1NqNZuqVCqSpNHRUVmWVQYG4uNwngqJ503zX/ufe07TH36oZq2marUq13UVhqEuXLigjRs31oHRWBupmMyqwARIG0bX2mQS27aJJAzDwLZtPM+jWCxy6dKlVKFQeB14F9icy+USq6qLXalUfWjdOv3h6lUFzaaq1ap835fv+3JdV/V6XUtLSzp69KiAv8XdwmrowgQwbJvue/eYmZ7GTiSIomjlBtu2aTQaBEHAuXPnGBsb25JMJt8FDq8WCb7c0VH7dTarV156SUtBIK9aled5K1XwfV+e56lcLisIAk1NTWnz5s0N4Bzw2SfVxWf2dHQEM/m8DluWTpw8qXa7LbdcfoCE7/srJObm5rR379428EfghSepxOHvp9N6MZlsv+A4wUbQiTfflCT5vq9KpfIACdd1tbS0pHq9rmPHjgn4B9C3Y8cO57ErkTbNv/w4mxXwEfAOhjEPBK++9poWFxdVr9fluu4DJKrVqqrVqtrttsbHx+U4zjywPybxyH5hvphMfrEnmQRodBrGV9caRga48PZbb/2pv78/unXrFplMhiAIPvmgaSKJMAy5e/cuQRAkgV9du3ZtAAiB5KNUw7Ql5/OOQ8IwMmnT7Orv7EwBCWDkypUr7xQKhcbFixfp6uoiDEOk/+RSFEUk4q7J5/OZ8fHxDYZhjBmG8Wfga/E+iYdWI2EYt3/R3a0ttt1cZ1mlX65fL+DvQDF2vmHLskqnT5/+hC5c19Xi4qJu376tnp4eTU1NKQgCzczMqFAoRMAc8O37wu5T8V0LSknD+OfzjuN/sGmTMqZ5D/jhelgbn+n3gNnBwcHI9301m001Gg1JUl9fn06dOqUoilQqlRSGoWZnZzUyMqKYxE+A9f9PF/uBl1OGMf3NVCpKfSzEby33dxzJu4Hf79y5M7xx44aGh4d18OBBHThwQJJWhOq6rlqtlsrlss6cOaMNGzbUgOGtW7cmH0ZgWbl9wNvAK/fNCsuOmQLywFgqlarFXbNw+fJlNeMEvb9DSqWSgiDQyMiIDMP4YM2aNZ97lKHEADo+helyHK8FXgd6d+3aVfvvly9rpNVq6fr168rlcgL+CvQ+zoT0sLVl231vcnJSYRg+8PW1Wk137tzR9u3bdf78eR0/flzAdeArTxqcdhzDR48cORK1Wq2Vs/c8T67ryvM81et19fX1aWJiQu12WwsLC+rp6QmBE/9rw8edH9uJROLnAwMDhiQk0W63cRyHdDpNFEUMDQ1RLBYZHBykUqmQzWbJZDJm7AlPNsAUi0XbNM2T2Wz23uTkpCSthNPo6Kimp6c1MTGhffv26ebNm6rVajp79qwsy1oA+ldrikoDrwJzw8PDmp2dVW9vbwR8ZFnW/LZt25YAr7OzcyGfzzeA+dgPVm+Sjg2qH7iaTqdbscj2xC08BHwH+AHwI+AbT+t/AuBLwE9jt3uGZ3iGx8a/AfGLCF71dxQxAAAAAElFTkSuQmCC") 5 3, auto;
 }
 
 html:not([data-cursor='off'])[data-skin='halloween'].dark :active:not([data-native-cursor], [data-native-cursor] *) {
-  cursor: url("data:image/png;base64,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") 6 4, auto;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAExklEQVR42u1Wb2hVdRh+zp977rajud1Nc0tlbX4YhV0hcNuHKY27RSOSUbI+CNoyRS0tYZsUISqa0hwOWs1oREgQ7EOTSAdrMOdIkBC9xpgUQvfDELdz7jnb7r3bOed3nj50Hdc/qeVdEPh8+XHgfeF53/d5z/MCf0FJv88C6AXwdPpbxX8AKf0WlpSU/Hju7FnW1dWNAqgCgA0bNqgZMQtDYEVVVUgDfvtw/36SdGzb5rZt22YBNAMASQmAvGAMlqrqzipV5fmREceZm6NlWYIkOzo6GAgEOjNGpCwIgbCifPPG8uXi1xs33LlkkvF4nKZp+iS9gYEBlpeXDwIoWQhdyACwSJJW6sGgrKiq5JOQJAmKokiGYSiRSMQbGBiorauruwhgPQAv67p4OS/v0tuhEIcvXxbu3Bzj8Tht26Zt2zQMg47jeIlEgrt27XIA7Ly7gMfugBwIsGh6GtErV6BqGnzfnw9QVRWJREIRQvhdXV1qV1fX57qufwFAA+BnRRfVuv7zmYIC0bB+vZNwXVrxOC3Lmu+Cbdu0LIuGYfgk3aGhIVZUVFwAsCobughG8vJ+j5aVsVlRePDIEZ+kMA3Dv5uEbducnJwkSTcWi7GhoWEcQORxx/Fi0+LF7rqcnMvrgsELzwA8eOgQSXJ6elqYpnkPCcMwODs766VSKe7Zs0cA+AAANm3apPxjcRYpyvG9BQUE0AigCJJ0BMDF7Tt2ODMzM3QcxzMM4x4SaaEKkqK7u5u5ubnHM0g8cjfkF4LB18LBIAAsKpCkvUsk6SUA1V+eOlW3cePGP2KxmBIKhTzXde9MlGUIIWTP82BZVjKVSgUAfN3b2yvS4lQfbQvIotJAQOiS9HyxqkoRXa8GsAbA+cHBwer6+vqf+vv71cLCQiGEIMn5ZN/3oaqq7DhOcPXq1W91d3dvlWX5B1mWtwPw0iQe3A1dkj45XFTEsKadWxUItJ9YutQD8E5GohwIBE60t7ffoQvTNP2ZmRmOj48zHA5zaGiIJN1oNMra2loDwMf3Mbz7m1EA+PQpWX5vTTD4ff+KFVymKD0A8BygpY0IALY2NzcnbNumEMKdnZ0lSUYiER47dowk/Vu3bpGkNzY2xra2NgJoBbAyXczDdbFElt+P5OZO5Mvy3gzzkdK/XgBYV1NTc/3atWvct28fN2/ezKamJpLkbaEahkHXdf2pqam5kydPsqysrB+AnBbn3yJTufl/E3ObRKGu6/0A3gTw1cjICD3P8zLXNR6Pc2JiwifptrW1+ZqmVWR08pGOE+kBROdRX1//y1zavjNX1DRNOo7DaDQqSktLXQBN/+ZCwkM68e7p06dJ8p7qk8kkb968ybVr1/p9fX1+S0uLA+D1rNk3gMrdu3fPeJ4nTNP0M7yClmUxlUoxEomwp6eHJMXU1BQrKyvHskYgJyenb3h4mCTnJicnaZomE4mEIClIulu2bHGPHj3qknQty3JIepFIJJaV+/HAgQOyruvLiouLv0uPgEIIEYvF2NHRwatXr7Knp4eNjY0cHR1lMplkZ2cnNU1ry/YVDQAtra2tqbGxMdbU1FwH8IqmaR9VV1d/C+BwKBT6LBwOnwGwNeuXdMZev5qfn38JQDme4Ame4P+IPwF8fA0Af2zCPQAAAABJRU5ErkJggg==") 5 3, auto;
 }
 
 /* And the same thing again on the pressable list, which is not redundant.
@@ -12209,7 +12409,7 @@ html:not([data-cursor='off'])[data-skin='halloween'] input[type='radio']:not(:di
 html:not([data-cursor='off'])[data-skin='halloween'] input[type='submit']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='halloween'] input[type='button']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='halloween'] .cursor-pointer:active:not([data-native-cursor], [data-native-cursor] *) {
-  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAAHH0lEQVR42u2YbWwUeR3HPzOzT7Pdbnu0tD3ahFq8Kg+5wxcURYqVq8UAwqmhCRcUY6OS4AshCC9qhAROuRg8DImIVjBgDSJ6tSdqejVIQMJDC6ZeWoHzBS0NS9mH2d12y+zMzs8XnXI8y1O5xPBLJvtiJ7Pf/f9+34ffaHxQXkALBAJTbdv+J/BR4BxgAw4gfMiluFffli1bZNasWTngJPCyC179sIB5ADXvhRdeBgaWLF4slmXJtWvXZNmyZQIMAktuOWXlWQP0AUpY0y6Xa5q8/c47YmWzkkwmxTRN2bx5swBpoBnIAwLP+jQVYO4cj8d5dcoUudDfL5mREYnH42IYhliWJYcPH5aioiIL+AMw1QWpPTuIqvrmlz0eWTZnjsSHhyVlGJJMJiWZTEosFhPLsqS3t1dqamocoBf4tIgo7nhMaMvHW/XKJCAYDuP3+XDkA8J6PB5SqRRVVVV0dHQoTU1N04E2RVFWusyeUJBjAEVKir1eRgwDM5tFUW8fMY/HQyaTQVEU9uzZw86dO4u9Xu8vgR8D+YB/ouZyHKC/VNcZuXqVa9EoPo8HkdtlT9M0RIRUKsXatWvp6OgIVFZWfht4G6hyn6VOVIvJDwQIRyKc6uoioOs4jnM3mxQFTdNIJpPU1tZy7NgxddGiRQuAPwOfdQX9qUrROMDcqAh1us4vdu8eswy5v3F4vV6SySTFxcW0t7ezYcOGqcBh4Dsuu59ay8elYuMXQ6HCz0+aRFt3N7HSUuoXLCCdTqNp2n2Ir2LbNpZlsXjxYqZPn+7v7Ox81TTNjwP/AEyXRE9ukZNVdfinpaWyqqBA1hcWSlUgIPtbW8W27Zt6OC47d16GYdyUovPnz8vs2bMd4Dww5xadfaJ6rSEYdOrz8gSIoiiD5ZqWU0F+sH27OI4jyWRS4vH4fUEmk0mJRqOSzWYlkUjIihUrBIh4vd6vuu1WnqTFv/paQUFFn2nKgG3/XoUjKahQVNXT+e672pUrV7SGhgZ0Xcc0TVT13qOladrN71euXMn169dDZ8+e/ZSu6xdt237fBfroLS9Q1cxfKyrk1WBQgNY8RbkSUlVHUZS/AOuACzU1NU5vb69YliWxWOyB7R4ZGZGenh6prKzMAe8DSZ/P933X8x+55WpYVf2FmkbJGBmmhlXV91oopIjIxwLQA3z9zJkznbW1tXZ7ezvhcBjHce4pQwC2bVNSUkIgEFBKSko+snXr1nA2m10HnPZ6vd8AQo/iPtqI43x3rq77JmkaHZmM7VNVfXVBQfDvmYw+OhZYO4G/jY6OaocOHZqpqqpv4cKFAFiWdVvLHcchGAzS39/P7t27lZaWFqWpqQlVVQNlZWVlPT09nwBSwH9uCcL/s3aWaZr1lXBYgEippqWOVFTIS15vDviRm1wC7j//JjC4fPlyiUQiYtu2RKNRMQxDDMOQVCol8XhcSkpKpLm5WRzHkaGhIbFtWwYHB6W6ulpCoZDt9/t/4s7kQ51kEfBzYAD42Yualj1XWSkLx2byCDDZnR/VdYklwLnq6urcyZMnxbIsSafTkkgkxHEcqa+vl6VLl4qI3GR+LBaTeDwuqVRKdu3aJcAw0AXUPQxABSgAPgdMUuDyXF2XIlW1gbcqbw+oinuarwC/03Xd3L9/v1y8eFHmzZsn69evl2nTpkk8Hpd0On2bfhqGITdu3JCBgQFpbW2V2tpaATqAFx/GHpVbQugX3GD6QzdBK/ewxwBQCnwPSJSVlQkwBGS2bdt2s/V3sjyRSEgikRDTNOX48ePi9/vTXq93zYO00uN+CpB1h/ZPrlWl3EG+sxz33hiwHbgciUReB94Mh8NtjY2NummaeDyee9qjZVlomsbp06cxTdPnHoo81iL1kFtgACgH1jQ2Nkoul7uvVkajURER2bt3r0yePFkaGhocl9H1j7OnPNR9M2fO9AGloVBouLu7W0ZHRyWRSNwFLhaLiYjI0aNHJRQKyYkTJ0REZNWqVQL8G/jkRAReL6D6fL73WlpaxLbtu07PMAyJx+OSy+Wkr69PCgoKpL29XUREhoeH5dKlSxIOhy13np8+OOCN+fPnS9ZdVcelZVwb0+m0pFIp6evrk6qqKjl48KCIiEQiETEMQ65evSrl5eU5YOsDE/VjVA5Q/X7/iVOnTl1fvXo1lmURCoWwLAtFUfD5fAwNDZGfn09+fj7FxcVYloWIUFRURF5eHm1tbQwODt5gzFYnZKfWgS8B782YMcPp6uoS27bFcRxpbm6WwsLCXF1dnbNjxw7ZtGmTALJmzRo5cOCArFu3Tvx+v6Wq6m/d50zY4h9wA+ofg8GguW/fPtm4caMAGeA3wK+BfwEXFEU5DXQD/S453phIcHeK9xT3FUkaGAHeqqur87hONdt1oHLgJeAzwIynlbofZQHTgG8Brz/LH39ez+t5Pa//1/ovvTcbWaZDNyAAAAAASUVORK5CYII=") 6 4, pointer;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAFE0lEQVR42u2XX2hU6RnGf+ffzMQ404yNsFapsyNaumwbWyNt1Z3O1kBYKAVrqYVIimYXpeC2xItse1PceiFUglIigd1cLLndxUJhu6AtadVeFKUmgg1saUuKrhnnzJwTk/l3zpynF3uSurVrFeOdD5yr75zvPOf9nvd53mPxMRxAwMvAJaALuAaYQBSvPTUY8fWF7u7u+d++/752794dAL8BtuRyuRRgPVUCmU2btjpQ/9kbb6jVasn3fR06dEjALLBHkgHYMdHVR9o03/u6bet3U1NqNZuqVCqSpNHRUVmWVQYG4uNwngqJ503zX/ufe07TH36oZq2marUq13UVhqEuXLigjRs31oHRWBupmMyqwARIG0bX2mQS27aJJAzDwLZtPM+jWCxy6dKlVKFQeB14F9icy+USq6qLXalUfWjdOv3h6lUFzaaq1ap835fv+3JdV/V6XUtLSzp69KiAv8XdwmrowgQwbJvue/eYmZ7GTiSIomjlBtu2aTQaBEHAuXPnGBsb25JMJt8FDq8WCb7c0VH7dTarV156SUtBIK9aled5K1XwfV+e56lcLisIAk1NTWnz5s0N4Bzw2SfVxWf2dHQEM/m8DluWTpw8qXa7LbdcfoCE7/srJObm5rR379428EfghSepxOHvp9N6MZlsv+A4wUbQiTfflCT5vq9KpfIACdd1tbS0pHq9rmPHjgn4B9C3Y8cO57ErkTbNv/w4mxXwEfAOhjEPBK++9poWFxdVr9fluu4DJKrVqqrVqtrttsbHx+U4zjywPybxyH5hvphMfrEnmQRodBrGV9caRga48PZbb/2pv78/unXrFplMhiAIPvmgaSKJMAy5e/cuQRAkgV9du3ZtAAiB5KNUw7Ql5/OOQ8IwMmnT7Orv7EwBCWDkypUr7xQKhcbFixfp6uoiDEOk/+RSFEUk4q7J5/OZ8fHxDYZhjBmG8Wfga/E+iYdWI2EYt3/R3a0ttt1cZ1mlX65fL+DvQDF2vmHLskqnT5/+hC5c19Xi4qJu376tnp4eTU1NKQgCzczMqFAoRMAc8O37wu5T8V0LSknD+OfzjuN/sGmTMqZ5D/jhelgbn+n3gNnBwcHI9301m001Gg1JUl9fn06dOqUoilQqlRSGoWZnZzUyMqKYxE+A9f9PF/uBl1OGMf3NVCpKfSzEby33dxzJu4Hf79y5M7xx44aGh4d18OBBHThwQJJWhOq6rlqtlsrlss6cOaMNGzbUgOGtW7cmH0ZgWbl9wNvAK/fNCsuOmQLywFgqlarFXbNw+fJlNeMEvb9DSqWSgiDQyMiIDMP4YM2aNZ97lKHEADo+helyHK8FXgd6d+3aVfvvly9rpNVq6fr168rlcgL+CvQ+zoT0sLVl231vcnJSYRg+8PW1Wk137tzR9u3bdf78eR0/flzAdeArTxqcdhzDR48cORK1Wq2Vs/c8T67ryvM81et19fX1aWJiQu12WwsLC+rp6QmBE/9rw8edH9uJROLnAwMDhiQk0W63cRyHdDpNFEUMDQ1RLBYZHBykUqmQzWbJZDJm7AlPNsAUi0XbNM2T2Wz23uTkpCSthNPo6Kimp6c1MTGhffv26ebNm6rVajp79qwsy1oA+ldrikoDrwJzw8PDmp2dVW9vbwR8ZFnW/LZt25YAr7OzcyGfzzeA+dgPVm+Sjg2qH7iaTqdbscj2xC08BHwH+AHwI+AbT+t/AuBLwE9jt3uGZ3iGx8a/AfGLCF71dxQxAAAAAElFTkSuQmCC") 5 3, pointer;
 }
 
 html:not([data-cursor='off'])[data-skin='halloween'].dark a[href]:active:not([data-native-cursor], [data-native-cursor] *),
@@ -12227,7 +12427,7 @@ html:not([data-cursor='off'])[data-skin='halloween'].dark input[type='radio']:no
 html:not([data-cursor='off'])[data-skin='halloween'].dark input[type='submit']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='halloween'].dark input[type='button']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='halloween'].dark .cursor-pointer:active:not([data-native-cursor], [data-native-cursor] *) {
-  cursor: url("data:image/png;base64,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") 6 4, pointer;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAExklEQVR42u1Wb2hVdRh+zp977rajud1Nc0tlbX4YhV0hcNuHKY27RSOSUbI+CNoyRS0tYZsUISqa0hwOWs1oREgQ7EOTSAdrMOdIkBC9xpgUQvfDELdz7jnb7r3bOed3nj50Hdc/qeVdEPh8+XHgfeF53/d5z/MCf0FJv88C6AXwdPpbxX8AKf0WlpSU/Hju7FnW1dWNAqgCgA0bNqgZMQtDYEVVVUgDfvtw/36SdGzb5rZt22YBNAMASQmAvGAMlqrqzipV5fmREceZm6NlWYIkOzo6GAgEOjNGpCwIgbCifPPG8uXi1xs33LlkkvF4nKZp+iS9gYEBlpeXDwIoWQhdyACwSJJW6sGgrKiq5JOQJAmKokiGYSiRSMQbGBiorauruwhgPQAv67p4OS/v0tuhEIcvXxbu3Bzj8Tht26Zt2zQMg47jeIlEgrt27XIA7Ly7gMfugBwIsGh6GtErV6BqGnzfnw9QVRWJREIRQvhdXV1qV1fX57qufwFAA+BnRRfVuv7zmYIC0bB+vZNwXVrxOC3Lmu+Cbdu0LIuGYfgk3aGhIVZUVFwAsCobughG8vJ+j5aVsVlRePDIEZ+kMA3Dv5uEbducnJwkSTcWi7GhoWEcQORxx/Fi0+LF7rqcnMvrgsELzwA8eOgQSXJ6elqYpnkPCcMwODs766VSKe7Zs0cA+AAANm3apPxjcRYpyvG9BQUE0AigCJJ0BMDF7Tt2ODMzM3QcxzMM4x4SaaEKkqK7u5u5ubnHM0g8cjfkF4LB18LBIAAsKpCkvUsk6SUA1V+eOlW3cePGP2KxmBIKhTzXde9MlGUIIWTP82BZVjKVSgUAfN3b2yvS4lQfbQvIotJAQOiS9HyxqkoRXa8GsAbA+cHBwer6+vqf+vv71cLCQiGEIMn5ZN/3oaqq7DhOcPXq1W91d3dvlWX5B1mWtwPw0iQe3A1dkj45XFTEsKadWxUItJ9YutQD8E5GohwIBE60t7ffoQvTNP2ZmRmOj48zHA5zaGiIJN1oNMra2loDwMf3Mbz7m1EA+PQpWX5vTTD4ff+KFVymKD0A8BygpY0IALY2NzcnbNumEMKdnZ0lSUYiER47dowk/Vu3bpGkNzY2xra2NgJoBbAyXczDdbFElt+P5OZO5Mvy3gzzkdK/XgBYV1NTc/3atWvct28fN2/ezKamJpLkbaEahkHXdf2pqam5kydPsqysrB+AnBbn3yJTufl/E3ObRKGu6/0A3gTw1cjICD3P8zLXNR6Pc2JiwifptrW1+ZqmVWR08pGOE+kBROdRX1//y1zavjNX1DRNOo7DaDQqSktLXQBN/+ZCwkM68e7p06dJ8p7qk8kkb968ybVr1/p9fX1+S0uLA+D1rNk3gMrdu3fPeJ4nTNP0M7yClmUxlUoxEomwp6eHJMXU1BQrKyvHskYgJyenb3h4mCTnJicnaZomE4mEIClIulu2bHGPHj3qknQty3JIepFIJJaV+/HAgQOyruvLiouLv0uPgEIIEYvF2NHRwatXr7Knp4eNjY0cHR1lMplkZ2cnNU1ry/YVDQAtra2tqbGxMdbU1FwH8IqmaR9VV1d/C+BwKBT6LBwOnwGwNeuXdMZev5qfn38JQDme4Ame4P+IPwF8fA0Af2zCPQAAAABJRU5ErkJggg==") 5 3, pointer;
 }
 
 /* The three the knife must not swallow. */
@@ -12555,6 +12755,84 @@ html:not([data-cursor='off'])[data-skin='halloween'] .cursor-grab:active:not([da
   /* Held open, so the loader is still legibly a scroll rather than a bar. */
   .loader-scroll > b {
     transform: scaleX(1);
+  }
+}
+
+/* ===========================================================================
+   Skin: SPACE — the shooting star. See `ShootingStar`.
+   ===========================================================================
+
+   One element: the tail is its background, the head is its `::after`. It is
+   anchored at its head (`transform-origin` on the right edge), rotated to its
+   tilt, and carried from a third of a viewport off the left edge to a third
+   off the right along that same slope — the vertical travel arrives from the
+   component already worked out, so the streak moves along its own line
+   rather than sliding sideways.
+
+   Transform and opacity only, so the whole crossing composites without a
+   repaint, and it is over in 900ms, which must match `STAR_DURATION`.
+
+   The tail is `--star-ink`, the token every star on this skin is drawn in:
+   near-white on the night palette, a mid indigo on the day one, where the sky
+   is a star chart on pale paper and a white streak would be invisible. The
+   head is the plasma blue either way, which is what reads as heat. */
+.shooting-star {
+  width: calc(clamp(120px, 13vw, 240px) * var(--star-length, 1));
+  height: 2px;
+  border-radius: 999px;
+  transform-origin: 100% 50%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(var(--star-ink) / 0.25) 40%,
+    rgb(var(--star-ink) / 0.9)
+  );
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: shooting-star-cross 900ms cubic-bezier(0.3, 0, 0.7, 1) forwards;
+}
+
+.shooting-star::after {
+  content: '';
+  position: absolute;
+  right: -3px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-radius: 999px;
+  background: rgb(255 255 255);
+  box-shadow:
+    0 0 6px 2px rgb(var(--space-plasma) / 0.85),
+    0 0 14px 4px rgb(var(--space-plasma) / 0.35);
+}
+
+/* On the pale page a white head is a hole in the paper; the plasma blue is
+   the brightest thing that still reads against it. */
+[data-skin='space']:not(.dark) .shooting-star::after {
+  background: rgb(var(--space-plasma));
+}
+
+@keyframes shooting-star-cross {
+  0% {
+    transform: translate3d(-30vw, var(--star-rise), 0) rotate(var(--star-tilt));
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(130vw, var(--star-fall), 0) rotate(var(--star-tilt));
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shooting-star {
+    display: none;
   }
 }
 
@@ -12966,11 +13244,11 @@ html:not([data-cursor='off'])[data-skin='halloween'] .cursor-grab:active:not([da
    --------------------------------------------------------------------------- */
 
 html:not([data-cursor='off'])[data-skin='dragon'] {
-  cursor: url("data:image/png;base64,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") 11 4, auto;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAETElEQVR42s2XW0xcVRSG/33OGebMjdtccJgJ1wgMLZiipRBELSBUSHwQyzMmOiaaYEJitA+UTUyMgkKCYO2JVtqkSsJLZYgRMXpe7JBosEaDCEEGhbFSLjPDxZly5mxfBk2IPgAz2PW4s5L15V9rr/1v4F4NSZI0AEgPYGptbRUBkGMr3tXVJQLge3t7X3z3kuQTRfEZSimXiFrcvxXv7OxUBgYGLjxW1/jO8kogMxwOp8Vy466CsF92t9u9Ozg42PH4E09e9K9skNt/rABABIAKgCVMAUqpMDExoXZ3d9eerW/s0Ip6Mj3zM0RRxwEwUkrVhLbA7/eTkZERVl9ff91qzeDW19ewtbUDUStyWZmZTgC6RLSA25NekqRof3//S2k2hyUQCGBXURD+cwd6k5GUlpW5AFglSRLiDcEBwMzMjAAA+fn5bp1OD8YYCOHAAOiNycgrPJUPQciL5cUfQFEUFQBLNVvui6oqmBqFKGqh0QhgjEHUG+xQlJM8z3Pnz8cXQACA9PR0BgCRnW2VIwRRFdDrdLBZzFj4bRkGo1Hb1NTU1NPT4wGwGHcFQqEQD4BMTk7OCoIAxlSAMRQX3Q/CVIgGE/JPlD9y+XLNeHNz80UANkoRl3bwAOD1ehljjLW1ta1WV1U/7czK4YLBEJJNRhAQzPsWYUpO05iCS5bRL6dXdTrdqFYb2p2ehhoXAACMECIMDw8vzM3OZFdVVZ2wOxwcCIEz0w6B57G6to7bu04WDq0sTE1NfX7uXHvY6/VGj7qc9gAgyzKjlLKhoaGvP/V8wgQeDpvNbAgEgpzVnEpSkw3Y3twm0TuzeTmFxblXrnx4k1JsyvLRAPb3kFBKeUqpBkAFgNKCgoJiu93u5DhOczoDrsZHeefGrzvqBz+YRsfGxtsALB1FBX7/gSzLjDGmcBz3uyzL3rW1ta8WFxc/8/l8N3b1tuXKTFITuRnQ2u6sFBSeLq1a2lJ+bG7eXL11C9GEbEnGGKGUCpTSJABGAM9eryzaulpXwrpOOiL5DsdrAPQSoEmkZyAAiCRBQynlKlNSui+VF2y/X1fCXngoayc3O7sDgO4wEPxBkj0eMFmWsRSJfDu/vKaUZGfk6U1JljT+bmWAT2HXgsFJCYDnADPBH1KRyCrwzbhv5buynPRqq0FrsWiUiqBo5K5thLwHgTgsACjAytrbl9/+aOz7M9nmh82GJKuZi1Zs6nX81fUtrwQwTwIMzP654GP+se7VGtcvXQ3FzF2REy4qyngdgFGSEjuYf9+WGETty7WF87ShmLnLc8Mul/UNAKY9d31cEGdfqXHN0YZi9nx5TgTAWwCS2TFZ+n8g6lxzF2qL2HvtZ5SWlhYPgLz/ej3j6fXVzs7Ou319fZNvfvHTczmnUv0PlJr5aDSYDoD4/e5j+9jwlEJISUl5qqys9GMAD+4tsuP82ZGYuunxMi6HgogV5/A/BsG9Hn8BZiOmIj6ZWdgAAAAASUVORK5CYII=") 8 2, auto;
 }
 
 html:not([data-cursor='off'])[data-skin='dragon'].dark {
-  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAFjElEQVR42u1ZbWxTZRg9z3vvbbtutOsWyhwS8SsCi0OECUETEqIONQ5lsoQYv1FRfmBixIiggPGHiX/8iPrDBKPG6PhQgYCK3/4RAeNH0CFGGKPb2Mbasq61vfe+xx+9RSQkgHRbl/Akzb1pm/Y57znv+zznucD5GEVB0hjNyZvedT7Ja717NdJ5mWfwHSGpRMQhede77298W+nAvMJnpQ6gkLxLcsX+g7Hn+5JpDPa1ZUpFGep0mveSf6G7L/l8f3LQ7uiIcdk990jJAyBperJZGTsSX06I/fvv+5TP75OuTKaipAF4K++QvOlAR/dzhDg9Pb3mkd4+BAIBxGL9kVLZA+oUyQsATbL64KGutyxfgNlsRh0bSEk68zf9/gB6+o9OKGUGlIgQwFPhqupoKpVyDWWoRPIYXNeBYVro6k1MKhUA5smr723asX+1H37QsAIktUEA2WwOJIUkEv19Uz35uKXGQKHS3jImVBnK5XJaRAQACIKkchwbg+n05Mz27Rd5TKlSPIXmmpaPJFh4w2dZ+bqgtRuKVPmOTJ49u1AnSgmABoDe3v6o1lpInV99aoRCFVBKQWsXPn8A27/esQgAvVfJABAAcJ2cWzggRQSuq1EVqURZwA/H1cq2c+w41H49yYn5rUODHJkj9ZQAai6o2WcoRRFFAHBdF2MqKjBhfC0c2xFo7YYi1YF1721+XES0iLgiI8PEyQAKSaw/loiLaRrHV1VrjSmTLodlmXBc19CujX37D9zNrpVLufeB7SQvISHk8G7q//yZd4QqEdlpgN9Ho1FDazpKKTiOg+pIJa6qn4K/s1lxbBv+8jGhta/0vrr7h4PzAITyLLAkWgmOH19zX6yj/ei4cVETgA2A2VwO9VMmob5uEtKZLHyG65hjG7i7+9LPReQnrwXRIwrAS0BEpO2KyybOG0z2d9SMi1plZUGxLMvVgDP7mulOw9X1biaTEduxnQ49dSbJJo9BczgByOlaaQBRkss7u/vuzNp2TaAsCKUM+Hw+xDq78ePPvyI+kMZP333Zs27O4Tly39a2Qic7ogAKlvEESURIzgEwM94Xv6R/YKCarhsMR6pSL65aMS3X8VXk1pvH23MfeaJFpHELSRMiWrzaMpIhpzPzby+t27DnnZv59Zs3Op/c2dBOxm4oRV8v+YJF07uqf+/3NH712g3xdxZM42tXXsxXGy5P8eXlT5KcRsLgEPoGKdJvkEDtL3PrN7WX+2f+EevJjjWsPXf/8M0TQO33EMFQSUkVZ+JCU4DO+osbFh85mkxcUFPt74I7e/OM65ZBxEC+KVSlykChhJsCOJxVt3idH49ZZVbdn8lj8Ad9W1d80baAhJMnorhMFBOAeHyEcf30xp3R4Py2owOLdqVTiJZZW57d0baAhFtsEDJEUzwREdW6cOYHe5MDzYl0FpEya/PqHW3NxQYxNLoUAUndsn5nS224fFM46Ec8YzetaZy8QQQGi7gnhqpzpIgIST68flfLhVXlH4aDfvQP5uavbpyyXgSqWCCG2oQo5vWk3miZsaEzkb4tmc4iEvR/tPqz3+4goc9VTkPdu2uPCb2kdfcdF1YGPwoHfYins7etvrE4TAyH+TgO4qHW3Qtrw+Ufh8t8iKezt69trGs9VxDD6WMLcjJeb5mxsSsx2JRM51BdHtj4zKd7W0gCEIicnZyG24gfB/FGS8OmzkTq1mQ6h2gosPHpbXsXepZWzmbSMdwznYKc3CWtu5prKyu2VJb7cbh3sPnl+6dvITmB+cZKSpWBk5kwX2q6elPczN3S1DxRcrb+Y9a9264k6XhTvxGdOZ0p+8Fv37zpwK8fNJFc9Sjz4BQwKh4c5kGQqXpyzSKcpXxKxiidaGGBUfkIF2pUP4M+H+fjfPz/+AfeS/7U0k4AygAAAABJRU5ErkJggg==") 11 4, auto;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAADQUlEQVR42tVWW2ibdRw957ukaXoxTdq0IkyUrcnixAtrvVBhW6txdky2l4Eg7EF8FFScq81mO8YeRfYmE4YvOioIugeFocgeytxFZSp11U5TptMSm7ZhSVzyfceHfJE6+7I2X6b/l+/K/3f+55zfBfivLkkmAAhoqt03MrjlXQfOnP3yhCRTEv2IZawUnGRF0pMXp2Y+u/DNdC9JB4D/ACSZXvDhy7NXT+aWCvbvc9lC7bOvACQZAFxJvT//OveeHQiaU5emBblRACQp3xkgCQBvtba0tS0uLlTy+WuslMs9ymTCtV98AeBR70raMns1uyWfzzvFUskulYoybSuMdeviy1jyhYHayfaEQi2SJNIASSfU2o5vf1ocQDUL6BcAAUBZWF9xHLquw2CwCbZtURJOf35qF6oeoFRfEP+g1CaumYYh14VCzc3ojHSYhWLBzWbnHpHUT7JM1jcbbpTgE9M0CUiQkExsACEFQ608+vb7h6UXDknaWPUDjLoBIOl4le7d68XCTDTaaTuurnfHutz7NyWN3ELOnc/lHj92+MoogKV6mnG5B0hysSfWscMy9EMk0hEINDUZ/Zsf4KN9DzIQsJxfmp9aANBN0gVk1NUDXhoaJL+/rVLqj7YH998eC5/LzWeX7rwjxr774mZ70Iq8+vwzJ6TCw9WKuXYZuEIvMKon/Pu5G0AMgPHd8X1PZ//8atzNlue2pj8cJsPnvT1U727IWke84X3XwsTujye2bdKxvg1/6OSbeyQFJPjXrj0wxvKZYGp486l3hu7V8Yfu/kKTkxHPRGZd2vG/NCJF0q1mCkxJTBTbn1tvWp86bS39R0b3fqRcLkzAWS2IVflGQKde2XXwSOoepQfjk8pkOtbCxKrNe3HkifR4KqkDQ4kz0trkuDlvAEbNqJdGtr82nkoqPRg/K30QbSgTNRAzIzv2j6eSSg/Fz0lHu7xy3ZhhtgZi+sD2fWOppEa3JS5IY7Hl03XDQMwe3PnyWCqp0a29XwPo8eRgQ0FcObTzpZHBhCZefywjacCbI1ZMeauuhqhO1DbJN3T62e7zmfkXgR+tKglio4igBEOSLf12l1/D7E3IAuNWxeatDP7/WX8BBLiptHYloJgAAAAASUVORK5CYII=") 8 2, auto;
 }
 
 html:not([data-cursor='off'])[data-skin='dragon'] a[href]:not([data-native-cursor], [data-native-cursor] *),
@@ -12988,7 +13266,7 @@ html:not([data-cursor='off'])[data-skin='dragon'] input[type='radio']:not(:disab
 html:not([data-cursor='off'])[data-skin='dragon'] input[type='submit']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='dragon'] input[type='button']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='dragon'] .cursor-pointer:not([data-native-cursor], [data-native-cursor] *) {
-  cursor: url("data:image/png;base64,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") 11 4, pointer;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAEKUlEQVR42tVXX0xbdRT+7u29vS1U+ROnQ2Yy6Mj4s/pvzIAumXswCy/uAU324MN8EB/MjHa6JZrA7QgkGMJimxB3H3jhjYaYQCYubgNdxKAO5jpoVbYOutZ1o3/W0nLb3nuPDyuJUZaM20LiefzlJuc733fOd84F/g8hSRIPgPnnW09PT2t/f3+v1WrdD8Cw1clZAHC5XJ+MjY3d8Hg8qxd/mNFOnvo8CuAdURSN/wZY1OQul+v0wsJC3H8nTJGETN/PeOjkZ70agO8AlALgiw5gPfnIyMj55dB9CoRjdHP5L/r6/GXq7Buk4++deADgqMPhMBVdgvXkQ0ND5+6uJOgPf5D+9AdpavoqdfYN0mnxC2poaLgElFUAKIh+doM3JhQKqd3d3Tvqm154V1E1qIoCIsLc9QUIgoC19GrO6/WOi+LHSQAKACoaAEmSOFEUyWQyvbWz6lk+mUzAaDTi7r0VRGJxGAwscvJaDMBcIpHgC2X7PwB8Ph+Xp9RmFASAAIZlsRKJQtMIWVnG0uJ8AMCSoihaIdVvCCAQCKgAyO/331pNJvPqEjKZLFiWhSyvIRQKBQEkZVnWCmVgo+ZhiAgMw9TM/DLn3bW71phOreKaxwvP/O/IZNLU1/WpE4A9/31BIDYcn+rqan58fDyekdPNra8e3GsuKUUqlcbSnRA0JYdTb6LhZuwpIRgMXiVC1uEoogQA0NHRoUiSxA4PD9ulwS+vR++HUb+3DpbSUvAsMVnVYIrFYlxdHeBgtsAB16XI+8GB9vb2iz/9/GtmcnqWzpwdooNHjngBNNrtdvOjiiiIgXxQnolro6OjHa2vNHf+ePmbRdk/i6YKpYTjUJVKpZiij+FGIBwOxz0AZxOJr6YOW39D2/5slaLg+Wj0XKbQJnwc+mhysksmolwo9PqVlCejpi7EuJaWlma3G+WiCK4QK36sJXL7NjSGYTin07l8lLV8kNY0odGIyukHGQ/zrXxrEVC3koF8iKwoIqaxWgwmDvJK1CQIgjneCrbYy+gR+aGIIrQrLC6tKURhHpZwOLzDZitsGelZ03t6DzUkTrxmJau1cgjAE4D+PtjUDPt8Pu5twK8+yc2XmXkcrih7EUCN3a7/ItoUgMDAgOoGtDm+eljRCGC0WgBNivKhtl0yMPSw0sqPDtVl32/ZrQLo3TYJANAZh0MAELcIfKjcbGTbDtS8DKBK0gli0z4eiXQRAIrstFzgDQZUM7QPQL3Pbt8eAE4ncgBo5oYipXMKEehpAPsCgYGsHlvWs8k0SZL42dlZD8syCYvA842Nu15yu1Gqpxd0rdL83aiUlJjnBLB4Lpax6R1HXQACgQEVAHlLnhmpsZXj2PE9jQDe8HrbNj2OnB4AbvdD+02n+alaW1k2rjGZ8nJEJiYmVGxzGPPH6TG9v2d/A7Jw6GT8oKhHAAAAAElFTkSuQmCC") 8 2, pointer;
 }
 
 html:not([data-cursor='off'])[data-skin='dragon'].dark a[href]:not([data-native-cursor], [data-native-cursor] *),
@@ -13006,18 +13284,18 @@ html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='radio']:not(:
 html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='submit']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='button']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='dragon'].dark .cursor-pointer:not([data-native-cursor], [data-native-cursor] *) {
-  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAFkklEQVR42u1ZW2xUVRRd+5wzczuvdsqrCLG1VkLaQopINEggQgJGFAMGigaMPzbBGPyEHzQREk0kRgO+lQ8T/RGwGCUaSPtBeZXQlsYWqC0UoaWUUtrpvDoz957tx502lcSktnPrYDg/M8mde2evvdde+3GBB+c+P8wsmFn9w7UCp/9fTNJwQUSaiEwABjM/zszbmPmLU2cafj965Ogr6d/KbPO6HPO9gpn3dXRe72hubeOu3rtc39zOO99+rweAh5kJADlli5qI8URkMXMZgN3tnTfW5+VPkx5fLli4cOL0+WRjU7OaXzhzO4A4AAnAygoAY4x/o/tW317DE/AxBEKhIZO1FrUnTvPt/kG3IXRTVVXV4TTFrKzIgTHG7+kPxT5LmvD19/ebWmsIInXq7HnR1dML0hYWlZd9CIAnk2MZBTDG+Nd6+gZ2RWNxc3g4zsxaGYYbl9o68MeVTp0bCMihwf7uTZvW/cjM5LT3xwuAAGgAwfMNTXuVO0dHo1EhhCApJcLhCJpbLiInJ0eDgeLix6rHcJ//cwBp7zMzv1xYXDIzFAppIYRgZiil0NbRiWg0DpdSIhIO4YXVS39Kg+apUMR/w9GlbsPD2tJ2WIiQSCRwvesmpJJMQojhWGygqKioAQATkc4WABYAxOKJEtM0CWBiZigpERoKIxyOwKWUllKhYM6cBgADzCyyKQIEAFrrv3mUhEA0FodpWRCCGADKysovTbbCOwFAAIDf52mWUjBgG0sATNMEmEFE0JaFh2bMvupk1Z0ogBEqHI1GwiSkGDVQEI0GybJMTJ/uG5wq6owbABHpdEWtIa2b8oNBycyWZobf74OUckSucOV2MGLfA52NEUjNnTPr9Tt9t5J5wSClUkmdl5cLv98H00zJWJL5Tl3VTq6vrGGGwQyaCjqNK9nSUZBE1Di/5JGtfT3dwh/IFV5Pjjl71kyYZoo0JJup+JLhRMoPwI0p4tK41SLdSigiOlixsPSlrmtXBwKBXLVwQamlpCvlz5FikOfVeFZUP01EIRBA2VCJ7wFhpiNR3fhV1ZP9t7p/8bqVfGJxhUtIQjxQLpnZzpkpTubJDDQbWi62n9rz/j7esmXbtRH6TJWcTqjgpOkkmNlFRNUd7y77MlJ/gJfPqM9jPvA8A5Suxo4fNdEbR+SVmWX3r5UvFkVipKQKhk8e35ALVPMURUBNlk12NA59e2HHx8/1tAx4gt7gw+k5mLOWQvdQiYg2/vzouciFQAT0w5Wbz+DSwcr0NZnVAEbaOmaIlKGHXLkGolYqhI++X8HMxURkOU2lyQMgu3UoGTZb7iZNHfAYubG+mz0ANHOWzMTjaTV8wnvZS3TN4zfoWFf/IiL6026LnM0FkZmywAJrK08smxX8za0UaoS1nAcGgkSwkO0Usj1MgnbsaC96dsGRsGkh5ZKzcODNp9JNqsj2CIAIdrJu/eRcr9S9+W6Fr+svrRlR2qwHAIBhzwyh4un+024lcbk3vNJ+fpZs5sY5O9NzpYXHQUAkYZZz8655RM5u6DL3YHuNwnPXb65NmDrpN5S77vO6VQDIyTwQGXS/ZgZRRWV7vtdo9boUaq/2rbFllvl+oBAAlgD04sJgrZSEW0Pxpcycl96R0n0AwF65rF654FjSYghBBdi/1VE5zehDR7cRGz+tl0L0BgyFb05edFROReaHNZZEFCrM954xlMTFnvAqAAIOrdqdCCsBoLXlRcdAQCSZllOHXnhkHsCInL6zuTZh6WTAUO6z39WtYnZGToUD7rfllCrbp/mMVq+SOFzXtdouaJmXU4cKjC2npQV5NcgROn+ef/nogJPhKCg4eNbtX9ZZWN0q8vOMGbj71qsAdgMsAJqy3emE3+Lbn4NL2g6tb+Qb2z9g5vJ0W0F4cP5H5y8AV8aLgwoTfAAAAABJRU5ErkJggg==") 11 4, pointer;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAADVklEQVR42tWXXYhUZRjH///3PTNn/NhZP6aP3ZVsc4UMtIJgV9ztQ0lQQkIi6Ca9Cy8S+rrwIrEulrqIILoLlOgiMIOFyrwQpLaM2cpdG8P8aGRbNZWZNue0znjmnPP3Ys5KyBbrzOyAD5yb97wvz+/8n4/3OcCdYJLsDGv3SdosyW2Zc0kbJH0oaWQ4OzZ1YOjQPgBmJsCmOpf0tKTsufOXVSxV9E02p11vvXcVwNJ4q6nXh/N/zkmGknZN/FkYpHUAIPoh+5M/Mppz+/rWfQCgKMkhGTQV4F/Ot10ueoN+EIYmCDFx4aIZGc25oV++vmVj70eASDJqROWZpCOASNLCU2fHByMhCoMAQRDYsdzJyE0m2dHZNUzyD6m2t6kAkgxJAViTdN1OzyvBsdZeulJAcfJvWWuwYf3GQzGoaTTP/ksBAOhwUykBFI1BofgXwjAyfqWCB5cvygJQ/DRkM+XAtKR5r1QiaAwg+H5VJE216vsALsagaroCJCNJJJm7K5M50ZZOE0DoJBwYEsbaayQnUMtAzUUIpteDJe3zd055JSTdlFm6ZHEIElEYJL1vXzwgqauWMjdD1jyAuAQtySMru5dtnyxc0cqeB5z2dLqK0J9/tcwFACoSTGPuZ98JBya9qdEjR4/p7ff36pTUH687cxWCW5UYXty2oPfJtY++Wjl3TJc+3d3fqPSYbQ+PIZIAfGDg5FMrjjNjfn6ehACGcw4QY1QlERg+ncrrwm/7zvdI6iEhqbFmNKvDta8FSeY7fi2fmPSut+HlrdslJRoNxG3QkxJ4f3viDFIOvPx4AoCNWxHnHoCISMj29XxejVD55B9vLcnKdMG0dDT74rnegzvXrQilPXc3OpDc7kEK4DPru4fS8xKmvOeXx2tgrQIgIwLCjncPB5Gwd+zslmltWgJAIBJAcnl+nuucPlOc2gQgSTKsNxFNHYlgAWDzqs6hVMJm9PVrD8dZaFoDgNoV/NgrAwcT1uKr/Uc3xWCtUYCMB5Zlb/5YjSLvu/HCs/GbsEUKQPEFdW3VPenD5aoekfZ3xd3StALgZufb9sRDQy4MPut/p7/ecqwTIP4XeOn177tXL+K9L2TeAGABRWiRMY7Fwt+/3Dqm8R0fS0jeMlXfGXYDQrieQBr1my4AAAAASUVORK5CYII=") 8 2, pointer;
 }
 
 /* The slash. `:active` rather than a class, so it covers everything a pointer
    can be held down on — including the page itself, where half the clicks in any
    application land. */
 html:not([data-cursor='off'])[data-skin='dragon'] :active:not([data-native-cursor], [data-native-cursor] *) {
-  cursor: url("data:image/png;base64,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") 11 4, auto;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAE6klEQVR42u1WX2xTVRz+7r2nt936Z2txDIG1tCMFBk4oEAYDxyLQB4mOIMQHQ9CYJoZojJo4Q5DbhQdDli2S+HIjYezBGKc+TMkCEynJcGxJYXPdhGAoLE3p5tretV1vb3v/+MCaIBGisUMf+J5OTu7N+c73/b7f+QH/MaiHNziOIxzHKQC0EydOOABsB7BKlmUjRVF6Qoh+YGDgXF9f34+ANgdQWkkJAKCOHz++ymw2v5pKpRbHYrE5QRCSkiRlJEnKqqqqRSKRKxMTE2EAyr9VgBQXmqZRfr+fsVgsh1OpVH0wGEzNzMyMsiz7OyEkC0A2Go0iTdNaIpEQAGgls0DTNIqiKKazs/PdUChku3XrVriysjJGCImLojinqqooy3K+UCgUGIbRLl26lACQLwUBAgAURaG9vf1QNisd6e/v/6KpqenXycnJpF6vzwiCkB0eHs7My128tVKqIixaoLnd7vci02mXIAj1Y2Nj39jt9mRvb28aQAGAulApoAGgra1trd3pXmOtWoKXWl57cWRkpN5ms2XmZVYXMoY0ANTU1HxSVV1NCpKI5c7aKq/Xe7irq+sZnufJI5JSWgIul+sFlmVhMpXDZLZirWe7F8AbZ86cIYBvQUnQAFBhq7blchKWLqmGKudRvcyue+fDYx8MDg4e8PkAjuN0HHf/2wXphL+M31TKTRU0oOLywBB+C0/Caq3EzFR05mTbx0cA9MwngCpV/v9EYHT8RsFssZFCQYIoSjh34SeIOQmVlRW4e3cqZV908abLpVr277/Q2tnZeT4cDqu2U6cKXAkKlAKAQCAw617rsQhCAiyrRzyRRGDgKpLCLMqNFujkBMrmrivtp79sj0TQBkAslRIMABBCNm7esqVObzAglxNhNpngdNSApilk0ilk8gRSmZt2ONZve3ld5vU1W1tWx2JTYa/XO3vw4EGtublZX18fYIaG/rkiDABcu3bt+krXipbNDdsqGKJDTpKgIwROhx3r6lajzu2CngCTI1e0XetFqyMe2eSJ5d5ao8y++e3tezh79mxoaAhZAJrf7zdUBQL0xN+0h5l/glOtra3jtKZscK90WkHRDDQN6XQKiekpdXjwcuZUx8ngyOD3F5p3OF2Zq0miZ3W6hFKoWCYmd9XVVByqcz/rGL0zMx4IBIQJQNE0gKZhCASgPc6uYr4pjuMYjuM2AWhsbGzcajQarfF4PBsMBscADAMYBJAB0GIAaj7y1B6uZhm7YiBsimhMUlGQFvN5QtG371nKur47P34aQAKAyvPQRaMcFY1yGs9DfpDQgw2G4nme+Hw+GUAVAHa+2JJ+v58NhUJqT0+PzPM84/P5VABbVgA77gBle/du3PqcmN2QV5RF5TqGTucKEPOyqGfJ6Di7+POLF3/uBZAuvjuPG0ioeUsYAHQ0GtV4nlce+LHYC8DzID4fCAAJwHIAHqsVDa80rGtaLMl1sqpYjDqC+JyEQl6dtS01Xb1X6fmhu7v7awDTj5uIHt5/lH9UkQ3Pg9y48T7p6OhQANQC8Didzp373GUNOkWtzWYKZTt3L4N5qV7e83b/MQCfLkRHpe/bCB3HcSwAE4CNAHwbnq/9qvuz3dNHj+4JA2h8EoMuBYDy+/2GAwfAArAB2PdXh1MLTIYGoHEAA44r1tQjU/Ckxn8NT/EUT/F/wh+q9hXqq7qnkwAAAABJRU5ErkJggg==") 8 2, auto;
 }
 
 html:not([data-cursor='off'])[data-skin='dragon'].dark :active:not([data-native-cursor], [data-native-cursor] *) {
-  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAGKklEQVR42u1Ya4xcZRl+3u+cOXPZ2dvs0m536LBqm66lAqJLlLU3tT+kDaYEqnXxUi9/JBqJxJT4R6UIJmoasMYLQqgUU6RaKBdTay9gUSnG1mxZZGvtbbvrtszu0J3LOec73+OPObMODaDWxRnMPMnJSc45Od/7vJfv/d4HaKC2kH/nG5IiIqbygGQGwFsBdANIhlcUwF9F5KHwe9acAElVMZxkGsCVALoAFACcBnAKwAQAD0AAQIuIWw8REJIQEZJMAVgJoBXAswBeBFAC0AKgA4AFQAGwAbwkIsfD/9YsAtOLk1wBoBfA7wEcBJACMAuABpADkA/JBAAQpk1QywhI2W62AVgL4ASAXaGnuwCMAxgXEUMyCiASeh/hvSQiUzWraJJCMk7yCyR7CcZIvovkxeH7GMlOkimSCZJW3WxHFWNIrt64cdMTAJpJLiHpAHBCw5NVHr+QHW3GYb/Ks09Em9s/NDAwcBmApwG0hwWdBWDOr5NqH9SCwLQ3RSQg2Xto8IVV8eY29My7Yl2lKM8zvmbGvi6BEJ9Jz83YWvu64Lkf59jYIhHJ1VWuvw6B5OGh4TUkYAnYMavL+dqPtnyrlvn9HxEg2W/ZkUyhUGAiEY+UXDeQaOya7T/b/jER0STteo/A4pbWNpA0nR3tCLRW8aYms3/o+U1Prl/fE5Kw6pnAeykC3/elM9WOZCIu+fwUOmel234bT20DEAsLWdUlgbMvvZw2xkBrLc3NSaS7u6D9QPleSTenZl258YebN4dnIwJUJFQ9pNU0gZJbaqIp75RBYPD2BfMQidjQOrB9z9Wezxt+8sAjD4qIAsSIwIiIrhsCsVi0KEpBRKC1xkWdKSzsnY+S64I0tuuW9Jlsdu13v3fvTgApcngZ+e3bwu4stdqpphctlvw9uUJp6UR2gmUvA0op7Hnqd/jbiZOIx2JQSul4PG6fyeaH+5J7Jy+dk+vrXfNkpjwXiF1ueq9oeP/DCETtfTRGLMtipdWSxLLF70Hv/LehVHLheb6dz+dNe2ts/sHi4r6tf5qrMfnTPhGhCHwRGJLWP683vuCnI8DBwcxzrhlMX9LTNJHNimVZQhJKKdiWhb8cOYrBoReRy50DQeNEHGrYysvnAica2XXbB/98B/ruGRWR4ZrNAyS/OlXSG85mc14hPxWxLUsqkYg6DlzPw8jpMZwcGeVkLmeMMWhp77QO7fsNugq/Qv+SjLvM69iI/muew2UDpwAUAQwBYiAwgplPL6k+TocHunvzbrAuO5FDyXW1CQIREZCEZduMOg6UUnYkEsH42Ch8P9h/3/ob565e2ZrRgeDYluMo+gF6EvED175zwQ7cve07IlIorwEFQIkgmKkDobya+kDy68dOnPpiItnSZtkRBIaVIRPFYgEjJ0/oi+d07c1k0veJyIPkTSueeeDolpFnziatw258yiEmp4qYKLj5btt+fl7v7O3Lf7D8F9JyxwuvnD8EYdFzxkbKyjAPIE3ywwAWA+gMlYfTAA6Ojj61u7t76VBliis3uLsuAqItWLtl7f0j47d4sWjEUZJwtcZR38Wkq4tdzbGnV106+6F33371Y5L85t+ryNgQuaAUk9eazkQk+FeSS3mMkICASJUXuWTJO+COfXI43eZ4jjNv9/jE+8dtE2VgMOVqaMPxnvamnbesWLhVvrR1dyjThP+FHUbF/Fe6UGigquyo5zUrUy10TUcPEBBKBJqkg1tv7ZY77zzG/bcv+uPDe6/bc3R89dlz7hVRS+DpAC+XNCK2DF8+J/XoujVX/Vyu3/SHKiIKoHqNtd7YOZaAqqRDtTgGwOKjN79vx44Daw6emljp+uYSS4CirzFZ9NmRcJ7tf8vsbau+/9FfSuymIzMlLV5wfYWpZQgolIlUn51a+eOBFZv3HvnI8JlzHxCynSQKnkbR0/lUIrpvw91LD2Dh534t0rcfdaIkSJgaqK4xjmyaO3bPzmsfPnTyhpFc4WobiAQOcOOnFyCf14ev+tTji+pSWCZhnT8kkXddvuuzy79x/1f6jx955Dqy9OWb3wwquSJpk6xurHPIDZ8n2fmm0vuJ+hiUZkAphIREBA000EADDTTQQAMN/H/iH650LCBVvdSuAAAAAElFTkSuQmCC") 11 4, auto;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAADp0lEQVR42u1WT2wUdRh9b2Z2+39LtQWUtoiUaAIYBMOFRBFFxcREWUmoinpo5EI9cSBe9KCJJ4MhGqpgrHJAgwb/oaA0ahVIPWgwkEIhpV1Lsdt/u93dmd2dnedhZ9Pa1EjjFi99yS+ZzEzmvbzvm+97wP8MTr8hySDp+dcLACwFUAvA8k8QwCmSfwIiQBVVgE9cC2CNTzgKIA4gDSADQACGSWaK4YA1hZS+oPUAagAMABgB4ALwfGLPf90ragkkkSQl3QtgwicXgKx/cj6pBwAks/7z4vWCpPUnT/74rqSQpDpJ5ZJKJVlz2YRGoQIAdlzojbSEw+GQX3OXpEPSnXMBkhb2X41uq6lbjA2bHt9DMu3bPucoOBC2AoFFOTfjDo0MvSBpLcmcJPNGCXiopKREVZUVKq8IBV7fe6AdQFm+NDLmXMDwWOIu23a4eGGtJc/NGYHgqncOHW0n6UmAJFOaeWYURUAqlaxOpzOovbkGDUtuMePxuDsei237vOOXAyQ9kjkS+qfB9Z/nwODwWMS2s/Wum1Eq5fCrEx1IZ7JuKFRlVS5Y+unO7Z0/AJEmsu1FSQEAHkiPRZgFhUF07NpI4pFYbNyzLMscGR3D9z+dwXgs7pWVVxkBdxSNpZcuP9Xato5ErOgOSHqgpzfyXWlZhZtMJhmwLNN20jjXfVH9kYFcwnY9GFbQHo9GW+/+dX/D1g87AOtn/1cVABOgyNn/upyyC14ZnXBetp00EokETMNQMBikBNi2jSv9Eef0Fx9HNzadbUh22zDPxH7fsrrhWxz85g2SA1O+Y/nl8WbjgJHveLV4QGvP5b6VEMxMNuvWVFdfqb+17hiANuxjFPc99+bpV8+t7os6q4bcLDw3d7W+MfTRk80bDvOJfV2TQkAApu+KrseBQg6gpDsAVAIYJ9nnL6TJdQ1YaHl4Z9fg8GN98m7vyTgrxnI5BIjzm5cvOnT/ni2fcPlLF6eIMfMaKPLvznBaDjBJ5mbIBxYAL78wZRTeEVBNICUdWdvZ+vbTJy4MbidQN+FkcVNZoLP5nsYPml7b/yW57NpsAgmnZAOR1AwWUoIxvekklKFz96YjB08909U/vLXUMoMjybSWhcqP7n523WE0v3+WZPe/JqLrhQAyT2zktU5uTkm1aH/+0feOn9/xW+/ogxs3L8Gda2ourQx/tmJOM6YEc/oSk/31bfpj11vS3l03NPBKsvLuzDKUFhsCDOT7SoXEPY95zGMeBfwFzCLL4MUlOScAAAAASUVORK5CYII=") 8 2, auto;
 }
 
 /* And the same thing again on the pressable list, which is not redundant.
@@ -13040,7 +13318,7 @@ html:not([data-cursor='off'])[data-skin='dragon'] input[type='radio']:not(:disab
 html:not([data-cursor='off'])[data-skin='dragon'] input[type='submit']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='dragon'] input[type='button']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='dragon'] .cursor-pointer:active:not([data-native-cursor], [data-native-cursor] *) {
-  cursor: url("data:image/png;base64,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") 11 4, pointer;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAE6klEQVR42u1WX2xTVRz+7r2nt936Z2txDIG1tCMFBk4oEAYDxyLQB4mOIMQHQ9CYJoZojJo4Q5DbhQdDli2S+HIjYezBGKc+TMkCEynJcGxJYXPdhGAoLE3p5tretV1vb3v/+MCaIBGisUMf+J5OTu7N+c73/b7f+QH/MaiHNziOIxzHKQC0EydOOABsB7BKlmUjRVF6Qoh+YGDgXF9f34+ANgdQWkkJAKCOHz++ymw2v5pKpRbHYrE5QRCSkiRlJEnKqqqqRSKRKxMTE2EAyr9VgBQXmqZRfr+fsVgsh1OpVH0wGEzNzMyMsiz7OyEkC0A2Go0iTdNaIpEQAGgls0DTNIqiKKazs/PdUChku3XrVriysjJGCImLojinqqooy3K+UCgUGIbRLl26lACQLwUBAgAURaG9vf1QNisd6e/v/6KpqenXycnJpF6vzwiCkB0eHs7My128tVKqIixaoLnd7vci02mXIAj1Y2Nj39jt9mRvb28aQAGAulApoAGgra1trd3pXmOtWoKXWl57cWRkpN5ms2XmZVYXMoY0ANTU1HxSVV1NCpKI5c7aKq/Xe7irq+sZnufJI5JSWgIul+sFlmVhMpXDZLZirWe7F8AbZ86cIYBvQUnQAFBhq7blchKWLqmGKudRvcyue+fDYx8MDg4e8PkAjuN0HHf/2wXphL+M31TKTRU0oOLywBB+C0/Caq3EzFR05mTbx0cA9MwngCpV/v9EYHT8RsFssZFCQYIoSjh34SeIOQmVlRW4e3cqZV908abLpVr277/Q2tnZeT4cDqu2U6cKXAkKlAKAQCAw617rsQhCAiyrRzyRRGDgKpLCLMqNFujkBMrmrivtp79sj0TQBkAslRIMABBCNm7esqVObzAglxNhNpngdNSApilk0ilk8gRSmZt2ONZve3ld5vU1W1tWx2JTYa/XO3vw4EGtublZX18fYIaG/rkiDABcu3bt+krXipbNDdsqGKJDTpKgIwROhx3r6lajzu2CngCTI1e0XetFqyMe2eSJ5d5ao8y++e3tezh79mxoaAhZAJrf7zdUBQL0xN+0h5l/glOtra3jtKZscK90WkHRDDQN6XQKiekpdXjwcuZUx8ngyOD3F5p3OF2Zq0miZ3W6hFKoWCYmd9XVVByqcz/rGL0zMx4IBIQJQNE0gKZhCASgPc6uYr4pjuMYjuM2AWhsbGzcajQarfF4PBsMBscADAMYBJAB0GIAaj7y1B6uZhm7YiBsimhMUlGQFvN5QtG371nKur47P34aQAKAyvPQRaMcFY1yGs9DfpDQgw2G4nme+Hw+GUAVAHa+2JJ+v58NhUJqT0+PzPM84/P5VABbVgA77gBle/du3PqcmN2QV5RF5TqGTucKEPOyqGfJ6Di7+POLF3/uBZAuvjuPG0ioeUsYAHQ0GtV4nlce+LHYC8DzID4fCAAJwHIAHqsVDa80rGtaLMl1sqpYjDqC+JyEQl6dtS01Xb1X6fmhu7v7awDTj5uIHt5/lH9UkQ3Pg9y48T7p6OhQANQC8Didzp373GUNOkWtzWYKZTt3L4N5qV7e83b/MQCfLkRHpe/bCB3HcSwAE4CNAHwbnq/9qvuz3dNHj+4JA2h8EoMuBYDy+/2GAwfAArAB2PdXh1MLTIYGoHEAA44r1tQjU/Ckxn8NT/EUT/F/wh+q9hXqq7qnkwAAAABJRU5ErkJggg==") 8 2, pointer;
 }
 
 html:not([data-cursor='off'])[data-skin='dragon'].dark a[href]:active:not([data-native-cursor], [data-native-cursor] *),
@@ -13058,7 +13336,7 @@ html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='radio']:not(:
 html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='submit']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='dragon'].dark input[type='button']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='dragon'].dark .cursor-pointer:active:not([data-native-cursor], [data-native-cursor] *) {
-  cursor: url("data:image/png;base64,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") 11 4, pointer;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAADp0lEQVR42u1WT2wUdRh9b2Z2+39LtQWUtoiUaAIYBMOFRBFFxcREWUmoinpo5EI9cSBe9KCJJ4MhGqpgrHJAgwb/oaA0ahVIPWgwkEIhpV1Lsdt/u93dmd2dnedhZ9Pa1EjjFi99yS+ZzEzmvbzvm+97wP8MTr8hySDp+dcLACwFUAvA8k8QwCmSfwIiQBVVgE9cC2CNTzgKIA4gDSADQACGSWaK4YA1hZS+oPUAagAMABgB4ALwfGLPf90ragkkkSQl3QtgwicXgKx/cj6pBwAks/7z4vWCpPUnT/74rqSQpDpJ5ZJKJVlz2YRGoQIAdlzojbSEw+GQX3OXpEPSnXMBkhb2X41uq6lbjA2bHt9DMu3bPucoOBC2AoFFOTfjDo0MvSBpLcmcJPNGCXiopKREVZUVKq8IBV7fe6AdQFm+NDLmXMDwWOIu23a4eGGtJc/NGYHgqncOHW0n6UmAJFOaeWYURUAqlaxOpzOovbkGDUtuMePxuDsei237vOOXAyQ9kjkS+qfB9Z/nwODwWMS2s/Wum1Eq5fCrEx1IZ7JuKFRlVS5Y+unO7Z0/AJEmsu1FSQEAHkiPRZgFhUF07NpI4pFYbNyzLMscGR3D9z+dwXgs7pWVVxkBdxSNpZcuP9Xato5ErOgOSHqgpzfyXWlZhZtMJhmwLNN20jjXfVH9kYFcwnY9GFbQHo9GW+/+dX/D1g87AOtn/1cVABOgyNn/upyyC14ZnXBetp00EokETMNQMBikBNi2jSv9Eef0Fx9HNzadbUh22zDPxH7fsrrhWxz85g2SA1O+Y/nl8WbjgJHveLV4QGvP5b6VEMxMNuvWVFdfqb+17hiANuxjFPc99+bpV8+t7os6q4bcLDw3d7W+MfTRk80bDvOJfV2TQkAApu+KrseBQg6gpDsAVAIYJ9nnL6TJdQ1YaHl4Z9fg8GN98m7vyTgrxnI5BIjzm5cvOnT/ni2fcPlLF6eIMfMaKPLvznBaDjBJ5mbIBxYAL78wZRTeEVBNICUdWdvZ+vbTJy4MbidQN+FkcVNZoLP5nsYPml7b/yW57NpsAgmnZAOR1AwWUoIxvekklKFz96YjB08909U/vLXUMoMjybSWhcqP7n523WE0v3+WZPe/JqLrhQAyT2zktU5uTkm1aH/+0feOn9/xW+/ogxs3L8Gda2ourQx/tmJOM6YEc/oSk/31bfpj11vS3l03NPBKsvLuzDKUFhsCDOT7SoXEPY95zGMeBfwFzCLL4MUlOScAAAAASUVORK5CYII=") 8 2, pointer;
 }
 
 /* The three the blade must not swallow. */
@@ -13092,17 +13370,17 @@ html:not([data-cursor='off'])[data-skin='dragon'] .cursor-grab:active:not([data-
    The interface is the same interface, drawn by a machine with a small
    framebuffer and sixteen colours. The right pointer for that machine is the
    pointer everybody already has, drawn the way that machine would have had to
-   draw it: a 12x19 grid, scaled 2x with no interpolation, every
+   draw it: a 8x12 grid, scaled 2x with no interpolation, every
    diagonal a staircase.
 
-   24x38 on screen. It was drawn at 3x, which was chunky and in use
-   too big — it covered what it pointed at. At 2x it is still plainly a grid
-   of fat pixels and sits close to the system arrow's footprint.
+   16x24 on screen. It was drawn at 3x, then at 2x on a larger grid,
+   and both were too big — they covered what they pointed at. This grid keeps it
+   a little over the system arrow's footprint and still plainly fat pixels.
 
    ## Two states: the arrow, and the hand
 
    Over anything that can be pressed, the arrow becomes the system's pointing
-   hand, redrawn on the same grid (17x19, 34x38 on screen). It
+   hand, redrawn on the same grid (12x12, 24x24 on screen). It
    used to stay an arrow everywhere, which took away the one cue that says
    "this can be clicked". No press frame: a 1987 machine did not animate its
    pointer, and the hand already says everything a press would.
@@ -13127,7 +13405,7 @@ html:not([data-cursor='off'])[data-skin='dragon'] .cursor-grab:active:not([data-
    ## Hotspots
 
    `1 1` for the arrow — the centre of its point, which is the top-left drawn
-   pixel by construction. `12 1` for the hand — the middle of the
+   pixel by construction. `10 1` for the hand — the middle of the
    fingertip. Both are pixel centres rather than corners, because at 2x a
    drawn pixel is 2 screen pixels across and a corner puts every click off
    the point somebody aimed with.
@@ -13137,11 +13415,11 @@ html:not([data-cursor='off'])[data-skin='dragon'] .cursor-grab:active:not([data-
    --------------------------------------------------------------------------- */
 
 html:not([data-cursor='off'])[data-skin='pixel'] {
-  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAmCAYAAADeB1slAAAAnUlEQVR42tXXOQ6AIBAF0K/xECw93P842rvcAquxICGgMjBQUZDMf0AmAKNcMMoFMI0ZzOMpwCVhFyw02c8VAGC1DwBwXNs0loBL0l5QW9JPUEvSX/BXIkfwVSJP8FYiV1AqkS/IScYRpCTyBFb7onX9z4CS0p6mEsrrppScEtJtIIncbhonH+ZtWpyWXt7xrcrJ2/0Phi3A1ouaCW71i2ZiTfVxIgAAAABJRU5ErkJggg==") 1 1, auto;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAYCAYAAADzoH0MAAAAhUlEQVR42r3UPQ6AIAyG4RfjIVBXgov3P4mLxtWfW+BUY4wJKNZvIh3oA6FQWx9q6wMvU5CZY4O3kmxBKYt5HQBoqjYALNto/hVIxqkHwLsuSfK94KlET5Aq0RfEJPoC77rbuszN9wLpKGeWqL0Dc/0DpJPUT7ePzjtInXu1aYwm9ldmC3a70j6th0oCogAAAABJRU5ErkJggg==") 1 1, auto;
 }
 
 html:not([data-cursor='off'])[data-skin='pixel'].dark {
-  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAmCAYAAADeB1slAAAAnElEQVR42tXXuw6AIAwF0Ktx4rHB/3+gbj5WnOpAQkClUJgYSHoPkAZglAtGuQCmMYN5PAW4JOyChSb7uQIArPYBAI5rm8YScEnaC2pL+glqSfoL/krkCL5K5AneSuQKSiXyBTnJOIKURJ7Aal+0rv8ZUFLa01RCed2UklNCug0kkdtN4+TDvE2L09LLO75VOXm7/8GwBdh6UTPBDcgQZ3YAXnl6AAAAAElFTkSuQmCC") 1 1, auto;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAYCAYAAADzoH0MAAAAh0lEQVR42r3UTQ5AMBCG4ZdYFTtu0Ij7n0bEDdj52dZqRETSUuNbNbPoPG06pTCVK0zleJmUyBwbvJVECzJZzOsIQJnXDmDZpuRfgaTrBwDaxgZJvhc8legJQiX6Ap9EX9A29rYuc/O9QDrKmSVq7yC5/gHSSeqn20fnHYTOvdo0euP7K6MFO/jhPql1MeWEAAAAAElFTkSuQmCC") 1 1, auto;
 }
 
 /* The hand over anything pressable. The fallback keyword is `pointer`, so a
@@ -13161,7 +13439,7 @@ html:not([data-cursor='off'])[data-skin='pixel'] input[type='radio']:not(:disabl
 html:not([data-cursor='off'])[data-skin='pixel'] input[type='submit']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='pixel'] input[type='button']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='pixel'] .cursor-pointer:not([data-native-cursor], [data-native-cursor] *) {
-  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACIAAAAmCAYAAACh1knUAAAAtUlEQVR42u2YSQ6AIAxFf42HcNga3Xj/u+je4QKuXODKxBAcgVixf0cgpHkt5QPhorKkVNtxP7YEh4rARHSVRDc0AIBpmgEAZVE7JcOGiAQigUggdxXbbuCq44ZDxNBxlWndGalwiDwlpRPiR8S33zCQUttbnA+RA7+hftlZaY/IqjWHe/O2YlcjdOZNfYvfqdH7Rp5Wr5ARY/S9l57vU6S/FCU14f0GuKoNSU04Lj5Pq38QWQAKNmuQJ9FWWQAAAABJRU5ErkJggg==") 12 1, pointer;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAmklEQVR42mNkIACkJNT+I/OfvbjFyEACYGKgMWAk5PKnz28yMDAwMHz9+puBgYGBQU1FhySf0NwHQ98CFnI1Epu6Bq8Pbt25gpKqcPmIfpEsJaH2H90VpPoI5iv65mSYq9HDFAbQczKxAGYO/VMRuk9IdfnAlabocUEpoFscMOIqY8j1CXp9MfA1GrE+wVXTDXxpip6zB10+AADDhEP+KD49swAAAABJRU5ErkJggg==") 10 1, pointer;
 }
 
 html:not([data-cursor='off'])[data-skin='pixel'].dark a[href]:not([data-native-cursor], [data-native-cursor] *),
@@ -13179,7 +13457,7 @@ html:not([data-cursor='off'])[data-skin='pixel'].dark input[type='radio']:not(:d
 html:not([data-cursor='off'])[data-skin='pixel'].dark input[type='submit']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='pixel'].dark input[type='button']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='pixel'].dark .cursor-pointer:not([data-native-cursor], [data-native-cursor] *) {
-  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACIAAAAmCAYAAACh1knUAAAAtElEQVR42u2Yuw6AIAxFb42Tj03/wBj//5+cdDE+VpxMDME3xIq9G4GQ5rSUC4STSqJMrcfD1BIsKgAT0VkS/dgAAOq6AwBUZWGVDBsiEogEIoFcVfh0A1sd1x8iho6rTOuOSPlD5C4pnRA/Iq79hoGUWt/ifIjs+A31y85KW0QWLTncmn8qdjVCR97UtfidGr1vpHH+ChkxRt976bk+RfpLUVLj32+ArdqQ1Pjj4tM4/weRGVtZazj3lgS2AAAAAElFTkSuQmCC") 12 1, pointer;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAl0lEQVR42tWVOw6AIBBEB2NFKD2CMd7/NMbYUmlj/LRakegmBBbjotNRAPP2qxCQ0dVxPa/7pMBQgZelQs6XbQQAWDsDANqmZpG8TvD/D8rUi7HV9V2Crh9uVeUjkkuy0dVBXXCJHJVsJzvXNKZOtJNj5d6RryJKwnWeb5rSXDyVWA6Ub8akktB9kX+jxZL4Nl1+Aq7ECU6oDEarMD/+QgAAAABJRU5ErkJggg==") 10 1, pointer;
 }
 
 /* The three the arrow must not swallow. */
@@ -13196,4 +13474,253 @@ html:not([data-cursor='off'])[data-skin='pixel'] .cursor-grab:not([data-native-c
 html:not([data-cursor='off'])[data-skin='pixel'] .cursor-grabbing:not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='pixel'] .cursor-grab:active:not([data-native-cursor], [data-native-cursor] *) {
   cursor: grabbing;
+}
+
+/* ===========================================================================
+   Skin: TERMINAL — the pointer is Ubuntu's.
+   ===========================================================================
+
+   Generated by `custom-cursor/terminal/build-cursors.py`. Re-run it after any
+   change and paste the result over this block; nothing here is hand-edited.
+
+   ## Why this pointer
+
+   The skin is a terminal, and the machine a terminal like this one runs on is
+   a Linux desktop. Its pointer is the one Ubuntu ships: a slim arrow with
+   rounded corners and a soft shadow, and a hand over anything that can be
+   pressed. Drawn from the shape rather than copied from the theme's files,
+   inside the system cursor's own 32px box, at the system arrow's size.
+
+   ## Two palettes
+
+   The light palette wears Ubuntu's own: a dark body inside a white rim. The
+   dark palette inverts it, the way the DMZ-White theme Ubuntu shipped for
+   years did, because a black arrow on a black-violet page is a rim with
+   nothing inside it. `.dark` sits on the same element as `data-skin`, so this
+   is one extra selector rather than a media query.
+
+   ## The opt-out
+
+   Every selector is gated on `html:not([data-cursor='off'])`, like every
+   other skin that draws a pointer, and anything inside a
+   `[data-native-cursor]` surface keeps the system's.
+
+   ## Hotspots
+
+   `2 2` for the arrow — its point. `10 2` for the hand — the middle
+   of the index fingertip.
+
+   Text fields, disabled controls and drag handles are left alone: an I-beam,
+   `not-allowed` and `grab` each say something no arrow can say.
+   --------------------------------------------------------------------------- */
+
+html:not([data-cursor='off'])[data-skin='terminal'] {
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAENElEQVR42u2WX0xTVxzHv6eXlt52l1v+FAoIZUSjlFWiY3tY+qA+7AHchphlyUzQLMAyHpYQ4WkPhjgXH1zmnhbdy8LLEpaYLExfCOviSDRaiJtUOyku4CCpFAoh1P6593z3sNaYbS7LSs0e/L6ck3tu7vnc35/vOQiFQrVra2uHFxYW3rx27douAAiFQlY8K83Nzb3NnAzDeBCNRg89U4iZmZme1dVVeebMJ0YOIjU/P3/0mUFMTk72pVIpulwVsqfnuGmaJkny/v37fQBA0gpAFA1gYmKiP5lMcs8enxRCYVfXEZlMJk2SXF5e/igfCZKiqAA7d+6S1dUeqqqTBw4ckrHYQ4MkY7HY+VwkLKdOnbIUFaCiooo7djTSbnewvf1VOTc3Z5DkysrKVwBseZDt3P8vH8tms6isrMTdu3dFZ+cbyq1bPxlVVVXHE4nE2NmzZ3UhhCSpFA0gD6HrOmKxGDo6OkuuXv0x63K53hoYGLgyOjpaLYQwg8FgSdEAAMAwDDgcDqTTaXR1HbFeunTJ0DTtte7u7h8mJiaaDx48aGxHm/5jPk3ThM1mg6IoOHHivZKLF780nE5nSyAQCE5PT7e3t7dnx8bGlKIBAICUEqWlpdA0DSdPDpWcO/epabfbG9va2q7cu3fv9XA4zEIK82/zKMQfLU8SABCPx/NzDg8PiUgkkjl//jO31+v9YmRkpA1AUgjx+P2CACwWC7LZ7OM5IDA0dBK6rkNVVaGqqojFYrZ4PI6mpiYHAOfIyMgjkkIIwYIAFEVBKpVCWVkZACCVSmF9fR0tLS08duxdIaX8zWKxxAFYEomEXF5eXszZtCjYiHbvbpFOp8bqag9DoZA8ffpjWq12VlRU0e9vM9LpDCORyFUA+wG8AqAVwA4Arqel8l8DpNNp1tc3yKamZl6/fl2SZDQapcdTx9raetrtDo6PfydJyuHh4S632+3Zt29fXWNjYzmA0oIiEAwG+9bWEub+/S8bs7NhM+f/MZLs73+fqupkWZmLHR2dBkkuLS2NArAODg6qAJSCT8rJyckPSHJ1dZUkOTU19c3evXvfMU0zefv2LMvLK2V9fQNttlLzxo0bJPkrADcAJd8thahkcXHxYSKRmBZCKDdv3vw5EAh8DiAVDoev+P3+o4FAwBwf/1ZpbX3JXFlZEQCsuYNJSCn/U+X/WbUAXgTQAqDJ4/F4VVWt6+3tPWyaJiORX3j58uX8rY3xeHwKQI3P57Ntyx3B7Xa/UFdXV1lTU1Pt9/vLATi8Xq8LQG0kEvk6k8k8ILk4Pz///YULFz5saGho1XW9vKDKf9L0cnac72WZT42madrm5qYLQGWu2NYBbALI5MYUAG4HwNOe23Rdd2xsbNgAiObmZqlpWmZra+tRNBrNPgFbFID8muLz+SwAcOfOHZnblNvx58/1XM/1v9HvKqkuSeIsScAAAAAASUVORK5CYII=") 2 2, auto;
+}
+
+html:not([data-cursor='off'])[data-skin='terminal'].dark {
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAD0ElEQVR42u2WTWhcVRTH/+/7I/OdTGYmCaZJq0GCtIolibRd1OhCiiDtQpFQunUpBnFjpQjuKkJLNpKVGxtsS+tKa0XoQEDbldXGJjQWJclkponJzHuZO+/dvwtfJChVcGaKixy4XHjvXs7vnnPP+V/FcTJ9phk+a1muEobix0qlcgeAAaCBR2GJROr1rq5uum6MqVTnL9ls9sXol/ko/KsbGxuJbDbL06ffDaUMe4UIruZyuVcBiCgSbSZQ1Tf37BkkSXnp0uUwFkswmUwzm82/ES0xACjtBJgcHNzHpaUlSZLXr38ts9lcGIslmMsV3ms7xDbA6uqqFEKQJG/evCUHB/cFtu0yny+cA6AC0KK5fQBSStZqNZLk3NycPHDgmcAwbOZyPZ8AcKMoaG0FqNfr9DyPJLm0tMxDh440DMNid3fhcwCd0Ta9rQBCCPq+Tyklq9Uqjx17uaFpBru7C7OO4/S2EuKhOdU0DUII2LaFixc/0ycmJoJSaWUkHk9+FY/HhwAErShT9V+igyAIARDT0x/rk5OTYalUGrIs51o6nR6LuqXelhTsHJ7n/Xk5z5x5P1AUjYlEajWd7nopupRaSwG2xzbADpMkw5mZmXpPTx9Tqcy9RCKRaSYKf9tIErr+x2cpJUhiamoK5XIFhmEoQRAq6XTSHB4exo0bRdc0tRSAalSibApASgld1+F5HkjCsixYloXbt3/g+fPnFFXVV6UM1gHQcTqkZdn319crSlNdcjsFy8vLkiQ9z+Phw0fk2bMfkiSDIODi4mLY09PHdLrzluM4JxzHeQXA8wCeApBrqhpUVZ3s7x9gtVqVKysrHB9/QQLgwYMjrNU8bm1tkSRPnjwldd2UyWTmFIAnAOyNnLvNtui3hoaeDOfn54PR0edCVdWZz/esaZrBCxdmSJJhGLJYLAa27TKT6fwUQAJALDp5c/pgmubbAwN7uX//07TtDmYyXddM03zHspyto0fHKYSQvu+TZHj8+AnqunG/UCg81iqFVHXdKpXL5e/v3v3pjuNYlx88KH8khPjOdd1visUiZmdnQ9u2ubCwIGOxGFVVNRqNht0qZVQAPA4gpWlaLAzDTQBbAALXdcdIZXpsbBT9/f24cuUqPM+Hbdvfrq2VXwPwK4D6fym9vwJkADhRNxMAfAA2gK5kMvOBEGKkXvfZ0RH7GZBfbG5ufglgHkA5Wt90BLYfGgoAGZ3IiKS31zTNvKZphu/7awAqAH6L5lq0vmmAh4mUAyC+o8waALzIcR1A2Ko78E9KuVNoZORUNpv3Xdu1Xftf2e8f7Ru2PGm/egAAAABJRU5ErkJggg==") 2 2, auto;
+}
+
+/* The hand over anything pressable. The fallback keyword is `pointer`, so a
+   machine that refuses the image still gets a hand. */
+html:not([data-cursor='off'])[data-skin='terminal'] a[href]:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'] button:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'] summary:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'] select:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'] label[for]:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'] [role='button']:not([aria-disabled='true']):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'] [role='tab']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'] [role='menuitem']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'] [role='option']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'] [role='switch']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'] input[type='checkbox']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'] input[type='radio']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'] input[type='submit']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'] input[type='button']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'] .cursor-pointer:not([data-native-cursor], [data-native-cursor] *) {
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAFIElEQVR42u1WTUxUVxT+7nt33jxmIDPDlBkFZHSYih2lmiAhCq0bIklNbBNLEyBhUROwNmJrYqKLRlx0URfGLmTowg1pxIhdNK6EUkYz0hSD0VgnsUOlYgERHX6GCcP7uacLocEEdIC4ql9yNvee5H455zvnuwxLgIhYc3MzA6AePny42uFwOABgampqqqWlpQNAqrm5mRhjhDeBnp4eDgDxePwsEVEymaRkMklERPF4/OzinLVCWuowHA4DgOJyuT6MxWKiqGiLVlS0RRsYGBAul+tDAEp7ezt7YwSi0agEQAWgh8PXpeHhUXl4eETu7OySAOgVFRX2yspKTkSMiNZEhL+GnJSXlwerVYEQApxzAKBIJDITiUT0xZoBgNVoYkkCFRUVrKOjQwcwzjmHEAQAUiqVAoCArus/TkxM/BUOh1sBaIyxsRc8iL3gwcSqCRCRdPXqVXnPnj1MCGH8l8g5SyaTuHatM2fr1q2f5efnobq6+ksAIpFI/H78+PF6xtg4AAGAAVj5hJw6deolTZimeaWzs4tk2WJ4vevJ7w+QoqgiEHhXD4VajQMHPqXOzi6ax5Bpmv1DQ0NVABgRSSuqABExxph48ODBdlVVfZqmwTCMXF3XAYBxzjE3Nwe3282ePXvOm5qOwjRNunfvD9TW1lBWVtaGY8e+3pCTk/MNgK5wOCzNV+P1ICIZAHv06NHHRKQRERmGQUREFy9eJMYkKivbRefOfU+qmkE7d5ZSefkH5HZ7yOnMJqvVRgD0jo4rJhH9BsDe0NBgSXsM+/v7JQBks9kqdV231NTUagUFPnHz5k3yeDwgEpBlGU6nA6nULMrLy7Fv30eIx58hGHwPBQUbwLnCnj59Ks33n09MTLCV7gGWkZFhDA4O0qVL7dL0dEI6cuQo6+m5Dlm2wDAMTE5OQlGsuH37Nm7cuAHOOZqamuD1emEY2sKYcgDyisR3+fJlBQAbHBz8gYjo0KEvNFW1kdudQ5s2FVIgsJmys9+hjRv95PGsI5fLTU5nNjmd2dTQ0EjFxduJMck8f76FiGgQQB4AC2MsvQrcv39f+Hw+a29v7y+aps2GQi2W2toaev58HIFAAGfOfAdJkjAzMwMAUBQFqmqF1WpFe/sljI+PQ5Y5RkZGMN8CCQATQrC0CJw+fdpUVdVSV1f364ULF77SNG2upeU89u//hLq6ruHu3bsoKSlBKpWCJEkgIghBICLY7XZI0otOzk/M6tfyjh07cgCsb2trO2maZI6NjZnbtr0vbLZM8njWLRu5ufnEuWKeOHGSiOhvAAUAlHR8YrEIzTt37kyVlpZSfX19W3d3V6vH45Hq6mrJNM0FgS0LxhgMw1iTGxIA/datW5M+n8/cu3dvSAjxZ2FhoTQ3Nys455BlGZzzl2LhTNc15OauX9DA2ix69+7dWQC88Xi8N5FIiLKyXRoAoSiq4Fx5KRRFFQATmzdv0Z88eWLqujYAYF0wGEyrBUvVVZSUlGixWIz6+vp+rqqq2tXT020JhVoxOjoKWeaLfIbBNE14vR4cPPg5d7lc6Ovr+wlAorGxka3lyyb5/X4HgPzu7u5vp6enY0T0mIj+WSYeJxKJWCQSOQfA73A4nOkuo1eVSMnMzHTMzMwoALwAbK/IJwCzAMYAaACmAcylY8nsNXeW4uJi+8OHD5VkMikv94UDIOx2u+nz+fRoNJoEoKfrhCyNewmAFAwGmaZpS+YrikLRaJTmHxWr+oy8xVu8xf8W/wKvgoq995JNngAAAABJRU5ErkJggg==") 10 2, pointer;
+}
+
+html:not([data-cursor='off'])[data-skin='terminal'].dark a[href]:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'].dark button:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'].dark summary:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'].dark select:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'].dark label[for]:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'].dark [role='button']:not([aria-disabled='true']):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'].dark [role='tab']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'].dark [role='menuitem']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'].dark [role='option']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'].dark [role='switch']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'].dark input[type='checkbox']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'].dark input[type='radio']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'].dark input[type='submit']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'].dark input[type='button']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'].dark .cursor-pointer:not([data-native-cursor], [data-native-cursor] *) {
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAEl0lEQVR42u1WXWhURxT+Zmbv3nU3m3vvZtf8mGJa0hARoqw+FRrzZNAaikjfLBRrIVXfrH0rWAqWSh8UKUKhapGSQLBPxRahtApSJJQKNtqUDa1uA5u4yd416eb+zZw+5CZs0yRujD4UPHC4MHc48833zflhWN5Y6Il0uvEN2y4ZAGCaVrlYnBgC8DcACv2ZWAQAb2jInE0kktTR0UkdHZ2USNRTQ0PmLAAe7nlmFrUsy9D1Dbd37eqRtm17tm173d27pK5vuG1ZlgEg+jQO4iutJ5PJuOvOBb29vdwwDGEYhujr6+OuOxfE4/EkAK1KqqcOgEkpBQCez+cXF4MggKYJtLQk55a8gycGsqKOnucFAKYZ4wgP4Uop+L58cWQk/0VTU8uoponPdV13c7lcAUBQdSG1HgC8KlBQzYqmadi//0CqVCq9fv36dWia9i5jTDY2Ng2bpvHW6OjoQwB+yAatS5Kurq4EgG+OHDlGRBS4rkvT09NERGpycjI4ceL94Nq1a3Tw4JsEgDiP/GWaqV8sy9obAhBrZYADUOl0Ouv7qm1s7E+dc9EUXoQFQQBd1+E4DstkMuL06U8AgLq6tiGbzZLrupvOnDm7yXHmPgDwfSiDrPXmAgBLpTIHkknTN80UtbW9RADo6NFjREQ0Ovo7nTz5IRER5XJjNDIyQq7rUpX5x4+/JwE23N7enqk1TXn11/e93fX1ycjg4IB769ZPas+evTQ5OQkigpQS5XIZAHDz5k1cvfototEo7t37DcViEUop3tjYyAHijuNEV8mwZQGw1tbW2MxMWe3YsYN6e3eLjRs38vPnz7Oenh4wxhCJRGCaJgAgm82iu/tVAMC5c+cwMTEBzjl83wcALQiCyFrTUgeQMAzry1QqTQMDgz4Rked5VCqVaGpqinzfJ9suk+d5i5xLKWloaIjy+TwRkTx16mMCkG9ubu4MY9YMQgNg1tUZbxuG5cRicbpy5WtFRDQ8PEyHDh2mSqVCvu+T53nkui65rrsIxnEcIiJ56dIlAng+lUptARCrBcCCBBIAm50t/yil/EjXdf/w4Xdw48YN2rlzJ7Zv34Y7d36FEAJKKTDGwNh8bNd1odR83dE0bWk3XVsDAvACgC7TND9NJJKqvb1D3r9/nxbkWMkrlQoRkbx8+TIBPG9Z1lYAG9bCwELVKwJ4ZNv2V/F4bCCXy/GBgUElpUQQBI8vKpHIunqBAuACeAiAVyqVi4zRK8VisU0IQVJKxhgDEf5VZRlji+AKhQIAhWh0fZ1aAEgB6Kyrq/958+Y2dffuXZ+I1Go+Pj7ub9myVSYSdX8kk8mXa5VgOc4kgDkAJSHEd1NT09l9+/oi/f39aGlpAZFafIBE8wwUCgVcuHAx8uBBHtFo9GqpNP0ojPXYhsQew0KzYVj9UsrXZmdnYgBbYT9RPJ5wNE37oVwufQbgAYCpJd10TQBYmMdpAJYQojUWi9WFQ8p/0QqhHMeZlVKOA7DDd1RZDwMLGRIDUB/qqa1S31U4B8wBmAm/NQ0lrIb/InS+yn6qar9yLcPIk8xxbJnDn9tze27/X/sHVLdpQrJAAHwAAAAASUVORK5CYII=") 10 2, pointer;
+}
+
+/* The three the arrow must not swallow. */
+html:not([data-cursor='off'])[data-skin='terminal'] input:not([type='checkbox']):not([type='radio']):not([type='submit']):not([type='button']):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'] textarea:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'] [contenteditable='true']:not([data-native-cursor], [data-native-cursor] *) {
+  cursor: text;
+}
+
+html:not([data-cursor='off'])[data-skin='terminal'] .cursor-grab:not([data-native-cursor], [data-native-cursor] *) {
+  cursor: grab;
+}
+
+html:not([data-cursor='off'])[data-skin='terminal'] .cursor-grabbing:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='terminal'] .cursor-grab:active:not([data-native-cursor], [data-native-cursor] *) {
+  cursor: grabbing;
+}
+
+/* ===========================================================================
+   Skin: RUNIC — the pointer is the pager's rune arrow.
+   ===========================================================================
+
+   Generated by `custom-cursor/runic/build-cursors.py`. Re-run it after any
+   change and paste the result over this block; nothing here is hand-edited.
+
+   ## Why this mark
+
+   It is `RuneArrow` — the arrow cut into the theme menu's "previous" and
+   "next" buttons — stroke for stroke, so the one direction sign this world
+   already has is the one it points with. Turned 45 degrees onto the diagonal
+   the system arrow sits on, and drawn inside the system cursor's own 32px box.
+
+   ## Two frames
+
+   At rest it lies on the diagonal. Over anything that can be pressed it
+   turns to 62 degrees, lifting its point at the thing it can act on. Both
+   turn about the mitre at the point, so the hotspot never moves between
+   them. The click
+   is a brief glow drawn at the pointer by `RuneClickGlow`, because a cursor
+   image cannot animate.
+
+   ## Two palettes
+
+   Oak-gall ink with the rubric in the cut and a paper halo on the light
+   sheet; bone with the ember in the cut and a soot halo on the night stone.
+   The halo is what keeps the mark legible over a control of the other tone.
+
+   ## The opt-out
+
+   Every selector is gated on `html:not([data-cursor='off'])`, and anything
+   inside a `[data-native-cursor]` surface keeps the system's pointer.
+
+   Text fields, disabled controls and drag handles are left alone: an I-beam,
+   `not-allowed` and `grab` each say something no arrow can say.
+   --------------------------------------------------------------------------- */
+
+html:not([data-cursor='off'])[data-skin='runic'] {
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAE0klEQVR42u1WW2yURRT+zsz/d7uX7qUUSlsv2KRiRDAEkBQx0geRQqxpG0GISqv1kZeSAIkQSnnR2ibimw8GeTBS0CqYoMbLqqSkCAGjXAIxwTZdaGm73eu/3f3/meMDhUKCsS1oYtIvmWQyk5PzzTlnvnMIUwAzi7+7IiLGdMHMNHrlbDDWezx0ed8+1/gx4T8AAcDolbNB023/6i0oCNhKxQFkb5HTgDQkpGk4IDF4h7UkBUDGI0NtwYeWf818SBKtV1MhYABAMCQpZdmz3tvR6ktcvRp0ufNBzAAIRATpyoOnsBBSiMdvGgpBSKYzeHP7FgSKiz65cTp7ylEzbm5swO4/fYafvPaHpvx8UpohtYJlZcEEjDkAKygA0AB8BnBmAOrCutXGstUV2emmwLi9DjxeD/kCflHg89B3Qxb+dBdg2cqFSCVSMAwJjztfMAMMhiUEyqJxs7S0GEDSuDcCiRS5vB7h9nmRiTjouZ5Gpd/EaCKNijXPo2ZDLayRYZameU4QXCBiMAjMQdPtMlODw5l7I6CyVp4ZSJLH69e2zb3uEMUSadR4FA43b4NtWbq+cSON9vZ9Wzjvma28e7dxfgFEqHyJv/TRx8inKB0Ohw2gSk37O+Ti5y+2vVrNH5RAdTSs4yMH3+fNpfl8bEkRby5z86cftSnm6xztPdF+P7/hRO7ohsgICSQSKdRsqIVtWbpz1x7xcokPnW+1CGhW9Y1vbOWxSwG4/N2AloDQADgz2J91F7s/I3oiNz0CABiAJCBfEqyREdQ3bhJEQnfubBEvFbvxectemYzH9Yrli5uU4zRJaUApBX/Aj+Cc2Yw4vgEQZWaarDLeSUBrmFKynUojZzvXdH//V3UNr70OsOravVdumutB57vtoj1uK5dmtjLAGMAL55fSwZ+ORAHN006BIAIMAw4zlFLQrPN9D1Q2xfu6h+oamrYnY3Hd2dYuNlcUwx1JygumD9VLF2F4aITLK8qJgQAgpi9EMi9P+2YVIuNoCCIQQEhcLAw+vHIH5y7PWrF8cVNbwlbuSFK+WJQHM5HF0y+sQfX6WqhYlLNZ+xTY1sw8JRJiosPRoGma8ErBUghogCFykpkJZvB7pRRcGnzB9OFYgvGcy8aXW7fjs/0fswwGYedyv1BocQwAiCbPYaK9SmFbmTHn54h2BmJJxxDkgPV4m1VeIQTGsoSnli5CVcsufDGcRX2JDz+0tIquA50ceLCiORHp6cDhw2IqUTAmdCARbNq2xfi9utoomxuCCRSl0rdyqpVSPKY1Dw+N8Nr1tcikLe5qaRV1xV4cbWkVBmu7puGV5lgld4eIusLhsFFVVeVMhgADgO1kd/rK5pVUlpVrQIvMYH/WN9dJjbcqKgj4acH8cvORinKoWBT1jRuJSOije1rFSjdwYM87eHbtalVQ4J0DAKtW3QeVYj4kAcAaOLORxy5F0wOnBlXiXDRz/fTxWF93B/MQH93/dq5u3uzcyWMf2qx7OdZ3Ys3ttlNyxhw2OBw2mMNGOBw2eHxgYT6Xx9wb4thvIebeEA/3+AEgFenpYO7n1OApZu5j6+rJ5n8Y3e4fbhZaOnKylrm/YeLlTP+aw9vX3ZxN5+WTHiTupu1ExMwsgR8JGGIiUpjBDGYwg/8b/gJRXGq2kjmduQAAAABJRU5ErkJggg==") 3 3, auto;
+}
+
+html:not([data-cursor='off'])[data-skin='runic'].dark {
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAEjUlEQVR42u1WXWwUVRT+zrl3dnd2t7vbPwgEIRrTxuJP0PikBhN4aEQFFG0bE0NIY2J8gkYkItHomxEhRmMiankhbSPgthVEiYohiBTUhtKCMQUjJLQWG1r2p7sz9x4fdoGKGN1FH0z6JSczOZk597vnn1Aa+C/0UpSyQQAS8+fHKxsbbw0yEUSEmAhMBGaCUnwdUQARbvRgxIGEF1D9U3kTt8AEgNx1vvUBjF6jMw5BOQH1eiZn9gFQAEwpBDQATAAUYa7etmVDdH5tRSKf90AEiBS8m835GJvIgAgNkAJtsRZBN4y33uvA4KnhDip6rVQP6MsvlrV3321zpd4btMgbAmuALBAOF9zsBAHmwu2IgVwaWHi3Se4/rPuHhnPMBJHS0+AKASKidCZLfvoSp1MpUg0PYjR0E459ewQVFVEY44OuJCHBmhDcX4edsZERMKClzBTUADAvFqPzmTRPpjLQrgu94F6on48iXp/Ajq9OoDe5B1qx+MaeABAsZjwBSLiaHNfhbNqzZRFgAFiyqDJjfHMp7QFwlIwE5yFdtxTVP+7DrteeRkvzCusbi9pEeD8T1b+8ePHtTzQ03FE3J7pQhSL1ac92Fy9jymNRKKWTvR+8KrK/zXRuXS/LVz4suYEuyX3YJFPHO6WpaYUBIDWx8BtKMZj/KOVC/6nJWIuKeCW6P/4Eq4Patr/YzDi2G9s3NjMzTEdHsq1QuThULDsLQEIO56Y8uwtAvlwChbBaA+Sn4DgaHZ1JtiJ2+8YWVt8n8f7zq1QiFrOnBgdbA1q1+r4BK0YmncUPx09KDPhsEhgv5oeUTIAJgO9JbVUFlHbORwL8aVdX9xomMtvWr1Lq6E688+xjbG7ZaLR4AjcEOK6cGxqi+kWN45NltGN9pR8K4FkArMHEYELoYjrfWhOPjHV0Jl9IxKL27ece58kDO6AyWTUaq0Pf4SOoramS02fOUjEs5TUiIgIgdmQ8BSxwIRkDKRirGk9lNyilqk8eH2i1N28yKp1RzsBeJOo9dPZ8iZ7ezxFgiNLqaBywEyWS4GkTbhTWAFNpscZcnnDK+IaMMV8EQyFo8WQ0Vod0/VJUnvkaO19pQUvzSslbwA0E+iaAiyhvvBIAeG4k7OOuB/xo9Wwf1voARGklACK+8QHXRd83h7HmzT3w73wI8l032tse4aam5TKeyq6Lus7mok0qKQTWWgQVJ7a8u0N37V2gJ8d/A1m/JgJQVoqjglnguFI7q0a6e/ZhdTgk7W2PMvX3YvvaZazFeB/t/nRdPBo4NJHK7y7a9v8JARERKM0v9Q8Nz+kfGrYAOORwbgpIFWNEmUyWfhoYcE6fPouAYnR0JsmK2Pa1y9j95Qi2bnoGBw72mQtjF2ZNG6UlLgdE13Y2BQARh1vCATUeDqjRwpMPVkXdzQDkqSeX5c8N9OSX3H+Pp5mkMhZsnP5vKVBFj0yXy7EMxIFKFKUKiAFA1HU2a0Dmzq4WBiQS0Ov+ZnX7V1HYptzASgCrK2Phxun6/+rA6XL1sKt7IZd1ixuEmtb7DWYwgxnM4P+G3wH54NB4CD9hrwAAAABJRU5ErkJggg==") 3 3, auto;
+}
+
+/* Over anything pressable, the point lifts. The fallback keyword is `pointer`,
+   so a machine that refuses the image still gets a hand. */
+html:not([data-cursor='off'])[data-skin='runic'] a[href]:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'] button:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'] summary:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'] select:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'] label[for]:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'] [role='button']:not([aria-disabled='true']):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'] [role='tab']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'] [role='menuitem']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'] [role='option']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'] [role='switch']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'] input[type='checkbox']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'] input[type='radio']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'] input[type='submit']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'] input[type='button']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'] .cursor-pointer:not([data-native-cursor], [data-native-cursor] *) {
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAFfUlEQVR42u2Wa1CUVRjHn/O+7y4LC7uIyk0UUOSmEqEYIioJgjDklJdRRxv9ImXO2OBMpY2ONpUzNpOW000yo5gxgyyaERAxF10IWK4KuFwXVGSXXZe9sPd93/fpg2I6+YVbfcj/53PO8zv/c57/OQDPEKKMQUQaEQn8Wxrpq5Qa78hnrAFgnoZBGrFo2mAYAADTYH2kSCSsEYq96CquXwcsW8aazZeulV+rI4RY/4YpogG2AADwhBCcMgrW2J6L5jY8susVvHjmI1SrbiA6exBxYABd3WccWkWWrOgL76edKaKn4pgIAAA6un9urW/acjJnO7vYz4MeFHjyoqhYKj4zjVq9fi2EhIYAMPQgcNx11mz9VVnXIYvL2WGYis0TZfVZn+jENZ35J04HW87lY9I8f3Jn1AFOqwUMDpbXiaU8zl9IRa1OoVZlpcGC6AUANK0BwCrOYi2l7VAJAUu0AAQIgXEfC7Hcr8sQSXwqDm7ajYvvKYlE4gO3TQ64RTxhIXGDn8UAvhSAFQmv9RAjWRAJoSkr6eT01RCTGA92nb7cK2BZNiJShBB+vACU2FeaqVFrge/v5YlQBOfvmmCJCGCmrwTWnfoUvN/YD10xy2DIU8r7OawktKOJ5r77Cj/Pes31y9cFnKefr3hyXSBgcloVzeDvGCUGH3/wS1kK97uaIex+H2h6VZD7/rtg16thZMTI1Fy9AW1VciTKdo4d0fBLlsZRwHK6J+/TuIX2bvzkzc14LozBg0kReE9VjXmpcVgcI8a9L8zlhvvl6NI19aJNeRKxvxvdvTg8UI01pWcR8S46R1p2jIXXROpTWq0OzEolAAB4RERCSHgopuzagZ1OgNhRHSk+d54XzPKfq1J2FxxL3R3reGBc6x8w63hydmaBXav7VkjRZQ+XSuUm5MCN8u/xxOJZeCJUiIWnjyC6etCub8W8jEQsjvXGvVGzWbVKjqzh5p/TkYRUR60CZrpsMCwUc8mpKwHs9gsiD6Fq84F90GLjMYG30gWnvkHa138Funsa0NJx2DBwPWELAD0lAIP1DSBEHriQeTA/JgJsNutnVpPxeHLmOiDLV/ASAQVDFeXkndf3oOKybBmy7Ie+gUENRZyq0appOI4jjVJEJBNNREo62A9WHjD8peU0cLyxrUWhLMuvKASXbXhpVgYt19sxbYYHVJWUkl0bcvn18Wns4T15pLqkPN5L6nPIyZPgR+/ChAAYrdCLlffquWNpq2igSG1S9tvmu+2XIwDRp72uERQWDjIJgTVBUtCHR1NmtYb6sbAUO1ra3YmpK8noqGNSjxLzwZXfmZuKZiYhLQXcJssfAACBQf6vAst6NctrWbfQg7lucEIiw0Jn0Gw4UPgl1F6pwqBgfwEjYMyGYdPQWEdPCMBLwBxdkZ0ezppGwWY2lwAACLy9s27XNUFXzxDJ2ZgOIfPmgLXkAthkV6GpfgNk7NyKwLtqLcO6qsikbPNEY/iZ6q4rlKCjS3v8ra18IABXfPowrx6o4fdHz8biWG/ct/ZFlnX0oPmO/NBkAujxJUSUMSiTMYiNAkQkAZJAgdNi84uMjSLpyXFkUUIcCQwNI5GbN8GIi4OZqi6q4rdS9AkMPjrQWRFOyMss4lFq0jsfayVUt4qtmoaf0NWrdRtv8VaNwul80Kwe6q/GvIQw/lKcBHMTwt02Yxuy+pb3JuvCY3JCCBJCkATFW8WBidsHOtoiOYosoggVa9DqNwbNncMt37mNK+szczRFsWa9EWiRcMa0fFAR8R+WuvQtP6CjEy/mf4y85Tais9cyOqjY9tC5Ino6IAgiUo++6MQ43BTBmtquIN6r5Ext+dq+ysixcfBfaSqKk3EWI0/Mwynr/ed6rv+1/gL2yfW8kvkNCAAAAABJRU5ErkJggg==") 3 3, pointer;
+}
+
+html:not([data-cursor='off'])[data-skin='runic'].dark a[href]:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'].dark button:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'].dark summary:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'].dark select:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'].dark label[for]:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'].dark [role='button']:not([aria-disabled='true']):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'].dark [role='tab']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'].dark [role='menuitem']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'].dark [role='option']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'].dark [role='switch']:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'].dark input[type='checkbox']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'].dark input[type='radio']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'].dark input[type='submit']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'].dark input[type='button']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'].dark .cursor-pointer:not([data-native-cursor], [data-native-cursor] *) {
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAFK0lEQVR42u1WaUxUVxT+7rtv3gyzMgyyKhYccUGjUq0LAhHX2mpcqhFrDFVTTdto/6mxtUarjdHi1sYAUnGL1ZpS10aEIloxFUWtOxm3LuKgoIMis7x3T384Jmj6h0H95Ze85P64Oe/7zvnOuYfj/yEDYHidsNth69kzwU7l5TJjz/2bB79XR8iiIDlMx+8BaABwDcAam4kPnTZtuOk1kGGQgI9jI220dePXNGdWNnXp2pm4xAjALQB5FoW/O2lSpplJ0ssnIz0Numt41mBBrj1++m2p5qnMD5TszNXmfZpDKSndiHOJAPwNYLtZwYT3Bve0S8+TCV3+jLGDLD/sq7y6dNFncYsy7dR4uYrpoxIQZtIDZpt4AIeodgeksjMu6fDRU7h44RL8/sBdAEd1Eg4qAkeagLpgPGo1Aauej2jW2OHSnasonV9njzweyPHdcD+iKywPb8LOPIDXAyhG8ZhHUHWtitI//+KlFadw9eJleH2+X5sDYjQACYBodQUafdrIxKSO6BOjCJ9KUAZNhnL3Ejz19RizrBgLDrlx9HFHPOTRwiw8LMNex5emG6iycK7/o5zJmlcVJs55yCWQAbzfL7UHLNoDVq+zoqS6FmMtceip1KJbYixWfpuHtXodnJ2dclZ6Pwzp24XS4nVaFFdE1ZkLEhHuERHaYkbKXz2f6OA8unYglyKjounU3g1Eu2fSraObtPbxMWSQJReAXAA1AMjpTKJxY4aTzaiQTsKHLcS0vgnC7eHonxQBAKj+twn369yUu+MIaZFOdGx2sVnTJwqvKjokJ8YXUXl5d4dJn+Vy3Vjxy/4jRT6/VmC04FAwlhaS/IyMgdR4aAlR+TKaPWsqMcbIoFeoYs86ol0zqe5EoZqUmEAK55U6XXBCM4aX1YZS1sBesKgP8Uh2aCf/OAcQ/ej1+W8szy+GGptC7Rou8rmzs8mvaQMDAbVKBn0R67CmaprGXwqBYX0SAeHHpQaBmhoXzLK81mbUrygrPYb9Nc2Cmh8hJ93JigpW0fjRmX0dDtuy2vueKsbY6TAdW2EHbEEDhmRCqbflCYTOSMfO3+Jen/9h2rDUKwVFC7ZpQrj3VpzjzDmApGsVmP7BSPZzcaE4e6JY3Z7/DZsyfkRvLusWBhQlLjiAQuuC24fXB6i21Dt6REYAwCFJktCpfTsngKaC9UuIGs4Kz6Zs8vz+PZUc2Eo1p/cRkVtcO73fr5N5wGFWuj4TE9IcGJCzXO7/dg+5+sw5yJJUpgqB23fqx9ktRuOQtFT1Celk6pwGW+05uO+1x8QpKzFy6CDye306IUSjPSbxTr3LFdIYfkZ7MYDNCsdmqx6dgu4uG57Rl8jrUncXraaVX80j2vc5aSc30NCswQRAZUClSc9XtEV98DV4vqVGjXrHCqAub82XguiB9knOBBHhiBD3j+cR7ZpBx/duVMMMego3Gxa2ZQC1fNNlIpKCZ3ribjT7hLq401sdJFsYQ+GWn9j1m/8wU0wCMp1WxFsVdr5BwtnzV9KTE6J31HuaGoIZoLZvJgCLBkxGhe8EUKcDhEkv+xQu1UbHRNH1ku+Eum0qXS0rDLSLtJNBlubj6cYUchZa1o4AkBtoeuLXsnv16pVsMSspKtTukQ7bBPfdOm3dnhMa7zdCE5qmRrVzQCOyv6pFUXrRJzJnW+Iiw2nOrGyyWUwkMzy2GnRTgpnjr4IECxKRny4ucBpkVgLgiMKQH2lRklvce314YflgL0Nlq0za4kyhrGBv8AZv8CL+Ay35K1fzexw9AAAAAElFTkSuQmCC") 3 3, pointer;
+}
+
+/* The three the arrow must not swallow. */
+html:not([data-cursor='off'])[data-skin='runic'] input:not([type='checkbox']):not([type='radio']):not([type='submit']):not([type='button']):not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'] textarea:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'] [contenteditable='true']:not([data-native-cursor], [data-native-cursor] *) {
+  cursor: text;
+}
+
+html:not([data-cursor='off'])[data-skin='runic'] .cursor-grab:not([data-native-cursor], [data-native-cursor] *) {
+  cursor: grab;
+}
+
+html:not([data-cursor='off'])[data-skin='runic'] .cursor-grabbing:not([data-native-cursor], [data-native-cursor] *),
+html:not([data-cursor='off'])[data-skin='runic'] .cursor-grab:active:not([data-native-cursor], [data-native-cursor] *) {
+  cursor: grabbing;
+}
+
+/*
+ * The rune pointer's click: a quick, weak glow. See `RuneClickGlow`.
+ *
+ * Centred 7px down and right of the hotspot, which is a third of the way
+ * down the pointer's stave, so it lights the mark rather than the empty corner
+ * beside it. Transform and opacity only, so it composites without a repaint,
+ * and it is gone in a quarter of a second.
+ *
+ * The light palette's glow is its own warm orange rather than `--rune-glow`,
+ * which on the paper sheet is a deep oxblood: a halo of that reads as a
+ * smudge, not as light. The dark palette's `--rune-glow` is already the ember.
+ */
+.rune-click-glow {
+  position: fixed;
+  width: 30px;
+  height: 30px;
+  margin: -8px 0 0 -8px;
+  border-radius: 999px;
+  pointer-events: none;
+  z-index: 2147483647;
+  background: radial-gradient(
+    circle,
+    rgb(214 108 44 / 0.42),
+    rgb(214 108 44 / 0.14) 46%,
+    transparent 70%
+  );
+  animation: rune-click-glow 260ms ease-out forwards;
+}
+
+.dark .rune-click-glow {
+  background: radial-gradient(
+    circle,
+    rgb(var(--rune-glow) / 0.5),
+    rgb(var(--rune-glow) / 0.16) 46%,
+    transparent 70%
+  );
+}
+
+@keyframes rune-click-glow {
+  from {
+    opacity: 1;
+    transform: scale(0.55);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.15);
+  }
 }

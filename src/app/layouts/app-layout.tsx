@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 import { FloatingShortcutLayer } from '@/features/floating-shortcuts/ui/floating-shortcut-layer';
+import { LiveCallGuard } from '@/features/live-rooms/ui/live-call-guard';
 import { ChatDock } from '@/features/project-chat-dock/ui/chat-dock';
 import { CreateProjectDialog } from '@/features/project-management/ui/create-project-dialog';
 import { cn } from '@/shared/lib/cn';
@@ -19,6 +20,7 @@ import {
   PageLoader,
   RouteBoundary,
   RuneScribe,
+  ShootingStar,
 } from '@/shared/ui';
 import { HiddenSidebar } from '@/widgets/hidden-sidebar/ui/hidden-sidebar';
 import { BranchCommitPrompt } from '@/features/task-management/ui/branch-commit-prompt';
@@ -105,6 +107,11 @@ export const AppLayout = () => {
       */}
       <BranchCommitPrompt />
 
+      {/* Asks before a navigation outside the project hangs up a live call.
+          Inert, and attached to nothing, whenever there is no call. See
+          `LiveCallGuard`. */}
+      <LiveCallGuard />
+
       {/* Something comes up over the bottom of the window once a minute, holds
           for three seconds and drops back. Inert on every skin but the
           eldritch one, and inert entirely under `prefers-reduced-motion` — it
@@ -149,6 +156,12 @@ export const AppLayout = () => {
           survivable sixty times an hour on a page somebody is working on. Same
           contract as everything above it. See `dragon-decor`. */}
       <DragonFlight />
+
+      {/* And once a minute on the space skin, a shooting star crosses the sky
+          from left to right in under a second. The same contract as the
+          dragon above it, and the same depth: behind every panel, seen through
+          the gaps. See `space-decor`. */}
+      <ShootingStar />
 
       <div
         className={cn(

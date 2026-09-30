@@ -70,8 +70,17 @@ const FRONT_POINTS = 40;
  */
 const WAVE_FRAMES = 28;
 
-/** How far the crest's glow reaches back from the front, in CSS pixels. */
-const CREST_DEPTH = 26;
+/**
+ * How far the crest's glow reaches back from the front, in CSS pixels.
+ *
+ * Narrow, because the band is drawn solid (see `.theme-wave-crest`). The old
+ * 26px was sized for a blur that faded most of it out; at full strength that
+ * much reads as a stripe rather than an edge.
+ */
+const CREST_DEPTH = 10;
+
+/** How far the crest runs ahead of the front, into the old palette. */
+const CREST_LEAD = 2;
 
 /** Clears whatever the front's own swell could reach, so the ends show nothing. */
 const EDGE_MARGIN = 6;
@@ -149,7 +158,7 @@ const crestAt = (progress: number, shape: WaveShape): string => {
   for (let index = 0; index <= FRONT_POINTS; index += 1) {
     const x = index / FRONT_POINTS;
     const y = frontAt(x, progress, shape);
-    leading.push(vertex(x, y + 4));
+    leading.push(vertex(x, y + CREST_LEAD));
     trailing.unshift(vertex(x, Math.max(shape.top, y - CREST_DEPTH)));
   }
   return `polygon(${[...leading, ...trailing].join(', ')})`;

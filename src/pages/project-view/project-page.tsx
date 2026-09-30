@@ -48,6 +48,7 @@ import {
   useProjectChatUnread,
   usePrefetchProjectChat,
 } from '@/features/project-chat-dock/ui/chat-dock';
+import { useLiveCallStore } from '@/features/live-rooms/model/live-call.store';
 import { LivePanel } from '@/features/live-rooms/ui/live-panel';
 import { MeetingsPanel } from '@/features/meetings/ui/meetings-panel';
 import { ProjectSettingsDialog } from '@/features/project-management/ui/project-settings-dialog';
@@ -200,6 +201,21 @@ const ProjectPage = () => {
    */
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
+
+  /*
+   * A call in this project outlives the Live tab being shown.
+   *
+   * The panel used to mount only while its tab was open, so pressing "Board"
+   * mid-call unmounted the stage and hung up — and the call's own "open the
+   * linked page" button, which switches to the text board, hung up the call it
+   * was pressed from. While this project has a call up, the panel stays
+   * mounted and is only hidden. Hidden tiles report themselves off screen, so
+   * every peer stops sending us video until the tab comes back, and the voices
+   * carry on. Leaving the *project* is what ends it, and `LiveCallGuard` asks
+   * first.
+   */
+  const liveCall = useLiveCallStore((state) => state.active);
+  const isInCallHere = liveCall !== null && liveCall.projectId === projectId;
   const tab: Tab = TABS.some((entry) => entry.value === tabParam)
     ? (tabParam as Tab)
     : 'board';
@@ -604,7 +620,24 @@ const ProjectPage = () => {
              * that advertises a secret to the people who may not see it.
              */
             .filter((entry) => entry.value !== 'connections' || canManage)
-            .map((entry) => ({ ...entry, label: t(entry.label) }))}
+            .map((entry) => ({
+              ...entry,
+              label: t(entry.label),
+              /*
+               * A live dot on the Live tab while its call carries on behind
+               * another one, so the way back is obvious. The ping is
+               * transform and opacity only, and it is gone with the call.
+               */
+              icon:
+                entry.value === 'live' && isInCallHere ? (
+                  <span className="relative inline-flex h-2.5 w-2.5" title={t('live.inCall')}>
+                    <span className="absolute inset-0 rounded-full bg-positive opacity-60 motion-safe:animate-ping" />
+                    <span className="relative m-auto h-2 w-2 rounded-full bg-positive" />
+                  </span>
+                ) : (
+                  entry.icon
+                ),
+            }))}
           onChange={setTab}
           label={t('project.tabsLabel')}
           /*
@@ -761,25 +794,33 @@ const ProjectPage = () => {
       {tab === 'meetings' && (
         <MeetingsPanel projectId={projectId} roster={project.roster} canManage={canManage} />
       )}
-      {tab === 'live' && projectId && (
-        <LivePanel
-          projectId={projectId}
-          initialRoomId={searchParams.get('room')}
-          /* A concluded project stops accepting new work, and a call is
-             work. The rooms already on it stay readable and joinable. */
-          canCreate={!isFinished}
-          onOpenDocument={(documentId) =>
-            setSearchParams(
-              (params) => {
-                params.set('tab', 'text');
-                params.set('doc', documentId);
-                params.delete('room');
-                return params;
-              },
-              { replace: true },
-            )
-          }
-        />
+      {projectId && (tab === 'live' || isInCallHere) && (
+        /*
+         * `contents` while shown, so the wrapper adds nothing to the layout
+         * the panel had before it existed; `hidden` otherwise. One class, not
+         * the `hidden` attribute beside `contents`: the utility would win that
+         * contest and the panel would never hide.
+         */
+        <div className={tab === 'live' ? 'contents' : 'hidden'}>
+          <LivePanel
+            projectId={projectId}
+            initialRoomId={searchParams.get('room')}
+            /* A concluded project stops accepting new work, and a call is
+               work. The rooms already on it stay readable and joinable. */
+            canCreate={!isFinished}
+            onOpenDocument={(documentId) =>
+              setSearchParams(
+                (params) => {
+                  params.set('tab', 'text');
+                  params.set('doc', documentId);
+                  params.delete('room');
+                  return params;
+                },
+                { replace: true },
+              )
+            }
+          />
+        </div>
       )}
       {tab === 'whiteboard' && <Whiteboard projectId={projectId} canClear={canManage} />}
       {tab === 'text' && (

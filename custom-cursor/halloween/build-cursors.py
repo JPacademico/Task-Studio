@@ -31,10 +31,14 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # inside the footprint of a system arrow. Every current browser accepts a
 # cursor image up to 128px; past that the declaration is dropped and the
 # fallback keyword takes over.
-BOX = 40
-KNIFE = 34        # the drawing's long side inside the canvas
-REST = 4          # where the resting frame sits, leaving room to lunge into
-THRUST = 4        # how far the click frame drives forward, in canvas pixels
+#
+# 32 since 2026-09-30: every custom pointer now sits in the system cursor's own
+# 32px box (see the Paper script). At 27px the guard and the pommel still read;
+# the grip's notches are the first detail to go, and they are the right one.
+BOX = 32
+KNIFE = 27        # the drawing's long side inside the canvas
+REST = 3          # where the resting frame sits, leaving room to lunge into
+THRUST = 3        # how far the click frame drives forward, in canvas pixels
 
 # Where the blade should point, measured the way `axis()` measures: 0 is right,
 # 90 is straight up, 135 is up and to the left.

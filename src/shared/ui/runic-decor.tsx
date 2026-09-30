@@ -145,3 +145,59 @@ export const RuneScribe = () => {
     </div>
   );
 };
+
+/**
+ * The rune pointer's click: a brief, weak glow where it was pressed.
+ *
+ * ## Why this is not a cursor frame
+ *
+ * A CSS cursor is a still image. The other skins that react to a press swap
+ * in an `:active` frame, which holds for as long as the button is down — a
+ * pose, not a flash. What was asked for here is a quick glow, and that needs a
+ * thing on the page that can fade: one small element per press, drawn at the
+ * pointer, carrying a quarter-second CSS animation and removed when the
+ * animation reports it has finished. Nothing is scheduled, nothing is held in
+ * React state, and the listener is only attached while this skin is on.
+ *
+ * ## Why it is centred off the hotspot
+ *
+ * The hotspot is the arrow's point, at the top-left of the drawing. A glow
+ * centred there would light the empty corner beside the pointer; centred a
+ * third of the way down the stave, it lights the mark itself, which is what
+ * reads as the rune glowing.
+ *
+ * Mouse and pen only, primary button only, and not over a surface that keeps
+ * the system pointer (`[data-native-cursor]`) or when the reader has turned
+ * the themed pointer off — the glow belongs to the rune pointer, and where
+ * there is no rune pointer there is nothing to glow.
+ */
+export const RuneClickGlow = () => {
+  const skin = useSkin();
+  const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    if (skin !== 'RUNIC' || reduceMotion) return;
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.pointerType === 'touch' || event.button !== 0) return;
+      if (document.documentElement.dataset.cursor === 'off') return;
+      if (event.target instanceof Element && event.target.closest('[data-native-cursor]')) return;
+
+      const glow = document.createElement('span');
+      glow.className = 'rune-click-glow';
+      glow.setAttribute('aria-hidden', 'true');
+      glow.style.left = `${event.clientX}px`;
+      glow.style.top = `${event.clientY}px`;
+      glow.addEventListener('animationend', () => glow.remove(), { once: true });
+      // And a timer behind it: an animation that never ran (a frame that was
+      // never drawn) never ends, and the glow must not outlive its moment.
+      window.setTimeout(() => glow.remove(), 400);
+      document.body.appendChild(glow);
+    };
+
+    window.addEventListener('pointerdown', onPointerDown, { capture: true, passive: true });
+    return () => window.removeEventListener('pointerdown', onPointerDown, { capture: true });
+  }, [reduceMotion, skin]);
+
+  return null;
+};

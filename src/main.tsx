@@ -1,6 +1,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
+// First, so its `popstate` listener is added before the router's. See the file.
+import './shared/lib/history-gate';
 import { App } from './app/App';
 import './app/styles/index.css';
 

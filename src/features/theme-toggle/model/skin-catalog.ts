@@ -178,7 +178,7 @@ export interface SkinDefinition {
   /**
    * Whether this theme replaces the mouse pointer.
    *
-   * Two do, and it is the one thing a theme can change that the reader cannot
+   * Six do, and it is the one thing a theme can change that the reader cannot
    * ignore — so it is declared here rather than being knowable only by reading
    * the cursor blocks at the bottom of `index.css`. The picker uses it to say
    * whether the control it offers applies to what is currently on screen.
@@ -271,6 +271,7 @@ export const SKIN_CATALOG: SkinDefinition[] = [
       'escuro',
       'terminal',
     ],
+    drawsCursor: true,
     light: {
       surface: '#f0e9f6',
       raised: '#fcf9ff',
@@ -336,6 +337,7 @@ export const SKIN_CATALOG: SkinDefinition[] = [
     description: 'skin.PIXEL.body',
     tags: ['arcade', '8-bit', 'game', 'sprite', 'retro', 'nes', 'blocky', 'magenta'],
     tagsPtBR: ['fliperama', 'arcade', '8 bits', 'jogo', 'sprite', 'retrô', 'pixel', 'magenta'],
+    drawsCursor: true,
     light: {
       surface: '#d6deec',
       raised: '#fafaff',
@@ -649,6 +651,7 @@ export const SKIN_CATALOG: SkinDefinition[] = [
       'antigo',
       'medieval',
     ],
+    drawsCursor: true,
     light: {
       surface: '#dec79a',
       raised: '#ead4a5',

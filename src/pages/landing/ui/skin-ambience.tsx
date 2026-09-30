@@ -6,7 +6,7 @@ import { cn } from '@/shared/lib/cn';
 import { BatGlyph } from '@/shared/ui/halloween-icons';
 
 /**
- * The seven skins that do something to the *room*, and what each one does.
+ * The skins that do something to the *room*, and what each one does.
  *
  * Deliberately a table here rather than a flag on the catalogue: this is a
  * property of the landing page's ability to *preview* an animation, not of the
@@ -30,6 +30,13 @@ const AMBIENCE = {
   RUNIC: { kind: 'runes', tones: ['#b45309', '#f59e0b'], count: 5 },
   ELDRITCH: { kind: 'eyes', tones: ['#2dd4bf', '#a855f7'], count: 4 },
   DRAGON: { kind: 'lanterns', tones: ['#e05833', '#f2c54f'], count: 7 },
+  /*
+   * A mid sky blue for the tail and near-white for the head: the one pairing
+   * that reads on both halves of the compare box. A white streak vanishes on
+   * the light half and a dark one on the night half; the blue carries it on
+   * either, and the head's glow is drawn in the same blue.
+   */
+  SPACE: { kind: 'meteors', tones: ['#38bdf8', '#f0f9ff'], count: 2 },
 } as const satisfies Partial<
   Record<ThemeSkin, { kind: string; tones: readonly [string, string]; count: number }>
 >;
@@ -225,9 +232,16 @@ export const SkinAmbience = ({ skin, density = 1, span = 1, className }: SkinAmb
   const spec = hasAmbience(skin) ? AMBIENCE[skin] : null;
   const isPlaced = spec ? PLACED_KINDS.has(spec.kind) : false;
 
-  const count = spec
-    ? Math.max(3, Math.round(spec.count * density * (isPlaced ? Math.max(1, span) : 1)))
-    : 0;
+  /*
+   * Shooting stars are the exception to the floor of three: they are timed
+   * rather than scattered (see the `meteors` case), and a third one on the
+   * same nine-second clock lands on top of the first.
+   */
+  const count = !spec
+    ? 0
+    : spec.kind === 'meteors'
+      ? spec.count
+      : Math.max(3, Math.round(spec.count * density * (isPlaced ? Math.max(1, span) : 1)));
 
   /*
    * Keyed on the skin so turning the barrel rebuilds the field rather than
@@ -374,6 +388,36 @@ export const SkinAmbience = ({ skin, density = 1, span = 1, className }: SkinAmb
               >
                 <EyeGlyph fill={toneA} pupil={toneB} />
               </span>
+            );
+
+          /*
+           * A shooting star: across the box and gone in under a second.
+           *
+           * The app's own (`ShootingStar`) keeps a one-minute cooldown, which
+           * is right on a page somebody works on and useless in a preview: a
+           * reader looking at the box for ten seconds would most likely see
+           * nothing. So the cadence here is the same streak every nine
+           * seconds, two of them offset by half a cycle, and the crossing
+           * itself is the first ninth of each cycle — `sa-meteor` spends the
+           * rest of it invisible. Evenly offset rather than scattered like the
+           * other kinds, because two streaks a second apart would read as one
+           * that stuttered.
+           */
+          case 'meteors':
+            return (
+              <span
+                key={index}
+                className="sa-meteor"
+                style={{
+                  ...style,
+                  left: undefined,
+                  '--sa-top': `${8 + p.top * 0.4}cqh`,
+                  '--sa-life': '9s',
+                  '--sa-delay': `${-((index * 9) / count + 2.4)}s`,
+                  '--sa-tail': toneA,
+                  '--sa-head': toneB,
+                } as CSSProperties}
+              />
             );
 
           /*

@@ -10,6 +10,7 @@ import {
   PhoneOff,
   Video,
   VideoOff,
+  Volume2,
 } from 'lucide-react';
 
 import { useLiveRoomActions } from '@/entities/live-room/model/queries';
@@ -18,6 +19,7 @@ import { cn } from '@/shared/lib/cn';
 import { Button, SkinLoader } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 import { FULLSCREEN_EVENTS, fullscreenElement } from '../lib/fullscreen';
+import { useLiveCallStore } from '../model/live-call.store';
 import { useLiveCall } from '../model/use-live-call';
 import { ParticipantTile } from './participant-tile';
 
@@ -69,6 +71,31 @@ export const LiveStage = ({ room, onLeave, onOpenDocument }: LiveStageProps) => 
     canPresent: room.you.canPresent,
     onEnded: onLeave,
   });
+
+  /*
+   * The rest of the app is told the call is up, and how to end it.
+   *
+   * Only while it is actually live — not while the devices are being asked
+   * for or the join is in flight — because what this enables is the project
+   * page keeping the stage alive across tabs and the guard stopping somebody
+   * leaving the project, and both are about a call that exists. Cleared on
+   * the way out, whichever way out that is. See `useLiveCallStore`.
+   */
+  const register = useLiveCallStore((state) => state.register);
+  const unregister = useLiveCallStore((state) => state.unregister);
+  const hangUp = call.leave;
+  const isLive = call.status === 'live';
+
+  useEffect(() => {
+    if (!isLive) return;
+    register({
+      projectId: room.projectId,
+      roomId: room.id,
+      roomTitle: room.title,
+      leave: hangUp,
+    });
+    return () => unregister(room.id);
+  }, [hangUp, isLive, register, room.id, room.projectId, room.title, unregister]);
 
   /*
    * The live answer, not the one the room row was fetched with.
@@ -259,7 +286,15 @@ export const LiveStage = ({ room, onLeave, onOpenDocument }: LiveStageProps) => 
                * what the detector was handed for the local stream — it exists
                * before a participant id does.
                */
-              isSpeaking={call.speaking.has(isSelf ? 'self' : peer.participantId)}
+              /*
+               * Only with the microphone on. A muted presenter's stream can
+               * still carry sound, their shared screen's, and a speaking ring
+               * around somebody who is muted would be a lie about the one
+               * thing the ring is for.
+               */
+              isSpeaking={
+                peer.flags.micOn && call.speaking.has(isSelf ? 'self' : peer.participantId)
+              }
               canModerate={canModerate}
               /*
                * No quality on your own tile, because there is no connection to
@@ -313,6 +348,12 @@ export const LiveStage = ({ room, onLeave, onOpenDocument }: LiveStageProps) => 
           isActive={call.flags.camOn}
           isDisabled={call.flags.sharing}
           label={call.flags.camOn ? t('live.cameraOff') : t('live.cameraOn')}
+          /*
+           * The camera held back for the voice (see `watchUplink`). On the
+           * button because that is where somebody looks when they wonder
+           * whether their camera is on, and the title says what happened.
+           */
+          warning={call.flags.camOn && call.cameraHeld ? t('live.cameraHeld') : undefined}
           icon={
             call.flags.camOn ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />
           }
@@ -322,7 +363,18 @@ export const LiveStage = ({ room, onLeave, onOpenDocument }: LiveStageProps) => 
           onClick={() => (call.flags.sharing ? void call.stopShare() : void call.startShare())}
           isActive={call.flags.sharing}
           isDisabled={!you.canPresent}
-          label={call.flags.sharing ? t('live.stopShare') : t('live.share')}
+          label={
+            call.flags.sharing
+              ? call.sharingAudio
+                ? t('live.stopShareWithAudio')
+                : t('live.stopShare')
+              : t('live.share')
+          }
+          // Whether the picker's "share audio" box was ticked is easy to miss,
+          // so a share that carries sound says so on the button.
+          mark={
+            call.flags.sharing && call.sharingAudio ? <Volume2 className="h-2.5 w-2.5" /> : undefined
+          }
           icon={
             call.flags.sharing ? (
               <MonitorX className="h-4 w-4" />
@@ -377,6 +429,13 @@ interface ControlButtonProps {
   isDisabled?: boolean;
   label: string;
   icon: React.ReactNode;
+  /**
+   * Something wrong with what this control runs, said as a yellow "!" on its
+   * corner, and in its title and accessible name ahead of the label.
+   */
+  warning?: string;
+  /** A small neutral badge on the corner, for a state worth seeing at a glance. */
+  mark?: React.ReactNode;
 }
 
 /**
@@ -388,23 +447,58 @@ interface ControlButtonProps {
  * The visible `title` still changes, because sighted users have no equivalent
  * of the pressed state being read out.
  */
-const ControlButton = ({ onClick, isActive, isDisabled, label, icon }: ControlButtonProps) => (
-  <button
-    type="button"
-    onClick={onClick}
-    disabled={isDisabled}
-    aria-pressed={isActive}
-    aria-label={label}
-    title={label}
-    className={cn(
-      'grid h-10 w-10 place-items-center rounded-full border transition-colors duration-150',
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60',
-      'disabled:cursor-not-allowed disabled:opacity-40',
-      isActive
-        ? 'border-brand bg-brand text-brand-contrast'
-        : 'border-edge bg-surface-sunken text-content-muted hover:text-content',
-    )}
-  >
-    {icon}
-  </button>
-);
+const ControlButton = ({
+  onClick,
+  isActive,
+  isDisabled,
+  label,
+  icon,
+  warning,
+  mark,
+}: ControlButtonProps) => {
+  const title = warning ? `${warning} ${label}` : label;
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={isDisabled}
+      aria-pressed={isActive}
+      aria-label={title}
+      title={title}
+      className={cn(
+        'relative grid h-10 w-10 place-items-center rounded-full border transition-colors duration-150',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60',
+        'disabled:cursor-not-allowed disabled:opacity-40',
+        isActive
+          ? 'border-brand bg-brand text-brand-contrast'
+          : 'border-edge bg-surface-sunken text-content-muted hover:text-content',
+      )}
+    >
+      {icon}
+      {warning ? (
+        <span
+          aria-hidden
+          className={cn(
+            'absolute -right-1 -top-1 grid h-4 w-4 place-items-center rounded-full',
+            'bg-warning text-3xs font-bold leading-none text-black ring-2 ring-surface-raised',
+          )}
+        >
+          !
+        </span>
+      ) : (
+        mark && (
+          <span
+            aria-hidden
+            className={cn(
+              'absolute -right-1 -top-1 grid h-4 w-4 place-items-center rounded-full',
+              'bg-surface-raised text-content ring-1 ring-edge',
+            )}
+          >
+            {mark}
+          </span>
+        )
+      )}
+    </button>
+  );
+};

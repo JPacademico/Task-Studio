@@ -41,10 +41,15 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # in the grip, a pommel. A paper plane is a silhouette with one fold in it, so
 # it stays readable much further down, and Paper is the quiet skin: the cursor
 # should be a plane you notice once, not furniture.
-BOX = 36
-PLANE = 30        # the drawing's long side inside the canvas
-REST = 3          # where the resting frame sits, leaving room to fly into
-THROW = 3         # how far the click frame flies forward, in canvas pixels
+#
+# 32 since 2026-09-30, down from 36 with a 30px plane: every custom pointer in
+# the product now sits in the system cursor's own 32px box, because a pointer
+# bigger than the one people are used to reads as a toy and covers the word it
+# is aimed at. A plane survives the reduction better than anything else here.
+BOX = 32
+PLANE = 24        # the drawing's long side inside the canvas
+REST = 2          # where the resting frame sits, leaving room to fly into
+THROW = 2         # how far the click frame flies forward, in canvas pixels
 
 # Where each drawing should point, in the same terms `axis()` reports: 0 is
 # right, 90 is straight up, 135 is up and to the left.
