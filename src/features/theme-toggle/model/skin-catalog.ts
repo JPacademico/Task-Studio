@@ -2,36 +2,13 @@ import type { ThemeSkin } from '@/entities/user/model/types';
 import { translate, type TranslationKey } from '@/shared/i18n';
 
 /**
- * The one description of every theme in the app.
- *
- * It used to live inside the settings picker, which was fine while settings
- * was the only place a theme could be chosen. Now there is a gallery too, and
- * two hand-maintained copies of eight palettes is how a theme ends up looking
- * like one thing on the shelf and another once applied — so the catalogue moved
- * here and both surfaces render the same rows.
- *
- * The preview values are deliberately literal hex rather than the CSS variables
- * the real skin uses: a card has to paint itself in a palette that is *not* the
- * active one, which a variable cannot do.
+ * The one description of every theme in the app. It used to live inside the settings picker, which
+ * was fine while settings was the only place a theme could be chosen.
  */
 
 /**
- * The skin's face, named once because both palettes use it.
- *
- * 乐米曲奇方块体 — LeMi CookieBlock — a geometric rounded-square face where
- * Latin, numerals and CJK are all built on one grid with an even stroke.
- *
- * The chain behind it is the real skin's, verbatim, and it has to be: the
- * preview's whole job is to show somebody what they are about to get, so a mock
- * that resolved to a face the page itself would not use is a mock that lies.
- * That includes the fallbacks — the shipped `.woff2` is not in the repository
- * yet (see `custom-font/dragon/README.md`), so on most machines today what the
- * card draws is `Verdana`, which is also what the skin draws.
- *
- * This replaced Kaiti, the brush-written scroll script the skin used to set its
- * headings in. The argument for the change is in the stylesheet beside
- * `--font-display`; the short version is that Kaiti's Latin is an afterthought
- * in that design, and this interface is mostly Latin.
+ * The skin's face, named once because both palettes use it. 乐米曲奇方块体 — LeMi CookieBlock — a
+ * geometric rounded-square face where Latin.
  */
 const DRAGON_FONT =
   "'LeMi CookieBlock', 'Yuanti SC', YouYuan, 'M PLUS Rounded 1c', Verdana, 'Segoe UI', sans-serif";
@@ -49,13 +26,8 @@ export interface SkinPreview {
   /** Border weight of the mock's cards. */
   border: number;
   /**
-   * Vibecoded only: the second half of the gradient.
-   *
-   * The skin's whole identity is a 135-degree indigo-to-fuchsia sweep, and a
-   * preview that painted `brand` as a flat fill would be selling a purple
-   * theme — which is the one thing this theme is not. Every surface in the mock
-   * that is normally a solid accent becomes a gradient between `brand` and
-   * this.
+   * Vibecoded only: the second half of the gradient. The skin's whole identity is a 135-degree
+   * indigo-to-fuchsia sweep.
    */
   gradient?: string;
   /** Arcade only: the mock's cards lose their corner pixels, like the real thing. */
@@ -71,67 +43,45 @@ export interface SkinPreview {
   /** Newsprint only: the double rule under the mock's masthead. */
   rule?: boolean;
   /**
-   * Dragon only: the gold mounting rule inset inside every card.
-   *
-   * The scroll border is the loudest thing this skin does to a panel — every
-   * surface in it is framed the way a hanging scroll is mounted — and a mock
-   * that only painted red and gold would be selling a colour scheme.
+   * Dragon only: the gold mounting rule inset inside every card. The scroll border is the loudest
+   * thing this skin does to a panel.
    */
   scrollTrim?: string;
   /**
-   * Dragon only: the jade the mark is cut from.
-   *
-   * A third colour, and the reason the palette is not simply "red and gold":
-   * jade is the one cool note in an imperial room and it is what the logo is.
+   * Dragon only: the jade the mark is cut from. A third colour, and the reason the palette is not
+   * simply "red and gold".
    */
   jade?: string;
   /** Newsprint only: a halftone screen over the whole mock. */
   halftone?: boolean;
   /**
-   * Eldritch only: the mock's boxes grow rather than being cut, so the corner
-   * rounding is asymmetric — the loudest thing the skin does, and invisible in
-   * a preview that only paints its palette.
+   * Eldritch only: the mock's boxes grow rather than being cut, so the corner rounding is
+   * asymmetric — the loudest thing the skin does.
    */
   organic?: boolean;
   /**
-   * Eldritch only: something is looking out of the mock.
-   *
-   * The real skin opens its eye on the page rather than on a card, but a mock
-   * has no page to open one on — and a preview that only paints the palette
-   * would be selling a teal-and-violet colour scheme, which is the least of
-   * what this theme is.
+   * Eldritch only: something is looking out of the mock. The real skin opens its eye on the page
+   * rather than on a card.
    */
   watcher?: string;
   /**
-   * Autumn only: the two colours the leaves in the mock are drawn in — one
-   * caught mid-fall over the page, one resting on a card.
-   *
-   * A pair rather than a single colour because a scatter of one hue reads as a
-   * pattern, and the whole point of the skin is that no two leaves match.
+   * Autumn only: the two colours the leaves in the mock are drawn in — one caught mid-fall over the
+   * page, one resting on a card.
    */
   leaves?: [string, string];
   /**
-   * Runic only: the colour of the ink.
-   *
-   * Drawn as a ruled line down the mock's own edge and a rune inked onto one of
-   * its cards — the two places the real skin puts it. A preview that only
-   * painted the paper would be selling a beige theme.
+   * Runic only: the colour of the ink. Drawn as a ruled line down the mock's own edge and a rune
+   * inked onto one of its cards — the two places the real skin puts it.
    */
   rune?: string;
   /**
-   * Underwater only: the colour bubbles and the caustic net are drawn in.
-   *
-   * The net is the thing being sold here. A preview that painted the palette
-   * and stopped would be a cyan card, and cyan cards are not what anybody
-   * remembers about this skin — the broken light on every surface is.
+   * Underwater only: the colour bubbles and the caustic net are drawn in. The net is the thing
+   * being sold here.
    */
   caustic?: string;
   /**
-   * Volcano only: the two ends of the temperature ramp — flow, then core.
-   *
-   * A pair rather than one colour because the entire skin is the *ramp*: a hot
-   * line under every object that runs from orange to yellow-white. One value
-   * would sell an orange theme, which is the least of what this is.
+   * Volcano only: the two ends of the temperature ramp — flow, then core. A pair rather than one
+   * colour because the entire skin is the *ramp*.
    */
   molten?: [string, string];
 }
@@ -139,49 +89,29 @@ export interface SkinPreview {
 export interface SkinDefinition {
   value: ThemeSkin;
   /**
-   * The theme's name, and the one string here that is *not* a key.
-   *
-   * "Studio", "Newsprint", "Eldritch" are names rather than words — they do not
-   * translate any more than a font's does, and a Portuguese reader looking for
-   * the theme somebody described to them wants to find the same label.
+   * The theme's name, and the one string here that is *not* a key. "Studio", "Newsprint",
+   * "Eldritch" are names rather than words — they do not translate any more than a font's does.
    */
   name: string;
   /**
-   * Three or four words, shown under the name in the gallery.
-   *
-   * A `TranslationKey`, not the words. Same reasoning as `TASK_TYPE_META`: this
-   * table carries presentation the design system owns *and* vocabulary the
-   * reader's language owns, and keeping literal English here made the whole
-   * theme gallery — the one screen in the app that is entirely prose —
-   * untranslatable. The type is what keeps it honest: a key with no entry in
-   * the dictionary is a compile error.
+   * Three or four words, shown under the name in the gallery. A `TranslationKey`, not the words.
    */
   tagline: TranslationKey;
   /** One sentence, also a key. Only the gallery has room for it. */
   description: TranslationKey;
   /**
-   * What somebody would type looking for this theme. Searched alongside the
-   * name and the tagline, which is why "dark", "retro" and "loud" are in here
-   * and not in the prose.
+   * What somebody would type looking for this theme. Searched alongside the name and the tagline,
+   * which is why "dark", "retro" and "loud" are in here and not in the prose.
    */
   tags: string[];
   /**
-   * The same keywords in Portuguese, searched alongside the English ones.
-   *
-   * Additive rather than a second table keyed by locale: somebody switching
-   * languages does not stop knowing the English word for "dark", and a search
-   * that quietly narrowed when they did would be worse than one that matches
-   * both. Optional, so a theme that has not been given any is simply searched
-   * in English.
+   * The same keywords in Portuguese, searched alongside the English ones. Additive rather than a
+   * second table keyed by locale.
    */
   tagsPtBR?: string[];
   /**
-   * Whether this theme replaces the mouse pointer.
-   *
-   * Six do, and it is the one thing a theme can change that the reader cannot
-   * ignore — so it is declared here rather than being knowable only by reading
-   * the cursor blocks at the bottom of `index.css`. The picker uses it to say
-   * whether the control it offers applies to what is currently on screen.
+   * Whether this theme replaces the mouse pointer. Nine do, and it is the one thing a theme can
+   * change that the reader cannot ignore.
    */
   drawsCursor?: boolean;
   light: SkinPreview;
@@ -309,6 +239,7 @@ export const SKIN_CATALOG: SkinDefinition[] = [
       'clássico',
       'vintage',
     ],
+    drawsCursor: true,
     light: {
       surface: '#eadbc2',
       raised: '#f7eedb',
@@ -377,6 +308,7 @@ export const SKIN_CATALOG: SkinDefinition[] = [
       'brilho',
       'futurista',
     ],
+    drawsCursor: true,
     light: {
       surface: '#e6ecf9',
       raised: '#fcfdff',
@@ -483,6 +415,7 @@ export const SKIN_CATALOG: SkinDefinition[] = [
       'vermelho',
       'clássico',
     ],
+    drawsCursor: true,
     light: {
       surface: '#e7e2d6',
       raised: '#f4f0e6',
@@ -781,21 +714,8 @@ export const SKIN_CATALOG: SkinDefinition[] = [
     },
   },
 
-  /*
-   * The fifteenth theme, and the only one that is a genre rather than a place.
-   *
-   * Everything else in this catalogue is somewhere you could stand: a
-   * newsroom, a volcano, the deep field. This one is the screenshot you get
-   * when you ask a model for "a beautiful modern SaaS dashboard" — indigo to
-   * fuchsia at 135 degrees, everything rounded to 16px, a gradient clipped
-   * through every heading, and a logo that is a squircle with an abstract
-   * white glyph in it.
-   *
-   * It is a joke, and it only works because it is built to the same standard
-   * as the fourteen around it. A deliberately ugly theme is just an ugly
-   * theme; this one has to *be* the thing it is imitating closely enough that
-   * the recognition arrives before the criticism does.
-   */
+  // The fifteenth theme, and the only one that is a genre rather than a place. Everything else in
+  // this catalogue is somewhere you could stand: a newsroom, a volcano, the deep field.
   {
     value: 'VIBECODED',
     name: 'Vibecoded',
@@ -914,16 +834,7 @@ export const SKIN_CATALOG: SkinDefinition[] = [
     value: 'DRAGON',
     name: 'Dragon',
     tagline: 'skin.DRAGON.tagline',
-    /*
-     * A verse rather than a spec sheet, everywhere the skin is described.
-     *
-     * It used to be the landing page's alone, overridden there while the
-     * in-app gallery kept a paragraph about lacquer and scroll rods — so the
-     * theme introduced itself one way to a visitor and another to the person
-     * who had just bought it. One description, in the catalogue, means the
-     * two can no longer drift. It is written in lines, so every surface that
-     * prints a description sets it `whitespace-pre-line`.
-     */
+    // A verse rather than a spec sheet, everywhere the skin is described.
     description: 'landing.themes.dragonVerse',
     tags: [
       'dragon',
@@ -962,25 +873,8 @@ export const SKIN_CATALOG: SkinDefinition[] = [
       'selo',
     ],
     drawsCursor: true,
-    /*
-     * Two rooms rather than one palette lightened and darkened.
-     *
-     * **Light is the scroll.** Raw silk and rice paper, mounted in gold-brown
-     * brocade, with the accent taken from the one red thing on a finished
-     * painting: the artist's seal. Cinnabar on cream is the highest-contrast
-     * pair in the whole reference and it is *already* how the source material
-     * uses red — sparingly, as the mark of authorship.
-     *
-     * **Dark is the hall.** Black lacquer with a red undertone, and the accent
-     * moves to imperial gold. That hue shift between palettes is deliberate
-     * and it is the only one in the catalogue: a lacquered hall *is* red, so
-     * red becomes the surface rather than the accent, and an accent painted
-     * red on top of it would disappear. Gold leaf is what an imperial room
-     * actually uses to mark something out against its own walls.
-     *
-     * Jade stays constant across both, because it is a stone rather than a
-     * light — and it is what the mark is cut from.
-     */
+    // Two rooms rather than one palette lightened and darkened. **Light is the scroll.** Raw silk
+    // and rice paper, mounted in gold-brown brocade.
     light: {
       surface: '#f3e2b5',
       raised: '#faefcf',
@@ -1012,39 +906,21 @@ export const SKIN_CATALOG: SkinDefinition[] = [
 export const SKIN_BY_VALUE = new Map(SKIN_CATALOG.map((skin) => [skin.value, skin]));
 
 /**
- * How many themes the settings page shows before it stops listing and starts
- * pointing at the gallery.
- *
- * Three is not an arbitrary cut: it is the width of the grid, so the section is
- * exactly one row whatever the catalogue grows to. A settings page that lists
- * every theme in the product is a settings page that gets longer every time
- * somebody adds one, and the choice is visual anyway — it wants a gallery.
+ * How many themes the settings page shows before it stops listing and starts pointing at the
+ * gallery.
  */
 export const SETTINGS_SKIN_LIMIT = 3;
 
 /**
- * Free-text search over the catalogue.
- *
- * Name, tagline and tags, all case-folded, matched on substring rather than on
- * whole words so "news" finds Newsprint and "radio" finds Hazard. An empty
- * query returns everything in catalogue order, which is the order the themes
- * shipped in.
+ * Free-text search over the catalogue. Name, tagline and tags, all case-folded, matched on
+ * substring rather than on whole words so "news" finds Newsprint and "radio" finds Hazard.
  */
 export const searchSkins = (query: string): SkinDefinition[] => {
   const needle = query.trim().toLowerCase();
   if (!needle) return SKIN_CATALOG;
 
-  /*
-   * The tagline is searched in the reader's own language.
-   *
-   * `translate` rather than a `t` threaded down from the page: this is called
-   * from a `useMemo` keyed on the query, and the language it reads is the one
-   * that was active when the search ran — which is the only answer that can
-   * match what is on screen. The `tags` are deliberately *not* translated: they
-   * are the words somebody types looking for a theme, and a Portuguese reader
-   * hunting the dark one is as likely to type "dark" as "escuro", so both
-   * lists are kept and searched together.
-   */
+  // The tagline is searched in the reader's own language. `translate` rather than a `t` threaded
+  // down from the page: this is called from a `useMemo` keyed on the query.
   return SKIN_CATALOG.filter((skin) =>
     [skin.name, translate(skin.tagline), ...skin.tags, ...(skin.tagsPtBR ?? [])].some((field) =>
       field.toLowerCase().includes(needle),

@@ -51,48 +51,10 @@ const daysUntil = (iso: string): number =>
   Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000));
 
 /**
- * Soft-deleted work. Nothing here is gone until it is purged, which is the
- * whole point of a recycle bin.
- *
- * Three kinds of deletable object land here: tasks binned from a board,
- * Post-its binned from the notes board, a project whiteboard or a cleared page,
- * and — since projects grew a retention window — whole projects.
- *
- * The notes half used to be a promise the UI made in a toast and never kept:
- * they were soft-deleted correctly, but nothing ever listed them again. The
- * projects half was the same promise with a bigger object behind it, and a
- * worse consequence — a binned project kept every task, page, note, message
- * and uploaded file it had, permanently, with no screen anywhere that could
- * even show it to you. Now it is listed, restorable, and destroyed on a clock.
- *
- * ## Why the projects tab looks different from the other two
- *
- * Because the decision is different. A binned task is a line you either want
- * back or do not. A binned project is forty tasks, two hundred messages and a
- * folder of uploads, and nobody can decide its fate from a name alone — so the
- * row carries what is still inside it and when the server will destroy it, and
- * the destroy button asks for a password rather than a confirmation click.
+ * Soft-deleted work. Nothing here is gone until it is purged, which is the whole point of a recycle
+ * bin.
  */
-/**
- * How long is left before something in the bin is destroyed.
- *
- * ## Why it is a component now rather than eight lines on the projects tab
- *
- * Because all three bins expire on the same window since `BinPurgeScheduler`
- * arrived, and the tasks tab needs exactly the same badge. Two copies of "when
- * does amber start" is two places for the threshold to drift, on a control
- * whose entire job is to be believed.
- *
- * ## Why amber at two days rather than at seven
- *
- * The window used to be thirty days and seven was the point where "I'll deal
- * with it later" stopped being true. The window is a week now, so seven would
- * mean every row in the bin is amber from the moment it arrives — a warning
- * that is always on is not a warning, it is a colour scheme.
- *
- * Two days is the same *idea* re-derived for the shorter window: the last
- * stretch in which somebody can still act without hurrying.
- */
+/** How long is left before something in the bin is destroyed. */
 const ExpiryBadge = ({ purgeAt }: { purgeAt: string | null | undefined }) => {
   const t = useT();
 
@@ -131,11 +93,8 @@ const RecycleBinPage = () => {
   const purgeProject = usePurgeProject();
 
   /**
-   * The project awaiting permanent deletion, and the password for it.
-   *
-   * Held here rather than per row so there can only ever be one such dialog
-   * open, and cleared the moment it closes — see the effect below. It is never
-   * put in a mutation variable that lingers or anywhere that gets logged.
+   * The project awaiting permanent deletion, and the password for it. Held here rather than per row
+   * so there can only ever be one such dialog open, and cleared the moment it closes.
    */
   const [purgeTarget, setPurgeTarget] = useState<BinnedProject | null>(null);
   const [password, setPassword] = useState('');
@@ -144,26 +103,14 @@ const RecycleBinPage = () => {
     if (!purgeTarget) setPassword('');
   }, [purgeTarget]);
 
-  /*
-   * The single task or note awaiting "delete forever".
-   *
-   * These used to go through `window.confirm`, the one dialog the product
-   * cannot dress — see `ConfirmDialog` for the whole list of what is wrong with
-   * it. One piece of state for both, so only one confirmation can ever be open.
-   */
+  // The single task or note awaiting "delete forever". These used to go through `window.confirm`,
+  // the one dialog the product cannot dress.
   const [confirmTarget, setConfirmTarget] = useState<
     { kind: 'task'; id: string; title: string } | { kind: 'note'; id: string } | null
   >(null);
 
-  /*
-   * "Empty bin": everything in all three tabs at once.
-   *
-   * Projects need the account's password to be destroyed, individually or in
-   * bulk, so the field appears only when there are binned projects — and
-   * leaving it empty still empties the other two tabs, with the projects left
-   * where they are. A password field that blocked deleting a stale task would
-   * be a lock on the wrong door.
-   */
+  // "Empty bin": everything in all three tabs at once. Projects need the account's password to be
+  // destroyed, individually or in bulk, so the field appears only when there are binned projects.
   const [isEmptying, setIsEmptying] = useState(false);
   const [emptyPassword, setEmptyPassword] = useState('');
   const [isEmptyBusy, setIsEmptyBusy] = useState(false);
@@ -184,9 +131,8 @@ const RecycleBinPage = () => {
       await purgeProject.mutateAsync({ projectId: purgeTarget.id, password });
       setPurgeTarget(null);
     } catch {
-      // The mutation's `onError` has already said what went wrong. Swallowed
-      // here so a rejected password leaves the dialog open to be retried
-      // rather than raising an unhandled rejection.
+      // The mutation's `onError` has already said what went wrong. Swallowed here so a rejected
+      // password leaves the dialog open to be retried rather than raising an unhandled rejection.
     } finally {
       // Gone from state whatever happened.
       setPassword('');
@@ -210,13 +156,8 @@ const RecycleBinPage = () => {
   };
 
   /**
-   * Every tab, one request each, side by side.
-   *
-   * The API does the work in bulk (`DELETE /tasks/recycle-bin`, and the like)
-   * rather than this looping single deletes: a full bin is hundreds of rows,
-   * and one round trip per row is both slow and a burst the rate limiter is
-   * right to refuse. The three are independent, so one failing does not stop
-   * the others — the toast reports what actually went.
+   * Every tab, one request each, side by side. The API does the work in bulk (`DELETE
+   * /tasks/recycle-bin`, and the like) rather than this looping single deletes.
    */
   const handleEmptyBin = async () => {
     setIsEmptyBusy(true);
@@ -378,20 +319,12 @@ const RecycleBinPage = () => {
                   </Badge>
                 )}
 
-                {/*
-                  The clock, on this tab as well as on projects.
-
-                  It could not be here before, because tasks did not expire —
-                  a binned task sat with `deletedAt` set for ever. Now that
-                  `BinPurgeScheduler` drains all three bins on the same window,
-                  a tab that said nothing about it would be the one screen in
-                  the product that hides a deletion it is about to perform.
-                */}
+                {/* The clock, on this tab as well as on projects. It could not be here before,
+                    because tasks did not expire. */}
                 <ExpiryBadge purgeAt={task.purgeAt ?? null} />
 
-                {/* The type's name, not its key. `TASK_TYPE_META` holds a
-                    `TranslationKey`; printing it raw is how this row came to
-                    read "type.MEGA" in every language. */}
+                {/* The type's name, not its key. `TASK_TYPE_META` holds a `TranslationKey`;
+                    printing it raw is how this row came to read "type.MEGA" in every language. */}
                 <Badge
                   className={cn(
                     'border-transparent bg-transparent',
@@ -528,13 +461,8 @@ const RecycleBinPage = () => {
                       )}
                     </p>
 
-                    {/*
-                      What is still inside it.
-
-                      A name is not enough to decide the fate of a project: the
-                      question "may I destroy this" is really "how much is in
-                      it", and this is the only screen that can answer it.
-                    */}
+                    {/* What is still inside it. A name is not enough to decide the fate of a
+                        project. */}
                     <p className="text-2xs text-content-faint">
                       {t('bin.projectContents', {
                         tasks: String(project.counts.tasks),
@@ -624,14 +552,8 @@ const RecycleBinPage = () => {
         )}
       </ConfirmDialog>
 
-      {/*
-        Permanent deletion, behind a password.
-
-        Its own dialog rather than the `ConfirmDialog` the task and note rows
-        use, and the difference is the size of what is being destroyed: a
-        project is everything under it, there is no copy anywhere afterwards,
-        and the API asks for the account's password for exactly that reason.
-      */}
+      {/* Permanent deletion, behind a password. Its own dialog rather than the `ConfirmDialog`
+          the task and note rows use, and the difference is the size of what is being destroyed. */}
       <Modal
         isOpen={purgeTarget !== null}
         onClose={() => setPurgeTarget(null)}

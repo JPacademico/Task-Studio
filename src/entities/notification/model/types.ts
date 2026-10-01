@@ -24,13 +24,8 @@ export interface AppNotification {
 }
 
 /**
- * The deep-link hints and the few structured values a row renders.
- *
- * Everything here is optional and everything is untrusted: the column is
- * free-form JSON on the API, rows written by older builds are still in the
- * table, and a client several versions behind the server will meet keys it has
- * never heard of. So this is a description of what *may* be there, not a
- * contract — every reader has to cope with each field being absent.
+ * The deep-link hints and the few structured values a row renders. Everything here is optional and
+ * everything is untrusted: the column is free-form JSON on the API.
  */
 export interface NotificationPayload {
   projectId?: string;
@@ -39,23 +34,13 @@ export interface NotificationPayload {
   /** Set on an organization invitation; see the bell's `deepLink`. */
   organizationId?: string;
   /**
-   * The deadline behind a due-soon alert, as an ISO instant.
-   *
-   * Carried here rather than written into `body` because a deadline is a point
-   * in time and only the reader's own browser knows how to render one — which
-   * timezone they are in, and which language the date should be in. The API
-   * used to format it into the body itself and produced
-   * `Deadline 2026-08-21T20:00:00.000Z`, which was UTC and unreadable in equal
-   * measure.
+   * The deadline behind a due-soon alert, as an ISO instant. Carried here rather than written into
+   * `body`.
    */
   dueAt?: string | null;
   /**
-   * Which feature wrote this row.
-   *
-   * Only the newer writers set it, and only where the ids alone are ambiguous.
-   * A live-room invitation carries a `projectId` like every task notification
-   * does, and without this the bell would open the board rather than the call
-   * somebody is being invited to — see its `deepLink`.
+   * Which feature wrote this row. Only the newer writers set it, and only where the ids alone are
+   * ambiguous.
    */
   kind?: string;
   /** The live room this announces. See `kind`. */

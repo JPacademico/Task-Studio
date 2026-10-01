@@ -29,18 +29,8 @@ interface TaskRowProps extends Pick<TaskViewProps, 'onOpen' | 'onToggleComplete'
 }
 
 /**
- * One line of the list.
- *
- * Lifted out of the `.map` it used to live in, for two reasons that arrived
- * together. The immediate one is that it needs `useIsTaskSyncing`, and a hook
- * cannot be called inside a loop body. The lasting one is that a component can
- * be memoised and a fragment of JSX cannot — so a list of two hundred rows now
- * re-renders only the row that changed, which is the same treatment `TaskCard`
- * has had since the board was written.
- *
- * The memo holds because every handler comes down from one `useMemo`d object in
- * the page above (see the project page's `taskHandlers`) and `t` is memoised on
- * the locale.
+ * One line of the list. Lifted out of the `.map` it used to live in, for two reasons that arrived
+ * together.
  */
 const TaskRowBase = ({
   task,
@@ -175,11 +165,8 @@ const TaskRow = memo(TaskRowBase);
 TaskRow.displayName = 'TaskRow';
 
 /**
- * One line per task.
- *
- * The card layouts are for arranging work; this one is for reading a lot of it
- * at once, so every row is the same height and the eye can run down a single
- * column of titles instead of hopping between boxes.
+ * One line per task. The card layouts are for arranging work; this one is for reading a lot of it
+ * at once.
  */
 export const TaskListView = ({
   tasks,

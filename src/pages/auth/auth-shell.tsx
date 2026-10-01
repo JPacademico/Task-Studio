@@ -19,26 +19,8 @@ interface AuthShellProps {
 }
 
 /**
- * Shared frame for every unauthenticated screen.
- *
- * The whole viewport is the desk — Post-its, a pinned task, stationery, all of
- * it draggable — and the sign-in card is simply the heaviest object on it. It
- * has its own grab bar, it can be dropped anywhere on the surface, and it sits
- * above everything else at every moment, so sliding it across the desk never
- * buries the two fields the user actually came for.
- *
- * The card drags from its handle only (`dragListener={false}` plus explicit
- * `dragControls`): dragging the whole card would mean selecting text in the
- * email field moves the window instead.
- *
- * Touch devices keep the card planted. There is no hover there, the desk is
- * decoration, and a draggable form on a phone is a form you can lose.
- *
- * It is also where the API gets woken (`wakeApi`). Every unauthenticated
- * screen renders through here, so this is the earliest moment the app knows
- * somebody is about to need the server — and the seconds between this frame
- * appearing and a password being typed are exactly the seconds a free-tier
- * container needs to start.
+ * Shared frame for every unauthenticated screen. The whole viewport is the desk — Post-its, a
+ * pinned task, stationery, all of it draggable.
  */
 export const AuthShell = ({ title, subtitle, children, footer }: AuthShellProps) => {
   const t = useT();
@@ -47,9 +29,8 @@ export const AuthShell = ({ title, subtitle, children, footer }: AuthShellProps)
   const isTouch = useIsTouchDevice();
   const reduceMotion = useReducedMotion();
 
-  // Fire-and-forget: the boot overlaps the form being filled in. `wakeApi`
-  // no-ops when the container has answered recently, so navigating between
-  // login, sign-up and reset does not ping it again.
+  // Fire-and-forget: the boot overlaps the form being filled in. `wakeApi` no-ops when the
+  // container has answered recently, so navigating between login.
   useEffect(wakeApi, []);
 
   const [hasMoved, setHasMoved] = useState(false);
@@ -58,23 +39,8 @@ export const AuthShell = ({ title, subtitle, children, footer }: AuthShellProps)
   return (
     <div
       ref={deskRef}
-      /*
-       * Horizontally clipped, vertically not — in every case.
-       *
-       * The desk used to be `overflow-hidden` outright whenever the card could
-       * be dragged, on the reasoning that a desk you throw objects around on
-       * must not grow scrollbars. The reasoning was right and the rule was too
-       * wide: at 1280×620 — a laptop, or any window with devtools docked — the
-       * sign-in card is 100px taller than the viewport, and `hidden` made that
-       * 100px *unreachable*. The footer link to sign-up and the whole OAuth row
-       * were simply gone, with no scrollbar to suggest otherwise.
-       *
-       * Vertical scrolling is safe because the thing that would have abused it
-       * cannot: `AuthScene` draws every desk object inside its own
-       * `absolute inset-0 overflow-hidden` layer, so no amount of throwing them
-       * around extends the page. The only element that can overflow this box is
-       * the card column, which is exactly the thing that has to be reachable.
-       */
+      /* Horizontally clipped, vertically not — in every case. The desk used to be `overflow-hidden`
+         outright whenever the card could be dragged. */
       className="relative min-h-dvh overflow-x-hidden overflow-y-auto bg-surface"
     >
       {/* Everything on the desk sits under the card. */}
@@ -88,10 +54,8 @@ export const AuthShell = ({ title, subtitle, children, footer }: AuthShellProps)
           <span className="font-hand text-base font-bold tracking-normal">Task Studio</span>
         </span>
 
-        {/* The headline only. The paragraph that used to sit under it was
-            flavour text on a screen whose entire job is two fields and a
-            button — it explained the desk to somebody who can already see it,
-            and pushed the sign-in card down on short laptops to do it. */}
+        {/* The headline only. The paragraph that used to sit under it was flavour text on a
+            screen whose entire job is two fields and a button. */}
         <div className="hidden max-w-sm lg:block">
           <h2 className="text-balance text-3xl font-bold leading-[1.15] tracking-tight xl:text-4xl">
             {t('auth.hero.title')}
@@ -112,19 +76,8 @@ export const AuthShell = ({ title, subtitle, children, footer }: AuthShellProps)
         <ThemeToggle />
       </div>
 
-      {/* --- The card ---------------------------------------------------------
-          A grid that centres its only child, so the drag offset starts from the
-          middle of the screen at any viewport size without measuring anything. */}
-      {/*
-        Vertical padding that gives way on a short screen.
-
-        96px of top-and-bottom air is right on a desktop monitor and is exactly
-        what pushed the card past the fold on a 1366x768 laptop, where the
-        viewport is about 640px tall once the browser's own chrome is gone. The
-        `short` variant is a *height* query — see `tailwind.config.js` — because
-        this was never a width problem: the card fits side to side at every size
-        it has ever been drawn at.
-      */}
+      {/* --- The card --- */}
+      {/* Vertical padding that gives way on a short screen. */}
       <div className="pointer-events-none relative z-50 grid min-h-dvh place-items-center px-5 py-12 short:py-5 sm:px-8">
         <motion.div
           drag={isDraggable}

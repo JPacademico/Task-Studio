@@ -7,90 +7,27 @@ import { cn } from '@/shared/lib/cn';
 import { useT } from '@/shared/i18n';
 
 /**
- * Where the CLI is documented.
- *
- * A constant rather than a string typed into two panels, because it is the one
- * link on either of them that used to leave this application — and a link that
- * is right in Settings and stale in the project tab is worse than one that is
- * wrong in both, since nobody goes looking for the second copy.
- *
- * ## Why it stopped pointing at the README
- *
- * It went to the package's README on GitHub, on the honest grounds that that
- * was where the documentation was. Now there is a page in the product, and the
- * README is the worse of the two for this reader in three ways: it arrives in a
- * different typeface with none of their theme, it is written for somebody
- * browsing source rather than somebody who has just been handed four commands,
- * and it is the one link on these panels that could quietly rot — nothing here
- * breaks when a repository is renamed.
- *
- * The README has not gone anywhere; it is still the right thing for somebody
- * reading the package on npm. This is for somebody using it.
+ * Where the CLI is documented. A constant rather than a string typed into two panels, because it is
+ * the one link on either of them that used to leave this application.
  */
 export const CLI_DOCS_URL = '/docs';
 
 /**
- * The focus ring every bespoke control in this feature wears.
- *
- * Spelled out once because these are raw `<button>` and `<a>` elements rather
- * than the shared `Button`, and the first version of this feature shipped with
- * none of them: thirteen interactive elements, zero focus styles, falling
- * through to whatever ring the browser draws. On `pixel` and `newspaper` —
- * both of which square every corner in the product — a rounded browser default
- * reads as a rendering fault rather than as focus.
- *
- * Matched to `buttonClasses` in `shared/ui/button.tsx` so the whole app keeps
- * one focus language.
+ * The focus ring every bespoke control in this feature wears. Spelled out once because these are
+ * raw `<button>` and `<a>` elements rather than the shared `Button`.
  */
 const FOCUS_RING =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-1 focus-visible:ring-offset-surface';
 
 /**
- * The address the CLI wants, which is not the address this app uses.
- *
- * `env.apiUrl` carries the version prefix because every request the browser
- * makes is relative to it. The CLI adds its own — it has to, being a separate
- * client with its own idea of which version it speaks — so handing somebody the
- * browser's value produces `…/api/v1/api/v1/cli/session` and a 404 that reads
- * as the server being broken.
- *
- * ## Why nothing on this panel prints it any more
- *
- * The install instructions used to read `taskstudio login --api <this>`, and
- * that line is gone. Not because the address is secret — it is in the bundle
- * every visitor of this page has already downloaded, and in every request the
- * page makes, so hiding it would be theatre — but because *asking people to
- * retype it* teaches a habit worth attacking. It trains users that the normal
- * way to sign in is to paste an API host read off a web page into the command
- * that then receives their password, and a page publishing a lookalike host is
- * the entire exploit.
- *
- * A published CLI knows which deployment it was published for, so it defaults
- * to it, and `taskstudio login` takes no arguments. `--api` survives for
- * self-hosters, who are exactly the people for whom typing an address is a
- * deliberate act rather than a step in an instruction they are following.
- *
- * Kept exported because `taskstudio doctor` checks the same mistake from the
- * other end, and because a self-hoster reading this file is the one audience
- * that still needs the derivation written down.
+ * The address the CLI wants, which is not the address this app uses. `env.apiUrl` carries the
+ * version prefix because every request the browser makes is relative to it.
  */
 export const cliApiUrl = (): string => env.apiUrl.replace(/\/api\/v\d+$/, '');
 
 /**
- * One command, with a button that copies it.
- *
- * ## Why the failure is loud now
- *
- * It used to be swallowed, on the argument that "the text is right there and
- * selectable". Both halves of that turned out to be false. `navigator.clipboard`
- * is `undefined` on a non-secure origin — which a self-hosted HTTP deployment
- * is — so on those deployments the button did nothing, every time, and said
- * nothing about it. And on a phone the line is wider than the column, so the
- * text is *not* all there to select.
- *
- * So a failure toasts, using the string the rest of the app already uses for
- * exactly this, and the success is announced to assistive technology instead of
- * being carried by an icon swap no screen reader can see.
+ * One command, with a button that copies it. It used to be swallowed, on the argument that "the
+ * text is right there and selectable". Both halves of that turned out to be false.
  */
 export const CommandLine = ({ children }: { children: string }) => {
   const t = useT();
@@ -98,16 +35,8 @@ export const CommandLine = ({ children }: { children: string }) => {
   const codeRef = useRef<HTMLElement>(null);
   const [isClipped, setIsClipped] = useState(false);
 
-  /*
-   * Whether the line runs past its column, measured rather than guessed.
-   *
-   * The fade below is painted only when it is true. A permanent one would lie
-   * about a short command having more to it, which is worse than no fade at
-   * all: the whole job of the affordance is to be believed.
-   *
-   * Re-measured on resize because the panel lives in a column that changes
-   * width — the Connections tab is narrower than Settings, and both reflow.
-   */
+  // Whether the line runs past its column, measured rather than guessed. The fade below is painted
+  // only when it is true.
   useEffect(() => {
     const element = codeRef.current;
     if (!element) return;
@@ -122,9 +51,8 @@ export const CommandLine = ({ children }: { children: string }) => {
 
   const copy = async () => {
     try {
-      // Optional-chained: on a non-secure origin the whole API is absent, and
-      // reading `.writeText` off `undefined` throws a TypeError that is far
-      // less legible than the sentence below.
+      // Optional-chained: on a non-secure origin the whole API is absent, and reading `.writeText`
+      // off `undefined` throws a TypeError that is far less legible than the sentence below.
       await navigator.clipboard?.writeText(children);
       setCopied(true);
       // Long enough to notice, short enough that the button is ready again
@@ -139,14 +67,8 @@ export const CommandLine = ({ children }: { children: string }) => {
     <div className="ui-code flex items-center gap-2 rounded-xl border border-edge bg-surface-sunken px-3 py-1.5">
       <code
         ref={codeRef}
-        /*
-         * Focusable and labelled, because it scrolls.
-         *
-         * A `<code>` that overflows is a scroll container, and a scroll
-         * container a keyboard cannot reach is content a keyboard user cannot
-         * read. Chrome makes overflowing elements focusable on its own; Safari
-         * and Firefox do not, so the attribute is explicit.
-         */
+        /* Focusable and labelled, because it scrolls. A `<code>` that overflows is a scroll
+           container. */
         tabIndex={isClipped ? 0 : -1}
         role={isClipped ? 'region' : undefined}
         aria-label={isClipped ? t('cli.commandScrollable') : undefined}
@@ -175,14 +97,7 @@ export const CommandLine = ({ children }: { children: string }) => {
         {copied ? <Check className="h-3.5 w-3.5 text-positive" /> : <Copy className="h-3.5 w-3.5" />}
       </button>
 
-      {/*
-        The success, said rather than drawn.
-
-        The icon swap is invisible to a screen reader, which left the primary
-        action of the whole feature with no confirmation at all for the people
-        least able to infer one. `role="status"` is polite: it waits for a gap
-        rather than interrupting whatever is being read.
-      */}
+      {/* The success, said rather than drawn. The icon swap is invisible to a screen reader. */}
       <span className="sr-only" role="status" aria-live="polite">
         {copied ? t('cli.copied') : ''}
       </span>
@@ -197,15 +112,8 @@ export const DocsLink = () => {
   return (
     <a
       href={CLI_DOCS_URL}
-      /*
-       * A new tab, still.
-       *
-       * It is an internal route now, so this could be a `<Link>` — and it
-       * should not be. Both panels are things somebody is in the middle of:
-       * copying a command, reading a token list. Navigating the tab away from a
-       * half-finished setup to read the reference, and having to find the way
-       * back, is exactly what a new tab exists to prevent.
-       */
+      /* A new tab, still. It is an internal route now, so this could be a `<Link>` — and it should
+         not be. */
       target="_blank"
       rel="noreferrer noopener"
       className={cn(
@@ -221,45 +129,14 @@ export const DocsLink = () => {
 };
 
 /**
- * A group label above a run of commands.
- *
- * 11px semibold rather than the 10px `text-content-faint` it started as. That
- * combination measured 3.30:1 against the default skin's own surface — under
- * the 4.5:1 floor for text this size, and failing on eight of the nine skins
- * checked — on the labels that make the block scannable in the first place.
- * `Group` in the connections panel already uses this pairing for the same job.
+ * A group label above a run of commands. 11px semibold rather than the 10px `text-content-faint` it
+ * started as.
  */
 const GroupLabel = ({ children }: { children: string }) => (
   <p className="text-2xs font-semibold uppercase tracking-wide text-content-muted">{children}</p>
 );
 
-/**
- * The commands themselves, in the order somebody runs them.
- *
- * ## Why there are two variants and not one list
- *
- * Because the two places this appears are answering different questions, and a
- * single list would answer neither well.
- *
- * In **Settings** the question is "how do I get this on my machine" — it is an
- * account-level page, there is no project in scope, and the answer ends at
- * being signed in. In a **project's Connections tab** the question is "how do I
- * connect *this* project", the reader is already looking at one, and the answer
- * they need is `init` — the command that adopts a checkout into a project that
- * already exists, which is the situation they are provably in.
- *
- * Showing `create project` to somebody standing inside a project would be
- * inviting them to make a second one for the same repository, which is the
- * worst thing this CLI can do to a board.
- *
- * ## Why `DocsLink` is not in here
- *
- * Because the two parents want it in different places, and putting it in both
- * produced two of them. Settings keeps it in the header, where it is visible
- * while the commands are folded away — that is most of the point of folding
- * them. The connections card has no header room, so it puts it at the bottom of
- * the panel. One link each, placed by whoever knows the layout.
- */
+/** The commands themselves, in the order somebody runs them. */
 export const CliCommandList = ({ variant }: { variant: 'account' | 'project' }) => {
   const t = useT();
 
@@ -278,12 +155,8 @@ export const CliCommandList = ({ variant }: { variant: 'account' | 'project' }) 
           <>
             <CommandLine>taskstudio init</CommandLine>
             <CommandLine>taskstudio ide install</CommandLine>
-            {/*
-              Offered in the project variant and not the account one, because
-              it is a per-repository hook and the reader is provably standing in
-              a project. In Settings there is no repository in scope, so the
-              same line would be an instruction somebody cannot follow yet.
-            */}
+            {/* Offered in the project variant and not the account one, because it is a
+                per-repository hook and the reader is provably standing in a project. */}
             <CommandLine>taskstudio hook install</CommandLine>
           </>
         ) : (

@@ -16,15 +16,8 @@ interface TaskOriginProps {
 }
 
 /**
- * Where a task comes from: a project, or nobody.
- *
- * The agenda mixes both kinds on one page, and the project chip used to be the
- * only thing on a card that said which board a task belonged to — so a task
- * with no project at all needs to say *that*, rather than simply dropping the
- * chip and leaving a gap that reads as a rendering bug.
- *
- * It is deliberately not a link. There is nowhere for a personal task to go:
- * the task menu is already the only place it lives.
+ * Where a task comes from: a project, or nobody. The agenda mixes both kinds on one page, and the
+ * project chip used to be the only thing on a card that said.
  */
 export const TaskOrigin = ({ project, variant = 'pill', className }: TaskOriginProps) => {
   const t = useT();

@@ -8,33 +8,8 @@ interface PendingEdit {
 }
 
 /**
- * Fields this client has written and the server has not confirmed back yet.
- *
- * ## The problem this exists for
- *
- * A project board is a shared surface, so every write fans out over the socket
- * as `note:updated` — to the whole room, *including the person who made it*.
- * The payload is the row as the server has it, which by the time it arrives is
- * one round trip behind whatever has happened locally since. Applied blindly,
- * that echo overwrites the optimistic value with an older one, and the user
- * watches their own edit get undone a moment after making it. On the title
- * field, where a write used to fire per keystroke, it looked like the letters
- * were changing by themselves.
- *
- * ## Why it is per field, not per note
- *
- * Dropping the whole echo would be simpler and would also drop a teammate's
- * concurrent change to a *different* field of the same note — somebody moving a
- * sheet while its author renames it. Recording which fields are in flight lets
- * the incoming row land in full and only the pending ones be kept back, so the
- * two edits compose instead of one winning.
- *
- * ## Why it expires
- *
- * A mutation that never settles — offline, a dropped socket — must not pin a
- * field forever. The TTL is the ceiling on how long a local value can outrank
- * the server's, and it is refreshed on every write, so it only ever elapses
- * once the client has genuinely stopped talking.
+ * Fields this client has written and the server has not confirmed back yet. A project board is a
+ * shared surface, so every write fans out over the socket as `note:updated` — to the whole room.
  */
 const pending = new Map<string, PendingEdit>();
 
@@ -42,12 +17,8 @@ const pending = new Map<string, PendingEdit>();
 const TTL_MS = 6_000;
 
 /**
- * How long a settled write stays authoritative.
- *
- * The echo of a write does not arrive with the response to it; the two race.
- * Releasing the field the instant the PATCH resolves therefore leaves a window
- * in which its own echo — still older than what is on screen if the user kept
- * typing — is treated as news. A short tail closes it.
+ * How long a settled write stays authoritative. The echo of a write does not arrive with the
+ * response to it; the two race.
  */
 const SETTLE_GRACE_MS = 1_200;
 
@@ -83,23 +54,16 @@ export const releaseLocalNoteEdit = (noteId: string, payload: UpdateNotePayload)
 };
 
 /**
- * The incoming row, with anything this client still owns kept back.
- *
- * `local` is what the cache holds right now — the optimistic value — so the
- * result is "everything the server says, except the words I am still typing".
+ * The incoming row, with anything this client still owns kept back. `local` is what the cache holds
+ * right now — the optimistic value — so the result is "everything the server says.
  */
 export const mergeRemoteNote = (local: Note | undefined, incoming: Note): Note => {
   const entry = pending.get(incoming.id);
   const live = entry && prune(incoming.id, entry);
   if (!live || !local) return incoming;
 
-  /*
-   * Field names are keys of `UpdateNotePayload`, every one of which is also a
-   * key of `Note` with a compatible type — but TypeScript cannot follow that
-   * through a `Set` iteration, so the copy is done through an index signature
-   * and the result asserted back. The narrow `EditableField` type on the set is
-   * what keeps the assertion honest: nothing else can get into it.
-   */
+  // Field names are keys of `UpdateNotePayload`, every one of which is also a key of `Note` with a
+  // compatible type — but TypeScript cannot follow that through a `Set` iteration.
   const merged: Record<string, unknown> = { ...incoming };
   const source = local as unknown as Record<string, unknown>;
   for (const field of live.fields) merged[field] = source[field];

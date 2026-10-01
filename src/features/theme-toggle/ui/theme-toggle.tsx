@@ -7,42 +7,8 @@ import { useT } from '@/shared/i18n';
 import { cn } from '@/shared/lib/cn';
 
 /**
- * Light or dark, as a switch rather than a button.
- *
- * ## Why it stopped being an icon
- *
- * It was a 36px square that showed a sun in light mode and a moon in dark, and
- * the problem with that is the one thing an icon-only toggle can never settle:
- * a sun on its own does not say whether it is describing the state you are in
- * or the state you would get by pressing it. Both readings are common, they are
- * opposites, and nothing on the control distinguishes them — so the honest
- * answer for most people was "press it and find out".
- *
- * A switch cannot be ambiguous in that way, because it shows *both* ends at
- * once. The sun and the moon are always visible, the knob sits on the one that
- * is currently true, and the direction it would travel is the change on offer.
- * Nobody has to guess, and nobody has to have read a convention.
- *
- * ## Why the knob is a separate element from the icons
- *
- * So the icons never move. A switch that slid the sun and moon along with the
- * knob would be animating three things to communicate one, and the two symbols
- * are the labels — labels that move are labels you re-read. The track holds
- * them at fixed positions and only the knob travels between them.
- *
- * ## Why both icons stay lit
- *
- * The inactive one is dimmed rather than hidden. Hiding it would put the
- * control straight back into the ambiguity it exists to remove: one symbol
- * visible is one symbol to misread. Dimmed, it still reads as "the other
- * option", which is exactly what it is.
- *
- * ## Accessibility
- *
- * A real `role="switch"` with `aria-checked`, so assistive technology announces
- * it as the two-state control it looks like rather than as a button whose
- * effect has to be inferred from its name. Checked means dark — an arbitrary
- * choice, made once, and stated here so it stays consistent.
+ * Light or dark, as a switch rather than a button. It was a 36px square that showed a sun in light
+ * mode and a moon in dark.
  */
 export const ThemeToggle = ({ className }: { className?: string }) => {
   const t = useT();
@@ -63,56 +29,15 @@ export const ThemeToggle = ({ className }: { className?: string }) => {
       title={isDark ? t('theme.toLight') : t('theme.toDark')}
       className={cn(
         'relative inline-block h-8 w-[3.75rem] shrink-0 rounded-full align-middle',
-        /*
-          Glass, rather than a sunken well.
-
-          It was `bg-surface-sunken` with a hairline border — a groove cut into
-          the bar it sits in, which is the right material for a control that is
-          *part of* the bar. This one is not: it is in the navigation on the
-          landing page, in the top bar of the application, and on the sign-in
-          desk, and in all three it is a small floating object over whatever is
-          behind it. The glass says that, and it says it in whichever of the
-          thirteen skins is on, because every value in the material resolves
-          through that skin's own tokens. See `.ui-liquid-glass` in `index.css`.
-
-          `--interactive` is on because this is a control rather than a surface:
-          the rim brightens and the bloom lifts under the pointer, which is the
-          hover state the border colour used to carry alone.
-        */
+        /* Glass, rather than a sunken well. It was `bg-surface-sunken` with a hairline border. */
         'ui-liquid-glass ui-liquid-glass--control ui-liquid-glass--interactive',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
         'focus-visible:ring-offset-2 focus-visible:ring-offset-surface',
         className,
       )}
     >
-      {/*
-        Two layers over the same box, so the knob and the icons cannot disagree.
-
-        ## What was wrong before
-
-        Two of them, and they compounded. The knob was placed with Tailwind's
-        `top-1/2 -translate-y-1/2` *and* animated with Framer's `x` — and Framer
-        writes `transform` as an inline style, which overrides the Tailwind
-        translate entirely. So the knob's top edge sat on the track's centre
-        line and it hung a full half-height low. The same collision is on record
-        against `FeatureNotes` and `ChatPin`; it catches everything that mixes a
-        transform utility with an animated transform.
-
-        The second was a hand-computed travel distance of 28px, derived from a
-        60px track that is really 58.6 — `3.75rem` against this app's 15.625px
-        root — and from ignoring the 1px border on each side. Measured, the knob
-        landed 2.7px right of the moon it was supposed to be under.
-
-        ## Why this cannot drift
-
-        Both layers are `inset-1`, so they are literally the same rectangle. The
-        icon row is `justify-between`; the knob row is `justify-start` or
-        `justify-end`. "The knob is on the moon" is therefore the same statement
-        as "the last flex item is at the end of the row" — true at any track
-        width, any root font size, any border, with no number written down
-        anywhere. `layout` lets Framer animate the change of alignment rather
-        than a distance nobody has to compute.
-      */}
+      {/* Two layers over the same box, so the knob and the icons cannot disagree. Two of them,
+          and they compounded. */}
       <span
         aria-hidden
         className={cn(
@@ -122,17 +47,8 @@ export const ThemeToggle = ({ className }: { className?: string }) => {
       >
         <motion.span
           layout
-          /*
-            The knob is a bead of the same glass, not a flat disc.
-
-            It keeps the brand fill — the knob is the one part of this control
-            that has to be found at a glance — and gains the bezel: a lit top
-            edge and a shadowed bottom one, which is what makes a 24px circle
-            read as a physical thing sliding along a track rather than as a
-            coloured dot being repositioned. The ring is `--glass-rim`, so it is
-            the light in the room rather than a lighter blue, and it stays
-            correct on the skins whose accent is nearly white.
-          */
+          /* The knob is a bead of the same glass, not a flat disc. It keeps the brand fill — the
+             knob is the one part of this control that has to be found at a glance. */
           className={cn(
             'h-6 w-6 rounded-full bg-brand',
             'shadow-[inset_0_1px_0_0_rgb(var(--glass-rim)/0.55),inset_0_-1px_0_0_rgb(0_0_0/0.25),0_2px_6px_-1px_rgb(var(--brand)/0.5)]',
@@ -145,9 +61,8 @@ export const ThemeToggle = ({ className }: { className?: string }) => {
         />
       </span>
 
-      {/* The two ends, fixed, in the same box the knob travels along. They paint
-          over it, so the active one reads as sitting *on* the knob rather than
-          beside it. */}
+      {/* The two ends, fixed, in the same box the knob travels along. They paint over it, so
+          the active one reads as sitting *on* the knob rather than beside it. */}
       <span
         aria-hidden
         className="pointer-events-none absolute inset-1 z-10 flex items-center justify-between"

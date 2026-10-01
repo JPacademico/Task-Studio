@@ -11,46 +11,14 @@ import { useT } from '@/shared/i18n';
 import { COLUMN } from './columns';
 import { LavaLink } from './lava-link';
 
-/**
- * The bar across the top.
- *
- * ## Why there are three links and not seven
- *
- * Because there are three things on the page. A landing page whose navigation
- * offers Pricing, Solutions, Resources and Customers when it has none of those
- * is a page that has copied a template, and every one of those links is a dead
- * end somebody has to discover for themselves. What is here maps exactly to
- * what is below it.
- *
- * ## Why the language and theme toggles are on a marketing page
- *
- * They are on every unauthenticated screen already — see `AuthShell` — and
- * both earn their place here for the same reason they do there. The app ships
- * in two languages, and somebody who reads Portuguese should not have to sign
- * up in English to find that out. The theme toggle is doing something else
- * too: the page is drawn in the reader's own palette, so switching it is the
- * fastest possible demonstration that the whole product is.
- */
+/** The bar across the top. */
 export const LandingNav = () => {
   const t = useT();
   const { pathname } = useLocation();
   const reduceMotion = useReducedMotion();
 
-  /*
-   * Whether the three section links can be plain anchors.
-   *
-   * They could not before, and that was a broken control rather than a cosmetic
-   * one: this bar is shared with the documentation page, where `href="#how"`
-   * resolves to `/docs#how` — an anchor to a section that does not exist on
-   * that document. Pressing any of the three did nothing at all, silently,
-   * which is the worst way for a link to fail.
-   *
-   * On the landing page itself they stay native anchors, because the browser's
-   * own same-document scrolling is smoother than anything a router can do and
-   * it honours `scroll-behavior` and `prefers-reduced-motion` for free.
-   * Anywhere else they become router links carrying the hash, and `LandingPage`
-   * scrolls to it on arrival — see the effect there.
-   */
+  // Whether the three section links can be plain anchors. They could not before, and that was a
+  // broken control rather than a cosmetic one: this bar is shared with the documentation page.
   const isOnLanding = pathname === '/welcome';
 
   return (
@@ -59,42 +27,15 @@ export const LandingNav = () => {
       data-theme-header
       className="sticky top-0 z-40 border-b border-edge/70 bg-surface/80 backdrop-blur"
     >
-      {/*
-        How far down the page you are, on the header's own bottom edge.
-
-        Here rather than on the `main` of either page, because this bar is the
-        one piece of chrome the landing page and the documentation share, and
-        both of them are one long column with no other progress cue in it. See
-        `ScrollProgress` for why it is a transform and how it picks up each
-        skin's accent without naming one.
-      */}
+      {/* How far down the page you are, on the header's own bottom edge. Here rather than on
+          the `main` of either page. */}
       <ScrollProgress />
-      {/*
-        The first thing in the tab order, and invisible until it is reached.
-
-        A sticky bar with a logo, three anchors, two toggles and two buttons is
-        eight stops between the top of the page and its first word. For anybody
-        navigating by keyboard that is eight stops paid on every arrival; this
-        is one, and it goes straight to the content.
-      */}
+      {/* The first thing in the tab order, and invisible until it is reached. A sticky bar with
+          a logo, three anchors. */}
       <a
         href="#content"
-        /*
-         * Parked above the viewport, not `sr-only`.
-         *
-         * `sr-only` + `buttonClasses` shipped a visible bug: `sr-only` collapses
-         * the box to 1×1 and sets `padding: 0`, and the button classes that
-         * follow it re-apply `px-3 py-1.5`, `bg-brand` and `rounded-xl`. Tailwind's
-         * merge does not treat those as conflicting — they are different
-         * property groups — so both survived and the result was a one-pixel
-         * brand-coloured rounded box, permanently visible in the top-left corner
-         * of the page, that did nothing when clicked.
-         *
-         * Translating a normally-sized button out of view has none of that
-         * fragility: nothing about the class list is load-bearing, the element
-         * keeps its real dimensions, and sliding it back in on focus is one
-         * transform on the compositor.
-         */
+        /* Parked above the viewport, not `sr-only`. `sr-only` + `buttonClasses` shipped a visible
+           bug: `sr-only` collapses the box to 1×1 and sets `padding: 0`. */
         className={cn(
           buttonClasses({ size: 'sm' }),
           'absolute left-4 top-3 z-50 -translate-y-[calc(100%+1.5rem)]',
@@ -107,31 +48,7 @@ export const LandingNav = () => {
       {/* The same column as the sections under it, so the brand and the last
           link line up with the page's edges at every width. See `columns`. */}
       <nav className={cn('mx-auto flex w-full items-center gap-3 px-4 py-3 sm:px-6', COLUMN)}>
-        {/*
-          The wordmark, which on this page is a "back to the top" control.
-
-          ## Why it needed a handler at all
-
-          It is a `Link` to `/welcome`, and on `/welcome` that is a navigation to
-          the address you are already at. React Router resolves it, sees the same
-          path, and does the correct thing for a router — nothing. So the one
-          element on the page every convention says returns you to the start was
-          the only one that did nothing when clicked, silently, from anywhere in
-          a five-section document.
-
-          It stays a real `Link` rather than becoming a button: on `/docs` this
-          same bar has to actually go somewhere, the destination has to be
-          visible in the status bar, and middle-click and ctrl-click have to open
-          it in a tab. Only the same-page case is intercepted.
-
-          ## Why the hash is cleared
-
-          Arriving from `/welcome#themes`, the address still says `#themes` while
-          the reader is looking at the top of the page — and a reload, or a
-          shared copy of that URL, would scroll them back down to a section they
-          deliberately left. `replaceState` drops it without adding a history
-          entry, which is the same treatment the section links give it.
-        */}
+        {/* The wordmark, which on this page is a "back to the top" control. */}
         <Link
           to="/welcome"
           onClick={(event) => scrollToTop(event, isOnLanding, reduceMotion)}
@@ -141,38 +58,18 @@ export const LandingNav = () => {
           <span className="grid h-9 w-9 place-items-center text-brand">
             <StudioMark className="h-9 w-9" />
           </span>
-          {/*
-            The name in the skin's own handwriting.
-
-            It was set in the interface typeface at 14px bold — which is to say
-            it was drawn exactly like every label, button and menu item beside
-            it, and read as one. A product whose whole argument is that it
-            behaves like paper had a wordmark that looked like a system font.
-
-            `font-hand` is the same variable the Post-its use, so the name is
-            written in whatever hand the active skin writes in: a marker on
-            Paper, a monospace on Terminal, a carved serif on Runic. It changes
-            with the theme rather than fighting it, which is what a wordmark
-            built out of design tokens buys that an image never could.
-
-            Slightly larger and with the tracking released, because a script
-            face set at a UI size with tight letter-spacing is a smudge.
-          */}
+          {/* The name in the skin's own handwriting. It was set in the interface typeface at
+              14px bold — which is to say it was drawn exactly like every label. */}
           <span className="font-hand text-base font-bold tracking-normal">Task Studio</span>
         </Link>
 
-        {/*
-          Hidden below `md`, and deliberately not replaced by a hamburger. The
-          links are anchors to sections of the very page somebody is already
-          scrolling; a menu that opens a sheet to offer "scroll down a bit" is
-          ceremony. On a phone the page *is* the navigation.
-        */}
+        {/* Hidden below `md`, and deliberately not replaced by a hamburger. The links are
+            anchors to sections of the very page somebody is already scrolling. */}
         <ul className="ml-4 hidden items-center gap-1 md:flex">
           {(
             [
-              // Page order, so the bar is a map of the page rather than a
-              // menu with its own opinion about it. Connections sits directly
-              // under the introduction now.
+              // Page order, so the bar is a map of the page rather than a menu with its own opinion
+              // about it. Connections sits directly under the introduction now.
               ['#connects', 'landing.nav.connects'],
               ['#how', 'landing.nav.how'],
               ['#inside', 'landing.nav.inside'],
@@ -210,21 +107,8 @@ export const LandingNav = () => {
         </ul>
 
         <div className="ml-auto flex items-center gap-1.5">
-          {/*
-            Docs sits with the toggles rather than in the list on the left, and
-            that is a distinction worth keeping: everything on the left is an
-            anchor to a section of *this* page, and this is a route to another
-            one. Mixing them would make one of the four behave differently from
-            the other three for no visible reason.
-
-            Its label is hidden on the narrowest screens and the icon carries
-            it alone. Measured at 360px, the right-hand cluster — Docs, the two
-            toggles, and two buttons — ran 58px past the edge and gave the whole
-            document a horizontal scrollbar; the theme control had just grown
-            from a 36px square into a 60px switch, which is where the extra
-            width came from. Dropping one word is a cheaper answer than hiding
-            the link, and `aria-label` keeps it announced either way.
-          */}
+          {/* Docs sits with the toggles rather than in the list on the left, and that is a
+              distinction worth keeping. */}
           <Link
             to="/docs"
             aria-label={t('landing.nav.docs')}
@@ -234,38 +118,11 @@ export const LandingNav = () => {
             <span className="hidden sm:inline">{t('landing.nav.docs')}</span>
           </Link>
 
-          {/*
-            The language picker, which was on this bar and invisible on it.
-
-            Two things were wrong and only the second one was visible. It was
-            written `hidden min-[400px]:block`, and Tailwind silently refuses to
-            generate `min-[…]` variants while `theme.screens` holds an object —
-            which this project's config did, for the `short` height query. The
-            warning is printed at build time and the consequence is not: the
-            class compiled to nothing, so the element was `display: none` at
-            every width since the day it was added. The variant now comes from a
-            plugin instead; see `tailwind.config.js`.
-
-            It also says which language it is currently in. Icon-only, it is a
-            glyph of a letter beside a theme control that is a 60px switch, and
-            a reader looking for a way to change the language has no reason to
-            think that is it. `PT` / `EN` beside the icon is two characters and
-            it turns a mystery into a control — the same treatment the sign-in
-            screens already give it.
-          */}
+          {/* The language picker, which was on this bar and invisible on it. */}
           <LanguageToggle withLabel className="hidden min-[400px]:block" />
           <ThemeToggle />
 
-          {/* Real anchors wearing the button's clothes — see `buttonClasses`.
-              Sign in stays quiet and Get started does not: somebody who
-              already has an account knows where to look, and somebody who
-              does not is the person this page is for.
-
-              `lava` rather than the flat brand fill, matching the two calls to
-              action further down the page and the "New project" button they
-              lead to. It is the same fill in all four places, which is what
-              makes it read as one invitation repeated rather than as four
-              buttons. */}
+          {/* Real anchors wearing the button's clothes — see `buttonClasses`. */}
           <Link
             to="/login"
             className={buttonClasses({
@@ -286,24 +143,7 @@ export const LandingNav = () => {
 };
 
 
-/**
- * Back to the start of the page, rather than to the page you are on.
- *
- * ## Why the wordmark needs any code
- *
- * Because on `/welcome` its `Link` points at `/welcome`. The router resolves
- * that, finds the location unchanged, and correctly does nothing — so the one
- * control every reader expects to return them to the top was the only thing in
- * the bar that answered a click with silence. Off the landing page the link is
- * a real navigation and this returns immediately.
- *
- * ## Why the scroll is smooth here and nowhere else
- *
- * The same argument `scrollToSection` makes below: `scroll-behavior: smooth` in
- * the stylesheet would animate every programmatic scroll in the application,
- * including the ones that are supposed to be instant. This is one of the two
- * places on the page where the animation is wanted, so it is asked for here.
- */
+/** Back to the start of the page, rather than to the page you are on. */
 const scrollToTop = (
   event: MouseEvent<HTMLAnchorElement>,
   isOnLanding: boolean,
@@ -319,19 +159,8 @@ const scrollToTop = (
   event.preventDefault();
   window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
 
-  /*
-   * Focus follows the scroll, or only the pointer went anywhere.
-   *
-   * Without this the caret stays on the wordmark and the next Tab continues
-   * from the navigation bar — which is where the reader already was, so a
-   * keyboard user gets no feedback that the control did anything at all. Moving
-   * it to `main` is what makes "back to the top" mean the same thing for the
-   * keyboard as it does for the pointer, and it is the element the skip link
-   * targets for the same reason.
-   *
-   * `preventScroll` because the smooth scroll above is already under way, and
-   * focusing a `tabIndex={-1}` element would otherwise jump straight to it.
-   */
+  // Focus follows the scroll, or only the pointer went anywhere. Without this the caret stays on
+  // the wordmark and the next Tab continues from the navigation bar.
   document.getElementById('content')?.focus({ preventScroll: true });
 
   window.history.replaceState(null, '', window.location.pathname + window.location.search);

@@ -3,28 +3,12 @@ import { type GlyphProps } from './glyph-kit';
 import { LETTER_ON_SHEET, StudioLetter } from './studio-letter';
 
 /**
- * This skin's product mark. Its navigation set is gone.
- *
- * There used to be a full set of underwater navigation glyphs here, exported as
- * `UNDERWATER_GLYPHS` and swapped in by `NavGlyph`. Every skin's set has
- * been withdrawn for the reason written up there: an icon is recognised by
- * shape, and a rail whose shapes change with the theme charges every user that
- * recognition again for a novelty that lands once.
- *
- * The mark is a different thing and stays. It is the *product's* signature
- * drawn in this world — one object, seen once, on a settings card and a theme
- * gallery tile — and nobody navigates by it.
+ * This skin's product mark. Its navigation set is gone. There used to be a full set of underwater
+ * navigation glyphs here, exported as `UNDERWATER_GLYPHS` and swapped in by `NavGlyph`.
  */
 /**
- * The product mark: the same Post-it, gone soft.
- *
- * The pad, the peeled corner and the pin are the product's signature across
- * every skin, and a skin earns its own mark by changing what the object is
- * *made of* — not by replacing it with something else. So this is the studio
- * mark's geometry, waterlogged: every edge has swollen and gone convex, the
- * peel becomes a corner lifting in the current, the two written lines have run
- * and now wave, and the pin is a bubble caught under the top edge on its way
- * out.
+ * The product mark: the same Post-it, gone soft. The pad, the peeled corner and the pin are the
+ * product's signature across every skin.
  */
 export const UnderwaterMark = ({ className }: GlyphProps) => (
   <svg viewBox="0 0 40 40" fill="none" aria-hidden className={cn('h-10 w-10', className)}>
@@ -56,13 +40,8 @@ export const UnderwaterMark = ({ className }: GlyphProps) => (
       strokeLinejoin="round"
     />
 
-    {/*
-      The letter, and the caustic crawling over it.
-
-      Two passes like the two run lines before it: the ink, then the same shape
-      again in the skin's glow carrying `tide-caustic`, so the light moves across
-      the letter the way it moves across everything else down here.
-    */}
+    {/* The letter, and the caustic crawling over it. Two passes like the two run lines before
+        it: the ink, then the same shape again in the skin's glow carrying `tide-caustic`. */}
     <StudioLetter transform={LETTER_ON_SHEET} strokeWidth={3.9} strokeOpacity={0.85} />
     <StudioLetter
       transform={LETTER_ON_SHEET}

@@ -17,17 +17,15 @@ interface BoardPagerProps {
   onRename: (index: number, name: string) => void;
   isAdding: boolean;
   /**
-   * How many pages this account's plan allows — three on the free tier, ten
-   * on a paid one. The pager used to show a fixed `/10` to everybody, so a free
-   * account saw room for seven more pages that the API would refuse.
+   * How many pages this account's plan allows — three on the free tier, ten on a paid one. The
+   * pager used to show a fixed `/10` to everybody.
    */
   max?: number;
   /** Shown when the free tier's ceiling is what stopped the add. */
   isPlanLimited?: boolean;
   /**
-   * Whether this reader may add and rename pages. A shared wall on a project
-   * they can only read, or one that is archived, draws the tabs and nothing
-   * that would be refused.
+   * Whether this reader may add and rename pages. A shared wall on a project they can only read, or
+   * one that is archived, draws the tabs and nothing that would be refused.
    */
   canEdit?: boolean;
   /** Whether this reader may remove pages — an admin's call on a shared wall. */
@@ -92,9 +90,8 @@ export const BoardPager = ({
 
         if (isEditing) {
           return (
-            // Renaming happens in place. A window.prompt() is the browser's
-            // dialog, not the app's, and it cannot show the length limit or be
-            // cancelled with anything but the keyboard.
+            // Renaming happens in place. A window.prompt() is the browser's dialog, not the app's,
+            // and it cannot show the length limit or be cancelled with anything but the keyboard.
             <span
               key={page.index}
               className="inline-flex items-center gap-1 rounded-xl border border-brand bg-brand/10 pl-2"

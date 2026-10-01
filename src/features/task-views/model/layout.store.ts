@@ -3,14 +3,8 @@ import { useCallback, useMemo, useState } from 'react';
 import { STORAGE_KEYS } from '@/shared/config/constants';
 
 /**
- * The shapes a set of tasks can be poured into.
- *
- * `board`   — status columns, drag & drop between them.
- * `sprint`  — the same columns crossed with priority swimlanes, plus a burn-down
- *             header: what a stand-up actually looks at.
- * `list`    — one dense line per task, for scanning a long backlog.
- * `calendar`— a month grid, for "what is landing on the 14th".
- * `agenda`  — day buckets ordered by hour; the personal default.
+ * The shapes a set of tasks can be poured into. `board` — status columns, drag & drop between them;
+ * `sprint` — the same columns crossed with priority swimlanes, plus a burn-down; header.
  */
 export type TaskLayout = 'board' | 'sprint' | 'list' | 'calendar' | 'agenda';
 
@@ -47,10 +41,8 @@ const write = (value: Stored): void => {
 };
 
 /**
- * The layout this surface is currently drawn in.
- *
- * Per device rather than per account: which shape suits you depends on the
- * screen in front of you, not on who you are.
+ * The layout this surface is currently drawn in. Per device rather than per account: which shape
+ * suits you depends on the screen in front of you, not on who you are.
  */
 export const useTaskLayout = (surface: LayoutSurface) => {
   const [layout, setLayoutState] = useState<TaskLayout>(() => {

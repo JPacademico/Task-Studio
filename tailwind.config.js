@@ -4,18 +4,8 @@ export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     /**
-     * The width breakpoints, and nothing else.
-     *
-     * `short` used to live here as a `{ raw }` entry, and it quietly cost the
-     * whole project a feature: Tailwind refuses to generate the `min-[…]` and
-     * `max-[…]` arbitrary variants at all when `screens` contains an object,
-     * and says so as a build *warning* rather than an error. So
-     * `min-[400px]:block` compiled to nothing, and the one element that used it
-     * — the landing page's language picker — was `display: none` at every
-     * width, on every screen, since the day it was added.
-     *
-     * The variant is declared as a plugin below instead, where it does exactly
-     * the same thing and costs nothing.
+     * The width breakpoints, and nothing else. `short` used to live here as a `{ raw }` entry, and
+     * it quietly cost the whole project a feature.
      */
     screens: {
       sm: '640px',
@@ -37,22 +27,8 @@ export default {
         },
         edge: 'rgb(var(--edge) / <alpha-value>)',
         /**
-         * The outline of a control you are meant to *aim at* — a checkbox, a
-         * radio, a toggle's track.
-         *
-         * Separate from `edge` because the two are asked to do different jobs.
-         * A panel border only has to divide two surfaces, so every skin tunes
-         * `--edge` to be as quiet as it can get away with; on the default
-         * studio dark that is `38 38 46` against a `23 23 28` card, a contrast
-         * ratio of 1.19, which is invisible. That is correct for a divider and
-         * useless for the one 20px square on a task card that the user has to
-         * find before they can tick it.
-         *
-         * `--check-edge` defaults to `--content-faint` — the quietest colour a
-         * skin still considers *legible* — and is overridden back to `--edge`
-         * on the skins drawn with a heavy ink outline, where the border is
-         * already the stronger of the two and also the stylistically right
-         * one. See the token block in `app/styles/index.css`.
+         * The outline of a control you are meant to *aim at* — a checkbox, a radio, a toggle's
+         * track. Separate from `edge` because the two are asked to do different jobs.
          */
         check: 'rgb(var(--check-edge) / <alpha-value>)',
         content: {
@@ -70,25 +46,8 @@ export default {
         danger: 'rgb(var(--danger) / <alpha-value>)',
       },
       /**
-       * The steps below `xs`, which Tailwind's stock scale stops at.
-       *
-       * ## Why these exist at all
-       *
-       * 364 places in this codebase asked for a font size in *pixels* —
-       * `text-[11px]` 176 times, `text-[10px]` 161 more — because the scale had
-       * nothing under `xs` (0.75rem) and a badge, a timestamp or a hint needed
-       * one. Every one of those was a size that could not scale: the root font
-       * size drives every `rem` in the app, so on a 2560px display everything
-       * grew except the labels, which is most of what "the content turns
-       * smaller" means on a large screen.
-       *
-       * Naming them continues Tailwind's own ladder downwards — `2xl`, `3xl`
-       * go up, so `2xs`, `3xs` go down — and each step is about one pixel at
-       * the 16px base, which is what the pixel values were reaching for.
-       *
-       * The line heights are set explicitly rather than inherited. At these
-       * sizes Tailwind's default ratio produces lines too tight to read, and
-       * every one of these call sites had already been overriding it by hand.
+       * The steps below `xs`, which Tailwind's stock scale stops at. 364 places in this codebase
+       * asked for a font size in *pixels* — `text-[11px]` 176 times, `text-[10px]` 161 more.
        */
       fontSize: {
         '2xs': ['0.6875rem', { lineHeight: '1rem' }],
@@ -97,41 +56,20 @@ export default {
         '5xs': ['0.5rem', { lineHeight: '0.75rem' }],
       },
       /**
-       * 12%, which Tailwind's stock scale does not have.
-       *
-       * The opacity modifier on a colour (`bg-brand/12`) is looked up in this
-       * scale, and the stock one steps by 5 — so `/12` matches nothing and
-       * Tailwind emits **no rule at all**. Not a fallback, not a warning: the
-       * class lands in the markup, resolves to nothing, and the element paints
-       * transparent.
-       *
-       * That had happened twenty-six times: every tinted icon chip in the app
-       * (`bg-brand/12`) and the two status wells on a task card
-       * (`bg-danger/12`, `bg-warning/12`) were rendering with no background,
-       * which reads as a design choice rather than as a bug and so had never
-       * been reported.
-       *
-       * Adding the step is the fix rather than rewriting all twenty-six to
-       * `/15`: 12% is what the code asks for, and one scale entry cannot be
-       * fat-fingered the way twenty-six edits can.
+       * 12%, which Tailwind's stock scale does not have. The opacity modifier on a colour
+       * (`bg-brand/12`) is looked up in this scale, and the stock one steps by 5.
        */
       opacity: {
         12: '0.12',
       },
       /**
-       * Radii are variables too: a skin is not just a palette, and the
-       * difference between the illustrated look and the terminal one is mostly
-       * how round the boxes are. `full` stays a literal pill on every skin.
+       * Radii are variables too: a skin is not just a palette, and the difference between the
+       * illustrated look and the terminal one is mostly how round the boxes are.
        */
       borderRadius: {
         /**
-         * For rounding exactly one corner.
-         *
-         * The size tokens below feed `border-radius`, a shorthand, so a skin
-         * may set an asymmetric four-value radius — and eldritch does. Those
-         * are invalid in a per-corner longhand (`rounded-br-2xl` and friends),
-         * where the browser drops the declaration outright and the corner
-         * silently stays square. This one is single-valued on every skin.
+         * For rounding exactly one corner. The size tokens below feed `border-radius`, a shorthand,
+         * so a skin may set an asymmetric four-value radius — and eldritch does.
          */
         corner: 'var(--radius-corner)',
         sm: 'var(--radius-sm)',
@@ -164,62 +102,28 @@ export default {
         shimmer: {
           '100%': { transform: 'translateX(100%)' },
         },
-        /*
-         * The connections belt on the landing page.
-         *
-         * Exactly half the track, because the track holds the list twice: at
-         * the instant this wraps to zero the second copy is occupying the
-         * pixels the first one has just left, so the loop has no seam and
-         * nothing has to measure anything.
-         *
-         * CSS rather than Framer Motion, unlike most of this app's movement,
-         * and for once that is the right way round: this is an unconditional,
-         * linear, infinite loop with no state behind it, so it belongs on the
-         * compositor where it costs no main-thread work, cannot drift, and can
-         * be paused under the pointer with one declaration. It is also then
-         * covered by the global `prefers-reduced-motion` rule for free.
-         */
+        // The connections belt on the landing page. Exactly half the track, because the track holds
+        // the list twice.
         marquee: {
           from: { transform: 'translate3d(0, 0, 0)' },
           to: { transform: 'translate3d(-50%, 0, 0)' },
         },
-        /*
-         * The edge affordance's swell and the auth desk's floating objects are
-         * deliberately *not* here — those are Framer Motion, so they can be
-         * cancelled by `useReducedMotion` at the component level rather than
-         * only by the global media query.
-         */
+        // The edge affordance's swell and the auth desk's floating objects are deliberately *not*
+        // here — those are Framer Motion.
       },
       animation: {
         'fade-up': 'fade-up 260ms cubic-bezier(0.22, 1, 0.36, 1) both',
         shimmer: 'shimmer 1.6s infinite',
-        /*
-         * Slow on purpose. Every card on the belt carries a sentence, and a
-         * belt that moves faster than somebody can finish reading one is a belt
-         * that punishes reading — which is the usual reason a marquee is the
-         * wrong shape for anything with words on it.
-         */
+        // Slow on purpose. Every card on the belt carries a sentence, and a belt that moves faster
+        // than somebody can finish reading one is a belt that punishes reading.
         marquee: 'marquee 46s linear infinite',
       },
     },
   },
   plugins: [
     /**
-     * A height-based variant, beside the width-based ones.
-     *
-     * Every breakpoint Tailwind ships is a *width*, and vertical overflow is
-     * not a width problem. A 1366x768 laptop has about 640px of viewport height
-     * once the browser's own chrome is taken out, and the sign-in card wants
-     * 619 of them — so it overflowed, and no amount of shrinking the type by
-     * viewport *width* was ever going to fix it, because the width was fine.
-     *
-     * `short` is the escape hatch for exactly that: the handful of surfaces
-     * whose vertical padding is generous on a desktop monitor and is the
-     * difference between fitting and scrolling on a laptop.
-     *
-     * A plugin rather than a `screens` entry — see the note there. It stacks
-     * the same way (`sm:short:p-5` still works) and it leaves `min-[…]` and
-     * `max-[…]` working, which the `screens` spelling did not.
+     * A height-based variant, beside the width-based ones. Every breakpoint Tailwind ships is a
+     * *width*, and vertical overflow is not a width problem.
      */
     ({ addVariant }) => {
       addVariant('short', '@media (max-height: 820px)');

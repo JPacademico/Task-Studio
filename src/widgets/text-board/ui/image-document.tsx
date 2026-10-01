@@ -16,45 +16,16 @@ interface ImageDocumentProps {
 }
 
 /**
- * A page that is a picture.
- *
- * ## Why the bytes come through the API
- *
- * The same reason a PDF's do (see `ImportedDocument`): the bucket hands out
- * public URLs, and an imported page is readable by whoever may read the page
- * rather than by whoever has the URL. Reading it through `/source` puts the
- * picture behind the project's roster check, and the `blob:` URL made here is
- * what the `<img>` is pointed at.
- *
- * The cost is that the picture is not in the browser's HTTP cache under a
- * stable URL, so flipping away and back re-fetches it. The route sets a
- * five-minute private `Cache-Control`, which covers exactly that pattern
- * without leaving somebody's screenshot in a shared cache.
- *
- * ## Why it is `ZoomableImage` rather than an `<img>` in a box
- *
- * Because the thing people upload here is a screenshot of a spec, a diagram or
- * a scanned page, and every one of those is unreadable at pane width. The
- * shared viewer already solves it — full screen, wheel and keyboard zoom, drag
- * to pan, escape to leave — and it is the same interaction a task attachment
- * has, which is the point: two pictures in the same product should not open in
- * two different ways.
- *
- * It is handed the *same* object URL for both the inline rendition and the
- * full one. The component's `thumbSrc` exists for surfaces that stored two
- * renditions; a text board stores one, deliberately — see `prepareImage` on
- * why the second object is not worth a second presigned request — so passing
- * the same URL twice is honest rather than wasteful: the bytes are already in
- * memory, and the viewer opens instantly instead of decoding a second file.
+ * A page that is a picture. The same reason a PDF's do (see `ImportedDocument`): the bucket hands
+ * out public URLs.
  */
 export const ImageDocument = ({ documentId, source, title }: ImageDocumentProps) => {
   const t = useT();
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
 
-  // Keyed on the id and the mime rather than on `source`, which is a fresh
-  // object on every render of the query cache — see the note in
-  // `ImportedDocument` for the re-download that would cause.
+  // Keyed on the id and the mime rather than on `source`, which is a fresh object on every render
+  // of the query cache — see the note in `ImportedDocument` for the re-download that would cause.
   const { mime } = source;
 
   useEffect(() => {
@@ -83,16 +54,8 @@ export const ImageDocument = ({ documentId, source, title }: ImageDocumentProps)
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">
-      {/*
-        The strip that says what this is — and, uniquely for a picture, what
-        happened to it.
-
-        Every other imported page is the bytes somebody chose. A picture is
-        not: it was decoded, capped at 1600px and re-encoded as WebP in the
-        browser before it was ever uploaded. That is a change to somebody's
-        file, so it is said out loud, with both numbers, rather than left for
-        them to notice when the download is a different format from the upload.
-      */}
+      {/* The strip that says what this is — and, uniquely for a picture, what happened to it.
+          Every other imported page is the bytes somebody chose. */}
       <div
         className={cn(
           'ui-card flex flex-wrap items-center gap-x-2.5 gap-y-1 rounded-xl border border-edge',

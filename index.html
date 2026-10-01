@@ -24,42 +24,11 @@
     <meta name="description" content="Personal and collaborative project management studio." />
     <title>Task Studio</title>
 
-    <!-- Palette and skin, applied before first paint. An external file rather
-         than an inline block so the CSP in vercel.json can refuse
-         script-src 'unsafe-inline' outright - see public/theme-init.js. -->
+    <!-- Palette and skin, applied before first paint. -->
     <script src="/theme-init.js"></script>
   </head>
   <body>
-    <!--
-      The gooey filter the "new thing" buttons' lava lamp is drawn through.
-
-      ## Why it lives in the shell rather than in a component
-
-      Because `filter: url(#lava-goo)` resolves against the *document*, and the
-      six or so controls that use it are spread across three routes and two
-      lazily-loaded chunks. A component that rendered its own copy would put
-      duplicate ids in the document the moment two of them were on screen —
-      which is exactly the case this is for — and one that mounted a shared copy
-      into `document.body` would be a side effect running before first paint for
-      the sake of nine lines of markup. Here it costs about 400 bytes, is
-      present before anything can reference it, and there is only ever one.
-
-      ## What it does
-
-      `feGaussianBlur` bleeds the blobs into one another; `feColorMatrix`
-      multiplies the *alpha* channel by 20 and subtracts 8, which turns that
-      soft bleed back into a hard edge. Two blobs whose blurs overlap therefore
-      resolve as one shape with a neck between them, and separate again as they
-      part — the metaball effect, and the only reason this reads as wax rather
-      than as circles sliding past each other.
-
-      `feBlend` puts the untouched blobs back on top so their cores stay the
-      full accent colour rather than the threshold's approximation of it.
-
-      `color-interpolation-filters="sRGB"` is not optional: the default is
-      linearRGB, which would run the threshold against gamma-decoded values and
-      hand back a colour visibly lighter than `--brand` on every skin.
-    -->
+    <!-- The gooey filter the "new thing" buttons' lava lamp is drawn through. -->
     <svg
       aria-hidden="true"
       focusable="false"

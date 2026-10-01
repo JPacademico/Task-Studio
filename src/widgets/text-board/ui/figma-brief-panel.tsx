@@ -34,30 +34,7 @@ const Section = ({
   </section>
 );
 
-/**
- * The assistant's reading of a design, beside the design.
- *
- * ## Why it is a panel and not a page
- *
- * Because it is an *opinion about* the file rather than part of it, and the
- * distinction is the whole reason this is safe to offer at all. The text board
- * used to hand imported documents to a model and let the result replace the
- * page — a transcription sitting under the original's title, which is the
- * worst failure a document surface can have, and why that feature is gone.
- *
- * Nothing here touches the design. The brief arrives in a panel, it is
- * labelled as written from names rather than artwork, and it becomes a
- * document only if somebody presses save — at which point it is a *new* page
- * with its own title, next to the design rather than over it.
- *
- * ## Why the disclaimer is in the panel rather than in a tooltip
- *
- * "The assistant never sees the artwork" is not a caveat, it is the thing that
- * tells a reader how much to trust what is in front of them: a claim about a
- * flow inferred from frame names is worth something, and a claim about a
- * colour would be invented. Somebody deciding whether to act on this needs it
- * at the same moment they read it.
- */
+/** The assistant's reading of a design, beside the design. */
 export const FigmaBriefPanel = ({
   brief,
   isLoading,

@@ -6,14 +6,8 @@ import { useT, type TranslationKey } from '@/shared/i18n';
 import { useDemoClock } from './demo-frame';
 
 /**
- * The stages, and the bar position each one holds.
- *
- * These are the *real* steps — `resolving`, `reading`, `analysing`, `writing` —
- * lifted from the API's `IMPORT_STEPS`, at the real proportions from
- * `IMPORT_PROGRESS`. That is the difference between a demo and a decoration:
- * anybody who signs up and pastes a repository sees this same sequence at
- * these same weights, including the long pause on `analysing` while the
- * assistant reads the repository.
+ * The stages, and the bar position each one holds. These are the *real* steps — `resolving`,
+ * `reading`, `analysing`, `writing` — lifted from the API's `IMPORT_STEPS`.
  */
 const STAGES: { key: TranslationKey; progress: number }[] = [
   { key: 'landing.import.resolving', progress: 12 },
@@ -30,23 +24,8 @@ const RESULTS: { key: TranslationKey; icon: typeof ListChecks }[] = [
 ];
 
 /**
- * A repository becoming a project, on a loop.
- *
- * ## Why the progress bar is the point
- *
- * The feature this is selling is not "we can read GitHub" — plenty of things
- * can. It is that the import *runs in the background*: you paste a URL, close
- * the dialog, and carry on working while a card in the corner tracks it. A
- * still screenshot cannot say that. A bar that visibly steps through named
- * stages and then hands over a finished project is the only honest way to show
- * a thing whose whole selling point is elapsed time.
- *
- * ## Why the stage names are the API's own
- *
- * Because they are checkable. "Analysing…" sitting at 72% for a beat is what
- * actually happens when the assistant reads a repository, and somebody who
- * signs up gets the same four words in the same order. A demo that invented
- * friendlier stage names would be a demo the product then fails to match.
+ * A repository becoming a project, on a loop. The feature this is selling is not "we can read
+ * GitHub" — plenty of things can.
  */
 export const DemoImport = () => {
   const t = useT();
@@ -67,11 +46,7 @@ export const DemoImport = () => {
         </span>
       </div>
 
-      {/* --- The tracker -------------------------------------------------
-
-          Drawn as the app's own import card, down to the round icon tile and
-          the two-line label — because that is literally what the reader will
-          see in the corner of their screen a minute after signing up. */}
+      {/* --- The tracker --- */}
       <div className="rounded-xl border border-edge bg-surface-raised p-3 shadow-sm">
         <div className="flex items-start gap-2.5">
           <span
@@ -87,11 +62,8 @@ export const DemoImport = () => {
           <div className="min-w-0 flex-1 leading-tight">
             <p className="truncate text-2xs font-semibold">acme/billing-service</p>
 
-            {/*
-              The stage line is keyed on its own text, so each one animates in
-              as a replacement rather than the string mutating in place — which
-              at this size reads as a flicker rather than as progress.
-            */}
+            {/* The stage line is keyed on its own text, so each one animates in as a
+                replacement rather than the string mutating in place. */}
             <div className="mt-0.5 h-[0.875rem] overflow-hidden">
               <AnimatePresence mode="wait" initial={false}>
                 <motion.p
@@ -112,9 +84,8 @@ export const DemoImport = () => {
           </div>
         </div>
 
-        {/* The bar. Width rather than a scaled transform: the track is what
-            the number *means*, and a bar scaled from its centre reads as a
-            shimmer rather than as a proportion. */}
+        {/* The bar. Width rather than a scaled transform: the track is what the number *means*,
+            and a bar scaled from its centre reads as a shimmer rather than as a proportion. */}
         <div className="mt-2.5 h-1 overflow-hidden rounded-full bg-surface-sunken">
           <motion.div
             className={cn('h-full rounded-full', isDone ? 'bg-positive' : 'bg-brand')}
@@ -125,11 +96,7 @@ export const DemoImport = () => {
         </div>
       </div>
 
-      {/* --- What it produced --------------------------------------------
-
-          Only once it is finished, and it stays for the two beats the clock
-          rests on — a summary that flashed past would be a summary nobody
-          reads. */}
+      {/* --- What it produced --- */}
       <div className="min-h-[3.25rem]">
         <AnimatePresence initial={false}>
           {isDone && (

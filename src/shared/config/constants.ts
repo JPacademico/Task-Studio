@@ -7,11 +7,8 @@ export const STORAGE_KEYS = {
   theme: 'task-studio:theme',
   themeSkin: 'task-studio:theme-skin',
   /**
-   * Whether the skins that draw their own pointer may.
-   *
-   * Per-device rather than per-account, and the only theme preference that is
-   * not mirrored to the profile — see `readStoredCursor` in `theme-provider`
-   * for why a cursor is a fact about the machine and not about the person.
+   * Whether the skins that draw their own pointer may. Per-device rather than per-account, and the
+   * only theme preference that is not mirrored to the profile.
    */
   customCursor: 'task-studio:custom-cursor',
   chatPosition: 'task-studio:chat-position',
@@ -21,60 +18,42 @@ export const STORAGE_KEYS = {
   railScope: 'task-studio:rail-scope',
   boardPage: 'task-studio:board-page',
   /**
-   * The last answer this deployment gave about Figma.
-   *
-   * Not a preference and not a cache of user data — a remembered fact about
-   * the *server*, kept only so the control it gates can be drawn on the first
-   * frame instead of appearing a moment later. See `useFigmaAvailability`.
+   * The last answer this deployment gave about Figma. Not a preference and not a cache of user data
+   * — a remembered fact about the *server*.
    */
   figmaAvailable: 'task-studio:figma-available',
   shortcuts: 'task-studio:floating-shortcuts',
   taskLayout: 'task-studio:task-layout',
   locale: 'task-studio:locale',
+  /** A project invite link opened before signing in, joined once there is a session. */
+  pendingInvite: 'task-studio:pending-invite',
   /**
-   * Which provider sign-in buttons the API offered last time.
-   *
-   * Cached so the sign-in screen can draw them on the first frame instead of
-   * after a round trip to a container that may be asleep. See `OAuthButtons`.
+   * Which provider sign-in buttons the API offered last time. Cached so the sign-in screen can draw
+   * them on the first frame instead of after a round trip to a container that may be asleep.
    */
   oauthProviders: 'task-studio:oauth-providers',
   /** Last session's task/project/board caches — see `query-persist.ts`. */
   queryCache: 'task-studio:query-cache',
   /**
-   * Set once the user has turned our own notification offer down.
-   *
-   * Not the browser's permission state — that lives in the browser and answers
-   * a different question. This one exists so a "Not now" is final rather than
-   * re-asked on every visit. See `shared/lib/notifications.ts`.
+   * Set once the user has turned our own notification offer down. Not the browser's permission
+   * state — that lives in the browser and answers a different question.
    */
   notificationsDeclined: 'task-studio:notifications-declined',
   /**
-   * Grouping-board columns this reader has folded away, per project.
-   *
-   * Local rather than on the server on purpose: hiding a column is a statement
-   * about one person's screen this afternoon, not about the project. A column
-   * hidden for everybody would be a second kind of delete, and the board
-   * already has the real one. See `hidden-columns.ts`.
+   * Grouping-board columns this reader has folded away, per project. Local rather than on the
+   * server on purpose: hiding a column is a statement about one person's screen this afternoon.
    */
   hiddenGroups: 'task-studio:hidden-groups',
   /**
-   * Where the reader parked the import tracker.
-   *
-   * Per device rather than per account, exactly like `chatPosition` and for
-   * the same reason: a corner that is out of the way on a 27-inch monitor is
-   * on top of the sidebar on a laptop, so a position synced across devices
-   * would be wrong on most of them.
+   * Where the reader parked the import tracker. Per device rather than per account, exactly like
+   * `chatPosition` and for the same reason.
    */
   importTrackerPosition: 'task-studio:import-tracker-position',
   /** Where the reader parked the Spotify player. Per device, as above. */
   spotifyPosition: 'task-studio:spotify-position',
   /**
-   * Whether the player is pinned open.
-   *
-   * Per device for the same reason its position is: "keep this on screen" is a
-   * statement about the screen in front of somebody, and a second monitor's
-   * worth of room is not a reason to give a laptop a permanent 336px panel in
-   * the corner.
+   * Whether the player is pinned open. Per device for the same reason its position is: "keep this
+   * on screen" is a statement about the screen in front of somebody.
    */
   spotifyPinned: 'task-studio:spotify-pinned',
 } as const;
@@ -103,21 +82,8 @@ export const NOTE_COLORS = [
   '#e2e8f0',
 ] as const;
 
-/*
- * The words are keys, not words.
- *
- * These tables carry two different kinds of thing: presentation that belongs to
- * the design system (the accent colour, the status dot) and vocabulary that
- * belongs to the language the user reads in. Keeping literal English here made
- * the second kind untranslatable — every card, badge and filter that rendered
- * `meta.label` printed English regardless of the chosen language, which is most
- * of the task surface.
- *
- * Storing a `TranslationKey` instead keeps the table where it belongs and moves
- * the resolution to the call site, which is the only place that has a `t`. The
- * type is what makes it safe: a key with no entry in the dictionary is a
- * compile error, so this cannot silently drift out of step with the locales.
- */
+// The words are keys, not words. These tables carry two different kinds of thing: presentation that
+// belongs to the design system.
 export const TASK_TYPE_META: Record<
   TaskType,
   { label: TranslationKey; short: TranslationKey; hint: TranslationKey; accent: string }
@@ -125,14 +91,8 @@ export const TASK_TYPE_META: Record<
   MEGA: {
     label: 'type.MEGA',
     /**
-     * What a card shows when the full name will not fit.
-     *
-     * Every skin picks its own family, and the wide ones — the illustrated
-     * skin's 700-weight Nunito, the vintage serif, the arcade's pixel face —
-     * render "MegaTask" materially wider than Inter does at the same nominal
-     * size. Rather than let the badge grow into its neighbours or clip the
-     * word, the card drops the "Task" suffix it was repeating on every row
-     * anyway and keeps the part that carries the meaning.
+     * What a card shows when the full name will not fit. Every skin picks its own family, and the
+     * wide ones — the illustrated skin's 700-weight Nunito, the vintage serif.
      */
     short: 'type.MEGA.short',
     hint: 'type.MEGA.hint',
@@ -198,47 +158,20 @@ export const CONNECTOR_COLORS = [
 export const MAX_BOARD_PAGES = 10;
 
 /**
- * How many notes one task's note checklist holds. Mirrored from the API's
- * `MAX_TASK_NOTES`, which is the authority — this is what lets the sheet grey
- * the "+" out *before* somebody writes one note too many and is told it will
- * not fit.
- *
- * Not the assistant's ceiling, which is still one to three steps per press.
- * The model proposes a few; this is how many the task can carry in total.
+ * How many notes one task's note checklist holds. Mirrored from the API's `MAX_TASK_NOTES`, which
+ * is the authority.
  */
 export const MAX_TASK_NOTES = 20;
 
 /**
- * How many columns one project's grouping board may hold. Mirrored from the
- * API's `MAX_GROUPS_PER_PROJECT`, which is the authority.
- *
- * Ten, down from twelve. The board pages now rather than scrolling sideways
- * forever, and ten is two clean pages of five — a number somebody can still
- * hold in their head as a set of categories. A board with thirty columns is
- * not a grouping, it is a second task list.
- *
- * The untagged lane is not counted against this: it is not a column anybody
- * created, and it appears and disappears on its own.
+ * How many columns one project's grouping board may hold. Mirrored from the API's
+ * `MAX_GROUPS_PER_PROJECT`, which is the authority. Ten, down from twelve.
  */
 export const MAX_GROUPS_PER_PROJECT = 10;
 
 /**
- * How many columns one page of the grouping board shows.
- *
- * Four, and the number is set by the *widest* the board ever gets rather than
- * by the cap: four columns plus the untagged lane is five lanes sharing the
- * width, which is where a lane stops being a column and starts being a ribbon
- * on a laptop. Ten columns is therefore three pages at worst.
- *
- * Paging rather than an unbounded horizontal scroller because ten lanes of
- * cards is a surface people *lose things on*: a column eight screens to the
- * right is functionally invisible, and the scrollbar is the only thing that
- * ever admits it is there.
- *
- * It applies at every width. A narrow screen still swipes between the lanes of
- * the page it is on — see `GroupsBoard` — because hiding the pager there would
- * leave the smallest screen as the only one where half the columns cannot be
- * reached at all.
+ * How many columns one page of the grouping board shows. Four, and the number is set by the
+ * *widest* the board ever gets rather than by the cap.
  */
 export const GROUP_COLUMNS_PER_PAGE = 4;
 
@@ -246,64 +179,25 @@ export const GROUP_COLUMNS_PER_PAGE = 4;
 export const EDGE_REVEAL_PX = 24;
 
 /**
- * Height of the top bar, in pixels — `3.5rem` plus a little slack.
- *
- * Mirrors `.safe-top-bar` in `index.css`. Read by the right-hand rail, which
- * refuses to open from inside this band so that reaching for the account menu
- * at the far right of the bar cannot throw the project rail across the page.
- * The notch inset is not added: over-reserving here would block a strip of the
- * page proper, and the controls that caused the problem all sit in the row.
+ * Height of the top bar, in pixels — `3.5rem` plus a little slack. Mirrors `.safe-top-bar` in
+ * `index.css`.
  */
 export const TOP_BAR_PX = 60;
 
 /**
- * How long any one free-text field is allowed to get.
- *
- * ## Why this is one table rather than a number per form
- *
- * Every field in the app used to carry its own `maxLength`, or — for the ones
- * added in a hurry — none at all. The ones with none were the bug: a step
- * pasted from a document went into the database at whatever length the
- * clipboard held, and from then on *every* open of that task's sheet paid to
- * lay out a paragraph of text inside a one-line row. The sheet did not feel
- * slow because it was doing more work; it felt slow because one row was doing
- * an unbounded amount of it.
- *
- * A table also makes the limits comparable, which is how they stay sensible:
- * a title is a line, a step is a sentence, a description is a paragraph, and
- * anything that is genuinely a document goes to the text board instead.
- *
- * These mirror the API's own column limits. The client's job is to make the
- * ceiling visible while somebody types rather than to be the only thing
- * enforcing it — a rejected save after a long paste is a worse way to learn
- * about a limit than a field that simply stops accepting characters.
+ * How long any one free-text field is allowed to get. Every field in the app used to carry its own
+ * `maxLength`, or — for the ones added in a hurry — none at all.
  */
 export const TEXT_LIMITS = {
   /** One line, on a card. */
   taskTitle: 140,
   /**
-   * A few paragraphs, on the sheet — not a document.
-   *
-   * Was 4000, which is around two pages of prose. That is not a task note; it
-   * is the thing people paste in when they have nowhere better to put it, and
-   * "nowhere better" stopped being true when the task sheet grew a link to the
-   * project's text board. A task that needs two pages of context should have a
-   * page, and the sheet will now take you to it.
-   *
-   * Deliberately *lower* than the API's own ceiling, which stays at 4000. The
-   * two do different jobs: this one bounds what somebody can type into a fresh
-   * field, and the API's admits descriptions written before this number
-   * changed — so editing the title of an old task with a long description
-   * still saves, rather than failing on a field the user never touched. The
-   * same reasoning as `dateInputBounds`.
+   * A few paragraphs, on the sheet — not a document. Was 4000, which is around two pages of prose.
    */
   taskDescription: 1500,
   /**
-   * A sentence: "Book the room", not the minutes of the meeting.
-   *
-   * Still used by the composer, which collects starting steps as plain lines
-   * before the task exists to hang notes off. Once it does, a step is a Post-it
-   * and `noteContent` is its ceiling.
+   * A sentence: "Book the room", not the minutes of the meeting. Still used by the composer, which
+   * collects starting steps as plain lines before the task exists to hang notes off.
    */
   checklistItem: 200,
   /** What fits on a Post-it before it stops being one. */
@@ -333,15 +227,8 @@ export const TEXT_LIMITS = {
   /** Titles on the text board and the notes board's pages. */
   documentTitle: 160,
   /**
-   * A document's *body*, as sanitised HTML.
-   *
-   * Mirrors the API's `DOCUMENT_CONTENT_LIMIT`. Generous, because this is the
-   * one surface in the app that is genuinely meant to hold a document — rich
-   * text with a few inline images runs to tens of kilobytes. Past a quarter of
-   * a megabyte it is a pasted binary rather than a page, which is the case
-   * this stops: without it the save simply 400s after the user has already
-   * typed, and the editor gives no hint which of the last hour's paragraphs
-   * was the problem.
+   * A document's *body*, as sanitised HTML. Mirrors the API's `DOCUMENT_CONTENT_LIMIT`. Generous,
+   * because this is the one surface in the app that is genuinely meant to hold a document.
    */
   documentContent: 262_144,
   boardPageName: 40,
@@ -350,23 +237,16 @@ export const TEXT_LIMITS = {
   chatMessage: 2000,
 
   /**
-   * Search boxes.
-   *
-   * Short on purpose: a query is a few words, and the value ends up in a query
-   * key and often in a request, so an unbounded one is a cache key nobody can
-   * read and a URL some proxy will refuse.
+   * Search boxes. Short on purpose: a query is a few words, and the value ends up in a query key
+   * and often in a request.
    */
   search: 120,
 
   /** RFC 5321's ceiling on an address. */
   email: 254,
   /**
-   * A password field.
-   *
-   * Generous — a passphrase manager will happily produce a hundred characters —
-   * and bounded anyway, because the value is hashed on the API and a bcrypt-
-   * family hash of an unbounded input is a CPU cost somebody else chooses for
-   * you. Long enough that no real password meets it.
+   * A password field. Generous — a passphrase manager will happily produce a hundred characters —
+   * and bounded anyway.
    */
   password: 200,
   /** Links pasted into the editor. Comfortably past any real URL. */

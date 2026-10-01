@@ -38,9 +38,8 @@ const urgencyOf = (project: ProjectListItem): string | null =>
   project.myNextDueAt ?? project.nextDueAt;
 
 /**
- * A project row, and — on a pointer device — something you can pull off the
- * rail to keep one project reachable from anywhere without pinning the whole
- * panel open.
+ * A project row, and — on a pointer device — something you can pull off the rail to keep one
+ * project reachable from anywhere without pinning the whole panel open.
  */
 const RailProject = ({
   project,
@@ -157,16 +156,8 @@ const RailProject = ({
 };
 
 /**
- * A company on the rail — and, like every other row in either rail, something
- * you can pull out and drop anywhere on screen.
- *
- * This used to be the one deliberately inert row, on the theory that a company
- * is somewhere you check on rather than somewhere you work. That reasoning did
- * not survive contact with people who run everything through one company: the
- * gesture is the same everywhere else in the app, so a row that quietly refuses
- * it reads as broken rather than as restraint. The row still says the two
- * numbers that decide whether it is worth opening — how many people, how much
- * work.
+ * A company on the rail — and, like every other row in either rail, something you can pull out and
+ * drop anywhere on screen.
  */
 const RailOrganization = ({
   organization,
@@ -272,14 +263,8 @@ export const ProjectRail = ({ onCreateProject }: ProjectRailProps) => {
     hideDistance: 300,
     enabled: !isTouch,
     locked: isPinned || isTearing,
-    /*
-     * The top bar is not a way in.
-     *
-     * The account avatar, the theme toggle and the notification bell all live
-     * within a few pixels of the right edge of the screen, and overshooting any
-     * of them used to open this rail over the page. Coming down the right edge
-     * from below the bar still works, which is the gesture the rail is for.
-     */
+    // The top bar is not a way in. The account avatar, the theme toggle and the notification bell
+    // all live within a few pixels of the right edge of the screen.
     keepOut: { top: TOP_BAR_PX },
   });
 
@@ -293,15 +278,8 @@ export const ProjectRail = ({ onCreateProject }: ProjectRailProps) => {
     sort: 'deadline',
   });
 
-  /*
-   * The companies, fetched only once somebody has switched to them.
-   *
-   * The rail is on every page and mounts on every load, so its queries are the
-   * ones most worth being careful about. Somebody who has never touched the
-   * toggle — which is most people, since projects is the default — never pays
-   * for this request at all, and somebody who has is on a device where the
-   * choice is already remembered. See `useNavPreferences`.
-   */
+  // The companies, fetched only once somebody has switched to them. The rail is on every page and
+  // mounts on every load, so its queries are the ones most worth being careful about.
   const { data: organizations = [], isLoading: organizationsLoading } = useOrganizations(
     scope === 'organizations',
   );
@@ -334,9 +312,8 @@ export const ProjectRail = ({ onCreateProject }: ProjectRailProps) => {
         className={cn(
           'nav-rail nav-rail--right ui-textured gpu fixed right-0 top-0 z-50 flex h-full w-[16.25rem] flex-col',
           'safe-t safe-b safe-r',
-          // See the note on the left rail: a full-height blur that animates is
-          // the most expensive thing on the page, and at 95% opacity nobody
-          // can tell it apart from a cheaper one.
+          // See the note on the left rail: a full-height blur that animates is the most expensive
+          // thing on the page, and at 95% opacity nobody can tell it apart from a cheaper one.
           'border-l border-edge bg-surface-raised/95 backdrop-blur-md',
           // `none` on Studio — see `--rail-wash-right` in `index.css`.
           '[background-image:var(--rail-wash-right)]',
@@ -373,21 +350,13 @@ export const ProjectRail = ({ onCreateProject }: ProjectRailProps) => {
             <NavPinButton isPinned={isPinned} onToggle={() => togglePin('right')} />
           </div>
 
-          {/*
-            What the rail is a list of.
-
-            In the header rather than a menu behind the pin, because it changes
-            the entire contents of the panel — a control that swaps everything
-            below it should be visible above everything below it. Projects
-            first, and default: it is what the rail has always been, and a
-            company is somewhere you visit rather than somewhere you work.
-          */}
+          {/* What the rail is a list of. In the header rather than a menu behind the pin,
+              because it changes the entire contents of the panel. */}
           <Segmented
             value={scope}
             onChange={setScope}
-            // Two halves rather than two content-sized pills: the labels differ
-            // in length in every language, and an off-centre split reads as a
-            // rendering accident on a control this small.
+            // Two halves rather than two content-sized pills: the labels differ in length in every
+            // language.
             className="w-full [&>button]:min-w-0 [&>button]:flex-1 [&>button]:justify-center [&>button]:px-2"
             options={[
               {
@@ -434,41 +403,10 @@ export const ProjectRail = ({ onCreateProject }: ProjectRailProps) => {
         </div>
 
         <footer className="border-t border-edge/70 p-3">
-          {/*
-            The footer follows the list, because "new" has to mean the thing
-            being looked at. Creating a company needs the dialog on the
-            organizations page — it asks for projects and people, not just a
-            name — so this links there rather than opening a second copy of it
-            from a 260px rail.
-          */}
-          {/*
-            Both of these now carry the lamp.
-
-            ## Why this is not a fourth exception to `LavaButton`'s own rule
-
-            That rule is "the one action on a screen that everything else exists
-            to support", and it is the same action here: this footer holds the
-            single most consequential control in the rail, directly under a list
-            of everything that already exists. It is also the control most
-            likely to be *missed* — it lives at the bottom of a panel that is
-            hidden until a pointer reaches the screen edge, so it gets no benefit
-            from a reader scanning the page. A moving fill is what carries the
-            eye to the bottom of a menu that just slid into view.
-
-            It is the same action as the top bar's "New project" besides, drawn
-            two different ways in two places that are both chrome — which is the
-            inconsistency the rule was written to prevent, arrived at from the
-            other side.
-
-            ## Why the organisation half is hand-drawn and the project half is not
-
-            Because one navigates and the other opens a dialog, and that
-            distinction is worth keeping in the element. `LavaButton` is a
-            `<button>`; rendering a navigation as one throws away middle-click,
-            open-in-new-tab and the destination on hover. So the link keeps
-            being a link and borrows the class and the surface instead — exactly
-            the composition `LavaLink` uses on the landing page.
-          */}
+          {/* The footer follows the list, because "new" has to mean the thing being looked at.
+              Creating a company needs the dialog on the organizations page. */}
+          {/* Both of these now carry the lamp. That rule is "the one action on a screen that
+              everything else exists to support", and it is the same action here. */}
           {isProjects ? (
             <LavaButton size="sm" onClick={onCreateProject} className="w-full">
               <Plus className="h-3.5 w-3.5" strokeWidth={2.6} />
@@ -478,9 +416,8 @@ export const ProjectRail = ({ onCreateProject }: ProjectRailProps) => {
             <NavLink
               to="/organizations"
               className={cn(
-                // No `bg-*` beside `ui-lava`: a utility background outranks the
-                // component layer and would paint a flat colour straight over
-                // the tube. See the note in `lava-button.tsx`.
+                // No `bg-*` beside `ui-lava`: a utility background outranks the component layer and
+                // would paint a flat colour straight over the tube.
                 'ui-btn ui-lava flex h-8 w-full items-center justify-center gap-1.5 rounded-xl',
                 'px-3 text-xs font-medium',
                 'transition-transform duration-150 active:scale-[0.98]',
@@ -488,9 +425,8 @@ export const ProjectRail = ({ onCreateProject }: ProjectRailProps) => {
               )}
             >
               <LavaSurface />
-              {/* `relative` is what lifts the label over the lamp: the surface
-                  and the hover fill both sit at `z-index: -1` inside this
-                  anchor's own stacking context. */}
+              {/* `relative` is what lifts the label over the lamp: the surface and the hover
+                  fill both sit at `z-index: -1` inside this anchor's own stacking context. */}
               <span className="relative inline-flex items-center gap-1.5">
                 <Plus className="h-3.5 w-3.5" strokeWidth={2.6} />
                 {t('org.new')}

@@ -47,13 +47,8 @@ import { CobwebGlyph } from '@/shared/ui/halloween-icons';
 interface NavItem {
   to: string;
   /**
-   * Translation keys, not the words themselves.
-   *
-   * `GROUPS` is a module constant, evaluated once at import — before any React
-   * tree exists and long before the user's language is known. Holding resolved
-   * strings here would freeze the menu into whatever language happened to load
-   * first and never update it again when the language changed. Keys defer that
-   * to render, where `t` is in scope and re-runs on every switch.
+   * Translation keys, not the words themselves. `GROUPS` is a module constant, evaluated once at
+   * import — before any React tree exists and long before the user's language is known.
    */
   label: TranslationKey;
   icon: LucideIcon;
@@ -90,10 +85,8 @@ const GROUPS: { heading: TranslationKey; items: NavItem[] }[] = [
         shortcutIcon: 'notes',
         hint: 'nav.notesBoardHint',
       },
-      // Alongside the task menu rather than under "Manage": both answer "what
-      // is on me", one in work and the other in appointments. The project tabs
-      // still own posting and editing a meeting — this is the read across all
-      // of them. See `MeetingsPage`.
+      // Alongside the task menu rather than under "Manage": both answer "what is on me", one in
+      // work and the other in appointments.
       {
         to: '/meetings',
         label: 'nav.meetings',
@@ -134,31 +127,10 @@ interface SidebarLinkProps {
 }
 
 /**
- * One menu row — and, on a pointer device, something you can pull off the rail.
- *
- * Dragging it out drops a pinned copy wherever it is released; the row itself
- * never moves, so it can never be clipped by the nav's own scroll box.
+ * One menu row — and, on a pointer device, something you can pull off the rail. Dragging it out
+ * drops a pinned copy wherever it is released; the row itself never moves.
  */
-/**
- * The web that gathers on a door nobody has opened.
- *
- * ## Why it is drawn on the *unselected* rows
- *
- * Because it is a readout of where the reader is not, which is the difference
- * between information and decoration. Webbing every row would be wallpaper;
- * webbing all but one makes the current room the clean one, and the active
- * item gains contrast against its neighbours rather than competing with them.
- *
- * ## Why the second web is conditional
- *
- * Two identical corners on every row reads as a border - the eye stops seeing
- * it as cobweb within about three rows and starts seeing it as a frame. One
- * corner, with a second on some of them, reads as neglect, which is the thing
- * being depicted. The choice is derived from the route so it is stable across
- * renders and reorderings rather than random.
- *
- * Returns null on the other thirteen skins before doing any work.
- */
+/** The web that gathers on a door nobody has opened. */
 const SidebarCobwebs = ({ to }: { to: string }) => {
   const skin = useSkin();
   if (skin !== 'HALLOWEEN') return null;
@@ -255,14 +227,7 @@ const SidebarLink = ({ item, badge, isTouch, onNavigate, onTearingChange }: Side
               <NavGlyph glyph={item.shortcutIcon} fallback={item.icon} className="h-4 w-4" />
             </span>
 
-            {/*
-              On the runic skin a destination is carved rather than printed:
-              the label is cut in Elder Futhark and turns back into Latin the
-              moment the row is hovered or focused, and the hint under it stays
-              carved because it is a gloss rather than the name of anywhere.
-              `RunicText` is a pass-through on the other nine themes, which is
-              why there is no skin check here.
-            */}
+            {/* On the runic skin a destination is carved rather than printed. */}
             <span className="relative min-w-0 flex-1">
               <span
                 className={cn(
@@ -309,12 +274,8 @@ interface HiddenSidebarProps {
 }
 
 /**
- * Desktop: a rail that stays hidden and slides out when the pointer approaches
- * the left edge, unless the user pins it open. Mobile: a normal drawer, since
- * hover does not exist there.
- *
- * The slide is a single `transform` animation on a fixed-position element, so it
- * never triggers layout on the page content.
+ * Desktop: a rail that stays hidden and slides out when the pointer approaches the left edge,
+ * unless the user pins it open. Mobile: a normal drawer, since hover does not exist there.
  */
 export const HiddenSidebar = ({ isMobileOpen, onMobileClose }: HiddenSidebarProps) => {
   const t = useT();
@@ -337,9 +298,8 @@ export const HiddenSidebar = ({ isMobileOpen, onMobileClose }: HiddenSidebarProp
     locked: isPinned || isTearing,
   });
 
-  // Dragging a row out of the rail ends with the pointer nowhere near it, and
-  // pointer capture eats the `mouseleave` that would let go of the hover lock.
-  // See `useReleaseAfterTearOff`.
+  // Dragging a row out of the rail ends with the pointer nowhere near it, and pointer capture eats
+  // the `mouseleave` that would let go of the hover lock.
   useReleaseAfterTearOff(isTearing, { unpin, close });
 
   const { data: invitations } = useMyInvitations();
@@ -380,64 +340,28 @@ export const HiddenSidebar = ({ isMobileOpen, onMobileClose }: HiddenSidebarProp
         className={cn(
           'nav-rail nav-rail--left ui-textured gpu fixed left-0 top-0 z-50 flex h-full w-[16.5rem] flex-col',
           'safe-t safe-b safe-l',
-          // `backdrop-blur-md`, not `-xl`: a full-height blurred panel makes
-          // the browser resample everything behind it on every frame it moves,
-          // and the rail moves on every reveal. At 95% opacity the difference
-          // between a 12px and a 24px blur is invisible; the cost is not.
+          // `backdrop-blur-md`, not `-xl`: a full-height blurred panel makes the browser resample
+          // everything behind it on every frame it moves, and the rail moves on every reveal.
           'border-r border-edge bg-surface-raised/95 backdrop-blur-md',
-          // A brand-tinted wash down the rail plus a lit inner edge: the panel
-          // should read as a lit surface, not a flat grey box. `none` on
-          // Studio, where a plain raised surface is the point — see
-          // `--rail-wash-left` in `index.css`.
+          // A brand-tinted wash down the rail plus a lit inner edge: the panel should read as a lit
+          // surface, not a flat grey box.
           '[background-image:var(--rail-wash-left)]',
           'shadow-[8px_0_40px_-24px_rgb(0_0_0/0.65)]',
         )}
       >
-        {/* Lit inner edge.
-
-            `nav-rail__edge` carries no styles of its own on most skins — it is
-            a hook, like `ui-modal` and `ui-task-title`, so a skin can replace
-            this hairline with its own idea of what divides a menu from a page.
-            The Dragon skin draws a jade rule here and runs a light up it; see
-            the foot of `index.css`. */}
+        {/* Lit inner edge. `nav-rail__edge` carries no styles of its own on most skins — it is
+            a hook, like `ui-modal` and `ui-task-title`. */}
         <span
           aria-hidden
           className="nav-rail__edge absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-brand/45 to-transparent"
         />
 
-        {/* Whatever is growing out of the seam this rail shares with the page.
-            Each of these renders on exactly one skin and returns null on the
-            other eight, and both stop moving while the rail is shut. */}
+        {/* Whatever is growing out of the seam this rail shares with the page. Each of these
+            renders on exactly one skin and returns null on the other eight. */}
         <EldritchTendrils edge="left" isActive={isOpen} />
         <AutumnHedge edge="left" isActive={isOpen} />
 
-        {/*
-          The mark, centred, and nothing else.
-
-          ## Why the wordmark and the subtitle are gone
-
-          They were saying what the reader already knew. "Task Studio / Studio
-          workspace" sat at the top of the application the reader is signed into,
-          on a rail they opened deliberately — three words of chrome answering a
-          question nobody in that position is asking, and the subtitle answered
-          it twice. The logo alone identifies the product, which is the only job
-          this corner has.
-
-          ## Why the ring went with them
-
-          It was a `ring-brand/25` circle drawn around a mark that already has
-          its own silhouette, so it read as a container the logo happened to be
-          inside rather than as part of it — and on the skins whose accent is
-          close to the rail's own surface it was a faint smudge with no edge.
-          The mark carries the brand colour itself.
-
-          ## Why the pin is positioned rather than laid out beside it
-
-          Centring is the point, and a flex row with the pin as a sibling
-          centres the logo in *the space the pin leaves*, which is visibly off
-          by half the pin's width. Taking it out of flow is what makes the
-          middle the actual middle. It keeps its own hit area and tab order.
-        */}
+        {/* The mark, centred, and nothing else. They were saying what the reader already knew. */}
         <header className="relative flex items-center justify-center px-4 pb-4 pt-5">
           <span className="grid h-11 w-11 place-items-center text-brand">
             <StudioMark className="h-11 w-11" />
@@ -454,9 +378,8 @@ export const HiddenSidebar = ({ isMobileOpen, onMobileClose }: HiddenSidebarProp
           {GROUPS.map((group) => (
             <div key={group.heading} className="space-y-1">
               <p className="px-3 pb-1 text-3xs font-semibold uppercase tracking-[0.18em] text-content-faint">
-                {/* A section heading names a shelf, not a destination — there
-                    is nothing to click and therefore nothing to reveal, so it
-                    stays carved. */}
+                {/* A section heading names a shelf, not a destination — there is nothing to
+                    click and therefore nothing to reveal, so it stays carved. */}
                 <RunicText mode="always">{t(group.heading)}</RunicText>
               </p>
 
@@ -483,15 +406,8 @@ export const HiddenSidebar = ({ isMobileOpen, onMobileClose }: HiddenSidebarProp
             </div>
           </div>
 
-          {/*
-            The way out, next to the person it signs out.
-
-            The top bar's account menu has always had this, but that bar is
-            hidden behind a hover on the *opposite* edge — so the one panel
-            already showing who you are had no way to stop being you. It is not
-            a `SidebarLink`: this is an action rather than a destination, so it
-            never wears the active pill and never tears off into a shortcut.
-          */}
+          {/* The way out, next to the person it signs out. The top bar's account menu has
+              always had this, but that bar is hidden behind a hover on the *opposite* edge. */}
           <button
             type="button"
             onClick={() => void signOut()}

@@ -5,11 +5,8 @@ import { EDGE_REVEAL_PX } from '@/shared/config/constants';
 type Edge = 'left' | 'top' | 'right' | 'bottom';
 
 /**
- * A strip along one or more viewport edges in which the panel refuses to open.
- *
- * Measured inwards from each named edge, in pixels. Only *opening* is
- * suppressed: a panel already out stays out, because the alternative is a rail
- * that snaps shut the moment the pointer travels up its own length.
+ * A strip along one or more viewport edges in which the panel refuses to open. Measured inwards
+ * from each named edge, in pixels.
  */
 export type KeepOut = Partial<Record<Edge, number>>;
 
@@ -28,19 +25,8 @@ interface Options {
 }
 
 /**
- * Reveals a hidden edge menu on pointer proximity.
- *
- * Runs entirely off a passive `pointermove` listener with the work deferred to
- * `requestAnimationFrame`: the handler never touches layout, so revealing a
- * panel stays a compositor-only job at 60fps.
- *
- * The hysteresis (open at `threshold`, close at `hideDistance`) is what keeps
- * the panel from flickering when the pointer hovers right on the boundary.
- *
- * Every callback below is stable across renders. That is not tidiness: callers
- * drive `pin`/`unpin` from effects that react to a gesture ending, and a fresh
- * `unpin` on every render would fire those effects continuously and cancel the
- * hover lock the moment it was taken.
+ * Reveals a hidden edge menu on pointer proximity. Runs entirely off a passive `pointermove`
+ * listener with the work deferred to `requestAnimationFrame`: the handler never touches layout.
  */
 export const useEdgeReveal = ({
   edge,
@@ -87,21 +73,8 @@ export const useEdgeReveal = ({
       }
     };
 
-    /*
-     * "The pointer is somewhere this panel has agreed not to answer from."
-     *
-     * The case this exists for: the account avatar sits at the far right of the
-     * top bar, a couple of dozen pixels from the edge of the screen — which is
-     * also the right rail's trigger zone. Reaching for your own profile picture
-     * and overshooting it by a hair threw the whole project rail across the
-     * page, over whatever was underneath it. The two controls were competing
-     * for the same pixels and the rail was winning.
-     *
-     * Naming the header as a keep-out band settles that argument in the
-     * header's favour, and costs the rail nothing: coming *down* the right
-     * edge still opens it, because that gesture starts below the bar. Only an
-     * approach that begins inside the header is ignored.
-     */
+    // "The pointer is somewhere this panel has agreed not to answer from." The case this exists
+    // for: the account avatar sits at the far right of the top bar.
     const isInKeepOut = (event: PointerEvent): boolean => {
       const bands = keepOutRef.current;
       if (!bands) return false;
@@ -169,19 +142,8 @@ export const useEdgeReveal = ({
 };
 
 /**
- * Lets go of the hover lock once a drag out of a rail has finished.
- *
- * A tear-off takes pointer capture (see `useTearOff`), and capture routes the
- * compatibility mouse events to the captured element too — so the rail never
- * receives the `mouseleave` that would normally release the lock its
- * `mouseenter` took. By the time the drag ends the pointer is halfway across
- * the screen, and `mouseleave` only fires on a *crossing*, so it never fires
- * again either: the rail sat open, unpinned and unclosable, until the user
- * hovered it a second time purely to be able to leave it.
- *
- * Releasing the lock when the gesture ends is what restores the ordinary
- * behaviour — the pointer is already far from the edge, so the next movement
- * slides the rail shut on its own, exactly as if it had been left normally.
+ * Lets go of the hover lock once a drag out of a rail has finished. A tear-off takes pointer
+ * capture (see `useTearOff`).
  */
 export const useReleaseAfterTearOff = (
   isTearing: boolean,

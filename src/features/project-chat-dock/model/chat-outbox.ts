@@ -13,24 +13,8 @@ import { useCurrentUser } from '@/features/auth/model/session.store';
 import { emitWithAck } from '@/shared/api/socket';
 
 /**
- * Messages that have been written but not yet acknowledged, kept on disk.
- *
- * ## Why every send goes through here, online or not
- *
- * Sending used to be one emit with a pending tick, and anything that went
- * wrong — a dropped socket, a timeout, the rate limit — left a red "not sent"
- * bubble and nothing else; the composer was disabled outright while offline.
- * Now a send is an entry in this queue, and the queue is drained in order
- * whenever the socket is up: immediately in the ordinary case, and on
- * reconnect after a train tunnel. Entries survive a reload because they are
- * persisted, and a resend is safe because the API writes each `clientId` once
- * (see `ChatService.send`).
- *
- * ## Why it is per account
- *
- * A queue restored from disk is sent as whoever is signed in *now*. Keyed by
- * user, somebody signing out and a colleague signing in on the same machine
- * can never post the first person's unsent sentence under the second name.
+ * Messages that have been written but not yet acknowledged, kept on disk. Sending used to be one
+ * emit with a pending tick, and anything that went wrong — a dropped socket, a timeout.
  */
 export interface OutboxEntry {
   clientId: string;
@@ -44,11 +28,8 @@ export interface OutboxEntry {
 }
 
 /**
- * Tries before an entry is given up on and shown as failed.
- *
- * A timeout is retried (the socket may be half-dead), but a message the
- * gateway refuses outright never acknowledges at all, so an unbounded retry
- * would resend a doomed message forever. Five spans a minute or so of backoff.
+ * Tries before an entry is given up on and shown as failed. A timeout is retried (the socket may be
+ * half-dead), but a message the gateway refuses outright never acknowledges at all.
  */
 const MAX_ATTEMPTS = 5;
 const RETRY_BASE_MS = 1_500;
@@ -143,11 +124,8 @@ interface SendAck {
 }
 
 /**
- * Drains the queue while the socket is up. Mounted once, by the chat dock.
- *
- * One entry at a time and in order, so a burst typed offline arrives in the
- * order it was written. A failure stops the drain and schedules the next try
- * with a growing wait; a reconnect starts one straight away.
+ * Drains the queue while the socket is up. Mounted once, by the chat dock. One entry at a time and
+ * in order, so a burst typed offline arrives in the order it was written.
  */
 export const useChatOutbox = (): void => {
   const { socket, isConnected } = useRealtime();
@@ -158,11 +136,8 @@ export const useChatOutbox = (): void => {
   useEffect(() => {
     if (!socket || !isConnected || !userId) return;
     let isStopped = false;
-    /*
-     * Per connection rather than a ref: a drain from a connection that has
-     * since dropped must not stop the new connection's drain from starting.
-     * If the two overlap on one entry, the API writes its `clientId` once.
-     */
+    // Per connection rather than a ref: a drain from a connection that has since dropped must not
+    // stop the new connection's drain from starting.
     const draining = { current: false };
 
     const scheduleRetry = (attempts: number) => {

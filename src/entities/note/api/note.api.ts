@@ -42,12 +42,8 @@ export const noteApi = {
   },
 
   /**
-   * Ticks a step on a task's note checklist, or un-ticks it.
-   *
-   * Its own endpoint rather than a field on `update`, because the two are
-   * authorised differently: only the author may rewrite what a note says, and
-   * anybody who can see the task may tick its boxes. See the API's
-   * `NotesService.setCompletion`.
+   * Ticks a step on a task's note checklist, or un-ticks it. Its own endpoint rather than a field
+   * on `update`, because the two are authorised differently.
    */
   async setCompletion(noteId: string, isCompleted: boolean): Promise<Note> {
     const { data } = await api.patch<Note>(`/notes/${noteId}/completion`, { isCompleted });
@@ -92,9 +88,7 @@ export const boardApi = {
     return data;
   },
 
-  // --- The project whiteboard's pages ----------------------------------------
-  // Adding and renaming take write access; removing is an admin's, because it
-  // bins every teammate's Post-its on the page. See `BoardService` on the API.
+  // --- The project whiteboard's pages ------------------------------------------
 
   async addProjectPage(projectId: string): Promise<ProjectBoardPages> {
     const { data } = await api.post<ProjectBoardPages>(`/notes/board/project/${projectId}/pages`);

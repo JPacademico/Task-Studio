@@ -35,12 +35,8 @@ import {
 } from '@/shared/ui';
 
 /**
- * The suspension lengths on offer, and why they are buttons and not a number.
- *
- * A free-text "days" field invites a typo that is indistinguishable from an
- * intention — 300 instead of 30 is a decade of somebody's working life, entered
- * by a slip nothing would catch. Four durations plus permanent covers what
- * moderation actually does, and each one is a deliberate press.
+ * The suspension lengths on offer, and why they are buttons and not a number. A free-text "days"
+ * field invites a typo that is indistinguishable from an intention.
  */
 const DURATIONS: { days: number | null; label: string }[] = [
   { days: 1, label: '24 hours' },
@@ -53,17 +49,8 @@ const DURATIONS: { days: number | null; label: string }[] = [
 const MIN_REASON = 10;
 
 /**
- * The plans, in the order the filter and the picker draw them.
- *
- * Spelled out here rather than fetched from `GET /admin/plans` for the *labels*
- * — that endpoint carries the ceilings, which the dialog shows, and this array
- * is what has to exist before any request has come back so the filter can be
- * drawn on an empty console.
- *
- * Untranslated, like the rest of this page. The console is deliberately not
- * dressed in the product's furniture and is read by one person who runs the
- * deployment; putting it through the dictionary would mean every plan rename
- * touching two locales to change a word only the operator sees.
+ * The plans, in the order the filter and the picker draw them. Spelled out here rather than fetched
+ * from `GET /admin/plans` for the *labels* — that endpoint carries the ceilings.
  */
 const PLANS: { value: Plan; label: string; tone: string }[] = [
   { value: 'FREE', label: 'Free', tone: 'border-edge text-content-muted' },
@@ -75,46 +62,10 @@ const planLabel = (plan: Plan): string =>
   PLANS.find((entry) => entry.value === plan)?.label ?? plan;
 
 /**
- * The moderation console.
- *
- * ## Why this page is not part of the app
- *
- * It sits outside `ProtectedRoute` and outside `AppLayout`, and it has no rail,
- * no chat dock and no project context — because it is not a screen for a *user*
- * of Task Studio. The administrator is not a user (see `AdminAuthService` on
- * the API): there is no account to sign into, no flag on a row, and no route
- * from a compromised session to this page. What opens it is a password held in
- * the deployment's environment, and what it buys is thirty minutes.
- *
- * Its plainness is deliberate too. Every other surface in this app is dressed
- * in one of thirteen skins; this one stays flat and severe, because it is the
- * screen where somebody takes a product away from a person and it should not
- * feel like the rest of the furniture.
- *
- * ## Why suspending needs a reason typed into it
- *
- * The reason is emailed, verbatim, to the person losing access — it is the only
- * thing they receive and the only basis on which they can respond. The API
- * enforces a minimum length; this refuses to enable the button below it for the
- * same reason, so the requirement is visible before the request rather than
- * after.
+ * The moderation console. It sits outside `ProtectedRoute` and outside `AppLayout`, and it has no
+ * rail, no chat dock and no project context.
  */
-/**
- * What people have said about one account, on demand.
- *
- * ## Why the reasons are not on the row
- *
- * Because the search result is a list of *accounts* and a report is a
- * paragraph. Inlining them would turn a scannable list into a wall the moment
- * one account collected four, and the count on the row already does the job a
- * list has to do — telling somebody which row to open.
- *
- * ## Why it fetches on expand rather than with the list
- *
- * A search returns twenty-five accounts and an administrator opens at most one
- * or two. Loading every account's reports to render a number that is already on
- * the row would be twenty-five queries for a list nobody has asked to read.
- */
+/** What people have said about one account, on demand. */
 const ReportSheet = ({ userId, count }: { userId: string; count: number }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [reports, setReports] = useState<AdminReport[] | null>(null);
@@ -200,10 +151,8 @@ const ReportSheet = ({ userId, count }: { userId: string; count: number }) => {
 };
 
 /**
- * The account list: one column where the console is a column, a grid where it
- * is a screen. Two across from 1600px and three from 2400px — each row is an
- * avatar, a name and a handful of actions, and at those widths a single row
- * was spreading that across a metre of glass.
+ * The account list: one column where the console is a column, a grid where it is a screen. Two
+ * across from 1600px and three from 2400px — each row is an avatar.
  */
 const ACCOUNT_GRID =
   'space-y-2 min-[1600px]:grid min-[1600px]:grid-cols-2 min-[1600px]:items-start min-[1600px]:gap-2 min-[1600px]:space-y-0 min-[2400px]:grid-cols-3';
@@ -222,15 +171,8 @@ const AdminPage = () => {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  /*
-   * Where in the directory we are, and how big it is.
-   *
-   * `page` is one-based because it is the number a person reads. `total` and
-   * `pageCount` come back from the API beside the rows rather than being
-   * guessed from the row count: twenty-five rows could equally be the whole
-   * directory or the first page of two hundred, and there is no way to tell
-   * those apart from the array alone. See `AdminUserPage`.
-   */
+  // Where in the directory we are, and how big it is. `page` is one-based because it is the number
+  // a person reads.
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [pageCount, setPageCount] = useState(1);
@@ -240,33 +182,15 @@ const AdminPage = () => {
   const [days, setDays] = useState<number | null>(7);
   const [isBanning, setIsBanning] = useState(false);
 
-  /*
-   * The plan sheet, kept entirely separate from the suspension sheet above.
-   *
-   * They are two dialogs on the same list and there was a real temptation to
-   * share one `target`. They must not: closing one would close the other, and
-   * more to the point they are opposite kinds of act — one takes a product away
-   * from somebody and the other gives them more of it. A shared piece of state
-   * is how a mis-click ends up on the wrong sheet.
-   */
+  // The plan sheet, kept entirely separate from the suspension sheet above. They are two dialogs on
+  // the same list and there was a real temptation to share one `target`.
   const [planTarget, setPlanTarget] = useState<AdminUserRow | null>(null);
   const [nextPlan, setNextPlan] = useState<Plan>('STARTUP');
   const [planNote, setPlanNote] = useState('');
   const [isSavingPlan, setIsSavingPlan] = useState(false);
 
-  /*
-   * Whether the deployment has a console at all, asked once and unauthenticated.
-   *
-   * A failed probe is deliberately *not* read as "no console". It used to be,
-   * and the result was a page that told an administrator their password was
-   * never set whenever the API was asleep, offline, or refusing the request for
-   * any other reason — the most confusing possible answer, because it names a
-   * cause the reader then goes and checks and finds correct.
-   *
-   * Only the 503 the API raises for a missing `ADMIN_PASSWORD` means that.
-   * Anything else is a failure to *ask*, so the password form is shown and the
-   * attempt is allowed to produce a real error of its own.
-   */
+  // Whether the deployment has a console at all, asked once and unauthenticated. A failed probe is
+  // deliberately *not* read as "no console".
   useEffect(() => {
     adminApi
       .status()
@@ -278,11 +202,8 @@ const AdminPage = () => {
   }, []);
 
   /**
-   * Re-read the directory.
-   *
-   * Also the place the session's expiry is noticed: a 401 anywhere in here
-   * means the half hour is up, so the token is dropped and the password form
-   * comes back rather than leaving an empty table and no explanation.
+   * Re-read the directory. Also the place the session's expiry is noticed: a 401 anywhere in here
+   * means the half hour is up.
    */
   const refresh = useCallback(async () => {
     setIsLoading(true);
@@ -294,15 +215,8 @@ const AdminPage = () => {
       setRows(directory.rows);
       setTotal(directory.total);
       setPageCount(directory.pageCount);
-      /*
-       * The API's answer wins over the request.
-       *
-       * It clamps a page number past the end rather than refusing it, so
-       * asking for page 9 of a 3-page directory comes back as page 3 with its
-       * rows. Writing that back is what keeps the control and the list
-       * agreeing — without it the footer would say "9 of 3" over page 3's
-       * contents, and "next" would do nothing forever.
-       */
+      // The API's answer wins over the request. It clamps a page number past the end rather than
+      // refusing it, so asking for page 9 of a 3-page directory comes back as page 3 with its rows.
       if (directory.page !== page) setPage(directory.page);
       setStats(counts);
     } catch (error) {
@@ -319,32 +233,16 @@ const AdminPage = () => {
     }
   }, [bannedOnly, page, planFilter, query]);
 
-  /*
-   * Re-runs when a *toggle* changes, and not when the search box is typed in.
-   *
-   * `refresh` is rebuilt whenever `query` changes, so listing it here would
-   * fire a request per keystroke against a console that returns twenty-five
-   * accounts. The two filters are pressed rather than typed, so they search
-   * immediately; the text field waits for the button or for Enter.
-   */
+  // Re-runs when a *toggle* changes, and not when the search box is typed in. `refresh` is rebuilt
+  // whenever `query` changes.
   useEffect(() => {
     if (!token) return;
     void refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, bannedOnly, planFilter, page]);
 
-  /*
-   * Changing a filter returns to the first page.
-   *
-   * Without this, narrowing a three-page directory to one page while standing
-   * on page 3 asks the API for a page that no longer exists — which it clamps,
-   * so the reader silently lands somewhere they did not choose. Going back to
-   * the top is the only answer that is the same every time.
-   *
-   * It runs *before* the fetch above on the same change, because setting state
-   * in an effect re-renders before the browser paints; the request that goes
-   * out is the one for page 1.
-   */
+  // Changing a filter returns to the first page. Without this, narrowing a three-page directory to
+  // one page while standing on page 3 asks the API for a page that no longer exists.
   const firstRender = useRef(true);
   useEffect(() => {
     if (firstRender.current) {
@@ -387,13 +285,8 @@ const AdminPage = () => {
   };
 
   /**
-   * Put an account on a plan by hand.
-   *
-   * The toast says what did *not* happen as well as what did, and that is the
-   * important half: this writes an entitlement and never touches Stripe, so an
-   * administrator moving a paying customer to Free has stopped their ceilings
-   * and not their billing. Saying so at the moment of the change is the only
-   * place that fact reliably lands.
+   * Put an account on a plan by hand. The toast says what did *not* happen as well as what did, and
+   * that is the important half: this writes an entitlement and never touches Stripe.
    */
   const handleSetPlan = async () => {
     if (!planTarget) return;
@@ -437,16 +330,8 @@ const AdminPage = () => {
     () =>
       cn(
         'min-h-dvh bg-surface px-5 pb-10 sm:px-8',
-        /*
-         * A deep top gutter, and it is not symmetry for its own sake.
-         *
-         * This page renders outside `AppLayout`, so it has none of the shell's
-         * chrome above it — no top bar, no reveal strip, nothing. `py-10` put
-         * the "Admin console" eyebrow about forty pixels under the browser's
-         * own toolbar, which on a maximised window reads as the page having
-         * been cut off rather than as a page that starts there. The extra
-         * breathing room is what tells a reader this is the top.
-         */
+        // A deep top gutter, and it is not symmetry for its own sake. This page renders outside
+        // `AppLayout`, so it has none of the shell's chrome above it — no top bar, no reveal strip.
         'pt-16 sm:pt-20',
         // Flat, and deliberately not skinned. See the component note.
         'safe-t safe-b safe-l safe-r',
@@ -521,17 +406,8 @@ const AdminPage = () => {
   // ---- The console ---------------------------------------------------------
   return (
     <div className={shell}>
-      {/*
-        The console's column, and what it does on a big screen.
-
-        `max-w-3xl` everywhere below 1600px, which is where this page is
-        normally read and where nothing moves. Above it the column follows the
-        window — the same `max(rem, vw)` shape the app shell uses — and the
-        account list below becomes a grid, because a 3xl column on a 2560 or
-        ultrawide panel was a narrow stripe of rows with most of the screen
-        empty on either side, which is the one layout a directory should never
-        be when there is room to show more of it at once.
-      */}
+      {/* The console's column, and what it does on a big screen. `max-w-3xl` everywhere below
+          1600px, which is where this page is normally read and where nothing moves. */}
       <div className="mx-auto w-full max-w-3xl space-y-5 min-[1600px]:max-w-[min(120rem,max(48rem,64vw))]">
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
@@ -574,21 +450,11 @@ const AdminPage = () => {
                 value: stats.unverified,
                 icon: <ShieldAlert className="h-3 w-3" />,
               },
-              /*
-                Accounts with something unread against them.
-                
-                Counting *people* rather than reports, because six colleagues
-                reporting one person is one thing to look at. See `AdminStats`.
-              */
+              /* Accounts with something unread against them. Counting *people* rather than reports,
+                 because six colleagues reporting one person is one thing to look at. */
               { label: 'Reported', value: stats.reported, icon: <Flag className="h-3 w-3" /> },
-              /*
-                Accounts on a paid plan, comped ones included.
-
-                Not "revenue" and not "subscribers" — both are questions Stripe
-                answers better, and this console has no business guessing at
-                either. What it counts is what it can enforce: how many accounts
-                are working inside raised ceilings. See `AdminStats.paid`.
-              */
+              /* Accounts on a paid plan, comped ones included. Not "revenue" and not "subscribers"
+                 — both are questions Stripe answers better. */
               {
                 label: 'On a paid plan',
                 value: stats.paid,
@@ -636,17 +502,8 @@ const AdminPage = () => {
           </Button>
         </form>
 
-        {/* --- The plan filter ------------------------------------------------
-
-            A row of its own under the search rather than a fourth control in
-            it. Four buttons plus a text field plus two toggles on one line
-            wraps into an unreadable block on anything narrower than a laptop,
-            and these three are a *set* — exactly one is active — which is a
-            different shape from the two independent toggles above.
-
-            "All" is a real option rather than "none selected", because a filter
-            you can only turn on is one somebody has to reload the page to
-            escape. */}
+        {/* --- The plan filter ---
+            A row of its own under the search rather than a fourth control in it. */}
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="mr-1 text-3xs uppercase tracking-[0.14em] text-content-faint">
             Plan
@@ -709,20 +566,8 @@ const AdminPage = () => {
                     </span>
                   )}
 
-                  {/*
-                    The plan, and — when it is not the default — who decided.
-
-                    Free draws no badge at all. It is the majority of every
-                    directory and a chip on every row would be noise that makes
-                    the two that matter harder to see.
-
-                    `granted` and `paid` are drawn apart because they are
-                    genuinely different situations: one is a decision somebody
-                    here made and can undo, the other is a card being charged
-                    that this console cannot stop. An administrator about to
-                    change a plan needs to know which one they are looking at
-                    before they open the sheet, not after.
-                  */}
+                  {/* The plan, and — when it is not the default — who decided. Free draws no
+                      badge at all. */}
                   {user.plan !== 'FREE' && (
                     <span
                       title={
@@ -752,16 +597,8 @@ const AdminPage = () => {
                   {user.banCount > 0 && ` · ${user.banCount} suspension(s) on record`}
                 </p>
 
-                {/*
-                  Reports, and the reasons one click away.
-
-                  The count is what decides whether somebody opens an account
-                  at all; the *reasons* are what they decide on. Four reports
-                  that all describe the same incident are one incident seen by
-                  four people, and four that describe four different things are
-                  a pattern — no aggregate can tell those apart, so the sheet
-                  has to be able to show the words.
-                */}
+                {/* Reports, and the reasons one click away. The count is what decides whether
+                    somebody opens an account at all; the *reasons* are what they decide on. */}
                 {user.reportCount > 0 && (
                   <ReportSheet userId={user.id} count={user.reportCount} />
                 )}
@@ -781,14 +618,8 @@ const AdminPage = () => {
               </div>
 
               <div className="flex shrink-0 items-center gap-1.5">
-                {/*
-                  Plan first, suspension second, and the order is not arbitrary.
-
-                  The destructive control belongs at the end of the row — it is
-                  the one a slipped click must not land on, and putting the
-                  benign action between it and the rest of the row is a cheap
-                  way to buy that distance.
-                */}
+                {/* Plan first, suspension second, and the order is not arbitrary. The
+                    destructive control belongs at the end of the row. */}
                 <Button
                   size="sm"
                   variant="ghost"
@@ -829,29 +660,7 @@ const AdminPage = () => {
           ))}
         </ul>
 
-        {/*
-          The pager.
-
-          ## Why it is drawn even on a single page
-
-          Because its other job is saying *how many accounts there are*, and
-          that number is worth having whether or not it spills onto a second
-          page. A footer that appeared only past twenty-five rows would also be
-          a control that moves the page under somebody the moment a search
-          crosses the threshold.
-
-          The two buttons are hidden — not disabled-and-drawn — on a
-          single-page directory, because a pair of permanently dead arrows is
-          chrome that teaches a reader to ignore that corner of the screen.
-
-          ## Why it does not draw a numbered page list
-
-          Twenty-five to a page over a directory that is realistically hundreds
-          of accounts means a numbered strip is either truncated with ellipses
-          or longer than the rows above it. Previous/next plus "page N of M" is
-          the whole of what an administrator working through a filtered list
-          needs, and it costs one line.
-        */}
+        {/* The pager. */}
         {rows !== null && (
           <footer className="flex flex-wrap items-center justify-between gap-3 pt-1">
             <p className="text-2xs text-content-faint">
@@ -866,12 +675,8 @@ const AdminPage = () => {
                 <Button
                   variant="secondary"
                   size="sm"
-                  /*
-                    Guarded on `isLoading` as well as on the bound, because the
-                    request for the next page is in flight for a moment during
-                    which the button is still pressable — and two presses would
-                    skip a page and land on a number the list never showed.
-                  */
+                  /* Guarded on `isLoading` as well as on the bound, because the request for the
+                     next page is in flight for a moment during which the button is still pressable. */
                   disabled={page <= 1 || isLoading}
                   onClick={() => setPage((current) => Math.max(1, current - 1))}
                 >
@@ -950,18 +755,7 @@ const AdminPage = () => {
         </div>
       </Modal>
 
-      {/* --- The plan sheet ---------------------------------------------------
-
-          Its own dialog rather than a dropdown on the row, and the reason is
-          what a plan change actually is: it raises or lowers every ceiling on
-          every project that account owns, for everybody working in them. That
-          is not a one-click act, and a menu that changed it on selection would
-          make it one.
-
-          What it deliberately does not do is touch Stripe. The paragraph at the
-          bottom says so, because the failure it prevents is an administrator
-          moving a paying customer to Free, assuming the card stopped, and
-          finding out a month later that it did not. */}
+      {/* --- The plan sheet --- */}
       <Modal
         isOpen={planTarget !== null}
         onClose={() => setPlanTarget(null)}
@@ -1008,13 +802,8 @@ const AdminPage = () => {
             </div>
           </div>
 
-          {/*
-            The note is for anything but Free, because Free is not a grant.
-
-            Moving somebody to Free releases the account back to Stripe — there
-            is no standing decision left to explain, and a note attached to one
-            would outlive the thing it described.
-          */}
+          {/* The note is for anything but Free, because Free is not a grant. Moving somebody to
+              Free releases the account back to Stripe. */}
           {nextPlan !== 'FREE' && (
             <Textarea
               label="Why (optional)"

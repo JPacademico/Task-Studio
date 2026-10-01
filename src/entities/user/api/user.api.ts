@@ -18,13 +18,8 @@ export const userApi = {
   },
 
   /**
-   * Report somebody to whoever runs this deployment.
-   *
-   * Nothing about the subject comes back — not a count, not whether anybody
-   * else has reported them — because every such field is a fact about somebody
-   * else that a stranger could enumerate by reporting people one at a time.
-   * Reporting the same person twice replaces the reason rather than adding a
-   * second report; see `UserReport` on the API.
+   * Report somebody to whoever runs this deployment. Nothing about the subject comes back — not a
+   * count, not whether anybody else has reported them.
    */
   async report(userId: string, payload: { reason: string; projectId?: string }): Promise<void> {
     await api.post(`/users/${userId}/report`, payload);
@@ -59,6 +54,18 @@ export const userApi = {
     return data;
   },
 
+  /** Starts the 24-hour countdown to deleting this account. */
+  async scheduleDeletion(payload: { confirmEmail: string; password?: string }): Promise<CurrentUser> {
+    const { data } = await api.post<CurrentUser>('/users/me/deletion', payload);
+    return data;
+  },
+
+  /** Keeps the account: cancels a scheduled deletion. */
+  async cancelDeletion(): Promise<CurrentUser> {
+    const { data } = await api.delete<CurrentUser>('/users/me/deletion');
+    return data;
+  },
+
   async removeAvatar(): Promise<CurrentUser> {
     const { data } = await api.delete<CurrentUser>('/users/me/avatar');
     return data;
@@ -76,10 +83,8 @@ export type UploadScope =
   | 'notes'
   | 'files'
   /**
-   * A board export waiting to be read by an importer.
-   *
-   * The one scope whose objects are temporary by contract: the importer
-   * deletes the file as soon as the job ends, whichever way it ends.
+   * A board export waiting to be read by an importer. The one scope whose objects are temporary by
+   * contract: the importer deletes the file as soon as the job ends, whichever way it ends.
    */
   | 'imports';
 
@@ -102,16 +107,8 @@ const putObject = async (
       headers: { 'Content-Type': blob.type },
     });
   } catch {
-    /*
-     * The PUT never produced a response at all.
-     *
-     * With a presign already in hand — so the API is reachable and this
-     * session is fine — that is almost always the *bucket* refusing the
-     * preflight: its CORS policy does not list the site this page is served
-     * from. The API never sees this request, so nothing appears in its logs,
-     * and "could not upload" alone sent people looking in the wrong place.
-     * The console line names the origin to add; the toast stays human.
-     */
+    // The PUT never produced a response at all. With a presign already in hand — so the API is
+    // reachable and this session is fine.
     console.error(
       `[task-studio] Object storage refused an upload from ${window.location.origin}. ` +
         "Add this origin to the R2 bucket's CORS policy (methods PUT and GET, header content-type).",
@@ -141,36 +138,15 @@ export interface UploadImageOptions {
   /** Also upload a small rendition. Costs a second object and a second presign. */
   thumbnail?: boolean;
   /**
-   * Asks whether these exact bytes are already stored, before sending them.
-   *
-   * Handed the MD5 of the *prepared* file — the WebP that would be uploaded,
-   * not the original — which is the fingerprint the bucket keeps for every
-   * object it holds. A match is used as the upload's result and nothing is
-   * sent: no presign, no PUT, no second copy of a picture that is already on
-   * the board. `null` means "not here", and the upload goes ahead as usual.
-   *
-   * Only offered where the API can answer it — the project whiteboard, whose
-   * pictures are filed and fingerprinted. See `boardFolderApi.lookup`.
+   * Asks whether these exact bytes are already stored, before sending them. Handed the MD5 of the
+   * *prepared* file — the WebP that would be uploaded, not the original.
    */
   reuse?: (md5: string) => Promise<{ key: string; publicUrl: string } | null>;
 }
 
 /**
- * Uploads a picked image, downscaled and re-encoded first.
- *
- * The original file is never sent. `prepareImage` turns it into a capped WebP
- * — see the note there for why that happens in the browser rather than on the
- * API — and it is that, not the file the user chose, which is signed and PUT.
- *
- * The thumbnail is off by default and deliberately so. Each rendition is a
- * separate object and therefore a separate presigned request, and
- * `/storage/uploads` now carries the tightest rate limit in the app precisely
- * because signing is the cheapest way to fill a bucket. Paying that twice for a
- * rendition nothing currently renders would be spending the budget this change
- * exists to defend.
- *
- * If the browser cannot decode the file at all the error propagates: better a
- * clear failure than an object in the bucket nothing can ever render.
+ * Uploads a picked image, downscaled and re-encoded first. The original file is never sent.
+ * `prepareImage` turns it into a capped WebP.
  */
 export const uploadImage = async (
   file: File,
@@ -179,12 +155,7 @@ export const uploadImage = async (
 ): Promise<UploadedImage> => {
   const prepared = await prepareImage(file, { thumbnail });
 
-  /*
-   * Already stored? Then it is already uploaded.
-   *
-   * A failed lookup is not an error: it only means we could not find out, and
-   * the answer to that is the ordinary upload rather than no picture at all.
-   */
+  // Already stored?
   if (reuse && !thumbnail) {
     const existing = await md5OfBlob(prepared.display)
       .then(reuse)
@@ -215,13 +186,7 @@ export const uploadImage = async (
   };
 };
 
-/**
- * What the `files` scope accepts, and what to put in an `<input accept>`.
- *
- * Mirrors the API's own allow-list, which is the thing that actually enforces
- * it — this exists so the file picker offers the right files rather than
- * letting somebody choose a 40 MB video and learn about the rule from a 503.
- */
+/** What the `files` scope accepts, and what to put in an `<input accept>`. */
 export const DOCUMENT_MIME_TYPES = [
   'application/pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -230,29 +195,7 @@ export const DOCUMENT_MIME_TYPES = [
 
 export const DOCUMENT_ACCEPT = `${DOCUMENT_MIME_TYPES.join(',')},.pdf,.docx,.doc`;
 
-/**
- * What a **text board** will import, in three kinds.
- *
- * Wider than a task attachment on one side and narrower on the other, and the
- * split is by what the board can *do* with the thing rather than by format
- * family:
- *
- *   - **Documents.** Plain text is here, because a `.txt` becomes an editable
- *     page with no model involved at all. `.doc`, the pre-2007 binary, is
- *     deliberately not: it can be *attached* to a task, where nothing has to
- *     read it, and it cannot become a page, where something does. The honest
- *     answer to somebody holding one is "save it as .docx".
- *   - **Pictures.** A screenshot, a mockup, a scanned page — things the board
- *     can show at full size, behind the project's own access rules, with
- *     nothing having interpreted them. Re-encoded before upload; see
- *     `uploadImportFile`.
- *   - **Archives.** A `.zip`, whose *contents* the board lists and whose files
- *     are still the download they always were.
- *
- * `image/svg+xml` is absent and must stay absent: an SVG is a document with
- * script in it, and an imported file is served back through the API's own
- * origin.
- */
+/** What a **text board** will import, in three kinds. */
 export const IMPORT_DOCUMENT_MIME = [
   'text/plain',
   'application/pdf',
@@ -270,13 +213,8 @@ export const IMPORT_MIME_TYPES = [
 ] as const;
 
 /**
- * The `accept` for the picker, mimes *and* extensions.
- *
- * Both spellings, because neither alone is enough. A machine with no Office
- * installed reports `''` for a `.docx`, and Windows has no registered type for
- * a `.zip` unless something claimed it — so a mime-only `accept` greys out
- * perfectly ordinary files. The extensions cover those; the mimes cover the
- * phones that report a type and no extension.
+ * The `accept` for the picker, mimes *and* extensions. Both spellings, because neither alone is
+ * enough.
  */
 export const IMPORT_ACCEPT = `${IMPORT_MIME_TYPES.join(
   ',',
@@ -286,38 +224,20 @@ export const IMPORT_ACCEPT = `${IMPORT_MIME_TYPES.join(
 export const MAX_DOCUMENT_BYTES = 10 * 1024 * 1024;
 
 /**
- * And the archive one, which is larger because an archive is a *set* of files.
- *
- * Twelve, matching `MAX_ARCHIVE_BYTES` on the API — the number a person reads
- * in an error has to be the number that is actually enforced, or the second
- * attempt fails for a reason the first one did not mention.
+ * And the archive one, which is larger because an archive is a *set* of files. Twelve, matching
+ * `MAX_ARCHIVE_BYTES` on the API.
  */
 export const MAX_ARCHIVE_BYTES = 12 * 1024 * 1024;
 
 /**
- * How large a *picked* picture may be, which is not what gets uploaded.
- *
- * A photograph never reaches the bucket as it was chosen: `prepareImage`
- * decodes it, caps it at 1600px on the long edge and re-encodes it as WebP, so
- * a 6 MB phone photo arrives as a couple of hundred kilobytes. The ceiling
- * that matters for storage is therefore met by construction, and this one
- * exists for a different reason entirely — decoding happens on the user's own
- * device, and a 60 MB scan will hang a mid-range phone long before it fails.
- *
- * Generous, because it is protecting a decode rather than a quota.
+ * How large a *picked* picture may be, which is not what gets uploaded. A photograph never reaches
+ * the bucket as it was chosen.
  */
 export const MAX_IMAGE_SOURCE_BYTES = 32 * 1024 * 1024;
 
 /**
- * What the operating system said the file was, or what its name implies.
- *
- * `File.type` is a hint, not a fact: it comes from the OS's own extension
- * registry, and a machine with no Office installed routinely reports `''` for
- * a `.docx` — at which point an allow-list check on the type alone rejects a
- * perfectly good Word file with "only PDF and Word documents". Falling back to
- * the extension is not a weakening of the rule: the API re-derives the type
- * from the presign request and refuses anything outside its own list, and the
- * bytes are never trusted here either way.
+ * What the operating system said the file was, or what its name implies. `File.type` is a hint, not
+ * a fact: it comes from the OS's own extension registry.
  */
 const EXTENSION_MIME: Record<string, string> = {
   txt: 'text/plain',
@@ -345,21 +265,8 @@ export type ImportKind = 'document' | 'image' | 'archive';
 export type ImportRejectionReason = 'type' | 'empty' | 'tooLarge';
 
 /**
- * A file the board will not take, and the reason in a form the UI can render.
- *
- * ## Why a code rather than a sentence
- *
- * This used to throw `new Error('Only PDF, Word (.docx) and plain-text files
- * can be imported.')`, which was fine while the only surface was a file picker
- * that showed the message in a toast — and became wrong the moment files could
- * be *dropped*. A drop needs its refusal on the drop target, in the reader's
- * own language, while the pointer is still over it; an English string thrown
- * from an API module can be neither translated nor shown early.
- *
- * So the rule stays here — it has to, it is the same rule the upload enforces
- * — and the wording moves to the interface. `limitBytes` travels with it
- * because "too large" without a number is an error that does not say what to
- * do next.
+ * A file the board will not take, and the reason in a form the UI can render. This used to throw
+ * `new Error('Only PDF, Word (.docx) and plain-text files can be imported.')`.
  */
 export class ImportRejection extends Error {
   constructor(
@@ -372,13 +279,8 @@ export class ImportRejection extends Error {
 }
 
 /**
- * Whether the board will take this file, decided without reading a byte of it.
- *
- * Shared by the picker and the drop target so the two cannot disagree, and
- * called *before* anything is uploaded so a wrong file costs nothing. The API
- * enforces every one of these rules again — a client check is a courtesy, not
- * a control — but somebody who picked the wrong file should find out from the
- * surface they are looking at rather than from a failed request.
+ * Whether the board will take this file, decided without reading a byte of it. Shared by the picker
+ * and the drop target so the two cannot disagree.
  */
 export const classifyImportFile = (
   file: File,
@@ -417,13 +319,8 @@ export interface UploadedFile {
 }
 
 /**
- * What an import actually stored, which is not always what was picked.
- *
- * A picture is re-encoded on the way (see `uploadImportFile`), so three of
- * these can differ from the file on the user's disk: the extension, the mime
- * and — by an order of magnitude — the size. `originalSize` is kept so the
- * interface can say what that bought rather than quietly changing somebody's
- * file behind their back.
+ * What an import actually stored, which is not always what was picked. A picture is re-encoded on
+ * the way (see `uploadImportFile`), so three of these can differ from the file on the user's disk.
  */
 export interface ImportedUpload extends UploadedFile {
   mime: string;
@@ -433,18 +330,8 @@ export interface ImportedUpload extends UploadedFile {
 }
 
 /**
- * Uploads a document exactly as it was chosen, against a given allow-list.
- *
- * Deliberately *not* `uploadImage`. That one re-encodes what it is given
- * before sending it, which is right for a photograph and catastrophic for a
- * document: there is nothing useful a canvas can do to a signed PDF, and the
- * whole point of attaching one is that the bytes the reader downloads are the
- * bytes the author attached. So this is `putObject` and nothing else.
- *
- * The guards here are duplicates of the API's, on purpose. The API is what
- * enforces them — a client check is a courtesy, not a control — but a person
- * who picked the wrong file should find out from the form they are looking at
- * rather than from a failed request after the upload has already started.
+ * Uploads a document exactly as it was chosen, against a given allow-list. Deliberately *not*
+ * `uploadImage`.
  */
 const putDocument = async (
   file: File,
@@ -457,15 +344,8 @@ const putDocument = async (
   if (file.size === 0) throw new Error('That file is empty.');
   if (file.size > MAX_DOCUMENT_BYTES) throw new Error('Documents must be 10 MB or smaller.');
 
-  /*
-   * Re-wrapped when the OS gave no type of its own.
-   *
-   * `putObject` signs the presign for `blob.type` and PUTs with that same
-   * `Content-Type`, so an empty one would sign a request the API's allow-list
-   * rejects — and, if it somehow did not, store an object R2 serves as
-   * `application/octet-stream` forever. A `Blob` copy is the cheapest way to
-   * attach the type we resolved; it does not re-encode anything.
-   */
+  // Re-wrapped when the OS gave no type of its own. `putObject` signs the presign for `blob.type`
+  // and PUTs with that same `Content-Type`.
   const blob = file.type ? file : new Blob([file], { type: mimeType });
   const uploaded = await putObject(blob, 'files');
 
@@ -485,41 +365,8 @@ const withExtension = (name: string, extension: string): string =>
   `${name.replace(/\.[a-z0-9]+$/i, '')}.${extension}`;
 
 /**
- * Uploads a file that is about to become a page on a text board.
- *
- * ## Documents and archives: byte for byte
- *
- * Nothing is re-encoded. There is nothing useful a canvas can do to a signed
- * PDF, and the whole point of putting one on a board is that what a colleague
- * downloads is what the author uploaded — the argument `uploadFile` makes for
- * attachments, unchanged. An archive is that case twice over: repacking
- * somebody's zip would change the checksum of a thing whose entire purpose is
- * being passed on intact.
- *
- * ## Pictures: never as they were picked
- *
- * A photograph is decoded, capped at 1600px on the long edge and re-encoded as
- * WebP before it is signed for — `prepareImage`, the same path a board note's
- * image takes and for the reasons spelled out there. A 6 MB phone photo
- * becomes a couple of hundred kilobytes, which is the difference between a
- * bucket that holds a year of screenshots and one that holds a month, and it
- * is paid for three times over: storage, every reader's download, and the
- * decode on every render.
- *
- * Three things fall out of that round trip beyond the size. The metadata is
- * gone, so a photograph stops carrying the coordinates of where it was taken.
- * An animated GIF or a multi-frame WebP becomes one still, which is what a
- * document page wants anyway. And the work happens on the device that already
- * has the decoder and the idle time, rather than on a 512 MB container.
- *
- * The stored filename takes the extension it now really has, because a
- * `screenshot.png` served as WebP lies about itself in every downloads folder
- * it lands in. The page is titled from the name with the extension stripped
- * either way, so nothing the reader sees changes.
- *
- * If the browser cannot decode the picture at all the error propagates rather
- * than falling back to the original: an object the bucket accepts and nothing
- * can render is worse than a clear refusal.
+ * Uploads a file that is about to become a page on a text board. Nothing is re-encoded. There is
+ * nothing useful a canvas can do to a signed PDF.
  */
 export const uploadImportFile = async (file: File): Promise<ImportedUpload> => {
   const classified = classifyImportFile(file);
@@ -555,14 +402,8 @@ export const uploadImportFile = async (file: File): Promise<ImportedUpload> => {
 };
 
 /**
- * The MIME types a board export arrives as.
- *
- * Longer than it looks like it should be, and every entry is a real browser's
- * real answer for a file a person picked. Windows with no Excel installed
- * reports a `.csv` as `text/plain`; Windows *with* Excel reports it as
- * `application/vnd.ms-excel`; Safari has its own opinion again. Refusing the
- * odd ones would make the feature fail for exactly the people most likely to
- * be migrating off a spreadsheet.
+ * The MIME types a board export arrives as. Longer than it looks like it should be, and every entry
+ * is a real browser's real answer for a file a person picked.
  */
 const BOARD_EXPORT_MIME = [
   'application/json',
@@ -576,15 +417,8 @@ const BOARD_EXPORT_MIME = [
 const MAX_BOARD_EXPORT_BYTES = 5 * 1024 * 1024;
 
 /**
- * Uploads a board export, on its way to becoming a project.
- *
- * ## Why the type is resolved from the extension when the browser has no idea
- *
- * `putObject` signs the presign for `blob.type` and PUTs with that same
- * `Content-Type`, so a file the OS reported as `''` would sign a request the
- * API's allow-list rejects — with an error about MIME types, for somebody who
- * picked a perfectly ordinary `.csv`. The extension is the only signal left at
- * that point, and it is the one the user themselves can see.
+ * Uploads a board export, on its way to becoming a project. `putObject` signs the presign for
+ * `blob.type` and PUTs with that same `Content-Type`.
  */
 export const uploadBoardExport = async (file: File): Promise<UploadedFile> => {
   if (file.size === 0) throw new Error('That file is empty.');

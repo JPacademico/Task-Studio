@@ -7,11 +7,8 @@ import { noteApi } from '../api/note.api';
 import { translate } from '@/shared/i18n';
 
 /**
- * Everything the user has binned, across every board they write to.
- *
- * Deleting a note has always been a soft delete — the toast even says "moved to
- * the recycle bin" — but nothing ever listed them, so the notes were
- * unreachable in practice. This is the other half of that promise.
+ * Everything the user has binned, across every board they write to. Deleting a note has always been
+ * a soft delete — the toast even says "moved to the recycle bin" — but nothing ever listed them.
  */
 export const useDeletedNotes = () =>
   useQuery({
@@ -19,17 +16,8 @@ export const useDeletedNotes = () =>
     queryFn: () => noteApi.list({ includeDeleted: true }),
   });
 
-/*
- * `useNotes`, `useCreateNote`, `useUpdateNote` and `useDeleteNote` used to live
- * here, keyed on a `ListNotesParams` cache of their own.
- *
- * Their only caller was the task sheet's notes section, which is gone: a task's
- * notes now arrive *inside the task* — `task.notes`, alongside the progress the
- * card draws — so there is no separate notes cache for a task to keep in step
- * with, and the writes go through `useTaskNoteMutations`. The two boards never
- * used these either; they have their own snapshot queries, because a canvas
- * needs its Post-its, its connectors and its ink in one read.
- */
+// `useNotes`, `useCreateNote`, `useUpdateNote` and `useDeleteNote` used to live here, keyed on a
+// `ListNotesParams` cache of their own.
 
 /** Fire-and-forget position sync at the end of a drag gesture. */
 export const useSaveNotePositions = () =>

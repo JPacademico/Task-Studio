@@ -53,54 +53,26 @@ interface TaskComposerProps {
   isOpen: boolean;
   onClose: () => void;
   /**
-   * Omitted for a personal task — work with no project behind it, created and
-   * edited from the task menu. The assignee picker disappears with it: there is
-   * no roster to pick from, and the task is the caller's by definition.
+   * Omitted for a personal task — work with no project behind it, created and edited from the task
+   * menu.
    */
   projectId?: string;
   roster?: RosterMember[];
   /** Present when editing an existing task. */
   task?: Task | null;
   /**
-   * The grouping-board column this task is being written into, fixed.
-   *
-   * Set by the "+" at the top of a column on the grouping board, and the whole
-   * point of that button: the tag is not a field to fill in, it is *why* the
-   * composer was opened. So the picker is drawn as a read-only chip rather than
-   * left editable — a locked control that can be changed is not locked, and a
-   * dropdown that silently re-answers the question the button already answered
-   * is how somebody ends up filing work in the wrong lane.
-   *
-   * The page's own "new task" button passes nothing and gets the ordinary
-   * picker, which is the right shape when the column is genuinely a choice.
+   * The grouping-board column this task is being written into, fixed. Set by the "+" at the top of
+   * a column on the grouping board, and the whole point of that button.
    */
   lockedGroupId?: string;
   /**
-   * The project's own finish date, when it has one.
-   *
-   * A prop rather than a lookup, and deliberately so: every surface that opens
-   * this composer already holds the project — the board fetched it, the
-   * grouping board was handed it — so asking for it again here would be a
-   * request to learn something the caller is looking at. It also keeps the
-   * composer usable for a personal task, which has no project to look up.
-   *
-   * Absent means no ceiling, which is both the personal-task case and the
-   * (common) case of a project with no deadline. When editing an existing
-   * task, `task.project.endsAt` is used in preference — it is the finish date
-   * of the project the task is actually *in*, which is the one that binds.
+   * The project's own finish date, when it has one. A prop rather than a lookup, and deliberately
+   * so: every surface that opens this composer already holds the project.
    */
   projectDeadline?: string | null;
   /**
-   * The repository this project is linked to, when there is one.
-   *
-   * A prop for the same reason `projectDeadline` is one: every surface that
-   * opens this composer is already holding the project. It decides whether the
-   * branch field exists at all — the API refuses a branch on a project with no
-   * repository, so offering the field there would be a control that saves
-   * nothing.
-   *
-   * `defaultBranch` fills the placeholder, so the field suggests the shape of
-   * an answer rather than sitting empty.
+   * The repository this project is linked to, when there is one. A prop for the same reason
+   * `projectDeadline` is one.
    */
   repository?: ProjectRepository | null;
 }
@@ -111,11 +83,8 @@ const PRIORITIES: TaskPriority[] = ['LOW', 'NORMAL', 'HIGH', 'URGENT'];
 const EMPTY_ROSTER: RosterMember[] = [];
 
 /**
- * Create/edit form for a task.
- *
- * The task *type* is never chosen by hand: it is derived from the scheduled
- * window and the number of assignees, previewed live here and re-derived
- * authoritatively by the API.
+ * Create/edit form for a task. The task *type* is never chosen by hand: it is derived from the
+ * scheduled window and the number of assignees.
  */
 export const TaskComposer = ({
   isOpen,
@@ -131,28 +100,15 @@ export const TaskComposer = ({
   // No project means a personal task: one assignee, no roster, no fan-out.
   const isPersonal = !projectId;
 
-  /*
-   * The project's grouping-board columns, for the tag picker.
-   *
-   * Asked for only when there is a project — a personal task has no board to be
-   * grouped on, so `useTaskGroups` is disabled rather than sending a request
-   * that can only 404. Empty is the normal case for a project that has never
-   * opened the grouping board, and the picker is hidden entirely in that case.
-   */
+  // The project's grouping-board columns, for the tag picker.
   const { data: groups = [] } = useTaskGroups(projectId);
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
 
   // Cached across every surface that asks — see `useAiStatus`.
   const { data: aiStatus } = useAiStatus();
-  /*
-   * Whether there is a call left to spend this month.
-   *
-   * A third reason the button can be unavailable, alongside "the checklist is
-   * full" and "you have not typed enough yet" — and the only one the reader
-   * cannot fix by typing. Optimistic while the status loads; see
-   * `hasAiCreditsLeft`.
-   */
+  // Whether there is a call left to spend this month. A third reason the button can be unavailable,
+  // alongside "the checklist is full" and "you have not typed enough yet".
   const hasAiCredits = hasAiCreditsLeft(aiStatus);
   const suggestSteps = useSuggestDraftSubtasks();
 
@@ -165,33 +121,19 @@ export const TaskComposer = ({
   const [dueAt, setDueAt] = useState('');
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   /**
-   * Teams whose people should be assigned, offered only when creating.
-   *
-   * Not seeded when editing: a team is expanded into individuals at the moment
-   * it is picked, so an existing task carries assignees rather than a memory of
-   * which teams produced them. Re-expanding one on an edit would silently
-   * re-add somebody who had deliberately been taken off.
+   * Teams whose people should be assigned, offered only when creating. Not seeded when editing: a
+   * team is expanded into individuals at the moment it is picked.
    */
   const [teamIds, setTeamIds] = useState<string[]>([]);
   const [checklist, setChecklist] = useState<string[]>([]);
   const [checklistDraft, setChecklistDraft] = useState('');
   /**
-   * Which grouping-board column to file this under, or `''` for none.
-   *
-   * The empty string rather than `null`, because it is bound to a `<select>`
-   * and that is what an unselected option's value is. It becomes `null` on the
-   * way out, which is what untags a task on the API.
+   * Which grouping-board column to file this under, or `''` for none. The empty string rather than
+   * `null`, because it is bound to a `<select>` and that is what an unselected option's value is.
    */
   const [groupId, setGroupId] = useState<string>('');
-  /*
-   * The picture on the form, in as much detail as this session knows.
-   *
-   * `key` is empty when the state was hydrated from an existing task: there is
-   * a picture, but this session did not upload it, so there is no object key to
-   * send and nothing about the attachment to change. A non-empty `key` means a
-   * fresh upload; `null` for the whole thing means the user took it off. The
-   * submit handler turns those three states into three different payloads.
-   */
+  // The picture on the form, in as much detail as this session knows. `key` is empty when the state
+  // was hydrated from an existing task: there is a picture.
   const [attachment, setAttachment] = useState<{
     key: string;
     publicUrl: string;
@@ -199,14 +141,8 @@ export const TaskComposer = ({
     thumbUrl: string | null;
   } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  /*
-   * The attached document, in as much detail as this session knows.
-   *
-   * Same three-state trick as `attachment` above, for the same reason: an empty
-   * `key` means "there is a file, but this session did not upload it", so the
-   * PATCH leaves it alone; a non-empty key is a fresh upload; `null` for the
-   * whole thing is the user having taken it off.
-   */
+  // The attached document, in as much detail as this session knows. Same three-state trick as
+  // `attachment` above, for the same reason: an empty `key` means "there is a file.
   const [file, setFile] = useState<AttachedFileDraft | null>(null);
 
   // Reset (or hydrate) whenever the dialog opens.
@@ -224,14 +160,8 @@ export const TaskComposer = ({
     setTeamIds([]);
     setChecklist([]);
     setChecklistDraft('');
-    /*
-     * The lock wins on a fresh task, and is ignored on an edit.
-     *
-     * Editing is opened from a card, not from a column, so a `lockedGroupId`
-     * has no business overwriting the tag a task already carries — and the
-     * board never passes one for an edit. Belt and braces, because getting this
-     * backwards would silently re-file somebody's task on save.
-     */
+    // The lock wins on a fresh task, and is ignored on an edit. Editing is opened from a card, not
+    // from a column.
     setGroupId(task?.group?.id ?? (task ? '' : (lockedGroupId ?? '')));
     setAttachment(
       task?.attachmentUrl
@@ -260,24 +190,13 @@ export const TaskComposer = ({
     [assigneeIds.length, dueAt, isPersonal, startAt],
   );
 
-  /*
-   * Two different complaints, kept apart.
-   *
-   * A malformed date ("what you typed is not a date") and a backwards window
-   * ("the deadline is before the start") need different words, and only the
-   * first can take the form down with it — see the note in `shared/lib/dates`.
-   * Both block the submit; neither throws.
-   */
+  // Two different complaints, kept apart. A malformed date ("what you typed is not a date") and a
+  // backwards window ("the deadline is before the start") need different words.
   const startIsMalformed = !isDateTimeInput(startAt);
   const dueIsMalformed = !isDateTimeInput(dueAt);
 
-  /*
-   * Out of range is its own complaint, separate from malformed.
-   *
-   * A deadline in 2100 is a real date and a typo, and telling somebody it is
-   * "not a date" sends them looking for a formatting mistake that is not there.
-   * See `isWithinDateWindow`.
-   */
+  // Out of range is its own complaint, separate from malformed. A deadline in 2100 is a real date
+  // and a typo.
   const startIsTooFar = !startIsMalformed && !isWithinDateWindow(startAt);
   const dueIsTooFar = !dueIsMalformed && !isWithinDateWindow(dueAt);
 
@@ -287,26 +206,12 @@ export const TaskComposer = ({
     Boolean(startAt && dueAt) &&
     new Date(dueAt).getTime() <= new Date(startAt).getTime();
 
-  /*
-   * The project's own finish date, when it has one.
-   *
-   * Read from the task being edited, or from the project list for a task being
-   * created — both are already in the cache on every surface this composer
-   * opens from, so neither costs a request. `null` on a personal task and on a
-   * project with no deadline, which is the common case and means no ceiling.
-   */
+  // The project's own finish date, when it has one. Read from the task being edited, or from the
+  // project list for a task being created.
   const projectEndsAt = task?.project?.endsAt ?? projectDeadline ?? null;
 
-  /*
-   * A deadline past the end of its own project.
-   *
-   * Its own complaint rather than folded into `dueIsTooFar`, because it is a
-   * different fact with a different remedy: "too far away" means pick an
-   * earlier date, and this means pick an earlier date *or go and move the
-   * project's*. The API refuses the same thing in the same words — see
-   * `assertTaskWithinProject` — and this is that refusal arriving while the
-   * form is still open, which is the only moment it is cheap to act on.
-   */
+  // A deadline past the end of its own project. Its own complaint rather than folded into
+  // `dueIsTooFar`, because it is a different fact with a different remedy.
   const dueIsAfterProject =
     !dueIsMalformed &&
     Boolean(dueAt && projectEndsAt) &&
@@ -321,48 +226,22 @@ export const TaskComposer = ({
     !dueIsTooFar &&
     !dueIsAfterProject;
 
-  /*
-   * The bounds the two controls carry, widened to admit whatever the task
-   * already holds — otherwise tightening the window would make a task saved
-   * with an old out-of-range date impossible to edit at all. See
-   * `dateInputBounds`.
-   */
+  // The bounds the two controls carry, widened to admit whatever the task already holds.
   const bounds = dateInputBounds(
     toDateTimeInput(task?.startAt ?? null),
     toDateTimeInput(task?.dueAt ?? null),
   );
 
-  /*
-   * The deadline field's own ceiling: the tighter of the five-year window and
-   * the project's finish date.
-   *
-   * Only the *deadline* gets it. A task that begins before its project ends
-   * and has no deadline of its own has not overrun anything, so bounding the
-   * start field would refuse something legitimate — and it cannot help anyway,
-   * since a start later than the deadline is already caught by
-   * `windowIsInvalid`.
-   *
-   * Deliberately not applied when the task already holds a later date. That is
-   * the same reasoning `dateInputBounds` exists for: a project whose finish
-   * date was pulled in *after* a task was scheduled would otherwise make that
-   * task uneditable, and somebody fixing its title should not first have to
-   * fix a date they did not set.
-   */
+  // The deadline field's own ceiling: the tighter of the five-year window and the project's finish
+  // date. Only the *deadline* gets it.
   const projectCeiling = toDateTimeInput(projectEndsAt);
   const dueMax =
     projectCeiling && projectCeiling < bounds.max && !(task?.dueAt && toDateTimeInput(task.dueAt) > projectCeiling)
       ? projectCeiling
       : bounds.max;
 
-  /*
-   * Two renditions go up, not one.
-   *
-   * The second encode costs a moment of the phone's CPU and one extra presigned
-   * request; what it buys is every future reader of this task downloading ~40 kB
-   * instead of the whole photograph to look at a thumbnail they may never open.
-   * That trade is paid once, by the person attaching it, and collected by
-   * everybody on the roster every time the sheet is opened.
-   */
+  // Two renditions go up, not one. The second encode costs a moment of the phone's CPU and one
+  // extra presigned request.
   const handleUpload = async (file: File) => {
     setIsUploading(true);
     try {
@@ -384,16 +263,8 @@ export const TaskComposer = ({
   const handleSubmit = async () => {
     if (!canSubmit) return;
 
-    /*
-     * The step somebody typed and did not press Enter on.
-     *
-     * `addStep` is wired to Enter and to the "+" button, so a reader who types
-     * the last step and goes straight for Create had it silently dropped —
-     * the field still showed the words while the task was saved without them.
-     * Flushing here is the whole fix, and it has to be a local value rather
-     * than `setChecklist` + read: this runs in the same tick as the request,
-     * and a state update queued now is not visible to the payload below.
-     */
+    // The step somebody typed and did not press Enter on. `addStep` is wired to Enter and to the
+    // "+" button.
     const pendingStep = checklistDraft.trim();
     const steps =
       pendingStep && checklist.length < MAX_TASK_NOTES
@@ -405,15 +276,8 @@ export const TaskComposer = ({
       description: description.trim() || undefined,
       color,
       priority,
-      /*
-       * Sent only where it can be stored, and always sent when it can.
-       *
-       * The API refuses a branch on a project with no repository, so omitting
-       * it there is not tidiness — it is the difference between a save and a
-       * 400. Where the field *is* offered it goes on every write including an
-       * empty string, because an empty string is how the branch comes back off
-       * and an omitted field would read as "leave it alone".
-       */
+      // Sent only where it can be stored, and always sent when it can. The API refuses a branch on
+      // a project with no repository, so omitting it there is not tidiness.
       ...(repository ? { branch: branch.trim() } : {}),
       startAt: fromDateTimeInput(startAt),
       dueAt: fromDateTimeInput(dueAt),
@@ -429,19 +293,8 @@ export const TaskComposer = ({
           ...shared,
           startAt: fromDateTimeInput(startAt) ?? null,
           dueAt: fromDateTimeInput(dueAt) ?? null,
-          /*
-           * Three states, not two.
-           *
-           * `attachmentKey` had been sent only when this session uploaded
-           * something, which quietly made removing a picture impossible: the
-           * X took it off the form and the field was then simply omitted from
-           * the PATCH, which the API reads as "leave it alone". Reopening the
-           * task brought the picture straight back.
-           *
-           *   - a fresh upload  -> the new key (and its thumbnail)
-           *   - cleared         -> `null`, which is how the API deletes it
-           *   - untouched       -> omitted, which is how the API keeps it
-           */
+          // Three states, not two. `attachmentKey` had been sent only when this session uploaded
+          // something, which quietly made removing a picture impossible.
           ...(attachment?.key
             ? {
                 attachmentKey: attachment.key,
@@ -456,14 +309,8 @@ export const TaskComposer = ({
             : file === null && task.file
               ? { file: null }
               : {}),
-          /*
-           * The tag, on three states as well.
-           *
-           * `null` when the picker was cleared — which is the only way to take
-           * a task off a column from here — and omitted entirely when there are
-           * no columns to choose from, so a project that has never used the
-           * grouping board never sends a field about it.
-           */
+          // The tag, on three states as well. `null` when the picker was cleared — which is the
+          // only way to take a task off a column from here.
           ...(groups.length > 0 ? { groupId: groupId || null } : {}),
         },
       });
@@ -489,13 +336,8 @@ export const TaskComposer = ({
   const isGroupLocked = Boolean(!task && lockedGroupId && selectedGroup);
 
   /**
-   * What the tag picker offers: "no group", then every column.
-   *
-   * A `SelectOption[]` rather than raw `<option>`s, because this is now the
-   * app's own listbox instead of the OS's. The swatch is the whole reason it is
-   * worth the change on this particular field — the columns are told apart by
-   * colour on the board, and a dropdown of bare words made the picker the one
-   * place they were not.
+   * What the tag picker offers: "no group", then every column. A `SelectOption[]` rather than raw
+   * `<option>`s, because this is now the app's own listbox instead of the OS's.
    */
   const groupOptions: SelectOption<string>[] = [
     { value: '', label: t('groups.noTag') },
@@ -505,27 +347,15 @@ export const TaskComposer = ({
   const typeMeta = TASK_TYPE_META[derivedType];
   const isPending = createTask.isPending || updateTask.isPending;
 
-  /*
-   * The assistant, and the two things it insists on first.
-   *
-   * A title and a description, both of them written, before the button does
-   * anything. Not politeness: `POST /ai/tasks/draft-subtasks` has nothing else
-   * to go on — there is no task row, no type, no board around it — so asking it
-   * to break down "Untitled" produces three confident sentences about nothing
-   * and spends a call against a free-tier quota to do it. The button says why
-   * it is closed rather than being hidden, because the fix is one field away.
-   */
+  // The assistant, and the two things it insists on first. A title and a description, both of them
+  // written, before the button does anything.
   const canSuggestSteps =
     title.trim().length >= 2 && description.trim().length >= 2;
   const checklistIsFull = checklist.length >= MAX_TASK_NOTES;
 
   /**
-   * One more starting step, if there is room for it.
-   *
-   * The cap is `MAX_TASK_NOTES`, which is what `CreateTaskDto` accepts — this
-   * field had none at all, so typing one step too many produced a form that
-   * looked complete and a save the API rejected with a validation error naming
-   * a field called `checklist` that nothing on screen is called.
+   * One more starting step, if there is room for it. The cap is `MAX_TASK_NOTES`, which is what
+   * `CreateTaskDto` accepts — this field had none at all.
    */
   const addStep = () => {
     const step = checklistDraft.trim();
@@ -546,14 +376,8 @@ export const TaskComposer = ({
 
       const proposed = (suggestion.result.suggestions ?? []).map((item) => item.title.trim());
 
-      /*
-       * Merged into what is already there, not dropped on top of it.
-       *
-       * Somebody who typed two steps and then pressed the sparkle wants a third
-       * suggested, not their own two replaced — and the duplicate check matters
-       * because the model is being asked to expand on a description that
-       * probably mentions the steps already written.
-       */
+      // Merged into what is already there, not dropped on top of it. Somebody who typed two steps
+      // and then pressed the sparkle wants a third suggested, not their own two replaced.
       setChecklist((current) => {
         const seen = new Set(current.map((item) => item.toLowerCase()));
         const additions = proposed.filter(
@@ -642,11 +466,8 @@ export const TaskComposer = ({
         />
 
         <div className="grid gap-4 sm:grid-cols-2">
-          {/* `min`/`max` are what make the browser mark an out-of-range year
-              invalid as it is typed, so the picker itself refuses to walk out
-              to 2100. They are a courtesy, not the control: the check that
-              actually decides is `canSubmit`, and the API enforces the same
-              window again — see `assertValidWindow`. */}
+          {/* `min`/`max` are what make the browser mark an out-of-range year invalid as it is
+              typed, so the picker itself refuses to walk out to 2100. */}
           <Input
             label={t('task.starts')}
             name="startAt"
@@ -687,16 +508,7 @@ export const TaskComposer = ({
           />
         </div>
 
-        {/*
-          Who is on this — named one at a time, or a whole team at once.
-
-          One control with two tabs rather than the two stacked lists this used
-          to be, and individuals is the tab it opens on: naming two people is
-          what most tasks need, and a team is the shortcut for when the answer
-          already has a name. The teams tab only exists while creating — see the
-          `teamIds` state for why editing does not offer it — and disappears
-          entirely on a project with no teams.
-        */}
+        {/* Who is on this — named one at a time, or a whole team at once. */}
         {!isPersonal && (
           <div className="space-y-1.5">
             <InvitePicker
@@ -734,16 +546,8 @@ export const TaskComposer = ({
           <div className="space-y-1.5">
             <p className="text-xs font-medium text-content-muted">{t('task.priority')}</p>
             <div className="flex flex-wrap gap-1.5">
-              {/*
-                The word, not the enum.
-
-                These four buttons were printing `option.toLowerCase()` — the
-                raw `TaskPriority` value — which is English on every screen in
-                the app regardless of the language chosen, and is the only place
-                a task's priority was not translated. `TASK_PRIORITY_META`
-                already holds the key every card, badge and filter reads it
-                through; this was simply not going through it.
-              */}
+              {/* The word, not the enum. These four buttons were printing
+                  `option.toLowerCase()` — the raw `TaskPriority` value. */}
               {PRIORITIES.map((option) => (
                 <button
                   key={option}
@@ -764,21 +568,8 @@ export const TaskComposer = ({
           </div>
         </div>
 
-        {/*
-          The branch this work happens on.
-
-          Drawn only on a project with a repository linked, because the API
-          refuses a branch anywhere else — a field that cannot save is worse
-          than a field that is not there, and the button that *would* make it
-          appear is beside the project's own name, which is where somebody
-          looking for it will get to.
-
-          Free text with the repository's default branch as the placeholder.
-          Not a dropdown of real branches, and that is deliberate: the branch is
-          routinely cut *after* the task that names it, so a list of what exists
-          today would refuse the ordinary case — a task written on Monday for a
-          branch made on Tuesday.
-        */}
+        {/* The branch this work happens on. Drawn only on a project with a repository linked,
+            because the API refuses a branch anywhere else. */}
         {repository && (
           <Input
             label={t('task.branch')}
@@ -791,52 +582,13 @@ export const TaskComposer = ({
           />
         )}
 
-        {/*
-          The grouping-board tag.
-
-          Absent entirely until the project has invented at least one column,
-          which is the point: a picker with nothing in it is a control that
-          teaches the reader a feature exists by refusing to do anything. A
-          project that never opens the grouping board never sees this field.
-
-          Also absent on a personal task, which has no board to be grouped on —
-          `useTaskGroups` is not even asked in that case.
-
-          ## Why this is `Select` and not a `<select>`
-
-          It was the native control, and it was the one field on this sheet that
-          belonged to a different application. A native `<select>` is drawn by
-          the operating system: it takes the skin's border and radius tokens as
-          suggestions and its own type as gospel. Two things followed from that,
-          and both were bugs rather than matters of taste.
-
-          The first is that the text was clipped. The box was forced to `h-9`
-          (36px) with `text-xs`, and the app's own iOS-zoom guard raises every
-          `select` to 16px below `md` — a 16px line in a 36px box that also has
-          to hold the OS's own vertical padding, so on a phone the column name
-          was cut off top and bottom. The second is that on the skins that run a
-          heavier face — the vintage serif, the arcade's pixel type — the
-          native control kept the system font while every other field on the
-          sheet changed, which is why it read as unstyled on the default skin
-          and outright foreign on the rest.
-
-          `Select` is the app's own listbox: same border, same radius token,
-          same motion curve, same type as the fields around it, and it carries
-          the column's colour as a swatch on the trigger *and* in the list —
-          which the old separate circle beside the box could only do for the
-          current value.
-        */}
+        {/* The grouping-board tag. Absent entirely until the project has invented at least one
+            column, which is the point. */}
         {groups.length > 0 && (
           <div className="space-y-1.5">
             {isGroupLocked ? (
-              /*
-                Opened from a column, so the column is not a question.
-
-                Drawn as a chip rather than as a disabled dropdown: a greyed-out
-                control invites a click that does nothing, and this is not a
-                field that failed to load — it is an answer that was given by
-                the button that opened this sheet.
-              */
+              /* Opened from a column, so the column is not a question. Drawn as a chip rather than
+                 as a disabled dropdown: a greyed-out control invites a click that does nothing. */
               <>
                 <p className="text-xs font-medium text-content-muted">{t('groups.tagLabel')}</p>
                 <p
@@ -882,24 +634,8 @@ export const TaskComposer = ({
                 </span>
               </p>
 
-              {/*
-                The assistant, on the sheet where the task is still being written.
-
-                The same feature the task sheet has, moved one step earlier —
-                and that is the whole of the difference. On the sheet the model
-                reads a saved row; here it reads what has been typed, which is
-                why the button waits for both a title *and* a description before
-                it will do anything: those two fields are the entire prompt, and
-                "Untitled" with nothing under it produces three confident
-                sentences about nothing at a cost against a free-tier quota.
-
-                Disabled with a reason rather than hidden, unlike the sheet's
-                version. There the button is absent when the model is not
-                configured, because that is a promise the deployment cannot
-                keep. Here the block is usually the user's own two empty fields,
-                and a control that says what it is waiting for is how they find
-                that out. It still disappears entirely with no model behind it.
-              */}
+              {/* The assistant, on the sheet where the task is still being written. The same
+                  feature the task sheet has, moved one step earlier. */}
               {aiStatus?.enabled && (
                 <Button
                   type="button"
@@ -909,14 +645,8 @@ export const TaskComposer = ({
                   onClick={() => void handleSuggestSteps()}
                   isLoading={suggestSteps.isPending}
                   disabled={!canSuggestSteps || checklistIsFull || !hasAiCredits}
-                  /*
-                    Ordered by which reason the reader should act on first.
-
-                    A spent allowance outranks the other two because it is the
-                    only one they cannot resolve on this screen — telling
-                    somebody to type more when the real answer is "not until the
-                    1st" sends them round a loop.
-                  */
+                  /* Ordered by which reason the reader should act on first. A spent allowance
+                     outranks the other two. */
                   title={
                     !hasAiCredits
                       ? t('ai.noCreditsLeft')
@@ -936,11 +666,8 @@ export const TaskComposer = ({
               )}
             </div>
 
-            {/* Says it out loud as well as in the tooltip: a disabled button
-                somebody cannot hover is a dead end on a touch screen.
-
-                The allowance line comes first and says what to do about it,
-                because unlike the other reason it is not fixed by typing. */}
+            {/* Says it out loud as well as in the tooltip: a disabled button somebody cannot
+                hover is a dead end on a touch screen. */}
             {aiStatus?.enabled && !hasAiCredits && aiStatus.allowance && (
               <p className="text-2xs text-content-faint">
                 {t('ai.noCreditsLeftBody', {
@@ -1015,10 +742,8 @@ export const TaskComposer = ({
 
           {attachment ? (
             <div className="relative overflow-hidden rounded-xl border border-edge bg-surface-sunken">
-              {/* `object-contain`: a preview that crops is a preview of
-                  something else. The small rendition is used where there is
-                  one, so re-opening the composer to edit a task does not
-                  re-download the full-size picture. */}
+              {/* `object-contain`: a preview that crops is a preview of something else. The
+                  small rendition is used where there is one. */}
               <img
                 src={attachment.thumbUrl ?? attachment.publicUrl}
                 alt="Task attachment"
@@ -1059,15 +784,8 @@ export const TaskComposer = ({
           )}
         </div>
 
-        {/*
-          A paper, beside the picture.
-
-          Two separate slots rather than one "attachment" that could be either,
-          because they are read in completely different ways: the picture is
-          drawn on the sheet, and the document is something you take away and
-          open elsewhere. A task that has both — a photo of the whiteboard and
-          the spec it turned into — is the normal case, not a conflict.
-        */}
+        {/* A paper, beside the picture. Two separate slots rather than one "attachment" that
+            could be either, because they are read in completely different ways. */}
         <FileAttachmentField
           label={t('task.documentAttachment')}
           value={file}

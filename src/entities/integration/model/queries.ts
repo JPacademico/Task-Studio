@@ -26,25 +26,12 @@ import type {
 } from './types';
 
 /**
- * Looking a repository up, before anything is created.
- *
- * A mutation rather than a query, which is unusual for something that only
- * reads — and deliberate. A query is keyed and cached, and what is wanted here
- * is the opposite: the lookup fires when somebody presses a button, its result
- * belongs to that press, and pasting a different URL must not show the
- * previous repository while the new one loads. `useMutation` is React Query's
- * name for "an imperative request with a result", which is exactly this.
+ * Looking a repository up, before anything is created. A mutation rather than a query, which is
+ * unusual for something that only reads — and deliberate.
  */
 /**
- * Connecting a project to a repository, and disconnecting it.
- *
- * Both write the *project* cache rather than invalidating it: the API answers
- * with the link, the project is already held by whichever page called this,
- * and a refetch would fetch a roster and a description to learn one field.
- *
- * `project:repository` also arrives on the socket for everybody else in the
- * room — see `RepositoryLinkService` — so the two paths agree by writing the
- * same shape into the same key.
+ * Connecting a project to a repository, and disconnecting it. Both write the *project* cache rather
+ * than invalidating it: the API answers with the link.
  */
 export const useLinkRepository = (projectId: string) => {
   const queryClient = useQueryClient();
@@ -78,27 +65,7 @@ export const useUnlinkRepository = (projectId: string) => {
   });
 };
 
-/**
- * What this deployment last said about Figma, remembered across reloads.
- *
- * ## Why `localStorage` and not just React Query's cache
- *
- * Because the cache is empty on the first render of every page load, and this
- * answer gates a *control*. `FigmaLink` draws nothing while the answer is
- * unknown, so on every fresh load of a project page the "connect a design"
- * button was absent for one request and then appeared — the header visibly
- * reflowing a beat after it had settled.
- *
- * A remembered answer removes the beat entirely: the control is drawn on the
- * first frame, correctly, and the request behind it confirms what was already
- * on screen. The failure mode is a deployment that has *just* had its
- * encryption key removed showing a button that then disappears — the same
- * disruption as today, once, for a configuration change that happens roughly
- * never.
- *
- * Wrapped in try/catch because Safari's private mode throws on both halves,
- * and a decorative optimisation must never be able to break the page it is on.
- */
+/** What this deployment last said about Figma, remembered across reloads. */
 const rememberedFigmaAvailability = (): { available: boolean } | undefined => {
   try {
     const stored = localStorage.getItem(STORAGE_KEYS.figmaAvailable);
@@ -117,19 +84,8 @@ const rememberFigmaAvailability = (available: boolean): void => {
 };
 
 /**
- * Whether this deployment offers Figma at all.
- *
- * Effectively immutable for the life of a session — it is decided by an
- * environment variable on the server — so it is cached for an hour rather than
- * refetched on focus like the calendar's status, which genuinely changes when
- * somebody comes back from a consent redirect.
- *
- * `placeholderData` rather than `initialData`, and the distinction is the whole
- * point: `initialData` would be written into the cache *as if it had been
- * fetched*, so a stale remembered value would sit there unrefetched for the
- * full hour of `staleTime`. `placeholderData` is only what to render while the
- * real request is in flight — the fetch still happens immediately, and the
- * answer is corrected the moment it lands.
+ * Whether this deployment offers Figma at all. Effectively immutable for the life of a session — it
+ * is decided by an environment variable on the server.
  */
 export const useFigmaAvailability = () => {
   const query = useQuery({
@@ -139,14 +95,7 @@ export const useFigmaAvailability = () => {
     placeholderData: rememberedFigmaAvailability,
   });
 
-  /*
-   * Remembered on the way past, in an effect rather than in `queryFn`.
-   *
-   * Writing it inside the fetcher would put a synchronous `localStorage` write
-   * on the response path of a request three components await. Here it is a
-   * cheap write that happens after paint, and only when the answer actually
-   * changed.
-   */
+  // Remembered on the way past, in an effect rather than in `queryFn`.
   const available = query.data?.available;
 
   useEffect(() => {
@@ -158,16 +107,8 @@ export const useFigmaAvailability = () => {
 };
 
 /**
- * Connecting a project to a design file, and disconnecting it.
- *
- * Both write the *project* cache rather than invalidating it, exactly as the
- * repository pair does: the API answers with the connection, the project is
- * already held by whichever page called this, and a refetch would pull a
- * roster and a description to learn one field.
- *
- * `project:figma` also arrives on the socket for everybody else in the room —
- * see `useProjectMarksRealtime` — so the two paths agree by writing the same
- * shape into the same key.
+ * Connecting a project to a design file, and disconnecting it. Both write the *project* cache
+ * rather than invalidating it, exactly as the repository pair does.
  */
 export const useConnectFigma = (projectId: string) => {
   const queryClient = useQueryClient();
@@ -202,28 +143,8 @@ export const useDisconnectFigma = (projectId: string) => {
 };
 
 /**
- * Keeps the two marks beside a project's name honest for everybody in the room.
- *
- * ## Why this exists
- *
- * Both link services have always announced themselves — `RepositoryLinkService`
- * emits `project:repository` and `FigmaService` emits `project:figma`, each
- * with a note explaining that an admin connecting something changes what four
- * other people are looking at. Nothing was listening. The repository mark
- * appeared for the person who pressed the button, because that mutation writes
- * the cache directly, and for everybody else on their next reload — which is
- * exactly the staleness the emit was added to prevent.
- *
- * One hook for both because they are one fact in two halves: what this project
- * connects to, drawn in the same place, changed by the same people, for the
- * same reasons.
- *
- * ## Why it writes the cache rather than invalidating it
- *
- * The payload carries the whole connection shape — the API sends what it just
- * stored — so there is nothing left to fetch. Invalidating would pull a
- * project's roster, description and window back over the wire to learn one
- * field that is already in hand, for every member of the room at once.
+ * Keeps the two marks beside a project's name honest for everybody in the room. Both link services
+ * have always announced themselves.
  */
 export const useProjectMarksRealtime = (projectId: string | undefined): void => {
   const { socket } = useRealtime();
@@ -236,13 +157,8 @@ export const useProjectMarksRealtime = (projectId: string | undefined): void => 
       queryClient.setQueryData<Project>(queryKeys.projects.detail(projectId), (current) =>
         current ? { ...current, ...next } : current,
       );
-      /*
-       * The lists get an invalidation rather than a write.
-       *
-       * A project appears in several of them — pinned, by organization, the
-       * dashboard's — under keys this hook has no business enumerating, and
-       * unlike the detail cache they are cheap to refetch and rarely open.
-       */
+      // The lists get an invalidation rather than a write. A project appears in several of them —
+      // pinned, by organization, the dashboard's.
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
     };
 
@@ -273,20 +189,8 @@ export const usePreviewRepository = () =>
   });
 
 /**
- * Starting an import.
- *
- * ## Why there is no success toast here any more
- *
- * There used to be, and it was the right shape when this call *was* the
- * import: it returned a project, so it could name one. It now returns a job
- * that has not done anything yet, and "Imported!" at that moment would be a
- * lie by about forty seconds.
- *
- * The announcement moved to where the fact is: `useImportTracker` watches the
- * job to completion and fires the toast when the project actually exists — or
- * says what went wrong when it does not. That is also the only version that
- * works when somebody navigates away mid-import, which is the entire point of
- * having made it a job.
+ * Starting an import. There used to be, and it was the right shape when this call *was* the import:
+ * it returned a project, so it could name one.
  */
 export const useStartImport = () => {
   const queryClient = useQueryClient();
@@ -294,15 +198,8 @@ export const useStartImport = () => {
   return useMutation({
     mutationFn: (payload: RepositoryImportPayload) => importsApi.startRepository(payload),
     onSuccess: (job) => {
-      /*
-       * Seed the tracker's cache with the job we were just handed.
-       *
-       * Without this the toast appears only when the first socket event lands
-       * — a few hundred milliseconds later, and never at all on a tab whose
-       * socket is reconnecting. Writing it here means pressing the button
-       * always produces something immediately, which is the whole promise of
-       * a background import: you are not left wondering whether it took.
-       */
+      // Seed the tracker's cache with the job we were just handed. Without this the toast appears
+      // only when the first socket event lands — a few hundred milliseconds later.
       queryClient.setQueryData<RepositoryImportJob[]>(queryKeys.integrations.imports, (current) =>
         current ? [job, ...current.filter((entry) => entry.id !== job.id)] : [job],
       );
@@ -312,16 +209,8 @@ export const useStartImport = () => {
 };
 
 /**
- * Starting a board import.
- *
- * Deliberately a sibling of `useStartImport` rather than a parameter on it.
- * The two take different payloads — a URL against an uploaded object key — and
- * the *caller* is a different panel in a different mode, so folding them
- * together would produce one hook whose argument is a union nobody at either
- * call site ever passes both halves of.
- *
- * Everything downstream is shared: the same cache key, the same tracker, the
- * same cancel. Which is the part worth reusing.
+ * Starting a board import. Deliberately a sibling of `useStartImport` rather than a parameter on
+ * it.
  */
 export const useStartBoardImport = () => {
   const queryClient = useQueryClient();
@@ -329,9 +218,8 @@ export const useStartBoardImport = () => {
   return useMutation({
     mutationFn: (payload: BoardImportPayload) => importsApi.startBoard(payload),
     onSuccess: (job) => {
-      // Seeded for the same reason the repository one is: pressing the button
-      // has to produce something immediately, even on a tab whose socket is
-      // still reconnecting.
+      // Seeded for the same reason the repository one is: pressing the button has to produce
+      // something immediately, even on a tab whose socket is still reconnecting.
       queryClient.setQueryData<RepositoryImportJob[]>(queryKeys.integrations.imports, (current) =>
         current ? [job, ...current.filter((entry) => entry.id !== job.id)] : [job],
       );
@@ -355,24 +243,8 @@ export const useCancelImport = () => {
 };
 
 /**
- * Every import this person has running, kept live.
- *
- * ## Why a query *and* a socket, when either would nearly do
- *
- * They fail in opposite directions and the combination is what makes an
- * import survive being ignored.
- *
- * The **query** is what a freshly mounted app knows. Reload the page, open a
- * second tab, come back from the lock screen — none of those have heard any
- * events, and all of them get the right answer from one request.
- *
- * The **socket** is what makes it feel live. Polling a forty-second job at any
- * interval short enough to look smooth is a request every second or two, for
- * every user with an import open, on a free-tier container.
- *
- * `refetchInterval` is deliberately absent. The events are the update
- * mechanism; a fallback poll is added below only while the socket is *down*,
- * which is the one situation where the query has to carry the whole job.
+ * Every import this person has running, kept live. They fail in opposite directions and the
+ * combination is what makes an import survive being ignored.
  */
 export const useImportJobs = () => {
   const { socket, isConnected } = useRealtime();
@@ -381,28 +253,11 @@ export const useImportJobs = () => {
   const query = useQuery({
     queryKey: queryKeys.integrations.imports,
     queryFn: importsApi.list,
-    /*
-     * No `enabled` gate on the session, and none is needed.
-     *
-     * The only caller is the import tracker, which is mounted by `AppLayout`
-     * — and `AppLayout` renders inside `ProtectedRoute`. Reaching for the
-     * session store from here would be an `entities` module importing from
-     * `features`, which is the one direction Feature-Sliced Design forbids,
-     * to re-enforce a rule the router already enforces.
-     */
-    // Half a minute, not five seconds. The socket is the update mechanism
-    // while it is connected, so a short window buys nothing except a refetch
-    // on every tab focus, for a list that is empty almost all the time.
+    // No `enabled` gate on the session, and none is needed. The only caller is the import tracker,
+    // which is mounted by `AppLayout` — and `AppLayout` renders inside `ProtectedRoute`.
     staleTime: 30_000,
-    /*
-     * The fallback, and only the fallback.
-     *
-     * While the socket is connected this is `false` and nothing polls. While
-     * it is not — a dropped network, a container that went to sleep with a
-     * tracker open — this is the only thing that will ever notice an import
-     * finished, so it polls at a rate that is unnoticeable to a person and
-     * negligible to the server.
-     */
+    // The fallback, and only the fallback. While the socket is connected this is `false` and
+    // nothing polls.
     refetchInterval: isConnected ? false : 8_000,
   });
 
@@ -415,12 +270,8 @@ export const useImportJobs = () => {
         return [job, ...rest];
       });
 
-      /*
-       * A finished import means a new project, so the lists that draw projects
-       * are now wrong. Invalidated here rather than in the mutation, because
-       * *here* is where the project actually starts existing — and this fires
-       * on whichever tab is open, including one that did not start the import.
-       */
+      // A finished import means a new project, so the lists that draw projects are now wrong.
+      // Invalidated here rather than in the mutation.
       if (job.status === 'SUCCEEDED') {
         void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
       }
@@ -435,9 +286,7 @@ export const useImportJobs = () => {
   return query;
 };
 
-// ---------------------------------------------------------------------------
-// Calendar
-// ---------------------------------------------------------------------------
+// --- Calendar ----------------------------------------------------------------
 
 /** Same layering note as `useImportJobs`: both callers are behind the router's
  *  own authentication gate, so there is nothing to check here. */
@@ -445,13 +294,8 @@ export const useCalendarStatus = () =>
   useQuery({
     queryKey: queryKeys.integrations.calendar,
     queryFn: calendarApi.status,
-    /*
-     * Five minutes. The connection changes when the user changes it — which
-     * goes through the mutations below and writes the cache directly — or when
-     * a background sync records an error, which is not urgent enough to poll
-     * for. Refetching on focus covers the one case that matters: coming back
-     * to the tab after the consent redirect.
-     */
+    // Five minutes. The connection changes when the user changes it — which goes through the
+    // mutations below and writes the cache directly — or when a background sync records an error.
     staleTime: 5 * 60_000,
   });
 
@@ -480,12 +324,8 @@ export const useSyncCalendar = () => {
         available: true,
         connection: result,
       });
-      /*
-       * A pull can move a meeting, so the calendars that draw them are stale.
-       * Invalidated whether or not anything came back changed: `applied` counts
-       * meetings this app rewrote, and a push that created events in Google
-       * changes nothing here but still costs nothing to refresh.
-       */
+      // A pull can move a meeting, so the calendars that draw them are stale. Invalidated whether
+      // or not anything came back changed: `applied` counts meetings this app rewrote.
       void queryClient.invalidateQueries({ queryKey: queryKeys.meetings.all });
 
       toast.success(
@@ -514,9 +354,7 @@ export const useDisconnectCalendar = () => {
   });
 };
 
-// ---------------------------------------------------------------------------
-// The subscribable calendar feed
-// ---------------------------------------------------------------------------
+// --- The subscribable calendar feed ------------------------------------------
 
 export const useCalendarFeed = () =>
   useQuery({
@@ -526,13 +364,8 @@ export const useCalendarFeed = () =>
   });
 
 /**
- * Mint a feed URL, replacing any existing one.
- *
- * The URL is returned to the *caller* rather than written into the cache, and
- * that is the whole contract: it is shown once, and the status query
- * deliberately cannot answer what it was. Putting it in the cache would make
- * it recoverable by anything that reads that key, which is precisely the
- * property the API gave up in order to store only a hash.
+ * Mint a feed URL, replacing any existing one. The URL is returned to the *caller* rather than
+ * written into the cache, and that is the whole contract: it is shown once.
  */
 export const useIssueCalendarFeed = () => {
   const queryClient = useQueryClient();
@@ -563,9 +396,7 @@ export const useRevokeCalendarFeed = () => {
   });
 };
 
-// ---------------------------------------------------------------------------
-// Webhooks
-// ---------------------------------------------------------------------------
+// --- Webhooks ----------------------------------------------------------------
 
 export const useProjectWebhooks = (projectId: string, enabled = true) =>
   useQuery({
@@ -612,14 +443,7 @@ export const useDeleteWebhook = (projectId: string) => {
   });
 };
 
-/**
- * Send a sample delivery and say what came back.
- *
- * The only mutation here that reports its own outcome as a toast rather than
- * letting a list refresh speak for it — because the whole point of the button
- * is to answer "did that work", and an answer somebody has to go and look for
- * is not one.
- */
+/** Send a sample delivery and say what came back. */
 export const useTestWebhook = (projectId: string) => {
   const queryClient = useQueryClient();
 
@@ -640,9 +464,7 @@ export const useTestWebhook = (projectId: string) => {
   });
 };
 
-// ---------------------------------------------------------------------------
-// Personal access tokens
-// ---------------------------------------------------------------------------
+// --- Personal access tokens --------------------------------------------------
 
 export const useApiTokens = () =>
   useQuery({
@@ -664,21 +486,8 @@ export const useCreateApiToken = () => {
 };
 
 /**
- * Revoking a token, and the one sentence the app says about it.
- *
- * ## Why the wording moved here
- *
- * The only surface that calls this — `CliMachinesPanel` — talks about
- * *machines*, deliberately and throughout: "signed-in machines", "that machine
- * is signed out". It used to add its own success toast at the call site while
- * this mutation fired `tokens.revoked` ("That token no longer works") of its
- * own accord, so one click produced two stacked toasts, and the second one
- * leaked the exact vocabulary the panel exists to keep away from the reader —
- * at the highest-stakes moment it has.
- *
- * One toast, said once, in the words the surface uses. A future caller that
- * genuinely is about tokens rather than machines should pass its own message
- * rather than reinstating a second one.
+ * Revoking a token, and the one sentence the app says about it. The only surface that calls this —
+ * `CliMachinesPanel` — talks about *machines*, deliberately and throughout: "signed-in machines".
  */
 export const useRevokeApiToken = () => {
   const queryClient = useQueryClient();
@@ -694,16 +503,11 @@ export const useRevokeApiToken = () => {
 };
 
 
-// ---------------------------------------------------------------------------
-// Spotify
-// ---------------------------------------------------------------------------
+// --- Spotify -----------------------------------------------------------------
 
 /**
- * The connection itself: who is linked, and whether the deployment offers this.
- *
- * Long stale time and a refetch on focus, exactly like the calendar's — the row
- * changes when the person changes it, and the one case that matters is coming
- * back to the tab after the consent redirect.
+ * The connection itself: who is linked, and whether the deployment offers this. Long stale time and
+ * a refetch on focus, exactly like the calendar's.
  */
 export const useSpotifyStatus = () =>
   useQuery({
@@ -713,26 +517,8 @@ export const useSpotifyStatus = () =>
   });
 
 /**
- * What is playing, while somebody is looking at it.
- *
- * ## Why this polls, and why it stops
- *
- * Spotify has no webhook and no socket for playback: a track that ends on
- * somebody's phone is a fact this application can only learn by asking. Five
- * seconds is the slowest interval at which a paused-then-played track still
- * feels live, and `enabled` is what keeps it from being a background cost —
- * nothing polls unless a player is actually open on screen.
- *
- * `refetchIntervalInBackground` stays off (the default): a hidden tab polling
- * somebody's music every five seconds is a battery cost with nobody to see it,
- * and the answer on return is one refetch away.
- *
- * ## Why failures are quiet
- *
- * No retry and no toast. Every reason this call fails is either transient (a
- * device went away, Spotify is rate-limiting) or already visible on the card in
- * settings (the grant was revoked). A player that shouted about a skipped poll
- * would be the loudest thing in the product.
+ * What is playing, while somebody is looking at it. Spotify has no webhook and no socket for
+ * playback.
  */
 export const useSpotifyPlayback = (enabled: boolean) =>
   useQuery({
@@ -745,14 +531,8 @@ export const useSpotifyPlayback = (enabled: boolean) =>
   });
 
 /**
- * Press a button, then ask what happened.
- *
- * Spotify applies a transport command asynchronously — the endpoint answers 204
- * well before the device has actually skipped — so refetching immediately
- * reports the *old* track about half the time. The short delay before
- * invalidating is not a guess at a network round trip; it is waiting for the
- * device to catch up, which is a different thing and is why it is here rather
- * than in the query's `staleTime`.
+ * Press a button, then ask what happened. Spotify applies a transport command asynchronously — the
+ * endpoint answers 204 well before the device has actually skipped.
  */
 export const useSpotifyCommand = () => {
   const queryClient = useQueryClient();
@@ -769,33 +549,8 @@ export const useSpotifyCommand = () => {
 };
 
 /**
- * The volume slider.
- *
- * Optimistic, and it has to be: a slider that waits for a server round trip
- * before moving is a slider that does not work. The cached playback is written
- * immediately so the thumb follows the pointer, and the poll above is left to
- * correct it if the device disagrees.
- *
- * ## Why a failure rolls the cache back, and why it only speaks once
- *
- * Dragging this with nothing playing anywhere used to produce a *stack* of
- * identical toasts, and there were three separate reasons for it:
- *
- *  1. **Every intermediate value was a request.** A native `range` fires
- *     `change` on each step of a drag, so one gesture was thirty calls to
- *     Spotify and thirty chances to fail. The player now commits one value per
- *     gesture — see `VolumeControl` — which is the half of the fix that had
- *     to happen at the call site rather than here.
- *  2. **The failures arrived seconds apart.** `toast` collapses repeats inside
- *     a short window, so a burst that spans a slow drag defeats it by
- *     construction. One request per gesture means one message.
- *  3. **The optimistic write was never undone.** The thumb stayed where it was
- *     dragged to on a device that had refused the change, so the control was
- *     reporting a volume nothing was set to until the next poll landed.
- *
- * `onMutate` returns the value it replaced and `onError` puts it back, which is
- * React Query's own shape for this and is why the rollback cannot drift out of
- * step with the optimistic write.
+ * The volume slider. Optimistic, and it has to be: a slider that waits for a server round trip
+ * before moving is a slider that does not work.
  */
 export const useSpotifyVolume = () => {
   const queryClient = useQueryClient();
@@ -838,19 +593,7 @@ export const useSpotifyPlayTrack = () => {
   });
 };
 
-/**
- * Put one of the search results next in line.
- *
- * What the player's search box does now, and the reason it is a different hook
- * rather than a flag: queueing succeeds without disturbing anything, so there
- * is nothing to refetch — the current track has not changed and will not for
- * several minutes. Invalidating playback here would be a poll asking a question
- * whose answer this call did not touch.
- *
- * The confirmation is a toast instead, because a queued track is otherwise
- * *invisible*: nothing on screen moves, and a control that appears to do
- * nothing is one people press again.
- */
+/** Put one of the search results next in line. */
 export const useSpotifyQueueTrack = () =>
   useMutation({
     mutationFn: (track: { id: string; name: string }) => spotifyApi.queue(track.id),

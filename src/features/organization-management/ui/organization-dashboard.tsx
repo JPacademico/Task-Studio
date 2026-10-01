@@ -113,20 +113,8 @@ const ProjectMetricRow = ({ project, t }: ProjectRowProps) => (
 );
 
 /**
- * The company's numbers, measured in projects.
- *
- * The deliberate difference from `ProjectDashboard`, which measures in tasks and
- * people: this is read by somebody who is not doing any of the work, and the
- * question is "which of these needs me". So the tiles count projects before they
- * count tasks, the league table is one row per project, and the two highlight
- * cards name a project rather than a person — a company page that crowned a
- * "most productive employee" would be measuring the wrong thing at the wrong
- * altitude, and measuring it across teams that cannot be compared.
- *
- * Every number here spans the whole company, including projects the reader is
- * not on. That is the point of the page — a completion rate that quietly
- * excluded half the work would not be the company's rate — and it is why the
- * endpoint behind it is staff-only.
+ * The company's numbers, measured in projects. The deliberate difference from `ProjectDashboard`,
+ * which measures in tasks and people: this is read by somebody who is not doing any of the work.
  */
 export const OrganizationDashboard = ({ organizationId }: { organizationId: string }) => {
   const t = useT();

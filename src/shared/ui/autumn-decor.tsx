@@ -6,27 +6,11 @@ import { cn } from '@/shared/lib/cn';
 import type { NavEdge } from '@/shared/lib/nav-preferences.store';
 
 /**
- * The things the autumn skin does that a stylesheet cannot.
- *
- * Everything else this skin owns — the parchment, the warm shadows, the bough
- * hanging in the corner of the page, the leaf resting on every card — is a
- * variable or a background-image, because that is what those things are. What
- * is left needs actual shapes in actual positions: leaves coming down across
- * the page, and a hedge growing out of the seam where a rail meets it.
- *
- * Both are decorative and inert: `aria-hidden`, `pointer-events-none`, and both
- * stop dead under `prefers-reduced-motion` (falling leaves are exactly the kind
- * of drifting background motion that setting exists for). Neither participates
- * in layout, so nothing here can break a page that stops drawing it.
- *
- * The animations are CSS, not Framer keyframes — the same rule the Post-it
- * flutter and the eldritch tendrils follow. A dozen JavaScript-driven loops
- * running forever behind the whole app is a frame budget spent on scenery.
+ * The things the autumn skin does that a stylesheet cannot. Everything else this skin owns — the
+ * parchment, the warm shadows, the bough hanging in the corner of the page.
  */
 
-/* ------------------------------------------------------------------------ *
- * The leaves themselves
- * ------------------------------------------------------------------------ */
+// --- The leaves themselves ---
 
 type LeafTone = 'ember' | 'gold' | 'moss' | 'brand';
 
@@ -47,12 +31,8 @@ interface LeafProps {
 }
 
 /**
- * One leaf.
- *
- * Filled, with the midrib and two side veins drawn over it in bark. The veins
- * are what stop it reading as an orange blob at 16px: they give the shape a
- * direction, so even when it is too small to identify it is still obviously a
- * leaf pointing somewhere.
+ * One leaf. Filled, with the midrib and two side veins drawn over it in bark. The veins are what
+ * stop it reading as an orange blob at 16px: they give the shape a direction.
  */
 const Leaf = ({ tone, shape, className, style }: LeafProps) => (
   <svg viewBox="0 0 24 24" fill="none" aria-hidden className={className} style={style}>
@@ -84,26 +64,11 @@ const Leaf = ({ tone, shape, className, style }: LeafProps) => (
   </svg>
 );
 
-/* ------------------------------------------------------------------------ *
- * The fall
- * ------------------------------------------------------------------------ */
+// --- The fall ---
 
 /**
- * Every leaf currently in the air, hand-placed.
- *
- * Not `Math.random()`, and not for the usual re-render reason: a random field
- * *clumps*. Ten leaves at ten random columns will regularly drop three of them
- * within a few percent of each other and leave a third of the screen empty,
- * which reads as a bug rather than as weather. These are spread across the
- * viewport, and everything else about each one — how long it takes to come
- * down, how far it swings, how fast it turns, which way it turns — is varied
- * enough that no two are ever in step.
- *
- * The negative delays matter: without them every leaf starts at the top of the
- * screen on the first frame after the skin is chosen, and the effect opens with
- * a curtain of leaves coming down in a line. Starting each one part-way through
- * its own fall means the first frame already looks like weather that has been
- * going on for a while.
+ * Every leaf currently in the air, hand-placed. Not `Math.random()`, and not for the usual
+ * re-render reason: a random field *clumps*.
  */
 const FALLING: {
   left: number;
@@ -128,21 +93,8 @@ const FALLING: {
 ];
 
 /**
- * Leaves coming down over the whole page.
- *
- * Mounted once by the app shell and inert on every other skin, which is why it
- * is affordable to leave in the tree: on eight of the nine themes this returns
- * `null` before it renders anything at all.
- *
- * It sits *above* the page content and *below* the chrome (z-25 against the
- * rails' z-40/z-50). Behind the content it would be invisible the moment a card
- * covered it, which on this app is most of the screen; above the chrome it
- * would be litter drifting over the menus and the dialogs. Between the two, it
- * is weather happening in the room the app is in.
- *
- * Each leaf is two nested elements on purpose: the outer one owns the fall and
- * the sway, the inner one owns the tumble. One element cannot hold both, since
- * the second `transform` would simply replace the first.
+ * Leaves coming down over the whole page. Mounted once by the app shell and inert on every other
+ * skin, which is why it is affordable to leave in the tree.
  */
 export const AutumnFall = () => {
   const reduceMotion = useReducedMotion();
@@ -183,29 +135,17 @@ export const AutumnFall = () => {
   );
 };
 
-/* ------------------------------------------------------------------------ *
- * The hedge
- * ------------------------------------------------------------------------ */
+// --- The hedge ---
 
 /**
- * How many sprigs grow out of one seam.
- *
- * Six, spread down the edge on an offset that is not a clean fraction so the
- * row never reads as a comb — the same reasoning as the eldritch tendril count,
- * and the same ceiling: each sprig is one compositor animation, and two rails
- * together already hold a dozen. They also stop when the rail they belong to is
- * shut, so a hidden menu costs nothing.
+ * How many sprigs grow out of one seam. Six, spread down the edge on an offset that is not a clean
+ * fraction so the row never reads as a comb — the same reasoning as the eldritch tendril count.
  */
 const SPRIG_COUNT = 6;
 
 /**
- * Three leaves and a twig, fanned out from the seam.
- *
- * Drawn into a 32×44 box. It started at 48×64, which put a hand-sized clump of
- * foliage against a 264px rail — decoration competing with the menu it is
- * decorating. The viewBox is unchanged, so this is purely how big the same
- * drawing is rendered: the leaves keep their proportions and simply stop
- * reaching a third of the way across the page.
+ * Three leaves and a twig, fanned out from the seam. Drawn into a 32×44 box. It started at 48×64,
+ * which put a hand-sized clump of foliage against a 264px rail.
  */
 const Sprig = ({ index }: { index: number }) => (
   <span
@@ -220,9 +160,8 @@ const Sprig = ({ index }: { index: number }) => (
     }
   >
     <svg viewBox="0 0 48 56" fill="none" aria-hidden className="h-11 w-8">
-      {/* The twig. Bolted to the rail's border: nothing at x=0 ever moves,
-          which is what keeps the growth attached to the thing it grows out
-          of rather than floating alongside it. */}
+      {/* The twig. Bolted to the rail's border: nothing at x=0 ever moves, which is what keeps
+          the growth attached to the thing it grows out of rather than floating alongside it. */}
       <path
         d="M0 28 C 10 27, 18 22, 26 16 M6 28 C 14 30, 20 36, 25 44 M10 28 C 18 28, 26 27, 34 25"
         stroke="rgb(var(--autumn-bark))"
@@ -231,9 +170,8 @@ const Sprig = ({ index }: { index: number }) => (
         strokeLinecap="round"
       />
 
-      {/* The leaves it carries. Ellipses rather than the drawn maple: at this
-          size a five-lobed silhouette turns to mush, and a simple blade with a
-          midrib stays legible down to a few pixels. */}
+      {/* The leaves it carries. Ellipses rather than the drawn maple: at this size a five-lobed
+          silhouette turns to mush. */}
       <g className="autumn-sprig__leaves">
         <g transform="rotate(-38 27 15)">
           <ellipse cx="27" cy="15" rx="11" ry="6" fill="rgb(var(--autumn-ember))" fillOpacity="0.9" />
@@ -257,12 +195,8 @@ const Sprig = ({ index }: { index: number }) => (
 
 interface AutumnHedgeProps {
   /**
-   * Which edge of the screen the rail this belongs to is anchored to.
-   *
-   * Only the two full-height side rails grow one. The top bar is 56px tall and
-   * sits directly over the page content — a hedge hanging out of the bottom of
-   * it would cross the first line of every screen, which is decoration getting
-   * in the way of the app.
+   * Which edge of the screen the rail this belongs to is anchored to. Only the two full-height side
+   * rails grow one.
    */
   edge: NavEdge;
   /** A hedge on a shut rail stops moving — see the note on SPRIG_COUNT. */
@@ -270,14 +204,8 @@ interface AutumnHedgeProps {
 }
 
 /**
- * What has grown over the seam while the menu was hidden.
- *
- * Every skin marks the join between a hidden rail and the page: the studio look
- * glows, the deep field sinks a singularity into it, the eldritch one grips it.
- * This one has simply been left alone long enough for something to take root in
- * it. Anchored *past* the rail's border rather than inside it, so the sprigs
- * come out of the edge and onto the page instead of looking like a pattern
- * printed on the sidebar.
+ * What has grown over the seam while the menu was hidden. Every skin marks the join between a
+ * hidden rail and the page: the studio look glows.
  */
 export const AutumnHedge = ({ edge, isActive }: AutumnHedgeProps) => {
   const reduceMotion = useReducedMotion();
@@ -292,10 +220,7 @@ export const AutumnHedge = ({ edge, isActive }: AutumnHedgeProps) => {
         'pointer-events-none absolute inset-y-0 w-8',
         'transition-opacity duration-300 ease-studio',
         edge === 'left' ? 'left-full' : 'right-full -scale-x-100',
-        // Hidden with the rail, not just stopped: the strip sits outside the
-        // panel, so it does not travel fully off-screen with it, and a frozen
-        // fringe of leaves at the screen edge would sit exactly where the edge
-        // affordance needs to be legible.
+        // Hidden with the rail, not just stopped: the strip sits outside the panel.
         isActive ? 'opacity-100' : 'opacity-0',
         (!isActive || reduceMotion) && 'autumn-hedge--still',
       )}

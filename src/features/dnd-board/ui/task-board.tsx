@@ -36,45 +36,23 @@ interface TaskBoardProps {
   onTogglePin: (task: Task) => void;
   onDelete: (task: Task) => void;
   /**
-   * Whether this user may move the card at all.
-   *
-   * The API only lets an assignee or a project admin change a status, so a
-   * board that hands everybody a drag handle is offering a gesture that will be
-   * rejected — and dropping a teammate's card into Completed looked, for the
-   * length of the optimistic update, exactly like it had worked.
+   * Whether this user may move the card at all. The API only lets an assignee or a project admin
+   * change a status.
    */
   canChangeStatus?: (task: Task) => boolean;
   /**
-   * Whether this card may land in Completed *yet*.
-   *
-   * Separate from `canChangeStatus` because it is a different question with a
-   * different answer per column: a member may freely drag their shared task
-   * between To do and In progress, and still not be the one who gets to call
-   * it finished. See `entities/task/lib/completion.ts` for the rule.
-   *
-   * Returns the reason it cannot, or `null` when it can — the string is both
-   * the column's hint while dragging and the toast when a drop is refused.
+   * Whether this card may land in Completed *yet*. Separate from `canChangeStatus` because it is a
+   * different question with a different answer per column.
    */
   completionBlock?: (task: Task) => string | null;
   /**
-   * Skeleton cards to draw in each column while more tasks are on the way.
-   *
-   * A number per column rather than a boolean, because the two waits are not
-   * the same: an empty board on a cold load has nothing at all to show and
-   * wants a couple of cards' worth of weight in each column, while a board that
-   * has already painted the reader's own tasks and is topping up with the rest
-   * of the roster's only needs to say "not finished". The caller knows which it
-   * is in; see `ProjectPage`.
-   *
-   * `0` — the default — draws nothing and lets the empty state through.
+   * Skeleton cards to draw in each column while more tasks are on the way. A number per column
+   * rather than a boolean, because the two waits are not the same.
    */
   pendingPerColumn?: number;
   /**
-   * Opens the composer for a new task, from inside the To do column.
-   *
-   * Absent where the reader cannot add work — a finished project, a member
-   * without the rights — and the slot is simply not drawn, the same rule the
-   * page's own "New task" button follows.
+   * Opens the composer for a new task, from inside the To do column. Absent where the reader cannot
+   * add work — a finished project, a member without the rights — and the slot is simply not drawn.
    */
   onAddTask?: () => void;
 }
@@ -82,28 +60,7 @@ interface TaskBoardProps {
 const COLUMNS: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'COMPLETED'];
 
 /**
- * The empty card at the foot of To do.
- *
- * ## Why a second way to add a task
- *
- * The page's "New task" button is at the top of the screen, and the place a
- * reader is looking when they think "and one more" is the bottom of the list
- * they are reading. A card-shaped gap there is the board saying where the next
- * one goes — which is also why it only lives in To do: new work starts there,
- * and a slot in Completed would be an invitation to log work as already done.
- *
- * ## Why it is drawn with nothing but tokens
- *
- * It has to sit in every skin's column without looking pasted in: the edge
- * colour, the corner radius and the brand tint all come from the skin, so on
- * the runic board it is a square-cut dashed frame, on Studio a soft one, and
- * on a dark palette it is as quiet as the column around it. The only fixed
- * thing is the dash, which is what reads as "empty" on every one of them.
- *
- * Always last in the column — below the overflow toggle and the loading
- * placeholders — so opening a capped column never moves it into the middle of
- * the list. On an empty To do it stretches to fill the column, which is both
- * the empty state and the way out of it.
+ * The empty card at the foot of To do. The page's "New task" button is at the top of the screen.
  */
 export const AddTaskSlot = ({ onClick, isAlone }: { onClick: () => void; isAlone: boolean }) => {
   const t = useT();
@@ -229,13 +186,7 @@ const Column = ({
           )}
           {t(meta.label)}
         </span>
-        {/*
-          The count is the truth about what has arrived, not about what exists.
-
-          While cards are still coming in, a bare "2" reads as a finished
-          answer and then silently becomes a "5" — so the number is dimmed and
-          followed by an ellipsis, which is the cheapest way to say "so far".
-        */}
+        {/* The count is the truth about what has arrived, not about what exists. */}
         <span
           className={cn(
             'rounded-full bg-surface-raised px-1.5 text-xs tabular-nums',
@@ -253,10 +204,8 @@ const Column = ({
 };
 
 /**
- * Status board with drag & drop between columns.
- *
- * Dropping optimistically updates the cache (see `useUpdateTaskStatus`), so the
- * card lands in its new column before the request resolves.
+ * Status board with drag & drop between columns. Dropping optimistically updates the cache (see
+ * `useUpdateTaskStatus`), so the card lands in its new column before the request resolves.
  */
 export const TaskBoard = ({
   tasks,
@@ -279,13 +228,8 @@ export const TaskBoard = ({
     useSensor(TouchSensor, { activationConstraint: { delay: 160, tolerance: 8 } }),
   );
 
-  /*
-   * Grouped, and sorted by deadline within each column.
-   *
-   * The sort is not cosmetic now that columns are capped: it decides *which*
-   * cards survive the cap, and the four a reader sees have to be the four that
-   * matter. See `byDeadline`.
-   */
+  // Grouped, and sorted by deadline within each column. The sort is not cosmetic now that columns
+  // are capped: it decides *which* cards survive the cap.
   const grouped = useMemo(
     () =>
       COLUMNS.reduce<Record<TaskStatus, Task[]>>(
@@ -300,14 +244,8 @@ export const TaskBoard = ({
     [tasks],
   );
 
-  /*
-   * How many cards fit before a column starts scrolling, and which columns the
-   * reader has opened past that.
-   *
-   * Keyed by status rather than a single boolean, because opening To do says
-   * nothing about wanting Completed opened as well — and Completed is the
-   * column most likely to be long and least likely to be worth reading.
-   */
+  // How many cards fit before a column starts scrolling, and which columns the reader has opened
+  // past that.
   const capacity = useColumnCapacity();
   const [opened, setOpened] = useState<Partial<Record<TaskStatus, boolean>>>({});
 
@@ -339,9 +277,8 @@ export const TaskBoard = ({
     // a stale render must not be able to slip a forbidden move through.
     if (canChangeStatus && !canChangeStatus(task)) return;
 
-    // A shared task is not one person's to close. The column already showed
-    // itself as locked during the drag; this is what makes the drop a no-op,
-    // and the toast is what stops it reading as a dropped gesture.
+    // A shared task is not one person's to close. The column already showed itself as locked during
+    // the drag; this is what makes the drop a no-op.
     if (target === 'COMPLETED') {
       const blocked = completionBlock?.(task);
       if (blocked) {
@@ -375,9 +312,8 @@ export const TaskBoard = ({
             blockedReason={status === 'COMPLETED' ? activeBlock : null}
             isPending={pendingPerColumn > 0}
           >
-            {/* See `TaskCard`: no entrance, no exit, nothing to track — and
-                on a drag board the wrapper competed with dnd-kit's own
-                transforms for the card that was moving. */}
+            {/* See `TaskCard`: no entrance, no exit, nothing to track — and on a drag board the
+                wrapper competed with dnd-kit's own transforms for the card that was moving. */}
             {grouped[status].slice(0, capacity).map((task) => (
               <DraggableTask
                 key={task.id}
@@ -394,13 +330,8 @@ export const TaskBoard = ({
               </DraggableTask>
             ))}
 
-            {/*
-              Everything past the cap, folded away until it is asked for.
-
-              Rendered inside the same droppable column, so a card can still be
-              dropped into a collapsed To do — the column is capped for
-              *reading*, and closing it must not close it for arranging.
-            */}
+            {/* Everything past the cap, folded away until it is asked for. Rendered inside the
+                same droppable column, so a card can still be dropped into a collapsed To do. */}
             <ColumnOverflow isOpen={Boolean(opened[status])}>
               {grouped[status].slice(capacity).map((task) => (
                 <DraggableTask
@@ -427,22 +358,14 @@ export const TaskBoard = ({
               />
             )}
 
-            {/*
-              Loading happens *in* the column, not under the board.
-
-              These placeholders used to be a two-column grid below all three
-              columns, which read as a fourth thing on the page rather than as
-              a board filling up — and it put the "still loading" signal
-              furthest from the columns it was about. A grey card in the
-              column it will land in is the whole affordance.
-            */}
+            {/* Loading happens *in* the column, not under the board. These placeholders used to
+                be a two-column grid below all three columns. */}
             {Array.from({ length: pendingPerColumn }, (_, index) => (
               <Skeleton key={`pending-${index}`} className="h-[6.5rem] shrink-0 rounded-2xl" />
             ))}
 
-            {/* "Nothing here" is a claim, and it cannot be made while cards
-                are still arriving. An empty To do that can take a new task
-                says so with the slot below instead. */}
+            {/* "Nothing here" is a claim, and it cannot be made while cards are still arriving.
+                An empty To do that can take a new task says so with the slot below instead. */}
             {grouped[status].length === 0 &&
               pendingPerColumn === 0 &&
               !(status === 'TODO' && onAddTask) && (

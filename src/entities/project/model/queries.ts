@@ -26,19 +26,8 @@ export const useProjects = (params: ListProjectsParams = {}) =>
   });
 
 /**
- * The project as the list already knows it.
- *
- * `ProjectListItem extends Project`, which is not an accident of typing — the
- * API shapes both from the same include, so a row from `/projects` carries
- * every field `/projects/:id` returns, roster and role included, plus counts.
- * There is genuinely nothing the detail page needs that the list did not
- * already fetch.
- *
- * That matters because the project page gates its entire render on this query:
- * until it resolved, the header, the tabs and the task board were all replaced
- * by a loader — so arriving from the dashboard meant waiting on a round trip
- * for data the dashboard had been holding all along, and the board underneath
- * could not even begin to seed itself.
+ * The project as the list already knows it. `ProjectListItem extends Project`, which is not an
+ * accident of typing — the API shapes both from the same include.
  */
 const seedProjectFrom = (queryClient: QueryClient, projectId: string): Project | undefined => {
   for (const [, data] of queryClient.getQueriesData<ProjectListItem[]>({
@@ -82,23 +71,8 @@ export const useUserOverview = () =>
   });
 
 /**
- * Moves the dashboard's own counters without waiting for the server.
- *
- * The tiles are computed by the API — three `taskAssignment.count()` queries —
- * so nothing on the client can *derive* them from what it holds. That is why
- * they used to lag: ticking a box patched every cached copy of the task
- * instantly and then left the counters to a second, sequential round trip
- * (`POST /completion`, and only then `GET /overview`), which on a remote
- * database is most of a second of the number sitting there visibly wrong
- * underneath a card that has already moved.
- *
- * A count, though, does not need deriving — it needs *nudging*. The caller
- * knows exactly what it just changed, so it says so, and the refetch that
- * follows still lands as the authority a moment later. If the two disagree the
- * server wins, silently, because it is the one holding the rows.
- *
- * Clamped at zero: a negative "overdue" from a delta that raced a refetch is
- * the one failure mode a user would actually notice.
+ * Moves the dashboard's own counters without waiting for the server. The tiles are computed by the
+ * API — three `taskAssignment.count()` queries.
  */
 export const patchUserOverview = (queryClient: QueryClient, delta: OverviewDelta): void => {
   if (!delta.openTasks && !delta.completedTasks && !delta.overdueTasks) return;
@@ -150,30 +124,12 @@ export const useUpdateProject = (projectId: string) => {
 };
 
 /**
- * Bin a project.
- *
- * The binned project's own subtree is **removed** rather than invalidated, for
- * the same reason the organization delete does it (see
- * `useDeleteOrganization`): `projects.detail(id)` is `['projects', id]` with
- * the dashboard, members and invitations nested under it, so invalidating the
- * `projects` prefix asks the server four times about a project it has just
- * binned. Every one of those answers 404 and every one carries an error toast.
- *
- * This path got away with it only because `ProjectSettingsDialog` redirects to
- * the dashboard immediately, so the observers usually unmounted before the
- * refetch landed — a race that happened to be winnable, not a design. Removing
- * the entries makes it not a race.
- *
- * The recycle bin is invalidated explicitly: it is the one list where the
- * project has just *appeared* rather than disappeared.
+ * Bin a project. The binned project's own subtree is **removed** rather than invalidated, for the
+ * same reason the organization delete does it (see `useDeleteOrganization`).
  */
 /**
- * Leaving a project, from its settings.
- *
- * Afterwards the project is somebody else's entirely, so it leaves this
- * client the way a deleted one does: its detail is dropped rather than
- * invalidated (a refetch would only 404), and every list, the agenda and the
- * plan meters that counted it are refreshed. The caller navigates away.
+ * Leaving a project, from its settings. Afterwards the project is somebody else's entirely, so it
+ * leaves this client the way a deleted one does: its detail is dropped rather than invalidated.
  */
 export const useLeaveProject = () => {
   const queryClient = useQueryClient();
@@ -200,34 +156,11 @@ export const useDeleteProject = () => {
     mutationFn: projectApi.remove,
     onSuccess: (_result, projectId) => {
       queryClient.removeQueries({ queryKey: queryKeys.projects.detail(projectId) });
-      /*
-       * The prefix, *after* the removal.
-       *
-       * Invalidating `['projects']` covers the lists, the overview and the
-       * recycle bin — where this project has just appeared — in one call, and
-       * it cannot resurrect the detail subtree because the line above already
-       * dropped those entries. Naming the lists individually would have missed
-       * the parameterised ones: `projects.list({})` is an exact three-element
-       * key, so it does not prefix-match `projects.list({ organizationId })`.
-       */
+      // The prefix, *after* the removal. Invalidating `['projects']` covers the lists, the overview
+      // and the recycle bin — where this project has just appeared — in one call.
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
-      /*
-       * The caches that hold the project's rows *outside* the project.
-       *
-       * The API stops serving a binned project's tasks and meetings the moment
-       * it is binned — the agenda joins on `project.deletedAt: null` — but the
-       * client does not find that out on its own: `tasks.agenda` is a separate
-       * key with its own `staleTime`, so without this the personal task board
-       * keeps drawing tasks from a project that no longer exists until
-       * something unrelated happens to invalidate it. That was the bug; a card
-       * you could still click, belonging to a project you had just deleted.
-       *
-       * Three prefixes rather than a bare `invalidateQueries()`: the blunt
-       * version would also refetch the binned project's own scoped caches —
-       * whiteboard, chat, roster — and every one of those answers 404 with a
-       * toast attached. `usePurgeProject` can afford it because by then
-       * nothing is observing them.
-       */
+      // The caches that hold the project's rows *outside* the project. The API stops serving a
+      // binned project's tasks and meetings the moment it is binned.
       void queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all });
       void queryClient.invalidateQueries({ queryKey: queryKeys.meetings.all });
       // Binning frees a project slot, and the plan meters count what exists.
@@ -239,12 +172,8 @@ export const useDeleteProject = () => {
 };
 
 /**
- * The owner's recycle bin: binned projects, and when each expires.
- *
- * Not cached for long. A binned project is a decision waiting to be made and
- * the page it is drawn on is opened deliberately, so the round trip is
- * affordable — and the one number on it that moves on its own, `purgeAt`, is
- * the one nobody should read stale.
+ * The owner's recycle bin: binned projects, and when each expires. Not cached for long. A binned
+ * project is a decision waiting to be made and the page it is drawn on is opened deliberately.
  */
 export const useBinnedProjects = () =>
   useQuery({
@@ -262,9 +191,8 @@ export const useRestoreProject = () => {
       // `projects.all` is the shared prefix, so the bin and the live list both
       // refresh — the project just moved from one to the other.
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
-      // And the same three the bin path drops, in the other direction: the
-      // project's tasks and meetings become visible again, and it takes its
-      // plan slot back.
+      // And the same three the bin path drops, in the other direction: the project's tasks and
+      // meetings become visible again, and it takes its plan slot back.
       void queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all });
       void queryClient.invalidateQueries({ queryKey: queryKeys.meetings.all });
       void queryClient.invalidateQueries({ queryKey: queryKeys.billing.summary });
@@ -275,13 +203,8 @@ export const useRestoreProject = () => {
 };
 
 /**
- * Destroy a binned project now.
- *
- * Everything is invalidated rather than patched, for the same reason
- * `useCompleteProject` does it: the rows this removes are spread across the
- * task, note, document, meeting and overview caches, and working out which
- * keys to edit would be re-implementing "that project never existed" on the
- * client.
+ * Destroy a binned project now. Everything is invalidated rather than patched, for the same reason
+ * `useCompleteProject` does it: the rows this removes are spread across the task, note, document.
  */
 export const usePurgeProject = () => {
   const queryClient = useQueryClient();
@@ -298,14 +221,8 @@ export const usePurgeProject = () => {
 };
 
 /**
- * Conclude a project.
- *
- * Everything is invalidated rather than patched, and this is the one place
- * where that bluntness is right: the write deletes every task, page, note,
- * stroke, message and meeting the project held, so the task caches, the
- * document caches, the dashboards and the rail's counts are all wrong at once.
- * Working out which keys to edit would be re-implementing "the project is
- * empty now" in the client.
+ * Conclude a project. Everything is invalidated rather than patched, and this is the one place
+ * where that bluntness is right: the write deletes every task, page, note, stroke.
  */
 export const useCompleteProject = () => {
   const queryClient = useQueryClient();
@@ -317,9 +234,8 @@ export const useCompleteProject = () => {
     onSuccess: (result) => {
       void queryClient.invalidateQueries();
 
-      // The total, not just the two headline counters: the dialog promised to
-      // clear the whole project, and a toast naming only tasks and pages
-      // understates what just happened to the whiteboard and the chat.
+      // The total, not just the two headline counters: the dialog promised to clear the whole
+      // project.
       const items = Object.values(result.cleared).reduce((sum, count) => sum + count, 0);
 
       toast.success(
@@ -354,14 +270,8 @@ export const useReopenProject = () => {
  * failure is cheap because nothing else depends on the flag.
  */
 /**
- * Flips `isPinned` everywhere a project is currently cached.
- *
- * Keyed on the *shape of the query key* rather than on the shape of the data,
- * and that distinction matters: `queryKeys.projects.all` is the prefix for the
- * lists, the detail, the dashboard, the roster and the overview alike. A patch
- * that recognised its targets by "an array of objects with an id" would happily
- * rewrite the roster, whose members also have ids and no business carrying a
- * pin.
+ * Flips `isPinned` everywhere a project is currently cached. Keyed on the *shape of the query key*
+ * rather than on the shape of the data, and that distinction matters.
  */
 const patchProjectPinned = (
   queryClient: QueryClient,
@@ -390,23 +300,8 @@ const patchProjectPinned = (
 };
 
 /**
- * Pinning, felt immediately.
- *
- * This used to be a bare mutation whose only cache work was an invalidation on
- * `onSettled`, which meant the icon could not change until *two* round trips
- * had finished: the write, and then the refetch it triggered. On a warm local
- * API that is a beat too slow; on a free-tier container that has gone to sleep
- * it is several seconds of a button that appears not to have registered the
- * click at all — so people press it again, which toggles it back.
- *
- * The pin is also a strictly local, strictly boolean piece of state: there is
- * no server-side computation to wait for and nothing another user can
- * concurrently disagree about, which makes it about the safest thing in the app
- * to write optimistically.
- *
- * The invalidation stays, moved behind the optimistic write. It is now
- * reconciliation nobody is waiting on rather than the thing that finally makes
- * the button correct.
+ * Pinning, felt immediately. This used to be a bare mutation whose only cache work was an
+ * invalidation on `onSettled`.
  */
 export const useTogglePin = () => {
   const queryClient = useQueryClient();
@@ -430,20 +325,8 @@ export const useTogglePin = () => {
   });
 };
 
-/*
- * The roster and its pending invitations change on human timescales.
- *
- * Both of these back a tab that is mounted only while it is open, so every
- * visit used to be a fresh request on the global 30s `staleTime` — and the
- * panel renders empty until it lands. But somebody joining a project is not a
- * thing that happens between two clicks of the same tab, and when it does the
- * socket says so: `roster:joined` / `roster:left` already invalidate
- * `projects.all` in the realtime provider.
- *
- * A minute of tolerance therefore costs nothing anybody can observe and makes
- * switching back and forth free. `usePrefetchProjectCollaboration` below does
- * the other half.
- */
+// The roster and its pending invitations change on human timescales. Both of these back a tab that
+// is mounted only while it is open.
 const ROSTER_STALE_TIME = 60_000;
 
 export const useRoster = (projectId: string | undefined) =>
@@ -463,16 +346,8 @@ export const usePendingInvitations = (projectId: string | undefined) =>
   });
 
 /**
- * Warm the roster tab while the user is looking at the board.
- *
- * Same reasoning as the chat prefetch: the tab is mounted on click, so the
- * click is the first moment the app asks for the data and the panel spends a
- * round trip empty. Moving the request to the page load spends it against time
- * the user was going to be here anyway.
- *
- * Invitations are only fetched when the caller can actually manage them —
- * `RosterPanel` guards the query the same way, and a request the server will
- * refuse is not a prefetch, it is a 403 on every project page.
+ * Warm the roster tab while the user is looking at the board. Same reasoning as the chat prefetch:
+ * the tab is mounted on click.
  */
 export const usePrefetchProjectCollaboration = (
   projectId: string | undefined,
@@ -500,20 +375,8 @@ export const usePrefetchProjectCollaboration = (
 };
 
 /**
- * Warms a project the pointer is resting on.
- *
- * Two requests, because opening a project needs both and neither is useful
- * alone: the detail response draws the header and decides the user's role
- * (which gates half the page), and the task list is the board itself. Fetching
- * only one would still leave the page half-empty on arrival.
- *
- * The task key mirrors `ProjectPage`'s opening filters exactly — `{ scope:
- * 'all', projectId }`. A prefetch under a different key fills a cache nothing
- * will read, which is the worst of both: a request paid for and a spinner
- * anyway. If those initial filters ever change, this has to change with them.
- *
- * `useIntentPrefetch` owns the restraint — dwell delay, per-destination
- * cooldown, no touch, no Data Saver. See that hook for why each one is there.
+ * Warms a project the pointer is resting on. Two requests, because opening a project needs both and
+ * neither is useful alone: the detail response draws the header and decides the user's role.
  */
 export const useProjectIntentPrefetch = (projectId: string | undefined): IntentHandlers => {
   const queryClient = useQueryClient();
@@ -565,13 +428,8 @@ export const useRespondToInvitation = () => {
 };
 
 /**
- * Drops one person from every cached copy of a roster.
- *
- * The roster is held in three shapes — the members query the panel reads, the
- * `roster` array on the project detail, and the same array on every project
- * *list* row (`ProjectListItem extends Project`) — and all three are on screen
- * at once: the panel, the header's member count and the avatar stack. Patching
- * one and refetching the rest is what made the row linger.
+ * Drops one person from every cached copy of a roster. The roster is held in three shapes — the
+ * members query the panel reads, the `roster` array on the project detail.
  */
 const patchRosterRemoval = (
   queryClient: QueryClient,
@@ -608,39 +466,12 @@ const patchRosterRemoval = (
 };
 
 /**
- * Removal, felt on the click rather than on the response.
- *
- * The request behind this is not one write: it deletes the membership, hands
- * back every task the person was assigned and clears their pin, inside a
- * transaction, and then broadcasts. On a cold free-tier database that is
- * comfortably over a second — during which the old UI did nothing at all. No
- * spinner, no row change, nothing until the success toast, so the honest read
- * of the screen was that the click had not registered. People clicked again.
- *
- * There is nothing to *wait* for, though: the client knows exactly which row
- * is going, and the server has no say in the outcome beyond yes or no. So the
- * row goes immediately and the caches are rolled back in full if the answer
- * turns out to be no — the same trade `useTogglePin` already makes, on an
- * action where the latency is far more visible.
- *
- * The invalidation stays, moved behind the optimistic write, where it is
- * reconciliation nobody is waiting on rather than the thing that finally makes
- * the panel correct.
+ * Removal, felt on the click rather than on the response. The request behind this is not one write:
+ * it deletes the membership, hands back every task the person was assigned and clears their pin.
  */
 /**
- * Changing somebody's role on the roster.
- *
- * ## Why this hook did not exist before
- *
- * The endpoint and the API client method have been there all along; nothing
- * called them, because the panel treated a role as something set once at
- * invitation time. That left the only way to correct a mistake being to remove
- * the person and invite them again — which loses their task assignments on the
- * way out (see `RosterService.removeMember`) to fix a dropdown.
- *
- * Optimistic, matching the removal below: the badge is the whole feedback, and
- * a badge that waits for a round trip before changing reads as a click that did
- * not register.
+ * Changing somebody's role on the roster. The endpoint and the API client method have been there
+ * all along; nothing called them.
  */
 export const useUpdateMemberRole = (projectId: string) => {
   const queryClient = useQueryClient();
@@ -664,12 +495,8 @@ export const useUpdateMemberRole = (projectId: string) => {
             : members,
       );
 
-      /*
-       * The project detail carries its own copy of the roster, and the header
-       * reads `myRole` from it. Patching only the members list would leave the
-       * two disagreeing until the next refetch — visibly, if the person whose
-       * role changed is the one looking at the page.
-       */
+      // The project detail carries its own copy of the roster, and the header reads `myRole` from
+      // it.
       queryClient.setQueryData<Project>(queryKeys.projects.detail(projectId), (project) =>
         project
           ? {

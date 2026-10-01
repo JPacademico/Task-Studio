@@ -53,14 +53,8 @@ interface SelectProps<T extends string> {
 }
 
 /**
- * The app's dropdown.
- *
- * A native `<select>` is drawn by the OS: it ignores the skin, the radius
- * tokens and the type scale, so every filter row had one grey rectangle that
- * belonged to a different application. This is a listbox that lives in the
- * design system — same border, same radius token, same motion curve as the
- * panels around it — with the keyboard behaviour the native control gives for
- * free written back in.
+ * The app's dropdown. A native `<select>` is drawn by the OS: it ignores the skin, the radius
+ * tokens and the type scale.
  */
 export const Select = <T extends string>({
   value,
@@ -82,11 +76,8 @@ export const Select = <T extends string>({
   const listId = useId();
 
   /**
-   * Where to put the list, measured from the trigger every time it opens.
-   *
-   * Recomputed rather than remembered because the trigger moves: a filter row
-   * reflows, a modal body scrolls, the window resizes. The numbers are viewport
-   * coordinates, which is what `position: fixed` wants.
+   * Where to put the list, measured from the trigger every time it opens. Recomputed rather than
+   * remembered because the trigger moves: a filter row reflows, a modal body scrolls.
    */
   const measure = useCallback(() => {
     const trigger = triggerRef.current;
@@ -96,12 +87,8 @@ export const Select = <T extends string>({
     const below = window.innerHeight - rect.bottom - GAP - MARGIN;
     const above = rect.top - GAP - MARGIN;
 
-    /*
-     * Open upwards only when there is genuinely more room up there *and* down
-     * here is too cramped to be useful. Flipping on the first pixel of
-     * shortfall makes a list near the middle of the screen jump sides as the
-     * page scrolls under it.
-     */
+    // Open upwards only when there is genuinely more room up there *and* down here is too cramped
+    // to be useful.
     const isAbove = below < 160 && above > below;
     const maxHeight = Math.min(MAX_LIST_HEIGHT, Math.max(120, isAbove ? above : below));
 
@@ -128,15 +115,8 @@ export const Select = <T extends string>({
 
     const handlePointerDown = (event: PointerEvent) => {
       const target = event.target as Node;
-      /*
-       * The popup is no longer a descendant of the container.
-       *
-       * It is portalled to `document.body` (see below), so the old
-       * `container.contains(target)` test now calls a click *on an option* an
-       * outside click — which closed the list on pointerdown, before the
-       * option's own click handler ever ran. That is precisely the "the role
-       * picker does nothing" bug this fixes, so both nodes are checked.
-       */
+      // The popup is no longer a descendant of the container. It is portalled to `document.body`
+      // (see below).
       if (containerRef.current?.contains(target)) return;
       if (popupRef.current?.contains(target)) return;
       setIsOpen(false);
@@ -145,11 +125,8 @@ export const Select = <T extends string>({
       if (event.key === 'Escape') setIsOpen(false);
     };
 
-    /*
-     * Scroll listened for in the capture phase so a scrolling *ancestor* —
-     * a modal body, a rail — is heard, not just the window. A popup pinned to
-     * viewport coordinates has to follow its trigger or it detaches from it.
-     */
+    // Scroll listened for in the capture phase so a scrolling *ancestor* — a modal body, a rail —
+    // is heard, not just the window.
     document.addEventListener('pointerdown', handlePointerDown);
     document.addEventListener('keydown', handleKey);
     window.addEventListener('scroll', measure, true);
@@ -206,9 +183,7 @@ export const Select = <T extends string>({
         }}
         onKeyDown={handleTriggerKey}
         className={cn(
-          // Tight on purpose: a filter row also has to hold the layout switcher
-          // on the same line, and in the skins that run a wide face every spare
-          // pixel of padding here is what pushed the switcher onto its own row.
+          // Tight on purpose: a filter row also has to hold the layout switcher on the same line.
           'ui-filter group inline-flex w-full items-center gap-1.5 rounded-xl border bg-surface px-2.5 text-left',
           'transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40',
           size === 'sm' ? 'h-9 text-xs' : 'h-10 text-sm',
@@ -239,23 +214,8 @@ export const Select = <T extends string>({
         </motion.span>
       </button>
 
-      {/*
-        The list is portalled to the body, and that is a bug fix rather than a
-        refactor.
-
-        It used to be `absolute` inside this container. That works on a filter
-        row and fails completely inside a dialog: the modal clips its panel
-        (`overflow-hidden`) and scrolls its body (`overflow-y-auto`), so a
-        listbox opening near the bottom of a form was cut off at the body's
-        edge — which is why the role picker in the "new organization" dialog
-        appeared to do nothing when clicked. Any `overflow` on any ancestor is
-        enough to do it, so the fix cannot be a `z-index`: the popup has to
-        leave the subtree.
-
-        `position: fixed` at measured viewport coordinates is what replaces it,
-        with the trigger re-measured on scroll and resize so the two stay
-        together. See `measure`.
-      */}
+      {/* The list is portalled to the body, and that is a bug fix rather than a refactor. It
+          used to be `absolute` inside this container. */}
       {createPortal(
         <AnimatePresence>
           {isOpen && box && (
@@ -277,9 +237,8 @@ export const Select = <T extends string>({
                 transformOrigin: box.isAbove ? 'bottom center' : 'top center',
               }}
               className={cn(
-                // `z-[60]` clears the modal's own layer: this now sits beside
-                // the dialog in the DOM rather than inside it, so it has to
-                // outrank it explicitly.
+                // `z-[60]` clears the modal's own layer: this now sits beside the dialog in the DOM
+                // rather than inside it, so it has to outrank it explicitly.
                 'panel z-[60] max-w-[16rem]',
                 'scrollbar-thin overflow-y-auto p-1.5',
               )}

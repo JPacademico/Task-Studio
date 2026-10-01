@@ -23,11 +23,8 @@ const META: Record<
 };
 
 /**
- * Picks the shape the same set of tasks is drawn in.
- *
- * Its own control rather than another entry in the filter row: a filter changes
- * *which* tasks you are looking at, and this changes *how* — mixing the two
- * into one strip made both harder to find.
+ * Picks the shape the same set of tasks is drawn in. Its own control rather than another entry in
+ * the filter row: a filter changes *which* tasks you are looking at, and this changes *how*.
  */
 export const LayoutSwitcher = ({ value, options, onChange, className }: LayoutSwitcherProps) => {
   const t = useT();

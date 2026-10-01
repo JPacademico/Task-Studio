@@ -13,29 +13,15 @@ import { useViewportDragBounds } from '@/shared/lib/use-viewport-drag-bounds';
 import { iconFor } from './shortcut-icon';
 
 /**
- * Where a pill sits in the app's stacking order.
- *
- * Named because these two numbers only make sense against the chrome they are
- * chosen relative to: the top bar is 40 and both side rails are 50.
- *
- * Resting used to be 30, which put a pill under everything — including the top
- * bar, which is a strip the user can perfectly well drop a pill onto. Doing so
- * made it disappear: it was still there, still clickable at the edges, but the
- * bar was painted over it the moment the bar was revealed, so the pill looked
- * lost. 45 sits above the top bar and below the side rails, which keeps the
- * original intent where it actually applied — a 260px rail sliding out passes
- * over its own shortcuts rather than fighting them for the same strip of
- * screen — while a pill parked in the header stays visible.
+ * Where a pill sits in the app's stacking order. Named because these two numbers only make sense
+ * against the chrome they are chosen relative to: the top bar is 40 and both side rails are 50.
  */
 const RESTING_Z = 45;
 const DRAGGING_Z = 70;
 
 /**
- * One pinned menu entry, sitting wherever the user dropped it.
- *
- * `left`/`top` come from the store and the drag runs on motion values, so
- * moving a pill never re-renders anything until the gesture ends — and the
- * transform is zeroed on release, when the stored coordinates take over.
+ * One pinned menu entry, sitting wherever the user dropped it. `left`/`top` come from the store and
+ * the drag runs on motion values.
  */
 const ShortcutPill = ({ shortcut }: { shortcut: FloatingShortcut }) => {
   const t = useT();
@@ -47,16 +33,8 @@ const ShortcutPill = ({ shortcut }: { shortcut: FloatingShortcut }) => {
   const suppressClickRef = useRef(false);
   const pillRef = useRef<HTMLDivElement>(null);
 
-  /*
-   * Constraints during the gesture, not only a clamp after it.
-   *
-   * `move` already refused an off-screen coordinate, so a pill could never be
-   * *left* outside the window — but it could be dragged there and then snap
-   * back on release, which is the same thing as far as anybody watching is
-   * concerned. Framer refuses the travel instead, and it refuses it against the
-   * pill's measured size rather than the 190x44 the store assumes for a label
-   * whose width is somebody's project name.
-   */
+  // Constraints during the gesture, not only a clamp after it. `move` already refused an off-screen
+  // coordinate, so a pill could never be *left* outside the window.
   const { bounds, measure } = useViewportDragBounds(pillRef, x, y);
 
   const Icon = iconFor(shortcut.icon);
@@ -76,26 +54,8 @@ const ShortcutPill = ({ shortcut }: { shortcut: FloatingShortcut }) => {
       dragConstraints={bounds}
       dragMomentum={false}
       dragElastic={0.05}
-      /*
-       * `zIndex` rides on the pill, not on the layer.
-       *
-       * The layer used to be `fixed inset-0 z-30` and the pill lifted itself to
-       * 60 while dragged — which never worked, because the layer established a
-       * stacking context and a child cannot climb out of one. 60 was therefore
-       * only ever 60 *within* z-30, so a pill dragged over the top bar (z-40)
-       * or either rail (z-50) vanished underneath them, exactly when the user
-       * was looking at it.
-       *
-       * Note it was `position: fixed` doing that, not the `z-index`: fixed and
-       * sticky elements always form a stacking context, so merely dropping the
-       * z-index would have moved the trap rather than removed it. The layer is
-       * `display: contents` now and generates no box at all, which is what lets
-       * these two values compete with the rails directly.
-       *
-       * At rest the pill sits above the top bar and below the side rails — see
-       * `RESTING_Z`. While dragged it goes to 70: above both rails, below the
-       * tear-off ghost (90) and the expanded stage (80).
-       */
+      /* `zIndex` rides on the pill, not on the layer. The layer used to be `fixed inset-0 z-30` and
+         the pill lifted itself to 60 while dragged — which never worked. */
       style={{ x, y, left: shortcut.x, top: shortcut.y, zIndex: RESTING_Z }}
       whileDrag={{ scale: 1.04, zIndex: DRAGGING_Z }}
       onDragStart={() => {
@@ -176,13 +136,8 @@ const ShortcutPill = ({ shortcut }: { shortcut: FloatingShortcut }) => {
 };
 
 /**
- * The layer every torn-off menu entry lives on.
- *
- * At rest the pills sit above the page but below the rails and the top bar, so
- * a menu sliding out passes over its own shortcuts rather than being covered by
- * them. A pill being *dragged* inverts that and rides above everything, because
- * the thing under the user's cursor is the one thing that must stay visible.
- * The layer itself is inert; only the pills take the pointer.
+ * The layer every torn-off menu entry lives on. At rest the pills sit above the page but below the
+ * rails and the top bar.
  */
 export const FloatingShortcutLayer = () => {
   const t = useT();
@@ -190,12 +145,8 @@ export const FloatingShortcutLayer = () => {
   const move = useFloatingShortcuts((state) => state.move);
   const isTouch = useIsTouchDevice();
 
-  // A window that got narrower must not strand a pill off-screen.
-  //
-  // Coalesced onto an animation frame: a drag of the window edge fires resize
-  // continuously, and each raw call re-clamped every pill, wrote localStorage
-  // and re-rendered the layer. One pass per painted frame is all that can
-  // possibly be seen.
+  // A window that got narrower must not strand a pill off-screen. Coalesced onto an animation
+  // frame: a drag of the window edge fires resize continuously.
   useEffect(() => {
     let frame = 0;
 
@@ -219,19 +170,8 @@ export const FloatingShortcutLayer = () => {
   if (isTouch || items.length === 0) return null;
 
   return createPortal(
-    /*
-     * `display: contents` — see the note on the pill's `style`.
-     *
-     * This element must generate no box, so that it forms no stacking context
-     * and the pills' own z-indices compete with the rails. It is a grouping
-     * node and nothing else: every pill is `position: fixed` and positions
-     * itself against the viewport, so there is nothing for a box here to do
-     * except trap them.
-     *
-     * `pointer-events-none` is gone with it. It existed to make a
-     * full-viewport overlay inert; there is no longer an overlay to make inert,
-     * and the pills carry `pointer-events-auto` themselves.
-     */
+    /* `display: contents` — see the note on the pill's `style`. This element must generate no box,
+       so that it forms no stacking context and the pills' own z-indices compete with the rails. */
     <div aria-label={t('nav.pinnedShortcuts')} className="contents">
       <AnimatePresence>
         {items.map((shortcut) => (

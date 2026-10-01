@@ -3,31 +3,12 @@ import { type GlyphProps } from './glyph-kit';
 import { LETTER_ON_SHEET, StudioLetter } from './studio-letter';
 
 /**
- * This skin's product mark. Its navigation set is gone.
- *
- * There used to be a full set of autumn navigation glyphs here, exported as
- * `AUTUMN_GLYPHS` and swapped in by `NavGlyph`. Every skin's set has
- * been withdrawn for the reason written up there: an icon is recognised by
- * shape, and a rail whose shapes change with the theme charges every user that
- * recognition again for a novelty that lands once.
- *
- * The mark is a different thing and stays. It is the *product's* signature
- * drawn in this world — one object, seen once, on a settings card and a theme
- * gallery tile — and nobody navigates by it.
+ * This skin's product mark. Its navigation set is gone. There used to be a full set of autumn
+ * navigation glyphs here, exported as `AUTUMN_GLYPHS` and swapped in by `NavGlyph`.
  */
 /**
- * The product mark: the same Post-it every other skin uses, in October.
- *
- * An earlier pass made this a maple leaf with a pin through it, which was a
- * better drawing and a worse mark. The pad, the peeled corner, the two written
- * lines and the pin head are the product's signature — they are what the
- * sidebar, the top bar and the auth screen all introduce the app with — and a
- * skin that replaces the object rather than dressing it stops being the same
- * product wearing a season.
- *
- * So the geometry below is the studio mark's, to the point. What is autumn
- * about it is the material: warm paper in the accent, a wooden pin head rather
- * than a chrome one, and two leaves that have come down onto the sheet.
+ * The product mark: the same Post-it every other skin uses, in October. An earlier pass made this a
+ * maple leaf with a pin through it, which was a better drawing and a worse mark.
  */
 export const AutumnMark = ({ className }: GlyphProps) => (
   <svg viewBox="0 0 40 40" fill="none" aria-hidden className={cn('h-10 w-10', className)}>
@@ -67,13 +48,8 @@ export const AutumnMark = ({ className }: GlyphProps) => (
     {/* The letter. */}
     <StudioLetter transform={LETTER_ON_SHEET} strokeOpacity={0.9} />
 
-    {/*
-      Two leaves that landed on it.
-
-      Small, and both inside the sheet: the mark is drawn at 28px in the rail
-      and anything hanging off the edge at that size is a smudge. Ellipses with
-      a midrib rather than the five-lobed maple for the same reason.
-    */}
+    {/* Two leaves that landed on it. Small, and both inside the sheet: the mark is drawn at
+        28px in the rail and anything hanging off the edge at that size is a smudge. */}
     <g stroke="rgb(var(--autumn-bark))" strokeOpacity="0.55" strokeWidth="0.9">
       <g transform="rotate(-32 27.5 25.5)">
         <ellipse cx="27.5" cy="25.5" rx="5.2" ry="2.8" fill="rgb(var(--autumn-ember))" />

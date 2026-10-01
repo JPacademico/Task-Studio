@@ -24,12 +24,8 @@ interface RoomsManagerProps {
 const MAX_CAPACITY = 10_000;
 
 /**
- * One registered room, and the two things an admin does to it.
- *
- * Inherited rooms are drawn and are not editable, which is the visible half of
- * the loan: a project can *book* the building's boardroom and cannot rename it,
- * because renaming it would rename it for every other project too. Saying so on
- * the row is what stops that reading as a bug.
+ * One registered room, and the two things an admin does to it. Inherited rooms are drawn and are
+ * not editable, which is the visible half of the loan.
  */
 const RoomRow = ({
   room,
@@ -92,27 +88,7 @@ const RoomRow = ({
   );
 };
 
-/**
- * The room registry, as a dialog off the meetings tab.
- *
- * ## Why rooms are managed here and not in project settings
- *
- * Because a room is only ever thought about while booking one. Somebody
- * discovers they need to register "Sala 2" at the moment the composer does not
- * offer it — and a registry two clicks into a settings dialog on another tab is
- * one they will not find then, and will not remember exists later. It opens
- * from the toolbar directly above the calendar it feeds.
- *
- * ## Why this does not edit a room in place
- *
- * Renaming exists on the API and is deliberately not offered here yet. The
- * reason is what a rename *means*: `Meeting.room` keeps the name a meeting was
- * booked under, so renaming a room leaves every existing booking saying the old
- * name — correct, and confusing to explain in a row of a dialog. Registering
- * the new name and retiring the old one is the same outcome with nothing to
- * explain. Retiring is the API's `isArchived`; this dialog offers removal,
- * which the API makes safe by keeping the bookings.
- */
+/** The room registry, as a dialog off the meetings tab. */
 export const RoomsManager = ({ isOpen, onClose, scope }: RoomsManagerProps) => {
   const t = useT();
 

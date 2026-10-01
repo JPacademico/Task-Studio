@@ -22,17 +22,8 @@ export interface FloatingShortcut {
   kind: 'nav' | 'project' | 'organization';
   to: string;
   /**
-   * What the pill reads.
-   *
-   * Two fields because the two kinds of pill mean different things by "label".
-   * A nav pill's text is interface copy and must follow the language setting,
-   * so it stores `labelKey` and is translated at render. A *project* or
-   * *organization* pill's text is the name somebody typed — user data, and
-   * translating it would be a bug — so it stores `label` and is drawn
-   * verbatim.
-   *
-   * `label` is also what pills pinned before this existed still carry, so it
-   * doubles as the fallback and nothing needs migrating.
+   * What the pill reads. Two fields because the two kinds of pill mean different things by "label".
+   * A nav pill's text is interface copy and must follow the language setting.
    */
   label: string;
   labelKey?: TranslationKey;
@@ -82,15 +73,8 @@ const write = (items: FloatingShortcut[]): void => {
 };
 
 /**
- * Menu entries the user has torn out of a rail and pinned to the screen.
- *
- * The hidden rails are the point of the layout, but a person who lives in one
- * place all day should be able to keep that one place within reach without
- * pinning a whole 264px panel open. A shortcut is a copy, not a move: the entry
- * stays in its menu, and the pill's return control simply drops the copy.
- *
- * Per device rather than per account — where you want a thing on screen depends
- * on the screen — so it lives in localStorage.
+ * Menu entries the user has torn out of a rail and pinned to the screen. The hidden rails are the
+ * point of the layout.
  */
 export const useFloatingShortcuts = create<ShortcutsState>((set) => ({
   items: read(),

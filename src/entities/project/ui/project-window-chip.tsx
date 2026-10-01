@@ -18,30 +18,8 @@ interface ProjectWindowChipProps {
 }
 
 /**
- * A project's planned window, as one line.
- *
- * ## Why a chip and not two fields
- *
- * The two dates are one fact — "this runs from here to here" — and splitting
- * them into a labelled pair on a header would take three lines to say what a
- * dash says in one. The header is already carrying a name, a description, an
- * organization and a roster.
- *
- * ## Why the finish date is the one that changes colour
- *
- * Because it is the one with consequences. The start date constrains nothing —
- * a project can take work before it — and a countdown to it would be a
- * countdown to nothing happening. The finish date is a ceiling on every task
- * in the project, so "a week left" is a fact somebody should notice without
- * doing arithmetic against today's date.
- *
- * A project that is already **past** its finish date is drawn in the warning
- * tone rather than the danger one, and that is a deliberate reading of what
- * overrunning means: it is not a failure, it is a plan that needs revising.
- * The app has no opinion about whether that is bad, and colouring it red
- * would be one.
- *
- * Renders nothing when there is no window at all, which is most projects.
+ * A project's planned window, as one line. The two dates are one fact — "this runs from here to
+ * here".
  */
 export const ProjectWindowChip = ({
   startsAt,
@@ -55,13 +33,8 @@ export const ProjectWindowChip = ({
 
   const remaining = endsAt ? new Date(endsAt).getTime() - Date.now() : null;
 
-  /*
-   * A finished project's window is a record, not a deadline.
-   *
-   * Without this, every concluded project would wear an "overrun" badge
-   * forever — which is both wrong and unkind, since finishing is precisely the
-   * thing that stops the deadline mattering.
-   */
+  // A finished project's window is a record, not a deadline. Without this, every concluded project
+  // would wear an "overrun" badge forever — which is both wrong and unkind.
   const overrun = !isFinished && remaining !== null && remaining < 0;
   const closing = !isFinished && !overrun && remaining !== null && remaining <= CLOSING_SOON_MS;
 
@@ -95,10 +68,8 @@ export const ProjectWindowChip = ({
             : t('project.windowUntil', { to: formatDeadlineDate(endsAt as string) })}
       </span>
 
-      {/* The number, only where it says something a date does not. Days left
-          is what a reader would otherwise work out by hand; "runs until March"
-          on a project with three months to go is not urgent and does not need
-          arithmetic attached to it. */}
+      {/* The number, only where it says something a date does not. Days left is what a reader
+          would otherwise work out by hand. */}
       {overrun && <span>· {t('project.windowOverrun')}</span>}
       {closing && (
         <span>

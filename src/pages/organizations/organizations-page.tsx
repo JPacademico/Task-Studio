@@ -17,17 +17,8 @@ interface OrganizationCardProps {
 }
 
 /**
- * One company, as a card that leads somewhere.
- *
- * This used to expand inline, on the reasoning that a folder holds nothing but
- * a list of links and a page of its own would be a navigation step arriving at
- * the same handful of rows. That reasoning belonged to the folder. A company
- * has a projects board, a metrics page, a staff list and a calendar, and none
- * of those fit under a chevron — so the card's job is now to say enough to
- * choose between companies, and the page's job is everything else.
- *
- * What it says is deliberately the same three facts for each: how many people,
- * how much work, and whether the reader is staff or just passing through.
+ * One company, as a card that leads somewhere. This used to expand inline, on the reasoning that a
+ * folder holds nothing.
  */
 const OrganizationCard = ({ organization, onEdit, t }: OrganizationCardProps) => (
   <article
@@ -97,9 +88,8 @@ const OrganizationCard = ({ organization, onEdit, t }: OrganizationCardProps) =>
             {t('org.projectCount', { count: organization.projectCount })}
           </span>
 
-          {/* A guest reached this company through a project inside it and is
-              not on its staff list. Saying so on the card explains why the
-              page they are about to open has fewer controls than they expect. */}
+          {/* A guest reached this company through a project inside it and is not on its staff
+              list. */}
           {!organization.myRole && (
             <>
               <span aria-hidden>·</span>
@@ -128,10 +118,8 @@ const OrganizationCard = ({ organization, onEdit, t }: OrganizationCardProps) =>
           </Button>
         )}
 
-        {/* A link, styled like the ghost icon button beside it. `Button` has
-            no `asChild`, and a button that calls `navigate` would lose
-            middle-click, "open in new tab" and the status-bar preview — on the
-            one control whose entire job is going somewhere. */}
+        {/* A link, styled like the ghost icon button beside it. `Button` has no `asChild`, and
+            a button that calls `navigate` would lose middle-click. */}
         <Link
           to={`/organizations/${organization.id}`}
           aria-label={t('org.open', { name: organization.name })}
@@ -150,12 +138,8 @@ const OrganizationCard = ({ organization, onEdit, t }: OrganizationCardProps) =>
 );
 
 /**
- * Organizations: the companies whose work lives in here.
- *
- * The list is a chooser and nothing more — everything a company *has* is on its
- * own page now. What this page still owns is the one act that has no page to
- * live on yet: creating one. See `OrganizationDialog` for why creation asks for
- * projects and people rather than only a name.
+ * Organizations: the companies whose work lives in here. The list is a chooser and nothing more —
+ * everything a company *has* is on its own page now.
  */
 const OrganizationsPage = () => {
   const t = useT();

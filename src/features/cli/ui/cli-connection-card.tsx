@@ -8,27 +8,8 @@ import { useT } from '@/shared/i18n';
 import { CliCommandList, DocsLink, FOCUS_RING } from './cli-commands';
 
 /**
- * The CLI, on a project's Connections shelf.
- *
- * ## Why this is a card that opens rather than a card with a Connect button
- *
- * Every other row on that shelf has a button because there is something on the
- * other side of it: an OAuth consent screen, a webhook composer, a repository
- * dialog. There is nothing on the other side of this one. Connecting an editor
- * is four commands typed into a terminal on somebody's own machine, and this
- * application cannot do any of it — it can only *say* what they are.
- *
- * A "Connect" button that opened a panel of text to copy would be a lie about
- * what pressing it does. So the card says what it is, and opening it reveals
- * the instructions, which is exactly what happens.
- *
- * ## Why it is collapsed by default
- *
- * Because most people reading this tab are not going to install a CLI, and four
- * lines of shell in a settings-shaped surface reads as complexity the product
- * is imposing on them. Collapsed, it is one row saying a thing exists; open, it
- * is a complete answer. Nobody has to scroll past a terminal to reach the
- * webhook they came for.
+ * The CLI, on a project's Connections shelf. Every other row on that shelf has a button because
+ * there is something on the other side of it: an OAuth consent screen, a webhook composer.
  */
 export const CliConnectionCard = () => {
   const t = useT();
@@ -75,14 +56,8 @@ export const CliConnectionCard = () => {
           </span>
         </span>
 
-        {/*
-          A fixed width, so the header does not reflow when the label changes.
-
-          "Commands" and "Hide" differ by 36px, and in pt-BR ("Comandos") by
-          more — enough that every line of the description re-wrapped at the
-          exact moment the panel animated open. The pill is now as wide as its
-          longest label in either language and the text column never moves.
-        */}
+        {/* A fixed width, so the header does not reflow when the label changes. "Commands" and
+            "Hide" differ by 36px, and in pt-BR ("Comandos") by more. */}
         <span
           className={cn(
             'w-[5.5rem] shrink-0 rounded-lg border px-2.5 py-1.5 text-center text-2xs font-medium transition-colors',
@@ -93,12 +68,8 @@ export const CliConnectionCard = () => {
         </span>
       </button>
 
-      {/*
-        `AnimatePresence` rather than a CSS max-height trick, matching
-        `Collapsible` in the shared primitives: the content is a variable number
-        of copyable rows, and a guessed max-height either clips the last one or
-        makes the close animation drift.
-      */}
+      {/* `AnimatePresence` rather than a CSS max-height trick, matching `Collapsible` in the
+          shared primitives: the content is a variable number of copyable rows. */}
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div

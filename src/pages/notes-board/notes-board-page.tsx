@@ -64,17 +64,7 @@ import {
 import { TextBoard } from '@/widgets/text-board/ui/text-board';
 import { useT, type TranslationKey } from '@/shared/i18n';
 
-/**
- * The two things a personal desk is made of.
- *
- * The project workspace has had both for a while — a whiteboard you arrange and
- * a text board you write on — and the personal side only ever had the first
- * one, which meant anything longer than a Post-it had to go and live inside
- * somebody's project.
- *
- * A switch rather than a second route: this is one desk seen two ways, and a
- * `/notes/text` URL would imply a second place to be.
- */
+/** The two things a personal desk is made of. The project workspace has had both for a while. */
 type BoardView = 'notes' | 'text';
 
 const VIEWS: { value: BoardView; label: TranslationKey; icon: React.ReactNode }[] = [
@@ -83,13 +73,8 @@ const VIEWS: { value: BoardView; label: TranslationKey; icon: React.ReactNode }[
 ];
 
 /**
- * The personal Post-it board: a free canvas of draggable objects, separate from
- * project and task notes.
- *
- * Three layers stack on the same surface — ink underneath, connectors above it,
- * Post-its on top — and each one owns its own repaints. A drag writes positions
- * into the cache directly and persists them through one debounced batch request,
- * so pointer movement never round-trips through the API.
+ * The personal Post-it board: a free canvas of draggable objects, separate from project and task
+ * notes.
  */
 const NotesBoardPage = () => {
   const t = useT();
@@ -129,62 +114,31 @@ const NotesBoardPage = () => {
   const restoreNote = useRestoreBoardNote(pageIndex);
   const pages = useBoardPages(pageIndex);
 
-  /*
-   * The page ceiling is the plan's, not a constant: three pages on the free
-   * tier, ten on a paid one. The structural ceiling stands in while the
-   * summary loads, and for a plan with no limit at all.
-   */
+  // The page ceiling is the plan's, not a constant: three pages on the free tier, ten on a paid
+  // one.
   const { data: billing } = useBillingSummary();
   const pageLimit = billing?.limits.boardPagesPerUser ?? MAX_BOARD_PAGES;
 
-  /*
-   * Ctrl+Z and Ctrl+Y for the wall.
-   *
-   * Keyed on the page index, so turning to another sheet of the pad starts a
-   * fresh history rather than offering to undo a change on a board that is no
-   * longer on screen. Every handler below that writes something records the
-   * pair of thunks that reverses it; the hook owns the stacks and the
-   * keystrokes. See `useBoardHistory` for why the entries are closures.
-   */
+  // Ctrl+Z and Ctrl+Y for the wall.
   const history = useBoardHistory(pageIndex);
 
   const notes = useMemo(() => board?.notes ?? [], [board?.notes]);
 
-  /*
-   * The notes, readable from a handler without being a dependency of it.
-   *
-   * This file's handlers are deliberately stable — the comment above them
-   * explains why: an identity that changes re-renders every Post-it on the
-   * wall, and some of this board's state ticks on the pointer. Undo needs to
-   * read a note's *previous* value, which would otherwise mean depending on
-   * `notes` and recreating the handler every time any note changed.
-   */
+  // The notes, readable from a handler without being a dependency of it. This file's handlers are
+  // deliberately stable — the comment above them explains why.
   const notesRef = useRef(notes);
   notesRef.current = notes;
 
-  /*
-   * Destructured, because `history` is a new object on every render while the
-   * functions inside it are stable `useCallback`s. Depending on the object
-   * would undo the very stability the ref above exists to preserve.
-   */
+  // Destructured, because `history` is a new object on every render while the functions inside it
+  // are stable `useCallback`s.
   const recordHistory = history.record;
   const links = board?.links ?? [];
   const strokes = board?.strokes ?? [];
   const strokesRef = useRef(strokes);
   strokesRef.current = strokes;
 
-  /*
-   * Ink joins the same undo stack as the notes.
-   *
-   * Ctrl+Z used to reach every change on this page except the one a hand
-   * makes most often, a line. Each stroke now records its own pair: undo
-   * removes it, redo draws it again (under a new id, which `ink.id` follows).
-   *
-   * `mutateAsync` rather than `mutate` with an `onSuccess`, and it matters:
-   * TanStack only runs a per-call `onSuccess` for the *latest* call, so three
-   * quick strokes would have left the first two with no id to undo by. And an
-   * undo that beats the server removes the stroke the moment its id arrives.
-   */
+  // Ink joins the same undo stack as the notes. Ctrl+Z used to reach every change on this page
+  // except the one a hand makes most often, a line.
   const addStrokeAsync = addStroke.mutateAsync;
   const removeStrokeNow = removeStroke.mutate;
 
@@ -273,19 +227,8 @@ const NotesBoardPage = () => {
     };
   }, []);
 
-  /*
-   * The sheet goes up first and the file follows it.
-   *
-   * See `useImageDrop`: the picture is on the wall the instant it is chosen,
-   * with the upload running underneath. Before this, the board sat unchanged
-   * for the length of a downscale plus a round trip to object storage, which on
-   * a phone photograph is the whole interaction spent looking at nothing.
-   */
-  /*
-   * The board as it is drawn right now, so a dropped picture is sized to land
-   * inside it rather than off its bottom edge. `client*` rather than the
-   * bounding box: a note's position is measured inside the border.
-   */
+  // The sheet goes up first and the file follows it. The board as it is drawn right now, so a
+  // dropped picture is sized to land inside it rather than off its bottom edge.
   const boardSize = useCallback(() => {
     const element = boardRef.current;
     return element ? { width: element.clientWidth, height: element.clientHeight } : null;
@@ -300,12 +243,8 @@ const NotesBoardPage = () => {
   });
 
   const handleCreateNote = () => {
-    /*
-     * The colour and angle are rolled once, here, rather than inside the
-     * mutation — so a redo puts back the *same* sheet rather than a differently
-     * coloured one at a new angle. An undo that changes what it restores is not
-     * an undo.
-     */
+    // The colour and angle are rolled once, here, rather than inside the mutation — so a redo puts
+    // back the *same* sheet rather than a differently coloured one at a new angle.
     const request = {
       content: '',
       color: NOTE_COLORS[Math.floor(Math.random() * NOTE_COLORS.length)],
@@ -314,15 +253,8 @@ const NotesBoardPage = () => {
     };
 
     createNote.mutate(request, {
-      /*
-       * Recorded from `onSuccess`, not from the click.
-       *
-       * Undoing a creation means deleting a specific row, and until the POST
-       * comes back there is no row id to delete — the sheet on screen is
-       * carrying a `pending-…` placeholder. Waiting means the entry only exists
-       * once it can actually be reversed, which is better than an entry that
-       * silently fails if pressed too early.
-       */
+      // Recorded from `onSuccess`, not from the click. Undoing a creation means deleting a specific
+      // row, and until the POST comes back there is no row id to delete.
       onSuccess: (note) =>
         history.record({
           label: t('board.history.addNote'),
@@ -392,13 +324,8 @@ const NotesBoardPage = () => {
   }, [isTouch, tool]);
 
   const marquee = useMarqueeSelection({
-    /*
-     * Off on touch. A lasso is a drag across the surface, which is the exact
-     * gesture the board now uses to scroll — with both live, every attempt to
-     * reach a note off-screen selected everything it passed over instead. The
-     * multi-select this backs is still reachable there through "Pick several",
-     * which is tap-based and does not compete with anything.
-     */
+    // Off on touch. A lasso is a drag across the surface, which is the exact gesture the board now
+    // uses to scroll — with both live.
     enabled: tool === 'select' && !isTouch,
     surfaceRef: boardRef,
     onCommit: commitMarquee,
@@ -473,23 +400,15 @@ const NotesBoardPage = () => {
         }
       }
 
-      // Cache first so the arrows and cards agree instantly, then one batched
-      // write for the whole gesture — minus anything that is still uploading,
-      // which has no row for the batch endpoint to move. See `useImageDrop`.
+      // Cache first so the arrows and cards agree instantly, then one batched write for the whole
+      // gesture — minus anything that is still uploading.
       patchPositions(moves);
 
       const saveable = moves.filter((move) => !isPendingNoteId(move.id));
       if (saveable.length > 0) persistPositions(saveable);
 
-      /*
-       * Where everything that moved came *from*, read off the notes as they
-       * were before `patchPositions` rewrote them.
-       *
-       * `notes` is this render's snapshot, so it still holds the pre-drag
-       * coordinates even though the cache no longer does — which is what makes
-       * a one-line reversal possible without threading drag-start state through
-       * the gesture. A drag that ended where it began records nothing.
-       */
+      // Where everything that moved came *from*, read off the notes as they were before
+      // `patchPositions` rewrote them.
       const before = saveable
         .map((move) => {
           const original = notes.find((entry) => entry.id === move.id);
@@ -519,36 +438,14 @@ const NotesBoardPage = () => {
     [bus, history, notes, patchPositions, persistPositions, t],
   );
 
-  /*
-   * One handler per action for the whole wall, rather than one arrow function
-   * per note per render. Every board state that ticks on the pointer — the
-   * draft connector in connect mode redraws on each animation frame — would
-   * otherwise re-render every Post-it on the page along with it.
-   */
-  /*
-   * Every write below refuses an id the server has never heard of.
-   *
-   * While a picture is uploading there is a sheet on the board with no row
-   * behind it (see `useImageDrop`), and it looks and behaves exactly like any
-   * other — so it can be picked up, renamed or binned. Each of those would
-   * PATCH or DELETE a `pending-image-…` id and come back 404, which surfaces as
-   * an error toast for an action that, from the user's side, was ordinary.
-   * Ignoring the write is the honest response: the note is not saveable yet,
-   * and it is about to be replaced by one that is.
-   */
+  // One handler per action for the whole wall, rather than one arrow function per note per render.
+  // Every board state that ticks on the pointer.
   const handleChange = useCallback(
     (id: string, payload: UpdateNotePayload) => {
       if (isPendingNoteId(id)) return;
       updateNote.mutate({ noteId: id, payload });
 
-      /*
-       * The inverse is the same keys read off the note as it was.
-       *
-       * Building it from `payload`'s own keys rather than from a fixed list
-       * means this keeps working when a field is added to `UpdateNotePayload`:
-       * whatever the caller changed is what gets put back, and nothing else is
-       * touched. A colour change does not quietly restore an old title.
-       */
+      // The inverse is the same keys read off the note as it was.
       const previous = notesRef.current.find((entry) => entry.id === id);
       if (!previous) return;
 
@@ -570,9 +467,8 @@ const NotesBoardPage = () => {
       if (isPendingNoteId(id)) return;
       deleteNote.mutate(id);
 
-      // A soft delete keeps the id, so the reversal is a restore rather than a
-      // re-create — and every connector that pointed at this note survives it.
-      // See `useRestoreBoardNote`.
+      // A soft delete keeps the id, so the reversal is a restore rather than a re-create — and
+      // every connector that pointed at this note survives it.
       recordHistory({
         label: t('board.history.delete'),
         undo: () => restoreNote.mutate(id),
@@ -598,15 +494,8 @@ const NotesBoardPage = () => {
     [notes, updateNote.mutate],
   );
 
-  /*
-   * No early return.
-   *
-   * The whole page used to be replaced by a centred loader until the snapshot
-   * landed, which took the header, the view switcher and the pager with it —
-   * so arriving at your own desk meant watching the furniture appear before
-   * the paper did, and then watching the layout settle around it. Now the
-   * chrome is drawn immediately and only the surface stands in for itself.
-   */
+  // No early return. The whole page used to be replaced by a centred loader until the snapshot
+  // landed, which took the header.
   const boardPages = board?.pages ?? [];
   const isBlank = !isLoading && notes.length === 0 && strokes.length === 0;
   const connectSource = connectFrom ? notes.find((note) => note.id === connectFrom) : undefined;
@@ -693,26 +582,16 @@ const NotesBoardPage = () => {
           isUploading={isUploading}
           isExpanded={isExpanded}
           onToggleExpand={() => setIsExpanded((expanded) => !expanded)}
-          /*
-           * No ink on touch. Freehand needs the surface to swallow the drag
-           * (`touch-action: none`), and the surface needs that same drag to
-           * scroll to the notes that do not fit on a phone. One of the two has
-           * to go, and a board you cannot navigate is worse than a board you
-           * cannot doodle on.
-           */
+          /* No ink on touch. Freehand needs the surface to swallow the drag (`touch-action: none`),
+             and the surface needs that same drag to scroll to the notes that do not fit on a phone. */
           showInkTools={!isTouch}
           onClearInk={handleClearInk}
           onClearAll={() => {
             if (window.confirm(t('notes.confirmClearPage'))) {
               clearBoard.mutate();
               setSelection([]);
-              /*
-               * Clearing the page is the one action that cannot be reversed —
-               * it deletes every row on the surface in one call and returns
-               * nothing to rebuild them from. So the stack goes with it, rather
-               * than leaving entries that would try to restore notes into a
-               * board that no longer has them. See `useBoardHistory`.
-               */
+              // Clearing the page is the one action that cannot be reversed — it deletes every row
+              // on the surface in one call and returns nothing to rebuild them from.
               history.clear();
             }
           }}
@@ -728,32 +607,11 @@ const NotesBoardPage = () => {
         className={cn(
           'relative rounded-3xl border border-dashed border-edge',
           'board-grid bg-surface-sunken/40',
-          /*
-           * Scrollable on touch, clipped on a pointer device.
-           *
-           * Notes are absolutely positioned wherever they were dropped, and a
-           * desk laid out on a 1400px screen puts most of them past the right
-           * edge of a phone. Clipped, those notes were not merely awkward to
-           * reach — there was no gesture that could reach them at all. As a
-           * scroll container the same absolute positions become scrollable
-           * extent, so everything is reachable with no pan/zoom layer to build
-           * and nothing to change about how a note stores its position.
-           *
-           * `ConnectorLayer` is `overflow-visible`, so the arrows keep drawing
-           * past the fold rather than being cut at the viewport edge.
-           */
+          /* Scrollable on touch, clipped on a pointer device. Notes are absolutely positioned
+             wherever they were dropped. */
           isTouch ? 'overflow-auto touch-pan-x touch-pan-y' : 'overflow-hidden',
-          /*
-           * `dvh`: the address bar is part of the viewport `vh` counts and the
-           * phone does not give back, so `58vh` ran under it.
-           *
-           * Raised from 58/66. A desk is the one surface here whose whole
-           * value is *room* — notes are placed by hand at absolute positions,
-           * and a short board means either scrolling to reach what somebody
-           * dropped or piling everything into the visible strip. The toolbar
-           * and the pager above it are fixed costs, so the board was getting
-           * barely half a screen on a laptop.
-           */
+          /* `dvh`: the address bar is part of the viewport `vh` counts and the phone does not give
+             back, so `58vh` ran under it. Raised from 58/66. */
           isExpanded ? 'min-h-0 flex-1' : 'min-h-[70dvh] sm:min-h-[78dvh]',
           tool === 'select' && !isTouch && 'cursor-crosshair',
         )}
@@ -807,10 +665,8 @@ const NotesBoardPage = () => {
           <AnimatePresence initial={false}>
             {notes.map((note) => (
               <PostIt
-                // Keyed on `clientKey` where there is one: a sheet drawn
-                // optimistically keeps the same element when the server's row
-                // takes its place, so a drag in progress is never torn out from
-                // under the pointer. See `Note.clientKey`.
+                // Keyed on `clientKey` where there is one: a sheet drawn optimistically keeps the
+                // same element when the server's row takes its place.
                 key={note.clientKey ?? note.id}
                 note={note}
                 constraintsRef={boardRef}
@@ -855,14 +711,8 @@ const NotesBoardPage = () => {
           canGroup={selection.length > 1}
           canUngroup={selectedGroupIds.size > 0}
           onGroup={() => {
-            /*
-             * Each note's *own* previous group, not one shared value.
-             *
-             * A selection can span several existing groups, so undoing a group
-             * has to put every sheet back where it came from individually —
-             * restoring them all to `null` would silently dissolve groups the
-             * user never touched.
-             */
+            // Each note's *own* previous group, not one shared value. A selection can span several
+            // existing groups.
             const before = notes
               .filter((note) => selection.includes(note.id))
               .map((note) => ({ id: note.id, groupId: note.groupId }));

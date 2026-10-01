@@ -114,13 +114,8 @@ export const organizationApi = {
   },
 
   /**
-   * Company invitations addressed to the signed-in user.
-   *
-   * A different path from `/invitations`, which answers the same question about
-   * projects. Two endpoints rather than one merged list because the ids come
-   * from two tables and are answered on two routes — see the API's
-   * `OrganizationInvitationsController`. The invitations *screen* still shows
-   * one list; assembling it is two parallel fetches.
+   * Company invitations addressed to the signed-in user. A different path from `/invitations`,
+   * which answers the same question about projects.
    */
   async myInvitations(): Promise<OrganizationInvitation[]> {
     const { data } = await api.get<OrganizationInvitation[]>('/organization-invitations');

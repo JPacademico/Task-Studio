@@ -17,22 +17,8 @@ interface LiveCallState {
 }
 
 /**
- * Whether this tab is in a live call, and where.
- *
- * ## Why this exists
- *
- * The call is owned by `LiveStage`, deep inside the project page's Live tab,
- * and everything about it used to be private to that component. Two things
- * outside it now need to know:
- *
- *   - the project page, which keeps the stage mounted (and hidden) while the
- *     reader is on another of the project's tabs, so that looking at the board
- *     does not hang up the call;
- *   - `LiveCallGuard`, which stops the reader leaving the project without
- *     being told that doing so ends the call.
- *
- * It holds only what those two need. The peer connections, the devices and the
- * roster all stay in `useLiveCall`, where their lifecycle is.
+ * Whether this tab is in a live call, and where. The call is owned by `LiveStage`, deep inside the
+ * project page's Live tab, and everything about it used to be private to that component.
  */
 export const useLiveCallStore = create<LiveCallState>((set) => ({
   active: null,

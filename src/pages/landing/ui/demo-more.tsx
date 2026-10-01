@@ -15,38 +15,11 @@ import { useT, type TranslationKey } from '@/shared/i18n';
 import { useDemoClock } from './demo-frame';
 
 /**
- * Six more of the product, built the same way as the first three.
- *
- * Every one of these obeys the rules `DemoFrame` sets out: assembled from the
- * app's own tokens rather than recorded, showing a *mechanism* rather than a
- * claim, and holding its last frame under `prefers-reduced-motion` so a still
- * reader sees the outcome rather than the setup.
- *
- * They live in one file rather than six because they are one thing — the
- * carousel's payload — and six twenty-line modules would be six imports and six
- * places to look for the same idiom.
- *
- * ## The rule every loop here now follows: nothing may change its own height
- *
- * Three of these used to, and it was the worst thing on the page. A loop built
- * out of `AnimatePresence` around conditionally-rendered rows grows a line at a
- * time as its clock advances and then collapses back to nothing when the clock
- * wraps — four times a cycle, forever. Inside a panel that is one of three in a
- * column, that is a panel that pumps; and because the carousel's page is only
- * given a *minimum* height, a page whose demos are mid-cycle is taller than the
- * same page a second later, so everything below the section slides up and down
- * on its own. The terminal loop was the loudest: one line to four and back.
- *
- * So the elements are all mounted, all the time, and the clock changes their
- * `opacity` and offset rather than their existence. The geometry of every panel
- * is now decided once, by its markup, and nothing the clock does can move it.
- * `AnimatePresence` is still the right tool for a list whose contents genuinely
- * come and go; it is the wrong one for a timeline pretending to be one.
+ * Six more of the product, built the same way as the first three. Every one of these obeys the
+ * rules `DemoFrame` sets out: assembled from the app's own tokens rather than recorded.
  */
 
-// ---------------------------------------------------------------------------
-// The notes wall
-// ---------------------------------------------------------------------------
+// --- The notes wall ----------------------------------------------------------
 
 /** Where each note sits, and the angle it was stuck down at. */
 const WALL: { key: TranslationKey; colour: string; x: string; y: string; tilt: number }[] = [
@@ -56,12 +29,8 @@ const WALL: { key: TranslationKey; colour: string; x: string; y: string; tilt: n
 ];
 
 /**
- * Post-its going up on a wall, and a string tied between two of them.
- *
- * The connector is the half worth showing. A sticky note is a sticky note in
- * any application; a note *linked* to another one is the thing the board does
- * that a list cannot, and it is the reason the wall is a canvas rather than a
- * column.
+ * Post-its going up on a wall, and a string tied between two of them. The connector is the half
+ * worth showing.
  */
 export const DemoNotes = () => {
   const t = useT();
@@ -119,17 +88,11 @@ export const DemoNotes = () => {
   );
 };
 
-// ---------------------------------------------------------------------------
-// Meetings reaching a real calendar
-// ---------------------------------------------------------------------------
+// --- Meetings reaching a real calendar ---------------------------------------
 
 /**
- * A meeting booked here, arriving there.
- *
- * The claim is narrow and worth being precise about: Task Studio writes into a
- * calendar it creates itself, and this shows exactly that — a row on the left,
- * the same row on the right, under a Google mark. It does not show it reading
- * anybody's existing appointments, because it cannot.
+ * A meeting booked here, arriving there. The claim is narrow and worth being precise about: Task
+ * Studio writes into a calendar it creates itself, and this shows exactly that — a row on the left.
  */
 export const DemoMeetings = () => {
   const t = useT();
@@ -147,9 +110,7 @@ export const DemoMeetings = () => {
           {t('landing.meet.here')}
         </p>
 
-        {/* Always in the layout, visible only once it is booked. See the note
-            at the top of the file: a row that appears and disappears is a
-            column that changes height four times a cycle. */}
+        {/* Always in the layout, visible only once it is booked. */}
         <motion.div
           animate={{ opacity: isBooked ? 1 : 0, y: isBooked || reduceMotion ? 0 : 8 }}
           transition={{ duration: reduceMotion ? 0 : 0.3 }}
@@ -200,18 +161,13 @@ export const DemoMeetings = () => {
   );
 };
 
-// ---------------------------------------------------------------------------
-// Pages that live with the project
-// ---------------------------------------------------------------------------
+// --- Pages that live with the project ----------------------------------------
 
 const PAGE_LINES = [92, 78, 96, 61, 85, 40];
 
 /**
- * A page being written next to the work it is about.
- *
- * Drawn as ruled lines filling in rather than as lorem text: the feature is
- * that documents live *in the project*, and inventing a paragraph for the
- * reader to squint at would put the emphasis on words nobody is meant to read.
+ * A page being written next to the work it is about. Drawn as ruled lines filling in rather than as
+ * lorem text: the feature is that documents live *in the project*.
  */
 export const DemoPages = () => {
   const t = useT();
@@ -256,19 +212,11 @@ export const DemoPages = () => {
   );
 };
 
-// ---------------------------------------------------------------------------
-// A changelog you can undo
-// ---------------------------------------------------------------------------
+// --- A changelog you can undo ------------------------------------------------
 
 /**
- * Somebody deleting something, and the log putting it back.
- *
- * ## Why the undo is the demo and the log is not
- *
- * Every project tool has an activity feed. Almost none of them let you *press*
- * one — and being able to is the entire reason this product's log exists. So
- * the loop spends its time on the reversal rather than on the list: a row is
- * struck through, a button is pressed, the row comes back.
+ * Somebody deleting something, and the log putting it back. Every project tool has an activity
+ * feed.
  */
 export const DemoUndo = () => {
   const t = useT();
@@ -309,9 +257,8 @@ export const DemoUndo = () => {
           {t('landing.undo.log')}
         </p>
 
-        {/* Mounted throughout, faded in on beat one. The row is the tallest
-            thing in this panel, so letting it come and go was letting the panel
-            change height on a loop — see the note at the top of the file. */}
+        {/* Mounted throughout, faded in on beat one. The row is the tallest thing in this
+            panel, so letting it come and go was letting the panel change height on a loop. */}
         <motion.div
           animate={{ opacity: step >= 1 ? 1 : 0, y: step >= 1 || reduceMotion ? 0 : -6 }}
           transition={{ duration: reduceMotion ? 0 : 0.25 }}
@@ -348,16 +295,11 @@ export const DemoUndo = () => {
   );
 };
 
-// ---------------------------------------------------------------------------
-// A commit that closes its own task
-// ---------------------------------------------------------------------------
+// --- A commit that closes its own task ---------------------------------------
 
 /**
- * The terminal half of the product, in four beats.
- *
- * Shown as a real prompt because that is what it is. The one thing this must
- * not do is imply the server commits anything: the line typed is `git commit`,
- * on the reader's machine, and Task Studio's part is the sentence underneath.
+ * The terminal half of the product, in four beats. Shown as a real prompt because that is what it
+ * is.
  */
 export const DemoCommit = () => {
   const t = useT();
@@ -371,16 +313,8 @@ export const DemoCommit = () => {
         <span className="text-content">git commit -m &quot;fix: rate limit the import routes&quot;</span>
       </p>
 
-      {/*
-        Three lines, always in the layout, revealed on their beat.
-
-        This is the loop that made the whole section pump. Mounting each line as
-        its beat arrived took the terminal from one line to four and back to one
-        every five seconds, and because the carousel gives its page a *minimum*
-        height rather than a fixed one, everything below the section rose and
-        fell with it. The lines are printed by a terminal, and a terminal does
-        not reflow what is above the cursor.
-      */}
+      {/* Three lines, always in the layout, revealed on their beat. This is the loop that made
+          the whole section pump. */}
       <motion.p
         animate={{ opacity: step >= 1 ? 1 : 0, x: step >= 1 || reduceMotion ? 0 : -6 }}
         transition={{ duration: reduceMotion ? 0 : 0.25 }}
@@ -411,15 +345,11 @@ export const DemoCommit = () => {
   );
 };
 
-// ---------------------------------------------------------------------------
-// The whiteboard
-// ---------------------------------------------------------------------------
+// --- The whiteboard ----------------------------------------------------------
 
 /**
- * Ink appearing on a board, at a nib you can see.
- *
- * The dotted ring is not decoration here — it is the actual cursor the board
- * draws, so this is the interface rather than a picture of it.
+ * Ink appearing on a board, at a nib you can see. The dotted ring is not decoration here — it is
+ * the actual cursor the board draws, so this is the interface rather than a picture of it.
  */
 export const DemoWhiteboard = () => {
   const t = useT();

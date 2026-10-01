@@ -15,44 +15,14 @@ interface JobEvent {
 }
 
 /**
- * How long to wait for a job to report back before going to look for it.
- *
- * Generously past the API's own ceiling for one of these — two bounded attempts
- * plus the pause between them — so this only fires when something has genuinely
- * gone missing rather than merely taken a while. What goes missing is almost
- * always the *delivery*: a socket that dropped and reconnected loses the events
- * that were emitted while it was away, and the job on the other end finished
- * perfectly well.
+ * How long to wait for a job to report back before going to look for it. Generously past the API's
+ * own ceiling for one of these — two bounded attempts plus the pause between them.
  */
 const WATCHDOG_MS = 100_000;
 
 /**
- * Suggestions as they are written, rather than all at once at the end.
- *
- * ## What changed and why
- *
- * Asking for suggestions used to be one long POST. The request was held open
- * for the whole generation — tens of seconds against this model — which put it
- * in a race with every timeout between the browser and the API, and losing that
- * race produced the worst possible outcome: the server carried on producing an
- * answer nobody would ever see, and the user was told it had failed.
- *
- * Now the POST only starts the job and returns a receipt. The suggestions
- * arrive on the socket that is already open for chat and the whiteboard, one at
- * a time as each is finished, so the panel fills in visibly instead of sitting
- * blank and then blinking into existence. There is no request left to time out.
- *
- * ## The three ways this can still go wrong, and what happens
- *
- * 1. **No socket.** Nothing would ever be delivered, so `start` uses the
- *    synchronous route instead. Slower, but it cannot silently hang.
- * 2. **The socket drops mid-job.** The events emitted while it was away are
- *    gone — Socket.io replays nothing. The watchdog notices the silence and
- *    goes looking in the suggestion history, where the finished job has already
- *    persisted its result.
- * 3. **The job genuinely failed.** It says so, over the same channel.
- *
- * Only after all three come up empty does the panel show an error.
+ * Suggestions as they are written, rather than all at once at the end. Asking for suggestions used
+ * to be one long POST.
  */
 export const useSuggestionStream = (projectId: string) => {
   const { socket, isConnected } = useRealtime();
@@ -63,14 +33,7 @@ export const useSuggestionStream = (projectId: string) => {
   const [status, setStatus] = useState<StreamStatus>('idle');
   const [errorText, setErrorText] = useState<string | null>(null);
 
-  /*
-   * The job being watched, in a ref rather than state.
-   *
-   * The socket handlers are registered once and must compare against whatever
-   * the *current* job is; reading it from state would capture the value at the
-   * time the effect ran, so every event after the first job would be discarded
-   * as belonging to somebody else.
-   */
+  // The job being watched, in a ref rather than state.
   const jobId = useRef<string | null>(null);
   const startedAt = useRef(0);
   const watchdog = useRef<ReturnType<typeof setTimeout>>(undefined);

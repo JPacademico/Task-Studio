@@ -10,11 +10,8 @@ interface TearOffGhostProps {
 }
 
 /**
- * What the pointer is carrying while a menu entry is being pulled out.
- *
- * Portalled to the body and positioned in viewport coordinates so it is never
- * clipped by the rail's scroll container — which is the whole reason the rows
- * themselves stay put during the gesture.
+ * What the pointer is carrying while a menu entry is being pulled out. Portalled to the body and
+ * positioned in viewport coordinates so it is never clipped by the rail's scroll container.
  */
 export const TearOffGhost = ({ point, label, icon: Icon, color }: TearOffGhostProps) => {
   if (!point) return null;

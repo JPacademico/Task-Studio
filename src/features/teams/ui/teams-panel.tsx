@@ -37,13 +37,8 @@ interface TeamComposerProps {
 }
 
 /**
- * Making a team, or changing one.
- *
- * The member picker is chips rather than a dropdown for the same reason the
- * meeting composer's is: the answer is nearly always several people, and a
- * dropdown turns "several" into several separate acts. Everybody offered is
- * already on the roster this team draws from — the API refuses anybody who is
- * not, so a picker that offered outsiders would be offering a failure.
+ * Making a team, or changing one. The member picker is chips rather than a dropdown for the same
+ * reason the meeting composer's is: the answer is nearly always several people.
  */
 const TeamComposer = ({ isOpen, onClose, scope, roster, team }: TeamComposerProps) => {
   const t = useT();
@@ -242,10 +237,8 @@ const TeamRow = ({ team, canManage, onEdit, onDelete, t }: TeamRowProps) => {
             <Pencil className="h-3.5 w-3.5" />
           </Button>
 
-          {/* Two-step rather than a dialog, matching the meetings board: the
-              group is not recoverable anywhere in this UI, and one stray click
-              on a toolbar is exactly how it would go. Nobody loses access —
-              a team is a shortcut for naming people, not a grant. */}
+          {/* Two-step rather than a dialog, matching the meetings board: the group is not
+              recoverable anywhere in this UI. */}
           <Button
             size={isConfirmingDelete ? 'sm' : 'icon'}
             variant={isConfirmingDelete ? 'danger' : 'ghost'}
@@ -276,19 +269,8 @@ interface TeamsPanelProps {
 }
 
 /**
- * Teams, at whichever altitude the caller is standing.
- *
- * One panel for both because the two are the same screen with a different
- * roster behind them — a company's teams are drawn from its staff and used when
- * starting projects and booking meetings; a project's are drawn from its roster
- * and used when assigning tasks. The only thing that differs is which list the
- * picker offers and which sentence the hint says, and both come from `scope`.
- *
- * What a team is *for* is worth being explicit about on the surface itself,
- * because the obvious reading is wrong: it does not own anything and it grants
- * nothing. Picking one somewhere else copies its people into that place, once,
- * at that moment. The panel says so under the heading rather than leaving it to
- * be discovered.
+ * Teams, at whichever altitude the caller is standing. One panel for both because the two are the
+ * same screen with a different roster behind them.
  */
 export const TeamsPanel = ({ scope, roster, canManage }: TeamsPanelProps) => {
   const t = useT();
@@ -374,13 +356,5 @@ export const TeamsPanel = ({ scope, roster, canManage }: TeamsPanelProps) => {
   );
 };
 
-/*
- * `TeamPicker` used to live here.
- *
- * It was a standalone chip row that every composer stacked above its own list
- * of faces — two controls asking the same question ("who is in on this?") at
- * two granularities, and neither of them answering it well. It is now one tab
- * of `InvitePicker`, which is also where the paging that a company roster
- * needs lives. Nothing was lost: picking a team still expands to its people at
- * the moment it is picked, which is the whole contract — see `Team`.
- */
+// `TeamPicker` used to live here. It was a standalone chip row that every composer stacked above
+// its own list of faces — two controls asking the same question.

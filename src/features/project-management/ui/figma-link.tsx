@@ -24,29 +24,8 @@ interface FigmaLinkDialogProps {
 }
 
 /**
- * Connecting a project to a design file, or letting go of one.
- *
- * ## Why this is its own component
- *
- * The same reason `RepositoryLinkDialog` is: two surfaces need it and neither
- * owns it. The mark beside the project's name is where somebody goes when they
- * are thinking about the design; the Figma card on the Connections shelf is
- * where they go when they are thinking about what this project talks to. Both
- * are legitimate doors and both have to open the *same room* — a second copy
- * of this form would be a second place for "what counts as a Figma link" and
- * "what disconnecting costs you" to drift apart.
- *
- * ## Why the credential is on the form at all
- *
- * Figma has no anonymous read of any kind, so unlike a GitHub link there is
- * nothing to verify an address against without one. The sentence under the
- * token field says plainly what that means — one person's token, read by the
- * whole roster — because the alternative is somebody discovering it later,
- * which is the shape of every bad surprise a shared credential produces.
- *
- * The field is `type="password"` and the token is never read back: no route
- * answers with it, so re-opening this dialog on a connected project shows the
- * disconnect side rather than a pre-filled secret.
+ * Connecting a project to a design file, or letting go of one. The same reason
+ * `RepositoryLinkDialog` is: two surfaces need it and neither owns it.
  */
 export const FigmaLinkDialog = ({ projectId, figma, isOpen, onClose }: FigmaLinkDialogProps) => {
   const t = useT();
@@ -63,14 +42,12 @@ export const FigmaLinkDialog = ({ projectId, figma, isOpen, onClose }: FigmaLink
       await connect.mutateAsync({ url: url.trim(), token: token.trim() });
       onClose();
       setUrl('');
-      // Cleared on success as well as on close: a token that lingers in a
-      // React state after the dialog is done with it is a credential kept
-      // alive for no reason at all.
+      // Cleared on success as well as on close: a token that lingers in a React state after the
+      // dialog is done with it is a credential kept alive for no reason at all.
       setToken('');
     } catch {
-      // The hook's own `onError` has already said what went wrong. Staying
-      // open with the text still in the fields is the whole handling: a
-      // mistyped link is corrected in place rather than retyped.
+      // The hook's own `onError` has already said what went wrong. Staying open with the text still
+      // in the fields is the whole handling.
     }
   };
 
@@ -86,15 +63,7 @@ export const FigmaLinkDialog = ({ projectId, figma, isOpen, onClose }: FigmaLink
     >
       {figma ? (
         <div className="space-y-4">
-          {/*
-            The file itself, as an object rather than as a sentence.
-
-            Somebody opening this dialog on a connected project is here to
-            check what is connected or to undo it, and both questions are
-            answered faster by a row that looks like the file than by a
-            paragraph naming it. The row is also the way *to* the file, which
-            is the thing most people actually came for.
-          */}
+          {/* The file itself, as an object rather than as a sentence. */}
           <a
             href={figma.url}
             target="_blank"
@@ -168,9 +137,8 @@ export const FigmaLinkDialog = ({ projectId, figma, isOpen, onClose }: FigmaLink
             <span className="text-2xs font-semibold uppercase tracking-wide text-content-faint">
               {t('figma.tokenLabel')}
             </span>
-            {/* A token is pasted, not typed, and a paste that silently
-                lost its last character is invisible behind a row of dots -
-                which is exactly the case the reveal is for. */}
+            {/* A token is pasted, not typed, and a paste that silently lost its last character
+                is invisible behind a row of dots - which is exactly the case the reveal is for. */}
             <PasswordInput
               value={token}
               onChange={(event) => setToken(event.target.value)}
@@ -182,16 +150,8 @@ export const FigmaLinkDialog = ({ projectId, figma, isOpen, onClose }: FigmaLink
             />
           </label>
 
-          {/*
-            Where to go and get one — as a step, not a footnote.
-
-            This was 10px `text-content-faint` under the field: the quietest
-            size in the app, in its quietest colour, carrying the one piece of
-            information without which nobody can finish the form. It is now the
-            size of the labels around it, on its own surface, because "I do not
-            have a token" is the state every first-time reader of this dialog
-            is in.
-          */}
+          {/* Where to go and get one — as a step, not a footnote. This was 10px
+              `text-content-faint` under the field: the quietest size in the app. */}
           <p
             className={cn(
               'flex items-start gap-2 rounded-xl border border-edge bg-surface-sunken/60',
@@ -203,36 +163,14 @@ export const FigmaLinkDialog = ({ projectId, figma, isOpen, onClose }: FigmaLink
           </p>
 
           <div className="flex items-center gap-2 border-t border-edge pt-3.5">
-            {/*
-              The shared-credential note, behind the mark it is about.
-
-              It used to be a permanent three-line block above the buttons.
-              That is the right weight the first time somebody reads it and the
-              wrong weight every time after, because it is a *property* of the
-              arrangement rather than a decision to make here — and it pushed
-              the actual buttons below the fold on a short window. Pointing at
-              the shield says it in full; see `HoverHint` for why this is the
-              one kind of sentence that may move behind a gesture.
-            */}
+            {/* The shared-credential note, behind the mark it is about. It used to be a
+                permanent three-line block above the buttons. */}
             <HoverHint label={t('figma.securityLabel')} hint={t('figma.sharedCredential')}>
               <ShieldCheck className="h-3.5 w-3.5" />
             </HoverHint>
 
-            {/*
-              The tutorial, in the corner nobody has to look at.
-
-              This dialog asks for two things somebody has to go and fetch from
-              another product, and the hint above the buttons can only name the
-              menu path — it has no room for what a token may read, what the
-              file link looks like, or what to do when Figma refuses it. The
-              documentation has all of that, so the dialog points at it from the
-              one place a reader looks when a form has defeated them.
-
-              A new tab, deliberately: following this in place would throw away
-              a link and a token somebody may have already pasted. `rel` is
-              there because `target="_blank"` without it hands the opened page a
-              live `window.opener`.
-            */}
+            {/* The tutorial, in the corner nobody has to look at. This dialog asks for two
+                things somebody has to go and fetch from another product. */}
             <a
               href="/docs#figma"
               target="_blank"
@@ -268,32 +206,7 @@ export const FigmaLinkDialog = ({ projectId, figma, isOpen, onClose }: FigmaLink
   );
 };
 
-/**
- * The way from a project to its design, beside the project's own name.
- *
- * ## Why it sits next to the repository mark
- *
- * Because they answer the same question about the two halves of a product
- * project — where is the code, where is the design — and both are
- * *destinations* rather than preferences. Somebody looking at a board and
- * wanting the design wants it now, from where they are; a link filed two
- * clicks into a settings dialog is a link people stop using and then stop
- * expecting.
- *
- * The same shape as `RepositoryLink` on purpose, down to the two-control
- * arrangement: on a connected project it is a link and nothing else, one click
- * straight to Figma, with disconnecting behind a second quiet button that only
- * an admin sees. A reader who cannot manage the project sees nothing at all on
- * an unconnected one — the offer would be a button that exists to refuse them.
- *
- * ## Why an unavailable deployment draws nothing rather than a disabled mark
- *
- * A deployment with no encryption key cannot keep a Figma credential, which is
- * a fact about the server and not about this project or this person. A greyed
- * mark would invite an admin to press it and read an error about an
- * environment variable they may not control; the Connections tab is where that
- * sentence belongs, and it says it there.
- */
+/** The way from a project to its design, beside the project's own name. */
 export const FigmaLink = ({ projectId, figma, canManage, isAvailable }: FigmaLinkProps) => {
   const t = useT();
   const [isOpen, setIsOpen] = useState(false);

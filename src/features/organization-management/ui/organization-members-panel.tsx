@@ -58,9 +58,8 @@ const MemberRow = ({
   const update = useUpdateOrganizationMember(organizationId);
   const remove = useRemoveOrganizationMember(organizationId);
 
-  // The owner's row is read-only in both directions: their role cannot be
-  // changed and they cannot be removed. Deleting the company is the only way
-  // out, and the settings dialog is where that lives.
+  // The owner's row is read-only in both directions: their role cannot be changed and they cannot
+  // be removed.
   const isCompanyOwner = member.role === 'OWNER';
 
   const saveTitle = () => {
@@ -109,15 +108,8 @@ const MemberRow = ({
         )}
       </div>
 
-      {/*
-        Admins can change roles now, not only the owner.
-        
-        The one thing they cannot do is change *another admin's* role — the API
-        refuses it, because otherwise any admin could demote every other one and
-        be the last one standing. So the control is a dropdown for a member and
-        a badge for a fellow admin, which says who may be edited without having
-        to explain it. See `OrganizationRosterService.updateMember`.
-      */}
+      {/* Admins can change roles now, not only the owner. The one thing they cannot do is
+          change *another admin's* role. */}
       {canManage && !isCompanyOwner && (isOwner || member.role !== 'ADMIN') ? (
         <Select
           value={member.role}
@@ -174,16 +166,7 @@ interface InviteFormProps {
   t: Translate;
 }
 
-/**
- * Inviting one person, by address.
- *
- * Address only, and no directory search: this panel is for a company inviting
- * somebody it already employs or is about to, and the person doing the inviting
- * knows the address. The API refuses anybody without a confirmed account, which
- * is the same rule the project roster follows and for the same reason — an
- * invitation to an address nobody has claimed is a row that can never be
- * answered.
- */
+/** Inviting one person, by address. */
 const InviteForm = ({ organizationId, t }: InviteFormProps) => {
   const [email, setEmail] = useState('');
   const [jobTitle, setJobTitle] = useState('');
@@ -261,19 +244,8 @@ interface OrganizationMembersPanelProps {
 }
 
 /**
- * The company's staff list.
- *
- * ## What being on it does and does not mean
- *
- * It means you can see the company: its projects board, its numbers, its
- * calendar and this list. It does **not** put you on any project — opening one
- * still requires being on its roster, and that invitation still comes from the
- * project itself. The panel says so in as many words, because "I added them to
- * the company, why can't they see the work" is the one question this design
- * invites and the one place to answer it is here.
- *
- * Only ever mounted for staff. The endpoints behind it are staff-only, and the
- * page shows a guest an explanation instead — see `OrganizationPage`.
+ * The company's staff list. It means you can see the company: its projects board, its numbers, its
+ * calendar and this list.
  */
 export const OrganizationMembersPanel = ({
   organization,

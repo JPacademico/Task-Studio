@@ -21,12 +21,8 @@ export const formatBadge = (source: DocumentSource): string => {
 };
 
 /**
- * Only a PDF renders in a browser *frame*.
- *
- * Pictures and archives are previewable too, and much more directly — they
- * have their own components below and never reach this one's frame. What is
- * left here is the original pair: a PDF, which the browser's own viewer draws,
- * and a `.docx`, which nothing draws.
+ * Only a PDF renders in a browser *frame*. Pictures and archives are previewable too, and much more
+ * directly — they have their own components below and never reach this one's frame.
  */
 const isPreviewable = (source: DocumentSource): boolean => source.mime === 'application/pdf';
 
@@ -41,43 +37,16 @@ interface ImportedDocumentProps {
 }
 
 /**
- * A page that is the file somebody uploaded.
- *
- * This is the whole point of importing rather than pasting: the page *is* the
- * document — the original bytes, shown as they are — and nothing has rewritten
- * a word of it. There used to be a **Convert & edit** button on this card that
- * handed the file to a language model and replaced the page with its reading
- * of it. It is gone, and what is left is the honest version of what this
- * surface was always best at: keeping somebody's document exactly as they
- * wrote it, behind the project's own access rules, one click from a download.
- *
- * ## Why the PDF is fetched rather than framed from storage
- *
- * The bucket hands out public URLs, and the app's CSP is `frame-src 'self'
- * blob:` — deliberately, because widening it to a storage origin widens it for
- * every other page too. So the file comes through the API (which checks the
- * project's roster on the way, something an unguessable URL cannot do) and is
- * framed from a `blob:` URL made here. The object URL is revoked on unmount;
- * leaving it behind pins the whole file in memory for the life of the tab.
- *
- * A `.docx` gets no frame, because no browser renders one. It gets the same
- * card with the honest version of the situation and the thing that actually
- * helps: open it in whatever opens Word files.
+ * A page that is the file somebody uploaded. This is the whole point of importing rather than
+ * pasting: the page *is* the document — the original bytes.
  */
 export const ImportedDocument = ({ documentId, source, title }: ImportedDocumentProps) => {
   const t = useT();
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
 
-  /*
-   * The effect keys on the mime, not on `source`.
-   *
-   * `source` is a fresh object on every render of the query cache — a
-   * teammate's save, a list refetch, a socket event — and depending on it
-   * would re-download the file each time, revoking a URL the `<iframe>` is
-   * still displaying. The id and the format are the only two facts the fetch
-   * actually depends on, and both are primitives.
-   */
+  // The effect keys on the mime, not on `source`. `source` is a fresh object on every render of the
+  // query cache — a teammate's save, a list refetch, a socket event.
   const { mime } = source;
 
   useEffect(() => {
@@ -108,20 +77,8 @@ export const ImportedDocument = ({ documentId, source, title }: ImportedDocument
     };
   }, [documentId, mime, t]);
 
-  /*
-   * The two kinds that have a surface of their own.
-   *
-   * Delegated rather than folded in as more branches, because neither is a
-   * variation on "a file in a frame": a picture is drawn at full size with a
-   * zoom, and an archive is a *listing* with no bytes rendered at all. Sharing
-   * this component's frame, its strip and its fetch would mean three layouts
-   * fighting inside one return statement — and the two effects above, which
-   * exist for the PDF, would be dead code on both paths.
-   *
-   * The routing lives here rather than at the call site so a text board still
-   * asks one question ("is this page an uploaded file?") and gets one
-   * component back.
-   */
+  // The two kinds that have a surface of their own. Delegated rather than folded in as more
+  // branches, because neither is a variation on "a file in a frame".
   if (isImage(source)) {
     return <ImageDocument documentId={documentId} source={source} title={title} />;
   }
@@ -134,18 +91,8 @@ export const ImportedDocument = ({ documentId, source, title }: ImportedDocument
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">
-      {/* --- The strip that says what this is, and what to do about it -----
-
-          One line, and deliberately *without* the file name on it.
-
-          The name was on screen three times over: in the table of contents
-          row, in the page heading above this, and here — and this was the
-          copy that said the least, because the heading is the same string
-          with the extension trimmed off. What this strip knows that neither
-          of the others does is the *format*, the size and the fact that
-          nothing has rewritten it, so that is all it says now. Everything it
-          gave up was vertical space taken from the document itself, which on
-          a PDF is the whole point of the pane. */}
+      {/* --- The strip that says what this is, and what to do about it ---
+          One line, and deliberately *without* the file name on it. */}
       <div
         className={cn(
           'ui-card flex flex-wrap items-center gap-x-2.5 gap-y-1 rounded-xl border border-edge',
@@ -165,15 +112,8 @@ export const ImportedDocument = ({ documentId, source, title }: ImportedDocument
 
         <span className="ml-auto" />
 
-        {/*
-          A button, not a link — there is no URL to give it.
-
-          Linking to the storage object would take the reader outside the
-          app's access rules and onto a public URL; the file is fetched through
-          the API instead, and what is opened is the blob this component
-          already holds. The formats with no preview never fetched one, so
-          those pay for it on the click rather than on every page open.
-        */}
+        {/* A button, not a link — there is no URL to give it. Linking to the storage object
+            would take the reader outside the app's access rules and onto a public URL. */}
         <button
           type="button"
           onClick={() => {
@@ -192,15 +132,8 @@ export const ImportedDocument = ({ documentId, source, title }: ImportedDocument
           <span className="hidden sm:inline">{t('doc.openOriginal')}</span>
         </button>
 
-        {/*
-          A sentence, not a control.
-
-          The question this card raises is "why can I not edit this?", and the
-          answer is a fact about the page rather than a button somebody is
-          missing: an imported file is kept as it was uploaded. Saying so here
-          costs one line and stops a reader hunting the toolbar for a pencil
-          that is deliberately not drawn.
-        */}
+        {/* A sentence, not a control. The question this card raises is "why can I not edit
+            this?". */}
         <span className="hidden items-center gap-1.5 text-3xs leading-snug text-content-muted xl:inline-flex">
           <Lock className="h-3 w-3 shrink-0 text-content-faint" />
           {t('doc.keptAsUploaded')}
@@ -216,23 +149,8 @@ export const ImportedDocument = ({ documentId, source, title }: ImportedDocument
         )}
 
         {canPreview && objectUrl && (
-          /*
-            No `sandbox`, and that is a decision rather than an omission.
-
-            A `blob:` URL inherits the creating document's origin, so a frame
-            pointed at one is same-origin — which would matter a great deal if
-            the browser could be talked into treating the bytes as HTML. It
-            cannot: a blob's recorded type is authoritative and is never
-            sniffed, and `sourceObjectUrl` rebuilds the blob as the mime the
-            API recorded at upload (which came from its own allow-list). So
-            this frame renders in the browser's PDF viewer or it renders
-            nothing.
-
-            The empty `sandbox` that would otherwise be right here also breaks
-            the PDF viewer outright in Chromium — it needs scripting to draw —
-            so the choice was between a preview that works and an attribute
-            that reads as careful while doing nothing.
-          */
+          /* No `sandbox`, and that is a decision rather than an omission. A `blob:` URL inherits
+             the creating document's origin, so a frame pointed at one is same-origin. */
           <iframe
             src={objectUrl}
             title={source.name}

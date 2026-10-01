@@ -32,29 +32,19 @@ interface MeetingComposerProps {
   isOpen: boolean;
   onClose: () => void;
   /**
-   * Which calendar this is being posted to. Exactly one, and it is fixed for
-   * the life of the surface that opened the composer — a project board can only
-   * book against itself, and a company only against itself.
+   * Which calendar this is being posted to. Exactly one, and it is fixed for the life of the
+   * surface that opened the composer — a project board can only book against itself.
    */
   projectId?: string;
   organizationId?: string;
   /**
-   * Who may be named in the room: a project's roster, or a company's staff.
-   *
-   * Typed as the summary both of those already are, rather than as
-   * `RosterMember`, because the composer needs a name, a face and an id and has
-   * no business knowing what role anybody holds in either place.
+   * Who may be named in the room: a project's roster, or a company's staff. Typed as the summary
+   * both of those already are, rather than as `RosterMember`, because the composer needs a name.
    */
   roster: UserSummary[];
   /**
-   * Projects this meeting may be attached to, offered only in company mode.
-   *
-   * The whole of feature 5's "link the meeting to a project": picking one puts
-   * the meeting on that project's board as well as on the company's calendar,
-   * because a company meeting *about* a project is something both audiences
-   * need in front of them. Absent — or empty — and the field is not drawn at
-   * all, which is the right answer both for a project board (it is already
-   * attached to itself) and for a company that has filed nothing yet.
+   * Projects this meeting may be attached to, offered only in company mode. The whole of feature
+   * 5's "link the meeting to a project".
    */
   linkableProjects?: MeetingProjectRef[];
   /** Present when editing; absent when posting a new one. */
@@ -75,16 +65,8 @@ const nextHour = (day: Date): Date => {
 };
 
 /**
- * Post or edit a meeting.
- *
- * Only an owner or an admin ever sees this — the panel gates the buttons that
- * open it, and the API refuses the write regardless, because a meeting is an
- * assertion about other people's time rather than a note anybody can leave.
- *
- * The participant list is optional and means what it says: who is expected in
- * the room. Leaving it empty is not an omission, it is the common case — a
- * meeting nobody was singled out for is one the whole roster is invited to,
- * and the panel says so in those words rather than listing everybody back.
+ * Post or edit a meeting. Only an owner or an admin ever sees this — the panel gates the buttons
+ * that open it, and the API refuses the write regardless.
  */
 export const MeetingComposer = ({
   isOpen,
@@ -100,22 +82,15 @@ export const MeetingComposer = ({
   const createMeeting = useCreateMeeting({ projectId, organizationId });
   const updateMeeting = useUpdateMeeting();
 
-  /*
-   * The rooms this calendar can book, fetched only while the dialog is open.
-   *
-   * A project's answer includes every room its company holds — the inheritance
-   * is the server's join, not something assembled here. See `useMeetingRooms`.
-   */
+  // The rooms this calendar can book, fetched only while the dialog is open. A project's answer
+  // includes every room its company holds — the inheritance is the server's join.
   const { data: rooms = [] } = useMeetingRooms({ projectId, organizationId }, isOpen);
 
   const [title, setTitle] = useState('');
   const [room, setRoom] = useState('');
   /**
-   * The registered room, or `''` for "somewhere else".
-   *
-   * `''` rather than `undefined` because it is bound to a `Select`, and a
-   * controlled select with an undefined value is an uncontrolled one — the
-   * same reason `linkedProjectId` below is spelled this way.
+   * The registered room, or `''` for "somewhere else". `''` rather than `undefined` because it is
+   * bound to a `Select`, and a controlled select with an undefined value is an uncontrolled one.
    */
   const [roomId, setRoomId] = useState('');
   const [description, setDescription] = useState('');
@@ -124,19 +99,13 @@ export const MeetingComposer = ({
   const [participantIds, setParticipantIds] = useState<string[]>([]);
   const [teamIds, setTeamIds] = useState<string[]>([]);
   /**
-   * The project a company meeting is about, or `''` for none.
-   *
-   * Only ever set in company mode. `''` rather than `undefined` because it is
-   * bound to a `Select`, and a controlled select with an undefined value is an
-   * uncontrolled one.
+   * The project a company meeting is about, or `''` for none. Only ever set in company mode. `''`
+   * rather than `undefined` because it is bound to a `Select`.
    */
   const [linkedProjectId, setLinkedProjectId] = useState('');
   /**
-   * The paper the meeting is about.
-   *
-   * Three states, matching the task composer's: an empty `key` means the file
-   * came from the row rather than from this session, so the PATCH leaves it
-   * alone; a real key is a fresh upload; `null` is somebody taking it off.
+   * The paper the meeting is about. Three states, matching the task composer's: an empty `key`
+   * means the file came from the row rather than from this session, so the PATCH leaves it alone.
    */
   const [file, setFile] = useState<AttachedFileDraft | null>(null);
 
@@ -161,14 +130,8 @@ export const MeetingComposer = ({
     setEndAt(toDateTimeInput(end));
     setParticipantIds(meeting?.participants.map((person) => person.id) ?? []);
     setLinkedProjectId(meeting?.projectId ?? '');
-    /*
-     * Always empty, including when editing.
-     *
-     * Teams are expanded into people the moment they are picked, so an existing
-     * meeting has a guest *list*, not a memory of which teams produced it —
-     * see the API's `TeamsService`. Pre-selecting anything here would be
-     * inventing a fact the row does not carry.
-     */
+    // Always empty, including when editing. Teams are expanded into people the moment they are
+    // picked, so an existing meeting has a guest *list*.
     setTeamIds([]);
     setFile(
       meeting?.file
@@ -177,14 +140,7 @@ export const MeetingComposer = ({
     );
   }, [defaultDay, isOpen, meeting]);
 
-  /*
-   * Moving the start drags the end along, keeping the length.
-   *
-   * Without this, changing the day of a meeting means editing two fields and
-   * getting the second one wrong is a validation error rather than a
-   * correction. Only while the window is currently valid, so a half-typed date
-   * cannot throw the other end somewhere absurd.
-   */
+  // Moving the start drags the end along, keeping the length.
   const handleStartChange = (value: string) => {
     const previousStart = new Date(startAt).getTime();
     const previousEnd = new Date(endAt).getTime();
@@ -198,9 +154,8 @@ export const MeetingComposer = ({
     setEndAt(toDateTimeInput(new Date(nextStart + (previousEnd - previousStart))));
   };
 
-  // Same guard as the task composer: an unparseable year is its own failure,
-  // and it has to be excluded before the two ends can be compared at all.
-  // See `shared/lib/dates`.
+  // Same guard as the task composer: an unparseable year is its own failure, and it has to be
+  // excluded before the two ends can be compared at all.
   const startIsMalformed = !isDateTimeInput(startAt);
   const endIsMalformed = !isDateTimeInput(endAt);
 
@@ -220,12 +175,7 @@ export const MeetingComposer = ({
     Boolean(startAt && endAt) &&
     new Date(endAt).getTime() <= new Date(startAt).getTime();
 
-  /*
-   * A room is named one way or the other, and one of them is enough.
-   *
-   * The picker is only drawn when there is something in it, so a deployment
-   * that has registered no rooms sees exactly the field it always had.
-   */
+  // A room is named one way or the other, and one of them is enough.
   const hasRooms = rooms.length > 0;
   const isCustomRoom = !roomId;
   const roomIsNamed = Boolean(roomId) || room.trim().length >= 1;
@@ -246,13 +196,8 @@ export const MeetingComposer = ({
 
     const payload = {
       title: title.trim(),
-      /*
-       * One or the other, never both.
-       *
-       * The API takes the name from the registry when an id is sent — a room
-       * cannot be booked under a label that is not what it is called — so
-       * sending the text alongside would be sending something that is ignored.
-       */
+      // One or the other, never both. The API takes the name from the registry when an id is sent —
+      // a room cannot be booked under a label that is not what it is called.
       ...(roomId ? { roomId } : { room: room.trim() }),
       description: description.trim() || undefined,
       // `canSubmit` has already proved both parse; the cast documents that.
@@ -273,26 +218,15 @@ export const MeetingComposer = ({
           : {};
 
     if (meeting) {
-      /*
-       * The link is not editable.
-       *
-       * Moving a meeting off one project's board and onto another is not a
-       * change to the meeting — it is a change to whose calendar it was ever
-       * on, and to who was told about it. The API refuses it for that reason,
-       * and the composer does not offer it: delete and repost is both clearer
-       * and the only thing that actually notifies the new audience.
-       */
+      // The link is not editable. Moving a meeting off one project's board and onto another is not
+      // a change to the meeting.
       await updateMeeting.mutateAsync({
         meetingId: meeting.id,
         payload: {
           ...payload,
           ...filePatch,
-          /*
-           * Explicitly null when the room was typed, which is the only way to
-           * *give a registered room back*. Omitting it would mean "leave the
-           * room alone", so a meeting moved out of Sala 2 and into a café would
-           * keep holding Sala 2 in the clash check.
-           */
+          // Explicitly null when the room was typed, which is the only way to *give a registered
+          // room back*.
           roomId: roomId || null,
         },
       });
@@ -344,16 +278,8 @@ export const MeetingComposer = ({
           autoFocus
         />
 
-        {/*
-          The room: picked from the registry, or typed.
-
-          Both, rather than one replacing the other, because both are real. A
-          company that has registered its floor wants the list — and the
-          double-booking check that comes with picking from it — while a project
-          that meets in a café needs to be able to say so. The picker appears
-          only when there is something in it, so nothing changes for a
-          deployment that has never registered a room.
-        */}
+        {/* The room: picked from the registry, or typed. Both, rather than one replacing the
+            other, because both are real. */}
         {hasRooms ? (
           <div className="space-y-2">
             <Select
@@ -471,14 +397,8 @@ export const MeetingComposer = ({
           maxLength={TEXT_LIMITS.meetingAgenda}
         />
 
-        {/*
-          Who is expected in the room — named one at a time, or by team.
-
-          The scope of the teams tab follows the meeting: a company meeting
-          reaches for the company's teams, a project meeting for that project's.
-          Individuals is the default, and the tab disappears where there are no
-          teams to offer.
-        */}
+        {/* Who is expected in the room — named one at a time, or by team. The scope of the
+            teams tab follows the meeting: a company meeting reaches for the company's teams. */}
         <InvitePicker
           people={roster}
           selectedPeople={participantIds}
@@ -504,13 +424,8 @@ export const MeetingComposer = ({
           label={t('meetings.participants')}
         />
 
-        {/*
-          The paper the meeting is about: an agenda, a deck, a contract.
-
-          Minutes written afterwards still belong on the text board, where the
-          people who were in the room can edit them. This is the thing everybody
-          is asked to read beforehand.
-        */}
+        {/* The paper the meeting is about: an agenda, a deck, a contract. Minutes written
+            afterwards still belong on the text board. */}
         <FileAttachmentField
           label={t('meetings.documentAttachment')}
           value={file}

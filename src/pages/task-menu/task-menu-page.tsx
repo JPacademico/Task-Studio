@@ -34,12 +34,8 @@ const isSameDay = (isoDate: string, reference: Date): boolean =>
   isoDate === reference.toISOString().slice(0, 10);
 
 /**
- * The chronological task menu: one bucket per calendar day, ordered by hour
- * inside the day, with an inbox for work that has no schedule yet.
- *
- * This is the personal surface, so it is scoped to the signed-in user and
- * finished work stays out of the way — `hideCompleted` is dropped only when the
- * status filter explicitly asks for completed tasks.
+ * The chronological task menu: one bucket per calendar day, ordered by hour inside the day, with an
+ * inbox for work that has no schedule yet.
  */
 const TaskMenuPage = () => {
   const t = useT();
@@ -49,10 +45,8 @@ const TaskMenuPage = () => {
     scope: 'mine',
     hideCompleted: true,
   });
-  // The agenda is a reading surface, so a *project* task opens read-only here:
-  // editing one still belongs to the project board, which is one click away on
-  // the card. A personal task has no board to send anybody to, so this page
-  // owns its composer.
+  // The agenda is a reading surface, so a *project* task opens read-only here: editing one still
+  // belongs to the project board, which is one click away on the card.
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
   const [composerTask, setComposerTask] = useState<Task | null>(null);
   const [isComposerOpen, setIsComposerOpen] = useState(false);
@@ -102,19 +96,8 @@ const TaskMenuPage = () => {
     [days, unscheduled],
   );
 
-  /*
-   * A skeleton in the shape of the agenda, not a spinner in place of it.
-   *
-   * The whole page used to be replaced by a centred loader, so arriving here
-   * meant watching the header, the filters and the layout switcher appear only
-   * once the tasks had landed — and then the page reflowed around them. Drawing
-   * the chrome immediately and standing in for the rows is both faster to first
-   * paint and steadier, because nothing moves when the data arrives.
-   *
-   * `isLoading` and not `isFetching`: this is only for the first fill of a
-   * cache. Changing a filter keeps the previous rows on screen (see
-   * `useTaskAgenda`) and reports progress through the header instead.
-   */
+  // A skeleton in the shape of the agenda, not a spinner in place of it. The whole page used to be
+  // replaced by a centred loader, so arriving here meant watching the header.
   const isEmpty = !isLoading && days.length === 0 && unscheduled.length === 0;
 
   return (
@@ -130,14 +113,8 @@ const TaskMenuPage = () => {
             </h1>
           </div>
 
-          {/* The one thing this page could not do. Every other task had to be
-              created from a project board, so work that belongs to nobody but
-              you had to be filed under a project to exist at all.
-
-              `LavaButton`, matching the project board's own "New task" — this
-              is the same action on the screen that owns it, and it was the one
-              of the three that had been left as a flat control. See
-              `LavaButton` for why the effect is rationed to these three. */}
+          {/* The one thing this page could not do. Every other task had to be created from a
+              project board, so work that belongs to nobody. */}
           <LavaButton size="sm" onClick={() => openPersonalComposer(null)}>
             <Plus className="h-3.5 w-3.5" strokeWidth={2.8} />
             {t('agenda.newTask')}
@@ -209,9 +186,8 @@ const TaskMenuPage = () => {
           rendering decision, never another request. */}
       {!isLoading && layout === 'list' && <TaskListView tasks={allTasks} showProjectLink {...handlers} />}
       {!isLoading && layout === 'calendar' && <TaskCalendarView tasks={allTasks} showProjectLink {...handlers} />}
-      {/* No admin override on this board: the personal agenda has no project
-          role to read, so a shared task always needs everybody's tick here.
-          The project board is where an admin can overrule it. */}
+      {/* No admin override on this board: the personal agenda has no project role to read, so a
+          shared task always needs everybody's tick here. */}
       {!isLoading && layout === 'board' && (
         <TaskBoard
           tasks={allTasks}
@@ -227,31 +203,14 @@ const TaskMenuPage = () => {
         />
       )}
 
-      {/* Rows are on screen, but they came from another surface's cache and
-          the real answer is still in flight — so the page says it is short
-          rather than growing quietly under the reader. See `PendingTasks`. */}
+      {/* Rows are on screen, but they came from another surface's cache and the real answer is
+          still in flight. */}
       {!isLoading && agendaIsPartial && <PendingTasks compact className="pt-1" />}
 
       {!isLoading && layout === 'agenda' && (
       <div className="space-y-6 sm:space-y-8">
-        {/*
-          * No `AnimatePresence` around the day buckets, deliberately.
-          *
-          * It used to wrap this list, and it never worked: an emptied bucket
-          * was held mounted as an "exiting" child whose exit animation never
-          * ran, so the section stayed in the DOM at full opacity indefinitely.
-          * With a filter that matches nothing, the page rendered its empty
-          * state *and* the previous filter's tasks underneath it.
-          *
-          * It was invisible until now only because changing a filter used to
-          * blank the whole page to a loader, which tore this tree down and took
-          * the stranded node with it. Keeping the page up — which is the point
-          * of the change — is what exposed it.
-          *
-          * Nothing is lost by removing it: the exit was never rendering. The
-          * *enter* animation is what carries this list, and `initial`/`animate`
-          * on a motion component need no presence tracking at all.
-          */}
+        {/* No `AnimatePresence` around the day buckets, deliberately. It used to wrap this
+            list, and it never worked. */}
         {days.map(({ date, tasks }) => (
             <section key={date} className="space-y-2.5">
               <header className="sticky top-14 z-10 -mx-1 flex items-center gap-3 bg-surface/85 px-1 py-1.5 backdrop-blur sm:py-2">
@@ -312,10 +271,8 @@ const TaskMenuPage = () => {
       </div>
       )}
 
-      {/* Same detail sheet the project board opens — the note checklist and the
-          assistant — so a task means the same thing on both surfaces. Editing
-          needs the project roster, which lives on the project page, so "Edit"
-          takes the user there rather than opening a composer with no options. */}
+      {/* Same detail sheet the project board opens — the note checklist and the assistant — so
+          a task means the same thing on both surfaces. */}
       <TaskDetailModal
         taskId={detailTaskId}
         onClose={() => setDetailTaskId(null)}

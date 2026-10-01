@@ -13,11 +13,8 @@ import { useT } from '@/shared/i18n';
 import { Spinner } from './primitives';
 
 /**
- * "3.2 MB", "740 KB" — the number a person decides with.
- *
- * Decimal units rather than binary, because the file manager the reader will
- * compare this against says the same thing, and being technically right about
- * mebibytes only makes the two disagree.
+ * "3.2 MB", "740 KB" — the number a person decides with. Decimal units rather than binary, because
+ * the file manager the reader will compare this against says the same thing.
  */
 export const formatFileSize = (bytes: number): string => {
   if (bytes < 1000) return `${bytes} B`;
@@ -40,19 +37,8 @@ interface FileAttachmentFieldProps {
 }
 
 /**
- * Pick a document, or take one off.
- *
- * The picture attachment beside it re-encodes what it is handed before
- * uploading — see `prepareImage` — and this deliberately does not: there is
- * nothing useful to do to a signed PDF, and the point of attaching one is that
- * the reader downloads the bytes the author attached. What it borrows from the
- * image field is everything else: the same two-step presigned upload so the
- * bytes never transit the API, the same "one attachment, replace or remove"
- * shape, and the same dashed drop target when the slot is empty.
- *
- * Never a preview. A PDF rendered inline is a second document viewer to build
- * and a megabyte to fetch before anybody has said they want it; the row says
- * what the file is, how big it is, and offers to open it.
+ * Pick a document, or take one off. The picture attachment beside it re-encodes what it is handed
+ * before uploading — see `prepareImage`.
  */
 export const FileAttachmentField = ({
   label,
@@ -129,16 +115,8 @@ interface FileAttachmentRowProps {
 }
 
 /**
- * One attached document, drawn as a row.
- *
- * Shared between the composers (where it can be taken off) and the read-only
- * surfaces (where it can only be opened), because the thing being described is
- * the same and a second layout for it would drift.
- *
- * The link is `target="_blank"` with `rel="noreferrer"`: the object lives on
- * the storage host, so this leaves the app either way, and a `download`
- * attribute is inert cross-origin — the browser navigates instead, which for a
- * PDF is the better outcome anyway.
+ * One attached document, drawn as a row. Shared between the composers (where it can be taken off)
+ * and the read-only surfaces (where it can only be opened).
  */
 export const FileAttachmentRow = ({ file, onRemove, removeLabel }: FileAttachmentRowProps) => (
   <div className="flex items-center gap-2.5 rounded-xl border border-edge bg-surface-sunken px-3 py-2.5">

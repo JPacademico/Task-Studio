@@ -17,11 +17,8 @@ interface ChatPinProps {
 const HOME_SPRING = { type: 'spring', stiffness: 240, damping: 22, mass: 0.6 } as const;
 
 /**
- * A thumbtack, drawn rather than borrowed.
- *
- * The head catches a highlight and the needle has a real point, because this
- * is an object the user picks up and pushes into something — a flat line icon
- * would read as a button and this is not one.
+ * A thumbtack, drawn rather than borrowed. The head catches a highlight and the needle has a real
+ * point, because this is an object the user picks up and pushes into something.
  */
 const Tack = ({ isPinned }: { isPinned: boolean }) => (
   <svg viewBox="0 0 32 32" fill="none" aria-hidden className="h-full w-full">
@@ -55,29 +52,8 @@ const Tack = ({ isPinned }: { isPinned: boolean }) => (
 );
 
 /**
- * The pin that keeps the project chat on screen.
- *
- * It floats above the middle of the window's top edge, bobbing, so it reads as
- * a loose object lying next to the conversation rather than another control in
- * its header — and from there it is visible whichever screen corner the window
- * has been dragged into, which the old top-left anchor was not. Dragging it
- * onto the window pushes it in and the chat stops belonging to the project
- * page; dragging it off — or clicking it once it is in — pulls it back out.
- * Dropping it anywhere that is not the window springs it back to where it was
- * resting, which is what makes the gesture safe to try.
- *
- * Three transforms are deliberately kept on three different elements:
- *
- *   - the drag lives on the outer box's `x`/`y` motion values;
- *   - the idle bob is a CSS keyframe on the middle span;
- *   - the tilt and the lift-on-grab are a plain transition on the inner span.
- *
- * They used to share one element, with the bob written as a repeating Framer
- * keyframe on the same `y` the drag writes to. The two then fought for the
- * value every frame and the release of a removed keyframe target pulled `y`
- * back to zero, which is what made the pin feel stuck in a box until it was
- * dragged hard enough to escape. Split across the three, the gesture is only
- * ever the pointer.
+ * The pin that keeps the project chat on screen. It floats above the middle of the window's top
+ * edge, bobbing.
  */
 export const ChatPin = ({
   isPinned,
@@ -91,27 +67,8 @@ export const ChatPin = ({
   const y = useMotionValue(0);
   const selfRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  /*
-   * Whether the gesture in progress turned into a drag.
-   *
-   * ## The bug this shape fixes
-   *
-   * A drag *usually* ends in a click event too, and that click must not undo
-   * the decision the drop just made — so the flag is raised on drag start and
-   * the click handler stands down when it sees it.
-   *
-   * It used to be lowered **inside the click handler**, which assumes the click
-   * always arrives. It does not. Whether a pointer sequence that included a
-   * drag also synthesises a click is browser-dependent, and on the browsers
-   * where it does not, the flag stayed raised forever — so the *next* genuine
-   * click was swallowed as "that was a drag", and the one after that, and every
-   * one after that. The pin simply stopped working, which is exactly the report
-   * from Vivaldi.
-   *
-   * Lowering it on `pointerdown` instead makes it a property of the gesture
-   * rather than a message between two handlers that may never both run. Every
-   * new interaction starts from a known state, on every engine.
-   */
+  // Whether the gesture in progress turned into a drag. A drag *usually* ends in a click event too,
+  // and that click must not undo the decision the drop just made.
   const didDragRef = useRef(false);
 
   /** Is the pin's own point currently over the chat window? */
@@ -135,10 +92,8 @@ export const ChatPin = ({
     <motion.div
       ref={selfRef}
       drag
-      // No constraints and no momentum: the pin goes wherever the pointer takes
-      // it and stops there, then springs home on release. Elasticity only ever
-      // applies against constraints, so there is nothing here to rubber-band
-      // against — which is the point.
+      // No constraints and no momentum: the pin goes wherever the pointer takes it and stops there,
+      // then springs home on release.
       dragMomentum={false}
       style={{ x, y }}
       // The start of every gesture, drag or click. See `didDragRef`.
@@ -156,10 +111,8 @@ export const ChatPin = ({
         setIsDragging(false);
         onHoverTargetChange?.(false);
 
-        // Either way the pin returns to its own anchor — pinned or loose, its
-        // home is the top of the window, not wherever the pointer stopped. It
-        // travels back rather than snapping, so the drop reads as letting go
-        // of something instead of the pin teleporting.
+        // Either way the pin returns to its own anchor — pinned or loose, its home is the top of
+        // the window, not wherever the pointer stopped.
         if (reduceMotion) {
           x.set(0);
           y.set(0);
@@ -174,9 +127,8 @@ export const ChatPin = ({
         // Set by `onDragStart`, cleared by the next `onPointerDown` — never
         // here, which is what used to leave it latched. See `didDragRef`.
         if (didDragRef.current) return;
-        // Clicking a tack that is in pulls it out. Clicking one that is loose
-        // pushes it in — the same result as dragging it over, for anyone who
-        // would rather not drag at all.
+        // Clicking a tack that is in pulls it out. Clicking one that is loose pushes it in — the
+        // same result as dragging it over, for anyone who would rather not drag at all.
         onPinnedChange(!isPinned);
       }}
       title={t(isPinned ? 'chat.pinnedHint' : 'chat.dragToPin')}
@@ -192,14 +144,11 @@ export const ChatPin = ({
         'absolute z-10 h-11 w-11 cursor-grab touch-none select-none active:cursor-grabbing',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
         'focus-visible:ring-offset-surface',
-        // Centred on the window's top edge. `w-11` is 2.75rem, so pulling it
-        // back by half of that is what puts the needle on the middle — done
-        // with a margin rather than `-translate-x-1/2`, because Framer Motion
-        // owns the `transform` property the moment the pin is picked up.
+        // Centred on the window's top edge. `w-11` is 2.75rem, so pulling it back by half of that
+        // is what puts the needle on the middle.
         'left-1/2 -ml-[1.375rem]',
-        // Loose, it hovers clear of the window — far enough that its point is
-        // outside the drop target, or resting would already read as a hit.
-        // Driven in, it sits on the edge itself, holding the window down.
+        // Loose, it hovers clear of the window — far enough that its point is outside the drop
+        // target, or resting would already read as a hit.
         isPinned ? '-top-3' : '-top-[3.25rem]',
         // The travel between those two spots is the animation that sells it.
         'transition-[top] duration-300 ease-studio',

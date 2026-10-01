@@ -21,30 +21,8 @@ const depthOf = (path: string): number => path.split('/').length - 1;
 const leafOf = (path: string): string => path.slice(path.lastIndexOf('/') + 1);
 
 /**
- * A page that is an uploaded `.zip`.
- *
- * ## What this can and cannot do, and why the line is where it is
- *
- * It lists. Every path, every size, read out of the archive's central
- * directory on the API without inflating a single byte — see
- * `zip-directory.ts` there. It cannot extract, and that is a decision rather
- * than a gap: unpacking attacker-controlled data on a small container is a zip
- * bomb waiting for an afternoon, and a 12 MB upload can honestly declare
- * petabytes of output. The download button in the toolbar above has always
- * been the way to get the files, and it still is.
- *
- * That trade is worth the listing anyway, because the question a reader
- * actually has is not "give me the files" — it is *"is the thing I want in
- * here?"*, and before this the only way to answer it was to spend eight
- * megabytes finding out.
- *
- * ## Why a flat, indented list rather than a collapsible tree
- *
- * A handover archive is three or four folders deep and forty files long. A
- * tree of that costs an expand/collapse interaction on every folder to see
- * what one scroll already shows, and the filter below — which is what people
- * actually reach for — has to flatten the tree to work at all. The indent
- * carries the structure; the filter carries the search.
+ * A page that is an uploaded `.zip`. It lists. Every path, every size, read out of the archive's
+ * central directory on the API without inflating a single byte — see `zip-directory.ts` there.
  */
 export const ArchiveDocument = ({ documentId, source }: ArchiveDocumentProps) => {
   const t = useT();
@@ -70,12 +48,7 @@ export const ArchiveDocument = ({ documentId, source }: ArchiveDocumentProps) =>
         'flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs',
         'transition-colors hover:bg-surface-sunken/70',
       )}
-      /*
-       * The indent is inline rather than a Tailwind class, because the depth
-       * is data. A `pl-{n}` lookup table would cap at whatever depths somebody
-       * thought of, and an archive is nested as deeply as whoever made it felt
-       * like nesting it.
-       */
+      /* The indent is inline rather than a Tailwind class, because the depth is data. */
       style={{ paddingLeft: `${0.5 + Math.min(depthOf(entry.path), 6) * 0.85}rem` }}
     >
       <span aria-hidden className="shrink-0 text-content-faint">
@@ -130,12 +103,7 @@ export const ArchiveDocument = ({ documentId, source }: ArchiveDocumentProps) =>
 
         <span className="ml-auto" />
 
-        {/*
-          The filter, and only once there is something to filter.
-
-          Twelve rows do not need a search box and a search box over twelve
-          rows is a control that makes a list look longer than it is.
-        */}
+        {/* The filter, and only once there is something to filter. */}
         {(data?.entries.length ?? 0) > 12 && (
           <label className="relative">
             <Search
@@ -153,20 +121,8 @@ export const ArchiveDocument = ({ documentId, source }: ArchiveDocumentProps) =>
         )}
       </div>
 
-      {/*
-        Said before the list, not after it.
-
-        The API refuses an archive whose numbers are impossible — overlapping
-        entries, or more expansion than DEFLATE can produce — so nothing that
-        reaches this component is a constructed bomb. What is left is the real
-        case the refusal must not swallow: a folder of logs or CSVs that
-        honestly unpacks two hundred to one, which is somebody's colleague
-        being helpful and is also thirty gigabytes landing on a laptop.
-
-        So it is a caution rather than a block, it names the number, and it
-        sits above the rows because the decision it informs — whether to press
-        download — is made in the toolbar before anybody scrolls.
-      */}
+      {/* Said before the list, not after it. The API refuses an archive whose numbers are
+          impossible — overlapping entries, or more expansion than DEFLATE can produce. */}
       {data?.safety.verdict === 'warn' && (
         <div
           role="status"
@@ -235,13 +191,8 @@ export const ArchiveDocument = ({ documentId, source }: ArchiveDocumentProps) =>
               )}
             </ul>
 
-            {/*
-              Said out loud rather than left as a silently short list.
-
-              A `node_modules` somebody zipped by accident is forty thousand
-              rows, and the API stops at fifteen hundred. A listing that just
-              ends is a listing the reader will trust to be complete.
-            */}
+            {/* Said out loud rather than left as a silently short list. A `node_modules`
+                somebody zipped by accident is forty thousand rows. */}
             {data.isTruncated && (
               <p className="border-t border-edge px-3 py-1.5 text-3xs text-content-faint">
                 {t('doc.archiveTruncated', {

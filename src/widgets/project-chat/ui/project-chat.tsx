@@ -59,23 +59,8 @@ interface ProjectChatProps {
 }
 
 /**
- * The floating, draggable project chat.
- *
- * Dragging uses Framer Motion motion values rather than dnd-kit: this window is
- * free-floating (no drop targets, no sorting), so a transform-only drag with no
- * React re-render is both simpler and smoother. dnd-kit stays where it earns
- * its keep — the task board, which needs droppable columns.
- *
- * Two deliberate details:
- *
- *   - Only the header starts a drag (`dragControls` + `dragListener={false}`).
- *     The whole window used to be the handle, which meant selecting a line of
- *     somebody's message dragged the conversation across the screen instead.
- *   - The window is mounted by the app layout rather than by the project page,
- *     so a pinned conversation survives navigation. Everything about *whether*
- *     it is pinned lives in the dock store; this component only draws it.
- *
- * The last position is remembered per device.
+ * The floating, draggable project chat. Dragging uses Framer Motion motion values rather than
+ * dnd-kit: this window is free-floating (no drop targets, no sorting).
  */
 export const ProjectChat = ({
   projectId,
@@ -104,24 +89,8 @@ export const ProjectChat = ({
   /** Whether "load earlier" has anything left to load. Unknown until a short page says no. */
   const [hasEarlier, setHasEarlier] = useState(true);
   const [isLoadingEarlier, setIsLoadingEarlier] = useState(false);
-  /*
-   * Everything the `@` picker needs, and nothing it does not.
-   *
-   * `caret` is tracked in state rather than read from the DOM at use time
-   * because the mention being typed is derived during render — "is there an
-   * unfinished `@name` immediately behind the cursor" is a question about the
-   * draft *and* the position in it, and only one of those was previously a
-   * React value.
-   *
-   * `picked` is every member chosen while writing this message, which is how
-   * their ids are known at all: the text says `@Ana Ribeiro` and nothing else
-   * in it identifies which Ana. It is filtered against the final text on send
-   * — see `mentionedIds` — so editing a name back out also takes the
-   * notification with it.
-   *
-   * `dismissedAt` is the position of an `@` the reader pressed Escape on, so
-   * the picker stays shut for that one and opens again for the next.
-   */
+  // Everything the `@` picker needs, and nothing it does not. `caret` is tracked in state rather
+  // than read from the DOM at use time because the mention being typed is derived during render.
   const [caret, setCaret] = useState(0);
   const [picked, setPicked] = useState<RosterMember[]>([]);
   const [mentionIndex, setMentionIndex] = useState(0);
@@ -142,32 +111,8 @@ export const ProjectChat = ({
     y,
   );
 
-  /*
-   * History is fetched rarely and kept for a long time, because the socket is
-   * what keeps this view current.
-   *
-   * On the global 30s `staleTime` every reopen of the window — and every
-   * navigation with it pinned — re-ran this query, which meant a network round
-   * trip standing between the click and the conversation on a surface that had
-   * the conversation a moment ago. The refetch was also close to pointless:
-   * anything that changed since the last fetch arrived over `chat:message` and
-   * is already in `liveMessages`.
-   *
-   * The long `gcTime` is the half that makes reopening instant. Without it the
-   * cache is dropped five minutes after the window closes, and the next open
-   * starts from nothing again.
-   *
-   * `refetchOnReconnect` stays on globally, which is the case this trades
-   * against: a dropped connection is the one situation where events were
-   * genuinely missed and the history really is behind.
-   */
-  /*
-   * `refetchOnMount: 'always'` is the other half of the fix for messages
-   * vanishing on reopen. The cached list is drawn at once, and the fetch that
-   * follows asks only for what arrived after its newest message — the part
-   * that was never delivered while the window was shut and the room left.
-   * See `loadConversation`.
-   */
+  // History is fetched rarely and kept for a long time, because the socket is what keeps this view
+  // current.
   const { data: messages = [], isLoading: isLoadingHistory } = useQuery({
     queryKey: queryKeys.chat.history(projectId),
     queryFn: () => loadConversation(queryClient, projectId),
@@ -189,16 +134,7 @@ export const ProjectChat = ({
     wasConnected.current = isConnected;
   }, [isConnected, projectId, queryClient]);
 
-  /*
-   * The roster, for two jobs that look unrelated and are the same one.
-   *
-   * It is the list the `@` picker offers, and it is also the set of names the
-   * renderer will light up in a message that has already been sent. Both need
-   * the same answer to "who is in this conversation", and the query is shared,
-   * cached for a minute and prefetched by the project page — so having the chat
-   * window ask for it costs a request the first time a conversation is opened
-   * from somewhere other than its own project, and nothing after that.
-   */
+  // The roster, for two jobs that look unrelated and are the same one.
   const { data: roster = [] } = useRoster(projectId);
 
   /** The unfinished `@name` at the caret, if the reader is typing one. */
@@ -209,21 +145,14 @@ export const ProjectChat = ({
     [mention, roster],
   );
 
-  /*
-   * A picker with nothing in it is not open.
-   *
-   * That is what keeps an `@` in ordinary prose — an address, a handle for
-   * somewhere else, a price — from putting a popover over the conversation:
-   * nothing on the roster matches, so there is nothing to show and the keyboard
-   * handler below stands down with it.
-   */
+  // A picker with nothing in it is not open. That is what keeps an `@` in ordinary prose — an
+  // address, a handle for somewhere else, a price — from putting a popover over the conversation.
   const isPickerOpen =
     mention !== null &&
     suggestions.length > 0 &&
     mention.start !== dismissedAt &&
-    // ...and the name at the caret is not already finished. Without this the
-    // picker reopens on the mention it has just inserted — see
-    // `isMentionComplete`.
+    // ...and the name at the caret is not already finished. Without this the picker reopens on the
+    // mention it has just inserted — see `isMentionComplete`.
     !isMentionComplete(mention.query, roster);
 
   // A different `@`, or a different query behind the same one, is a different
@@ -232,15 +161,8 @@ export const ProjectChat = ({
     setMentionIndex(0);
   }, [mention?.start, mention?.query]);
 
-  /*
-   * Put the caret back after an insertion.
-   *
-   * A controlled input rewrites its own value on every render, and doing so
-   * drops the selection to the end of the new text — which is only the right
-   * place when the mention was inserted at the end. Insert one mid-sentence and
-   * the caret would jump past everything after it. This runs after the draft is
-   * drawn, so `setSelectionRange` is measuring the text that is actually there.
-   */
+  // Put the caret back after an insertion. A controlled input rewrites its own value on every
+  // render, and doing so drops the selection to the end of the new text.
   useEffect(() => {
     const target = pendingCaret.current;
     if (target === null) return;
@@ -261,11 +183,8 @@ export const ProjectChat = ({
   useEffect(() => {
     if (!socket) return;
 
-    /*
-     * Into the cache, not into component state — which is what made messages
-     * survive the window closing. Our own message coming back retires the
-     * optimistic bubble with the same `clientId`; see `mergeMessages`.
-     */
+    // Into the cache, not into component state — which is what made messages survive the window
+    // closing.
     const handleMessage = (message: ChatMessage) => {
       if (message.projectId !== projectId) return;
       upsertChatMessages(queryClient, projectId, [message]);
@@ -314,16 +233,8 @@ export const ProjectChat = ({
     return () => clearInterval(interval);
   }, []);
 
-  // The window is only ever mounted while it is open, so anything arriving
-  // here has by definition been seen — counting what was missed is the closed
-  // case, and that belongs to `useProjectChatUnread`.
-  /*
-   * Follow the conversation's *end*, not its length.
-   *
-   * Keyed on the length, loading an older page — which grows the list at the
-   * top — yanked the reader from the message they had scrolled up to read
-   * straight back to the bottom.
-   */
+  // The window is only ever mounted while it is open, so anything arriving here has by definition
+  // been seen — counting what was missed is the closed case.
   const lastMessageKey = messages.length > 0
     ? (messages[messages.length - 1].clientId ?? messages[messages.length - 1].id)
     : null;
@@ -375,28 +286,8 @@ export const ProjectChat = ({
   };
 
   /**
-   * Draw the message first, send it second.
-   *
-   * Previously this emitted and cleared the input, and the sentence did not
-   * appear until the server had written it to Postgres and fanned it back out —
-   * so the person who typed it watched an empty conversation for a round trip
-   * and had no way to tell a slow network from a lost message.
-   *
-   * Now the local copy goes up immediately with a `pending` mark, and the
-   * gateway's acknowledgement settles it: the broadcast usually arrives first
-   * and replaces it outright, and the ack is the backstop that catches the
-   * cases the broadcast cannot describe — a rate-limited send, a timeout, a
-   * socket that dropped between the click and the write.
-   *
-   * `delivery: 'failed'` is deliberately left on screen rather than rolled
-   * back. A message that vanishes reads as a message that was never typed; one
-   * with a warning on it reads as something to send again, which is what
-   * actually happened.
-   *
-   * The send itself goes through the outbox (`useChatOutbox`), which is what
-   * lets the composer work offline: the bubble goes up as "sending", sits in a
-   * queue that survives a reload, and goes out in order the moment the socket
-   * is back. A resend carries the same `clientId`, and the API writes it once.
+   * Draw the message first, send it second. Previously this emitted and cleared the input, and the
+   * sentence did not appear until the server had written it to Postgres and fanned it back out.
    */
   const send = () => {
     const content = draft.trim();
@@ -405,14 +296,8 @@ export const ProjectChat = ({
     // See `shared/lib/uid`: `crypto.randomUUID` does not exist on an insecure
     // origin, and this line ran on every message sent.
     const clientId = uid();
-    /*
-     * Whoever is still named in the sentence as it stands.
-     *
-     * Not `picked` itself: that is the log of every row clicked while writing,
-     * and a draft gets rewritten. Somebody whose name was typed and then
-     * deleted must not be pulled into a conversation that no longer mentions
-     * them. See `mentionedIds`.
-     */
+    // Whoever is still named in the sentence as it stands. Not `picked` itself: that is the log of
+    // every row clicked while writing, and a draft gets rewritten.
     const mentions = mentionedIds(content, picked);
 
     const createdAt = new Date().toISOString();
@@ -452,11 +337,8 @@ export const ProjectChat = ({
   };
 
   /**
-   * Writes the chosen name into the draft and remembers who it was.
-   *
-   * The id is kept here because this is the only moment it is known: after
-   * this, the draft holds a display name and nothing that distinguishes two
-   * people who share one.
+   * Writes the chosen name into the draft and remembers who it was. The id is kept here because
+   * this is the only moment it is known.
    */
   const pickMention = (member: RosterMember) => {
     if (!mention) return;
@@ -471,16 +353,8 @@ export const ProjectChat = ({
   };
 
   /**
-   * The picker's keyboard, handled from the text field so the caret never
-   * leaves it.
-   *
-   * Every branch calls `preventDefault`, and for Enter that is doing two jobs:
-   * it stops the browser's implicit form submission as well as the default key
-   * behaviour. Without it, choosing a name from the list would also send the
-   * half-written message it was going into.
-   *
-   * With the picker closed this returns immediately, so arrows, Tab and Enter
-   * behave exactly as they did before any of this existed.
+   * The picker's keyboard, handled from the text field so the caret never leaves it. Every branch
+   * calls `preventDefault`, and for Enter that is doing two jobs.
    */
   const handleComposerKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (!isPickerOpen) return;
@@ -505,21 +379,8 @@ export const ProjectChat = ({
   const typingCount = Object.keys(typingUsers).length;
 
   return (
-    /*
-     * A floating window on a pointer device, a sheet on a phone.
-     *
-     * The draggable window is the whole point of this component on a desktop —
-     * you park the conversation somewhere and keep working around it. None of
-     * that survives a 375px screen: at `min(360px, 100vw-2rem)` the window is
-     * already the full width, so there is nowhere to park it, and the drag
-     * handle only competes with the scroll gesture for the message list right
-     * underneath it. The pin is meaningless for the same reason — a window that
-     * fills the screen is either open or closed.
-     *
-     * So touch gets a bottom sheet: full width, anchored, no drag, no tack, and
-     * `dvh` height so the composer sits above the address bar instead of behind
-     * it. Desktop keeps every bit of the original behaviour.
-     */
+    /* A floating window on a pointer device, a sheet on a phone. The draggable window is the whole
+       point of this component on a desktop. */
     <motion.div
       drag={!isTouch}
       // Only the header is a handle — see the note above.
@@ -527,16 +388,8 @@ export const ProjectChat = ({
       dragControls={dragControls}
       dragMomentum={false}
       dragElastic={0}
-      /*
-       * Measured, not guessed.
-       *
-       * This was four literals worked out from the window being 380 wide and
-       * "about 220" tall, read once during a render. All three assumptions were
-       * wrong in some state: the window grows with its own content, a stored
-       * offset from a large monitor survives into a small one, and
-       * `window.innerWidth` changes without a render. See
-       * `useViewportDragBounds`.
-       */
+      /* Measured, not guessed. This was four literals worked out from the window being 380 wide and
+         "about 220" tall, read once during a render. */
       dragConstraints={dragBounds}
       onDragStart={measureDragBounds}
       // A sheet is positioned by the layout, so a stored desktop offset must
@@ -619,25 +472,8 @@ export const ProjectChat = ({
         </header>
 
         <div ref={scrollRef} className="scrollbar-thin flex-1 space-y-3 overflow-y-auto px-3 py-3">
-          {/*
-            Waiting, rather than an empty box that looks like an empty room.
-
-            `isLoading` and not `isPending`: the query is gated on `projectId`,
-            and a disabled query is pending forever — which would have left the
-            loader spinning on a window with no project behind it. `isLoading`
-            is pending *and fetching*, i.e. the one state where bytes are
-            actually on their way.
-
-            The history is cached for half an hour (see the note on the query),
-            so this is the first open of a conversation and almost nothing else.
-            That is exactly when the difference matters: before this, a cold
-            fetch drew "No messages yet" for the length of a round trip, which
-            is not slow — it is *wrong*, and on a shared project it is the one
-            wrong thing a chat window can say.
-
-            `SkinLoader` rather than a spinner, so the wait is drawn in whatever
-            the reader's theme is made of — ink, gears, sprites, an orbit.
-          */}
+          {/* Waiting, rather than an empty box that looks like an empty room. `isLoading` and
+              not `isPending`: the query is gated on `projectId`. */}
           {isLoadingHistory && messages.length === 0 && (
             <div className="flex flex-col items-center gap-2 py-10">
               <SkinLoader label={t('chat.loading')} />
@@ -677,12 +513,8 @@ export const ProjectChat = ({
                 // The client id where there is one, so a bubble keeps its
                 // element when the server's copy replaces it.
                 key={message.clientId ?? message.id}
-                /*
-                 * `content-visibility` rather than a virtualised list: rows
-                 * scrolled out of view skip layout and paint, which is the
-                 * cost a long history actually has, without taking over the
-                 * scroll container or measuring variable-height bubbles.
-                 */
+                /* `content-visibility` rather than a virtualised list: rows scrolled out of view
+                   skip layout and paint, which is the cost a long history actually has. */
                 className={cn(
                   'flex items-end gap-2 [contain-intrinsic-size:auto_3.5rem] [content-visibility:auto]',
                   isMine && 'flex-row-reverse',
@@ -695,9 +527,8 @@ export const ProjectChat = ({
                     isMine
                       ? 'rounded-br-corner bg-brand text-brand-contrast'
                       : 'rounded-bl-corner bg-surface-sunken text-content',
-                    // A failed send is the one state that must survive being
-                    // glanced at, so it changes the bubble rather than adding a
-                    // detail inside it.
+                    // A failed send is the one state that must survive being glanced at, so it
+                    // changes the bubble rather than adding a detail inside it.
                     message.delivery === 'failed' && 'opacity-80 ring-1 ring-danger',
                   )}
                 >
@@ -711,20 +542,8 @@ export const ProjectChat = ({
                       segment.member ? (
                         <mark
                           key={index}
-                          /*
-                            Three treatments, because a mention means three
-                            different things depending on who is reading it.
-
-                            Being named yourself is the only one that is
-                            *information* rather than decoration — it is the
-                            reason this feature exists — so it gets the full
-                            accent, the one thing in the conversation drawn at
-                            that weight. Somebody else being named is context,
-                            and is tinted rather than filled. Inside your own
-                            bubble the accent is already the background, so the
-                            chip lifts out of it with the label colour instead;
-                            a brand fill there would be invisible.
-                          */
+                          /* Three treatments, because a mention means three different things
+                             depending on who is reading it. */
                           className={cn(
                             'rounded px-0.5 font-semibold',
                             isMine
@@ -743,12 +562,8 @@ export const ProjectChat = ({
                   </p>
                   <p className="mt-1 flex items-center gap-1 text-4xs opacity-60">
                     {formatTime(message.createdAt)}
-                    {/*
-                      Only our own messages carry a delivery mark, and only
-                      while there is something to say about it: pending, failed,
-                      or — once the server's copy has replaced ours — nothing at
-                      all beyond the tick that says it landed.
-                    */}
+                    {/* Only our own messages carry a delivery mark, and only while there is
+                        something to say about it: pending, failed. */}
                     {isMine && message.delivery === 'pending' && (
                       <Clock3 className="h-2.5 w-2.5" aria-label={t('chat.sending')} />
                     )}
@@ -796,19 +611,14 @@ export const ProjectChat = ({
             value={draft}
             onChange={(event) => {
               setDraft(clampText(event.target.value, TEXT_LIMITS.chatMessage));
-              // Read off the event's own target rather than from a later DOM
-              // read: by the time an effect could look, the value and the
-              // selection have both moved on.
+              // Read off the event's own target rather than from a later DOM read: by the time an
+              // effect could look, the value and the selection have both moved on.
               setCaret(event.target.selectionStart ?? event.target.value.length);
               // Throttled and stopped on idle — see `useTypingSignal`.
               if (isConnected) typingSignal.keystroke();
             }}
-            /*
-             * `onSelect` fires for every caret move — clicking into the middle
-             * of the draft, arrowing along it, selecting a word. Each of those
-             * changes the answer to "is there an unfinished mention here", and
-             * `onChange` alone would miss all of them.
-             */
+            /* `onSelect` fires for every caret move — clicking into the middle of the draft,
+               arrowing along it, selecting a word. */
             onSelect={(event) =>
               setCaret(event.currentTarget.selectionStart ?? draft.length)
             }

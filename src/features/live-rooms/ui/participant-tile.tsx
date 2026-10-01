@@ -32,18 +32,13 @@ interface ParticipantTileProps {
   /** How this connection is doing. Absent for the local tile, which has none. */
   quality?: LiveQuality;
   /**
-   * Called when this tile enters or leaves the viewport.
-   *
-   * The stage passes the peer's id down with it - see `LiveStage`. The tile
-   * only reports what it can see about itself; what to do about that is the
-   * call's business.
+   * Called when this tile enters or leaves the viewport. The stage passes the peer's id down with
+   * it - see `LiveStage`.
    */
   onVisibilityChange?: (visible: boolean) => void;
   /**
-   * Whether this tile is the one filling the screen.
-   *
-   * Owned by the stage rather than read here, because the stage is the one
-   * that has to act on it for every *other* tile too. See `LiveStage`.
+   * Whether this tile is the one filling the screen. Owned by the stage rather than read here,
+   * because the stage is the one that has to act on it for every *other* tile too.
    */
   isFullscreen?: boolean;
 }
@@ -52,12 +47,8 @@ interface ParticipantTileProps {
 const CHROME_IDLE_MS = 2_500;
 
 /**
- * The three states, as an icon and a colour.
- *
- * Signal bars rather than a coloured dot, because a dot has to be learned and
- * bars do not: everybody has read a signal meter, and the *number* of bars
- * carries the reading even for somebody who cannot tell the amber from the
- * red. The colour is the second channel, never the only one.
+ * The three states, as an icon and a colour. Signal bars rather than a coloured dot, because a dot
+ * has to be learned and bars do not: everybody has read a signal meter.
  */
 const QUALITY_ICON = {
   good: SignalHigh,
@@ -72,22 +63,8 @@ const QUALITY_TONE = {
 } as const;
 
 /**
- * One person in a call.
- *
- * ## Why the media element is driven by a ref rather than a `src`
- *
- * A `MediaStream` is not a URL. `srcObject` is the only way to attach one, it
- * is not a React prop, and setting it during render would mutate the DOM
- * outside the commit phase. So the element is rendered empty and an effect
- * attaches the stream — which is also what lets the same element survive a peer
- * renegotiating and handing over a different stream object.
- *
- * ## Why the local tile is always muted
- *
- * Playing your own microphone back through your own speakers is a feedback
- * loop, and on a laptop it is an immediate howl. `muted` on the element does
- * not mute what is *sent* — the track is untouched — it only stops this
- * browser from playing it.
+ * One person in a call. A `MediaStream` is not a URL. `srcObject` is the only way to attach one, it
+ * is not a React prop, and setting it during render would mutate the DOM outside the commit phase.
  */
 export const ParticipantTile = ({
   peer,
@@ -114,49 +91,13 @@ export const ParticipantTile = ({
     // frame on screen after a peer has gone.
     element.srcObject = peer.stream ?? null;
     if (peer.stream) {
-      /*
-       * `play()` is called explicitly and its rejection swallowed.
-       *
-       * Autoplay policy blocks a video with audio until the page has been
-       * interacted with — which it has, because somebody pressed "join" — but
-       * the promise still rejects on a tab that is backgrounded at the moment
-       * the stream arrives, and that is not an error anybody can act on.
-       */
+      // `play()` is called explicitly and its rejection swallowed. Autoplay policy blocks a video
+      // with audio until the page has been interacted with — which it has.
       void element.play().catch(() => undefined);
     }
   }, [peer.stream]);
 
-  /*
-   * Whether anybody can actually see this tile.
-   *
-   * ## Why the tile watches itself
-   *
-   * In a mesh the *sender* pays for every stream it sends - one encoder and
-   * one uplink per peer - and the sender cannot know whether the far end is
-   * looking. Only this element knows that it has been scrolled out of the
-   * grid, or that the panel it lives in has been collapsed. So it says so, and
-   * `useLiveCall` tells that one peer, which stops encoding for us alone. See
-   * `setVideoInterest`.
-   *
-   * ## Why the threshold is zero and the margin is generous
-   *
-   * A tile is worth receiving the moment any part of it is on screen - the
-   * question is "can this be seen at all", not "is this prominent". The 200px
-   * root margin resumes a tile *before* it is scrolled into view, so the
-   * stream is flowing by the time it arrives rather than starting from a
-   * frozen frame under the reader's eye.
-   *
-   * ## Why the local tile is skipped
-   *
-   * There is no connection to it - it renders `localStream` directly - so
-   * there is nothing to pause and nobody to tell.
-   *
-   * ## Why an unsupported observer resumes rather than pauses
-   *
-   * `IntersectionObserver` is everywhere that matters, but if it were missing
-   * the safe failure is to keep receiving: a wasted stream is a cost, and a
-   * paused one that never resumes is a participant who appears frozen.
-   */
+  // Whether anybody can actually see this tile.
   useEffect(() => {
     if (!onVisibilityChange || isSelf) return;
 
@@ -174,15 +115,7 @@ export const ParticipantTile = ({
 
     return () => {
       observer.disconnect();
-      /*
-       * Unmounting is not "invisible", it is "gone".
-       *
-       * Reporting false on the way out would tell a peer to stop sending on a
-       * connection that is about to be closed anyway - a wasted frame - and if
-       * the tile is unmounting because the *layout* changed rather than
-       * because the peer left, the next mount would have to undo it. Saying
-       * "visible" is idempotent on the sender and costs nothing.
-       */
+      // Unmounting is not "invisible", it is "gone".
       onVisibilityChange(true);
     };
   }, [isSelf, onVisibilityChange]);
@@ -194,21 +127,13 @@ export const ParticipantTile = ({
   const isCameraHeld = peer.flags.camOn && !peer.flags.sharing && Boolean(peer.videoHeld);
 
   /**
-   * A tile shows video when the person has a camera on, or is presenting.
-   *
-   * Not a held camera on somebody else's tile: nothing is arriving, and the
-   * last frame that did would sit there frozen as if they had stopped moving.
-   * Your own tile keeps its preview, since your camera is still running.
+   * A tile shows video when the person has a camera on, or is presenting. Not a held camera on
+   * somebody else's tile: nothing is arriving.
    */
   const hasPicture = peer.flags.sharing || (peer.flags.camOn && (isSelf || !isCameraHeld));
 
-  /*
-   * Fullscreen is offered on somebody else's picture, and only there.
-   *
-   * Not on your own tile: while you present, that tile *is* your screen, and
-   * filling the screen with a capture of the screen is a hall of mirrors. Not
-   * on an avatar either, because there is nothing there to see better.
-   */
+  // Fullscreen is offered on somebody else's picture, and only there. Not on your own tile: while
+  // you present, that tile *is* your screen.
   const offersFullscreen = !isSelf && hasPicture && canFullscreen();
 
   const toggleFullscreen = () => {
@@ -220,29 +145,14 @@ export const ParticipantTile = ({
     if (tile && offersFullscreen) void enterFullscreen(tile, videoRef.current);
   };
 
-  /*
-   * Out of fullscreen when the picture goes.
-   *
-   * A presenter who stops sharing with their camera off leaves an avatar
-   * behind, and an avatar the size of a monitor is a screen somebody has to
-   * work out how to leave. The picture is what they came in for, so the room
-   * comes back when it ends.
-   */
+  // Out of fullscreen when the picture goes. A presenter who stops sharing with their camera off
+  // leaves an avatar behind.
   useEffect(() => {
     if (isFullscreen && !hasPicture) void exitFullscreen();
   }, [hasPicture, isFullscreen]);
 
-  /*
-   * The chrome fades when nobody is pointing at it.
-   *
-   * The name plate and the buttons sit over the picture, which is fine in a
-   * grid and in the way on a full screen, most of all over the bottom line of a
-   * shared document. They come back on any movement, press or key, the same
-   * rule every video player uses, so there is nothing to learn. Keyboard focus
-   * on a button also holds them in view, but only keyboard focus
-   * (`:focus-visible` below): the fullscreen button keeps focus after the click
-   * that pressed it, and `focus-within` would pin the chrome up for good.
-   */
+  // The chrome fades when nobody is pointing at it. The name plate and the buttons sit over the
+  // picture, which is fine in a grid and in the way on a full screen.
   useEffect(() => {
     const tile = tileRef.current;
     if (!isFullscreen || !tile) {
@@ -309,14 +219,8 @@ export const ParticipantTile = ({
         muted={isSelf}
         className={cn(
           'h-full w-full',
-          /*
-           * A camera is contained, a screen is fitted.
-           *
-           * `cover` on a shared screen crops the edges off, which is where
-           * the tabs and the toolbar of the thing being demonstrated live.
-           * `contain` on a webcam letterboxes a face, which looks broken. The
-           * two want opposite rules and the flag already distinguishes them.
-           */
+          /* A camera is contained, a screen is fitted. `cover` on a shared screen crops the edges
+             off, which is where the tabs and the toolbar of the thing being demonstrated live. */
           // On a full screen a face is contained too: cropping somebody's
           // head to fit an ultrawide monitor is not seeing them better.
           peer.flags.sharing || isFullscreen ? 'object-contain' : 'object-cover',
@@ -396,17 +300,8 @@ export const ParticipantTile = ({
           <MicOff className="h-3 w-3 shrink-0 text-white/50" aria-label={t('live.micOff')} />
         )}
 
-        {/*
-          The connection meter, and only when it has something to say.
-
-          A `good` connection draws nothing at all, which is the point: every
-          other degradation in a call is silent, so this indicator's whole job
-          is to break that silence when it matters. An icon that is always
-          present is one nobody looks at - the same as no icon, with extra
-          clutter. The title carries the numbers for anybody who wants to know
-          *why*, and the `sr-only` span carries them for anybody who cannot
-          hover a tooltip.
-        */}
+        {/* The connection meter, and only when it has something to say. A `good` connection
+            draws nothing at all, which is the point. */}
         {QualityIcon && qualityLabel && quality && (
           <span className={cn('shrink-0', QUALITY_TONE[quality.level])} title={qualityLabel}>
             <QualityIcon className="h-3 w-3" aria-hidden />
@@ -414,14 +309,8 @@ export const ParticipantTile = ({
           </span>
         )}
 
-        {/*
-          Relayed, which is not a fault and is worth saying anyway.
-
-          It is the single most useful fact when somebody asks why one pair in
-          a call is worse than the rest, and nothing else in the interface can
-          surface it. Drawn quietly and in the interface's own muted white:
-          this is an explanation, not a warning.
-        */}
+        {/* Relayed, which is not a fault and is worth saying anyway. It is the single most
+            useful fact when somebody asks why one pair in a call is worse than the rest. */}
         {quality?.isRelayed && (
           <span className="shrink-0 text-white/50" title={t('live.relayed')}>
             <span aria-hidden className="text-3xs font-bold tracking-wide">
@@ -432,28 +321,15 @@ export const ParticipantTile = ({
         )}
       </div>
 
-      {/*
-        The tile's own buttons: fullscreen for anybody watching, and the
-        moderator's two grants. Revealed on hover and on focus.
-
-        Hidden by default because a call of eight would otherwise carry two
-        dozen buttons nobody is looking at, and always reachable by keyboard
-        because `group-focus-within` is what stops "hover to reveal" from
-        meaning "mouse only".
-      */}
+      {/* The tile's own buttons: fullscreen for anybody watching, and the moderator's two
+          grants. Revealed on hover and on focus. */}
       {((canModerate && !isSelf) || offersFullscreen || isFullscreen) && (
         <div
           className={cn(
             'absolute flex gap-1 transition-opacity duration-300',
             isFullscreen ? 'right-4 top-4' : 'right-1.5 top-1.5',
-            /*
-             * In a grid, revealed on hover and on focus, and always shown where
-             * there is no hover to reveal it with: a phone has no pointer
-             * resting over a tile, and the fullscreen button is most wanted on
-             * the smallest screen.
-             *
-             * On a full screen, shown until the pointer rests (see above).
-             */
+            /* In a grid, revealed on hover and on focus, and always shown where there is no hover
+               to reveal it with: a phone has no pointer resting over a tile. */
             isFullscreen
               ? isChromeHidden
                 ? 'opacity-0 group-has-[:focus-visible]:opacity-100'
@@ -464,11 +340,8 @@ export const ParticipantTile = ({
                 ),
           )}
         >
-          {/*
-            The moderator's two grants stay out of the fullscreen view. Handing
-            somebody the microphone is room management, which belongs on the
-            stage with the rest of the room in sight.
-          */}
+          {/* The moderator's two grants stay out of the fullscreen view. Handing somebody the
+              microphone is room management. */}
           {canModerate && !isSelf && !isFullscreen && onGrantSpeak && (
             <button
               type="button"

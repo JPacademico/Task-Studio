@@ -1,15 +1,8 @@
 import { Skeleton } from '@/shared/ui';
 
 /**
- * The agenda's own shape, drawn before the agenda arrives.
- *
- * A centred spinner told the user only that something was happening. This tells
- * them *what* is coming and, more usefully, reserves the room it will need — so
- * the header and the filter row above it do not jump downwards the moment the
- * first day bucket lands.
- *
- * Two buckets rather than a screenful: enough to read as "a list of days is
- * loading", few enough that a fast response never flashes a wall of grey.
+ * The agenda's own shape, drawn before the agenda arrives. A centred spinner told the user only
+ * that something was happening.
  */
 export const AgendaSkeleton = () => (
   <div className="space-y-6 sm:space-y-8" aria-hidden>

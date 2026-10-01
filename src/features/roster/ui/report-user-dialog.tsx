@@ -22,30 +22,7 @@ interface ReportUserDialogProps {
   onReported: () => void;
 }
 
-/**
- * Telling whoever runs this deployment about somebody.
- *
- * ## What this dialog has to be honest about
- *
- * Three things, and all three are in the body copy rather than in a tooltip,
- * because getting any of them wrong changes whether somebody files at all:
- *
- *   - **Where it goes.** To the operators of this deployment — not to the
- *     project's owner, not to a moderation queue somebody imagines is staffed.
- *   - **That it is not anonymous to them.** An administrator sees who filed
- *     it, because five reports from one address book and five from five people
- *     are different situations and no aggregate can tell them apart.
- *   - **That the person reported is never told.** This is the fear that stops
- *     people reporting a colleague, and leaving it unsaid does not make it less
- *     of a fear — it makes it a guess.
- *
- * ## Why the reason is required and long
- *
- * A report with no reason is a click, and a console full of clicks is a console
- * nobody reads. The floor is ten characters — enough to stop an empty submit,
- * short enough that "he keeps deleting my tasks" clears it — and the ceiling is
- * a thousand, because the useful reports are the ones with a story in them.
- */
+/** Telling whoever runs this deployment about somebody. */
 export const ReportUserDialog = ({
   isOpen,
   onClose,
@@ -102,14 +79,7 @@ export const ReportUserDialog = ({
             placeholder={t('report.placeholder')}
             maxLength={MAX_REASON}
           />
-          {/*
-            The floor is stated only once somebody has started writing.
-
-            Showing "say a little more" against an empty field is telling
-            somebody off before they have done anything; showing it against
-            four characters is the field explaining why the button is still
-            disabled, which is the moment it is useful.
-          */}
+          {/* The floor is stated only once somebody has started writing. */}
           {reason.trim().length > 0 && !isLongEnough && (
             <p className="text-3xs text-content-faint">{t('report.tooShort')}</p>
           )}

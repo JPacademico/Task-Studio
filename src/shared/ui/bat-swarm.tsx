@@ -9,10 +9,8 @@ const COUNT = 9;
 
 interface BatSwarmProps {
   /**
-   * The dialog the bats come off.
-   *
-   * A ref rather than a parent, and that is the whole fix — see the note below
-   * on the clip.
+   * The dialog the bats come off. A ref rather than a parent, and that is the whole fix — see the
+   * note below on the clip.
    */
   anchor: RefObject<HTMLElement | null>;
 }
@@ -24,59 +22,7 @@ interface Box {
   height: number;
 }
 
-/**
- * A burst of bats off the edges of a dialog, on the Halloween skin only.
- *
- * ## Why it renders nothing on the other thirteen skins
- *
- * Because it is mounted by `Modal`, which every dialog in the product uses. The
- * cheapest possible answer on a skin that does not want it is `null` before any
- * work happens — no elements, no animation, no measurement — and that is what
- * the guard below buys. A seasonal flourish must not cost the other skins a
- * single node.
- *
- * ## Why the bats are no longer inside the dialog
- *
- * They were, and it is why they appeared to come *out of the middle* of it. The
- * panel is `overflow-hidden` — it has to be, or a scrolling body would paint
- * over the rounded corners — so a bat launched from the centre was clipped the
- * instant it reached the edge. What anybody actually saw was nine glyphs
- * materialising in the middle of a form and being cut off halfway out, which
- * reads as a rendering fault rather than as a swarm.
- *
- * So this is now a *sibling* of the panel inside the dialog's own full-screen
- * layer, positioned over it from a measurement rather than by containment.
- * Nothing clips it, and the bats start where the swarm was always supposed to
- * start: on the border, going away from it.
- *
- * `position: fixed` against the measured rect rather than `absolute` inside a
- * relative wrapper, because a wrapper would have to carry the panel's own
- * sizing — and the panel's width is set by `className` at something like forty
- * call sites, half of which override `sm:max-w-lg` with something wider. A
- * measurement costs one `getBoundingClientRect` per dialog opening and changes
- * no layout at all.
- *
- * ## Why the measurement is taken after a frame
- *
- * The panel animates in from `scale: 0.985`, so measuring during the same
- * commit returns the box it is arriving *from*, about 1.5% small. One
- * `requestAnimationFrame` is enough to read it settled, and since the bats fade
- * up over their first 150ms there is nothing on screen during the wait.
- *
- * ## Why the flight is computed once and never recomputed
- *
- * `useMemo` with an empty dependency list: the component is mounted fresh on
- * every open (it lives inside `AnimatePresence`, which unmounts the whole
- * dialog on close), so "once per mount" is exactly "once per open". Deriving
- * the angles during render without memoising would give every bat a new
- * trajectory on every parent re-render — and a dialog re-renders on every
- * keystroke in the form it contains, which would restart the swarm each time
- * somebody typed.
- *
- * The spread is deterministic rather than random, for the same reason the hero
- * field's scatter is: a fan somebody has looked at and approved should be the
- * same fan next time. The jitter is a fixed per-index offset, not `Math.random`.
- */
+/** A burst of bats off the edges of a dialog, on the Halloween skin only. */
 export const BatSwarm = ({ anchor }: BatSwarmProps) => {
   const skin = useSkin();
   const reduceMotion = useReducedMotion();
@@ -100,58 +46,26 @@ export const BatSwarm = ({ anchor }: BatSwarmProps) => {
   const flight = useMemo(
     () =>
       Array.from({ length: COUNT }, (_, index) => {
-        /*
-         * Evenly around the dialog, starting a little past due-right so that no
-         * bat begins life sitting exactly on a corner — a glyph on a corner
-         * reads as a decoration somebody placed there rather than as something
-         * leaving.
-         */
+        // Evenly around the dialog, starting a little past due-right so that no bat begins life
+        // sitting exactly on a corner.
         const angle = ((index + 0.35) / COUNT) * Math.PI * 2;
         const cos = Math.cos(angle);
         const sin = Math.sin(angle);
 
-        /*
-         * The circle mapped onto the border of the box.
-         *
-         * Dividing by the larger of the two components pushes the point out
-         * until one axis is at the full half-extent, which is the definition of
-         * the rectangle's edge. Without it the starting points land on the
-         * *inscribed ellipse* and only the four midpoints touch the border —
-         * the corners of the dialog would have no bats near them at all, which
-         * is the half of "from around the border" that is most visible.
-         */
+        // The circle mapped onto the border of the box. Dividing by the larger of the two
+        // components pushes the point out until one axis is at the full half-extent.
         const reach = Math.max(Math.abs(cos), Math.abs(sin));
         const edgeX = cos / reach;
         const edgeY = sin / reach;
 
         // A fixed wobble per index, so the ring is not a perfect clock face.
         const jitter = ((index * 37) % 11) / 11;
-        /*
-         * Further, because they are bigger.
-         *
-         * The travel used to end about 140-270px out, which cleared a 24px bat
-         * comfortably. A 48px one is still half over the dialog at that
-         * distance, so the swarm looked like it stopped rather than left. The
-         * increase is roughly the size difference, not a round number chosen
-         * for its own sake.
-         */
+        // Further, because they are bigger. The travel used to end about 140-270px out, which
+        // cleared a 24px bat comfortably.
         const distance = 190 + jitter * 150;
 
-        /*
-         * The sway, and why the travel is three points rather than one.
-         *
-         * Straight out along the radius is how a firework leaves, not how a bat
-         * does. Real flight is a line with a lateral wander on it — the animal
-         * is being carried by its own wingbeats, so it crabs a little to one
-         * side and then the other on its way out.
-         *
-         * `swayX`/`swayY` is the radial direction turned ninety degrees, scaled
-         * by a per-index amount and signed by whether the index is odd. Framer
-         * reads the three-element arrays below as a path through those points,
-         * so each bat leaves on a shallow S rather than on a ray. It is the one
-         * change that makes nine of them read as a swarm rather than as an
-         * explosion diagram.
-         */
+        // The sway, and why the travel is three points rather than one. Straight out along the
+        // radius is how a firework leaves, not how a bat does.
         const swing = (28 + jitter * 34) * (index % 2 === 0 ? 1 : -1);
         const swayX = -sin * swing;
         const swayY = cos * swing;
@@ -161,17 +75,12 @@ export const BatSwarm = ({ anchor }: BatSwarmProps) => {
           // correct for a 512px form and a full-width bottom sheet alike.
           left: 50 + edgeX * 50,
           top: 50 + edgeY * 50,
-          // Out along the radius, with a lateral wander on the way — see the
-          // note on `swing`. The travel is what carries them off the dialog;
-          // the starting point is what puts them on its edge.
+          // Out along the radius, with a lateral wander on the way — see the note on `swing`. The
+          // travel is what carries them off the dialog.
           x: [0, cos * distance * 0.45 + swayX, cos * distance],
           y: [0, sin * distance * 0.45 + swayY, sin * distance],
-          /*
-           * Banked, and banked *through* the sway rather than into a fixed
-           * angle: the middle value leans the bat towards the side it is
-           * drifting to and the last one levels it off, which is the same
-           * three points the travel uses and therefore lands on the same beats.
-           */
+          // Banked, and banked *through* the sway rather than into a fixed angle: the middle value
+          // leans the bat towards the side it is drifting to and the last one levels it off.
           rotate: [
             0,
             ((angle * 180) / Math.PI) * 0.2 + (swing > 0 ? 14 : -14),
@@ -179,33 +88,23 @@ export const BatSwarm = ({ anchor }: BatSwarmProps) => {
           ],
           scale: 0.55 + jitter * 0.5,
           delay: index * 0.028,
-          // Longer than it was: a bat that crosses 200px in three quarters of a
-          // second is a projectile. Slower is also what makes the wingbeat
-          // visible, which is the whole point of having rigged it.
+          // Longer than it was: a bat that crosses 200px in three quarters of a second is a
+          // projectile.
           duration: 1.3 + jitter * 0.6,
         };
       }),
     [],
   );
 
-  /*
-   * Reduced motion gets nothing at all rather than a static bat.
-   *
-   * This is pure decoration with no state to communicate — there is no
-   * information a reader loses by not seeing it — so the honest reduced-motion
-   * answer is to skip it entirely rather than to leave nine glyphs sitting on
-   * top of the dialog.
-   */
+  // Reduced motion gets nothing at all rather than a static bat. This is pure decoration with no
+  // state to communicate.
   if (!isFlying || !box) return null;
 
   return (
     <div
       aria-hidden
-      /*
-       * Above the panel's own `z-10`, so a bat crossing the dialog's edge
-       * passes in front of it rather than disappearing behind the very border
-       * it is leaving.
-       */
+      /* Above the panel's own `z-10`, so a bat crossing the dialog's edge passes in front of it
+         rather than disappearing behind the very border it is leaving. */
       className="pointer-events-none fixed z-20 overflow-visible"
       style={{ top: box.top, left: box.left, width: box.width, height: box.height }}
     >
@@ -214,13 +113,8 @@ export const BatSwarm = ({ anchor }: BatSwarmProps) => {
           key={index}
           /* The colour and the halo are `.hw-bat`'s — see `--hw-bat-ink`. */
           className="hw-bat absolute"
-          /*
-           * Negative margins rather than a `translate(-50%, -50%)`, because
-           * Framer owns `transform` on this element — it is animating `x`, `y`,
-           * `scale` and `rotate` through it — and a CSS translate written
-           * alongside would simply be overwritten on the first frame.
-           * `BatGlyph` is `h-8 w-12`, so half of that is 1rem and 1.5rem.
-           */
+          /* Negative margins rather than a `translate(-50%, -50%)`, because Framer owns `transform`
+             on this element — it is animating `x`, `y`. */
           style={{
             left: `${bat.left}%`,
             top: `${bat.top}%`,
@@ -238,22 +132,14 @@ export const BatSwarm = ({ anchor }: BatSwarmProps) => {
           transition={{
             duration: bat.duration,
             delay: bat.delay,
-            /*
-             * `easeOut` rather than the custom curve, now that the travel is a
-             * three-point path. A cubic-bezier is applied *between each pair* of
-             * keyframes, so the old curve made the bat sprint to the midpoint,
-             * stop, and sprint again — a stutter exactly where the sway is
-             * supposed to read as one continuous arc.
-             */
+            /* `easeOut` rather than the custom curve, now that the travel is a three-point path. A
+               cubic-bezier is applied *between each pair* of keyframes. */
             ease: 'easeOut',
             opacity: { times: [0, 0.15, 0.62, 1], duration: bat.duration, delay: bat.delay },
           }}
         >
-          {/* Twice what it was. At 16 pixels the rig was there and nobody
-              could see it — the wings, the ears and the notched trailing edge
-              are all features of a *shape*, and a shape needs room. The margins
-              above are half of this, so the glyph stays centred on its own
-              point on the dialog's border. */}
+          {/* Twice what it was. At 16 pixels the rig was there and nobody could see it — the
+              wings, the ears and the notched trailing edge are all features of a *shape*. */}
           <BatGlyph className="h-8 w-12" />
         </motion.span>
       ))}

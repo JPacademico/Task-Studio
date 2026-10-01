@@ -112,25 +112,14 @@ export const TopNavigation = ({ onOpenMobileMenu, onCreateProject }: TopNavigati
         <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
           {!isTouch && <NavPinButton isPinned={isPinned} onToggle={() => togglePin('top')} />}
 
-          {/*
-            The one control on this bar that is not navigation.
-
-            It carries a moving fill rather than the flat brand one every other
-            primary button has — see `LavaButton` for why exactly two buttons
-            inside the app get that.
-          */}
+          {/* The one control on this bar that is not navigation. It carries a moving fill
+              rather than the flat brand one every other primary button has. */}
           <LavaButton size="sm" onClick={onCreateProject} className="hidden sm:inline-flex">
             <Plus className="h-3.5 w-3.5" strokeWidth={2.6} />
             {t('nav.newProject')}
           </LavaButton>
-          {/*
-            Phones get the same action as a single glyph rather than losing it.
-
-            Both twins are in the DOM at all times and only one is displayed.
-            That used to matter a great deal — the hidden one would have been a
-            WebGL context nobody could see — and now costs nothing at all: a
-            `display: none` element runs no animations and paints no gradients.
-          */}
+          {/* Phones get the same action as a single glyph rather than losing it. Both twins are
+              in the DOM at all times and only one is displayed. */}
           <LavaButton
             size="icon"
             onClick={onCreateProject}
@@ -145,27 +134,7 @@ export const TopNavigation = ({ onOpenMobileMenu, onCreateProject }: TopNavigati
           <ThemeToggle />
 
           <div className="relative">
-            {/*
-              `grid place-items-center`, not the bare button it was.
-
-              A `<button>` is `inline-block`, so its contents live in a line
-              box — and an avatar showing a *photo* has no text baseline, so
-              that line box aligned it by its bottom edge and reserved the
-              font's descender space underneath. Measured: a 31.8px picture
-              inside a 37.66px button, sitting high, in a row whose every other
-              control is a centred grid. (An avatar showing initials has a text
-              baseline and was always fine, which is why this only showed for
-              accounts that had uploaded a picture.)
-
-              `.avatar` carries `vertical-align: middle` now, which fixes the
-              alignment everywhere it is used; making this one a grid removes
-              the line box altogether, so the button's box is exactly the
-              avatar's.
-
-              `leading-none` for the same reason one level down: a grid item
-              still inherits a line-height, and on the initials fallback that
-              was what made a photo-less avatar measure taller than a photo.
-            */}
+            {/* `grid place-items-center`, not the bare button it was. */}
             <button
               type="button"
               onClick={() => setIsMenuOpen((open) => !open)}
@@ -199,15 +168,8 @@ export const TopNavigation = ({ onOpenMobileMenu, onCreateProject }: TopNavigati
                     {t('nav.profileSettings')}
                   </Link>
 
-                  {/*
-                    Says it is working, and cannot be pressed twice.
-
-                    The revoke is a network call against a container the host
-                    may have stopped, so this is not always instant — and a
-                    menu item that does nothing visible for half a minute is
-                    one people click again, which is how a single sign-out
-                    became two. See `useSignOut`.
-                  */}
+                  {/* Says it is working, and cannot be pressed twice. The revoke is a network
+                      call against a container the host may have stopped. */}
                   <button
                     type="button"
                     onClick={() => void signOut()}

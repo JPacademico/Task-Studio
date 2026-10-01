@@ -7,13 +7,8 @@ import { cn } from '@/shared/lib/cn';
 import { useT } from '@/shared/i18n';
 
 /**
- * How tall a card is, near enough, and what else a column spends height on.
- *
- * Both measured from the rendered board rather than derived: a task card is
- * about 104px plus the 10px gap under it, and a column spends roughly 300px on
- * the page header, the tab strip, the filter row, its own heading and the
- * board's bottom padding before it draws a single card. Neither needs to be
- * exact — the answer is rounded to a whole card and then clamped.
+ * How tall a card is, near enough, and what else a column spends height on. Both measured from the
+ * rendered board rather than derived.
  */
 const CARD_BLOCK_PX = 114;
 const COLUMN_CHROME_PX = 300;
@@ -24,24 +19,8 @@ const MIN_VISIBLE = 3;
 const MAX_VISIBLE = 9;
 
 /**
- * How many cards a column shows before it offers to open.
- *
- * ## Why this is measured rather than a constant
- *
- * The brief asked for "four, more or less depending on the screen". Four is
- * right on a laptop and wrong in both directions elsewhere: on a 1440px-tall
- * monitor it leaves two thirds of the column empty and makes people press a
- * button to see work that would have fitted anyway, and on a short window even
- * four scrolls — which is the thing the cap exists to prevent.
- *
- * So it is a division: the height actually available, over the height of a
- * card. That also means it answers correctly at every root font size, since the
- * card grows with the type — see the fluid scale in `index.css`.
- *
- * ## Why it re-measures on resize and nothing else
- *
- * The value only changes when the window does. Recomputing on scroll or on
- * every render would be work for an answer that cannot have changed.
+ * How many cards a column shows before it offers to open. The brief asked for "four, more or less
+ * depending on the screen".
  */
 export const useColumnCapacity = (): number => {
   const read = () =>
@@ -66,24 +45,7 @@ export const useColumnCapacity = (): number => {
   return capacity;
 };
 
-/**
- * The control that opens a capped column.
- *
- * ## Why a column is capped at all
- *
- * Because a board is a *summary* and a scrolling column is not one. Twenty
- * cards in To do means the reader scrolls one column to read it, loses sight of
- * the other two while they do, and has to scroll back to compare — which is
- * exactly the thing a board is supposed to save them from. Capped, all three
- * columns are legible at once and the ones with more say so.
- *
- * ## Why the count is on the button
- *
- * "Show all" is a promise with no size on it. "Show all 17" is the difference
- * between a click somebody makes and a click somebody thinks about, and it is
- * also the only place the board still tells the truth about how much work is in
- * a column once the column has stopped showing it.
- */
+/** The control that opens a capped column. */
 export const ColumnOverflowToggle = ({
   hidden,
   isOpen,
@@ -114,13 +76,8 @@ export const ColumnOverflowToggle = ({
     >
       {isOpen ? t('board.showFewer') : t('board.showAllCount', { count: String(hidden) })}
 
-      {/*
-        The arrowhead turns rather than being swapped for an up-chevron.
-
-        Two icons would be two things to recognise; one that rotates is the same
-        object in a different state, which is what the control actually is. It
-        is also the cheapest possible animation — one transform, no layout.
-      */}
+      {/* The arrowhead turns rather than being swapped for an up-chevron. Two icons would be
+          two things to recognise; one that rotates is the same object in a different state. */}
       <motion.span
         aria-hidden
         className="inline-flex"
@@ -134,12 +91,8 @@ export const ColumnOverflowToggle = ({
 };
 
 /**
- * The cards past the cap, revealed together.
- *
- * `AnimatePresence` on the group rather than a transition per card: a column
- * opening is one event, and staggering fourteen entrances turns a disclosure
- * into a performance. The height animation is what makes the column look like
- * it is unfolding rather than jumping.
+ * The cards past the cap, revealed together. `AnimatePresence` on the group rather than a
+ * transition per card: a column opening is one event.
  */
 export const ColumnOverflow = ({
   isOpen,
@@ -172,27 +125,7 @@ export const ColumnOverflow = ({
   );
 };
 
-/**
- * The order a capped column shows its work in.
- *
- * ## Why deadline order, and why it is the *column's* order rather than the
- * expanded view's
- *
- * Because the cap decides what a reader sees, so it has to hide the right
- * things. Whatever order the API returns, the four cards that survive a cap
- * must be the four that matter most — and on a board of dated work that is the
- * four due soonest. Sorting only the expanded list would mean the collapsed
- * column showed an arbitrary four and the button revealed the urgent ones,
- * which is precisely backwards.
- *
- * Pinned work sorts above all of it. A pin is somebody saying "this one,
- * regardless" — it would be a strange feature that let the cap hide the card
- * you had pinned to keep in sight.
- *
- * Undated work sorts last rather than first. It is the only defensible answer:
- * a task with no deadline is not urgent by omission, and putting it above dated
- * work would let anything undated push a deadline out of view.
- */
+/** The order a capped column shows its work in. expanded view's. */
 export const byDeadline = <T extends { dueAt: string | null; isPinned?: boolean }>(
   a: T,
   b: T,

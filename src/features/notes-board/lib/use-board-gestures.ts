@@ -19,15 +19,8 @@ interface MarqueeOptions {
 const MIN_DRAG = 6;
 
 /**
- * Rubber-band selection over the board background.
- *
- * Dragging a box around things is how every canvas tool on earth selects more
- * than one object, and it is the fix for a board whose only multi-select was
- * Ctrl+click — a shortcut that is invisible until somebody tells you about it.
- *
- * The live box is component state on the board (one small absolutely-positioned
- * div), and the intersection test only runs on release, so dragging the lasso
- * never touches a single Post-it.
+ * Rubber-band selection over the board background. Dragging a box around things is how every canvas
+ * tool on earth selects more than one object.
  */
 export const useMarqueeSelection = ({ enabled, surfaceRef, onCommit }: MarqueeOptions) => {
   const [rect, setRect] = useState<Rect | null>(null);
@@ -102,11 +95,8 @@ export const useMarqueeSelection = ({ enabled, surfaceRef, onCommit }: MarqueeOp
 };
 
 /**
- * Pointer position in surface coordinates, sampled on an animation frame.
- *
- * Used to draw the connector that follows the cursor between picking the two
- * ends of a link — the piece of feedback that turns "click two notes" from an
- * instruction into something the user can see happening.
+ * Pointer position in surface coordinates, sampled on an animation frame. Used to draw the
+ * connector that follows the cursor between picking the two ends of a link.
  */
 export const usePointerPosition = (
   enabled: boolean,

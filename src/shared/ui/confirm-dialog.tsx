@@ -21,25 +21,8 @@ interface ConfirmDialogProps {
 }
 
 /**
- * "Are you sure?", in the app's own clothes.
- *
- * ## Why not `window.confirm`
- *
- * The browser's dialog is the one piece of UI this product cannot dress: it is
- * drawn by the operating system in the operating system's font, it cannot say
- * *what* is about to be destroyed in anything but a line of plain text, it
- * freezes every animation and timer on the page while it is open, and on some
- * browsers it offers to stop the site showing dialogs at all — after which the
- * delete button silently does nothing. A permanent deletion deserves a moment
- * that looks like the rest of the product and states its consequence plainly.
- *
- * ## Why it is built on `Modal`
- *
- * So every skin already knows how to draw it: `Modal` carries the `ui-modal`
- * hook the skins style, the escape key, the backdrop and the exit animation.
- * This only decides the shape of a confirmation — a centred danger mark, the
- * sentence, and two buttons with the destructive one last, where the eye ends
- * up and the hand has to travel to.
+ * "Are you sure?", in the app's own clothes. The browser's dialog is the one piece of UI this
+ * product cannot dress: it is drawn by the operating system in the operating system's font.
  */
 export const ConfirmDialog = ({
   isOpen,

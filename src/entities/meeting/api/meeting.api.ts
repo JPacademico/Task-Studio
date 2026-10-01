@@ -13,30 +13,15 @@ import type {
 
 export const meetingApi = {
   /**
-   * One calendar's live meetings, in clock order.
-   *
-   * Deliberately unpaged over the wire. The board pages by *day* and searches
-   * by name, and both of those are answered instantly from a snapshot the
-   * client already holds — a request per day arrow would be a round trip for a
-   * filter, on a surface people scrub back and forth through. The server caps
-   * the response and offers `from`/`to`/`search` for callers that need them.
-   *
-   * `params` carries either a `projectId` or an `organizationId`. A company's
-   * calendar answers with its own meetings *and* those of every project filed
-   * under it, which is why asking for both at once is rejected rather than
-   * merged — it would be one question with two overlapping answers.
+   * One calendar's live meetings, in clock order. Deliberately unpaged over the wire. The board
+   * pages by *day* and searches by name.
    */
   async list(params: ListMeetingsParams): Promise<Meeting[]> {
     const { data } = await api.get<Meeting[]>('/meetings', { params });
     return data;
   },
 
-  /**
-   * Everything one person is expected at, across every project they are on.
-   *
-   * Each row carries its own `project`, because this is the one meetings
-   * surface where "which project is this?" is a real question.
-   */
+  /** Everything one person is expected at, across every project they are on. */
   async agenda(params: AgendaParams = {}): Promise<Meeting[]> {
     const { data } = await api.get<Meeting[]>('/meetings/agenda', { params });
     return data;
@@ -58,18 +43,8 @@ export const meetingApi = {
 };
 
 /**
- * The rooms a calendar can book.
- *
- * A separate object rather than four more methods on `meetingApi`, because
- * they answer a different question with a different lifetime: the calendar is
- * refetched constantly and rooms change a few times a year. Keeping them apart
- * is what lets the picker hold a room list for an hour while the meetings under
- * it stay a minute fresh.
- *
- * Asking for a *project's* rooms answers with the project's own **plus** every
- * room its company holds — the inheritance is resolved by the server on read,
- * so a project filed under a company gains the building immediately and loses
- * it again if it is unfiled. See the API's `MeetingRoomsService`.
+ * The rooms a calendar can book. A separate object rather than four more methods on `meetingApi`,
+ * because they answer a different question with a different lifetime.
  */
 export const meetingRoomApi = {
   async list(scope: RoomScope): Promise<MeetingRoom[]> {

@@ -8,58 +8,20 @@ import { useT } from '@/shared/i18n';
 import { CliCommandList, DocsLink, FOCUS_RING } from './cli-commands';
 
 /**
- * The Task Studio CLI, as a settings row.
- *
- * ## What this used to be, and why it is half the size
- *
- * It used to also hold the list of machines signed in through `taskstudio
- * login`, on the argument that commands are an offer you can fold away while a
- * list of live credentials is a security surface that must stay visible. The
- * argument was right and the conclusion was wrong: obeying both halves inside
- * one bordered box produced a panel that folded for nobody, because the half
- * that must not fold pinned the half that should.
- *
- * So they are two objects now. This one is an offer — an icon, a sentence, a
- * link, and a button that reveals four lines of shell for the people who want
- * them. `CliMachinesPanel` is the inventory, in its own section, always open.
- * Each gets to be honest about what it is.
- *
- * ## Why the commands are behind a button at all
- *
- * Because Settings is where somebody goes to change their display name, and
- * four lines of shell sitting open on that page is the product telling every
- * user that a terminal is part of using it. It is not. The row says the CLI
- * exists and links to its documentation — that much everybody should see — and
- * the commands appear for the people who press the button, which is exactly
- * the set of people who want them.
+ * The Task Studio CLI, as a settings row. It used to also hold the list of machines signed in
+ * through `taskstudio login`.
  */
 export const CliPanel = () => {
   const t = useT();
   const [showCommands, setShowCommands] = useState(false);
   const panelId = useId();
 
-  /*
-   * The skin's own reveal curve, not a number typed here.
-   *
-   * `skin-motion.ts` carries a per-skin table — `terminal` snaps linear in
-   * 100ms, `volcano` runs a slow cubic-bezier its author annotated "pressure,
-   * then failure" — and a hardcoded `easeOut` was a curve that exists in none
-   * of the thirteen. A panel that animates differently from every other reveal
-   * in the same skin is the sort of wrongness nobody can name and everybody
-   * feels.
-   */
+  // The skin's own reveal curve, not a number typed here. `skin-motion.ts` carries a per-skin table
+  // — `terminal` snaps linear in 100ms.
   const motionSpec = useSkinMotion();
 
-  /*
-   * And no curve at all when the reader has asked for none.
-   *
-   * The global `prefers-reduced-motion` rule in `index.css` clamps CSS
-   * transition and animation durations, which does nothing to a Framer Motion
-   * tween: those are inline styles driven from rAF, so there is no declaration
-   * for the media query to override. The hook is the only thing that reaches
-   * them, and six other components in this codebase already use it for exactly
-   * this reason.
-   */
+  // And no curve at all when the reader has asked for none. The global `prefers-reduced-motion`
+  // rule in `index.css` clamps CSS transition and animation durations.
   const reduceMotion = useReducedMotion();
 
   return (

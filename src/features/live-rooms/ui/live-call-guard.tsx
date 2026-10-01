@@ -31,39 +31,8 @@ type RouterNavigator = {
 };
 
 /**
- * "You are about to leave the call", before it happens rather than after.
- *
- * ## What counts as leaving
- *
- * Leaving the *project*. The call now survives moving between the project's
- * own tabs (the page keeps the stage mounted and hidden — see
- * `useLiveCallStore`), so the board, the text board and everything else under
- * `/projects/:id` are free to visit. Anything else — Settings, Themes, the
- * dashboard, another project — unmounts the project page and with it the call,
- * and that is what this asks about first.
- *
- * ## Why it is built by hand
- *
- * The router here is a `BrowserRouter`, not a data router, so `useBlocker` is
- * not available — and moving the whole app onto `createBrowserRouter` to get
- * one is a far larger change than the guard it would buy. So the three ways
- * out are each caught where they happen:
- *
- *   - **Links and `navigate()`** both end in the router's navigator's `push`
- *     or `replace`. While a call is up those two are wrapped: a destination
- *     outside the project is held, and the dialog opens instead.
- *   - **Back and forward** arrive as `popstate`, after the browser has already
- *     moved. The handler plugs into `history-gate`, whose listener was added
- *     before the router's and so runs first, and stops the router seeing the
- *     event; the address is put back where the router still thinks it is,
- *     and the move is replayed only if the reader agrees. (A capture listener
- *     added here was the first attempt, and it cannot work: on `window`,
- *     listeners run in the order they were added, capture or not.)
- *   - **Closing or reloading the tab** gets the browser's own "leave site?"
- *     prompt through `beforeunload` — the one exit no page can restyle.
- *
- * All three are attached only while a call is up, and removed the moment it
- * is not, so the other 99% of the product's navigation never goes near this.
+ * "You are about to leave the call", before it happens rather than after. Leaving the *project*.
+ * The call now survives moving between the project's own tabs.
  */
 export const LiveCallGuard = () => {
   const t = useT();
@@ -163,12 +132,7 @@ export const LiveCallGuard = () => {
         return;
       }
 
-      /*
-       * An entry the router did not stamp, so there is no distance to put
-       * back. The browser stays where it moved to; agreeing hands the router
-       * that move as it would have had it, and staying writes the router's own
-       * address back on top.
-       */
+      // An entry the router did not stamp, so there is no distance to put back.
       const arrived = window.location.href;
       const kept = routerHref.current;
       setPending({

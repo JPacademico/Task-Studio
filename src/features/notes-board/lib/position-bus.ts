@@ -14,12 +14,8 @@ export interface PositionBus {
 }
 
 /**
- * A one-way channel from the dragging Post-it to the connector layer.
- *
- * Arrows have to stay glued to a card while it moves, but routing drag
- * coordinates through React state would re-render every note on the board 60
- * times a second. The bus keeps the coordinates outside React and hands them to
- * the single component that needs them, coalesced to one animation frame.
+ * A one-way channel from the dragging Post-it to the connector layer. Arrows have to stay glued to
+ * a card while it moves.
  */
 export const createPositionBus = (): PositionBus => {
   const positions: Record<string, Point> = {};

@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useRef } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight, Github, Instagram } from 'lucide-react';
@@ -14,7 +14,7 @@ import { IntegrationsStrip } from './ui/integrations-strip';
 import { LandingNav } from './ui/landing-nav';
 import { LavaLink } from './ui/lava-link';
 import { PiticoMark } from './ui/pitico-mark';
-import { useSkin } from '@/app/providers/theme-provider';
+import { useSkin, useTheme } from '@/app/providers/theme-provider';
 import { SkinAmbience } from './ui/skin-ambience';
 import { PricingTable } from './ui/pricing-table';
 import { Reveal } from './ui/reveal';
@@ -22,116 +22,54 @@ import { RotatingWord } from './ui/rotating-word';
 import { ThemeShowcase } from './ui/theme-showcase';
 import { COLUMN, COLUMN_NARROW, COLUMN_WIDE } from './ui/columns';
 
-/*
- * The two WebGL surfaces on this page, split out of its chunk.
- *
- * `three`, `@react-three/fiber` and the shader library together outweigh
- * everything else in the repository, and the landing page is the only screen
- * that uses any of them. Behind `lazy` they are a separate request that is only
- * made once a reader has actually scrolled a decorative section into view on a
- * machine that passed `useCanvasBudget` — so a phone, a metered connection, or
- * anybody who has asked for reduced motion downloads none of it and sees the
- * CSS design that shipped before it.
- */
+// The two WebGL surfaces on this page, split out of its chunk. `three`, `@react-three/fiber` and
+// the shader library together outweigh everything else in the repository.
 const HeroField = lazy(() => import('./ui/hero-field'));
 
 /** Where the author's link goes. */
 const AUTHOR_URL = 'https://www.instagram.com/pitic0_';
 
-/**
- * The front door.
- *
- * ## Why this exists at all
- *
- * Because the root address used to answer a stranger with a password field.
- * That is the app assuming a relationship it has not got: somebody who has
- * just heard about the product and typed the address in has no account, no
- * reason to make one yet, and no way to find out what they would be signing up
- * for. `ProtectedRoute` sends a guest here now, and a signed-in visitor goes
- * straight to their dashboard — so the same URL means "my work" to a user and
- * "what is this" to a visitor, which is the only arrangement that serves both.
- *
- * ## Why the demos are built rather than filmed
- *
- * The loops below are the page's whole argument, and every one of them is
- * assembled from the app's own components and design tokens rather than being a
- * screen recording. The reasoning is set out in full on `DemoFrame`; the short
- * version is that a video would be several megabytes off a free tier, frozen in
- * one of thirteen skins, and stale the day a button moved.
- *
- * ## Why there are no testimonials and no logo wall
- *
- * Nobody has said anything quotable yet, and the only logos that could honestly
- * appear are of things the product *connects to* — which is what the
- * connections belt is. Both sections exist on the pages this was modelled on
- * and both would be furniture here.
- *
- * Pricing used to be on that list, on the grounds that there was none to state.
- * There is now, so it has a section — placed last, for the reason given there.
- * The page says what the thing is, shows it working, lists what it plugs into,
- * shows what it can look like, says what it costs, and asks. That is the whole
- * of it.
- */
+/** The front door. */
 const LandingPage = () => {
   const t = useT();
   const reduceMotion = useReducedMotion();
   const navigate = useNavigate();
   const { hash } = useLocation();
-  /*
-   * The theme the reader is actually wearing, for the closing section's
-   * ambience. `useSkin` rather than the barrel's index in `ThemeShowcase`:
-   * the point down there is that pressing Apply changes the page you are
-   * standing on, and reading the applied value is what makes that true.
-   */
+  // The theme the reader is actually wearing, for the closing section's ambience. `useSkin` rather
+  // than the barrel's index in `ThemeShowcase`.
   const activeSkin = useSkin();
 
-  /*
-   * The introduction's 3D field, and the three questions it has to answer
-   * before it is allowed to exist: is this machine up to it, has the reader
-   * asked for less motion, and is the section even on screen. All three live in
-   * `useCanvasBudget`; what is left here is a ref for it to observe and a pixel
-   * ratio for the canvas to render at.
-   */
+  // The introduction's 3D field, and the three questions it has to answer before it is allowed to
+  // exist: is this machine up to it, has the reader asked for less motion.
   const heroScene = useRef<HTMLDivElement>(null);
   const canRenderHero = useCanvasBudget(heroScene);
   const heroPixelRatio = useCanvasPixelRatio(1.75);
 
-  /*
-   * Start the API waking up the moment somebody lands.
-   *
-   * The same call `AuthShell` makes, and it earns its place here more than it
-   * does there: this page is the *first* thing a new visitor sees, they will
-   * spend at least a few seconds reading before pressing anything, and those
-   * are exactly the seconds a sleeping free-tier container needs to start. By
-   * the time they reach the sign-up form it has answered.
-   *
-   * A no-op when the container has responded recently. See `wakeApi`.
-   */
+  // Out of view the field is not torn down outright: it parks into `heroStill`, a plain 2D copy of
+  // its last frame, so a fast scroll back meets the picture rather than an empty band.
+  const heroStill = useRef<HTMLCanvasElement>(null);
+  const [isHeroMounted, setIsHeroMounted] = useState(false);
+  const parkHero = useCallback(() => setIsHeroMounted(false), []);
+  const { isDark } = useTheme();
+
+  useEffect(() => {
+    if (canRenderHero) setIsHeroMounted(true);
+  }, [canRenderHero]);
+
+  // A still in yesterday's colours is worse than none: a skin or palette change drops it.
+  useEffect(() => {
+    const still = heroStill.current;
+    if (!still || still.width === 0) return;
+    still.width = 0;
+    still.height = 0;
+  }, [activeSkin, isDark]);
+
+  // Start the API waking up the moment somebody lands. The same call `AuthShell` makes, and it
+  // earns its place here more than it does there.
   useEffect(wakeApi, []);
 
-  /*
-   * Arriving with a section already named.
-   *
-   * The navigation bar is shared with the documentation page, where the section
-   * links cannot be plain anchors — `#how` there means "a section of /docs",
-   * which does not exist, so all three did nothing at all. They are router
-   * links to `/welcome#how` off this page, and this is the other half of that:
-   * React Router restores neither scroll position nor hash target on a
-   * client-side navigation, so without this the reader lands at the top of the
-   * page having asked for the middle of it.
-   *
-   * Deferred by a task rather than called straight from the effect, because
-   * the section being scrolled to is inside a lazily-loaded route that has only
-   * just mounted: the element exists, but the images and the panels around it
-   * are still settling, and a scroll measured against an unsettled layout lands
-   * short of the heading it was aiming at.
-   *
-   * `setTimeout` rather than `requestAnimationFrame`, which reads as the more
-   * correct tool and is not: a frame callback does not fire at all while the
-   * document is hidden, so a link opened into a background tab would restore
-   * the reader to the top of the page rather than to the section they asked
-   * for. A task fires either way, and `scrollIntoView` flushes layout itself.
-   */
+  // Arriving with a section already named. The navigation bar is shared with the documentation
+  // page, where the section links cannot be plain anchors.
   useEffect(() => {
     if (!hash) return;
 
@@ -149,113 +87,37 @@ const LandingPage = () => {
     <div className="min-h-dvh bg-surface">
       <LandingNav />
 
-      {/*
-        A `main` landmark, which the page did not have.
-
-        It is what the skip link above lands in, and it is what a screen
-        reader's "jump to main content" offers — on a page that is otherwise
-        eleven sections with no boundary between the navigation and the
-        argument. `tabIndex={-1}` makes it a valid focus target for the anchor
-        without putting it in the tab order.
-      */}
+      {/* A `main` landmark, which the page did not have. It is what the skip link above lands
+          in, and it is what a screen reader's "jump to main content" offers. */}
       <main id="content" tabIndex={-1} className="focus:outline-none">
-      {/* ================= HERO =================
-
-          Taller than it was, and the extra height is the point rather than a
-          side effect.
-
-          It used to be sized to its contents — a headline, a paragraph and two
-          buttons, which on a laptop is about half a screen. That was the right
-          call while the background was a flat radial tint: there was nothing to
-          give more room *to*. A field with depth in it needs depth on screen to
-          read as one, so the section now takes at least three quarters of the
-          viewport and centres its argument in that rather than pinning it to
-          the top — the space is around the copy, not above the fold.
-
-          `svh` rather than `vh`: on a phone `vh` is measured against a viewport
-          without the browser's own chrome in it, so a `vh` hero overflows by the
-          height of the address bar on the one device where that is most of the
-          screen. */}
+      {/* --- HERO ---
+          Taller than it was, and the extra height is the point rather than a side effect. */}
       <section className="relative flex min-h-[76svh] items-center overflow-hidden">
-        {/*
-          A wash behind the headline rather than a hard band.
-
-          The page is meant to read as paper on a desk, and a full-bleed
-          coloured hero would be the one rectangle on it that is obviously a
-          website. This is a soft radial tint in the brand accent — present
-          enough to lift the type off the surface, faint enough that the
-          thirteen skins each get their own version of it for free.
-
-          It is still here, and it is now the *floor* rather than the whole
-          background: it is what is on screen before the 3D field is fetched,
-          what stays on a phone or a metered connection, and what somebody who
-          has asked for reduced motion sees instead. The section has never had a
-          frame in which it had no background, which is the only reason the field
-          is allowed to arrive late.
-
-          ## Why it comes out of a variable now
-
-          Because Studio does not want it. On a loud skin the tint is what makes
-          the top of the page feel lit; on the plain one it reads as a gradient
-          nobody removed, and the paper field behind it is doing that job
-          already. `--hero-wash` is `none` there and the brand radial everywhere
-          else — see the `[data-skin='studio']` block in `index.css`.
-
-          The two scrims below are *not* part of this and stay on every skin:
-          they are drawn in the page's own surface colour and they are what
-          holds the paragraph's contrast ratio up over a moving field.
-        */}
+        {/* A wash behind the headline rather than a hard band. The page is meant to read as
+            paper on a desk. */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 [background-image:var(--hero-wash)]"
         />
 
-        {/*
-          The room the introduction stands in.
-
-          `pointer-events-none` on the host as well as on the canvas: everything
-          in front of this is a link or a button, and a full-bleed canvas that
-          took clicks would make the whole introduction inert. It is also why
-          `HeroField` reads the pointer off the window rather than off itself.
-        */}
+        {/* The room the introduction stands in. `pointer-events-none` on the host as well as on
+            the canvas: everything in front of this is a link or a button. */}
         <div ref={heroScene} aria-hidden className="pointer-events-none absolute inset-0">
-          {canRenderHero && (
+          <canvas ref={heroStill} width={0} height={0} className="absolute left-0 top-0" />
+          {isHeroMounted && (
             <Suspense fallback={null}>
-              <HeroField pixelRatio={heroPixelRatio} />
+              <HeroField
+                pixelRatio={heroPixelRatio}
+                live={canRenderHero}
+                still={heroStill}
+                onParked={parkHero}
+              />
             </Suspense>
           )}
         </div>
 
-        {/*
-          The type sits on a scrim, and the scrim is not decoration.
-
-          The field behind it is translucent paper, and a card drifting behind
-          the paragraph lifts the background enough to take a
-          `text-content-muted` line below the contrast ratio it was checked at.
-          A fade in the page's own surface colour guarantees that ratio whatever
-          the scene does behind it, and costs one composited gradient.
-
-          ## Why it is two gradients now rather than one
-
-          Because one full-bleed vertical fade cannot tell the difference
-          between the part of the section that has type on it and the part that
-          does not, and it was charging both.
-
-          At 70/40/80 it was removing most of the field everywhere — including
-          the outer thirds, where there is nothing to protect. Combined with a
-          hero that was drawing pastels at six percent, the net result was a
-          background nobody could see, which is the bug this pair of changes is
-          fixing from both ends.
-
-          So the vertical fade is now light enough to let the field read, and
-          the guarantee the paragraph actually depends on is made by the second
-          gradient: an ellipse centred on the copy, opaque in the middle and
-          gone by the edges. The type keeps the same floor it had; the corners
-          of the section get their background back.
-
-          The bottom stop stays heavy on both — that one is doing a different
-          job, blending the section into the one beneath it.
-        */}
+        {/* The type sits on a scrim, and the scrim is not decoration. The field behind it is
+            translucent paper. */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-gradient-to-b from-surface/40 via-surface/15 to-surface/75"
@@ -266,13 +128,8 @@ const LandingPage = () => {
         />
 
         <div className={cn('relative mx-auto w-full px-4 pb-16 pt-14 sm:px-6 sm:pb-24 sm:pt-20', COLUMN)}>
-          {/*
-            No pill above the headline.
-
-            It read "Boards, notes, meetings and docs — in one place", which is
-            the sentence under the headline said first, worse, and in 11px. The
-            first thing on the page is now the thing the page is about.
-          */}
+          {/* No pill above the headline. It read "Boards, notes, meetings and docs — in one
+              place", which is the sentence under the headline said first, worse, and in 11px. */}
           <motion.h1
             initial={reduceMotion ? false : { opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
@@ -284,28 +141,8 @@ const LandingPage = () => {
             <span className="text-content-muted">{t('landing.hero.titleTail')}</span>
           </motion.h1>
 
-          {/*
-            The paragraph and the buttons on one line, not stacked.
-
-            Headline, then paragraph, then buttons is three full-width rows for
-            about forty words, and on a laptop it pushed the first demo entirely
-            below the fold — so the page's opening screen was type and nothing
-            else. Side by side, the same content ends a third of a screen
-            higher and the reader meets the product rather than a wall of
-            introduction.
-
-            `items-end` rather than `items-center`: the buttons align to the
-            paragraph's last line, so the two blocks share a baseline instead of
-            floating against each other. Stacked below `sm`, where there is no
-            width to put them side by side and the vertical order is the reading
-            order anyway.
-
-            There is nothing under them. A line of reassurance used to sit there
-            — "No card. Bring a GitHub repository…" — and both halves of it were
-            already said better elsewhere: there is no pricing on this page for
-            a card to be relevant to, and the import demo *shows* a repository
-            becoming a project rather than promising it.
-          */}
+          {/* The paragraph and the buttons on one line, not stacked. Headline, then paragraph,
+              then buttons is three full-width rows for about forty words. */}
           <motion.div
             initial={reduceMotion ? false : { opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
@@ -317,16 +154,7 @@ const LandingPage = () => {
             </p>
 
             <div className="flex shrink-0 flex-wrap items-center gap-2.5">
-              {/*
-                The lamp, not the flat brand fill.
-
-                It is the same control the "New project" button in the app is,
-                and putting it on the two calls to action here is what makes the
-                page and the product read as one thing: the button that gets you
-                in is the button you press once you are. See `LavaSurface` for
-                why that is affordable on four buttons at once and was not
-                affordable on two before.
-              */}
+              {/* The lamp, not the flat brand fill. */}
               <LavaLink to="/signup" size="lg">
                 {t('landing.hero.primary')}
                 <ArrowRight aria-hidden className="h-4 w-4" />
@@ -339,29 +167,8 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ================= CONNECTIONS =================
-
-          Second on the page now, and with neither a heading nor a paragraph.
-
-          Both were removed for the same reason and the move follows from it.
-          "It plugs into what you already use" is a sentence the belt underneath
-          says better and instantly — eight marks a reader recognises before
-          they have finished the heading — and the paragraph under it ("nothing
-          here needs an account manager") was answering an objection nobody has
-          yet formed two screens into a page with no pricing on it.
-
-          Stripped of the words, it stops being a section that has to be *read*
-          and becomes a band that is simply *seen*, which is the only thing it
-          was ever going to be at this speed. That is what makes it work
-          directly under the introduction, where it costs no vertical space
-          worth the name and answers the first question a stranger actually has
-          — "does this work with my stuff?" — before the product has to argue
-          anything.
-
-          Full-bleed, outside the page's column. A marquee that stops at the
-          same margin as the copy above it is a marquee in a box; edge to edge
-          it reads as something passing through. The fade at each end is on the
-          strip itself. */}
+      {/* --- CONNECTIONS ---
+          Second on the page now, and with neither a heading nor a paragraph. */}
       <section
         id="connects"
         aria-label={t('landing.nav.connects')}
@@ -372,50 +179,12 @@ const LandingPage = () => {
         </Reveal>
       </section>
 
-      {/* ================= THE DEMOS =================
-
-          The band is `surface-raised`, not `surface-sunken`, and that swap is
-          the whole of the dark-mode contrast fix.
-
-          Alternating sections were painted `bg-surface-sunken/30`. Composited
-          in dark mode that is rgba(8,8,10,0.3) over a rgb(13,13,16) page —
-          about one and a half points *darker* than the ground, which is both
-          invisible and the wrong direction: a section of a page is a plane
-          lying on it, not a hole cut into it. So the page read as one
-          undifferentiated black rectangle with occasional hairlines, and every
-          card inside it had to do the whole job of saying "something is here".
-
-          At `raised/40` the same band composites about eight points *above* the
-          page, so the stack finally has three legible steps — ground 13, band
-          21, card 32 — and the borders go back to describing edges rather than
-          carrying the entire layout. In light mode the change is barely
-          perceptible, because there the two tokens were never far apart.
-
-          No heading over this one, deliberately.
-
-          It used to carry "Three things, actually working" and a sentence
-          explaining that the panels below were real interfaces rather than
-          screenshots. Both were redundant against the thing underneath them:
-          nine live, moving, themed interfaces are self-evidently not
-          screenshots, and a reader who needs to be told that has not looked at
-          them yet. The section is now the demos, which is what it was always
-          for. */}
+      {/* --- THE DEMOS --- */}
       <section
         id="how"
         aria-label={t('landing.nav.how')}
-        /*
-         * `overflow-x-clip` is the companion to the carousel's full-bleed arrow
-         * layer. That layer is `w-screen` — 100vw — and `vw` counts the
-         * scrollbar, so on any page tall enough to have one the layer is about
-         * 15px wider than the visible area and hangs a few pixels past each
-         * edge. Unclipped, that is a horizontal scrollbar on the whole
-         * document.
-         *
-         * `clip` rather than `hidden`: `hidden` makes the box a scroll
-         * container, which changes what `position: sticky` and anchor scrolling
-         * do inside it. `clip` just stops the paint at the edge, which is all
-         * that is wanted.
-         */
+        /* `overflow-x-clip` is the companion to the carousel's full-bleed arrow layer. That layer
+           is `w-screen` — 100vw — and `vw` counts the scrollbar. */
         className="scroll-mt-20 overflow-x-clip border-t border-edge/70 bg-surface-raised/40"
       >
         <div className={cn('mx-auto w-full px-4 py-16 sm:px-6 sm:py-24', COLUMN)}>
@@ -430,15 +199,8 @@ const LandingPage = () => {
         id="inside"
         className="scroll-mt-20 border-t border-edge/70 bg-surface-raised/40"
       >
-        {/* The heading is inside the board now — pinned to the middle of it,
-            with the six notes arranged around it. A heading above a wall and a
-            heading *on* the wall are different claims, and this section is
-            making the second one.
-
-            `max-w-7xl` rather than the `max-w-6xl` every other section uses,
-            and it is the one place on the page that earns the exception: the
-            board *is* the section, so every pixel of column it does not use is
-            a pixel of empty wall around a wall. See `FeatureNotes`. */}
+        {/* The heading is inside the board now — pinned to the middle of it, with the six notes
+            arranged around it. */}
         <div className={cn('mx-auto w-full px-4 py-16 sm:px-6 sm:py-24', COLUMN_WIDE)}>
           <Reveal>
             <FeatureNotes />
@@ -446,30 +208,14 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ================= THEMES =================
-
-          Last of the four, and deliberately so. It is the most immediately
-          impressive thing on the page and the least useful thing to lead with:
-          somebody who does not yet know what the product *is* has no reason to
-          care what it can look like. By this point they have watched it work,
-          seen what it plugs into and read what is in it — and this is the
-          answer to the question that follows all three, which is what it would
-          be like to live in. */}
+      {/* --- THEMES ---
+          Last of the four, and deliberately so. */}
       <section
         id="themes"
         className="scroll-mt-20 border-t border-edge/70"
       >
         <div className={cn('mx-auto w-full px-4 py-16 sm:px-6 sm:py-24', COLUMN)}>
-          {/*
-            A heading and nothing else.
-
-            The paragraph under this explained that a skin reinterprets the whole
-            app rather than recolouring it — which is precisely what the barrel,
-            the description panel and the light-against-dark box below
-            demonstrate, in the reader's own eyes, thirteen times over. A
-            sentence claiming what the thing under it is about to show is a
-            sentence that only delays the showing.
-          */}
+          {/* A heading and nothing else. */}
           <Reveal>
             <header className="max-w-2xl">
               <h2 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl">
@@ -484,31 +230,8 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ================= PRICING =================
-
-          Last of the content sections, and directly before the closing.
-
-          ## Why it is here rather than near the top
-
-          Because a price is only a question once somebody wants the thing. A
-          visitor who has just arrived has no way to judge whether five dollars
-          is cheap or expensive — they do not yet know what it buys. By this
-          point they have watched the boards work, seen what it plugs into, read
-          what is inside it and seen what it can look like; the price is the
-          answer to the question all four of those produce.
-
-          It is also the last thing before the maker's mark, which means the two
-          buttons in the closing section are now the *second* invitation rather
-          than the first, and the reader arrives at them having already seen
-          what each plan costs.
-
-          ## Why the section note that used to be on this page is gone
-
-          The introduction's comment said "there is no pricing, no testimonials
-          and no logo wall" and gave the honest reason: there was no pricing to
-          state. There is now. The other two are still absent and still for the
-          reasons given there.
-      */}
+      {/* --- PRICING ---
+          Last of the content sections, and directly before the closing. */}
       <section id="pricing" className="scroll-mt-20 border-t border-edge/70">
         <div className={cn('mx-auto w-full px-4 py-16 sm:px-6 sm:py-24', COLUMN)}>
           <Reveal>
@@ -528,61 +251,11 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ================= CLOSING =================
-
-          The last thing on the page is who made it, not a second sign-up form.
-
-          ## What was here
-
-          A repeat of the introduction: the app's mark, a heading, a line of
-          copy, and the same two buttons the navigation bar has been carrying at
-          the top of the screen for the whole scroll. It is the default ending
-          for a landing page and it is almost content-free — a reader who has
-          got this far has passed a "Get started" button four times and has
-          either decided or not.
-
-          ## What replaced it
-
-          One short section that says the product came from somewhere. `A P.
-          solution`, where the `P.` opens into `Pitico.` when it is touched — a
-          maker's mark, in metal, at the foot of the page, in the same place and
-          the same spirit as a signature on the back of a chair.
-
-          The buttons stay. They are the one thing on the old section that was
-          doing work, they are now the *second* thing in a section rather than
-          its whole reason for existing, and somebody who has just found out
-          there is a studio behind this is exactly the person who might sign up
-          because of it. */}
+      {/* --- CLOSING ---
+          The last thing on the page is who made it, not a second sign-up form. */}
       <section className="relative overflow-hidden border-t border-edge/70 bg-surface-raised/40">
-        {/*
-          The applied theme's own weather, across the closing band.
-
-          ## Why here and nowhere else on the page
-
-          Because this is the one section with the room for it. The app mounts
-          these fields over the *whole viewport* (see `AppLayout`), and the
-          landing page deliberately does not — a reader scrolling a marketing
-          page through a permanent snowfall is being sold a distraction. One
-          band at the foot, after the argument is over, is where an atmospheric
-          flourish costs nothing and lands as a last word rather than as noise.
-
-          ## Why the active skin rather than the one in the barrel
-
-          Because the theme section above already previews the barrel's choice
-          in its own box. This one answers the other half of the promise: press
-          Apply up there and the *page you are standing on* starts behaving like
-          that theme, which is the claim the whole section is making and the
-          only demonstration that settles it.
-
-          Renders nothing for the seven skins without an ambience, nothing under
-          `prefers-reduced-motion`, and it is `pointer-events-none` and
-          `aria-hidden` throughout — the two buttons underneath it stay
-          pressable. `density` is low because this band is wide: the field is
-          meant to be noticed on the second look, not the first.
-        */}
-        {/* `span`: the band is about three times as wide as it is tall, so
-            the runes and eyes — which stay where they appear rather than
-            crossing it — need that many more to fill it. */}
+        {/* The applied theme's own weather, across the closing band. */}
+        {/* `span`: the band is about three times as wide as it is tall, so the runes and eyes. */}
         <SkinAmbience skin={activeSkin} density={0.55} span={3} className="z-0" />
 
         <div className="relative z-10 mx-auto w-full max-w-3xl px-4 py-20 text-center sm:px-6 sm:py-28">
@@ -591,12 +264,7 @@ const LandingPage = () => {
             <StudioMark className="h-14 w-14" />
           </span>
 
-          {/*
-            The mark is set in the heading rather than beside it.
-
-            `items-baseline` and an inline layout let the text align cleanly 
-            regardless of internal font size differences. 
-          */}
+          {/* The mark is set in the heading rather than beside it. */}
           <h2 className="mt-6 flex flex-wrap items-baseline justify-center gap-x-2 text-balance text-3xl font-bold tracking-tight sm:text-4xl">
             <span>{t('landing.pitico.before')}</span>
             <PiticoMark />
@@ -628,38 +296,7 @@ const LandingPage = () => {
       </main>
 
       {/* ================= FOOTER ================= */}
-      {/*
-        A desk, not a bar.
-
-        ## What this is adapted from, and what was changed
-
-        The reference is a paper board with three Post-its pinned across its
-        bottom edge, overlapping it. That composition is worth borrowing here
-        for a reason beyond looking good: this product's whole argument is that
-        work should behave like paper, and the footer was the one part of the
-        page still shaped like a website's footer — a grey strip of links.
-
-        Three things in the reference were dropped rather than translated:
-
-          - **The postal address.** There isn't one. Inventing "1942 Design St"
-            would be fabricating a record, and a made-up head office on a real
-            product is the kind of detail that quietly costs trust when somebody
-            checks. The slot says the true thing instead: it is open source, and
-            here is where it lives.
-          - **The newsletter.** There is no list and no endpoint behind one, so
-            the field would have been a control that swallows an address and
-            does nothing. The same visual slot now carries the real funnel — an
-            address here goes to the sign-up form with the field already filled.
-          - **"We're Hiring".** Nobody is.
-
-        ## Why the Post-it colours are literals
-
-        They are the product's material rather than the theme's — the same three
-        sheets `NOTE_COLORS` gives a real note — so they stay put across all
-        fourteen skins, and their ink is written against *the sheet* rather than
-        taken from `--content`, which on a dark skin is near-white and would be
-        unreadable on yellow paper. Everything else here is a token.
-      */}
+      {/* A desk, not a bar. */}
       <footer className="relative border-t border-edge/70 bg-surface-raised/50 pb-16 pt-14">
         <div className={cn('mx-auto w-full px-4 pb-32 sm:px-6', COLUMN)}>
           <div className="flex flex-col gap-10 md:flex-row md:justify-between">
@@ -691,14 +328,8 @@ const LandingPage = () => {
 
             {/* ---------- Right: the funnel, the map, the small print ---------- */}
             <div className="flex flex-1 flex-col items-start justify-between gap-7 md:items-end">
-              {/*
-                The reference's newsletter line, carrying the real funnel.
-
-                A `form` with a `GET`-shaped submit rather than an input and a
-                button wired to an onClick: Enter submits it, the browser
-                validates the address before this code ever runs, and password
-                managers and autofill recognise it for what it is.
-              */}
+              {/* The reference's newsletter line, carrying the real funnel. A `form` with a
+                  `GET`-shaped submit rather than an input and a button wired to an onClick. */}
               <form
                 onSubmit={(event) => {
                   event.preventDefault();
@@ -742,14 +373,13 @@ const LandingPage = () => {
                   { to: '/docs', label: 'landing.nav.docs' as const },
                   { to: '/themes', label: 'landing.footer.themes' as const },
                   { to: '/login', label: 'landing.nav.signIn' as const },
+                  { to: '/terms', label: 'legal.terms' as const },
+                  { to: '/privacy', label: 'legal.privacy' as const },
                 ].map((link) => (
                   <Link
                     key={link.to}
                     to={link.to}
-                    /* The wavy underline is the reference's one real signature.
-                       It survives translation because it is drawn by the text
-                       decoration rather than by a colour, so it reads the same
-                       on all fourteen skins. */
+                    /* The wavy underline is the reference's one real signature. */
                     className="text-content transition-colors hover:text-brand hover:underline hover:decoration-wavy hover:decoration-2 hover:underline-offset-4"
                   >
                     {t(link.label)}
@@ -767,21 +397,7 @@ const LandingPage = () => {
         </div>
 
         {/* ---------- The three pinned notes ---------- */}
-        {/*
-          In flow, pulled up over the board's bottom edge — not absolutely
-          positioned.
-
-          The first version placed them with `absolute bottom-0` and reserved
-          the space with a large `padding-bottom` on the footer. That is two
-          numbers that have to agree, and they only agree at one breakpoint: as
-          soon as the left column wrapped to a third line, the copy grew down
-          into the padding and the yellow sheet landed on top of the tagline.
-
-          A negative margin cannot drift, because the notes are still a block in
-          the layout — the padding above them is theirs to consume, and anything
-          that makes the column taller pushes them down with it. It is also what
-          the reference does, for the same reason.
-        */}
+        {/* In flow, pulled up over the board's bottom edge — not absolutely positioned. */}
         <div className="relative z-10 -mt-24 px-4 sm:px-6">
           <div className={cn('mx-auto grid w-full grid-cols-1 gap-5 sm:grid-cols-3', COLUMN_NARROW)}>
             {FOOTER_NOTES.map((note) => (
@@ -797,9 +413,8 @@ const LandingPage = () => {
                   className="relative min-h-[9.5rem] rounded-sm p-5 shadow-lg transition-transform duration-500 ease-studio group-hover:rotate-0"
                   style={{ backgroundColor: note.sheet, rotate: `${-note.tilt * 1.6}deg` }}
                 >
-                  {/* The pin. `--danger` rather than a literal red, so the head
-                      belongs to the skin the way the reference's does to its
-                      own palette. */}
+                  {/* The pin. `--danger` rather than a literal red, so the head belongs to the
+                      skin the way the reference's does to its own palette. */}
                   <span
                     aria-hidden
                     className="absolute -top-2.5 left-1/2 h-4 w-4 -translate-x-1/2 rounded-full bg-danger shadow-md ring-2 ring-danger/30"
@@ -807,12 +422,8 @@ const LandingPage = () => {
                     <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-white/40" />
                   </span>
 
-                  {/*
-                    The note's words are carved on the runic skin until the
-                    sheet is pointed at (the whole card is the `group`). The
-                    address under them is not: it is the one line somebody may
-                    need to copy, and it stays legible on every skin.
-                  */}
+                  {/* The note's words are carved on the runic skin until the sheet is pointed
+                      at (the whole card is the `group`). */}
                   <span
                     className="mb-1.5 block pt-1 font-hand text-2xl font-bold"
                     style={{ color: note.ink }}
@@ -842,16 +453,8 @@ const LandingPage = () => {
 };
 
 /**
- * The three notes pinned across the footer's bottom edge.
- *
- * Data rather than three near-identical blocks of markup: they differ in four
- * values and agree on everything else, and the version of this with the sheets
- * written out three times had already drifted by one padding step.
- *
- * The sheets are `NOTE_COLORS`' own yellow, pink and blue — the product's
- * material, fixed across every skin — and each ink is chosen against its sheet
- * rather than taken from `--content`, which is near-white on a dark skin and
- * invisible on yellow paper.
+ * The three notes pinned across the footer's bottom edge. Data rather than three near-identical
+ * blocks of markup: they differ in four values and agree on everything else.
  */
 const FOOTER_NOTES = [
   {
@@ -883,31 +486,7 @@ const FOOTER_NOTES = [
   },
 ];
 
-/**
- * Who made it.
- *
- * ## Why it is a tooltip and not just a link
- *
- * Because "by Pitico" on its own is a name with no destination visible, and a
- * name in brand colour that turns out to be a link to somewhere unstated is the
- * pattern people have learned to distrust. The tooltip says where it goes
- * before it is followed — which is the whole job of one, and the reason this is
- * a small labelled card rather than a `title` attribute: `title` takes a second
- * to appear, cannot be styled to match thirteen skins, and never appears at all
- * on touch or for a keyboard user.
- *
- * ## Why it is CSS rather than a component
- *
- * There is no tooltip primitive in `shared/ui` and one credit line is not the
- * brief that should produce one — a general tooltip has to solve placement,
- * collision, portals and dismissal, none of which this needs. `group-hover`
- * and `group-focus-within` on a fixed position above a fixed-width card is
- * eight declarations, and it works for the pointer and the keyboard equally.
- *
- * `aria-describedby` is deliberately absent: the tooltip's text is already the
- * link's accessible description via `aria-label`, and pointing at it as well
- * would make a screen reader read the destination twice.
- */
+/** Who made it. */
 const AuthorCredit = () => {
   const t = useT();
 
@@ -931,39 +510,15 @@ const AuthorCredit = () => {
         Pitico
       </a>
 
-      {/*
-        The card. Parked above the line, revealed on hover or on focus reaching
-        anything inside the group — which on this element is the link itself, so
-        a keyboard user tabbing to it gets the same explanation a pointer user
-        gets.
-
-        `pointer-events-none` matters: without it the card appears under the
-        pointer travelling towards the link and swallows the click.
-      */}
+      {/* The card. Parked above the line, revealed on hover or on focus reaching anything
+          inside the group — which on this element is the link itself. */}
       <span
-        /*
-         * `aria-hidden`, not `role="tooltip"`.
-         *
-         * The card says exactly what the link's `aria-label` already says, so
-         * exposing it as well makes a screen reader announce the destination
-         * twice — once as the name of the thing being focused and once as a
-         * loose paragraph next to it. It is a *visual* affordance for people
-         * who cannot hear an accessible name, and marking it as anything else
-         * is the accessibility equivalent of alt text on a decorative border.
-         */
+        /* `aria-hidden`, not `role="tooltip"`. The card says exactly what the link's `aria-label`
+           already says. */
         aria-hidden
         className={cn(
-          /*
-             Hidden below `sm`, and nothing is lost by it.
-
-             This is a hover affordance, and a touch screen cannot hover — so on
-             the phones this breakpoint describes it could never have appeared.
-             It could still *overflow*, though: `whitespace-nowrap` on a sentence
-             anchored to a credit that sits at the end of a flex row pushed 58px
-             past the right edge at 360px and gave the whole document a
-             horizontal scrollbar. The link's `aria-label` carries the same
-             destination, so the information is not lost either.
-          */
+          /* Hidden below `sm`, and nothing is lost by it. This is a hover affordance, and a touch
+             screen cannot hover. */
           'pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 -translate-x-1/2',
           'hidden sm:block',
           'whitespace-nowrap rounded-lg border border-edge bg-surface-raised px-2.5 py-1.5',

@@ -7,13 +7,8 @@ import { cn } from '@/shared/lib/cn';
 import { PushPin } from '@/shared/ui';
 
 /**
- * The desk the sign-in screen is built on.
- *
- * The whole viewport is the surface now, not a decorative half: every object is
- * a physical thing the product is actually made of — a Post-it, a pinned card, a
- * paperclip, a stopwatch — scattered across the full width and picked up with
- * the pointer. Nothing animates layout: each object is a transform on its own
- * compositor layer, so the entire scene costs one paint.
+ * The desk the sign-in screen is built on. The whole viewport is the surface now, not a decorative
+ * half.
  */
 
 /** Shared floating loop, offset per object so the desk never pulses in unison. */
@@ -37,12 +32,8 @@ interface DeskObjectProps {
 }
 
 /**
- * A thing you can pick up.
- *
- * Two layers, deliberately: the outer one carries the drag transform, the inner
- * one carries the idle float. Driving both from a single element means the same
- * `transform` property is written by two owners, and the float wins the frame
- * the pointer lets go.
+ * A thing you can pick up. Two layers, deliberately: the outer one carries the drag transform, the
+ * inner one carries the idle float.
  */
 const DeskObject = ({
   className,
@@ -232,18 +223,8 @@ const TaskChip = ({ bounds }: { bounds: React.RefObject<HTMLElement | null> }) =
     tilt={-3}
     title={t('auth.desk.miniTask')}
   >
-    {/*
-      Drawn in design tokens, not in white.
-
-      Every one of these was `white/10` on a frosted panel, which is a card on
-      a dark desk and a blank rectangle on a light one — the desk is
-      `bg-surface`, and in light mode that is `246 246 248`. The card was
-      genuinely there; the only parts of it anybody could see were the brand
-      spine, the green pill and the three avatars, floating on nothing.
-
-      Tokens give the same glass on the dark palette and an actual card on the
-      light one, and the whole thing now follows a skin change for free.
-    */}
+    {/* Drawn in design tokens, not in white. Every one of these was `white/10` on a frosted
+        panel, which is a card on a dark desk and a blank rectangle on a light one. */}
     <div className="relative w-[10.75rem] overflow-hidden rounded-xl border border-edge bg-surface-raised/85 p-3 shadow-[0_16px_32px_-18px_rgb(0_0_0/0.45)] backdrop-blur-md">
       <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-brand" />
       <p className="text-2xs font-semibold text-content">{t('auth.desk.rollOut')}</p>
@@ -290,9 +271,8 @@ const Trinket = ({
     <motion.span
       whileHover={{ rotate: 12 }}
       className={cn(
-        // Same reasoning as the task chip: a white hairline on a white desk is
-        // not a hairline. `tone` carries the fill, and every caller now passes
-        // one built out of tokens.
+        // Same reasoning as the task chip: a white hairline on a white desk is not a hairline.
+        // `tone` carries the fill, and every caller now passes one built out of tokens.
         'grid h-11 w-11 place-items-center rounded-2xl border border-edge backdrop-blur-md',
         'shadow-[0_10px_24px_-16px_rgb(0_0_0/0.45)]',
         tone,
@@ -303,30 +283,14 @@ const Trinket = ({
   </DeskObject>
 );
 
-/**
- * The desk itself.
- *
- * `bounds` is the element every object is kept inside — the whole page, so the
- * user can drag a Post-it from one corner of the screen to the other without
- * ever losing it off an edge.
- */
+/** The desk itself. `bounds` is the element every object is kept inside — the whole page. */
 export const AuthScene = ({ bounds }: { bounds: React.RefObject<HTMLElement | null> }) => {
   const t = useT();
 
   return (
   <div className="pointer-events-none absolute inset-0 overflow-hidden">
-    {/*
-      Depth: brand blooms and a soft grid, all pure CSS.
-
-      There were three. The one off the *top-left* corner has gone, and it is
-      the only one that was ever in the way: it sat directly behind the sign-in
-      card on every layout above `sm`, so the one surface on the screen that has
-      to be read - two labelled fields and a button - was reading through a
-      130px wash of accent at 30% on top of whatever the skin's own page wash
-      was already doing there. The other two sit off the bottom-right and dead
-      centre, well clear of the card, and they are what keeps the scene from
-      being a flat rectangle.
-    */}
+    {/* Depth: brand blooms and a soft grid, all pure CSS. There were three. The one off the
+        *top-left* corner has gone, and it is the only one that was ever in the way. */}
     <div
       aria-hidden
       className="absolute -bottom-32 right-[-10%] h-[26.25rem] w-[26.25rem] rounded-full bg-brand/20 blur-[130px]"

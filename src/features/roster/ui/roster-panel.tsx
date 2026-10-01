@@ -36,13 +36,8 @@ interface RosterPanelProps {
   /** Owner or admin: may invite, remove and change roles. */
   canManage: boolean;
   /**
-   * Whether the reader is the project's owner.
-   *
-   * Only the owner may change an *admin's* role — otherwise any admin could
-   * demote every other one and be the last one standing, which is a takeover
-   * performed with a dropdown. The API refuses it either way; this is what
-   * stops the control being offered in the first place. See
-   * `RosterService.updateMemberRole`.
+   * Whether the reader is the project's owner. Only the owner may change an *admin's* role —
+   * otherwise any admin could demote every other one and be the last one standing.
    */
   isOwner?: boolean;
 }
@@ -57,14 +52,8 @@ const ROLE_ICON: Record<ProjectRole, ReactNode> = {
 };
 
 /**
- * The roster while it is still arriving.
- *
- * Laid out as the rows it is standing in for — avatar, two lines of text, a
- * role chip — rather than a spinner in the middle of an empty panel, so the
- * tab does not visibly reflow when the real names land on top of it.
- *
- * Four rows because that is roughly a small team; a taller placeholder would
- * promise more people than most projects have and then collapse.
+ * The roster while it is still arriving. Laid out as the rows it is standing in for — avatar, two
+ * lines of text, a role chip — rather than a spinner in the middle of an empty panel.
  */
 const RosterSkeleton = () => (
   <ul className="divide-y divide-edge overflow-hidden rounded-2xl border border-edge bg-surface-raised">
@@ -95,16 +84,8 @@ export const RosterPanel = ({ projectId, canManage, isOwner = false }: RosterPan
 
   const { data: members = [], isPending: isRosterPending } = useRoster(projectId);
 
-  /*
-   * Who is being reported, and who already has been.
-   *
-   * `reported` is local to this mounted panel rather than fetched per row: a
-   * roster of twenty would be twenty requests to grey out a menu item, and the
-   * answer only changes because of something the reader did on this screen.
-   * Reopening the page loses it, which is correct — the API takes a second
-   * report as an edit of the first, so the worst case is offering an action
-   * that turns out to be a rewrite.
-   */
+  // Who is being reported, and who already has been. `reported` is local to this mounted panel
+  // rather than fetched per row.
   const [reporting, setReporting] = useState<{ id: string; displayName: string } | null>(null);
   const [reported, setReported] = useState<Set<string>>(() => new Set());
   const { data: pending = [] } = usePendingInvitations(canManage ? projectId : undefined);
@@ -150,12 +131,8 @@ export const RosterPanel = ({ projectId, canManage, isOwner = false }: RosterPan
         ) : (
           <ul className="divide-y divide-edge overflow-hidden rounded-2xl border border-edge bg-surface-raised">
             {members.map((member) => {
-              /*
-               * The row is already gone from the cache by the time this runs —
-               * removal is optimistic (see `useRemoveMember`). This only covers
-               * the sliver where the mutation has been queued and React has not
-               * re-rendered yet, and the retry a rollback would produce.
-               */
+              // The row is already gone from the cache by the time this runs — removal is
+              // optimistic (see `useRemoveMember`).
               const isRemoving =
                 removeMember.isPending && removeMember.variables === member.id;
 
@@ -180,20 +157,7 @@ export const RosterPanel = ({ projectId, canManage, isOwner = false }: RosterPan
                     <p className="truncate text-2xs text-content-faint">{member.email}</p>
                   </div>
 
-                  {/*
-                    The role is editable in place for an owner or admin.
-
-                    It used to be a read-only badge, which meant the only way to
-                    correct a role was to remove the person and invite them
-                    again — and removal takes their task assignments with it
-                    (see the API's `RosterService.removeMember`). A dropdown is
-                    a great deal less destructive than that.
-
-                    The owner's own row stays a badge: ownership moves through a
-                    transfer, not through here. An admin also cannot change
-                    another admin — the API refuses it, so the control is not
-                    offered. See `RosterService.updateMemberRole`.
-                  */}
+                  {/* The role is editable in place for an owner or admin. */}
                   {canManage &&
                   member.role !== 'OWNER' &&
                   member.id !== currentUser?.id &&
@@ -213,21 +177,8 @@ export const RosterPanel = ({ projectId, canManage, isOwner = false }: RosterPan
                     <Badge>{member.role.toLowerCase()}</Badge>
                   )}
 
-                  {/*
-                    Reporting is offered to *everybody* about everybody else,
-                    which is the point of having it.
-
-                    Removing somebody is a power; reporting them is a recourse,
-                    and it exists precisely for the person who has neither the
-                    role to remove somebody nor anywhere else to take it. So
-                    this is not behind `canManage` — the only row it is missing
-                    from is the reader's own.
-
-                    Once filed it stops being an action and becomes a state.
-                    Reporting again would work (the API replaces the reason),
-                    but a button that looks unused after being pressed is how
-                    somebody ends up filing four times wondering if it took.
-                  */}
+                  {/* Reporting is offered to *everybody* about everybody else, which is the
+                      point of having it. */}
                   {member.id !== currentUser?.id &&
                     (reported.has(member.id) ? (
                       <span
@@ -389,12 +340,8 @@ export const RosterPanel = ({ projectId, canManage, isOwner = false }: RosterPan
         </div>
       </Modal>
 
-      {/*
-        One dialog for the whole list, opened with whoever the row named.
-
-        A dialog per row would mount twenty of them to use at most one, and
-        every one of them would carry its own text field's state.
-      */}
+      {/* One dialog for the whole list, opened with whoever the row named. A dialog per row
+          would mount twenty of them to use at most one. */}
       {reporting && (
         <ReportUserDialog
           isOpen

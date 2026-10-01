@@ -21,28 +21,8 @@ const LIFETIMES = [
 ] as const;
 
 /**
- * Personal access tokens, for everything that is not a browser.
- *
- * ## Why anybody needs one
- *
- * The app's own session is a fifteen-minute token refreshed by a browser.
- * Nothing else can use that — a cron job, a script, a Zapier action reading a
- * project — and without an alternative the workaround people reach for is
- * putting their password in a script. This exists so that never has to be the
- * answer.
- *
- * It ships alongside webhooks deliberately: a webhook is how the app tells you
- * something happened, and this is how you ask. Between them they cover both
- * directions without the app needing to know about any particular vendor.
- *
- * ## Why the panel is blunt about what a token can do
- *
- * Because it can do everything its owner can. There are no scopes — see the
- * API's `ApiTokenService` for why a half-enforced permission system is worse
- * than an honest absence — and a UI that implied otherwise, or simply did not
- * mention it, would be the place that implication came from. So the sentence
- * is on the panel, above the button, rather than in documentation nobody
- * opens.
+ * Personal access tokens, for everything that is not a browser. The app's own session is a
+ * fifteen-minute token refreshed by a browser.
  */
 export const ApiTokensPanel = () => {
   const t = useT();
@@ -55,14 +35,7 @@ export const ApiTokensPanel = () => {
   const [name, setName] = useState('');
   const [lifetime, setLifetime] = useState<string>('90');
 
-  /**
-   * The token, held only as long as the panel is open.
-   *
-   * Never written to the query cache, for the same reason the calendar feed's
-   * URL is not: the cache survives navigation and is read by anything that
-   * asks for the key, and this is a credential whose entire security model is
-   * that it exists in exactly one place for exactly one moment.
-   */
+  /** The token, held only as long as the panel is open. */
   const [revealed, setRevealed] = useState<{ name: string; token: string } | null>(null);
   const [copied, setCopied] = useState(false);
 

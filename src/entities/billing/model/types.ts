@@ -1,9 +1,6 @@
 /**
- * The three plans, spelled exactly as the API stores them.
- *
- * A string union rather than an enum: these values cross the wire as strings,
- * they are compared against strings, and a TypeScript enum would add a runtime
- * object whose only job is to hold three literals the compiler already knows.
+ * The three plans, spelled exactly as the API stores them. A string union rather than an enum:
+ * these values cross the wire as strings, they are compared against strings.
  */
 export type Plan = 'FREE' | 'STARTUP' | 'BARON';
 
@@ -17,12 +14,8 @@ export type PlanSource = 'DEFAULT' | 'STRIPE' | 'ADMIN';
 export type Currency = 'usd' | 'brl';
 
 /**
- * One ceiling. `null` means no ceiling at all.
- *
- * The same distinction the API makes, and it has to survive the wire: `null`
- * renders as "Unlimited" and a number renders as itself, so a component that
- * treated the two the same would print "0" for the one thing somebody is
- * paying extra to get.
+ * One ceiling. `null` means no ceiling at all. The same distinction the API makes, and it has to
+ * survive the wire: `null` renders as "Unlimited" and a number renders as itself.
  */
 export type Limit = number | null;
 
@@ -39,9 +32,8 @@ export interface PlanLimits {
   /** Pages on the personal Post-it board: 3 on the free tier, 10 on any paid plan. */
   boardPagesPerUser: Limit;
   /**
-   * Pages on a project's shared whiteboard — the same 3 / 10, counted against
-   * the project *owner's* plan. Optional only so a summary from an API that
-   * predates project pages still parses.
+   * Pages on a project's shared whiteboard — the same 3 / 10, counted against the project *owner's*
+   * plan. Optional only so a summary from an API that predates project pages still parses.
    */
   whiteboardPagesPerProject?: Limit;
   teamsPerScope: Limit;
@@ -49,12 +41,8 @@ export interface PlanLimits {
   documentBoardBytes: Limit;
   aiCallsPerMonth: Limit;
   /**
-   * Which destinations a plan may post its events to. `null` is all of them.
-   *
-   * A list rather than the boolean it used to be, because the free tier sells
-   * Discord and not the other two — see `PlanLimits.broadcastFlavours` on the
-   * API. The comparison table renders it per destination rather than as one
-   * row, so a free reader can see what they already have.
+   * Which destinations a plan may post its events to. `null` is all of them. A list rather than the
+   * boolean it used to be, because the free tier sells Discord and not the other two.
    */
   broadcastFlavours: readonly BroadcastFlavour[] | null;
   figmaConnections: boolean;

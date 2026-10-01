@@ -33,56 +33,15 @@ interface ZoomableImageProps {
   /** Applied to the inline thumbnail button. */
   className?: string;
   /**
-   * How much room the inline rendition is entitled to.
-   *
-   * `thumb` (the default) caps it at 160px: right where a picture is *part* of
-   * something else — a task sheet, a card — and the click through to the
-   * viewer is the real way to look at it.
-   *
-   * `fill` lets it take the box it is given. That is for the case where the
-   * picture *is* the content and the container has already decided how much
-   * space that deserves — a text board's page, where an imported screenshot
-   * capped at 160px in a 70vh pane would be a stamp floating in an empty
-   * frame, and the zoom would stop being a convenience and become the only
-   * way to read the page at all.
+   * How much room the inline rendition is entitled to. `thumb` (the default) caps it at 160px:
+   * right where a picture is *part* of something else — a task sheet, a card.
    */
   variant?: 'thumb' | 'fill';
 }
 
 /**
- * An image that stays out of the way until it is asked for.
- *
- * ## The problem
- *
- * A task sheet drew its attachment as a 224px-tall `object-cover` band. Two
- * things were wrong with that, and they pull in opposite directions:
- *
- *   - **`object-cover` crops.** A portrait photograph or a tall screenshot —
- *     which is what most task attachments are — lost its top and bottom to fill
- *     a landscape box, so the one thing the picture was attached to say could
- *     be the part that was not shown.
- *   - **It was the full-resolution file.** Up to 1600px on the long edge and a
- *     few hundred kilobytes, downloaded in full to paint a strip a fifth that
- *     size, every time the sheet was opened, whether or not anybody looked at
- *     it.
- *
- * ## What happens instead
- *
- * Inline, the small rendition is drawn `object-contain` inside a fixed box: the
- * whole picture, letterboxed, at a size and a weight that suit a thumbnail. The
- * full-size file is not requested at all — `src` is only handed to an `<img>`
- * once the viewer is open, and it is warmed on hover, so by the time a click
- * lands the bytes are usually already in the cache.
- *
- * Opened, it takes the screen: the real picture at its real resolution, with
- * the thumbnail scaled up underneath it so there is something to look at while
- * the full one decodes rather than a black rectangle. It can be zoomed with the
- * buttons, the wheel or `+`/`-`, panned by dragging once it is bigger than the
- * viewport, and closed with the return arrow, Escape, or a click on the
- * backdrop.
- *
- * Zoom and pan are one `transform` on one element, so none of it costs a layout
- * pass no matter how large the image is.
+ * An image that stays out of the way until it is asked for. A task sheet drew its attachment as a
+ * 224px-tall `object-cover` band.
  */
 export const ZoomableImage = ({
   src,
@@ -172,37 +131,13 @@ interface ImageViewerProps {
   isOpen: boolean;
   onClose: () => void;
   /**
-   * Extra controls for the header, beside the zoom group — a download button,
-   * on a folder of pictures. The viewer does not decide what a picture can be
-   * done *with*; the surface that opened it does.
+   * Extra controls for the header, beside the zoom group — a download button, on a folder of
+   * pictures.
    */
   actions?: React.ReactNode;
 }
 
-/**
- * The full-screen half of `ZoomableImage`, on its own.
- *
- * ## Why it was split out
- *
- * Because not every picture that should open this way can be a button. A
- * Post-it on a board is a *draggable object*: it is picked up, moved and
- * dropped by the same pointer that would click it, so the board has to decide
- * whether a press was a click or the start of a drag before anything opens —
- * and it cannot wrap the paper in a `<button>` that would swallow the drag.
- * The board keeps its own element and simply asks for this viewer when a press
- * turns out to have been a click. `ZoomableImage` is now this plus a thumbnail
- * button, which is what it always was.
- *
- * Opened, it takes the screen: the real picture at its real resolution, with
- * the thumbnail scaled up underneath it so there is something to look at while
- * the full one decodes rather than a black rectangle. It can be zoomed with the
- * buttons, the wheel or `+`/`-`, panned by dragging once it is bigger than the
- * viewport, and closed with the return arrow, Escape, or a click on the
- * backdrop.
- *
- * Zoom and pan are one `transform` on one element, so none of it costs a layout
- * pass no matter how large the image is.
- */
+/** The full-screen half of `ZoomableImage`, on its own. */
 export const ImageViewer = ({
   src,
   thumbSrc,
@@ -246,14 +181,8 @@ export const ImageViewer = ({
     });
   }, []);
 
-  /*
-   * Escape leaves, +/- zoom, 0 resets.
-   *
-   * Registered in the capture phase, which matters: the task sheet this opens
-   * from is itself a dialog listening for Escape, and without capturing here
-   * one press would close the sheet *behind* the viewer and leave the viewer
-   * floating over a page it no longer belongs to.
-   */
+  // Escape leaves, +/- zoom, 0 resets. Registered in the capture phase, which matters: the task
+  // sheet this opens from is itself a dialog listening for Escape.
   useEffect(() => {
     if (!isOpen) return;
 
@@ -387,9 +316,8 @@ export const ImageViewer = ({
                 </span>
               </header>
 
-              {/* Clicking the surround leaves, the way a lightbox always has —
-                  but only the surround: a click that lands on the picture is
-                  somebody looking at it, not somebody trying to get out. */}
+              {/* Clicking the surround leaves, the way a lightbox always has — but only the
+                  surround. */}
               <div
                 className="safe-b relative flex min-h-0 flex-1 items-center justify-center overflow-hidden p-3 sm:p-6"
                 onWheel={handleWheel}
@@ -397,12 +325,7 @@ export const ImageViewer = ({
                   if (event.target === event.currentTarget) close();
                 }}
               >
-                {/*
-                  The thumbnail, scaled up, until the real one has decoded.
-                  Blurred on purpose: it reads as "this is not the picture yet"
-                  rather than as a bad picture, and it goes the instant the
-                  full-size image below reports itself loaded.
-                */}
+                {/* The thumbnail, scaled up, until the real one has decoded. */}
                 {thumbSrc && !isFullLoaded && (
                   <img
                     aria-hidden

@@ -34,21 +34,12 @@ const anchorOf = (task: Task): Date | null => {
 };
 
 /**
- * A month at a time.
- *
- * The board answers "what state is this in" and the agenda answers "what is
- * next"; neither answers "how loaded is the week of the 14th", which is the
- * question a deadline-driven team actually asks before committing to anything.
- * Undated work is kept visible in a tray under the grid rather than dropped —
- * it is the backlog the month is competing with.
+ * A month at a time. The board answers "what state is this in" and the agenda answers "what is
+ * next"; neither answers "how loaded is the week of the 14th".
  */
 /**
- * One task under the picked day.
- *
- * A component rather than inline JSX because it needs `useIsTaskSyncing`, and a
- * hook cannot be called inside a loop body. The Done/Undo button here is the
- * calendar's own completion control — the other three layouts go through
- * `TaskCard`, which carries the same lock.
+ * One task under the picked day. A component rather than inline JSX because it needs
+ * `useIsTaskSyncing`, and a hook cannot be called inside a loop body.
  */
 const DayRow = ({
   task,

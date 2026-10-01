@@ -14,11 +14,8 @@ interface ExpandToggleProps {
 }
 
 /**
- * Takes a canvas to the whole screen and back.
- *
- * Drawn as a framed corner-bracket rather than a plain icon button: it is the
- * one control that changes the size of the surface you are working on, so it
- * should read as a window chrome affordance and not as another tool.
+ * Takes a canvas to the whole screen and back. Drawn as a framed corner-bracket rather than a plain
+ * icon button.
  */
 export const ExpandToggle = ({ isExpanded, onToggle, className, label }: ExpandToggleProps) => (
   <button
@@ -58,42 +55,18 @@ interface ExpandableStageProps {
   children: ReactNode;
   /** Applied to the inline (non-expanded) wrapper only. */
   className?: string;
-  /**
-   * Fired every time the children actually move between the page and the
-   * full-screen portal.
-   *
-   * The move remounts the subtree, so anything holding a DOM node inside it —
-   * the whiteboard's `<canvas>`, which is sized and painted imperatively — has
-   * to re-run its setup against the new element.
-   */
+  /** Fired every time the children actually move between the page and the full-screen portal. */
   onSurfaceRemount?: () => void;
   /**
-   * Keep the system pointer over this stage, whatever the skin draws.
-   *
-   * For a surface whose pointer is a tool — the whiteboard's crosshair, rubber
-   * and grab hands — where a skin's decorative cursor would override the one
-   * thing the pointer is there to say. Set on both hosts, so full screen keeps
-   * it too. See `[data-native-cursor]` in `index.css`.
+   * Keep the system pointer over this stage, whatever the skin draws. For a surface whose pointer
+   * is a tool — the whiteboard's crosshair, rubber and grab hands.
    */
   nativeCursor?: boolean;
 }
 
 /**
- * A surface that can take over the screen.
- *
- * Expanded, the children are portalled to `document.body`: a fixed overlay
- * mounted inside the page would be positioned against the route wrapper — that
- * element is composited (`transform: translateZ(0)`) and therefore becomes the
- * containing block for anything fixed inside it, which quietly turns "full
- * screen" into "as big as the content column".
- *
- * The swap is deliberately instant. Growing and shrinking a whole board used to
- * be animated on the skin's stage curve, but on a surface the user is arranging
- * by hand the transition read as lag rather than as continuity — every trip to
- * full screen and back put a few hundred milliseconds of scaling paper between
- * the click and the work. A hard cut also means the children live in exactly
- * one host at a time, so there is no window where a collapsing canvas is still
- * painting in the portal while its replacement mounts in the page.
+ * A surface that can take over the screen. Expanded, the children are portalled to `document.body`:
+ * a fixed overlay mounted inside the page would be positioned against the route wrapper.
  */
 export const ExpandableStage = ({
   isExpanded,

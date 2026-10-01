@@ -3,28 +3,12 @@ import { type GlyphProps } from './glyph-kit';
 import { LETTER_ON_SHEET, StudioLetter } from './studio-letter';
 
 /**
- * This skin's product mark. Its navigation set is gone.
- *
- * There used to be a full set of volcano navigation glyphs here, exported as
- * `VOLCANO_GLYPHS` and swapped in by `NavGlyph`. Every skin's set has
- * been withdrawn for the reason written up there: an icon is recognised by
- * shape, and a rail whose shapes change with the theme charges every user that
- * recognition again for a novelty that lands once.
- *
- * The mark is a different thing and stays. It is the *product's* signature
- * drawn in this world — one object, seen once, on a settings card and a theme
- * gallery tile — and nobody navigates by it.
+ * This skin's product mark. Its navigation set is gone. There used to be a full set of volcano
+ * navigation glyphs here, exported as `VOLCANO_GLYPHS` and swapped in by `NavGlyph`.
  */
 /**
- * The product mark: the same Post-it, as a flake of crust.
- *
- * The studio mark's geometry, in cooling rock: the peel becomes a broken corner
- * with the melt showing in the break — paper curls, crust snaps — the two
- * written lines become fissures with the core visible in them, and the pin is a
- * spatter blob that landed on the top-left and welded itself on.
- *
- * The bottom edge carries the same hot line every other raised object in this
- * skin does, because the mark is not exempt from the skin's one physical claim.
+ * The product mark: the same Post-it, as a flake of crust. The studio mark's geometry, in cooling
+ * rock: the peel becomes a broken corner with the melt showing in the break — paper curls.
  */
 export const VolcanoMark = ({ className }: GlyphProps) => (
   <svg viewBox="0 0 40 40" fill="none" aria-hidden className={cn('h-10 w-10', className)}>
@@ -53,13 +37,8 @@ export const VolcanoMark = ({ className }: GlyphProps) => (
       strokeLinejoin="round"
     />
 
-    {/*
-      The letter, as a fissure with the core showing through it.
-
-      Same two passes as the cracks it replaces — the split, then the melt down
-      inside it carrying `ember-pulse`. The crust plate is the material; the
-      letter is what has broken open in it.
-    */}
+    {/* The letter, as a fissure with the core showing through it. Same two passes as the cracks
+        it replaces — the split, then the melt down inside it carrying `ember-pulse`. */}
     <StudioLetter transform={LETTER_ON_SHEET} strokeWidth={4} strokeOpacity={0.85} />
     <StudioLetter
       transform={LETTER_ON_SHEET}

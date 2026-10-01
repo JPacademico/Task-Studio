@@ -1,16 +1,6 @@
 /**
- * Generates the PWA icon set without any image dependency.
- *
- * iOS/Safari refuses to install a PWA whose manifest icons 404, and a binary
- * asset does not belong in source control, so the icons are produced from code:
- * a Post-it note — the object the whole app is built around — with its corner
- * rolled under and the product's initial on it, encoded as PNG by hand.
- *
- * The geometry is lifted from the SVG mark rather than redrawn, so the icon on
- * a home screen and the mark in the top bar are the same object. What differs
- * is only what a raster at 16px needs: a heavier stroke and a shaded fold.
- *
- * Run with: npm run icons
+ * Generates the PWA icon set without any image dependency. iOS/Safari refuses to install a PWA
+ * whose manifest icons 404, and a binary asset does not belong in source control.
  */
 import { deflateSync } from 'node:zlib';
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -32,17 +22,8 @@ const PAPER_TOP = [252, 199, 75]; // #fcc74b
 const PAPER_BOTTOM = [243, 174, 28]; // #f3ae1c
 const INK = [38, 56, 75]; // #26384b
 
-/*
- * The underside of the curl, and the one place this deliberately departs from
- * the reference art.
- *
- * In the original the lifted corner is a *lighter* yellow, which is what paper
- * actually does when light passes through it. At 180px that is a lovely detail
- * and at 16px it is nothing at all: two yellows a few percent apart occupy four
- * pixels and merge into one flat corner, and the curl — the thing that makes
- * the object read as paper rather than as a square — disappears. Shading the
- * underside instead keeps it legible at every size the icon is actually used.
- */
+// The underside of the curl, and the one place this deliberately departs from the reference art. In
+// the original the lifted corner is a *lighter* yellow.
 const FOLD = [224, 162, 26]; // #e0a21a
 
 const crcTable = Array.from({ length: 256 }, (_, n) => {
@@ -98,14 +79,8 @@ const mix = (a, b, t) => [
 ];
 
 /**
- * The mark's geometry, in coordinates local to the sheet.
- *
- * `0,0` is the sheet's top-left corner and `1,1` its bottom-right, so one set
- * of numbers draws the icon at 180px and at 512px with nothing to rescale by
- * hand. They are the SVG mark's own paths — see `StudioMark` and
- * `StudioLetter` — divided through by the sheet's size, which is what keeps the
- * installed-app icon and the in-app mark the same drawing rather than two
- * drawings that look similar.
+ * The mark's geometry, in coordinates local to the sheet. `0,0` is the sheet's top-left corner and
+ * `1,1` its bottom-right.
  */
 
 /** The sheet's outline, the cut edge bowing inward where the corner rolls away. */
@@ -125,10 +100,8 @@ const FLAP = [
 ];
 
 /**
- * The letter, carried over from `StudioLetter`'s 24-unit box.
- *
- * Placed exactly as the in-app mark places it: `translate(3.2 3.1) scale(0.85)`
- * in sheet units, then divided by the sheet's 27 × 27.5.
+ * The letter, carried over from `StudioLetter`'s 24-unit box. Placed exactly as the in-app mark
+ * places it: `translate(3.2 3.1) scale(0.85)` in sheet units.
  */
 const letterPoint = (u, v) => [(3.2 + 0.85 * u) / 27, (3.1 + 0.85 * v) / 27.5];
 
@@ -144,11 +117,8 @@ const BAR = [
 ];
 
 /**
- * Half the letter's stroke, in sheet units.
- *
- * A shade heavier than the SVG mark's 3.06/27, for the reason given on
- * `StudioLetter.strokeWidth`: this file's output is looked at at 16px in a
- * browser tab, where a stroke that measures right measures one pixel.
+ * Half the letter's stroke, in sheet units. A shade heavier than the SVG mark's 3.06/27, for the
+ * reason given on `StudioLetter.strokeWidth`.
  */
 const INK_HALF_WIDTH = 0.066;
 
@@ -215,26 +185,14 @@ const onStroke = (x, y, polyline, half) => {
 };
 
 /**
- * A Post-it note on a brand tile, drawn straight into an RGBA buffer.
- *
- * ## Why it is supersampled
- *
- * Every edge in this drawing is a diagonal or a curve — the tile's rounded
- * corners, the sheet's rolled edge, and now a handwritten letter. Sampled once
- * per pixel they come out as staircases, which was tolerable while the sheet
- * was a rectangle with three straight rules on it and is not now. Four samples
- * per axis is sixteen per pixel: enough that a curve at 180px is smooth, cheap
- * enough that the whole set still generates in a couple of seconds, and it
- * costs nothing at runtime because this runs at build time and ships PNGs.
+ * A Post-it note on a brand tile, drawn straight into an RGBA buffer. Every edge in this drawing is
+ * a diagonal or a curve — the tile's rounded corners, the sheet's rolled edge.
  */
 const drawIcon = (size, { tiled = false, maskable = false } = {}) => {
   const pixels = Buffer.alloc(size * size * 4);
   const radius = maskable ? 0 : size * 0.22;
-  /*
-   * A tiled icon holds the sheet inside a safe area; an untiled one is *only*
-   * the sheet, so it should use nearly the whole canvas — the tile was what the
-   * old padding was leaving room for.
-   */
+  // A tiled icon holds the sheet inside a safe area; an untiled one is *only* the sheet, so it
+  // should use nearly the whole canvas — the tile was what the old padding was leaving room for.
   const pad = maskable ? size * 0.2 : tiled ? size * 0.14 : size * 0.05;
   const samples = 4;
 
@@ -298,9 +256,8 @@ const drawIcon = (size, { tiled = false, maskable = false } = {}) => {
 
       const taken = samples * samples;
       const offset = (y * size + x) * 4;
-      // Averaged over *covered* samples so a partly-covered edge pixel keeps
-      // its colour and only loses alpha — averaging over all of them would
-      // darken every rounded corner towards black.
+      // Averaged over *covered* samples so a partly-covered edge pixel keeps its colour and only
+      // loses alpha — averaging over all of them would darken every rounded corner towards black.
       const covered = a / 255;
       pixels[offset] = covered ? Math.round(r / covered) : 0;
       pixels[offset + 1] = covered ? Math.round(g / covered) : 0;
@@ -344,19 +301,8 @@ const FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"
 
 mkdirSync(ICONS_DIR, { recursive: true });
 
-/*
- * The `any` icons are the logo on nothing — a browser or a launcher that shows
- * one of these puts it on its own background, and a tile behind it would be a
- * square somebody did not ask for.
- *
- * The other two keep theirs, and that is a platform requirement rather than a
- * preference. A `maskable` icon is cropped to whatever shape the launcher
- * likes and must cover the whole canvas; transparency there is a hole punched
- * in the middle of the home screen. iOS composites a transparent
- * apple-touch-icon onto black, which is a black square nobody asked for either.
- * Both are surfaces that draw a filled tile no matter what is handed to them,
- * so the honest thing is to hand them a tile that is the brand's.
- */
+// The `any` icons are the logo on nothing — a browser or a launcher that shows one of these puts it
+// on its own background, and a tile behind it would be a square somebody did not ask for.
 writeFileSync(join(ICONS_DIR, 'icon-192.png'), drawIcon(192));
 writeFileSync(join(ICONS_DIR, 'icon-512.png'), drawIcon(512));
 writeFileSync(join(ICONS_DIR, 'maskable-512.png'), drawIcon(512, { tiled: true, maskable: true }));

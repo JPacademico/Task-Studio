@@ -13,32 +13,8 @@ import { Button, Skeleton } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
 /**
- * A calendar feed anybody's calendar application can subscribe to.
- *
- * ## Why this sits under the Google panel rather than replacing it
- *
- * They are different trades and most people want this one. Google sync is
- * two-way and costs a consent screen, a stored credential and a background
- * poll; a feed is one-way and costs a URL. Somebody on Outlook, on a phone's
- * built-in calendar, or who simply does not want to grant an app write access
- * to their account gets the whole of what they actually wanted from the
- * cheaper half.
- *
- * Second in the panel rather than first, because it is the one that needs
- * explaining. Connecting Google is a button somebody recognises; subscribing
- * to a URL is a thing people have to be shown once.
- *
- * ## Why the URL is shown once and then never again
- *
- * Because only its hash is stored — it is a bearer credential, and it is kept
- * the way every other bearer credential in this app is kept. That has a real
- * cost in the interface: somebody who closes this panel without copying the
- * URL has to rotate to get another, which invalidates the subscription they
- * may have already set up on one device.
- *
- * So the reveal is deliberately sticky — it stays until dismissed rather than
- * disappearing on the next render — and the copy button is the primary action
- * rather than a secondary affordance next to the text.
+ * A calendar feed anybody's calendar application can subscribe to. They are different trades and
+ * most people want this one.
  */
 export const CalendarFeedPanel = () => {
   const t = useT();
@@ -48,11 +24,8 @@ export const CalendarFeedPanel = () => {
   const revoke = useRevokeCalendarFeed();
 
   /**
-   * The URL, held in component state for as long as the panel is open.
-   *
-   * Deliberately not written into the query cache. The cache is read by
-   * anything that asks for that key and survives navigation; this is a secret
-   * that should live exactly as long as the moment it is being copied in.
+   * The URL, held in component state for as long as the panel is open. Deliberately not written
+   * into the query cache.
    */
   const [revealed, setRevealed] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -75,12 +48,8 @@ export const CalendarFeedPanel = () => {
       // forever and stop looking like something that can be pressed again.
       window.setTimeout(() => setCopied(false), 2_000);
     } catch {
-      /*
-       * `writeText` is refused outright in a few contexts — an insecure
-       * origin, Safari outside a user gesture — and the honest fallback is to
-       * tell somebody to copy it themselves rather than to fail silently. The
-       * URL is on screen; only the shortcut is missing.
-       */
+      // `writeText` is refused outright in a few contexts — an insecure origin, Safari outside a
+      // user gesture.
       toast.error(t('feed.copyFailed'));
     }
   };
@@ -110,12 +79,8 @@ export const CalendarFeedPanel = () => {
           <p className="text-2xs font-medium text-brand">{t('feed.copyNow')}</p>
 
           <div className="flex items-center gap-1.5">
-            {/*
-              A read-only input rather than a `<p>`: it is selectable with a
-              triple-click, it scrolls rather than wrapping a 120-character URL
-              across four lines, and it is what somebody reaches for when the
-              clipboard button does not work.
-            */}
+            {/* A read-only input rather than a `<p>`: it is selectable with a triple-click, it
+                scrolls rather than wrapping a 120-character URL across four lines. */}
             <input
               readOnly
               value={revealed}

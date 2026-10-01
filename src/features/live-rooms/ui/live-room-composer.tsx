@@ -46,24 +46,8 @@ const nextQuarter = (): Date => {
 };
 
 /**
- * Open a live room, or change one.
- *
- * ## Why "now" is a mode rather than a prefilled time
- *
- * The overwhelming majority of live rooms exist because two people want to
- * talk in the next thirty seconds. Putting a datetime field in front of that —
- * even one helpfully prefilled — makes the common case read as a scheduling
- * task, and a prefilled "now" goes stale while somebody fills in the rest of
- * the form. So the default is a toggle that means *open the doors as soon as
- * this is saved*, and the field only appears when somebody says otherwise.
- *
- * ## Why every other control is visible rather than behind "advanced"
- *
- * Because each one is a decision about other people. Who can come in, who can
- * talk, who can share a screen — these are the difference between a stand-up
- * and a presentation, and a host who does not notice them until somebody
- * interrupts has been failed by the form. They are ordered by how often they
- * are changed, not by how important they are.
+ * Open a live room, or change one. The overwhelming majority of live rooms exist because two people
+ * want to talk in the next thirty seconds.
  */
 export const LiveRoomComposer = ({
   isOpen,
@@ -75,12 +59,8 @@ export const LiveRoomComposer = ({
   const t = useT();
   const { create, update } = useLiveRoomActions(projectId);
 
-  /*
-   * Both lists are fetched only while the dialog is open.
-   *
-   * A project with three hundred tasks would otherwise pay for that list on
-   * every visit to the tab, to fill a picker most people never touch.
-   */
+  // Both lists are fetched only while the dialog is open. A project with three hundred tasks would
+  // otherwise pay for that list on every visit to the tab.
   const { data: documents = [] } = useProjectDocuments(isOpen ? projectId : undefined);
   const { data: tasks = [] } = useTasks(
     isOpen ? { projectId, hideCompleted: true, limit: 100 } : {},
@@ -106,14 +86,7 @@ export const LiveRoomComposer = ({
     const opening = room ? new Date(room.opensAt) : nextQuarter();
     setTitle(room?.title ?? '');
     setDescription(room?.description ?? '');
-    /*
-     * A room already open reads as "now" rather than as its own past start.
-     *
-     * Showing `opensAt` in the field would invite somebody editing the title
-     * of a running call to accidentally re-save a time in the past, which the
-     * API accepts and which reads to everybody else as the room having opened
-     * twice.
-     */
+    // A room already open reads as "now" rather than as its own past start.
     setOpensNow(!room || opening.getTime() <= Date.now());
     setOpensAt(toDateTimeInput(opening));
     setClosesAt(room?.closesAt ? toDateTimeInput(new Date(room.closesAt)) : '');
@@ -121,14 +94,7 @@ export const LiveRoomComposer = ({
     setTalkPolicy(room?.talkPolicy ?? 'OPEN');
     setScreenPolicy(room?.screenPolicy ?? 'OPEN');
     setDocumentId(room?.document?.id ?? '');
-    /*
-     * Only the people named *directly*.
-     *
-     * A room's guest list also contains everybody a team or a task pulled in,
-     * and pre-selecting those as though somebody had picked them by hand would
-     * make the next save turn them into direct invitations — which is a
-     * different fact, and one that would survive the team being removed.
-     */
+    // Only the people named *directly*.
     setMemberIds(
       room?.members.filter((member) => member.source === 'DIRECT').map((m) => m.user.id) ?? [],
     );
@@ -175,13 +141,8 @@ export const LiveRoomComposer = ({
     };
 
     if (room) {
-      /*
-       * `null` rather than `undefined` for the two clearable fields.
-       *
-       * The API reads an absent key as "leave it alone" and an explicit null
-       * as "remove it", which is the only way an edit can take a linked
-       * document or a closing time back off a room.
-       */
+      // `null` rather than `undefined` for the two clearable fields. The API reads an absent key as
+      // "leave it alone" and an explicit null as "remove it".
       const patch: UpdateLiveRoomPayload = {
         ...payload,
         closesAt: payload.closesAt ?? null,
@@ -196,21 +157,8 @@ export const LiveRoomComposer = ({
   };
 
   /**
-   * Who the chosen tasks pull in, shown back before anybody saves.
-   *
-   * The server does the work — a task's assignees are added to the guest list
-   * and emailed (see `LiveService.announce`) — and doing it there rather than
-   * here is right: the browser's copy of a task can be a minute stale, and a
-   * guest list assembled from it would be wrong in a way nobody could see.
-   *
-   * But an invitation happening invisibly is a bad surprise, and "this will
-   * email four people" is exactly the kind of thing somebody should know
-   * *before* they press the button rather than afterwards. So this is a
-   * preview, drawn from the task rows already in hand, and it says so.
-   *
-   * People already named by hand are filtered out: they are in the picker
-   * above with their face lit up, and listing them twice would suggest the
-   * tasks had added somebody they did not.
+   * Who the chosen tasks pull in, shown back before anybody saves. The server does the work — a
+   * task's assignees are added to the guest list and emailed (see `LiveService.announce`).
    */
   const pulledInByTasks = useMemo(() => {
     const seen = new Map<string, { id: string; displayName: string; avatarUrl: string | null }>();
@@ -351,14 +299,8 @@ export const LiveRoomComposer = ({
             ]}
           />
 
-          {/*
-            Always shown, including for an `EVERYONE` room.
-
-            Naming somebody there is not access — everybody already has it —
-            it is *telling* them, which is a real and separate thing to want.
-            Hiding the picker would make "invite the two people who need to be
-            here" impossible without also shutting everybody else out.
-          */}
+          {/* Always shown, including for an `EVERYONE` room. Naming somebody there is not
+              access — everybody already has it — it is *telling* them. */}
           <InvitePicker
             isOpen={isOpen}
             label={
@@ -380,14 +322,8 @@ export const LiveRoomComposer = ({
             {t('live.subjectLabel')}
           </legend>
 
-          {/*
-            The tasks, and the sentence under them, which is the whole feature.
-
-            Picking a task does two things a guest list cannot: it says what
-            the call is about, and it reaches the people doing that work —
-            including by email, which is the one case where going outside the
-            app is warranted. See the API's `LiveService.announce`.
-          */}
+          {/* The tasks, and the sentence under them, which is the whole feature. Picking a task
+              does two things a guest list cannot: it says what the call is about. */}
           <div className="space-y-1.5">
             <p className="text-xs font-medium text-content-muted">{t('live.tasksLabel')}</p>
             <p className="text-3xs leading-relaxed text-content-faint">

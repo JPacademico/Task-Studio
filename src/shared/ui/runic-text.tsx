@@ -4,51 +4,19 @@ import { useSkin } from '@/app/providers/theme-provider';
 import { cn } from '@/shared/lib/cn';
 import { emberDelay, runeTokens } from '@/shared/lib/runes';
 
-/**
- * Text, carved.
- *
- * Two things happen here and they are separate on purpose.
- *
- * **The transliteration.** On the runic skin a label is drawn in Elder Futhark;
- * on every other skin this component is a pass-through that renders its
- * children and nothing else. That is what keeps the runes out of eight other
- * themes without a single `skin === ` check at any call site.
- *
- * **The light.** A few runes in each label carry `.rune-ember` and glow on a
- * long, offset cycle — never all of them, never the whole string. A word that
- * pulses as a unit reads as a status; individual glyphs catching light reads as
- * a carved surface with something moving behind it, which is the whole idea.
- *
- * Legibility is handled by never actually taking the Latin away:
- *
- *   - `mode="swap"` keeps both, stacked in one grid cell, and hands the row
- *     over to Latin the moment the pointer or the keyboard reaches it. Both
- *     copies are always in the DOM, so the box is as wide as the wider of the
- *     two and hovering never reflows the rail.
- *   - `mode="always"` (labels that are decoration rather than navigation —
- *     section headings, the hint line under a nav row) stays runic, and the
- *     Latin lives in the tooltip and in the accessible name.
- *
- * Either way the runes are `aria-hidden` and the Latin is what assistive tech
- * reads: this is a typeface joke, and a typeface joke should not reach the
- * accessibility tree.
- */
+/** Text, carved. */
 
 interface RunicTextProps {
   /** The Latin. Always kept — this component never destroys its input. */
   children: string;
   /**
-   * `swap` reverts to Latin under the pointer; `always` stays carved.
-   *
-   * The default is `swap` because most text that gets this treatment is a
-   * navigation label, and a destination you cannot read is a destination you
-   * do not click.
+   * `swap` reverts to Latin under the pointer; `always` stays carved. The default is `swap` because
+   * most text that gets this treatment is a navigation label.
    */
   mode?: 'swap' | 'always';
   /**
-   * Lets the swap wrap onto several lines, for text that is a sentence rather
-   * than a label — a Post-it, say. Without it the swap is one clipped line,
-   * which is right for a nav row and would cut a note off mid-thought.
+   * Lets the swap wrap onto several lines, for text that is a sentence rather than a label — a
+   * Post-it, say.
    */
   wrap?: boolean;
   className?: string;

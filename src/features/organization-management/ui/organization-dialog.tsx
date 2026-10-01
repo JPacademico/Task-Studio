@@ -37,18 +37,8 @@ interface InviteListProps {
 }
 
 /**
- * The people who will be invited once the company exists.
- *
- * A staging list rather than a live one, and that is the whole point: nothing
- * is sent until the dialog is submitted, so somebody assembling a founding team
- * can add four colleagues, notice a typo in the second, fix it, and only then
- * commit. Sending each one on Enter would make every mistake a real invitation
- * that has to be revoked from a screen that does not exist yet.
- *
- * Addresses only, and no directory search. The person creating a company knows
- * the addresses of the people they are creating it with, and a search across
- * every account in the system is a different feature with a different risk
- * profile — see `toDirectoryEntry` on the API for what it costs to offer one.
+ * The people who will be invited once the company exists. A staging list rather than a live one,
+ * and that is the whole point: nothing is sent until the dialog is submitted.
  */
 const InviteList = ({ invites, onAdd, onRemove, t }: InviteListProps) => {
   const [email, setEmail] = useState('');
@@ -96,16 +86,8 @@ const InviteList = ({ invites, onAdd, onRemove, t }: InviteListProps) => {
           }}
         />
 
-        {/*
-          No job title here any more.
-
-          It was asked for at the moment somebody is assembling a founding team
-          from a list of email addresses, which is the moment they are least
-          likely to know or care what each person's title is — and it made the
-          row three fields wide for a label nothing in the app reads. Where
-          people are grouped for a *purpose* is a team, which has its own tab
-          and can be built once everybody has actually accepted.
-        */}
+        {/* No job title here any more. It was asked for at the moment somebody is assembling a
+            founding team from a list of email addresses. */}
         <Select
           value={role}
           onChange={setRole}
@@ -157,13 +139,8 @@ interface ProjectPickerProps {
 }
 
 /**
- * Which of the caller's own projects this company starts with.
- *
- * Multi-select chips rather than a dropdown, because the answer is usually
- * several and a dropdown makes "several" into several separate acts. Only
- * projects the caller *owns* and has not filed anywhere else are offered —
- * that is the API's rule, not a UI convenience, and the picker is filled from
- * the endpoint that enforces it rather than from the general project list.
+ * Which of the caller's own projects this company starts with. Multi-select chips rather than a
+ * dropdown.
  */
 const ProjectPicker = ({ selected, onToggle, isOpen, t }: ProjectPickerProps) => {
   // Only asked for while this dialog is actually open — see the query.
@@ -230,31 +207,8 @@ const ProjectPicker = ({ selected, onToggle, isOpen, t }: ProjectPickerProps) =>
 };
 
 /**
- * Create or edit a company, and delete one.
- *
- * ## Why creation asks for more than a name
- *
- * An organization used to be a folder, and a folder needs a name and a colour.
- * A company needs to know whose work it holds and who works there, and both of
- * those are answered *at the moment somebody decides to make one* — "these four
- * projects are this company's, and these three people run them" is a single
- * thought. Splitting it into a create, then a visit to the page, then a picker,
- * then an invite screen is the same thought re-entered four times, and every
- * one of those steps is one somebody can forget.
- *
- * The two halves land differently on purpose, and the API is built around that:
- * the projects are filed in the same transaction as the create, so a company
- * never exists holding half of what it was meant to; the invitations are sent
- * afterwards and reported per person, so one mistyped address does not undo the
- * company and the three good invitations. See `OrganizationsService.create`.
- *
- * ## Why editing asks for less
- *
- * In edit mode the picker and the invite list are gone. Both have better homes
- * once the company exists — the projects board files a project next to the
- * projects it will sit beside, and the staff tab invites somebody next to the
- * list of everybody already invited. A settings dialog that duplicated them
- * would be a second way to do each, with no context around either.
+ * Create or edit a company, and delete one. An organization used to be a folder, and a folder needs
+ * a name and a colour.
  */
 export const OrganizationDialog = ({
   isOpen,
@@ -294,13 +248,8 @@ export const OrganizationDialog = ({
 
   const trimmedName = name.trim();
   const canSubmit = trimmedName.length >= 2;
-  /*
-   * Case-insensitive: this is a speed bump, not a spelling test.
-   *
-   * Guarded on `organization` rather than compared against a fallback string,
-   * so that in create mode — where there is nothing to delete — this is false
-   * because there is no company, not because a sentinel failed to match.
-   */
+  // Case-insensitive: this is a speed bump, not a spelling test. Guarded on `organization` rather
+  // than compared against a fallback string, so that in create mode.
   const canDelete = Boolean(
     organization &&
       confirmation.trim().toLowerCase() === organization.name.trim().toLowerCase(),
@@ -333,20 +282,8 @@ export const OrganizationDialog = ({
   const handleDelete = async () => {
     if (!organization || !canDelete) return;
 
-    /*
-     * Leave the company's page before the page notices it is gone.
-     *
-     * This dialog opens from two places: a card on the organizations index,
-     * and the settings button *inside* the company's own workspace. In the
-     * second case the route that is mounted is `/organizations/:id` for the
-     * id being destroyed, and staying there means a page whose every query
-     * points at a 404 — which is how deleting one company used to produce a
-     * pile of error toasts (see `useDeleteOrganization` for the other half).
-     *
-     * Checked against the current path rather than done unconditionally: from
-     * the index there is nothing to leave, and a redirect that fires anyway
-     * would replace a history entry for no reason.
-     */
+    // Leave the company's page before the page notices it is gone. This dialog opens from two
+    // places: a card on the organizations index.
     const isOnItsOwnPage = location.pathname.startsWith(`/organizations/${organization.id}`);
 
     await deleteOrganization.mutateAsync(organization.id);

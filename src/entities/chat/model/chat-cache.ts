@@ -5,34 +5,16 @@ import { chatApi } from '../api/chat.api';
 import type { ChatDelivery, ChatMessage } from './types';
 
 /**
- * One conversation, held in the query cache and nowhere else.
- *
- * ## The bug this replaced
- *
- * The window used to keep two lists: the history it fetched (cached for five
- * minutes) and a `liveMessages` array in component state for everything that
- * arrived or was sent while it was open. Closing the window unmounted the
- * component and threw the second list away; reopening it inside those five
- * minutes drew the cached history without refetching — so every message
- * exchanged during the last open simply vanished, both sides' alike, until
- * the cache happened to expire.
- *
- * Now there is one list, it lives in the cache (which outlives the window),
- * and every writer — the socket, the composer, the outbox — writes to it.
- * Reopening shows it instantly and then catches up with only what was missed
- * (`after`), because events that arrived while the window was shut and the
- * project room was left were never delivered at all.
+ * One conversation, held in the query cache and nowhere else. The window used to keep two lists:
+ * the history it fetched.
  */
 
 /** A page of history. The first open asks for this many, "load earlier" too. */
 export const CHAT_PAGE = 50;
 
 /**
- * The most a reopened window catches up on in one request.
- *
- * Past this there may be a gap between what is cached and what came back, and
- * a list with a hole in the middle is worse than a shorter one — so the cache
- * is replaced by the latest page instead.
+ * The most a reopened window catches up on in one request. Past this there may be a gap between
+ * what is cached and what came back.
  */
 const CATCH_UP_LIMIT = 100;
 
@@ -45,14 +27,8 @@ const byTime = (a: ChatMessage, b: ChatMessage) => {
 };
 
 /**
- * Two versions of a conversation, as one.
- *
- * Confirmed messages are keyed by server id, and the incoming copy wins — it
- * may carry a later edit. A local bubble is retired the moment a confirmed
- * message with its `clientId` exists. Local bubbles always sort *after* the
- * confirmed ones: their timestamps come from this machine's clock, and a
- * clock a minute slow would otherwise file a message just sent above the
- * conversation it is answering.
+ * Two versions of a conversation, as one. Confirmed messages are keyed by server id, and the
+ * incoming copy wins — it may carry a later edit.
  */
 export const mergeMessages = (current: ChatMessage[], incoming: ChatMessage[]): ChatMessage[] => {
   const confirmed = new Map<string, ChatMessage>();
@@ -77,15 +53,8 @@ export const mergeMessages = (current: ChatMessage[], incoming: ChatMessage[]): 
   ];
 };
 
-/*
- * Which conversations have a real baseline in the cache.
- *
- * A socket message for a conversation nobody has opened must not *create* its
- * cache entry: a list holding one message looks like a complete conversation,
- * and the catch-up below would then ask only for what came after it — never
- * for the history before. Those arrivals are parked instead, and folded in by
- * the fetch that establishes the baseline.
- */
+// Which conversations have a real baseline in the cache. A socket message for a conversation nobody
+// has opened must not *create* its cache entry.
 const seeded = new Set<string>();
 const parked = new Map<string, ChatMessage[]>();
 
@@ -144,12 +113,8 @@ export const setLocalDelivery = (
 ): void => updateLocalMessage(queryClient, projectId, clientId, (message) => ({ ...message, delivery }));
 
 /**
- * The server has the message; the room may not have told us yet.
- *
- * The broadcast only reaches sockets in the project's room, and the outbox
- * can deliver while the window is shut and the room has been left. So the
- * acknowledgement's own id turns the bubble into a confirmed message here —
- * otherwise it would sit on "sending" until the next refetch.
+ * The server has the message; the room may not have told us yet. The broadcast only reaches sockets
+ * in the project's room.
  */
 export const confirmLocalMessage = (
   queryClient: QueryClient,
@@ -171,12 +136,8 @@ export const confirmLocalMessage = (
 };
 
 /**
- * The query function for a conversation.
- *
- * First load: the latest page. Every load after that: only what came after
- * the newest confirmed message already here — a reopened window is instant
- * and costs one small request. The cache is read again *after* the network
- * answers, so a bubble typed while the request was in flight survives it.
+ * The query function for a conversation. First load: the latest page. Every load after that: only
+ * what came after the newest confirmed message already here.
  */
 export const loadConversation = async (
   queryClient: QueryClient,
@@ -215,10 +176,8 @@ export const loadConversation = async (
 };
 
 /**
- * Older messages, prepended.
- *
- * Returns how many arrived, so the caller knows whether there is anything
- * further back — a short page is the start of the conversation.
+ * Older messages, prepended. Returns how many arrived, so the caller knows whether there is
+ * anything further back — a short page is the start of the conversation.
  */
 export const loadEarlierMessages = async (
   queryClient: QueryClient,

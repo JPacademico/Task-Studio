@@ -14,12 +14,8 @@ export interface ProjectTaskSuggestion {
   rationale: string;
   priority: TaskPriority;
   /**
-   * The proposed schedule, as offsets rather than dates.
-   *
-   * The API turns these into real timestamps when the suggestion is accepted —
-   * see `scheduleFor` — so a proposal read today and accepted tomorrow is
-   * scheduled from tomorrow rather than from a moment that has passed. Optional
-   * because a suggestion generated before this existed has neither.
+   * The proposed schedule, as offsets rather than dates. The API turns these into real timestamps
+   * when the suggestion is accepted — see `scheduleFor`.
    */
   startOffsetDays?: number;
   durationHours?: number;
@@ -41,11 +37,8 @@ export interface AiSuggestion {
 }
 
 /**
- * What is left of this month's assistant allowance.
- *
- * Null when the deployment has no model at all — there is nothing to meter, and
- * reporting a limit against a feature that cannot run would be inventing a
- * ceiling nobody is up against.
+ * What is left of this month's assistant allowance. Null when the deployment has no model at all —
+ * there is nothing to meter.
  */
 export interface AiAllowance {
   used: number;
@@ -63,42 +56,20 @@ export interface AiStatus {
 
 export const aiApi = {
   /**
-   * Whether the assistant works here, and how much of it this reader has left.
-   *
-   * The allowance rides on the status call rather than a route of its own,
-   * because every surface that asks "is the assistant available" needs both
-   * answers to be useful: a button drawn from `enabled` alone offers a feature
-   * that will refuse on press for somebody who has spent their five calls.
+   * Whether the assistant works here, and how much of it this reader has left. The allowance rides
+   * on the status call rather than a route of its own.
    */
   async status(): Promise<AiStatus> {
     const { data } = await api.get<AiStatus>('/ai/status');
     return data;
   },
 
-  /*
-   * The two generation routes carry their own ceiling.
-   *
-   * Everything else in the app answers from Postgres and has no business
-   * taking twenty seconds; these two wait on a language model, on a free tier,
-   * behind a container that may itself be starting up. Sharing the default
-   * meant a healthy-but-slow generation was reported to the user as the server
-   * being unreachable — while the server went on producing an answer that had
-   * nowhere to go. See `SLOW_ROUTE_TIMEOUT_MS`.
-   */
+  // The two generation routes carry their own ceiling. Everything else in the app answers from
+  // Postgres and has no business taking twenty seconds; these two wait on a language model.
 
   /**
-   * 1-3 steps for one task, read from its own title, description and type.
-   *
-   * These two came back for the note checklist. They had been removed when the
-   * sheet's old "Suggest steps" button went away — the reasoning at the time
-   * was that the project's assistant tab did the same job with the whole board
-   * in view. It does a *different* job: it proposes whole tasks for a project,
-   * and this proposes steps inside one task somebody is already reading. The
-   * endpoints never went anywhere; only the client's callers did.
-   *
-   * Carries the long ceiling for the same reason `suggestProjectTasks` does:
-   * it waits on a language model, on a free tier, behind a container that may
-   * itself be starting up.
+   * 1-3 steps for one task, read from its own title, description and type. These two came back for
+   * the note checklist.
    */
   async suggestSubtasks(taskId: string): Promise<AiSuggestion> {
     const { data } = await api.post<AiSuggestion>(
@@ -110,17 +81,8 @@ export const aiApi = {
   },
 
   /**
-   * The same 1-3 steps, for a task that has not been saved yet.
-   *
-   * No `taskId`, because there is no task: this is the composer asking while
-   * somebody is still typing. Nothing is written anywhere — the steps go into
-   * the composer's own starting checklist and become Post-its if, and only if,
-   * the task is actually created. That is why there is no `accept` half to
-   * this: the composer's Save *is* the accept.
-   *
-   * Carries the long ceiling for the same reason the other two generation
-   * routes do — it waits on a language model, on a free tier, behind a
-   * container that may itself be starting up.
+   * The same 1-3 steps, for a task that has not been saved yet. No `taskId`, because there is no
+   * task: this is the composer asking while somebody is still typing.
    */
   async suggestDraftSubtasks(draft: {
     title: string;
@@ -133,12 +95,8 @@ export const aiApi = {
   },
 
   /**
-   * Files accepted steps onto the task's note checklist, as Post-its.
-   *
-   * `titles` omitted means "all of them". The API trims whatever will not fit
-   * under `MAX_TASK_NOTES` rather than refusing the lot, so `added` can be
-   * smaller than what was suggested — which is the normal case on a task that
-   * already had a step or two.
+   * Files accepted steps onto the task's note checklist, as Post-its. `titles` omitted means "all
+   * of them".
    */
   async acceptSubtasks(
     suggestionId: string,
@@ -152,24 +110,12 @@ export const aiApi = {
   },
 
   /**
-   * Starts a generation and returns its receipt.
-   *
-   * Answers in milliseconds — the work happens on the server and reports back
-   * over the socket — so this one deliberately does *not* get the long
-   * `SLOW_ROUTE_TIMEOUT_MS` ceiling. If registering a job takes twenty seconds,
-   * something is wrong and waiting longer will not fix it.
-   *
-   * `alreadyRunning` means a job for this project was in flight and this call
-   * joined it rather than starting a second paid generation.
+   * Starts a generation and returns its receipt. Answers in milliseconds — the work happens on the
+   * server and reports back over the socket.
    */
   /**
-   * `guidance` is an optional note steering *what* is proposed.
-   *
-   * Sent as typed and cleaned on the API — see `prepareGuidance` there. It is
-   * deliberately not sanitised here as well: a second, slightly different
-   * opinion about what counts as a fence is exactly how the two end up
-   * disagreeing, and only the server's opinion is the one that protects
-   * anything. The client's job is the character ceiling, which is on the field.
+   * `guidance` is an optional note steering *what* is proposed. Sent as typed and cleaned on the
+   * API — see `prepareGuidance` there.
    */
   async startProjectTasks(
     projectId: string,
@@ -200,10 +146,8 @@ export const aiApi = {
   },
 
   /**
-   * Materialises accepted proposals as real tasks on the board.
-   *
-   * Returns the created rows so the caller can put them straight into the task
-   * caches — accepting is the one moment the board is guaranteed to be looking.
+   * Materialises accepted proposals as real tasks on the board. Returns the created rows so the
+   * caller can put them straight into the task caches.
    */
   async acceptTasks(
     suggestionId: string,

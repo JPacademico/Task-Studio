@@ -1,72 +1,5 @@
 #!/usr/bin/env python3
-"""
-Builds `studio-pixel.woff2` and `studio-pixel-bold.woff2` — the Pixel skin's
-typeface.
-
-Run from the repository root:
-
-    python custom-font/pixel/build-studio-pixel.py
-
-It writes both fonts to `custom-font/pixel/` (the archive copy) and to
-`public/fonts/pixel/` (the served copy), plus `preview.png` beside this file.
-Requires fontTools and brotli (`pip install fonttools brotli`) and Pillow for
-the preview. Nothing in the application runs this; it produces two files.
-
-## Why this skin draws its own face
-
-The Pixel skin's stack used to name 'Press Start 2P', 'Silkscreen' and
-'Pixelify Sans' — none of which was ever loaded — so every visitor fell
-through to Cascadia Mono or Consolas: the same monospace the Terminal skin
-lands on. Two skins with two different premises read in one typeface, and
-the 8-bit one lost the single thing that most says "8-bit".
-
-Loading an existing pixel face would have fixed the fallback and kept the
-problem one step removed: those faces are on half the retro sites on the web.
-This one is drawn here, one decision per pixel, on the same grid the skin's
-pointer is drawn on (`custom-cursor/pixel/`), so the letters and the cursor
-are visibly the same machine.
-
-## The grid
-
-A classic 5x7 cell: capitals and figures are seven pixels tall, lowercase has
-a five-pixel x-height with two-pixel ascenders over it and two-pixel
-descenders under the baseline. One pixel of space follows every glyph.
-
-A pixel is 100 units on a 1000-unit em, which gives:
-
-    cap height   700    (0.70 em — close to what a UI sans measures)
-    x-height     500
-    ascent      1000    room above a capital for an accent and a gap
-    descent      250    two descender rows and a quarter-pixel of air
-
-Proportional, not monospaced: an `i` is one pixel wide and an `m` five. A
-monospaced pixel face is a terminal, which is the other skin.
-
-## Accents
-
-Built, not drawn per letter: every accented letter is its base glyph plus a
-two-row mark, centred on the base and set one clear row above it — above the
-x-height for lowercase, above the cap height for capitals. `í` and friends
-use a dotless `i`. The cedilla hangs in the descender rows. That covers every
-letter the Portuguese and English interfaces use, which matters for the
-reason the Dragon face's note gives: a missing glyph renders as the *next*
-font in the stack appearing in the middle of a word.
-
-## Bold
-
-A real pixel bold rather than the browser's smear: every pixel is doubled to
-its right, so stems are two pixels wide and each glyph one pixel wider. It is
-how a machine with this grid drew emphasis, and it keeps every edge on the
-grid, which synthetic emboldening does not.
-
-## Outlines
-
-Each glyph's pixels are traced into their union — outer contours clockwise,
-counters anticlockwise — rather than emitted as one square per pixel.
-Abutting squares leave hairline seams wherever antialiasing lands between
-them, and a glyph made of forty overlapping contours is forty times the work
-for the rasteriser.
-"""
+"""Builds `studio-pixel.woff2` and `studio-pixel-bold.woff2` — the Pixel skin's typeface."""
 
 from __future__ import annotations
 
@@ -87,14 +20,7 @@ ASCENT = 1000
 DESCENT = 250
 FAMILY = 'Studio Pixel'
 
-# ---------------------------------------------------------------------------
-# The drawings.
-#
-# Rows from the top of the capital zone down: the seventh row (index 6) sits on
-# the baseline, and rows 7 and 8, when present, are descenders. A glyph whose
-# rows are fewer than seven is padded at the top — `-` is one row, drawn where
-# it sits, with blank rows above it given explicitly.
-# ---------------------------------------------------------------------------
+# --- The drawings. ---
 
 G: dict[str, list[str]] = {
     'A': ['.###.', '#...#', '#...#', '#####', '#...#', '#...#', '#...#'],
@@ -288,9 +214,7 @@ COMPOSITES = {
 
 CEDILLA = {chr(0x00C7): 'C', chr(0x00E7): 'c'}
 
-# ---------------------------------------------------------------------------
-# Pixels
-# ---------------------------------------------------------------------------
+# --- Pixels ---
 
 Pixels = set[tuple[int, int]]
 
@@ -344,14 +268,8 @@ def embolden(pixels: Pixels) -> Pixels:
 
 
 def embolden_stems(pixels: Pixels, width: int) -> tuple[Pixels, int]:
-    """
-    A pixel bold for glyphs whose counters are one pixel wide.
-
-    Doubling every pixel to its right closes a one-pixel gap, which turns an
-    `m` into a solid block and a pair of quotes into a bar. Here only the
-    *stem* columns — columns with two or more pixels stacked — are doubled,
-    by inserting a copy of each beside it, so every stem is two pixels wide and
-    every gap between them stays open. The glyph grows by one pixel per stem.
+    """A pixel bold for glyphs whose counters are one pixel wide. Doubling every pixel to its
+    right closes a one-pixel gap.
     """
     stems = sorted({x for x, y in pixels if (x, y + 1) in pixels or (x, y - 1) in pixels})
     shift: dict[int, int] = {}
@@ -387,19 +305,11 @@ def bolden(char: str, pixels: Pixels, width: int) -> tuple[Pixels, int]:
     return embolden(pixels), width + 1
 
 
-# ---------------------------------------------------------------------------
-# Tracing
-# ---------------------------------------------------------------------------
+# --- Tracing ---
 
 def contours_of(pixels: Pixels) -> list[list[tuple[int, int]]]:
-    """
-    The union of the pixels as closed contours, in pixel units.
-
-    Each pixel contributes its four edges clockwise (y up: up the left, along
-    the top, down the right, back along the bottom). An edge shared by two
-    pixels appears once in each direction and cancels; what is left is the
-    boundary, already oriented — clockwise around ink, anticlockwise around
-    counters.
+    """The union of the pixels as closed contours, in pixel units. Each pixel contributes its
+    four edges clockwise.
     """
     edges: set[tuple[tuple[int, int], tuple[int, int]]] = set()
     for x, y in pixels:
@@ -422,8 +332,6 @@ def contours_of(pixels: Pixels) -> list[list[tuple[int, int]]]:
     def turn_right_first(previous: tuple[int, int], at: tuple[int, int],
                          options: list[tuple[int, int]]) -> tuple[int, int]:
         # Where two pixels touch only at a corner, the vertex has two ways out.
-        # Taking the sharpest right turn keeps each pixel group its own closed
-        # contour instead of one figure-of-eight through the shared corner.
         dx, dy = at[0] - previous[0], at[1] - previous[1]
         right = (dy, -dx)
         for option in options:
@@ -473,9 +381,7 @@ def draw_glyph(pixels: Pixels):
     return pen.glyph()
 
 
-# ---------------------------------------------------------------------------
-# Assembly
-# ---------------------------------------------------------------------------
+# --- Assembly ---
 
 def glyph_name(char: str) -> str:
     if len(char) > 1:

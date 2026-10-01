@@ -4,50 +4,13 @@ import { useReducedMotion } from 'framer-motion';
 import { useSkin } from '@/app/providers/theme-provider';
 
 /**
- * What is leaking, drifting up off the whole page.
- *
- * Everything else this skin owns — the stencil hatching, the tape down every
- * rail, the sludge pooled in the bottom of each card, the trefoil turning in
- * the corner — is a variable or a background-image. What was missing needs
- * actual objects in actual positions: motes of contamination coming up out of
- * the tanks.
- *
- * The same mechanic as `EmberRise`, read in a different world. An ember is hot
- * and *cools* as it climbs; a mote of this is not hot at all — it is airborne
- * particulate, so it does not change colour, it **fades and disperses**: rising
- * slower, wandering further sideways, and thinning out rather than burning
- * down. Same contract, opposite physics.
- *
- * ## Why this one is cheaper than the embers
- *
- * `lava-ember-rise` animates `background` and `box-shadow` as well as
- * `transform`, which is a repaint per frame per particle — affordable there
- * only because the elements are 4px and few, and flagged in that file as a
- * pattern not to copy. So this does not copy it. Every frame here changes
- * `transform` and `opacity` only, which the compositor handles on its own
- * thread with no repaint at all; the glow that makes a mote look like it is
- * emitting is a static `box-shadow` set once and left alone.
- *
- * Decorative and inert: `aria-hidden`, `pointer-events-none`, and it stops dead
- * under `prefers-reduced-motion`. Nothing here participates in layout.
+ * What is leaking, drifting up off the whole page. Everything else this skin owns — the stencil
+ * hatching, the tape down every rail, the sludge pooled in the bottom of each card.
  */
 
 /**
- * Every mote currently in the air, hand-placed.
- *
- * Not `Math.random()`, for the same reason the embers, the leaves and the
- * bubbles are not: a random field clumps, and a clumped field reads as a bug
- * rather than as weather.
- *
- * Spread wider and flatter than the ember field. Embers come off a vent, so
- * they are weighted to the middle; a leak has no single source — the whole
- * floor is the source — so these are even across the width, longer-lived, and
- * dimmer. Twelve of them, which is the point at which the field reads as
- * continuous without any two ever being close enough to look paired.
- *
- * The negative delays are what make the first frame look like something
- * already happening rather than a volley launched the moment the theme was
- * picked.
+ * Every mote currently in the air, hand-placed. Not `Math.random()`, for the same reason the
+ * embers, the leaves and the bubbles are not: a random field clumps.
  */
 const MOTES: {
   left: number;
@@ -72,14 +35,8 @@ const MOTES: {
 ];
 
 /**
- * Contamination drifting up past the whole page.
- *
- * Mounted once by the app shell and inert on every other skin — on twelve of
- * the thirteen themes this returns `null` before rendering anything.
- *
- * Same z-25 band as the autumn fall, the bubbles and the embers, and for the
- * same reason: above the content so a card cannot hide it, below the chrome so
- * it never drifts across a menu or a dialog.
+ * Contamination drifting up past the whole page. Mounted once by the app shell and inert on every
+ * other skin — on twelve of the thirteen themes this returns `null` before rendering anything.
  */
 export const HazardDrift = () => {
   const reduceMotion = useReducedMotion();

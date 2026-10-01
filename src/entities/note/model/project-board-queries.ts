@@ -26,15 +26,8 @@ import type {
 import { translate } from '@/shared/i18n';
 
 /**
- * The project whiteboard's Post-it layer.
- *
- * Same optimistic-cache strategy as the personal board — a gesture has to land
- * on the next frame — with one addition the personal board does not need:
- * everything a teammate does arrives over the socket and is merged into the
- * same snapshot, so two people rearranging the wall see one wall.
- *
- * Every hook here is for one *page* of the wall: the cache is keyed by it, a
- * create lands on it, and a teammate's note from another page is not drawn.
+ * The project whiteboard's Post-it layer. Same optimistic-cache strategy as the personal board — a
+ * gesture has to land on the next frame — with one addition the personal board does not need.
  */
 const useProjectBoardCache = (projectId: string, pageIndex: number) => {
   const queryClient = useQueryClient();
@@ -77,16 +70,8 @@ export const useProjectBoardRealtime = (projectId: string, pageIndex = 0) => {
   useEffect(() => {
     if (!socket || !projectId) return;
 
-    /*
-     * A teammate's change, merged rather than assigned.
-     *
-     * The server broadcasts to the whole room including whoever caused the
-     * event, so this handler also sees the echo of our own writes — always at
-     * least one round trip stale. Replacing the cached note with it wholesale
-     * is what used to rewind a title under the cursor mid-word. See
-     * `mergeRemoteNote`: everything the server says lands except the fields
-     * this client is still holding.
-     */
+    // A teammate's change, merged rather than assigned. The server broadcasts to the whole room
+    // including whoever caused the event, so this handler also sees the echo of our own writes.
     const upsertNote = (note: Note) => {
       if (note.projectId !== projectId) return;
 
@@ -180,13 +165,8 @@ export const useProjectBoardRealtime = (projectId: string, pageIndex = 0) => {
 };
 
 /**
- * The wall's pages: add, rename, remove — and everybody else's doing so.
- *
- * The page list rides on every page's snapshot, so a change is written into
- * all of them at once (`setQueriesData` on the project prefix) rather than
- * refetching each. `whiteboard:pages` is the same change arriving from a
- * teammate; the server sends it to the whole room, this client included, so
- * the local write and the echo simply agree.
+ * The wall's pages: add, rename, remove — and everybody else's doing so. The page list rides on
+ * every page's snapshot, so a change is written into all of them at once.
  */
 export const useProjectBoardPages = (projectId: string) => {
   const queryClient = useQueryClient();
@@ -253,21 +233,7 @@ export const useProjectBoardPages = (projectId: string) => {
   };
 };
 
-/**
- * The personal board's optimistic create, on a wall other people are watching.
- *
- * See `useCreateBoardNote` for why the note goes up before the request does.
- * The one addition here is the echo: the server broadcasts `note:created` to
- * the whole room including us, and that handler upserts by id — so the real row
- * can arrive over the socket *before* the mutation resolves. The swap below
- * therefore drops the placeholder rather than replacing it whenever the row is
- * already on the wall, which is the difference between one note and two.
- *
- * `currentUserId` matters more here than on the personal board: it is what
- * decides whether the card draws its own delete button and whose stamp goes in
- * the corner. Without it a note would be un-deletable by its author for as long
- * as the request took.
- */
+/** The personal board's optimistic create, on a wall other people are watching. */
 export const useCreateProjectNote = (
   projectId: string,
   currentUserId?: string,
@@ -287,17 +253,8 @@ export const useCreateProjectNote = (
     onMutate: (request) => {
       const { payload, replacesId } = splitCreateRequest(request);
 
-      /*
-       * A sheet the caller already drew is adopted, not duplicated.
-       *
-       * `useImageDrop` puts a picture on the wall the moment the file is
-       * chosen and only calls this once the upload finishes, so by now there is
-       * already a note there showing a `blob:` preview. Appending a second
-       * placeholder would show the same picture twice; taking the first one
-       * down first would blink it out of existence for the length of this
-       * request. Adopting its id does neither — the sheet never moves, and the
-       * swap below simply replaces it with the server's row.
-       */
+      // A sheet the caller already drew is adopted, not duplicated. `useImageDrop` puts a picture
+      // on the wall the moment the file is chosen and only calls this once the upload finishes.
       if (replacesId) return { placeholderId: replacesId };
 
       const placeholderId = pendingNoteId();
@@ -319,19 +276,7 @@ export const useCreateProjectNote = (
       return { placeholderId };
     },
 
-    /*
-     * The swap is an adoption — see `adoptServerNote`.
-     *
-     * The sheet keeps the key it was drawn under, so replacing a `pending-…` id
-     * with the real one does not unmount the element and tear a drag in
-     * progress out from under the pointer; and it keeps whatever position it
-     * has been dragged to since the request left, so the row the server just
-     * wrote does not yank it back to where it was dropped.
-     *
-     * `alreadyArrived` is this board's own wrinkle: the socket echo of our own
-     * create can beat the HTTP response, in which case the real row is already
-     * on the wall and the placeholder is simply removed.
-     */
+    // The swap is an adoption — see `adoptServerNote`.
     onSuccess: (note, _request, context) => {
       let moved: Note | null = null;
 
@@ -351,9 +296,8 @@ export const useCreateProjectNote = (
         };
       });
 
-      // Dragged while the create was in flight, so the server's copy is in the
-      // wrong place. This is the one moment the real id and the intended
-      // position are both known — see the personal board for the full note.
+      // Dragged while the create was in flight, so the server's copy is in the wrong place. This is
+      // the one moment the real id and the intended position are both known.
       if (moved) {
         const local: Note = moved;
         const geometry = {
@@ -393,15 +337,8 @@ export const useUpdateProjectNote = (projectId: string, pageIndex = 0) => {
       noteApi.update(noteId, payload),
 
     onMutate: ({ noteId, payload }) => {
-      /*
-       * No `cancelQueries` here, and that is a deliberate removal.
-       *
-       * It was awaited, which made every keystroke's optimistic write land a
-       * microtask late and — worse — cancelled the board's own background
-       * refetch on a surface where several of these can be in flight at once.
-       * A note write does not race the snapshot query for the same field: the
-       * merge below and `markLocalNoteEdit` are what settle that argument.
-       */
+      // No `cancelQueries` here, and that is a deliberate removal. It was awaited, which made every
+      // keystroke's optimistic write land a microtask late and — worse.
       const previous = queryClient
         .getQueryData<ProjectBoardSnapshot>(key)
         ?.notes.find((note) => note.id === noteId);
@@ -419,14 +356,8 @@ export const useUpdateProjectNote = (projectId: string, pageIndex = 0) => {
       return { previous };
     },
 
-    /*
-     * Roll back one note, not the whole board.
-     *
-     * Restoring a snapshot taken before the write would also undo every other
-     * change made since — a teammate's drag, another note's colour — because
-     * the snapshot is the entire page. On a live surface that is a much bigger
-     * lie than the failed write it is trying to correct.
-     */
+    // Roll back one note, not the whole board. Restoring a snapshot taken before the write would
+    // also undo every other change made since — a teammate's drag, another note's colour.
     onError: (error, { noteId }, context) => {
       const previous = context?.previous;
       if (previous) {
@@ -475,15 +406,7 @@ export const useDeleteProjectNote = (projectId: string, pageIndex = 0) => {
 };
 
 /** Rewrites the wall's note list, cache-only. See the personal board's copy. */
-/**
- * Putting a binned note back, with the id it had.
- *
- * See the personal board's copy for why this exists rather than a re-create:
- * `remove` is a soft delete, so a restore returns the same primary key and the
- * connectors that pointed at the note survive. On a shared wall that matters
- * more than it does on a private one — a re-created note would break somebody
- * else's link, not just your own.
- */
+/** Putting a binned note back, with the id it had. */
 export const useRestoreProjectNote = (projectId: string, pageIndex = 0) => {
   const { patch } = useProjectBoardCache(projectId, pageIndex);
 

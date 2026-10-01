@@ -1,28 +1,4 @@
-/**
- * The Google Calendar glyph, drawn rather than imported.
- *
- * ## Why this is not a lucide icon
- *
- * Because the point of the control it sits on is *which* calendar. A generic
- * calendar outline says "something to do with dates"; this says "your Google
- * account", which is the only question somebody has when deciding whether to
- * press it. A line icon from the same set as every other icon in the app is
- * exactly the thing that made the badge invisible in the first place.
- *
- * ## Why it is drawn from primitives rather than pasted from a brand kit
- *
- * Two reasons, and the second is the practical one. Google's product marks are
- * licensed for use in exactly this context — indicating an integration — but
- * they are also a fixed asset that ages, and a pixel copy of a logo in a
- * codebase is a thing nobody dares touch. This is a recognisable rendition
- * built from four rectangles and a rule: unmistakably that calendar at 16px,
- * and honest about being an app's drawing of it rather than a facsimile.
- *
- * `currentColor` is deliberately not used. Brand colour is the whole
- * information here, so the mark stays itself on every one of the app's
- * thirteen skins rather than turning into the skin's accent — which would make
- * it a generic calendar again.
- */
+/** The Google Calendar glyph, drawn rather than imported. */
 export const GoogleCalendarMark = ({ className }: { className?: string }) => (
   <svg
     viewBox="0 0 24 24"

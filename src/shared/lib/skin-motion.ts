@@ -5,13 +5,8 @@ import { useSkin } from '@/app/providers/theme-provider';
 import type { ThemeSkin } from '@/entities/user/model/types';
 
 /**
- * How each skin moves.
- *
- * Colour and radius travel through CSS variables, but a curve cannot: Framer
- * Motion owns the transition, so the skins declare theirs here. The difference
- * is the point — the illustrated skin overshoots like something springy, the
- * CRT snaps, the brass machine takes its time, and the arcade redraws in whole
- * frames rather than easing between them.
+ * How each skin moves. Colour and radius travel through CSS variables, but a curve cannot: Framer
+ * Motion owns the transition, so the skins declare theirs here.
  */
 const REVEAL: Record<ThemeSkin, Transition> = {
   STUDIO: { duration: 0.2, ease: [0.22, 1, 0.36, 1] },
@@ -35,37 +30,20 @@ const REVEAL: Record<ThemeSkin, Transition> = {
   // Stone on stone: heavy to start, and it arrives with weight behind it. The
   // one curve in the set that accelerates the whole way and then stops dead.
   RUNIC: { duration: 0.34, ease: [0.7, 0, 0.3, 1] },
-  // Buoyant. The softest spring in the set by a distance: it drifts in, goes
-  // slightly past, and rocks back. Water resists a fast move and refuses to let
-  // anything stop dead, so this is the one curve that is still settling after
-  // it has arrived.
+  // Buoyant. The softest spring in the set by a distance: it drifts in, goes slightly past, and
+  // rocks back.
   UNDERWATER: { type: 'spring', stiffness: 110, damping: 13, mass: 1.5 },
-  // Pressure, then failure. It barely moves for the first third, then goes all
-  // at once and stops — the curve rock actually follows, which is nothing for a
-  // long time and then everything.
+  // Pressure, then failure. It barely moves for the first third, then goes all at once and stops —
+  // the curve rock actually follows, which is nothing for a long time and then everything.
   VOLCANO: { duration: 0.44, ease: [0.85, 0, 0.12, 1] },
   // A startle: nothing, then all at once, then it settles. The overshoot is
   // the point — this is the one skin where things are supposed to jump.
   HALLOWEEN: { type: 'spring', stiffness: 520, damping: 17, mass: 0.6 },
-  /*
-   * The default `ease-in-out` of every tutorial, at the default 300ms.
-   *
-   * Every other curve in this table was chosen: stone accelerates, water
-   * refuses to stop dead, the arcade quantises. This one is what you get when
-   * nobody chose — the symmetric curve that ships in the snippet — and being
-   * unremarkable is the whole joke. It is the only entry here that would be a
-   * mistake on any other skin.
-   */
+  // The default `ease-in-out` of every tutorial, at the default 300ms. Every other curve in this
+  // table was chosen: stone accelerates, water refuses to stop dead, the arcade quantises.
   VIBECODED: { duration: 0.3, ease: 'easeInOut' },
-  /*
-   * Ceremony. Slow to start, unhurried through the middle, and it settles
-   * rather than stopping.
-   *
-   * The reference is a hanging scroll being unrolled: nothing in an imperial
-   * hall moves abruptly, and nothing is allowed to snap. This is the longest
-   * curve in the table that is not a spring, which is deliberate — a spring
-   * would add a bounce, and lacquered wood does not bounce.
-   */
+  // Ceremony. Slow to start, unhurried through the middle, and it settles rather than stopping. The
+  // reference is a hanging scroll being unrolled: nothing in an imperial hall moves abruptly.
   DRAGON: { duration: 0.42, ease: [0.32, 0, 0.16, 1] },
 };
 
@@ -88,13 +66,8 @@ const MARKER: Record<ThemeSkin, Transition> = {
   DRAGON: { duration: 0.3, ease: [0.32, 0, 0.16, 1] },
 };
 
-/*
- * There is deliberately no `stage` curve here.
- *
- * Taking a board to the full screen and back used to animate on one, which read
- * as lag on a surface the user is arranging by hand — so the swap is now a hard
- * cut. See `ExpandableStage`.
- */
+// There is deliberately no `stage` curve here. Taking a board to the full screen and back used to
+// animate on one, which read as lag on a surface the user is arranging by hand.
 
 export const useSkinMotion = () => {
   // The skin alone: a light/dark flip changes nothing here. See `SkinContext`.

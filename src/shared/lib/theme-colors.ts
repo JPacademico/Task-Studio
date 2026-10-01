@@ -1,28 +1,8 @@
 import { startTransition, useEffect, useState } from 'react';
 
 /**
- * The active skin's palette, as hex, for things that cannot read a CSS variable.
- *
- * ## Why this exists
- *
- * Every colour in the product resolves through a custom property — that is what
- * makes thirteen skins and two palettes cost one attribute mutation instead of a
- * re-render. WebGL does not participate in the cascade. A shader is handed
- * floats, a `three` material is handed a `Color`, and neither has any way to ask
- * the document what `--brand` currently is.
- *
- * So the values are read out of the cascade once, at the only place that can do
- * it — `getComputedStyle` on the root element — and handed to the canvas as
- * plain strings. The alternative is hard-coding the accent in every 3D surface,
- * which is how a background ends up petrol blue on a volcano skin.
- *
- * ## Why it re-reads on a theme change
- *
- * `ThemeProvider` switches the palette by writing `class="dark"` and
- * `data-skin="…"` on `<html>`; nothing re-renders and no React state carries the
- * colours. A `MutationObserver` on exactly those two attributes is the only
- * signal available, and it is a cheap one: two attributes on one element, fired
- * at most once per deliberate theme change.
+ * The active skin's palette, as hex, for things that cannot read a CSS variable. Every colour in
+ * the product resolves through a custom property.
  */
 
 /** The tokens a 3D surface is allowed to ask for. Kept small on purpose. */
@@ -42,15 +22,8 @@ export type ThemeToken = (typeof TOKENS)[number];
 export type ThemePalette = Record<ThemeToken, string>;
 
 /**
- * `"14 116 144"` → `"#0e7490"`.
- *
- * The tokens are stored as bare RGB triplets so Tailwind can compose them with
- * an alpha (`rgb(var(--brand) / 0.4)`); `three` wants something its `Color`
- * constructor understands, and hex is the one spelling every graphics library
- * agrees on. A token that is missing or in an unexpected shape falls back to
- * mid-grey rather than throwing — a wrong colour in a decorative background is
- * a blemish, and an exception thrown out of a `getComputedStyle` call during a
- * paint is a blank page.
+ * `"14 116 144"` → `"#0e7490"`. The tokens are stored as bare RGB triplets so Tailwind can compose
+ * them with an alpha (`rgb(var(--brand) / 0.4)`).
  */
 const tripletToHex = (value: string): string => {
   const parts = value.trim().split(/[\s,]+/).map(Number);
@@ -87,25 +60,15 @@ const readPalette = (): ThemePalette => {
 };
 
 /**
- * The palette, kept in step with the theme.
- *
- * Read lazily on first render rather than in an effect, so the first frame a
- * canvas draws is already the right colour — reading it afterwards would show
- * one frame of the fallback palette on every mount, which on a skin as far from
- * the default as `volcano` is a visible flash of the wrong product.
+ * The palette, kept in step with the theme. Read lazily on first render rather than in an effect,
+ * so the first frame a canvas draws is already the right colour.
  */
 export const useThemePalette = (): ThemePalette => {
   const [palette, setPalette] = useState<ThemePalette>(readPalette);
 
   useEffect(() => {
-    /*
-     * Only the two changes that can move a token: the `dark` class and the
-     * skin. `<html>` carries other classes that come and go (the light/dark
-     * wave adds `theme-wave` for the length of its animation), and each of
-     * those used to cost a full `getComputedStyle` of the root plus a
-     * re-render of every canvas reading this. The removal lands in the very
-     * frame the wave ends, where it showed as a stutter.
-     */
+    // Only the two changes that can move a token: the `dark` class and the skin. `<html>` carries
+    // other classes that come and go.
     const signature = () =>
       `${document.documentElement.classList.contains('dark')}|${document.documentElement.dataset.skin ?? ''}`;
     let last = signature();
@@ -130,15 +93,8 @@ export const useThemePalette = (): ThemePalette => {
       attributeFilter: ['class', 'data-skin'],
     });
 
-    /*
-     * One read after mount as well.
-     *
-     * `ThemeProvider` applies the stored skin in an effect, and effects in a
-     * child run before the provider's own on the first commit — so a canvas
-     * mounted inside it can genuinely render once against the document's
-     * pre-theme state. The observer catches every *later* change and this
-     * catches the first one.
-     */
+    // One read after mount as well. `ThemeProvider` applies the stored skin in an effect, and
+    // effects in a child run before the provider's own on the first commit.
     setPalette(readPalette());
 
     return () => observer.disconnect();

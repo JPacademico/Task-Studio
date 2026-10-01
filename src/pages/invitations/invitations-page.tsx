@@ -12,18 +12,8 @@ import { Avatar, Badge, Button, EmptyState, PageLoader } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
 /**
- * The two kinds of invitation, flattened into one thing the list can draw.
- *
- * They arrive from two endpoints and are answered on two routes — different
- * tables, different ids, and a merged endpoint would leave the accept route
- * guessing which table an id came from. But they are the same *event* from the
- * reader's side ("somebody asked me to join something"), so they belong in one
- * list, sorted together, in the order they arrived.
- *
- * `kind` is what routes the reply back to the right mutation, and it is also
- * what the row uses to say which of the two this is — the difference matters:
- * accepting a project invitation gives you work, accepting a company one gives
- * you a view of it.
+ * The two kinds of invitation, flattened into one thing the list can draw. They arrive from two
+ * endpoints and are answered on two routes — different tables, different ids.
  */
 interface UnifiedInvitation {
   kind: 'project' | 'organization';
@@ -145,10 +135,7 @@ const InvitationsPage = () => {
                       {invitation.invitedBy.displayName} {t('invites.invitedYou')}{' '}
                       {formatRelative(invitation.createdAt)}
                     </p>
-                    {/* What accepting actually gets you. Worth spelling out for
-                        a company: joining one does not put anybody on a project
-                        inside it, and "why can't I see the work" is the
-                        question that follows if nobody says so. */}
+                    {/* What accepting actually gets you. */}
                     <p className="text-2xs text-content-faint">
                       {t(
                         invitation.kind === 'organization'

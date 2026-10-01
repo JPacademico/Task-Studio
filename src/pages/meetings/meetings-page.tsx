@@ -30,14 +30,8 @@ interface AgendaRowProps {
 }
 
 /**
- * One entry on the personal agenda.
- *
- * Deliberately read-only, and that is the whole difference from the project
- * board's row. Editing, completing and deleting a meeting are owner-or-admin
- * powers *of the project it belongs to* — a rule this page cannot evaluate,
- * because it deals in a dozen projects at once and holds the roster of none of
- * them. Rather than draw controls that might 403, every row links back to the
- * project whose calendar owns it, where those powers are already correct.
+ * One entry on the personal agenda. Deliberately read-only, and that is the whole difference from
+ * the project board's row.
  */
 const AgendaRow = ({ meeting, t }: AgendaRowProps) => {
   const start = parseISO(meeting.startAt);
@@ -97,16 +91,8 @@ const AgendaRow = ({ meeting, t }: AgendaRowProps) => {
         {meeting.file && <FileAttachmentRow file={meeting.file} />}
       </div>
 
-      {/*
-        Who called it, carrying that source's own colour so a mixed week stays
-        scannable by origin as well as by time.
-
-        The project when there is one, and otherwise the company — a meeting
-        booked on a company's own calendar belongs to no project, and an agenda
-        row with no source at all leaves the reader working out where it came
-        from. A meeting on both shows the project, which is the more specific
-        of the two and the one whose board it can be opened from.
-      */}
+      {/* Who called it, carrying that source's own colour so a mixed week stays scannable by
+          origin as well as by time. */}
       {(meeting.project ?? meeting.organization) && (
         <Link
           to={
@@ -140,18 +126,8 @@ const AgendaRow = ({ meeting, t }: AgendaRowProps) => {
 };
 
 /**
- * Your week, across every project you are on.
- *
- * The project boards each answer "what is coming up *here*", which is the wrong
- * question for somebody who is on five of them — the only way to know whether
- * Tuesday afternoon was free was to open five tabs and read five calendars. So
- * this asks the question from the other side: one list, in clock order, of
- * everything you are expected at, with a filter for the times you genuinely
- * want one project's calendar and nothing else.
- *
- * Grouping is by day and the day headings are sticky, because an agenda is
- * scrolled rather than paged — unlike the project board, which pages by day
- * precisely because it has a month grid to page from.
+ * Your week, across every project you are on. The project boards each answer "what is coming up
+ * *here*", which is the wrong question for somebody who is on five of them.
  */
 const MeetingsPage = () => {
   const t = useT();
@@ -165,13 +141,8 @@ const MeetingsPage = () => {
   // Only to populate the filter — the agenda itself is one request either way.
   const { data: projects = [] } = useProjects();
 
-  /*
-   * Searching is local, like the project board's.
-   *
-   * The response is already in hand and capped, so a round trip per keystroke
-   * would buy nothing but latency. `useDeferredValue` keeps the input
-   * responsive while a long list re-filters.
-   */
+  // Searching is local, like the project board's. The response is already in hand and capped, so a
+  // round trip per keystroke would buy nothing but latency.
   const query = useDeferredValue(search).trim().toLowerCase();
 
   const matches = useMemo(
@@ -246,20 +217,8 @@ const MeetingsPage = () => {
             options={projectOptions}
           />
 
-          {/*
-            The same offer the project's meetings tab makes, on the page that
-            is *entirely* meetings.
-
-            It belonged here more than there, and was missing. A project's tab
-            shows one project's meetings; this page is every meeting this
-            person is expected at, across every project — which is exactly the
-            list somebody means when they say "I want this on my phone". Asking
-            the question on the narrower surface and not on the wider one had
-            it backwards.
-
-            One component, so the two surfaces cannot drift into saying
-            different things about the same connection. See `CalendarSyncBadge`.
-          */}
+          {/* The same offer the project's meetings tab makes, on the page that is *entirely*
+              meetings. It belonged here more than there, and was missing. */}
           <CalendarSyncBadge />
         </div>
       </header>
@@ -282,15 +241,8 @@ const MeetingsPage = () => {
 
       <div className="space-y-5">
         {days.map(([key, entries]) => {
-          /*
-           * Dimmed only if the whole day is behind us.
-           *
-           * `isPast(startOfDay(...))` would have dimmed *today* as well —
-           * midnight this morning is, after all, in the past — which greys out
-           * the one heading somebody opening this page is looking for. The
-           * comparison has to be day against day, not instant against now, and
-           * a meeting that started an hour ago is still today's.
-           */
+          // Dimmed only if the whole day is behind us. `isPast(startOfDay(...))` would have dimmed
+          // *today* as well — midnight this morning is, after all, in the past.
           const isEarlier = isBefore(
             startOfDay(parseISO(`${key}T12:00:00`)),
             startOfDay(new Date()),

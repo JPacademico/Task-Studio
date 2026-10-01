@@ -44,16 +44,12 @@ export const SKIN_LABELS: Record<ThemeSkin, string> = {
 };
 
 /**
- * `VINTAGE` shipped as `STEAMPUNK`. That value survives in stored preferences
- * and in profiles written by an older client, so every entry point that reads
- * a skin normalises through here rather than trusting the string.
+ * `VINTAGE` shipped as `STEAMPUNK`. That value survives in stored preferences and in profiles
+ * written by an older client.
  */
 /**
- * The skins every plan may wear: the default look and Paper.
- *
- * Mirrors `FREE_THEME_SKINS` on the API, which is the authority — it refuses
- * to store any other skin for a free account and reports the default in its
- * place. This copy only decides what the pickers offer and lock.
+ * The skins every plan may wear: the default look and Paper. Mirrors `FREE_THEME_SKINS` on the API,
+ * which is the authority.
  */
 export const FREE_SKINS: readonly ThemeSkin[] = ['STUDIO', 'PAPER'];
 
@@ -74,11 +70,14 @@ export interface CurrentUser {
   theme: ThemePreference;
   themeSkin: ThemeSkin;
   /**
-   * The account's plan, sent with the profile so the pickers know which skins
-   * to lock without a second request. Optional only so a cached profile from
-   * before the field existed still parses; absent reads as the free tier.
+   * The account's plan, sent with the profile so the pickers know which skins to lock without a
+   * second request.
    */
   plan?: 'FREE' | 'STARTUP' | 'BARON';
+  /** When a self-requested deletion runs (ISO); null or absent when none is scheduled. */
+  deletionDueAt?: string | null;
+  /** False for accounts that only ever signed in through Google or GitHub. */
+  hasPassword?: boolean;
   createdAt: string;
 }
 
@@ -98,12 +97,8 @@ export interface AuthSession {
 }
 
 /**
- * A PDF or Word file pinned to a task or a meeting.
- *
- * One object or `null`, never three sibling nulls: the URL, the name and the
- * size are meaningless apart — the object key is a UUID, so without the name a
- * download arrives called nothing — and every surface that reads this branches
- * on "is there a file" exactly once. Mirrors the API's own shape.
+ * A PDF or Word file pinned to a task or a meeting. One object or `null`, never three sibling
+ * nulls: the URL, the name and the size are meaningless apart — the object key is a UUID.
  */
 export interface AttachedFile {
   url: string;

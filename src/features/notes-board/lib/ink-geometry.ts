@@ -3,32 +3,20 @@ import type { WhiteboardStrokeData } from '@/entities/chat/model/types';
 export type InkPoint = [number, number];
 
 /**
- * The closest two kept samples may be while a stroke is being drawn, in CSS
- * pixels.
- *
- * A pointer reports far faster than a stroke needs — a gaming mouse coalesces
- * a thousand samples a second, most of them a fraction of a pixel apart — and
- * every one used to be kept, painted and broadcast. Below about a pixel and a
- * quarter, the quadratic smoothing in `traceStroke` draws the same curve from
- * the sparser set, so the difference is visible only in the payload.
+ * The closest two kept samples may be while a stroke is being drawn, in CSS pixels. A pointer
+ * reports far faster than a stroke needs — a gaming mouse coalesces a thousand samples a second.
  */
 export const MIN_SAMPLE_GAP_PX = 1.25;
 
 /**
- * How far the simplified stroke may stray from the drawn one, in CSS pixels.
- *
- * Applied once, when the stroke is committed, before it is saved and sent. Well
- * under a pixel at the size it was drawn at, which is the only size anybody has
- * seen it at yet — and the stroke is stored normalised, so a larger screen
- * scales the error with it rather than magnifying it.
+ * How far the simplified stroke may stray from the drawn one, in CSS pixels. Applied once, when the
+ * stroke is committed, before it is saved and sent.
  */
 export const SIMPLIFY_TOLERANCE_PX = 0.6;
 
 /**
- * Stored coordinates are fractions of the board, and four decimal places is a
- * ten-thousandth of it: a fifth of a pixel on a 2,000px wall, which no screen
- * can show. The raw values carried fifteen digits each, which is most of the
- * bytes in every ink frame and in every stroke row.
+ * Stored coordinates are fractions of the board, and four decimal places is a ten-thousandth of it:
+ * a fifth of a pixel on a 2,000px wall, which no screen can show.
  */
 const QUANTUM = 10_000;
 
@@ -49,19 +37,8 @@ export const isFarEnough = (
 };
 
 /**
- * Ramer–Douglas–Peucker, in the pixel space the stroke was drawn in.
- *
- * Keeps the points that carry the shape — corners, the apex of a curve — and
- * drops the ones that lie on a line between their neighbours within
- * `tolerance`. A long straight sweep collapses to its two ends; a signature
- * keeps every turn.
- *
- * Measured in pixels rather than in the stored fractions because the two axes
- * of a fraction are different lengths: a board twice as wide as it is tall
- * would otherwise simplify horizontally twice as aggressively.
- *
- * Iterative, with an explicit stack: a stroke can hold thousands of points and
- * the recursive form's depth is the stroke's length in the worst case.
+ * Ramer–Douglas–Peucker, in the pixel space the stroke was drawn in. Keeps the points that carry
+ * the shape — corners, the apex of a curve.
  */
 export const simplifyPoints = (
   points: InkPoint[],
@@ -123,17 +100,7 @@ export const simplifyPoints = (
   return result;
 };
 
-/**
- * Lays a stroke's path on a context, smoothed.
- *
- * Midpoint quadratic smoothing: each kept sample becomes the control point of
- * a curve that runs from the midpoint before it to the midpoint after it. The
- * curve passes through no sample except the two ends, which is what rounds a
- * run of pointer samples into a line instead of a chain of straight segments —
- * and it needs no extra points to do it, so it costs nothing on the wire. The
- * personal board's `InkLayer` has drawn its SVG ink this way from the start;
- * the shared wall was still joining the dots.
- */
+/** Lays a stroke's path on a context, smoothed. */
 export const traceStroke = (
   context: CanvasRenderingContext2D,
   points: InkPoint[],
@@ -164,23 +131,8 @@ export const traceStroke = (
 };
 
 /**
- * Paints one stroke, in order, onto whatever layer it is given.
- *
- * ## Why the width is multiplied by the pixel ratio
- *
- * The canvas is sized in *device* pixels so ink stays sharp on a dense screen,
- * and `lineWidth` is in the canvas's own units. Without the ratio a 3px pen
- * drew 1.5 CSS pixels wide on a retina display and 3 on anything else — so two
- * people on the same board saw the same stroke at different weights, and the
- * rubber rubbed out half the width its own ring on the canvas promised.
- *
- * ## Erasing
- *
- * `destination-out` rather than a stroke in the background colour: the canvas
- * is transparent over the board's own grid and whatever the active skin paints
- * behind it, so "the background colour" is not a colour this code knows. It
- * only removes ink laid down *before* it on the same layer, which is what makes
- * it behave like a rubber rather than a hole.
+ * Paints one stroke, in order, onto whatever layer it is given. The canvas is sized in *device*
+ * pixels so ink stays sharp on a dense screen, and `lineWidth` is in the canvas's own units.
  */
 export const paintStroke = (
   context: CanvasRenderingContext2D,

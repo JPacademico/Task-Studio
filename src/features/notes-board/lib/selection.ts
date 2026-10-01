@@ -8,11 +8,8 @@ interface Box {
 }
 
 /**
- * Which notes a lasso caught.
- *
- * Intersection, not containment: asking a user to fully enclose every note
- * means a box that also swallows everything between them, and a Post-it that is
- * 90% inside the band obviously counts.
+ * Which notes a lasso caught. Intersection, not containment: asking a user to fully enclose every
+ * note means a box that also swallows everything between them.
  */
 export const notesInsideRect = (notes: Note[], rect: Box): string[] => {
   const right = rect.left + rect.width;
@@ -30,12 +27,8 @@ export const notesInsideRect = (notes: Note[], rect: Box): string[] => {
 };
 
 /**
- * A stable colour per group, derived from its id.
- *
- * Groups have no colour of their own in the data, but they need to be
- * distinguishable on the board — two adjacent groups tinted the same read as
- * one. Hashing the id gives every group a consistent hue for free, with no
- * extra column and no coordination between clients.
+ * A stable colour per group, derived from its id. Groups have no colour of their own in the data,
+ * but they need to be distinguishable on the board.
  */
 export const groupTintFor = (groupId: string | null): string | undefined => {
   if (!groupId) return undefined;

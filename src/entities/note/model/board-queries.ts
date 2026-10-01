@@ -23,11 +23,8 @@ import type {
 import { translate } from '@/shared/i18n';
 
 /**
- * Board mutations write straight into the page snapshot.
- *
- * Every gesture on this surface — dropping a note, drawing a line, pulling an
- * arrow between two cards — has to land on the next frame. Refetching the whole
- * page after each one would make the board feel like a form.
+ * Board mutations write straight into the page snapshot. Every gesture on this surface — dropping a
+ * note, drawing a line, pulling an arrow between two cards — has to land on the next frame.
  */
 const useBoardCache = (pageIndex: number) => {
   const queryClient = useQueryClient();
@@ -36,15 +33,8 @@ const useBoardCache = (pageIndex: number) => {
   return {
     key,
     queryClient,
-    /*
-     * Memoised, like the project board's equivalent.
-     *
-     * `key` is a fresh array on every render, so a bare arrow here was a fresh
-     * function on every render too — which quietly defeats any `useCallback`
-     * built on top of it, and those are what keep a wall of memoised Post-its
-     * from re-rendering together. The key's *contents* are what matter, and
-     * they are the dependency.
-     */
+    // Memoised, like the project board's equivalent. `key` is a fresh array on every render, so a
+    // bare arrow here was a fresh function on every render too.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     patch: useCallback(
       (update: (snapshot: BoardSnapshot) => BoardSnapshot) =>
@@ -61,44 +51,14 @@ export const useBoard = (pageIndex: number) =>
     queryKey: queryKeys.notes.board(pageIndex),
     queryFn: () => boardApi.snapshot(pageIndex),
     staleTime: 20_000,
-    /*
-     * Each page is its own cache entry, so flipping tabs used to empty the
-     * board — pager included, since the page list arrives inside the snapshot —
-     * and rebuild it a round trip later. Holding the previous page keeps the
-     * tabs in place and the surface populated while the next one loads, which
-     * on a board is the difference between turning a page and losing your desk.
-     */
+    // Each page is its own cache entry, so flipping tabs used to empty the board — pager included,
+    // since the page list arrives inside the snapshot — and rebuild it a round trip later.
     placeholderData: keepPreviousData,
   });
 
 /**
- * Sticks the note on the wall now, and tells the server afterwards.
- *
- * ## What this replaces
- *
- * The mutation used to append the note in `onSuccess`, which meant "add a
- * Post-it" — a gesture whose entire content is *a blank square appears where I
- * asked for one* — cost a full round trip before anything happened. On the
- * free-tier API that is a few hundred milliseconds warm and several seconds
- * from cold, spent looking at an unchanged board with a spinner in the toolbar.
- * Long enough that the usual response was to press the button again, which
- * produced two notes.
- *
- * Everything about a new note is already known here. Its colour, position and
- * rotation are picked *by the caller* before the request is made; the server
- * contributes an id, a `zIndex` and two timestamps. There is nothing to wait
- * for, so it does not wait: the sheet goes up against a placeholder id and is
- * swapped for the real row when it lands.
- *
- * `isPendingNoteId` is what keeps the gap safe — the board refuses to PATCH or
- * DELETE an id the server has never heard of, so a note picked up, typed into
- * or binned during those few hundred milliseconds cannot 404. See
- * `entities/note/lib/optimistic`.
- *
- * `currentUserId` is passed rather than read from the session store because
- * this is the entity layer: it does not get to know that a feature called auth
- * exists. The personal board hides the author stamp anyway; the project board's
- * copy of this needs it to decide whether the card is yours to edit.
+ * Sticks the note on the wall now, and tells the server afterwards. The mutation used to append the
+ * note in `onSuccess`, which meant "add a Post-it".
  */
 export const useCreateBoardNote = (pageIndex: number, currentUserId?: string) => {
   const { patch } = useBoardCache(pageIndex);
@@ -114,17 +74,8 @@ export const useCreateBoardNote = (pageIndex: number, currentUserId?: string) =>
     onMutate: (request) => {
       const { payload, replacesId } = splitCreateRequest(request);
 
-      /*
-       * A sheet the caller already drew is adopted, not duplicated.
-       *
-       * `useImageDrop` puts a picture on the wall the moment the file is
-       * chosen and only calls this once the upload finishes, so by now there is
-       * already a note there showing a `blob:` preview. Appending a second
-       * placeholder would show the same picture twice; taking the first one
-       * down first would blink it out of existence for the length of this
-       * request. Adopting its id does neither — the sheet never moves, and the
-       * swap below simply replaces it with the server's row.
-       */
+      // A sheet the caller already drew is adopted, not duplicated. `useImageDrop` puts a picture
+      // on the wall the moment the file is chosen and only calls this once the upload finishes.
       if (replacesId) return { placeholderId: replacesId };
 
       const placeholderId = pendingNoteId();
@@ -145,20 +96,8 @@ export const useCreateBoardNote = (pageIndex: number, currentUserId?: string) =>
       return { placeholderId };
     },
 
-    /*
-     * Replace in place rather than remove-then-append.
-     *
-     * Appending the real row after dropping the placeholder would move the note
-     * to the end of the list, and the list is paint order — so a note created
-     * while another was still in flight would visibly jump above its neighbour
-     * the moment the response arrived.
-     *
-     * The replacement is an *adoption*, not an overwrite: the sheet keeps the
-     * key it was drawn under and whatever position it has been dragged to since
-     * the request left. See `adoptServerNote` for why both of those matter, and
-     * the follow-up write below for the half of it the server needs to hear
-     * about.
-     */
+    // Replace in place rather than remove-then-append. Appending the real row after dropping the
+    // placeholder would move the note to the end of the list, and the list is paint order.
     onSuccess: (note, _request, context) => {
       let moved: Note | null = null;
 
@@ -172,15 +111,8 @@ export const useCreateBoardNote = (pageIndex: number, currentUserId?: string) =>
         }),
       }));
 
-      /*
-       * The sheet was dragged while the create was in flight, so the row the
-       * server just wrote is already in the wrong place.
-       *
-       * Fired here rather than left to the drag's own `onDragEnd`, because that
-       * has already run — against a `pending-…` id the board correctly refused
-       * to write. This is the one moment the real id and the intended position
-       * are both known.
-       */
+      // The sheet was dragged while the create was in flight, so the row the server just wrote is
+      // already in the wrong place.
       if (moved) {
         const local: Note = moved;
         void noteApi
@@ -191,10 +123,8 @@ export const useCreateBoardNote = (pageIndex: number, currentUserId?: string) =>
             height: local.height,
           })
           .catch(() => {
-            // Nothing to say. The note exists and is where the user put it on
-            // screen; the worst case is that it returns to the drop point on
-            // the next full load, which is a great deal better than a toast
-            // about a request the user never made.
+            // Nothing to say. The note exists and is where the user put it on screen; the worst
+            // case is that it returns to the drop point on the next full load.
           });
       }
     },
@@ -218,10 +148,7 @@ export const useUpdateBoardNote = (pageIndex: number) => {
     mutationFn: ({ noteId, payload }: { noteId: string; payload: UpdateNotePayload }) =>
       noteApi.update(noteId, payload),
 
-    // Synchronous, and holding one note rather than the page. See the longer
-    // note on the project board's copy of this mutation: awaiting
-    // `cancelQueries` delayed the optimistic paint by a microtask for no
-    // benefit, and a page-wide snapshot is the wrong unit to roll back.
+    // Synchronous, and holding one note rather than the page.
     onMutate: ({ noteId, payload }) => {
       const previous = queryClient
         .getQueryData<BoardSnapshot>(key)
@@ -285,26 +212,12 @@ export const useDeleteBoardNote = (pageIndex: number) => {
 };
 
 /**
- * Rewrites the page's note list, cache-only.
- *
- * The board's optimistic surfaces need a way to put an object on the wall
- * before the server has heard of it — see `useImageDrop` — and every existing
- * mutation here couples that to a request. This is the write on its own.
+ * Rewrites the page's note list, cache-only. The board's optimistic surfaces need a way to put an
+ * object on the wall before the server has heard of it — see `useImageDrop`.
  */
 /**
- * Putting a binned note back, with the id it had.
- *
- * The one mutation that exists purely for undo, and the reason a deleted note
- * can be un-deleted properly rather than re-created. `noteApi.remove` is a soft
- * delete — the row keeps its id and gains a `deletedAt` — so restoring it
- * brings back the same primary key, and every connector that pointed at the
- * note still points at it. Re-creating from the client's cached copy would mint
- * a new id and silently orphan every link the note was part of, which is a
- * quietly destructive "undo".
- *
- * The server scopes the lookup to the caller's own rows, which costs nothing
- * here: a note can only be deleted by the person who wrote it, so the only
- * deletion anybody can undo is one they are allowed to restore.
+ * Putting a binned note back, with the id it had. The one mutation that exists purely for undo, and
+ * the reason a deleted note can be un-deleted properly rather than re-created.
  */
 export const useRestoreBoardNote = (pageIndex: number) => {
   const { patch } = useBoardCache(pageIndex);
@@ -332,11 +245,8 @@ export const usePatchBoardNotes = (pageIndex: number) => {
 };
 
 /**
- * Writes drag coordinates into the cache without touching the network.
- *
- * The batch endpoint below is what persists them; going through the normal
- * update mutation as well would fire a second, redundant PATCH per note for
- * coordinates the server is already about to receive.
+ * Writes drag coordinates into the cache without touching the network. The batch endpoint below is
+ * what persists them; going through the normal update mutation as well would fire a second.
  */
 export const usePatchBoardPositions = (pageIndex: number) => {
   const queryClient = useQueryClient();
@@ -419,11 +329,8 @@ export const useAddBoardStroke = (pageIndex: number) => {
 };
 
 /**
- * Takes one stroke off the page — undo for a line.
- *
- * Optimistic, because undo has to feel instant: the line leaves the page on
- * the keystroke, and the request confirms it. A failure puts the page back as
- * the server has it rather than guessing what to restore.
+ * Takes one stroke off the page — undo for a line. Optimistic, because undo has to feel instant:
+ * the line leaves the page on the keystroke, and the request confirms it.
  */
 export const useRemoveBoardStroke = (pageIndex: number) => {
   const { patch, queryClient, key } = useBoardCache(pageIndex);

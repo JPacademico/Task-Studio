@@ -6,20 +6,8 @@ import { cn } from '@/shared/lib/cn';
 import { BatGlyph } from '@/shared/ui/halloween-icons';
 
 /**
- * The skins that do something to the *room*, and what each one does.
- *
- * Deliberately a table here rather than a flag on the catalogue: this is a
- * property of the landing page's ability to *preview* an animation, not of the
- * skin itself. A skin whose ambience has not been drawn for this component
- * simply is not in the table, and everything downstream reads `null` and
- * renders nothing — which is also the honest answer for the seven that have no
- * ambient animation at all.
- *
- * The tones are literal hex for the same reason `SkinPreview`'s colours are: a
- * preview has to paint itself in a palette that is *not* the active one, and a
- * CSS variable cannot do that. They are the decoration's own colours rather
- * than the skin's brand — autumn leaves are not brand-coloured, and a field of
- * accent-tinted anything reads as a loading state.
+ * The skins that do something to the *room*, and what each one does. Deliberately a table here
+ * rather than a flag on the catalogue.
  */
 const AMBIENCE = {
   AUTUMN: { kind: 'leaves', tones: ['#c2410c', '#ca8a04'], count: 9 },
@@ -30,12 +18,8 @@ const AMBIENCE = {
   RUNIC: { kind: 'runes', tones: ['#b45309', '#f59e0b'], count: 5 },
   ELDRITCH: { kind: 'eyes', tones: ['#2dd4bf', '#a855f7'], count: 4 },
   DRAGON: { kind: 'lanterns', tones: ['#e05833', '#f2c54f'], count: 7 },
-  /*
-   * A mid sky blue for the tail and near-white for the head: the one pairing
-   * that reads on both halves of the compare box. A white streak vanishes on
-   * the light half and a dark one on the night half; the blue carries it on
-   * either, and the head's glow is drawn in the same blue.
-   */
+  // A mid sky blue for the tail and near-white for the head: the one pairing that reads on both
+  // halves of the compare box.
   SPACE: { kind: 'meteors', tones: ['#38bdf8', '#f0f9ff'], count: 2 },
 } as const satisfies Partial<
   Record<ThemeSkin, { kind: string; tones: readonly [string, string]; count: number }>
@@ -44,27 +28,15 @@ const AMBIENCE = {
 export type AmbientSkin = keyof typeof AMBIENCE;
 
 /**
- * The kinds that happen *in place* rather than travelling.
- *
- * A leaf or an ember covers the box by crossing it, so a handful is enough
- * however wide the box is. A rune or an eye stays where it appears — so it
- * covers only the spot it is in, and a count that suits a square preview
- * leaves a wide band almost empty. These are the two that scale with `span`.
+ * The kinds that happen *in place* rather than travelling. A leaf or an ember covers the box by
+ * crossing it, so a handful is enough however wide the box is.
  */
 const PLACED_KINDS: ReadonlySet<string> = new Set(['runes', 'eyes']);
 
 /** Whether this skin has an ambience the landing page knows how to draw. */
 export const hasAmbience = (skin: ThemeSkin): skin is AmbientSkin => skin in AMBIENCE;
 
-/**
- * A deterministic pseudo-random sequence.
- *
- * Not `Math.random()`, for the reason every scatter in this codebase avoids it:
- * a field somebody has looked at and approved should be the same field next
- * time. A hash of the index is reproducible across renders, across reloads and
- * across the two places this component is mounted, so the preview box and the
- * page section are visibly the same weather rather than two unrelated ones.
- */
+/** A deterministic pseudo-random sequence. */
 const noise = (seed: number): number => {
   const x = Math.sin(seed * 12.9898) * 43758.5453;
   return x - Math.floor(x);
@@ -91,21 +63,12 @@ const buildField = (count: number, offset: number, isPlaced = false): Particle[]
       // Spread across the width on a jittered grid rather than at random: pure
       // noise clumps, and a gap of a third of the box reads as a bug.
       left: ((index + 0.5) / count) * 100 + (a - 0.5) * (60 / count),
-      /*
-       * Down the height, the same argument for the things that stay put.
-       *
-       * Pure noise put two of three runes in the bottom fifth of the band on
-       * the landing page — where, once their own height was added, they hung
-       * off the edge. The golden-ratio walk spreads any count evenly down the
-       * box with a little noise so it never reads as a lattice; the CSS then
-       * keeps every one of them wholly inside (see `.sa-flare`).
-       */
+      // Down the height, the same argument for the things that stay put. Pure noise put two of
+      // three runes in the bottom fifth of the band on the landing page.
       top: isPlaced ? ((index * 0.618_034 + b * 0.25) % 1) * 100 : b * 100,
       size: 0.6 + c * 0.9,
       duration: 7 + a * 9,
-      // Negative, so the field is already mid-flight on the first frame. A
-      // preview that starts empty and fills over ten seconds shows nothing at
-      // the moment somebody looks at it, which is the only moment that counts.
+      // Negative, so the field is already mid-flight on the first frame.
       delay: -(b * 14),
       drift: (c - 0.5) * 2,
       spin: 3 + a * 4,
@@ -113,9 +76,7 @@ const buildField = (count: number, offset: number, isPlaced = false): Particle[]
     };
   });
 
-/* -------------------------------------------------------------------------- *
- * The glyphs
- * -------------------------------------------------------------------------- */
+// --- The glyphs ---
 
 const LeafGlyph = ({ fill }: { fill: string }) => (
   <svg viewBox="0 0 24 24" className="h-full w-full" aria-hidden>
@@ -129,15 +90,8 @@ const LeafGlyph = ({ fill }: { fill: string }) => (
 );
 
 /**
- * A paper lantern, for the imperial skin.
- *
- * Deliberately not the dragon. The dragon is a 264-unit glyph that takes eleven
- * seconds to cross a whole viewport — inside a preview box a few hundred pixels
- * wide it would be a red smear passing every second or so, which sells the
- * wrong thing about the theme. Lanterns rising are the same room without the
- * set piece in it, and they read at 14 pixels.
- *
- * Two colours: the paper takes the accent, the cap and the base take the metal.
+ * A paper lantern, for the imperial skin. Deliberately not the dragon. The dragon is a 264-unit
+ * glyph that takes eleven seconds to cross a whole viewport.
  */
 const LanternGlyph = ({ fill, trim }: { fill: string; trim: string }) => (
   <svg viewBox="0 0 16 24" className="h-full w-full" aria-hidden>
@@ -173,82 +127,41 @@ const EyeGlyph = ({ fill, pupil }: { fill: string; pupil: string }) => (
   </svg>
 );
 
-/* -------------------------------------------------------------------------- *
- * The field
- * -------------------------------------------------------------------------- */
+// --- The field ---
 
 interface SkinAmbienceProps {
   skin: ThemeSkin;
   /**
-   * Dials the whole field down. The page section carries a *lot* more area than
-   * the preview box, and a density that reads as weather in a 300px window
-   * reads as an infestation across a 1200px band.
+   * Dials the whole field down. The page section carries a *lot* more area than the preview box.
    */
   density?: number;
   /**
-   * How much wider than tall the box is, roughly.
-   *
-   * Only the kinds that stay in place use it (see `PLACED_KINDS`): three eyes
-   * are a watchful preview in a square box and three dots lost in a band four
-   * times as wide as it is tall. The travelling kinds ignore it.
+   * How much wider than tall the box is, roughly. Only the kinds that stay in place use it (see
+   * `PLACED_KINDS`).
    */
   span?: number;
   className?: string;
 }
 
 /**
- * The thing a skin does to the room it is in, drawn inside a box.
- *
- * ## Why this is not the app's own decor components
- *
- * `AutumnFall`, `EmberRise`, `BubbleRise` and the rest are all `position:
- * fixed`, gated on `useSkin()`, and — the part that actually rules them out —
- * their keyframes travel in `vh`. A leaf falling `120vh` inside a 300px preview
- * box crosses it in the first eighth of its animation and then spends six
- * seconds somewhere below the page. They are correct for what they are: weather
- * over the whole application. This is a different problem that happens to look
- * the same.
- *
- * So the travel here is in **container query units** (`cqh`/`cqw`), which
- * resolve against this box rather than the viewport. That is the single
- * decision that lets one component serve a 300px preview and a 1200px page band
- * with no per-site numbers at all — and it is why the sizes are in `cqmin` too,
- * so a leaf is proportionate to the window it is falling through.
- *
- * ## Why an arbitrary skin rather than the active one
- *
- * Because the whole point of the showcase is previewing a theme you have *not*
- * applied. The palette comes in as literal hex on a CSS variable (see
- * `AMBIENCE`) rather than from `--brand`, which would resolve to whatever skin
- * the reader is currently wearing and paint every preview the same colour.
- *
- * Renders nothing at all for a skin with no ambience, and nothing under
- * `prefers-reduced-motion` — this is pure atmosphere carrying no information,
- * so the honest reduced-motion answer is to leave it out rather than to show a
- * still frame of it.
+ * The thing a skin does to the room it is in, drawn inside a box. `AutumnFall`, `EmberRise`,
+ * `BubbleRise` and the rest are all `position: fixed`, gated on `useSkin()`.
  */
 export const SkinAmbience = ({ skin, density = 1, span = 1, className }: SkinAmbienceProps) => {
   const reduceMotion = useReducedMotion();
   const spec = hasAmbience(skin) ? AMBIENCE[skin] : null;
   const isPlaced = spec ? PLACED_KINDS.has(spec.kind) : false;
 
-  /*
-   * Shooting stars are the exception to the floor of three: they are timed
-   * rather than scattered (see the `meteors` case), and a third one on the
-   * same nine-second clock lands on top of the first.
-   */
+  // Shooting stars are the exception to the floor of three: they are timed rather than scattered
+  // (see the `meteors` case).
   const count = !spec
     ? 0
     : spec.kind === 'meteors'
       ? spec.count
       : Math.max(3, Math.round(spec.count * density * (isPlaced ? Math.max(1, span) : 1)));
 
-  /*
-   * Keyed on the skin so turning the barrel rebuilds the field rather than
-   * leaving one skin's leaves falling in the next one's colours, and memoised
-   * so the parent's re-render (the wheel fires several a second) does not
-   * reshuffle a field that is mid-flight.
-   */
+  // Keyed on the skin so turning the barrel rebuilds the field rather than leaving one skin's
+  // leaves falling in the next one's colours, and memoised so the parent's re-render.
   const field = useMemo(
     () => (spec ? buildField(count, spec.kind.length * 11, isPlaced) : []),
     [spec, count, isPlaced],
@@ -279,9 +192,8 @@ export const SkinAmbience = ({ skin, density = 1, span = 1, className }: SkinAmb
           case 'leaves':
             return (
               <span key={index} className="sa-drop" style={style}>
-                {/* Two elements: the outer owns the fall and the sway, the inner
-                    owns the tumble. One box cannot animate two transforms — the
-                    second simply replaces the first. */}
+                {/* Two elements: the outer owns the fall and the sway, the inner owns the
+                    tumble. */}
                 <span className="sa-spin" style={{ animationDirection: index % 2 ? 'reverse' : 'normal' }}>
                   <LeafGlyph fill={fill} />
                 </span>
@@ -317,26 +229,8 @@ export const SkinAmbience = ({ skin, density = 1, span = 1, className }: SkinAmb
 
           case 'bats':
             return (
-              /*
-               * The app's own bat, not a flat copy of it.
-               *
-               * This used to be a second silhouette declared in this file, with
-               * its own path and its own idea of a flap — so the bats crossing
-               * the preview were a different animal from the ones coming off a
-               * dialog, and only one of the two got fixed whenever either was.
-               * `BatGlyph` is rigged (see `halloween-icons.tsx`) and animates
-               * its own wings, so the wrapper that used to squash the whole
-               * glyph is gone with it.
-               *
-               * Colour comes from `--hw-bat-ink` rather than from `toneA`,
-               * which is the one place this component reads a live token
-               * instead of a literal — and it has to. The tone is a fixed
-               * near-black, which is correct over the light half of the compare
-               * box and invisible over the dark one; the token is the only
-               * value that knows which of those the reader is looking at.
-               * `--bat-flap` slows the beat: these are crossing a sky, not
-               * passing your face.
-               */
+              /* The app's own bat, not a flat copy of it. This used to be a second silhouette
+                 declared in this file, with its own path and its own idea of a flap. */
               <span
                 key={index}
                 className="sa-cross"
@@ -352,11 +246,8 @@ export const SkinAmbience = ({ skin, density = 1, span = 1, className }: SkinAmb
               </span>
             );
 
-          /*
-           * The two that stay put are placed through `--sa-top`/`--sa-left`
-           * rather than `top`/`left`: the stylesheet clamps them by the glyph's
-           * own size, which is in container units a percentage cannot see.
-           */
+          // The two that stay put are placed through `--sa-top`/`--sa-left` rather than
+          // `top`/`left`: the stylesheet clamps them by the glyph's own size.
           case 'runes':
             return (
               <span
@@ -390,19 +281,8 @@ export const SkinAmbience = ({ skin, density = 1, span = 1, className }: SkinAmb
               </span>
             );
 
-          /*
-           * A shooting star: across the box and gone in under a second.
-           *
-           * The app's own (`ShootingStar`) keeps a one-minute cooldown, which
-           * is right on a page somebody works on and useless in a preview: a
-           * reader looking at the box for ten seconds would most likely see
-           * nothing. So the cadence here is the same streak every nine
-           * seconds, two of them offset by half a cycle, and the crossing
-           * itself is the first ninth of each cycle — `sa-meteor` spends the
-           * rest of it invisible. Evenly offset rather than scattered like the
-           * other kinds, because two streaks a second apart would read as one
-           * that stuttered.
-           */
+          // A shooting star: across the box and gone in under a second. The app's own
+          // (`ShootingStar`) keeps a one-minute cooldown.
           case 'meteors':
             return (
               <span
@@ -420,14 +300,8 @@ export const SkinAmbience = ({ skin, density = 1, span = 1, className }: SkinAmb
               />
             );
 
-          /*
-           * Lanterns go *up*, on the same `sa-rise` the embers and bubbles use.
-           *
-           * The glow is a drop-shadow in the lantern's own red rather than a
-           * `box-shadow` on the box, because the box is a rectangle and the
-           * lantern is not — a box-shadow would put a rectangular halo behind
-           * a rounded object, which is exactly what it looks like.
-           */
+          // Lanterns go *up*, on the same `sa-rise` the embers and bubbles use. The glow is a
+          // drop-shadow in the lantern's own red rather than a `box-shadow` on the box.
           case 'lanterns':
             return (
               <span

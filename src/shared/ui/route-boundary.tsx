@@ -16,12 +16,8 @@ interface RouteBoundaryState {
 }
 
 /**
- * Catches a page that fails to render — most often a lazy chunk that never
- * arrived, because the dev server restarted or the network dropped mid-import.
- *
- * Without this, a rejected `import()` leaves the Suspense boundary pending
- * forever and the route simply shows nothing, which is indistinguishable from
- * a hung app. Here it becomes a visible, retryable state.
+ * Catches a page that fails to render — most often a lazy chunk that never arrived, because the dev
+ * server restarted or the network dropped mid-import.
  */
 export class RouteBoundary extends Component<RouteBoundaryProps, RouteBoundaryState> {
   state: RouteBoundaryState = { error: null };
@@ -40,16 +36,8 @@ export class RouteBoundary extends Component<RouteBoundaryProps, RouteBoundarySt
   componentDidCatch(error: Error, info: ErrorInfo): void {
     console.error('Route failed to render', error, info.componentStack);
 
-    /*
-     * And tell the server, which is the half that was missing.
-     *
-     * The console line above is for whoever has the browser open — which, on a
-     * deployed PWA, is never us. `reportClientError` puts the same failure in
-     * the API's structured log, where it can actually be found. It is
-     * deliberately incapable of throwing: a reporter that failed here would
-     * fail *during* error handling, and React answers that by unmounting the
-     * tree — a blank page instead of the fallback below.
-     */
+    // And tell the server, which is the half that was missing. The console line above is for
+    // whoever has the browser open — which, on a deployed PWA, is never us.
     reportClientError({ error, componentStack: info.componentStack });
   }
 

@@ -21,23 +21,7 @@ interface RepositoryLinkDialogProps {
   onClose: () => void;
 }
 
-/**
- * Connecting a repository, or letting go of one.
- *
- * ## Why this is its own component
- *
- * Because two surfaces need it and neither of them owns it. The control beside
- * the project's name is where somebody goes when they are thinking about the
- * code; the GitHub card on the Connections shelf is where they go when they are
- * thinking about what this project talks to. Both are legitimate doors and both
- * have to open the *same room* — a second copy of this form would be a second
- * place for "which URLs are accepted" and "what disconnecting costs you" to
- * drift apart, and the drift would not be visible from either side.
- *
- * Which of the two forms it draws is decided by state rather than by the
- * caller: a project either has a repository or it does not, and asking two call
- * sites to work that out is asking one of them to eventually get it wrong.
- */
+/** Connecting a repository, or letting go of one. */
 export const RepositoryLinkDialog = ({
   projectId,
   repository,
@@ -58,9 +42,8 @@ export const RepositoryLinkDialog = ({
       onClose();
       setUrl('');
     } catch {
-      // The hook's own `onError` has already said what went wrong. Staying
-      // open with the text still in the field is the whole handling: a typo is
-      // corrected in place rather than retyped.
+      // The hook's own `onError` has already said what went wrong. Staying open with the text still
+      // in the field is the whole handling: a typo is corrected in place rather than retyped.
     }
   };
 
@@ -76,15 +59,8 @@ export const RepositoryLinkDialog = ({
     >
       {repository ? (
         <div className="space-y-4">
-          {/*
-            The repository as an object, and as the way to it.
-
-            The same treatment the Figma dialog gives a connected file, for the
-            same reason: somebody opening this is checking what is linked or
-            undoing it, and a row that looks like the repository answers the
-            first question at a glance while being the answer to "take me
-            there" — which is what most people actually wanted.
-          */}
+          {/* The repository as an object, and as the way to it. The same treatment the Figma
+              dialog gives a connected file, for the same reason. */}
           <a
             href={repository.url}
             target="_blank"
@@ -154,16 +130,8 @@ export const RepositoryLinkDialog = ({
             />
           </label>
 
-          {/*
-            The one rule that decides whether this will work, said before the
-            button rather than by the button's failure.
-
-            Only a public repository can be linked — the deployment's token
-            carries no scopes by design — and somebody pasting a private URL
-            currently learns that from a red toast. At the size of a field
-            label, on its own surface, it is a precondition instead of an
-            error.
-          */}
+          {/* The one rule that decides whether this will work, said before the button rather
+              than by the button's failure. */}
           <p
             className={cn(
               'flex items-start gap-2 rounded-xl border border-edge bg-surface-sunken/60',
@@ -189,29 +157,7 @@ export const RepositoryLinkDialog = ({
   );
 };
 
-/**
- * The way from a project to its code, beside the project's own name.
- *
- * ## Why it sits on the title rather than in settings
- *
- * Because it is a *destination*, not a preference. Somebody looking at a board
- * and wanting the repository wants it now, from where they are — and a link
- * filed two clicks into a settings dialog is a link people stop using and then
- * stop expecting. The header already carries the other facts of the same kind
- * (which company this is filed under, when it runs) and this is one more.
- *
- * ## Why the same control does both jobs
- *
- * On a linked project it is a link and nothing else: one click, straight to
- * GitHub, no menu in the way. On an unlinked one it is the offer to connect —
- * which is a different action, but it answers the same question somebody
- * arrived with ("where is the code?") and putting it anywhere else means the
- * answer to that question depends on a state they cannot see yet.
- *
- * A reader who cannot manage the project sees *nothing* on an unlinked one.
- * The offer would be a button that exists to refuse them, and "no repository is
- * connected" is not news anybody needs delivered.
- */
+/** The way from a project to its code, beside the project's own name. */
 export const RepositoryLink = ({ projectId, repository, canManage }: RepositoryLinkProps) => {
   const t = useT();
   const [isOpen, setIsOpen] = useState(false);
@@ -248,14 +194,8 @@ export const RepositoryLink = ({ projectId, repository, canManage }: RepositoryL
           <span className="sr-only">{t('repo.open')}</span>
         </a>
 
-        {/*
-          Disconnecting is deliberately not on this control.
-
-          It lives in the dialog behind the same button an admin uses to
-          connect, so the destructive half is never one stray click away from
-          the half everybody uses forty times a day. An admin gets a second,
-          quiet button to open it; everybody else gets the link alone.
-        */}
+        {/* Disconnecting is deliberately not on this control. It lives in the dialog behind the
+            same button an admin uses to connect. */}
         {canManage && (
           <Button
             variant="ghost"

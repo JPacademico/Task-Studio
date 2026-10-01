@@ -31,15 +31,8 @@ export const projectApi = {
   },
 
   /**
-   * Conclude a project: it keeps its record, and loses everything in it.
-   *
-   * "Everything" is literal — tasks, pages, notes, whiteboard, chat, meetings,
-   * pending invitations and the banner. What survives is the name, the
-   * description, the colour, the roster and the teams.
-   *
-   * The password is re-confirmed by the API against the account's own hash —
-   * it is never stored, compared or even held on this side. See the note on
-   * `CompleteProjectDto`.
+   * Conclude a project: it keeps its record, and loses everything in it. "Everything" is literal —
+   * tasks, pages, notes, whiteboard, chat, meetings, pending invitations and the banner.
    */
   async complete(
     projectId: string,
@@ -68,21 +61,11 @@ export const projectApi = {
     /** Organization teams whose people join the roster as MEMBERs. */
     teamIds?: string[];
     /**
-     * Named company staff who join the roster as MEMBERs.
-     *
-     * The other half of `teamIds`, and the more common one — most projects
-     * start with three or four specific people. Added, not invited: somebody
-     * already inside the company has a relationship with the creator that a
-     * stranger reached through `POST /projects/:id/invitations` does not.
+     * Named company staff who join the roster as MEMBERs. The other half of `teamIds`, and the more
+     * common one — most projects start with three or four specific people.
      */
     memberIds?: string[];
-    /**
-     * The planned window, as ISO instants. Both optional and independent.
-     *
-     * `endsAt` is the one with teeth — the API refuses a task deadline past it
-     * — which is why `fromDateInput` resolves it to the *end* of the chosen
-     * day rather than midnight at the start of it. See that helper.
-     */
+    /** The planned window, as ISO instants. Both optional and independent. */
     startsAt?: string;
     endsAt?: string;
   }): Promise<Project> {
@@ -99,12 +82,8 @@ export const projectApi = {
       isArchived?: boolean;
       bannerKey?: string;
       /**
-       * The planned window, on a three-state contract: an instant sets it,
-       * `null` clears it, and an absent field leaves it alone.
-       *
-       * `null` has to be sendable, which is why this is not simply
-       * `string | undefined` — taking a finish date back off a project is a
-       * thing people do, and `undefined` on a PATCH means "no opinion".
+       * The planned window, on a three-state contract: an instant sets it, `null` clears it, and an
+       * absent field leaves it alone.
        */
       startsAt?: string | null;
       endsAt?: string | null;
@@ -135,11 +114,8 @@ export const projectApi = {
   },
 
   /**
-   * Destroy a binned project now, rather than waiting out its thirty days.
-   *
-   * `POST` with a body, not `DELETE` with a query string: this carries a
-   * password, and a password in a URL ends up in browser history and every
-   * proxy log along the way.
+   * Destroy a binned project now, rather than waiting out its thirty days. `POST` with a body, not
+   * `DELETE` with a query string: this carries a password.
    */
   async purge(projectId: string, password: string): Promise<{ filesDeleted: number }> {
     const { data } = await api.post<{ filesDeleted: number }>(
@@ -150,9 +126,8 @@ export const projectApi = {
   },
 
   /**
-   * Empty the project bin: every binned project this account owns, behind the
-   * account's password — asked once for the lot. `POST` with a body for the
-   * reason `purge` gives.
+   * Empty the project bin: every binned project this account owns, behind the account's password —
+   * asked once for the lot. `POST` with a body for the reason `purge` gives.
    */
   async purgeAll(password: string): Promise<{ purged: number; filesDeleted: number }> {
     const { data } = await api.post<{ purged: number; filesDeleted: number }>(

@@ -21,13 +21,8 @@ const LANE_ACCENT: Record<TaskPriority, string> = {
 };
 
 /**
- * The stand-up board.
- *
- * The plain board answers "where is this", which is enough when everything
- * matters equally. A sprint never does: the same three columns crossed with
- * priority swimlanes shows in one glance whether the urgent row is still full
- * on the left, which is the only thing the meeting is really asking. The header
- * carries the arithmetic — committed, done, late — so nobody has to count cards.
+ * The stand-up board. The plain board answers "where is this", which is enough when everything
+ * matters equally.
  */
 export const TaskSprintView = ({
   tasks,

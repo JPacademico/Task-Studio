@@ -18,69 +18,20 @@ const SIZES: Record<NonNullable<LavaButtonProps['size']>, string> = {
 };
 
 /**
- * The product's "make a new thing" buttons, drawn as a lava lamp.
- *
- * ## Which buttons get it
- *
- * "New project" in the top bar, "New task" on a project board, and "New task"
- * on the personal agenda — the one action on each of those screens that
- * everything else exists to support, and the control where a reader arriving
- * cold should have no doubt about where to start.
- *
- * The rule is the action, not the screen. The personal agenda's button was for
- * a while the odd one out — the same "new task" as the board's, drawn flat —
- * which read as the page being a lesser version of a project rather than as a
- * deliberate difference, and that is the whole argument for it being here.
- *
- * The list stops there. A button that draws attention to itself is only useful
- * if almost nothing else does, and every other primary button in the app —
- * Save, Invite, Connect — is a *confirmation* of something already decided. A
- * shimmering Save button is noise attached to a decision already made.
- *
- * The landing page's calls to action are the remaining case and use
- * `LavaLink`, which is this with an anchor inside it.
- *
- * ## Why the flat accent fill is gone
- *
- * It was the whole complaint about the version before this one: the button was
- * still, unmistakably, a blue rectangle, and the effect on top of it moved
- * through colours a few percent apart. The tube is now three quarters of the
- * way from the accent to the far side of the label and the wax is the accent
- * itself — see `--lava-body` — so the moving part is the *brightest* thing on
- * the control rather than a variation on its background.
- *
- * The accent is not lost; it is what the button becomes when you point at it.
- * Hover sweeps a disc of full `--brand` out from the middle in 240ms and stops
- * the lamp behind it, which is both the requested behaviour and the cheapest
- * possible answer to "is this expensive while I am using it".
- *
- * ## What this used to be
- *
- * A `@shadergradient/react` scene: three.js, a WebGL context and a lazily
- * fetched chunk larger than everything else in the repository, mounted per
- * button behind a concurrency permit because a browser only hands out so many
- * contexts. What all of that bought was a water plane — a ripple travelling
- * across a surface, which across 150 pixels of button reads as a faint shimmer
- * on a flat fill. Seven empty spans and two keyframes do the thing it was
- * supposed to do, on a phone, with no network request.
+ * The product's "make a new thing" buttons, drawn as a lava lamp. "New project" in the top bar,
+ * "New task" on a project board, and "New task" on the personal agenda.
  */
 export const LavaButton = forwardRef<HTMLButtonElement, LavaButtonProps>(
   ({ children, className, isLoading, size = 'md', disabled, ...props }, ref) => (
     <button
       ref={ref}
-      // `||`, not `??`: an explicit `disabled={false}` alongside `isLoading`
-      // would otherwise leave the button pressable while its own action is
-      // still running, which is how one click becomes two writes.
+      // `||`, not `??`: an explicit `disabled={false}` alongside `isLoading` would otherwise leave
+      // the button pressable while its own action is still running.
       disabled={disabled || isLoading}
       aria-busy={isLoading || undefined}
       className={cn(
-        /*
-         * `ui-lava` carries the tube, the label colour, the edge and the hover
-         * fill — see `index.css`. Deliberately no `bg-*` or `shadow-*` utility
-         * beside it: either would outrank the component layer and paint a flat
-         * colour over the lamp or drop the hairline that makes the button's
-         * boundary visible on a dark page.
-         */
+        /* `ui-lava` carries the tube, the label colour, the edge and the hover fill — see
+           `index.css`. */
         'ui-btn ui-lava inline-flex items-center justify-center rounded-xl font-medium',
         'transition-transform duration-150 active:scale-[0.98]',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',

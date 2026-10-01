@@ -8,13 +8,8 @@ import type {
 } from '../model/types';
 
 /**
- * Where a project posts its events.
- *
- * Under `/projects/:id/webhooks` rather than under `/integrations`, because
- * the thing being configured is the *project* — its events, its admins, its
- * settings — and only the delivery is an integration. Everything under
- * `/integrations` is scoped to a person and needs no project at all, which is
- * a different shape of authorisation entirely.
+ * Where a project posts its events. Under `/projects/:id/webhooks` rather than under
+ * `/integrations`, because the thing being configured is the *project* — its events, its admins.
  */
 export const webhooksApi = {
   /** The catalogue a composer offers, and whether the deployment allows any. */
@@ -31,11 +26,8 @@ export const webhooksApi = {
   },
 
   /**
-   * Register one. The response carries the signing secret, once.
-   *
-   * There is deliberately no endpoint that returns it again — it is stored
-   * encrypted rather than hashed because signing needs it back, but that is a
-   * reason to keep it, not a reason to hand it out twice.
+   * Register one. The response carries the signing secret, once. There is deliberately no endpoint
+   * that returns it again — it is stored encrypted rather than hashed.
    */
   async create(projectId: string, payload: WebhookPayloadDraft): Promise<CreatedWebhook> {
     const { data } = await api.post<CreatedWebhook>(`/projects/${projectId}/webhooks`, payload);
@@ -59,11 +51,8 @@ export const webhooksApi = {
   },
 
   /**
-   * Post a sample event now.
-   *
-   * On a longer timeout than the default: it makes a real outbound request and
-   * waits for the answer, which is the entire point — the alternative is a
-   * button whose result you have to go and look for in a list.
+   * Post a sample event now. On a longer timeout than the default: it makes a real outbound request
+   * and waits for the answer, which is the entire point.
    */
   async test(projectId: string, webhookId: string): Promise<WebhookTestResult> {
     const { data } = await api.post<WebhookTestResult>(

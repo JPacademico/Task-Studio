@@ -3,22 +3,8 @@ import { cn } from '@/shared/lib/cn';
 import { useT } from '@/shared/i18n';
 
 /**
- * Paper on the wall before the wall has been read.
- *
- * Both boards used to draw nothing while their snapshot was in flight: the
- * whiteboard rendered an empty grid with the "Stick up a Post-it" prompt in the
- * middle of it, so an arriving user was told their populated board was blank
- * and then watched it fill in. The personal board replaced the entire page with
- * a centred spinner, which at least did not lie but took the toolbar and the
- * pager away with it.
- *
- * So: the surface, its grid and its chrome stay exactly where they are, and the
- * objects that have not arrived yet are stood in for by ghost sheets in
- * roughly the places sheets end up. It reads as "loading" without a caption
- * having to say so, and nothing on screen moves when the real notes land.
- *
- * `aria-hidden`, with the live region left to the loader: a screen reader
- * should hear "loading the board", not six empty rectangles.
+ * Paper on the wall before the wall has been read. Both boards used to draw nothing while their
+ * snapshot was in flight.
  */
 const GHOSTS = [
   { left: '6%', top: '12%', width: 190, height: 190, rotate: -3 },

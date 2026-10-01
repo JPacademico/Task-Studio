@@ -1,27 +1,6 @@
 /**
- * What a project document is allowed to contain.
- *
- * The text board is a `contentEditable` surface: its content is HTML, it is
- * loaded back by assigning `innerHTML`, and some of it was pasted in from
- * somewhere else entirely. That makes this the security boundary for the whole
- * feature on the client side, and it mirrors the allow-list the API enforces
- * (`sanitize-document.ts` in the backend). Both exist on purpose — the API
- * cannot trust that the client ran this, and the client cannot trust that a
- * row in the database was written by this version of the API.
- *
- * It is built on `DOMParser` rather than on regular expressions. A regex
- * cannot parse HTML, and every "sanitiser" that tries is eventually defeated
- * by a nesting case its author did not imagine; the browser's own parser
- * cannot be tricked about what a tag is, and `DOMParser` builds an inert
- * document, so nothing loads and nothing executes while we inspect it.
- *
- * Three deliberate exclusions:
- *
- *   - No `<iframe>`. "Insert a video" is served by `<video>` with a direct
- *     media URL, which cannot host a third-party document or overlay the app.
- *   - No `<script>`, `<style>`, `<link>`, `<object>`, `<embed>`, `<form>` —
- *     removed outright, contents and all.
- *   - No `on*` handlers, ever, and no `javascript:` in any URL.
+ * What a project document is allowed to contain. The text board is a `contentEditable` surface: its
+ * content is HTML, it is loaded back by assigning `innerHTML`.
  */
 
 const ALLOWED_TAGS = new Set([
@@ -43,10 +22,8 @@ const DISCARDED_TAGS = new Set([
 
 const ALLOWED_ATTRIBUTES: Record<string, Set<string>> = {
   A: new Set(['href', 'title']),
-  // `loading` and `decoding` are enumerated attributes with a fixed, inert set
-  // of values — they cannot carry a URL or a handler. They are on the list
-  // because the editor writes `loading="lazy"` on every inserted image, and an
-  // allow-list that dropped it would silently undo that on the first save.
+  // `loading` and `decoding` are enumerated attributes with a fixed, inert set of values — they
+  // cannot carry a URL or a handler.
   IMG: new Set(['src', 'alt', 'width', 'height', 'loading', 'decoding']),
   VIDEO: new Set(['src', 'controls', 'width', 'height', 'poster', 'preload']),
   FONT: new Set(['color', 'face', 'size']),
@@ -68,10 +45,8 @@ const ALLOWED_STYLE_PROPERTIES = new Set([
 ]);
 
 /**
- * A style value we are willing to copy through.
- *
- * Deliberately strict: `url(`, `expression(` and anything with a bracket or a
- * semicolon in it is how a style attribute becomes a fetch or worse.
+ * A style value we are willing to copy through. Deliberately strict: `url(`, `expression(` and
+ * anything with a bracket or a semicolon in it is how a style attribute becomes a fetch or worse.
  */
 const SAFE_STYLE_VALUE = /^[#\w\s.,%()'"-]{1,120}$/;
 const UNSAFE_STYLE_VALUE = /url\s*\(|expression\s*\(|javascript:|@import/i;
@@ -159,11 +134,8 @@ const clean = (element: Element): void => {
 export const sanitizeDocumentHtml = (html: string): string => {
   const parsed = new DOMParser().parseFromString(`<body>${html}</body>`, 'text/html');
 
-  // Clean the *children*, never the body itself. `clean` unwraps any element
-  // outside the allow-list, and `<body>` is emphatically outside it — so
-  // handing it the root removed the root, and reading `parsed.body.innerHTML`
-  // on the next line threw. The body here is a container we supplied, not
-  // content the user wrote.
+  // Clean the *children*, never the body itself. `clean` unwraps any element outside the
+  // allow-list, and `<body>` is emphatically outside it — so handing it the root removed the root.
   for (const child of [...parsed.body.children]) clean(child);
 
   return parsed.body.innerHTML;

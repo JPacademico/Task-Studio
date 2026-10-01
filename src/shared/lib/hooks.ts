@@ -23,9 +23,8 @@ export const useIsTouchDevice = (): boolean => useMediaQuery('(pointer: coarse)'
 export const useIsDesktop = (): boolean => useMediaQuery('(min-width: 1024px)');
 
 /**
- * Debounced callback with a stable identity. Used for note positions and
- * whiteboard strokes, where the pointer produces far more events than the API
- * should ever see.
+ * Debounced callback with a stable identity. Used for note positions and whiteboard strokes, where
+ * the pointer produces far more events than the API should ever see.
  */
 export const useDebouncedCallback = <Args extends unknown[]>(
   callback: (...args: Args) => void,

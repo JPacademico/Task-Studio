@@ -20,25 +20,7 @@ interface BoardFullDialogProps {
   onClose: () => void;
 }
 
-/**
- * The Documents board had no room to file a picture from the whiteboard.
- *
- * ## What it has to get across, in order
- *
- * 1. **Nothing was lost.** The picture is on the whiteboard; only the
- *    Documents board's copy is missing. A dialog that opened on "storage
- *    full" alone would read as "your upload failed", which it did not.
- * 2. **How full, in numbers.** The same gauge the Documents tab draws, so the
- *    two never disagree about how much room there is.
- * 3. **The two ways out.** Clearing what is not needed — which anybody on the
- *    roster can start on right now — and a larger plan, which only the
- *    project's *owner* can buy, because a project board is sized by the
- *    owner's plan and nobody else's. Offering a member an upgrade that would
- *    not change this board would be selling them the wrong thing.
- *
- * No upgrade button on Baron: it is the largest plan, so the only honest way
- * out there is the first one.
- */
+/** The Documents board had no room to file a picture from the whiteboard. */
 export const BoardFullDialog = ({ projectId, filing, onClose }: BoardFullDialogProps) => {
   const t = useT();
   const navigate = useNavigate();

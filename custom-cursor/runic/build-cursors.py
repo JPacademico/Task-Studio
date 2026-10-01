@@ -1,44 +1,4 @@
-"""Builds the Runic skin's cursor: the pager's rune arrow, turned to point.
-
-Run it after changing anything below:
-
-    python custom-cursor/runic/build-cursors.py
-
-It writes `built/cursor.css` beside this file; paste that over the block in
-`src/app/styles/index.css` marked `Skin: RUNIC - the pointer is the pager's
-rune arrow`. (A file rather than stdout, because the em dashes in the
-generated comments do not survive a Windows console pipe.)
-
-Requires Pillow (`pip install pillow`). Nothing in the application depends on
-this script at build or run time; it is a one-off tool that produces text.
-
-## What is being drawn
-
-`RuneArrow` in `src/shared/ui/runic-icons.tsx` - the mark on the theme menu's
-"previous" and "next" buttons - stroke for stroke: the stave, the barb, and
-the two nicks that make it a rune rather than an arrow, with the lit line down
-the barb and the stave that the skin calls the glow. The geometry below is that
-component's `viewBox="0 0 24 24"` paths, copied, so the two stay one drawing.
-
-Only the angle is new. The pager's arrow points left; a pointer has to point
-where the system's does, up and to the left, so the resting frame is the same
-mark turned 45 degrees. Over anything that can be pressed it turns further,
-to 62 degrees, and stands a little more upright - the whole cursor lifting
-its point at the thing it can act on. The click's glow is not a frame here: a
-cursor image cannot animate, so it is a short flash drawn by `RuneClickGlow`.
-
-## How it is drawn
-
-Each stroke is drawn as a capsule at eight times size - square caps, as the
-component's `strokeLinecap="square"` has them - into a mask, then:
-
-  - the halo is the mask dilated by a disc, in the page's own paper colour,
-    so the mark stays legible over a dark control as well as a light page;
-  - the body is the mask in ink;
-  - the glow line is drawn over the barb and the stave in the rubric colour.
-
-Then reduced with LANCZOS, like the Dragon and Terminal pointers.
-"""
+"""Builds the Runic skin's cursor: the pager's rune arrow, turned to point."""
 import base64
 import io
 import math
@@ -51,9 +11,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 BOX = 32
 S = 8
 
-# Screen pixels per unit of the component's 24-unit viewBox. The arrow is 16
-# units long, so this makes it about 19px along its own axis - the system
-# arrow's height - and on the diagonal it fills about 20x20 of the box.
+# Screen pixels per unit of the component's 24-unit viewBox.
 SCALE = 1.15
 
 # The component's paths, in its own units.
@@ -68,12 +26,15 @@ NICK_WIDTH = 1.6
 GLOW_WIDTH = 1.0
 HALO = 1.2
 
-# Where the point sits in the box, and the two angles, in degrees clockwise
-# from the pager's own "left". Far enough in that the halo round the mitre is
-# not cut off by the edge of the image.
-POINT = (3.2, 3.2)
+# The two angles, in degrees clockwise from the pager's own "left". Where the point sits is measured
+# by `fit()`: a fixed (3.2, 3.2) let the 62-degree pose cut its lower barb off at the left edge.
 REST_DEGREES = 45
 HOVER_DEGREES = 62
+# Clear pixels kept between the widest frame and the edge of the box.
+MARGIN = 1
+# Provisional placement, in a box this much larger, before `fit()` measures the frames.
+POINT = (12.0, 12.0)
+WORK_BOX = BOX + 24
 
 PALETTES = {
     # Oak-gall ink on the sheet, the rubric in the cut, a paper halo.
@@ -90,13 +51,31 @@ PALETTES = {
     },
 }
 
+# The click: the arrow itself catches fire, like a rune the scribe's light has found. The stroke
+# turns ember, its cut burns white-hot and the light bleeds out of the stroke rather than a disc.
+LIT = {
+    'light': {
+        'bloom': (232, 92, 24),
+        'bloom_alpha': 0.8,
+        'body': (196, 58, 16, 255),
+        'core': (255, 196, 112, 255),
+        'rim': (90, 24, 8, 255),
+    },
+    'dark': {
+        'bloom': (255, 118, 34),
+        'bloom_alpha': 1.0,
+        'body': (255, 158, 72, 255),
+        'core': (255, 240, 208, 255),
+        'rim': (40, 12, 4, 255),
+    },
+}
+# How far the light bleeds past the stroke, in screen pixels.
+BLOOM = 3.4
+
 
 def mitre_point() -> tuple[float, float]:
-    """Where the outer edges of the barb's two arms meet, in viewBox units.
-
-    The tip of the drawn mark is not the vertex of its centre line but this,
-    half a stroke width beyond it along the bisector. Both frames turn about
-    it, so the hotspot sits on the visible point and never moves.
+    """Where the outer edges of the barb's two arms meet, in viewBox units. The tip of the drawn
+    mark is not the vertex of its centre line.
     """
     (ax, ay), (tx, ty), (bx, by) = BARB
     half_angle = (math.atan2(by - ty, bx - tx) - math.atan2(ay - ty, ax - tx)) / 2
@@ -170,7 +149,7 @@ def polyline(draw: ImageDraw.ImageDraw, points, width: float, degrees: float) ->
 
 
 def mask_of(segments, width: float, degrees: float, barb: bool = False) -> Image.Image:
-    mask = Image.new('L', (BOX * S, BOX * S), 0)
+    mask = Image.new('L', (WORK_BOX * S, WORK_BOX * S), 0)
     draw = ImageDraw.Draw(mask)
     for segment in segments:
         stroke(draw, segment, width, degrees)
@@ -179,7 +158,16 @@ def mask_of(segments, width: float, degrees: float, barb: bool = False) -> Image
     return mask
 
 
-def frame(degrees: float, palette: dict) -> Image.Image:
+def layers(stack, size) -> Image.Image:
+    out = Image.new('RGBA', size, (0, 0, 0, 0))
+    for colour, alpha in stack:
+        layer = Image.new('RGBA', size, colour)
+        layer.putalpha(alpha)
+        out = Image.alpha_composite(out, layer)
+    return out
+
+
+def frame(degrees: float, palette: dict, lit: dict | None = None) -> Image.Image:
     body = mask_of(STAVE, BODY_WIDTH, degrees, barb=True)
     body.paste(255, mask=mask_of(NICKS, NICK_WIDTH, degrees))
     glow = mask_of(STAVE, GLOW_WIDTH, degrees, barb=True)
@@ -187,21 +175,52 @@ def frame(degrees: float, palette: dict) -> Image.Image:
     size = int(HALO * S) * 2 + 1
     halo = body.filter(ImageFilter.MaxFilter(size))
 
-    out = Image.new('RGBA', body.size, (0, 0, 0, 0))
-    for colour, alpha in ((palette['halo'], halo), (palette['body'], body), (palette['glow'], glow)):
-        layer = Image.new('RGBA', body.size, colour)
-        layer.putalpha(alpha)
-        out = Image.alpha_composite(out, layer)
-    return out.resize((BOX, BOX), Image.LANCZOS)
+    if lit is None:
+        stack = ((palette['halo'], halo), (palette['body'], body), (palette['glow'], glow))
+        return layers(stack, body.size).resize((WORK_BOX, WORK_BOX), Image.LANCZOS)
+
+    # The bloom is the stroke's own shape, blurred: light coming out of the cut, not a disc behind it.
+    bloom = body.filter(ImageFilter.MaxFilter(int(0.9 * S) * 2 + 1))
+    bloom = bloom.filter(ImageFilter.GaussianBlur(BLOOM * S / 2))
+    bloom = bloom.point(lambda value: min(255, int(value * lit['bloom_alpha'] * 1.6)))
+    rim = body.filter(ImageFilter.MaxFilter(int(0.5 * S) * 2 + 1))
+    stack = (
+        ((*lit['bloom'], 255), bloom),
+        (lit['rim'], rim),
+        (lit['body'], body),
+        (lit['core'], glow),
+    )
+    return layers(stack, body.size).resize((WORK_BOX, WORK_BOX), Image.LANCZOS)
 
 
-FRAMES = {}
+POSES = {}
 for name, palette in PALETTES.items():
-    FRAMES[f'rest-{name}'] = frame(REST_DEGREES, palette)
-    FRAMES[f'hover-{name}'] = frame(HOVER_DEGREES, palette)
+    POSES[f'rest-{name}'] = frame(REST_DEGREES, palette)
+    POSES[f'hover-{name}'] = frame(HOVER_DEGREES, palette)
+    POSES[f'rest-lit-{name}'] = frame(REST_DEGREES, palette, LIT[name])
+    POSES[f'hover-lit-{name}'] = frame(HOVER_DEGREES, palette, LIT[name])
 
-# The mitre, which does not move between the frames: both turn about it.
-HOTSPOT = (round(POINT[0]), round(POINT[1]))
+
+def fit() -> tuple[int, int]:
+    """Where to cut the box from the work canvas so every frame fits, bloom included."""
+    boxes = [
+        image.getchannel('A').getbbox()
+        for image in POSES.values()
+    ]
+    left, top = min(b[0] for b in boxes), min(b[1] for b in boxes)
+    right, bottom = max(b[2] for b in boxes), max(b[3] for b in boxes)
+    if right - left + 2 * MARGIN > BOX or bottom - top + 2 * MARGIN > BOX:
+        raise SystemExit(f'frames span {right - left}x{bottom - top}px; a {BOX}px box is too small')
+    return (int(left - MARGIN), int(top - MARGIN))
+
+
+CUT = fit()
+FRAMES = {
+    name: image.crop((CUT[0], CUT[1], CUT[0] + BOX, CUT[1] + BOX)) for name, image in POSES.items()
+}
+
+# The mitre, which does not move between the frames: all four turn about it.
+HOTSPOT = (round(POINT[0] - CUT[0]), round(POINT[1] - CUT[1]))
 
 built = f'{HERE}/built'
 os.makedirs(built, exist_ok=True)
@@ -217,6 +236,8 @@ point = f'{HOTSPOT[0]} {HOTSPOT[1]}'
 
 GATE = "html:not([data-cursor='off'])[data-skin='runic']"
 GATE_DARK = "html:not([data-cursor='off'])[data-skin='runic'].dark"
+LIT_GATE = f"{GATE}[data-rune-lit]"
+LIT_GATE_DARK = f"{GATE_DARK}[data-rune-lit]"
 NATIVE = ":not([data-native-cursor], [data-native-cursor] *)"
 
 
@@ -249,43 +270,8 @@ TEXT = [
 ]
 
 css = f'''
-/* ===========================================================================
-   Skin: RUNIC - the pointer is the pager's rune arrow.
-   ===========================================================================
-
-   Generated by `custom-cursor/runic/build-cursors.py`. Re-run it after any
-   change and paste the result over this block; nothing here is hand-edited.
-
-   ## Why this mark
-
-   It is `RuneArrow` - the arrow cut into the theme menu's "previous" and
-   "next" buttons - stroke for stroke, so the one direction sign this world
-   already has is the one it points with. Turned {REST_DEGREES} degrees onto the diagonal
-   the system arrow sits on, and drawn inside the system cursor's own {BOX}px box.
-
-   ## Two frames
-
-   At rest it lies on the diagonal. Over anything that can be pressed it
-   turns to {HOVER_DEGREES} degrees, lifting its point at the thing it can act on. Both
-   turn about the mitre at the point, so the hotspot never moves between
-   them. The click
-   is a brief glow drawn at the pointer by `RuneClickGlow`, because a cursor
-   image cannot animate.
-
-   ## Two palettes
-
-   Oak-gall ink with the rubric in the cut and a paper halo on the light
-   sheet; bone with the ember in the cut and a soot halo on the night stone.
-   The halo is what keeps the mark legible over a control of the other tone.
-
-   ## The opt-out
-
-   Every selector is gated on `html:not([data-cursor='off'])`, and anything
-   inside a `[data-native-cursor]` surface keeps the system's pointer.
-
-   Text fields, disabled controls and drag handles are left alone: an I-beam,
-   `not-allowed` and `grab` each say something no arrow can say.
-   --------------------------------------------------------------------------- */
+/* --- Skin: RUNIC - the pointer is the pager's rune arrow. ---
+   Generated by `custom-cursor/runic/build-cursors.py`. A click lights the arrow (`RuneClickGlow`). */
 
 {GATE} {{
   cursor: url("data:image/png;base64,{uris['rest-light']}") {point}, auto;
@@ -303,6 +289,23 @@ css = f'''
 
 {inside(GATE_DARK, PRESSABLE)} {{
   cursor: url("data:image/png;base64,{uris['hover-dark']}") {point}, pointer;
+}}
+
+/* Lit: the same two poses with the stroke burning. */
+{LIT_GATE} {{
+  cursor: url("data:image/png;base64,{uris['rest-lit-light']}") {point}, auto;
+}}
+
+{LIT_GATE_DARK} {{
+  cursor: url("data:image/png;base64,{uris['rest-lit-dark']}") {point}, auto;
+}}
+
+{inside(LIT_GATE, PRESSABLE)} {{
+  cursor: url("data:image/png;base64,{uris['hover-lit-light']}") {point}, pointer;
+}}
+
+{inside(LIT_GATE_DARK, PRESSABLE)} {{
+  cursor: url("data:image/png;base64,{uris['hover-lit-dark']}") {point}, pointer;
 }}
 
 /* The three the arrow must not swallow. */

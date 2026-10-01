@@ -1,11 +1,8 @@
 import type { UserSummary } from '@/entities/user/model/types';
 
 /**
- * The file behind an imported page.
- *
- * A page can arrive two ways: typed into the editor, or uploaded as a document
- * somebody already had. This is set for the second kind and is what the board
- * reads to decide whether it is drawing an editor or a file.
+ * The file behind an imported page. A page can arrive two ways: typed into the editor, or uploaded
+ * as a document somebody already had.
  */
 export interface DocumentSource {
   /** The uploader's own filename. The object key is a UUID, so this is it. */
@@ -13,37 +10,21 @@ export interface DocumentSource {
   mime: string;
   size: number;
   /**
-   * Whether the page has a body of its own, or *is* still the file.
-   *
-   * False means there is nothing to edit and nothing to render: the board
-   * shows the upload itself and offers it back for download. A PDF and a
-   * `.docx` are always false and stay that way — nothing on the API reads one.
-   * True for a `.txt`, whose paragraphs the browser writes at upload time, and
-   * for the pages that were converted while that feature existed: they keep
-   * their text and are ordinary editable documents.
-   *
-   * Answered by the API rather than inferred from an empty `content`, which
-   * would misread a page somebody has since emptied.
+   * Whether the page has a body of its own, or *is* still the file. False means there is nothing to
+   * edit and nothing to render: the board shows the upload itself and offers it back for download.
    */
   hasBody: boolean;
 }
 
 /**
- * The four things a page can be downloaded as.
- *
- * `docx` is the one somebody can carry on working in: a PDF is final and the
- * other two are plain. All four are rendered from the same flattened blocks on
- * the API, so they agree about what a heading is.
+ * The four things a page can be downloaded as. `docx` is the one somebody can carry on working in:
+ * a PDF is final and the other two are plain.
  */
 export type DocumentExportFormat = 'pdf' | 'docx' | 'txt' | 'html';
 
 /**
- * One picture inside a written page, offered on its own.
- *
- * A page's images were the one thing on a text board you could see and could
- * not save: they live on the bucket's origin, where a cross-origin `download`
- * attribute is ignored, so a link navigates the tab to the picture instead of
- * saving a file. The API serves them back by position — see its `listAssets`.
+ * One picture inside a written page, offered on its own. A page's images were the one thing on a
+ * text board you could see and could not save: they live on the bucket's origin.
  */
 export interface DocumentAsset {
   /** Position in the page, which is the only identifier a picture has. */
@@ -56,12 +37,8 @@ export interface DocumentAsset {
 }
 
 /**
- * One record inside an imported `.zip`.
- *
- * Read from the archive's central directory on the API, which is names and
- * numbers and no decompression anywhere — see `zip-directory.ts` there. It is
- * deliberately not possible to fetch one of these out of the archive: the
- * download button beside the listing is what gets the files.
+ * One record inside an imported `.zip`. Read from the archive's central directory on the API, which
+ * is names and numbers and no decompression anywhere — see `zip-directory.ts` there.
  */
 export interface ArchiveEntry {
   /** Always `/`-separated, and normalised — see the reader's `readablePath`. */
@@ -75,13 +52,8 @@ export interface ArchiveEntry {
 }
 
 /**
- * The API's read on whether an archive is a zip bomb.
- *
- * A `refuse` verdict never reaches here — the listing route throws on one, and
- * so does the download — so what a client sees is `ok` or `warn`. The warning
- * is deliberately not a refusal: a folder of logs genuinely compresses two
- * hundred to one, and what the reader is owed before they click is the number
- * rather than an argument. See `zip-safety.ts` on the API.
+ * The API's read on whether an archive is a zip bomb. A `refuse` verdict never reaches here — the
+ * listing route throws on one, and so does the download — so what a client sees is `ok` or `warn`.
  */
 export interface ArchiveSafety {
   verdict: 'ok' | 'warn' | 'refuse';
@@ -118,11 +90,8 @@ export interface FigmaPageSummary {
 }
 
 /**
- * A Figma file's structure as of the last sync.
- *
- * The API's reduction of a node tree that is megabytes of vectors and fills —
- * pages, and each page's top-level objects, which is the granularity somebody
- * navigates and exports at.
+ * A Figma file's structure as of the last sync. The API's reduction of a node tree that is
+ * megabytes of vectors and fills — pages, and each page's top-level objects.
  */
 export interface FigmaSnapshot {
   name: string;
@@ -134,11 +103,8 @@ export interface FigmaSnapshot {
 }
 
 /**
- * The Figma file a page mirrors, when the page *is* a design.
- *
- * The fourth kind of page and the only one holding no bytes anywhere: what is
- * stored is an address plus the snapshot below, and the pixels come from
- * Figma's renderer when somebody asks for them.
+ * The Figma file a page mirrors, when the page *is* a design. The fourth kind of page and the only
+ * one holding no bytes anywhere: what is stored is an address plus the snapshot below.
  */
 export interface DocumentFigma {
   fileKey: string;
@@ -157,12 +123,8 @@ export interface DocumentFigma {
 }
 
 /**
- * A page that is a folder of pictures — the whiteboard's, filed.
- *
- * Every picture pinned to a page of a project's whiteboard is filed by the API
- * into a folder page named after that whiteboard page. The folder points at
- * the same objects the Post-its do, so it costs no storage of its own; see
- * `BoardFoldersService` on the API.
+ * A page that is a folder of pictures — the whiteboard's, filed. Every picture pinned to a page of
+ * a project's whiteboard is filed by the API into a folder page named after that whiteboard page.
  */
 export interface DocumentFolder {
   /** The whiteboard page it is still filling; null once that page is gone. */
@@ -191,11 +153,8 @@ export interface FolderContents {
 }
 
 /**
- * What the Documents board did with a picture just pinned to the whiteboard.
- *
- * Only ever on the create response to the person who pinned it. `full` is the
- * case the whiteboard answers with a dialog: the picture is on the wall, but
- * the Documents board had no room to file it.
+ * What the Documents board did with a picture just pinned to the whiteboard. Only ever on the
+ * create response to the person who pinned it.
  */
 export type FolderFiling =
   | { status: 'saved' | 'exists'; documentId: string; title: string }
@@ -218,11 +177,8 @@ export type FolderFiling =
 export type FigmaExportFormat = 'png' | 'jpg' | 'svg' | 'pdf';
 
 /**
- * The assistant's reading of a design's *structure*.
- *
- * Written from page and frame names — never from artwork — and returned to
- * whoever asked rather than written onto anything. See `figma-brief.prompt.ts`
- * on the API for why that distinction is the whole of the safety argument.
+ * The assistant's reading of a design's *structure*. Written from page and frame names — never from
+ * artwork — and returned to whoever asked rather than written onto anything.
  */
 export interface FigmaBrief {
   summary: string;
@@ -234,9 +190,8 @@ export interface FigmaBrief {
 /** Putting a Figma file on a project's board as a page. */
 export interface CreateFigmaPagePayload {
   /**
-   * Required, unlike on every sibling payload: the credential is a property of
-   * the project, so a personal design page would be a row that can never
-   * render.
+   * Required, unlike on every sibling payload: the credential is a property of the project, so a
+   * personal design page would be a row that can never render.
    */
   projectId: string;
   /** Omit for the file the project already designs against. */
@@ -254,11 +209,8 @@ export interface ProjectDocument {
   id: string;
   title: string;
   /**
-   * Sanitised rich-text HTML.
-   *
-   * Absent on list responses: a project's table of contents would otherwise
-   * ship every page's full body to render a sidebar. `excerpt` is what the
-   * list rows read from.
+   * Sanitised rich-text HTML. Absent on list responses: a project's table of contents would
+   * otherwise ship every page's full body to render a sidebar.
    */
   content?: string;
   /** Plain-text opening of the body, derived server-side. */
@@ -282,58 +234,35 @@ export interface ProjectDocument {
   createdBy: UserSummary;
   updatedBy: UserSummary | null;
   /**
-   * The file this page was imported from, or null if it was typed here.
-   *
-   * Present on table-of-contents rows as well as on an open page, so the list
-   * can badge an import before anybody clicks it.
+   * The file this page was imported from, or null if it was typed here. Present on
+   * table-of-contents rows as well as on an open page.
    */
   source: DocumentSource | null;
   /**
-   * The Figma file this page mirrors, or null on every other kind of page.
-   *
-   * Mutually exclusive with `source` in practice — a page is either bytes in a
-   * bucket or an address in Figma — though nothing needs to enforce that,
-   * because the two are set by different routes and neither ever sets both.
-   *
-   * Present on table-of-contents rows so the list can mark a design before
-   * anybody clicks it, with `snapshot` omitted there. See `DocumentFigma`.
+   * The Figma file this page mirrors, or null on every other kind of page. Mutually exclusive with
+   * `source` in practice — a page is either bytes in a bucket or an address in Figma.
    */
   figma: DocumentFigma | null;
   /**
-   * Set when the page is a folder of whiteboard pictures, null otherwise.
-   *
-   * Optional only so a row from an API that predates folders still types; a
-   * missing field reads as "not a folder", which is what it was.
+   * Set when the page is a folder of whiteboard pictures, null otherwise. Optional only so a row
+   * from an API that predates folders still types; a missing field reads as "not a folder".
    */
   folder?: DocumentFolder | null;
   /**
-   * Everybody the author has handed the pen to.
-   *
-   * Reading a project's page is the roster's right; rewriting one is not. A
-   * page is one person's argument at a particular moment, so it is editable by
-   * its author, by the people in this list, and by the project's owner — see
-   * the API's `DocumentEditorGrant` for why the owner and not every admin.
+   * Everybody the author has handed the pen to. Reading a project's page is the roster's right;
+   * rewriting one is not.
    */
   editors: UserSummary[];
   /**
-   * Whether *this* reader may rewrite it.
-   *
-   * Answered by the server rather than worked out here. The rule reads three
-   * different things — the author, this list, the project's owner — and a
-   * client that re-derived it would be a second implementation of an
-   * authorisation decision, drifting from the real one the first time either
-   * changed.
+   * Whether *this* reader may rewrite it. Answered by the server rather than worked out here. The
+   * rule reads three different things — the author, this list, the project's owner.
    */
   canEdit: boolean;
   /** Whether this reader may change who else may edit. Narrower than `canEdit`. */
   canManageAccess: boolean;
   /**
-   * Whether this reader may destroy it: the author, or a project admin.
-   *
-   * Deliberately not the same set as `canEdit`, and not a subset of it either.
-   * A granted editor can rewrite the page and cannot delete it; an admin can
-   * delete it and cannot rewrite it. Both directions are intentional — see the
-   * API's `DocumentsService.canDelete`.
+   * Whether this reader may destroy it: the author, or a project admin. Deliberately not the same
+   * set as `canEdit`, and not a subset of it either.
    */
   canDelete: boolean;
   createdAt: string;
@@ -360,12 +289,8 @@ export interface UpdateDocumentPayload {
 }
 
 /**
- * Registering an already-uploaded file as a page.
- *
- * The bytes are not here. They went straight from the browser to storage
- * through a presigned PUT, exactly as a task attachment does; this is the
- * receipt, and the API checks that the object key really belongs to whoever
- * is sending it.
+ * Registering an already-uploaded file as a page. The bytes are not here. They went straight from
+ * the browser to storage through a presigned PUT, exactly as a task attachment does.
  */
 export interface ImportDocumentPayload {
   projectId?: string;
@@ -378,48 +303,22 @@ export interface ImportDocumentPayload {
   sourceMime: string;
   sourceSize: number;
   /**
-   * The page body, when the browser could produce it without a model.
-   *
-   * Only ever set for `text/plain` — turning plain text into paragraphs is a
-   * `split`, so the browser does it at upload. The API refuses to honour it
-   * for any other format.
+   * The page body, when the browser could produce it without a model. Only ever set for
+   * `text/plain` — turning plain text into paragraphs is a `split`.
    */
   content?: string;
 }
 
 /**
- * A page as it arrives over the socket.
- *
- * Every `can*` flag is an answer to "may *you*", computed by the API from
- * whoever made the request that caused the broadcast — which is not the person
- * receiving it. The API therefore strips them all before emitting (see
- * `DocumentsService.broadcastShape`), and this type is what is left. Every
- * consumer merges it *over* what it already holds, so the reader keeps their
- * own answer to a question the event was never about.
+ * A page as it arrives over the socket. Every `can*` flag is an answer to "may *you*", computed by
+ * the API from whoever made the request that caused the broadcast.
  */
 export type DocumentBroadcast = Omit<
   ProjectDocument,
   'canEdit' | 'canManageAccess' | 'canDelete'
 >;
 
-/**
- * How full one text board is, and how full it is allowed to get.
- *
- * ## Why the ceiling comes from the server rather than from the reader's plan
- *
- * Because on a project board it is not the reader's plan. A project's pages
- * share one allowance sized by the **project owner's** plan — a gigabyte on
- * Baron, 500 MB on Startup, 100 MB on Free — and every member of the project
- * writes into that same one. A client that drew the gauge from
- * `billing/me.limits` would show a free member of a Baron project a 100 MB
- * ceiling on a board that holds a gigabyte, and a Baron member of a free
- * colleague's project the reverse.
- *
- * A personal desk is the one board where the two answers coincide, because
- * there is only one person on it.
- *
- * `null` is no ceiling at all, exactly as it is on the plan catalogue.
- */
+/** How full one text board is, and how full it is allowed to get. */
 export interface BoardUsage {
   scope: 'project' | 'personal';
   /** The sum of every live page on this board: uploaded originals plus bodies. */

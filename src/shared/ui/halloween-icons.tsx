@@ -2,14 +2,8 @@ import { cn } from '@/shared/lib/cn';
 import { type GlyphProps } from './glyph-kit';
 
 /**
- * The Halloween skin's product mark, plus the two decorations the skin owns.
- *
- * The mark follows the rule every other skin's does: the *object* stays — the
- * pad, the peeled corner, the pin — and only the material changes. A skin that
- * swapped the Post-it for a pumpkin would stop being the same product wearing a
- * season, and would cost every user the recognition the mark exists to buy.
- *
- * So this is the studio sheet, lit from inside, with a carved face on it.
+ * The Halloween skin's product mark, plus the two decorations the skin owns. The mark follows the
+ * rule every other skin's does: the *object* stays — the pad, the peeled corner, the pin.
  */
 export const HalloweenMark = ({ className }: GlyphProps) => (
   <svg viewBox="0 0 40 40" fill="none" aria-hidden className={cn('h-10 w-10', className)}>
@@ -44,13 +38,8 @@ export const HalloweenMark = ({ className }: GlyphProps) => (
       strokeLinejoin="round"
     />
 
-    {/*
-      The carved face, cut *out* of the sheet rather than drawn on it.
-
-      Filled with the page's own surface so the shapes read as holes with the
-      wall showing through — which is what a lantern is. Drawing them in ink
-      would have made it a doodle of a pumpkin instead of a carved one.
-    */}
+    {/* The carved face, cut *out* of the sheet rather than drawn on it. Filled with the page's
+        own surface so the shapes read as holes with the wall showing through. */}
     <path d="M12.2 14.4l4.3 2.6-4.3 2.6v-5.2Z" fill="rgb(var(--surface))" />
     <path d="M26.6 14.4v5.2l-4.3-2.6 4.3-2.6Z" fill="rgb(var(--surface))" />
     <path
@@ -65,40 +54,8 @@ export const HalloweenMark = ({ className }: GlyphProps) => (
 );
 
 /**
- * One bat, rigged: a body and two wings that beat independently.
- *
- * ## Why it stopped being a single path
- *
- * It was one path and the "flap" was a `scaleY` on the whole glyph — the bat
- * squashed vertically, body and all, twice a second. The argument for it was
- * that a rig is invisible at sixteen pixels, and that was true of the *old*
- * sixteen pixels: a shape wide enough to read as a wingspan, squashing.
- *
- * What it actually looked like next to a real flapping bat is the thing this
- * change is about. A bat in flight moves its wings through about fifty degrees
- * and keeps its body level; squashing the body is what a moth pinned to a
- * board does. Rigging the two wings costs two more nodes and one more keyframe
- * list, and it is the difference between a shape that is being animated and
- * something that is flying.
- *
- * ## How the rig works
- *
- * Each wing is its own path, rotating about the shoulder it joins the body at —
- * `transform-box: fill-box` plus a `transform-origin` on the side nearest the
- * body, both in `.bat-wing` in `index.css`. The two are mirror images across
- * `x = 16`, written out rather than produced with `scale(-1, 1)` on a group: a
- * CSS `transform` replaces an SVG `transform` attribute rather than composing
- * with it, so the mirror would be silently thrown away the moment the flap
- * animation touched the same element. (It was, the first time.)
- *
- * The trailing edge of each wing has two notches. That is the whole silhouette:
- * at twenty pixels it is the only feature that separates a bat from a bird, and
- * it survives being scaled down further than anything else in the shape.
- *
- * The glyph carries no colour of its own — `currentColor` throughout — so the
- * modal swarm and the landing page's field each set their own, which is what
- * lets one of them be a silhouette against a cream page and the other a
- * moonlit shape against a near-black one.
+ * One bat, rigged: a body and two wings that beat independently. It was one path and the "flap" was
+ * a `scaleY` on the whole glyph — the bat squashed vertically, body and all, twice a second.
  */
 export const BatGlyph = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 32 16" fill="none" aria-hidden className={className}>
@@ -122,14 +79,7 @@ export const BatGlyph = ({ className }: { className?: string }) => (
   </svg>
 );
 
-/**
- * A cobweb that hangs in one corner.
- *
- * `preserveAspectRatio="none"` deliberately: it is stretched across whatever
- * box it is put in, and a web is one of the few shapes that survives being
- * distorted — it reads as having been spun to fit the gap, which is exactly
- * what a real one does.
- */
+/** A cobweb that hangs in one corner. `preserveAspectRatio="none"` deliberately. */
 export const CobwebGlyph = ({ className }: { className?: string }) => (
   <svg
     viewBox="0 0 48 48"

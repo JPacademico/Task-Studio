@@ -17,17 +17,8 @@ import type {
 } from '../model/types';
 
 /**
- * Makes a failed `responseType: 'blob'` request explain itself.
- *
- * Asking axios for a blob applies to *every* response, including the 400 that
- * says this page is still the uploaded file — so `error.response.data` arrives
- * as a `Blob` holding JSON rather than as the parsed object every other call in
- * the app gets. `errorMessage` then finds no `message` field and falls back to
- * "Request failed with status code 400", which is the least useful sentence
- * available for the one route where the server has something specific to say.
- *
- * Reading the blob and putting the parsed body back where it would have been
- * lets the ordinary error handling downstream work unchanged.
+ * Makes a failed `responseType: 'blob'` request explain itself. Asking axios for a blob applies to
+ * *every* response, including the 400 that says this page is still the uploaded file.
  */
 const rethrowWithReadableBody = async (error: unknown): Promise<never> => {
   if (axios.isAxiosError(error) && error.response?.data instanceof Blob) {
@@ -46,11 +37,8 @@ const rethrowWithReadableBody = async (error: unknown): Promise<never> => {
 
 export const documentApi = {
   /**
-   * Table of contents. Rows carry an excerpt rather than a body.
-   *
-   * With no `projectId` the server returns the caller's personal pages — the
-   * scope is the absence of the parameter rather than a flag, because that is
-   * exactly what "this page belongs to no project" means in the row itself.
+   * Table of contents. Rows carry an excerpt rather than a body. With no `projectId` the server
+   * returns the caller's personal pages.
    */
   async list(projectId?: string, taskId?: string): Promise<ProjectDocument[]> {
     const { data } = await api.get<ProjectDocument[]>('/documents', {
@@ -63,12 +51,8 @@ export const documentApi = {
   },
 
   /**
-   * How full this board is, and how full it may get.
-   *
-   * A request of its own rather than a field on the list, because the two have
-   * completely different lifetimes: the table of contents is invalidated by
-   * every rename, and this only moves when a page is added or removed. Folding
-   * it into `list` would make a title edit refetch a `SUM` over the board.
+   * How full this board is, and how full it may get. A request of its own rather than a field on
+   * the list, because the two have completely different lifetimes.
    */
   async boardUsage(projectId?: string): Promise<BoardUsage> {
     const { data } = await api.get<BoardUsage>('/documents/board-usage', {
@@ -93,12 +77,8 @@ export const documentApi = {
   },
 
   /**
-   * Replaces the list of people who may edit this page.
-   *
-   * The whole set, not a diff — granting and revoking are the same act, and a
-   * client that sends what it means cannot get out of step with a server
-   * applying a sequence of adds and removes. Returns the page, so the caller
-   * gets the recomputed `canEdit` back rather than guessing at it.
+   * Replaces the list of people who may edit this page. The whole set, not a diff — granting and
+   * revoking are the same act.
    */
   async setEditors(documentId: string, userIds: string[]): Promise<ProjectDocument> {
     const { data } = await api.put<ProjectDocument>(`/documents/${documentId}/editors`, {
@@ -118,12 +98,8 @@ export const documentApi = {
   },
 
   /**
-   * What is inside an imported `.zip`.
-   *
-   * Names and sizes, read from the archive's central directory on the API —
-   * nothing is unpacked, here or there. There is deliberately no way to fetch
-   * one entry: the download of the whole archive is what gets the files, and
-   * it always was.
+   * What is inside an imported `.zip`. Names and sizes, read from the archive's central directory
+   * on the API — nothing is unpacked, here or there.
    */
   async archive(documentId: string): Promise<ArchiveListing> {
     const { data } = await api.get<ArchiveListing>(`/documents/${documentId}/archive`);
@@ -137,12 +113,8 @@ export const documentApi = {
   },
 
   /**
-   * One of those pictures, as bytes.
-   *
-   * Fetched rather than linked for the reason the route exists at all: the
-   * picture is on the bucket's origin, and a cross-origin `download` attribute
-   * is ignored — a direct link navigates the tab to the image. Returns the
-   * blob; turning one into a download is the caller's business.
+   * One of those pictures, as bytes. Fetched rather than linked for the reason the route exists at
+   * all: the picture is on the bucket's origin, and a cross-origin `download` attribute is ignored.
    */
   async asset(documentId: string, index: number): Promise<Blob> {
     const { data } = await api
@@ -152,17 +124,8 @@ export const documentApi = {
   },
 
   /**
-   * Every picture in a page, as one `.zip`.
-   *
-   * Built on the API rather than here, and the reasoning lives with the route
-   * that does it (`DocumentsService.readAssetsArchive`). The short version is
-   * that the alternative costs a request per picture through a throttled
-   * byte-serving endpoint, plus a zip writer in every visitor's first load.
-   *
-   * The header carries how many pictures actually made it in, which can be
-   * fewer than the page shows if an object has gone missing from the bucket
-   * underneath it. Absent — an old API, or a proxy that dropped it — the caller
-   * falls back to not claiming a number.
+   * Every picture in a page, as one `.zip`. Built on the API rather than here, and the reasoning
+   * lives with the route that does it (`DocumentsService.readAssetsArchive`).
    */
   async assetsArchive(documentId: string): Promise<{ blob: Blob; count: number | null }> {
     const response = await api
@@ -185,10 +148,8 @@ export const documentApi = {
   },
 
   /**
-   * One picture out of a folder, as a blob to save.
-   *
-   * Fetched through the API for the same reason `asset` is: the bucket is
-   * another origin, and a cross-origin `download` attribute is ignored.
+   * One picture out of a folder, as a blob to save. Fetched through the API for the same reason
+   * `asset` is: the bucket is another origin, and a cross-origin `download` attribute is ignored.
    */
   async folderItem(documentId: string, itemId: string): Promise<Blob> {
     const { data } = await api
@@ -198,12 +159,8 @@ export const documentApi = {
   },
 
   /**
-   * The whole folder as one `.zip`, built by the API on request.
-   *
-   * Two numbers come back with it — how many pictures made it in and how many
-   * the folder holds — because a zip that stopped at its size budget, or lost
-   * a picture the bucket no longer has, should say so rather than pass for
-   * the whole folder.
+   * The whole folder as one `.zip`, built by the API on request. Two numbers come back with it —
+   * how many pictures made it in and how many the folder holds.
    */
   async folderArchive(
     documentId: string,
@@ -233,9 +190,8 @@ export const documentApi = {
   },
 
   /**
-   * "Is this picture already on this project's boards?", asked with the MD5
-   * of the prepared file before uploading it. A match is used instead of the
-   * upload. See `UploadImageOptions.reuse`.
+   * "Is this picture already on this project's boards?", asked with the MD5 of the prepared file
+   * before uploading it. A match is used instead of the upload.
    */
   async lookupBoardAsset(
     projectId: string,
@@ -254,12 +210,8 @@ export const documentApi = {
   },
 
   /**
-   * Brings a design page back in step with the file it mirrors.
-   *
-   * `changed` is the interesting half of the answer. A sync reads Figma's own
-   * version marker first and stops there when it matches, so the usual outcome
-   * is "nothing moved" for the cost of one small request — which is what makes
-   * this a button anybody can press rather than a scheduled job.
+   * Brings a design page back in step with the file it mirrors. `changed` is the interesting half
+   * of the answer.
    */
   async syncFigma(documentId: string): Promise<{ changed: boolean; document: ProjectDocument }> {
     const { data } = await api.post<{ changed: boolean; document: ProjectDocument }>(
@@ -271,12 +223,8 @@ export const documentApi = {
   },
 
   /**
-   * Rendered previews for some of a design's objects.
-   *
-   * Answers with Figma's own short-lived URLs, which the browser then loads
-   * directly — the bytes never come through the API. That is what keeps a grid
-   * of a dozen frames from putting a dozen megabytes of somebody else's PNGs
-   * through a small container to draw a sidebar.
+   * Rendered previews for some of a design's objects. Answers with Figma's own short-lived URLs,
+   * which the browser then loads directly — the bytes never come through the API.
    */
   async figmaImages(
     documentId: string,
@@ -291,12 +239,8 @@ export const documentApi = {
   },
 
   /**
-   * One object out of a design, as bytes to save.
-   *
-   * Fetched rather than linked, for the reason the API proxies it at all: a
-   * cross-origin `download` attribute is ignored, so a direct link to Figma's
-   * CDN navigates the tab to a PNG instead of saving a named file. Returns the
-   * blob; who turns one into a download is the caller's business.
+   * One object out of a design, as bytes to save. Fetched rather than linked, for the reason the
+   * API proxies it at all: a cross-origin `download` attribute is ignored.
    */
   async figmaExport(
     documentId: string,
@@ -315,11 +259,8 @@ export const documentApi = {
   },
 
   /**
-   * The assistant's reading of a design's structure.
-   *
-   * Slow-route timeout, like every other call that waits on a model: the
-   * client has to be the one that keeps waiting, because the API's own attempt
-   * ceiling is what produces the message worth showing.
+   * The assistant's reading of a design's structure. Slow-route timeout, like every other call that
+   * waits on a model: the client has to be the one that keeps waiting.
    */
   async figmaBrief(documentId: string): Promise<FigmaBrief> {
     const { data } = await api.post<FigmaBrief>(
@@ -330,18 +271,7 @@ export const documentApi = {
     return data;
   },
 
-  /**
-   * The page as a file, in the format the reader picked.
-   *
-   * A `POST` for a read, because the editor's unsaved buffer travels with it:
-   * downloading mid-edit has always given what is on the screen rather than
-   * the last save, and a draft is far too big for a query string.
-   *
-   * Returns a `Blob` rather than saving it. Who turns a blob into a download
-   * is the caller's business, and putting `document.createElement('a')` inside
-   * an API module would make this the one function here that cannot be called
-   * without a DOM.
-   */
+  /** The page as a file, in the format the reader picked. */
   async exportAs(
     documentId: string,
     format: DocumentExportFormat,
@@ -357,24 +287,7 @@ export const documentApi = {
     return data;
   },
 
-  /**
-   * The uploaded original, fetched through the API rather than from the bucket.
-   *
-   * Two things fall out of proxying it. The file is behind the same roster
-   * check as the page it belongs to, instead of behind an unguessable URL. And
-   * the preview can render it from a `blob:` URL, which is why the app's
-   * `frame-src` can stay at `'self' blob:` rather than trusting a storage
-   * origin — see the CSP in `vercel.json`.
-   *
-   * `mimeType` is the type the API recorded for the file at upload, and it is
-   * re-applied to the blob rather than taken from the response. That is what
-   * makes framing the result safe: a `blob:` URL's recorded type is
-   * authoritative — the browser does not sniff it — so a blob built as
-   * `application/pdf` is handed to the PDF viewer whatever its bytes turn out
-   * to say, and can never be interpreted as same-origin HTML.
-   *
-   * The caller owns the returned object URL and has to revoke it.
-   */
+  /** The uploaded original, fetched through the API rather than from the bucket. */
   async sourceObjectUrl(documentId: string, mimeType: string): Promise<string> {
     const { data } = await api
       .get<Blob>(`/documents/${documentId}/source`, { responseType: 'blob' })

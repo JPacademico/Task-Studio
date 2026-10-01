@@ -26,13 +26,8 @@ interface RealtimeContextValue {
 }
 
 /**
- * The second argument the API sends beside every realtime payload.
- *
- * `origin` is the `X-Client-Id` of the request that caused the event, when
- * there was one — see `shared/api/client-id`. It is optional in the type
- * because it is optional on the wire: an event raised by a cron sweep, a
- * webhook or a server that has not been deployed yet simply has none, and every
- * handler here treats that as "somebody else did this".
+ * The second argument the API sends beside every realtime payload. `origin` is the `X-Client-Id` of
+ * the request that caused the event, when there was one — see `shared/api/client-id`.
  */
 interface RealtimeMeta {
   origin?: string;
@@ -55,9 +50,8 @@ const NOTIFICATION_TOAST: Record<AppNotification['type'], 'info' | 'success' | '
 };
 
 /**
- * Owns the single socket connection and the app-wide events every screen cares
- * about (notifications, task mutations from teammates). Project-scoped traffic
- * — chat, whiteboard, presence — is subscribed to by the widgets that need it.
+ * Owns the single socket connection and the app-wide events every screen cares about
+ * (notifications, task mutations from teammates).
  */
 export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
   const status = useSessionStore((state) => state.status);
@@ -77,24 +71,7 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
     // effect run, so a reconnect or a sign-out cannot leave one pending.
     let taskRefreshTimer: number | undefined;
 
-    /*
-     * ---- Staying connected ------------------------------------------------
-     *
-     * socket.io reconnects by itself after a dropped transport, and does not
-     * after the two failures that actually happen here: the gateway refusing a
-     * handshake whose access token has expired (which it signals by
-     * disconnecting the socket server-side), and a `connect_error` raised
-     * before the socket was ever active. Both leave a client that has stopped
-     * trying, which is what put the header's "Live" pill permanently offline
-     * on any tab left open for more than a quarter of an hour.
-     *
-     * So those two are revived by hand, on a backoff of our own — the socket's
-     * own backoff does not apply to a retry it is not making. The delay grows
-     * to half a minute and resets the moment a connection succeeds or the user
-     * comes back to the tab, because somebody looking at the screen is the one
-     * situation where waiting another 30 seconds is worth spending a request
-     * to avoid.
-     */
+    // --- Staying connected ---
     let reviveTimer: number | undefined;
     let reviveAttempt = 0;
 
@@ -120,13 +97,8 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
     };
 
     /**
-     * `reason` is the whole point of this handler.
-     *
-     * `io client disconnect` is our own sign-out and must not be undone.
-     * `io server disconnect` is the gateway rejecting us — a stale token,
-     * nine times out of ten — and is the case socket.io explicitly will not
-     * retry. Everything else is a transport problem the library is already
-     * working on, so it is left alone.
+     * `reason` is the whole point of this handler. `io client disconnect` is our own sign-out and
+     * must not be undone.
      */
     const handleDisconnect = (reason: string) => {
       setIsConnected(false);
@@ -142,15 +114,8 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
     /** The library's budget is infinite now, but a guard costs nothing. */
     const handleReconnectFailed = () => scheduleRevive();
 
-    /*
-     * The three moments worth spending a probe on.
-     *
-     * A laptop coming out of sleep fires none of the socket's own events for
-     * some time — the OS simply stops delivering to a closed socket — so the
-     * cheapest reliable signal that the connection may be stale is the user
-     * turning their attention back to the page. `online` covers the same
-     * thing for a network that came back while the tab was in front.
-     */
+    // The three moments worth spending a probe on. A laptop coming out of sleep fires none of the
+    // socket's own events for some time — the OS simply stops delivering to a closed socket.
     const handleWake = () => {
       if (document.visibilityState === 'hidden') return;
       reviveAttempt = 0;
@@ -165,15 +130,8 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
 
       const level = NOTIFICATION_TOAST[notification.type] ?? 'info';
 
-      /*
-       * The same wording the bell renders, not the raw columns.
-       *
-       * A due-soon alert carries its deadline as an instant in the payload, so
-       * the description has to be assembled here exactly as the panel
-       * assembles it — otherwise the toast and the row that follows it a
-       * second later say different things about the same task. See
-       * `entities/notification/lib/notification-copy`.
-       */
+      // The same wording the bell renders, not the raw columns. A due-soon alert carries its
+      // deadline as an instant in the payload.
       const description =
         [notificationBody(notification), notificationDeadline(notification)]
           .filter(Boolean)
@@ -184,20 +142,8 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
       else if (level === 'warning') toast.warning(notification.title, options);
       else toast(notification.title, options);
 
-      /*
-       * The same event again, on the desktop — but only when it would tell the
-       * user something the toast cannot.
-       *
-       * `document.hidden` is the whole condition. With the tab in front the
-       * toast has already said it, and a system notification on top of it is
-       * the duplicate-alert pattern that makes people turn notifications off.
-       * The value is entirely in the case where nobody is looking.
-       *
-       * A pure no-op unless the user opted in through the bell — see
-       * `showDesktopNotification`, which checks permission itself rather than
-       * trusting callers to. Nothing here can throw, and nothing downstream
-       * depends on it having run.
-       */
+      // The same event again, on the desktop — but only when it would tell the user something the
+      // toast cannot. `document.hidden` is the whole condition.
       if (document.hidden) {
         showDesktopNotification({
           title: notification.title,
@@ -212,47 +158,11 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
       }
     };
 
-    /*
-     * A teammate changed something — refresh the task caches, no toast.
-     *
-     * Coalesced, because task traffic arrives in bursts and each of these is
-     * expensive: `tasks.all` covers every mounted list, every agenda and every
-     * open detail, so one invalidation is a fan of parallel requests. Three
-     * events in the same tick — which is what completing a shared task or
-     * reordering a column produces — used to be three of those fans.
-     *
-     * The window is short on purpose. This is a *live* surface: 200ms is below
-     * the threshold where a person watching a colleague work would notice a
-     * delay, and comfortably wide enough to swallow a burst.
-     *
-     * The overview goes with it. The home dashboard's counters are derived from
-     * assignment rows, so a colleague finishing their half of a shared task
-     * changes *my* numbers — and before this they simply sat there wrong until
-     * something else happened to invalidate them.
-     */
+    // A teammate changed something — refresh the task caches, no toast. Coalesced, because task
+    // traffic arrives in bursts and each of these is expensive.
     const handleTaskEvent = (_payload: unknown, meta?: RealtimeMeta) => {
-      /*
-       * Not for the tab that caused it.
-       *
-       * This is the fix for the rollback people actually saw. Drag a card to
-       * Completed and straight back to To do: the first write's `task:updated`
-       * comes back to *this* tab while the second write is still in flight, the
-       * refetch below asks a server that has only been told about the first
-       * one, and its perfectly correct `COMPLETED` is painted over the `TODO`
-       * the user is looking at. The card jumps back on its own, sits there for
-       * a round trip, and then corrects itself.
-       *
-       * The tab that made the change is the one tab that needs no telling: it
-       * applied the change optimistically before the request left, it holds the
-       * newest intent, and its own mutation handlers reconcile it — including
-       * rolling it back if the write actually failed. Everybody else (a
-       * teammate, a second tab, the same account on a phone) sees an origin
-       * that is not theirs and refetches exactly as before.
-       *
-       * An event with no origin at all — a scheduled sweep, an inbound webhook,
-       * a commit closing a task from the CLI — belongs to nobody and is
-       * therefore treated as somebody else's. See `isOwnEvent`.
-       */
+      // Not for the tab that caused it. This is the fix for the rollback people actually saw. Drag
+      // a card to Completed and straight back to To do.
       if (isOwnEvent(meta)) return;
 
       if (taskRefreshTimer !== undefined) return;
@@ -265,18 +175,11 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
     };
 
     /**
-     * A column was added, renamed, reordered or deleted.
-     *
-     * Its own handler rather than another `handleTaskEvent` subscriber: the
-     * tasks did not change, only the lanes they sit in, and invalidating every
-     * task list in the cache to redraw a dozen short rows is a refetch of the
-     * whole board to learn a word changed. `taskGroups.all` is the prefix that
-     * covers both the picker's list and the board's read.
+     * A column was added, renamed, reordered or deleted. Its own handler rather than another
+     * `handleTaskEvent` subscriber: the tasks did not change.
      */
     const handleTaskGroupEvent = (_payload: unknown, meta?: RealtimeMeta) => {
-      // Same reasoning as `handleTaskEvent`: renaming or reordering a column is
-      // optimistic, and refetching on the echo of your own write is how a
-      // dragged column snaps back for a round trip.
+      // Same reasoning as `handleTaskEvent`: renaming or reordering a column is optimistic.
       if (isOwnEvent(meta)) return;
 
       void queryClient.invalidateQueries({ queryKey: queryKeys.taskGroups.all });
@@ -288,23 +191,14 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
     };
 
-    /*
-     * The project was binned by its owner, and this tab is somebody else.
-     *
-     * The server emitted this from the start and nothing listened, which is
-     * half of why a deleted project's tasks stayed on a teammate's personal
-     * board: their agenda has no reason to refetch — no task changed — and the
-     * cards sat there until something unrelated invalidated the cache. The
-     * other half was the deleting tab's own cache, handled in
-     * `useDeleteProject`.
-     *
-     * The project's own subtree is dropped rather than invalidated, for the
-     * reason spelled out there: it is gone, and asking the server about it
-     * four more times produces four 404s with toasts attached. This tab may
-     * well be *looking* at the project when this arrives, so the detail
-     * queries have live observers — `removeQueries` empties them and the page
-     * falls back to its not-found state instead of flashing an error.
-     */
+    // Scheduled syncs have no originating tab, so this one is never skipped as "own".
+    const handleBoardSync = (payload: { projectId?: string }) => {
+      if (!payload?.projectId) return;
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.boardSync(payload.projectId) });
+    };
+
+    // The project was binned by its owner, and this tab is somebody else. The server emitted this
+    // from the start and nothing listened.
     const handleProjectDeleted = (payload: { projectId?: string }, meta?: RealtimeMeta) => {
       if (isOwnEvent(meta)) return;
 
@@ -331,14 +225,8 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
     socket.on('task:created', handleTaskEvent);
     socket.on('task:updated', handleTaskEvent);
     socket.on('task:deleted', handleTaskEvent);
-    /*
-     * The task sub-checklist is gone: a task's steps are Post-its now, so a
-     * step arriving or being ticked comes through as a note event. `note:*`
-     * fires for the whiteboard too, which is why it lands on the debounced
-     * task handler rather than on anything more targeted — the alternative is
-     * inspecting every note's scope on the client to decide whether it was one
-     * of a task's.
-     */
+    // The task sub-checklist is gone: a task's steps are Post-its now, so a step arriving or being
+    // ticked comes through as a note event.
     socket.on('task-notes:changed', handleTaskEvent);
     socket.on('note:created', handleTaskEvent);
     socket.on('note:updated', handleTaskEvent);
@@ -348,6 +236,7 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
     socket.on('roster:left', handleRosterEvent);
     socket.on('project:updated', handleRosterEvent);
     socket.on('project:deleted', handleProjectDeleted);
+    socket.on('board-sync:changed', handleBoardSync);
     socket.on('error', handleError);
 
     return () => {
@@ -374,6 +263,7 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
       socket.off('roster:left', handleRosterEvent);
       socket.off('project:updated', handleRosterEvent);
       socket.off('project:deleted', handleProjectDeleted);
+      socket.off('board-sync:changed', handleBoardSync);
       socket.off('error', handleError);
     };
   }, [queryClient, status]);
@@ -389,13 +279,8 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
 export const useRealtime = (): RealtimeContextValue => useContext(RealtimeContext);
 
 /**
- * How many mounted components currently want each room open.
- *
- * A room is shared state on one socket, so the naive "join on mount, leave on
- * unmount" breaks as soon as two components want the same one: leaving a
- * project page while its chat is pinned would emit `project:leave` and take
- * the still-open conversation offline with it. Counting the holders means the
- * room closes when the last one lets go, not the first.
+ * How many mounted components currently want each room open. A room is shared state on one socket,
+ * so the naive "join on mount.
  */
 const roomHolders = new Map<string, number>();
 

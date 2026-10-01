@@ -1,12 +1,8 @@
 import type { UserSummary } from '@/entities/user/model/types';
 
 /**
- * The ladder inside a company, which is not the ladder inside a project.
- *
- * Deliberately a separate type from `ProjectRole` even though the three values
- * are spelled the same, mirroring the API's two enums: an organization ADMIN
- * may file projects and invite colleagues, and that says nothing at all about
- * what they may do inside any particular project.
+ * The ladder inside a company, which is not the ladder inside a project. Deliberately a separate
+ * type from `ProjectRole` even though the three values are spelled the same.
  */
 export type OrgRole = 'OWNER' | 'ADMIN' | 'MEMBER';
 
@@ -23,31 +19,15 @@ export interface OrganizationProject {
   updatedAt: string;
   ownerId: string;
   /**
-   * Whether this reader is on the project's roster.
-   *
-   * The board shows staff every project the company runs, which means some of
-   * these cards lead to a page that will refuse them. The card says so rather
-   * than offering a link that dead-ends in a 404 — seeing a project exist and
-   * being able to open it are two different permissions, and the interface has
-   * to be honest about which one you have.
+   * Whether this reader is on the project's roster. The board shows staff every project the company
+   * runs, which means some of these cards lead to a page that will refuse them.
    */
   hasAccess: boolean;
 }
 
 /**
- * A company: its people, and the projects they run.
- *
- * This used to be a folder — a name, a colour and a list of projects, with no
- * roster of its own. It now has staff, invitations, a banner, a calendar and a
- * metrics board, because what it is asked to model is a company rather than a
- * shelf.
- *
- * What did **not** change is what it grants. Membership here lets you see the
- * company — its projects board, its numbers, its calendar, its staff list — and
- * nothing inside any of those projects. Opening one still requires being on its
- * roster, and that invitation still comes from the project. See the API's
- * `OrganizationsService` for why keeping those two questions apart is what
- * makes a second membership system safe.
+ * A company: its people, and the projects they run. This used to be a folder — a name, a colour and
+ * a list of projects, with no roster of its own.
  */
 export interface Organization {
   id: string;
@@ -61,13 +41,8 @@ export interface Organization {
   owner: UserSummary;
 
   /**
-   * `null` for a reader who is not staff.
-   *
-   * An organization used to be visible to anybody on the roster of a project
-   * inside it, and those people can still find it — but they are guests, not
-   * employees. Every write refuses them, and the page shows them the company
-   * without the controls. Spelled as `null` rather than folded into MEMBER so
-   * that distinction cannot quietly stop being drawn.
+   * `null` for a reader who is not staff. An organization used to be visible to anybody on the
+   * roster of a project inside it, and those people can still find it — but they are guests.
    */
   myRole: OrgRole | null;
   isOwner: boolean;
@@ -126,10 +101,8 @@ export interface AttachableProject {
 }
 
 /**
- * One person to invite, as the composer collects them.
- *
- * `userId` when they were picked from a list the client already had, `email`
- * when the address was typed. Never both, and the API needs at least one.
+ * One person to invite, as the composer collects them. `userId` when they were picked from a list
+ * the client already had, `email` when the address was typed.
  */
 export interface OrganizationInviteDraft {
   userId?: string;
@@ -139,13 +112,7 @@ export interface OrganizationInviteDraft {
   message?: string;
 }
 
-/**
- * What became of one invitation in a batch.
- *
- * Reported per person rather than as one "done", because a create dialog that
- * quietly drops a mistyped address is one where somebody discovers a week later
- * that they were never invited.
- */
+/** What became of one invitation in a batch. Reported per person rather than as one "done". */
 export interface InviteOutcome {
   email: string | null;
   displayName: string | null;
@@ -175,16 +142,11 @@ export interface UpdateOrganizationPayload {
   bannerUrl?: string;
 }
 
-// ---------------------------------------------------------------------------
-// Metrics
-// ---------------------------------------------------------------------------
+// --- Metrics -----------------------------------------------------------------
 
 /**
- * One project's headline numbers, as the company's board reads them.
- *
- * The unit is a project rather than a task, and that is the whole difference
- * between this and a project dashboard: the reader is not doing the work, and
- * the question is "which of these needs me".
+ * One project's headline numbers, as the company's board reads them. The unit is a project rather
+ * than a task, and that is the whole difference between this and a project dashboard.
  */
 export interface OrganizationProjectMetrics {
   id: string;

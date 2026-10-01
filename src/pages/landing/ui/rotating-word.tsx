@@ -5,38 +5,8 @@ import { cn } from '@/shared/lib/cn';
 import { useT, type TranslationKey } from '@/shared/i18n';
 
 /**
- * The nouns the headline cycles through.
- *
- * Every one is a thing this app actually holds — a task, a meeting, a note, a
- * project — and the last is the word they add up to. That ordering is the
- * argument the headline is making: the specific things first, so "work" lands
- * as a summary of what was just listed rather than as a vague claim on its own.
- *
- * Deliberately five. Three is too few to read as a list and reads as a gimmick;
- * eight means somebody watches the same word come round twice before they have
- * finished the paragraph underneath.
- *
- * ## Why the possessive is not here any more
- *
- * It used to be: a second key per noun, animating in its own column, because
- * English has one "your" for all five and Portuguese has three — *suas*
- * tarefas, *seus* projetos, *seu* trabalho, agreeing with the gender and number
- * of the word behind it.
- *
- * That was correct grammar and a broken headline. Two columns of *different*
- * widths turning over at the same instant is two moving parts where the design
- * has room for one, and on the two Portuguese boundaries where the possessive
- * genuinely changes — `suas` → `seus` → `seu` — the pair visibly reflowed
- * against the verb beside it. No amount of reserved width fixes it, because
- * both columns are reserved at their own widest and the *ratio* between them is
- * what moves.
- *
- * So the determiner went back into the fixed part of the sentence, where each
- * language writes it once and to its own taste: English says "Manage your" and
- * cycles the noun; Portuguese says "Organize" and cycles the noun, which is
- * idiomatic on its own — *Organize tarefas* needs no possessive to mean what it
- * means. One column, one thing moving, and the line is the same length in every
- * language.
+ * The nouns the headline cycles through. Every one is a thing this app actually holds — a task, a
+ * meeting, a note, a project — and the last is the word they add up to.
  */
 const WORDS: TranslationKey[] = [
   'landing.word.tasks',
@@ -52,56 +22,14 @@ const HOLD_MS = 2_200;
 const TRANSITION = { duration: 0.42, ease: [0.22, 1, 0.36, 1] } as const;
 
 /**
- * How a word leaves and how the next one arrives.
- *
- * ## Why this is a straight vertical move and nothing else
- *
- * It used to carry a `rotateX` as well, and to run under
- * `AnimatePresence mode="popLayout"`. Both had to go, and the second was the
- * actual defect.
- *
- * `popLayout` takes the *exiting* child out of layout flow by giving it
- * `position: absolute`. Inside a grid cell that is fatal to the arrangement
- * this component is built on: an absolutely-positioned grid item is no longer
- * placed by the cell, so the leaving word snapped to the cell's start and rose
- * *diagonally* rather than straight up — which is precisely the "going upwards
- * to the left" that was reported.
- *
- * Sync mode keeps both words in the same grid cell, in flow, stacked. The cell
- * is already as wide as its widest entry (the invisible measuring layer below),
- * so two words sharing it for 420ms changes no geometry at all. Nothing moves
- * except the type.
- *
- * `rotateX` went with it: without a `perspective` on the parent it was a
- * vertical squash rather than a rotation, and squashing letterforms mid-cycle
- * is the kind of effect that reads as a rendering fault at a glance.
+ * How a word leaves and how the next one arrives. It used to carry a `rotateX` as well, and to run
+ * under `AnimatePresence mode="popLayout"`. Both had to go, and the second was the actual defect.
  */
 const ENTER = { y: '0.62em', opacity: 0 } as const;
 const EXIT = { y: '-0.62em', opacity: 0 } as const;
 const REST = { y: 0, opacity: 1 } as const;
 
-/**
- * One word in the headline, replaced on a loop.
- *
- * ## Why the width is reserved rather than animated
- *
- * The words are different lengths, and a headline that reflows every two
- * seconds drags the line under it around with it — which is the single most
- * common way this effect goes wrong. So every word is stacked in the same grid
- * cell, invisible except the current one, and the cell is as wide as the
- * longest of them. Nothing moves except the word itself.
- *
- * That also means the reserved width is correct in *every language* without
- * anybody measuring anything: the widest Portuguese word reserves the
- * Portuguese width, because the same markup is doing the measuring.
- *
- * ## Reduced motion
- *
- * Holds the first word and stops. Not a faster cycle, not a cross-fade — a
- * headline that changes its own words is precisely the kind of unrequested
- * motion the preference exists to turn off, and the sentence reads perfectly
- * with one noun in it.
- */
+/** One word in the headline, replaced on a loop. */
 export const RotatingWord = ({ className }: { className?: string }) => {
   const t = useT();
   const reduceMotion = useReducedMotion();
@@ -121,131 +49,22 @@ export const RotatingWord = ({ className }: { className?: string }) => {
 
   return (
     <span
-      /*
-       * Opts this whole cell out of a skin that clips a gradient through its
-       * headings — Vibecoded does, and this is the one thing in a heading that
-       * moves. See the `[data-no-gradient]` rule at the foot of `index.css` for
-       * why a transformed child cannot take an ancestor's clipped background.
-       */
+      /* Opts this whole cell out of a skin that clips a gradient through its headings — Vibecoded
+         does, and this is the one thing in a heading that moves. */
       data-no-gradient
       className={cn(
         'relative inline-grid',
-        /*
-         * The hand, at the headline's own size.
-         *
-         * The noun is the only word in the headline that changes, and it says
-         * so by being written in a different hand — the skin's own
-         * `--font-hand`, the same face as the wordmark. That is the whole of
-         * the emphasis, and it is enough.
-         *
-         * It used to be set at `1.15em` as well, on the theory that a script
-         * face reads smaller than a roman at the same size and needs the
-         * difference made up. In this pairing it does not: the hand has a
-         * generous x-height, so the correction landed as a word visibly
-         * larger than the words around it — which reads as a mistake in the
-         * type rather than as emphasis, and is the one thing a headline
-         * cannot afford.
-         *
-         * `em`, not a fixed size, so it tracks the headline's own responsive
-         * steps rather than needing a value per breakpoint.
-         */
+        /* The hand, at the headline's own size. The noun is the only word in the headline that
+           changes, and it says so by being written in a different hand. */
         'font-hand text-[1em] leading-[0.95]',
-        /*
-         * Clipped, so a word travelling out of the cell is not briefly readable
-         * over the line above.
-         *
-         * ## Why there is no `vertical-align` here at all
-         *
-         * There was: `align-bottom`, and it is what made the noun sit visibly
-         * higher than the roman words beside it. It aligns the box's *bottom
-         * margin edge* with the bottom of the line box — the descender line —
-         * so the word floated up by however deep the headline's descenders go.
-         * Small enough to read as bad kerning rather than as a bug, which is
-         * why it survived several passes over this file.
-         *
-         * The reasoning behind it was that `overflow: hidden` destroys an
-         * inline box's baseline, so one has to be faked. That is true of an
-         * inline-*block*; it is not true here. This is an inline-**grid**, and
-         * a grid box takes its baseline from the items in its first row — which
-         * are the words themselves. The baseline was real the whole time.
-         *
-         * So the correct value is the default, and it was checked rather than
-         * assumed: a zero-height inline-block probe dropped into the headline
-         * and another inside the live word put the two baselines 12.94px apart
-         * under an explicit `-0.16em` shift, at a font-size of 80.86px — the
-         * shift and the error being the same number is what identifies the
-         * override, not the box, as the thing that was wrong. Removing it puts
-         * the delta at zero.
-         *
-         * ## Why the padding is deep, and why a negative margin cancels it
-         *
-         * The padding is what gives descenders somewhere to be drawn instead of
-         * being sliced off by the clip, and at `0.16em` there was not enough of
-         * it: the bottom of every `p`, `j` and `ç` in the list was being cut.
-         *
-         * The arithmetic, measured rather than guessed. The cell is one line
-         * box tall — `leading-[0.95]`, so 0.95em — while the hand's own content
-         * area is 1.75em (1.252 ascent, 0.498 descent). The difference is split
-         * as half-leading, so the glyphs overflow the box by 0.4em at each end
-         * and the baseline sits 0.85em down. A descender reaching the font's
-         * full 0.498em therefore ends 1.35em from the top of a box that is
-         * 1.11em tall with the old padding — about six pixels of `p` missing at
-         * the headline's size, which is exactly what was reported.
-         *
-         * `0.42em` clears the deepest glyph the metrics allow, with room for
-         * the twelve other hands the skins set — a script face is precisely
-         * where a long descender is most likely, and the value is chosen off
-         * the *declared* descent rather than off the ink of these five words so
-         * it does not have to be re-measured every time a noun changes.
-         *
-         * The negative margin is what keeps the rest of the line where it was.
-         * Padding on an inline-level box grows its margin box, and the line box
-         * grows to fit — so deepening the padding alone would have pushed the
-         * second line of the headline down by a quarter of an em, on the one
-         * line of the page whose spacing is most visible. `-mb` gives back
-         * exactly the added padding, so the box this occupies in the line is
-         * unchanged and only the *clip* is deeper. The baseline does not move:
-         * an inline-grid takes it from the items in its first row, not from its
-         * own margin edge — see the note above.
-         *
-         * The horizontal pair does the same job for a hand's side bearings. A
-         * script face overhangs its advance width, and a clip at the content
-         * edge takes the tail off the last letter; `px`/`-mx` widen the clip
-         * without widening the box, so the cell stays exactly as wide as the
-         * longest noun and the headline still never reflows.
-         *
-         * ## And why there is now a top pair as well
-         *
-         * The same bug, at the other end, and only visible in Portuguese. Three
-         * of the five nouns there are *reunioes*, *anotacoes* and *projetos* -
-         * and the first two carry a tilde. A tilde sits above the x-height,
-         * well into the ascender band, and the clip was at the content edge on
-         * that side too: on the skins whose `--font-hand` has a tall ascent the
-         * mark was clipped flat, which turns `o-tilde` into something that
-         * reads as a printing fault in a headline forty pixels high.
-         *
-         * `0.34em` rather than the 0.42 below, and the asymmetry is real: the
-         * deepest thing a hand draws is a descender, which is a stroke, while
-         * the highest is a diacritic sitting on a lowercase letter - it clears
-         * the ascender line on almost no face. The value still has headroom
-         * over every hand the fourteen skins set, because it is chosen off the
-         * declared ascent rather than off the ink of these five words.
-         *
-         * `-mt` gives the padding straight back, for exactly the reason `-mb`
-         * does: without it the headline's *first* line would move down by a
-         * third of an em, which is more visible than the thing being fixed.
-         */
+        /* Clipped, so a word travelling out of the cell is not briefly readable over the line
+           above. */
         'overflow-hidden px-[0.1em] -mx-[0.1em] pb-[0.42em] -mb-[0.26em] pt-[0.34em] -mt-[0.34em]',
         className,
       )}
     >
-      {/*
-        The measuring layer. Every noun rendered at once, invisible and
-        un-clickable, all in the one cell — so the cell is as wide as the
-        longest of them and the headline never reflows. `aria-hidden` because a
-        screen reader must not read the list; the live word below is the
-        content.
-      */}
+      {/* The measuring layer. Every noun rendered at once, invisible and un-clickable, all in
+          the one cell. */}
       {WORDS.map((word) => (
         <span
           key={word}
@@ -256,9 +75,8 @@ export const RotatingWord = ({ className }: { className?: string }) => {
         </span>
       ))}
 
-      {/* Sync mode, deliberately — see the note on `ENTER`. Both words share the
-          grid cell while one leaves and the other arrives, which is what keeps
-          the movement vertical and the geometry still. */}
+      {/* Sync mode, deliberately — see the note on `ENTER`. Both words share the grid cell
+          while one leaves and the other arrives. */}
       <AnimatePresence initial={false}>
         <motion.span
           key={current}
@@ -266,11 +84,8 @@ export const RotatingWord = ({ className }: { className?: string }) => {
           animate={REST}
           exit={reduceMotion ? undefined : EXIT}
           transition={TRANSITION}
-          /*
-           * `col-start-1 row-start-1` puts it in the same cell as the measuring
-           * layer rather than after it, and `whitespace-nowrap` stops a
-           * two-word noun breaking mid-rotation.
-           */
+          /* `col-start-1 row-start-1` puts it in the same cell as the measuring layer rather than
+             after it, and `whitespace-nowrap` stops a two-word noun breaking mid-rotation. */
           className="gpu col-start-1 row-start-1 whitespace-nowrap text-brand"
         >
           {t(current)}

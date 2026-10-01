@@ -3,13 +3,8 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useRealtime } from '@/app/providers/realtime-provider';
 
 /**
- * At most one "typing" frame this often while the keys keep coming.
- *
- * It used to be one frame per keystroke — a fast typist is eight a second, to
- * every socket in the room, each one a state update on every receiving screen
- * for a badge that only ever says "somebody is typing". The receiver keeps the
- * badge up for a little longer than this (`TYPING_VISIBLE_MS`), so a throttled
- * stream still reads as continuous.
+ * At most one "typing" frame this often while the keys keep coming. It used to be one frame per
+ * keystroke — a fast typist is eight a second, to every socket in the room.
  */
 const TYPING_EVERY_MS = 2_000;
 

@@ -1,31 +1,6 @@
 /**
- * The marks for the services this app actually connects to.
- *
- * ## Why these are drawn and not fetched
- *
- * A landing page that loads eight logos from a CDN is a landing page with eight
- * requests, a content-security question and a layout shift — and the Artifact
- * of that on a free-tier deployment is a strip that pops in half a second after
- * everything else. These are a few hundred bytes of path data each, inline, and
- * they are drawn the moment the section is.
- *
- * ## Why they carry brand colour rather than `currentColor`
- *
- * Because *which service* is the entire information. A row of identical grey
- * glyphs says "we integrate with some things"; the colours are what let
- * somebody spot the one they use without reading a single label. This is the
- * one place in the app where a mark deliberately ignores the active skin —
- * every other icon takes the skin's accent, and these are quoting somebody
- * else's identity rather than expressing ours.
- *
- * ## What is deliberately not here
- *
- * No logo this product does not genuinely talk to. It is tempting to fill a
- * strip with every tool a reader might recognise, and it is a lie that gets
- * discovered on the pricing page. Jira and Asana appear as a *file* mark
- * rather than their own logos for exactly that reason: the app reads their
- * exports, it does not connect to them, and their logo in a row of connections
- * would promise an integration that does not exist.
+ * The marks for the services this app actually connects to. A landing page that loads eight logos
+ * from a CDN is a landing page with eight requests, a content-security question and a layout shift.
  */
 
 interface MarkProps {
@@ -53,14 +28,8 @@ export const SlackMark = ({ className }: MarkProps) => (
 );
 
 /**
- * Figma — the five shapes, in the five colours.
- *
- * Taller than it is wide, unlike every other mark here, and the `viewBox` says
- * so rather than the geometry being squashed to fit a square: the logo's 2:3
- * proportion is most of what makes it recognisable at 20px, and a Figma mark
- * stretched into a circle reads as a generic cluster of dots. It letterboxes
- * inside whatever box the caller sizes, which is what `preserveAspectRatio`
- * does by default and is the right answer here.
+ * Figma — the five shapes, in the five colours. Taller than it is wide, unlike every other mark
+ * here, and the `viewBox` says so rather than the geometry being squashed to fit a square.
  */
 export const FigmaMark = ({ className }: MarkProps) => (
   <svg viewBox="0 0 24 36" aria-hidden="true" focusable="false" className={className}>
@@ -81,13 +50,18 @@ export const TrelloMark = ({ className }: MarkProps) => (
   </svg>
 );
 
+/** Jira — three stacked tiles in Atlassian blue, a nod to the mark rather than a copy of it. */
+export const JiraMark = ({ className }: MarkProps) => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className={className}>
+    <rect x="3" y="3" width="18" height="18" rx="3" fill="#0052CC" />
+    <path d="M12 5.5 18.5 12 12 18.5 5.5 12Z" fill="#2684FF" />
+    <path d="M12 8.6 15.4 12 12 15.4 8.6 12Z" fill="#ffffff" />
+  </svg>
+);
+
 /**
- * The calendar-feed mark: a document with a broadcast wave on it.
- *
- * Not any one vendor's logo, deliberately. The `.ics` feed is the integration
- * that works with *every* calendar — Apple, Outlook, Thunderbird, Fastmail —
- * and picking one of their logos to stand for all of them would understate it
- * to everybody using the other three.
+ * The calendar-feed mark: a document with a broadcast wave on it. Not any one vendor's logo,
+ * deliberately.
  */
 export const FeedMark = ({ className }: MarkProps) => (
   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className={className}>
@@ -105,10 +79,8 @@ export const FeedMark = ({ className }: MarkProps) => (
 );
 
 /**
- * The board-export mark: a spreadsheet.
- *
- * Stands for Jira, Asana, Monday and Trello's own CSV — see the module note on
- * why those get a file rather than their logos.
+ * The board-export mark: a spreadsheet. Stands for Jira, Asana, Monday and Trello's own CSV — see
+ * the module note on why those get a file rather than their logos.
  */
 export const ExportMark = ({ className }: MarkProps) => (
   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className={className}>
@@ -138,13 +110,8 @@ export const WebhookMark = ({ className }: MarkProps) => (
 );
 
 /**
- * GitHub — the mark, drawn rather than taken from a line-icon set.
- *
- * The lucide glyph is a one-weight outline that disappears at 16px inside a
- * tinted chip, which is exactly the complaint the Connections shelf had about
- * every icon on it. This is the filled silhouette people actually recognise,
- * and it keeps its own black-and-white identity across all thirteen skins for
- * the same reason the four above do.
+ * GitHub — the mark, drawn rather than taken from a line-icon set. The lucide glyph is a one-weight
+ * outline that disappears at 16px inside a tinted chip.
  */
 export const GitHubMark = ({ className }: MarkProps) => (
   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className={className}>
@@ -157,15 +124,8 @@ export const GitHubMark = ({ className }: MarkProps) => (
 );
 
 /**
- * Spotify — the circle and its three arcs.
- *
- * Drawn rather than fetched, like every other mark in this file: a remote
- * brand asset is a network request, a cache policy and a thing that breaks when
- * somebody else reorganises their CDN. The arcs are strokes rather than filled
- * crescents, which is what keeps it legible at the 18px the player draws it at.
- *
- * `currentColor` on the glyph and the brand green on the disc, so the mark sits
- * correctly on a dark panel and on a cream one without a second copy.
+ * Spotify — the circle and its three arcs. Drawn rather than fetched, like every other mark in this
+ * file: a remote brand asset is a network request.
  */
 export const SpotifyMark = ({ className }: MarkProps) => (
   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className={className}>

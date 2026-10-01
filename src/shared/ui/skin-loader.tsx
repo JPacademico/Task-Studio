@@ -5,19 +5,8 @@ import type { ThemeSkin } from '@/entities/user/model/types';
 import { cn } from '@/shared/lib/cn';
 
 /**
- * Waiting, drawn in the active skin.
- *
- * A skin owns its type, its corners and its motion curve, so a single grey
- * spinner in the middle of all six of them was the one moment the illusion
- * dropped. Each loader below is the same idea expressed in that skin's own
- * material: ink for the illustrated one, a block caret for the CRT, geared
- * brass for the vintage plates, stepped sprites for the arcade, a satellite on
- * an orbit for the deep field.
- *
- * Every one of them is CSS on two or three nodes animating transform/opacity
- * only — see the `.loader-*` block in `index.css`. Nothing here runs a
- * JavaScript animation, so a page can hold several without costing a frame,
- * and `prefers-reduced-motion` flattens all of them through the global rule.
+ * Waiting, drawn in the active skin. A skin owns its type, its corners and its motion curve, so a
+ * single grey spinner in the middle of all six of them was the one moment the illusion dropped.
  */
 
 /** A cog, drawn once and reused at two sizes by the vintage loader. */
@@ -105,17 +94,8 @@ const BODY: Record<ThemeSkin, ReactElement> = {
     </span>
   ),
 
-  /*
-   * Not a spinner. A rune being cut, holding its light, and worn away again.
-   *
-   * `pathLength="100"` is what makes the draw-on work: it renormalises the
-   * stave to a hundred units so `stroke-dasharray: 100` in the stylesheet is
-   * exactly one full stroke, whatever the path measures. Redrawing the rune
-   * then cannot silently break the animation.
-   *
-   * The ring around it ratchets through eight notches rather than sweeping —
-   * this skin has no smooth motion anywhere else either.
-   */
+  // Not a spinner. A rune being cut, holding its light, and worn away again. `pathLength="100"` is
+  // what makes the draw-on work.
   RUNIC: (
     <span className="loader-rune">
       <svg viewBox="0 0 40 40" fill="none">
@@ -145,26 +125,16 @@ const BODY: Record<ThemeSkin, ReactElement> = {
     </span>
   ),
 
-  // Not a progress indicator: pressure. It swells for nine tenths of the cycle
-  // and lets go in the last tenth, which is this skin's motion curve drawn as
-  // a loop.
+  // Not a progress indicator: pressure. It swells for nine tenths of the cycle and lets go in the
+  // last tenth, which is this skin's motion curve drawn as a loop.
   VOLCANO: (
     <span className="loader-magma">
       <i />
       <b />
     </span>
   ),
-  /*
-   * A jack-o'-lantern whose face lights in three steps.
-   *
-   * The body does not spin, bounce or pulse as a whole — it is a lantern, and a
-   * lantern that moves reads as being carried. What animates is the *light*:
-   * the two eyes and the grin come up in sequence and fall back, which is a
-   * loop with a direction to it, so it says "still going" the way a spinner
-   * does without anything travelling.
-   *
-   * Three nodes, animating opacity only. See `.loader-pumpkin` in `index.css`.
-   */
+  // A jack-o'-lantern whose face lights in three steps. The body does not spin, bounce or pulse as
+  // a whole — it is a lantern, and a lantern that moves reads as being carried.
   HALLOWEEN: (
     <span className="loader-pumpkin">
       <svg viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -191,33 +161,16 @@ const BODY: Record<ThemeSkin, ReactElement> = {
     </span>
   ),
 
-  /*
-   * A gradient ring, spinning. The single most-shipped loading indicator on the
-   * web, and the only honest one for this skin: a spinner with a conic gradient
-   * and rounded ends is what the snippet produces, so that is what it gets.
-   *
-   * `loader-vibe` is two elements rather than a `border` trick because the
-   * border version cannot hold a gradient — see `index.css`.
-   */
+  // A gradient ring, spinning. The single most-shipped loading indicator on the web, and the only
+  // honest one for this skin.
   VIBECODED: (
     <span className="loader-vibe">
       <i />
     </span>
   ),
 
-  /*
-   * A scroll unrolling, and rolling back.
-   *
-   * The loop is the gesture the whole skin is built on: two lacquered rods and
-   * a sheet of silk between them, the sheet widening and narrowing while the
-   * rods travel apart and back together. Nothing spins, because nothing in an
-   * imperial hall spins — waiting here is something being *opened*, which is
-   * also the honest metaphor for what a loading state is.
-   *
-   * Three nodes: the two rods and the silk. The rods translate, the silk
-   * scales on its own X axis, and all three run off one keyframe set so they
-   * cannot drift out of step. See `.loader-scroll` in `index.css`.
-   */
+  // A scroll unrolling, and rolling back. The loop is the gesture the whole skin is built on: two
+  // lacquered rods and a sheet of silk between them.
   DRAGON: (
     <span className="loader-scroll">
       <i />
@@ -265,9 +218,7 @@ export const SkinLoader = ({
 };
 
 /**
- * The caption under a full-page loader.
- *
- * The CRT already writes "LOADING" inside its own glyph, so repeating the
- * label underneath it reads as a stutter — every other skin keeps it.
+ * The caption under a full-page loader. The CRT already writes "LOADING" inside its own glyph, so
+ * repeating the label underneath it reads as a stutter — every other skin keeps it.
  */
 export const skinLoaderWantsCaption = (skin: ThemeSkin): boolean => skin !== 'TERMINAL';

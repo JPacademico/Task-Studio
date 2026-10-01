@@ -15,9 +15,8 @@ import {
 import type { ShortcutIcon } from '../model/shortcuts.store';
 
 /**
- * A component cannot be serialised into localStorage, so a pinned shortcut
- * stores a key and looks the glyph up here. Keeping the table in one place is
- * also what stops a renamed icon import from silently blanking a saved pill.
+ * A component cannot be serialised into localStorage, so a pinned shortcut stores a key and looks
+ * the glyph up here.
  */
 export const SHORTCUT_ICONS: Record<ShortcutIcon, LucideIcon> = {
   dashboard: LayoutDashboard,

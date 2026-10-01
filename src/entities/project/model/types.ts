@@ -16,23 +16,13 @@ export interface Project {
   bannerUrl: string | null;
   isArchived: boolean;
   /**
-   * When the owner concluded it, or `null`.
-   *
-   * A finished project keeps its name, description, roster and teams and has
-   * had every task and page cleared out of it. It is readable but takes no new
-   * work; reopening gives back the shell and nothing that was in it. See the
-   * API's `ProjectsService.complete`.
+   * When the owner concluded it, or `null`. A finished project keeps its name, description, roster
+   * and teams and has had every task and page cleared out of it.
    */
   completedAt: string | null;
   /**
-   * The window the project is *aimed* at, as opposed to `completedAt`, which
-   * is when it actually ended. Both optional and independent.
-   *
-   * `startsAt` constrains nothing — a project whose start date is next month
-   * still takes work today, because people write a plan down before they
-   * follow it. `endsAt` is a ceiling: the API refuses a task deadline past it,
-   * and refuses to pull it back over work that already exists. That asymmetry
-   * is the point of having the second field at all.
+   * The window the project is *aimed* at, as opposed to `completedAt`, which is when it actually
+   * ended. Both optional and independent.
    */
   startsAt: string | null;
   endsAt: string | null;
@@ -41,37 +31,18 @@ export interface Project {
   owner: UserSummary;
   isOwner: boolean;
   /**
-   * The folder this project is filed under, if any.
-   *
-   * Sent to the whole roster, and grants nothing — an organization is a
-   * grouping, not a permission. See `entities/organization/model/types`.
+   * The folder this project is filed under, if any. Sent to the whole roster, and grants nothing —
+   * an organization is a grouping, not a permission.
    */
   organization: OrganizationRef | null;
   /**
-   * The GitHub repository this project stands for, if one is linked.
-   *
-   * Set by an import at creation time, and settable afterwards by an owner or
-   * admin. Both halves come from the API: `fullName` is what every GitHub path
-   * is built from, `url` is where a browser goes, and deriving the second from
-   * the first here would be a second place that knows what a GitHub address
-   * looks like.
-   *
-   * `defaultBranch` is a *suggestion* for a task's branch field, cached when
-   * the link was made. Stale is harmless — nothing validates against it.
+   * The GitHub repository this project stands for, if one is linked. Set by an import at creation
+   * time, and settable afterwards by an owner or admin.
    */
   repository: ProjectRepository | null;
   /**
-   * The Figma file this project designs against, if one is connected.
-   *
-   * Beside `repository` and shaped the same way, because they answer the same
-   * question about the two halves of a product project: where is the code,
-   * where is the design. Both are drawn as a mark beside the project's name
-   * for the whole roster.
-   *
-   * `connectedBy` is on the shape rather than being an implementation detail
-   * of the connections tab, because the credential behind this is one person's
-   * and everybody reads the design through it — so "whose is it" is a fact
-   * about the connection, and the person to ask when it stops working.
+   * The Figma file this project designs against, if one is connected. Beside `repository` and
+   * shaped the same way.
    */
   figma: ProjectFigma | null;
   myRole: ProjectRole;
@@ -80,11 +51,8 @@ export interface Project {
 }
 
 /**
- * The Figma file a project designs against.
- *
- * Never carries the credential: the API's own shape has no field for it, and
- * the query behind it does not select the column. See `ProjectFigmaConnection`
- * there for why the token is a shared, per-project one at all.
+ * The Figma file a project designs against. Never carries the credential: the API's own shape has
+ * no field for it, and the query behind it does not select the column.
  */
 export interface ProjectFigma {
   /** The key in a Figma URL. Every API path is built from it. */
@@ -115,11 +83,8 @@ export interface ProjectListItem extends Project {
 }
 
 /**
- * What `complete()` actually removed, so the client can say so.
- *
- * Every counter, not just the two the toast names: the dialog promised to
- * clear the whole project, and reporting only tasks and pages would understate
- * what just happened to the whiteboard and the conversation.
+ * What `complete()` actually removed, so the client can say so. Every counter, not just the two the
+ * toast names: the dialog promised to clear the whole project.
  */
 export interface ClearedCounts {
   tasks: number;
@@ -133,17 +98,8 @@ export interface ClearedCounts {
 }
 
 /**
- * One project in the owner's recycle bin.
- *
- * Not a `Project`. A binned project is not something the app can open — it has
- * no board, no role and no membership to speak of from here — so it is its own
- * shape, carrying only what the bin has to draw: what it was, how much is
- * still inside it, and when the server will destroy it.
- *
- * `purgeAt` comes from the API rather than being computed here. The retention
- * window is the server's rule (`PROJECT_PURGE_AFTER_MS`) and a client doing
- * its own arithmetic is a client that will eventually disagree with the
- * sweeper about which day something disappears.
+ * One project in the owner's recycle bin. Not a `Project`. A binned project is not something the
+ * app can open — it has no board, no role and no membership to speak of from here.
  */
 export interface BinnedProject {
   id: string;
@@ -225,11 +181,8 @@ export interface UserOverview {
 }
 
 /**
- * The three counters a single task write can move, as signed deltas.
- *
- * Only these three: `projects` and `pinnedProjects` change on writes that
- * already refetch the whole overview, and inventing a delta for them would be
- * two more chances to be wrong for no perceptible gain.
+ * The three counters a single task write can move, as signed deltas. Only these three: `projects`
+ * and `pinnedProjects` change on writes that already refetch the whole overview.
  */
 export type OverviewDelta = Partial<
   Pick<UserOverview, 'openTasks' | 'completedTasks' | 'overdueTasks'>

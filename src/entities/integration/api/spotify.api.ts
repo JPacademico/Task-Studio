@@ -7,13 +7,8 @@ import type {
 } from '../model/types';
 
 /**
- * The remote control, as HTTP.
- *
- * Every call here is scoped to the signed-in person by the API — there is no
- * user id in any of these paths, and that is deliberate on both sides. The
- * thing being controlled is an account somebody is listening to at this moment;
- * a route that took an id would be one URL away from letting a colleague pause
- * it.
+ * The remote control, as HTTP. Every call here is scoped to the signed-in person by the API — there
+ * is no user id in any of these paths, and that is deliberate on both sides.
  */
 export const spotifyApi = {
   /** Whether the deployment offers this, and what this person has connected. */
@@ -23,12 +18,7 @@ export const spotifyApi = {
   },
 
   /**
-   * Where to send the browser to grant access.
-   *
-   * The API answers with a URL rather than redirecting, and the caller does
-   * `window.location.assign` with it — a 302 inside an XHR is followed by the
-   * browser and lands the consent page in a response body nobody can interact
-   * with. Same shape as the calendar's, for the same reason.
+   * Where to send the browser to grant access. The API answers with a URL rather than redirecting.
    */
   async connectUrl(): Promise<string> {
     const { data } = await api.get<{ url: string }>('/integrations/spotify/connect');
@@ -70,14 +60,7 @@ export const spotifyApi = {
     await api.post('/integrations/spotify/play', { trackId });
   },
 
-  /**
-   * The same track, next in line instead of now.
-   *
-   * What the player's search box calls. `play` replaces the playback context
-   * outright — picking a song out of a list used to end the album somebody was
-   * listening to — and this appends to the user queue instead. See the API's
-   * `SpotifyClient.queue`.
-   */
+  /** The same track, next in line instead of now. */
   async queue(trackId: string): Promise<void> {
     await api.post('/integrations/spotify/queue', { trackId });
   },

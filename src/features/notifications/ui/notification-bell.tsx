@@ -24,34 +24,18 @@ const deepLink = (notification: AppNotification): string | null => {
   if (notification.type === 'PROJECT_INVITE' || notification.type === 'ORG_INVITE') {
     return '/invitations';
   }
-  /*
-   * Checked before `projectId`, because a meeting posted at organization level
-   * against one of its projects carries both — and the row that announced it
-   * came from the organization.
-   */
+  // Checked before `projectId`, because a meeting posted at organization level against one of its
+  // projects carries both — and the row that announced it came from the organization.
   if (payload?.organizationId && !payload.projectId) {
     return `/organizations/${payload.organizationId}`;
   }
-  /*
-   * A live room opens the tab it is on, with the room named.
-   *
-   * Checked before the bare `projectId` below, which every project
-   * notification carries: without this an invitation to a call that starts in
-   * four minutes would land somebody on the board and leave them to find it.
-   */
+  // A live room opens the tab it is on, with the room named. Checked before the bare `projectId`
+  // below, which every project notification carries.
   if (payload?.kind === 'live-room' && payload.projectId && payload.roomId) {
     return `/projects/${payload.projectId}?tab=live&room=${payload.roomId}`;
   }
-  /*
-   * Being mentioned opens the conversation, not the board.
-   *
-   * Same argument as the live room above, and the same trap: a chat mention
-   * carries a `projectId` like every other project notification, so the
-   * fall-through below would land somebody on the task board with no sign of
-   * the sentence that named them — and the chat window is a floating dock they
-   * would then have to know to open. The project page reads this parameter and
-   * opens it for them.
-   */
+  // Being mentioned opens the conversation, not the board. Same argument as the live room above,
+  // and the same trap: a chat mention carries a `projectId` like every other project notification.
   if (payload?.kind === 'chat-mention' && payload.projectId) {
     return `/projects/${payload.projectId}?chat=open`;
   }
@@ -109,38 +93,13 @@ export const NotificationBell = () => {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -6, scale: 0.98 }}
               transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-              /*
-                An ordinary panel, not glass.
-
-                The frosted material was the most legible thing in the product
-                to argue for and the least comfortable to read: the pane's whole
-                content is 12px labels, 10px bodies and a timestamp in
-                `--content-faint`, composited over whatever colour the board
-                underneath happens to be at that point. Keeping the page visible
-                through it was never worth what it cost the text on top — the
-                page is still there when the pane closes, and the pane is open
-                for a few seconds at a time.
-
-                `.panel` is the skin's own card: its fill, its border weight, its
-                texture and its shadow, so the pane belongs to whatever theme is
-                on rather than to a material that sits outside all of them.
-              */
+              /* An ordinary panel, not glass. */
               className={cn(
                 'panel absolute right-0 top-11 z-50 w-[21.25rem] overflow-hidden',
               )}
             >
-              {/*
-                No heading, and no row where one used to be.
-
-                The pane hangs off a bell, under a badge counting unread items,
-                and every row in it is a notification — "Notifications" was a
-                label for something already named three times over by the time
-                anybody read it. Dropping the word and keeping the bar would
-                have traded a redundant line for an empty one, so the bar itself
-                is now conditional: it exists only when there is an action to
-                put in it, and "mark all read" is an action only when something
-                is unread. With nothing unread the list starts at the top edge.
-              */}
+              {/* No heading, and no row where one used to be. The pane hangs off a bell, under
+                  a badge counting unread items, and every row in it is a notification. */}
               {unread > 0 && (
                 <header className="flex items-center justify-end border-b border-edge px-3 py-2">
                   <Button
@@ -155,10 +114,8 @@ export const NotificationBell = () => {
                 </header>
               )}
 
-              {/* The opt-in sits above the list, not over it: opening the bell
-                  is the moment somebody has shown they care about
-                  notifications, and it is the only moment this is offered.
-                  Renders nothing at all once answered. See `NotificationOptIn`. */}
+              {/* The opt-in sits above the list, not over it: opening the bell is the moment
+                  somebody has shown they care about notifications. */}
               <NotificationOptIn />
 
               <div className="scrollbar-thin max-h-[23.75rem] overflow-y-auto">
@@ -176,9 +133,8 @@ export const NotificationBell = () => {
 
                 {notifications.map((notification) => {
                   const link = deepLink(notification);
-                  // Both read the row rather than the raw columns — the API
-                  // sends a deadline as an instant, not as prose. See
-                  // `entities/notification/lib/notification-copy`.
+                  // Both read the row rather than the raw columns — the API sends a deadline as an
+                  // instant, not as prose.
                   const body = notificationBody(notification);
                   const deadline = notificationDeadline(notification);
 
@@ -186,22 +142,8 @@ export const NotificationBell = () => {
                     <button
                       key={notification.id}
                       type="button"
-                      /*
-                       * Clicking one deals with it and takes it away.
-                       *
-                       * This used to mark the row read and leave it in place,
-                       * which meant the only way to get a notification off the
-                       * list was to empty the entire list. So the bell filled
-                       * up with weeks of greyed-out rows and the two that
-                       * mattered were somewhere underneath them.
-                       *
-                       * Dismissing on click is the same gesture doing the
-                       * obvious thing: you have seen it, it is gone, and the
-                       * deep link still opens if there is one to open. Nothing
-                       * is lost that was not already only a record of
-                       * something that had happened elsewhere — the invitation,
-                       * the task and the project all still exist.
-                       */
+                      /* Clicking one deals with it and takes it away. This used to mark the row
+                         read and leave it in place. */
                       onClick={() => {
                         dismiss.mutate(notification.id);
                         if (link) {
@@ -209,17 +151,8 @@ export const NotificationBell = () => {
                           setIsOpen(false);
                         }
                       }}
-                      /*
-                        Rows in a card again, now that the card is opaque.
-
-                        A drawn rule and a solid hover fill are what a list on a
-                        surface is supposed to use; they were only ever wrong
-                        against glass, where the rule read as a crack and the
-                        fill punched a hole through the material. An unread row
-                        hovers to a deeper tint of its own accent rather than to
-                        the neutral fill, so leaning on it does not erase the one
-                        thing it is marked with.
-                      */
+                      /* Rows in a card again, now that the card is opaque. A drawn rule and a solid
+                         hover fill are what a list on a surface is supposed to use. */
                       className={cn(
                         'flex w-full gap-3 border-b border-edge px-4 py-3 text-left transition-colors last:border-b-0',
                         notification.readAt

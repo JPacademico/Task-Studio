@@ -2,22 +2,8 @@ import { translate } from '@/shared/i18n';
 import type { Task, TaskAssignee } from '../model/types';
 
 /**
- * Who is allowed to call a shared task finished.
- *
- * A task with one assignee is that person's to close. A task with several is
- * the team's, and one member deciding it is done on everybody's behalf is the
- * thing this file exists to stop: the API completes *every* outstanding
- * assignment when a status flips to COMPLETED, so a single drag used to tick
- * three people's boxes for them.
- *
- * The rule, matching the API exactly:
- *
- *   - Every assignee ticks their own box (`isCompletedByMe`). When the last
- *     one does, the task completes itself.
- *   - Dragging the card into Completed is only allowed once everybody *else*
- *     has ticked theirs — the drag then stands for the dragger's own tick.
- *   - A project owner or admin may close it regardless. Somebody has to be
- *     able to finish work the person who left the company was assigned to.
+ * Who is allowed to call a shared task finished. A task with one assignee is that person's to
+ * close.
  */
 
 /** Carried by more than one person, which is where the rule starts to apply. */
@@ -28,12 +14,8 @@ export const outstandingAssignees = (task: Task): TaskAssignee[] =>
   task.assignees.filter((assignee) => assignee.completedAt === null);
 
 /**
- * How many people other than the caller are still outstanding.
- *
- * Deliberately derived from `isMine` / `isCompletedByMe` rather than from a
- * user id: those two flags are computed server-side for the caller, so no
- * surface has to know who is signed in to ask the question — and there is no
- * second copy of "which of these assignees is me" to get wrong.
+ * How many people other than the caller are still outstanding. Deliberately derived from `isMine` /
+ * `isCompletedByMe` rather than from a user id.
  */
 export const blockingAssigneeCount = (task: Task): number => {
   const outstanding = outstandingAssignees(task).length;
@@ -61,11 +43,8 @@ export const canCompleteTask = (task: Task, context: CompletionContext = {}): bo
   Boolean(context.isAdmin) || blockingAssigneeCount(task) <= 0;
 
 /**
- * Why not — phrased for a tooltip and for the toast a rejected drop raises.
- *
- * Names the people rather than counting them: "waiting on Ana and Tom" is
- * actionable in a way "waiting on 2 assignees" is not. Caps at three names so
- * a task shared across a whole roster still produces a sentence.
+ * Why not — phrased for a tooltip and for the toast a rejected drop raises. Names the people rather
+ * than counting them.
  */
 export const completionBlockedReason = (
   task: Task,

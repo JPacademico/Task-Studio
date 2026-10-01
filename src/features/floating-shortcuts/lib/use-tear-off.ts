@@ -1,12 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
- * Below this the gesture was a click on the row, not a drag out of the rail.
- *
- * Small on purpose. The old value asked for 14px of travel before anything
- * appeared, which on a menu row reads as "nothing is happening" and is most of
- * why the gesture felt like it needed a run-up. Six pixels is past the wobble
- * of a normal click and under the distance a deliberate drag covers instantly.
+ * Below this the gesture was a click on the row, not a drag out of the rail. Small on purpose. The
+ * old value asked for 14px of travel before anything appeared.
  */
 const THRESHOLD = 6;
 
@@ -18,29 +14,8 @@ interface TearOffOptions {
 }
 
 /**
- * Drag a row out of a menu, in one press.
- *
- * Deliberately not Framer Motion's `drag`: the rows live inside a scrolling
- * `overflow-y-auto` column, so an element that moved with the pointer would be
- * sliced off at the edge of its own scroll container the moment it left. This
- * hook never moves the row — it tracks the pointer and hands back a position
- * for a ghost the caller paints in a portal, which is free to be anywhere on
- * screen.
- *
- * Three things make press-and-drag actually work first time, all of which the
- * rows need because they are anchors:
- *
- *   - `draggable={false}` plus a swallowed `dragstart`. A link is natively
- *     draggable, so pressing one and moving hands the gesture to the browser's
- *     own drag-and-drop, which immediately fires `pointercancel` at us and
- *     tears down the tracking. That is the whole reason the rail used to want
- *     a double-click first: the second press of a double-click lands inside
- *     the browser's own suppression window, so the native drag never starts
- *     and ours survives.
- *   - Pointer capture, so the events keep arriving even once the pointer has
- *     left the rail — which it does immediately, since the point is to drop
- *     the copy somewhere else entirely.
- *   - A swallowed click on release, so a drag does not also navigate.
+ * Drag a row out of a menu, in one press. Deliberately not Framer Motion's `drag`: the rows live
+ * inside a scrolling `overflow-y-auto` column.
  */
 export const useTearOff = ({ enabled = true, onTearOff }: TearOffOptions) => {
   const [ghost, setGhost] = useState<{ x: number; y: number } | null>(null);

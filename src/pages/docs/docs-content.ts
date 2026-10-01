@@ -1,33 +1,8 @@
 import type { Locale } from '@/shared/i18n';
 
 /**
- * Everything the CLI documentation says, in both languages.
- *
- * ## Why this is not in `shared/i18n/locales.ts`
- *
- * Every other translated string in the app is, and this is the one deliberate
- * exception. The dictionary there is a *flat* map shared by ninety components,
- * and its value is that any surface can reach any string: `common.cancel` is one
- * sentence used in thirty places, and keeping it in one table is what stops
- * thirty copies drifting.
- *
- * This is the opposite shape. It is a single document, read by a single page, in
- * which the strings are *ordered* and *grouped* — a command belongs next to its
- * description and inside its section, and flattening that into
- * `docs.cmd.branch.body` throws away the only structure the content has. Adding
- * a hundred keys of prose that nothing else will ever read would also double the
- * length of a file whose whole job is to be scannable.
- *
- * So the document lives with the page that is the document. The two locales sit
- * side by side rather than in separate files, for the reason `locales.ts` gives
- * for the same choice: a missing translation is then a *compile error* rather
- * than a page that silently renders English at somebody who does not read it.
- *
- * ## Why the commands themselves are not translated
- *
- * Because `taskstudio branch` is not English, it is a command. Translating it
- * would document something the tool does not answer to. Only the prose around it
- * changes language.
+ * Everything the CLI documentation says, in both languages. Every other translated string in the
+ * app is, and this is the one deliberate exception.
  */
 
 export interface DocsCommand {
@@ -44,13 +19,8 @@ export interface DocsSection {
   /** The word in the sidebar and on the heading. */
   title: string;
   /**
-   * The glyph beside the heading. A terminal unless stated.
-   *
-   * There was no choice here while every section was a list of commands — the
-   * icon said "this is the CLI" and it was true fifteen times over. The Figma
-   * section is the first that is not about a terminal at all: it is a thing you
-   * do in two websites, and a prompt symbol over it would be the page's own
-   * navigation telling the reader they are in the wrong place.
+   * The glyph beside the heading. A terminal unless stated. There was no choice here while every
+   * section was a list of commands.
    */
   icon?: 'terminal' | 'figma';
   /** One line under the heading. Omitted where the commands speak. */

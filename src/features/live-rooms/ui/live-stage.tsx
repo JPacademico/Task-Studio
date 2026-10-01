@@ -32,18 +32,8 @@ interface LiveStageProps {
 }
 
 /**
- * How the tiles are laid out, by how many there are.
- *
- * Written as a lookup rather than as `auto-fit` with a `minmax`, because the
- * two disagree about the case that matters most. `auto-fit` given a 320px
- * minimum puts two people side by side in a wide panel and leaves each of them
- * a strip a third as tall as the space — whereas a call of two wants two large
- * tiles, and a call of five wants a 3x2 grid with one gap rather than five
- * columns of postage stamps.
- *
- * Capped at three columns because `LIVE_MAX_PARTICIPANTS` is eight: four
- * columns would put the eighth tile alone on a second row with three empty
- * cells beside it.
+ * How the tiles are laid out, by how many there are. Written as a lookup rather than as `auto-fit`
+ * with a `minmax`, because the two disagree about the case that matters most.
  */
 const gridFor = (count: number): string => {
   if (count <= 1) return 'grid-cols-1';
@@ -52,13 +42,8 @@ const gridFor = (count: number): string => {
 };
 
 /**
- * The call itself.
- *
- * Everything technical lives in `useLiveCall` — this is the surface. The one
- * decision it does make is the order of the controls, which is worth stating:
- * **microphone, camera, screen, hand, leave**, left to right, with leave
- * separated. That is the order of how often they are pressed, and the gap is
- * because leave is the one that cannot be undone by pressing it again.
+ * The call itself. Everything technical lives in `useLiveCall` — this is the surface. The one
+ * decision it does make is the order of the controls, which is worth stating.
  */
 export const LiveStage = ({ room, onLeave, onOpenDocument }: LiveStageProps) => {
   const t = useT();
@@ -72,15 +57,8 @@ export const LiveStage = ({ room, onLeave, onOpenDocument }: LiveStageProps) => 
     onEnded: onLeave,
   });
 
-  /*
-   * The rest of the app is told the call is up, and how to end it.
-   *
-   * Only while it is actually live — not while the devices are being asked
-   * for or the join is in flight — because what this enables is the project
-   * page keeping the stage alive across tabs and the guard stopping somebody
-   * leaving the project, and both are about a call that exists. Cleared on
-   * the way out, whichever way out that is. See `useLiveCallStore`.
-   */
+  // The rest of the app is told the call is up, and how to end it. Only while it is actually live —
+  // not while the devices are being asked for or the join is in flight.
   const register = useLiveCallStore((state) => state.register);
   const unregister = useLiveCallStore((state) => state.unregister);
   const hangUp = call.leave;
@@ -97,44 +75,21 @@ export const LiveStage = ({ room, onLeave, onOpenDocument }: LiveStageProps) => 
     return () => unregister(room.id);
   }, [hangUp, isLive, register, room.id, room.projectId, room.title, unregister]);
 
-  /*
-   * The live answer, not the one the room row was fetched with.
-   *
-   * `room.you` is what the API said when the tab last loaded the list; the
-   * seat is what the gateway says right now, and a moderator raising somebody
-   * mid-call changes the second without touching the first.
-   */
+  // The live answer, not the one the room row was fetched with. `room.you` is what the API said
+  // when the tab last loaded the list; the seat is what the gateway says right now.
   const you = call.self ?? room.you;
   const canModerate = call.self?.isModerator ?? room.you.isModerator;
 
   const roster = call.roster;
   const columns = useMemo(() => gridFor(roster.length), [roster.length]);
 
-  /*
-   * One stable callback for the whole grid, not one arrow function per tile.
-   *
-   * `ParticipantTile`'s visibility effect depends on the handler it is given,
-   * so a fresh closure per render would tear the `IntersectionObserver` down
-   * and build a new one on every render of the stage - and the stage
-   * re-renders whenever anybody mutes, unmutes, raises a hand or changes
-   * connection quality, which in a call of eight is constantly. Rebuilding an
-   * observer fires it again immediately, so that would also emit a
-   * `live:video-interest` frame per tile per re-render.
-   *
-   * The curry is what keeps it stable while still telling the call *which*
-   * peer moved: `visibilityHandlers` memoises one bound function per
-   * participant, created on first use and reused thereafter.
-   */
+  // One stable callback for the whole grid, not one arrow function per tile. `ParticipantTile`'s
+  // visibility effect depends on the handler it is given.
   const setVideoInterest = call.setVideoInterest;
   const visibilityHandlers = useRef(new Map<string, (visible: boolean) => void>());
 
-  /*
-   * What each tile last said about itself, and which one fills the screen.
-   *
-   * Interest is now two questions rather than one: can this tile be seen, and
-   * is somebody else's tile covering everything. Both are kept here so either
-   * can change and the answer sent is always the pair of them together.
-   */
+  // What each tile last said about itself, and which one fills the screen. Interest is now two
+  // questions rather than one: can this tile be seen.
   const tileVisible = useRef(new Map<string, boolean>());
   const [fullscreenId, setFullscreenId] = useState<string | null>(null);
   const fullscreenRef = useRef<string | null>(null);
@@ -162,35 +117,8 @@ export const LiveStage = ({ room, onLeave, onOpenDocument }: LiveStageProps) => 
     [setVideoInterest, wantsVideoFrom],
   );
 
-  /*
-   * One tile full screen, and every other stream paused while it is.
-   *
-   * ## Why the stage listens rather than the tile
-   *
-   * A tile knows when *it* goes full screen, but what matters is what that
-   * does to every other tile: they are all still mounted and still intersecting
-   * the viewport underneath, so their observers would keep saying "visible" to
-   * peers whose video nobody can see. Only the stage has all of them in hand.
-   *
-   * It also catches the exits nobody pressed a button for: Escape, the
-   * browser's own gesture, and the tile being unmounted because its peer left,
-   * which takes the fullscreen element out of the document and ends it.
-   *
-   * ## What pausing buys the person watching
-   *
-   * Each paused peer stops encoding for us (see `setVideoInterest`), so the
-   * downlink and the decoder that were spread over the grid are left to the one
-   * stream on screen. On a home connection that is the difference between a
-   * shared document being readable at full size and smearing every time somebody
-   * else in the call moves. It is also a saving for the paused peers, who send
-   * one fewer stream.
-   *
-   * ## Why the matching is by attribute
-   *
-   * `data-participant-id` is on each tile, so the element that went full screen
-   * names its own peer. There is no map of elements to keep in step with the
-   * roster.
-   */
+  // One tile full screen, and every other stream paused while it is. A tile knows when *it* goes
+  // full screen, but what matters is what that does to every other tile.
   useEffect(() => {
     const sync = () => {
       const element = fullscreenElement();
@@ -281,28 +209,16 @@ export const LiveStage = ({ room, onLeave, onOpenDocument }: LiveStageProps) => 
               key={peer.participantId}
               peer={peer}
               isSelf={isSelf}
-              /*
-               * The local tile is keyed on the literal `self`, because that is
-               * what the detector was handed for the local stream — it exists
-               * before a participant id does.
-               */
-              /*
-               * Only with the microphone on. A muted presenter's stream can
-               * still carry sound, their shared screen's, and a speaking ring
-               * around somebody who is muted would be a lie about the one
-               * thing the ring is for.
-               */
+              /* The local tile is keyed on the literal `self`, because that is what the detector
+                 was handed for the local stream — it exists before a participant id does. */
+              /* Only with the microphone on. A muted presenter's stream can still carry sound,
+                 their shared screen's. */
               isSpeaking={
                 peer.flags.micOn && call.speaking.has(isSelf ? 'self' : peer.participantId)
               }
               canModerate={canModerate}
-              /*
-               * No quality on your own tile, because there is no connection to
-               * measure - the local preview is the camera, not a stream that
-               * crossed a network. Reporting "good" there would be a claim
-               * about somebody else's experience of you, which this client
-               * cannot see.
-               */
+              /* No quality on your own tile, because there is no connection to measure - the local
+                 preview is the camera, not a stream that crossed a network. */
               quality={isSelf ? undefined : call.quality[peer.participantId]}
               onVisibilityChange={isSelf ? undefined : visibilityHandlerFor(peer.participantId)}
               isFullscreen={fullscreenId === peer.participantId}
@@ -348,11 +264,7 @@ export const LiveStage = ({ room, onLeave, onOpenDocument }: LiveStageProps) => 
           isActive={call.flags.camOn}
           isDisabled={call.flags.sharing}
           label={call.flags.camOn ? t('live.cameraOff') : t('live.cameraOn')}
-          /*
-           * The camera held back for the voice (see `watchUplink`). On the
-           * button because that is where somebody looks when they wonder
-           * whether their camera is on, and the title says what happened.
-           */
+          /* The camera held back for the voice (see `watchUplink`). */
           warning={call.flags.camOn && call.cameraHeld ? t('live.cameraHeld') : undefined}
           icon={
             call.flags.camOn ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />
@@ -439,13 +351,8 @@ interface ControlButtonProps {
 }
 
 /**
- * One round control.
- *
- * `aria-pressed` rather than a second label for the on state: these are
- * toggles, and a screen reader announcing "microphone, pressed" is both
- * shorter and more accurate than two strings that have to be kept in step.
- * The visible `title` still changes, because sighted users have no equivalent
- * of the pressed state being read out.
+ * One round control. `aria-pressed` rather than a second label for the on state: these are toggles,
+ * and a screen reader announcing "microphone.
  */
 const ControlButton = ({
   onClick,

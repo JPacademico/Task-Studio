@@ -17,10 +17,8 @@ const ChevronUp = ({ className }: { className?: string }) => (
 );
 
 /**
- * The maker's mark: a `p.` that opens into `pitico.`
- *
- * Styled to match a stamped, lowercase, terminal aesthetic with 
- * centering arrows over the second 'i'.
+ * The maker's mark: a `p.` that opens into `pitico.` Styled to match a stamped, lowercase, terminal
+ * aesthetic with centering arrows over the second 'i'.
  */
 export const PiticoMark = ({ className }: { className?: string }) => {
   const t = useT();
@@ -38,16 +36,8 @@ export const PiticoMark = ({ className }: { className?: string }) => {
   const middle = baseWord.slice(baseLetter.length);
   const suffix = hasDot ? '.' : '';
 
-  /*
-   * The arrows bracket the middle letter of the part that opens.
-   *
-   * It used to be `charAt(2)` with a comment naming the second "i" of
-   * "pitico" - which stopped being true the moment the word became "pico.",
-   * where index 2 is the "o" and the arrows sat one letter short of the end
-   * instead of over the centre. Deriving the index means the mark survives the
-   * next rename too, and it is the same answer for the old word: the middle of
-   * "itico" is its third letter, which is the "i" the comment was pointing at.
-   */
+  // The arrows bracket the middle letter of the part that opens. It used to be `charAt(2)` with a
+  // comment naming the second "i" of "pitico".
   const targetIndex = Math.floor(middle.length / 2);
   const middleBefore = middle.slice(0, targetIndex);
   const middleTarget = middle.charAt(targetIndex);

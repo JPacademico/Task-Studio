@@ -15,12 +15,8 @@ export const billingApi = {
   },
 
   /**
-   * Opens a hosted checkout and answers with a URL to send the browser to.
-   *
-   * The client never names a price — only a plan, a cadence and a currency —
-   * and the API resolves what that costs. See `BillingService.startCheckout`
-   * for why accepting a price id from a browser is the one thing this must not
-   * do.
+   * Opens a hosted checkout and answers with a URL to send the browser to. The client never names a
+   * price — only a plan, a cadence and a currency — and the API resolves what that costs.
    */
   async checkout(payload: StartCheckoutPayload): Promise<{ url: string }> {
     const { data } = await api.post<{ url: string }>('/billing/checkout', payload);

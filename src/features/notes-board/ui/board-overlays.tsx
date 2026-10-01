@@ -15,13 +15,7 @@ interface SelectionBarProps {
   onClear: () => void;
 }
 
-/**
- * The selection bar, floating over the board instead of hiding in the toolbar.
- *
- * Grouping used to live in the top strip, far from the notes it acted on and
- * only reachable after discovering Ctrl+click. Here it appears where the work
- * is, the moment there is a selection, and says what it will do.
- */
+/** The selection bar, floating over the board instead of hiding in the toolbar. */
 export const SelectionBar = ({
   count,
   canGroup,

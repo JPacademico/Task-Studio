@@ -1,26 +1,6 @@
 /**
- * Single place the browser bundle reads configuration from.
- *
- * Only `VITE_*` values exist at runtime — API keys and database URLs live on the
- * NestJS side and are never shipped to the client.
- *
- * ## Why the production branch has no fallback
- *
- * Vite inlines `import.meta.env.VITE_*` at *build* time. `.env` is gitignored,
- * so a hosted build only sees what the host's dashboard provides — and when
- * that is nothing, an `??` default does not degrade, it *bakes the developer's
- * laptop address into the bundle every visitor downloads*. The app then loads
- * perfectly, renders every screen, and fails on the first request with
- * `ERR_CONNECTION_REFUSED` against `localhost` — a machine the visitor's
- * browser is quite happy to try and which is, for them, simply not running a
- * server.
- *
- * That is the worst shape a misconfiguration can take: invisible to CI,
- * invisible to the build log, and indistinguishable at the UI from the API
- * being down. So the fallback is scoped to `DEV`, where localhost is genuinely
- * the right guess, and a production build without the variable fails loudly —
- * first in `vite.config.ts`, which aborts the build before an artefact exists,
- * and here as the backstop for anything that reaches the browser anyway.
+ * Single place the browser bundle reads configuration from. Only `VITE_*` values exist at runtime —
+ * API keys and database URLs live on the NestJS side and are never shipped to the client.
  */
 const stripTrailingSlash = (value: string): string => value.replace(/\/$/, '');
 

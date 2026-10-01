@@ -35,6 +35,7 @@ import {
   Select,
   Textarea,
 } from '@/shared/ui';
+import { InviteLinkSection } from './invite-link-section';
 import { ProjectWindowFields } from './project-window-fields';
 import { useT } from '@/shared/i18n';
 
@@ -43,66 +44,20 @@ interface ProjectSettingsDialogProps {
   onClose: () => void;
   project: Project;
   /**
-   * Whether to draw the danger zone at all.
-   *
-   * The dialog opens for owners *and* admins — editing a project has always
-   * been an ADMIN capability on the API, and gating the whole sheet on
-   * ownership left an admin running a project unable to fix a typo in its name.
-   * Deleting it is a different matter and stays the owner's, so the half that
-   * does that is simply absent for everybody else rather than present and
-   * refused.
+   * Whether to draw the danger zone at all. The dialog opens for owners *and* admins — editing a
+   * project has always been an ADMIN capability on the API.
    */
   isOwner?: boolean;
   /**
-   * Whether the project's name, colour and dates can be changed here.
-   *
-   * The dialog used to open for owners and admins only, which left a member
-   * with no way out of a project at all: leaving has always worked on the API
-   * and had no button. It now opens for everybody on the roster, and this is
-   * what keeps the editing half to the people the API lets edit — a member
-   * sees the one section that is theirs, leaving.
+   * Whether the project's name, colour and dates can be changed here. The dialog used to open for
+   * owners and admins only, which left a member with no way out of a project at all.
    */
   canEdit?: boolean;
 }
 
 /**
- * Renaming a project, re-colouring it, or getting rid of it.
- *
- * ## Why this exists
- *
- * The three things you choose when you create a project — its name, what it is
- * for, and its colour — were, until now, chosen once and permanently. A typo in
- * a project name was a typo everybody on the roster read every day, and the
- * only way to be rid of a project created by mistake was to leave it sitting in
- * the rail forever. The API has always supported both edits and deletion; there
- * was simply nothing on screen that asked for them.
- *
- * ## Who gets it
- *
- * The owner, and nobody else. The API is slightly more generous than that —
- * `PATCH` accepts an admin, `DELETE` insists on the owner — and the difference
- * is deliberate on this side: a control that appears for admins and then fails
- * on the destructive half of the sheet is worse than one that does not appear.
- * A project has exactly one owner, so "can I change this project" has exactly
- * one honest answer.
- *
- * ## Finishing, and deleting
- *
- * Two different endings, and the difference is what survives.
- *
- * **Finishing** keeps the project and empties it: the name, the description,
- * the roster and the teams stay as the record of a piece of work, and every
- * task and page is destroyed. It can be reopened, which gives back that shell
- * and nothing that was in it. Confirmed with a **password** rather than a typed
- * project name, because nothing here is recoverable afterwards — a typed name
- * proves you read the dialog, a password proves it is you.
- *
- * **Deleting** takes the whole thing, and is a *soft* delete: the project lands
- * in the owner's recycle bin and can be restored. Confirmed by typing the
- * project's name, which is the right bar for something reversible.
- *
- * The gentler of the two sits first, because it is the one most people
- * reaching for "delete" actually want.
+ * Renaming a project, re-colouring it, or getting rid of it. The three things you choose when you
+ * create a project — its name, what it is for, and its colour — were, until now.
  */
 export const ProjectSettingsDialog = ({
   isOpen,
@@ -120,27 +75,12 @@ export const ProjectSettingsDialog = ({
   const deleteProject = useDeleteProject();
   const completeProject = useCompleteProject();
   const reopenProject = useReopenProject();
-  /*
-   * Unfiling is addressed to the *organization*, because that is where the
-   * endpoint lives — `DELETE /organizations/:id/projects/:projectId`. The hook
-   * needs an id at call time and a project that is filed nowhere has none, so
-   * it is handed the empty string and the whole section is hidden in that
-   * case: a mutation that can never be triggered is cheaper than a conditional
-   * hook, which React does not allow anyway.
-   */
+  // Unfiling is addressed to the *organization*, because that is where the endpoint lives — `DELETE
+  // /organizations/:id/projects/:projectId`.
   const detachProject = useDetachProject(project.organization?.id ?? '');
 
-  /*
-   * The board's tasks, for one number: the latest deadline anybody has
-   * scheduled.
-   *
-   * It costs nothing extra in the ordinary case. This dialog is opened from
-   * the project page, which has already fetched exactly this list under
-   * exactly this key, so the query is a cache hit and the same `staleTime`
-   * every other reader of it gets. What it buys is the finish-date field
-   * saying "work is scheduled past that" while the form is still open, instead
-   * of the API saying it after a round trip.
-   */
+  // The board's tasks, for one number: the latest deadline anybody has scheduled. It costs nothing
+  // extra in the ordinary case.
   const { data: tasks = [] } = useTasks({ projectId: project.id });
 
   const latestTaskDue = tasks.reduce<string | null>((latest, task) => {
@@ -161,22 +101,15 @@ export const ProjectSettingsDialog = ({
   /** Two-step, like the danger-zone controls — but without the typed name. */
   const [isConfirmingUnfile, setIsConfirmingUnfile] = useState(false);
   /**
-   * Held only long enough to be sent.
-   *
-   * Cleared on every open and on every outcome — see the effect below and
-   * `handleFinish`. It is never put anywhere but this component's own state:
-   * not in a query cache, not in a mutation variable that lingers, and not in
-   * anything that gets logged.
+   * Held only long enough to be sent. Cleared on every open and on every outcome — see the effect
+   * below and `handleFinish`.
    */
   const [password, setPassword] = useState('');
   /** Two-step, like unfiling: the first press arms it, the second leaves. */
   const [isConfirmingLeave, setIsConfirmingLeave] = useState(false);
   /**
-   * Who takes the project over when its owner leaves.
-   *
-   * Admins first, then by name: an admin is already running the project
-   * alongside the owner, so they are the successor people almost always mean.
-   * Pre-selected so the common case is two clicks, never a hunt.
+   * Who takes the project over when its owner leaves. Admins first, then by name: an admin is
+   * already running the project alongside the owner.
    */
   const successors = [...project.roster]
     .filter((member) => member.id !== currentUser?.id)
@@ -193,9 +126,8 @@ export const ProjectSettingsDialog = ({
 
   const isFinished = Boolean(project.completedAt);
 
-  // Re-seeded on every open: the dialog is mounted by the page, so its state
-  // would otherwise be whatever was last typed into it — including a half-typed
-  // deletion confirmation.
+  // Re-seeded on every open: the dialog is mounted by the page, so its state would otherwise be
+  // whatever was last typed into it — including a half-typed deletion confirmation.
   useEffect(() => {
     if (!isOpen) return;
 
@@ -239,14 +171,8 @@ export const ProjectSettingsDialog = ({
       // read as "leave it alone" and the field could never be emptied.
       description: description.trim(),
       color,
-      /*
-       * `null` on an emptied field, not `undefined`.
-       *
-       * The dates are on the API's three-state contract — an instant sets it,
-       * `null` clears it, absent leaves it alone — and `fromDateInput` answers
-       * `undefined` for an empty field, which would mean "leave it alone" and
-       * make a finish date impossible to take back off.
-       */
+      // `null` on an emptied field, not `undefined`. The dates are on the API's three-state
+      // contract — an instant sets it, `null` clears it, absent leaves it alone.
       startsAt: fromDateInput(startsAt, 'start') ?? null,
       endsAt: fromDateInput(endsAt, 'end') ?? null,
     });
@@ -265,36 +191,12 @@ export const ProjectSettingsDialog = ({
     onClose();
   };
 
-  /**
-   * Take the project out of its company, and leave everything else alone.
-   *
-   * A separate act from deleting, and the reason it needed its own control is
-   * that the only way to do it was from the *company's* board — a hover-only
-   * ✕ on a card, on a page somebody who wants to unfile their own project has
-   * no particular reason to visit, and which an org admin can reach but a
-   * project owner who is merely a member of that company cannot see at all.
-   * The API has always allowed either party to do it (see `detachProject`),
-   * so the project side gets the same control, said in full.
-   *
-   * Not in the danger zone. Nothing is destroyed: the roster, the tasks, the
-   * pages and the teams are all properties of the project, and filing is a
-   * label on top of them. Refiling it afterwards is one click on the company
-   * page.
-   */
+  /** Take the project out of its company, and leave everything else alone. */
   const handleUnfile = () => {
     if (!project.organization) return;
 
-    /*
-     * Fired, not awaited — and the dialog closes on the same tick.
-     *
-     * The mutation rewrites both caches before the request leaves (see
-     * `useDetachProject`), so by the time this sheet is gone the header behind
-     * it has already dropped the company chip. Awaiting bought nothing except
-     * a spinner for the length of a round trip, which on a cold API is most of
-     * a minute for a change to one nullable column. A refusal rolls the caches
-     * back and says so in a toast, which is the right shape for something the
-     * user has already been shown as done.
-     */
+    // Fired, not awaited — and the dialog closes on the same tick. The mutation rewrites both
+    // caches before the request leaves (see `useDetachProject`).
     detachProject.mutate(project.id);
     setIsConfirmingUnfile(false);
     onClose();
@@ -306,17 +208,8 @@ export const ProjectSettingsDialog = ({
   };
 
   /**
-   * Put the project away, or take it back out.
-   *
-   * Reversible, destroys nothing, and deliberately *not* in the danger zone —
-   * the same argument the unfiling control above makes. An archived project
-   * keeps its roster, its board, its pages and its history; it stops appearing
-   * on the dashboard, which is the whole of what it does.
-   *
-   * Closing on archive and staying open on un-archive is the asymmetry that
-   * matches what each one is for: putting something away is the last thing
-   * somebody wants to do with it, and taking it back out is the first of
-   * several.
+   * Put the project away, or take it back out. Reversible, destroys nothing, and deliberately *not*
+   * in the danger zone — the same argument the unfiling control above makes.
    */
   const handleArchive = async (next: boolean) => {
     await updateProject.mutateAsync({ isArchived: next });
@@ -329,11 +222,8 @@ export const ProjectSettingsDialog = ({
   };
 
   /**
-   * Leave, and go somewhere that still exists for you.
-   *
-   * An owner hands the project to `successorId` on the way out — the API will
-   * not let a project be left without one. Navigating before the lists have
-   * refetched is deliberate: this page is about to be a 404 for this reader.
+   * Leave, and go somewhere that still exists for you. An owner hands the project to `successorId`
+   * on the way out — the API will not let a project be left without one.
    */
   const handleLeave = async () => {
     if (isOwner && !successorId) return;
@@ -418,14 +308,8 @@ export const ProjectSettingsDialog = ({
               options={TASK_COLORS}
             />
 
-            {/*
-              The latest deadline on the board is passed in so the finish field can
-              object *before* the API does. The API refuses a finish date pulled
-              back over work that already exists — it has to, since nothing stops a
-              client posting one — and being told the same thing while the form is
-              still open, with the offending date named, is the difference between
-              a rule and an obstacle.
-            */}
+            {/* The latest deadline on the board is passed in so the finish field can object
+                *before* the API does. */}
             <ProjectWindowFields
               startsAt={startsAt}
               endsAt={endsAt}
@@ -436,14 +320,11 @@ export const ProjectSettingsDialog = ({
           </>
         )}
 
-        {/* --- Where this project is filed ----------------------------------
+        {/* --- Invite link: owners and admins, the same people who can invite. --- */}
+        {canEdit && <InviteLinkSection projectId={project.id} isOpen={isOpen} />}
 
-            Above the rule, because unfiling destroys nothing — see
-            `handleUnfile`. Owner only: the API accepts an organization admin
-            or the project's owner, and this dialog cannot tell whether the
-            reader is the first, so it offers the case it knows is allowed
-            rather than one that might be refused. An org admin still has the
-            ✕ on the company's own board. */}
+        {/* --- Where this project is filed ---
+            Above the rule, because unfiling destroys nothing — see `handleUnfile`. */}
         {isOwner && project.organization && (
           <section className="space-y-2.5 rounded-xl border border-edge bg-surface-sunken/50 p-3.5">
             <header className="flex items-center gap-2">
@@ -479,17 +360,7 @@ export const ProjectSettingsDialog = ({
           </section>
         )}
 
-        {/* --- Out of the way, and back again -------------------------------
-
-            Above the rule for the reason `handleArchive` gives: nothing is
-            destroyed and one click undoes it. Hidden on a finished project,
-            because the API refuses that combination outright — finishing is
-            the stronger state and already keeps the project off the board
-            (see `ProjectsService.update`) — so offering the control there
-            would be offering a button whose only outcome is an error.
-
-            Owner only, matching every other structural control in this
-            dialog. */}
+        {/* --- Out of the way, and back again --- */}
         {isOwner && !isFinished && (
           <section className="space-y-2.5 rounded-xl border border-edge bg-surface-sunken/50 p-3.5">
             <header className="flex items-center gap-2">
@@ -520,16 +391,8 @@ export const ProjectSettingsDialog = ({
           </section>
         )}
 
-        {/* --- Leaving -----------------------------------------------------
-
-            Everybody's section, and the only one a member sees. Not in the
-            danger zone: nothing is destroyed — the project, its work and its
-            history carry on without you, and an invitation brings you back.
-
-            The owner's version asks one more thing, because a project always
-            has an owner: who takes it over. With nobody else on the roster
-            there is nobody to hand it to, and the section says what is left —
-            finishing or deleting it, below. */}
+        {/* --- Leaving ---
+            Everybody's section, and the only one a member sees. */}
         <section className="space-y-2.5 rounded-xl border border-edge bg-surface-sunken/50 p-3.5">
           <header className="flex items-center gap-2">
             <LogOut className="h-3.5 w-3.5 shrink-0 text-content-faint" />
@@ -594,9 +457,7 @@ export const ProjectSettingsDialog = ({
           )}
         </section>
 
-        {/* --- The dangerous half ------------------------------------------
-            Below a rule and behind its own disclosure, so it cannot be reached
-            by tabbing past the colour swatches. Owner only — see `isOwner`. */}
+        {/* --- The dangerous half --- */}
         {isOwner && (
         <section className="space-y-2.5 rounded-xl border border-danger/30 bg-danger/[0.04] p-3.5">
           <header className="flex items-center gap-2">
@@ -604,14 +465,8 @@ export const ProjectSettingsDialog = ({
             <h3 className="text-xs font-semibold text-danger">{t('project.dangerZone')}</h3>
           </header>
 
-          {/*
-            Finishing, above deleting.
-
-            A project that is over is the common case and deleting it is the
-            rare one, so the reversible-shaped action comes first — and putting
-            it here rather than in the calm half of the sheet is deliberate:
-            it destroys tasks and pages, and it belongs behind the same rule.
-          */}
+          {/* Finishing, above deleting. A project that is over is the common case and deleting
+              it is the rare one, so the reversible-shaped action comes first. */}
           {isFinished ? (
             <div className="space-y-2.5 border-b border-danger/20 pb-3">
               <p className="text-2xs leading-relaxed text-content-muted">

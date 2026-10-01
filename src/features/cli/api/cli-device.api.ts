@@ -1,13 +1,8 @@
 import { api } from '@/shared/api/client';
 
 /**
- * What the approval screen is told about the terminal asking to come in.
- *
- * Everything here is shown and none of it is trusted. `deviceName` is a string
- * the requesting process chose — it is the machine's hostname when the request
- * came from this CLI, and it is whatever an attacker likes when it did not.
- * That is exactly why `ipAddress` sits beside it: a request the reader did not
- * make is recognised by the address, not by the label.
+ * What the approval screen is told about the terminal asking to come in. Everything here is shown
+ * and none of it is trusted.
  */
 export interface CliDeviceRequest {
   userCode: string;
@@ -18,13 +13,8 @@ export interface CliDeviceRequest {
 }
 
 /**
- * The browser's half of signing a terminal in.
- *
- * The terminal never sends a password anywhere in this flow — it asks for a
- * code, prints it, and waits. Everything that decides anything happens here, on
- * a page whose origin the browser is showing in its own address bar, under an
- * account that is already signed in. See the API's `CliDeviceAuthService` for
- * the whole argument.
+ * The browser's half of signing a terminal in. The terminal never sends a password anywhere in this
+ * flow — it asks for a code, prints it, and waits.
  */
 export const cliDeviceApi = {
   async describe(userCode: string): Promise<CliDeviceRequest> {

@@ -8,14 +8,8 @@ export const queryKeys = {
   session: ['session'] as const,
 
   /**
-   * The plan, and what it costs.
-   *
-   * Two keys rather than one, because they have opposite lifetimes. The
-   * catalogue is the same table for everybody and changes when the deployment
-   * is redeployed — so it is cached hard and never invalidated by anything a
-   * user does. The summary is the reader's own plan and usage, and it changes
-   * the moment a checkout completes, a webhook lands, or anything is created
-   * against a ceiling.
+   * The plan, and what it costs. Two keys rather than one, because they have opposite lifetimes.
+   * The catalogue is the same table for everybody and changes when the deployment is redeployed.
    */
   billing: {
     catalogue: ['billing', 'plans'] as const,
@@ -29,26 +23,19 @@ export const queryKeys = {
     dashboard: (projectId: string) => ['projects', projectId, 'dashboard'] as const,
     members: (projectId: string) => ['projects', projectId, 'members'] as const,
     invitations: (projectId: string) => ['projects', projectId, 'invitations'] as const,
+    inviteLink: (projectId: string) => ['projects', projectId, 'invite-link'] as const,
+    boardSync: (projectId: string) => ['projects', projectId, 'board-sync'] as const,
     overview: ['projects', 'overview'] as const,
     /**
-     * The owner's binned projects.
-     *
-     * Under `projects` so that invalidating `projects.all` after a delete or a
-     * restore refreshes the bin too — the two lists are opposite halves of the
-     * same set, and one moving without the other is exactly the bug a shared
-     * prefix prevents.
+     * The owner's binned projects. Under `projects` so that invalidating `projects.all` after a
+     * delete or a restore refreshes the bin too.
      */
     recycleBin: ['projects', 'recycle-bin'] as const,
   },
 
   /**
-   * A project's changelog.
-   *
-   * A root of its own rather than a branch of `projects`, because every write
-   * anywhere in the app invalidates `projects.all` — a rename, a pin, a
-   * roster change — and a changelog nested under it would refetch its whole
-   * scrolled history each time. It is fed by the socket instead; see
-   * `useProjectActivityRealtime`.
+   * A project's changelog. A root of its own rather than a branch of `projects`, because every
+   * write anywhere in the app invalidates `projects.all` — a rename, a pin, a roster change.
    */
   activity: {
     all: ['activity'] as const,
@@ -64,13 +51,8 @@ export const queryKeys = {
   },
 
   /**
-   * The grouping board's columns.
-   *
-   * A root of its own rather than a branch of `tasks`, and the reason is what
-   * invalidating each one is *for*. A task write moves cards between columns
-   * and must refresh `taskGroups.board`; a column write renames or reorders a
-   * lane and must not blow away every task list in the cache to do it. Nesting
-   * these under `tasks` would make the second impossible to express.
+   * The grouping board's columns. A root of its own rather than a branch of `tasks`, and the reason
+   * is what invalidating each one is *for*.
    */
   taskGroups: {
     all: ['task-groups'] as const,
@@ -106,12 +88,8 @@ export const queryKeys = {
       ['documents', 'list', projectId ?? 'personal', taskId ?? 'all'] as const,
     detail: (documentId: string) => ['documents', documentId] as const,
     /**
-     * How full one board is. Same scoping rule as `list`: no project id is the
-     * caller's own desk.
-     *
-     * Under the `documents` prefix on purpose — every mutation in this entity
-     * already invalidates that prefix, so adding, importing or binning a page
-     * refreshes the gauge without a single call site learning it exists.
+     * How full one board is. Same scoping rule as `list`: no project id is the caller's own desk.
+     * Under the `documents` prefix on purpose.
      */
     usage: (projectId: string | undefined) =>
       ['documents', 'usage', projectId ?? 'personal'] as const,
@@ -120,36 +98,21 @@ export const queryKeys = {
   },
 
   /**
-   * Live calls, which are not meetings.
-   *
-   * A root of its own rather than a branch of `meetings`, and the reason is
-   * invalidation rather than taxonomy: the two lists refresh on completely
-   * different events — a calendar on a booking, this on somebody pressing
-   * "open a room" — and nesting them would make every meeting write refetch a
-   * list of calls that had not changed.
-   *
-   * There is deliberately no key for a call's *participants*. Who is in a room
-   * right now arrives over the socket and lives in component state; putting it
-   * in the query cache would mean a stale answer surviving in an offline
-   * snapshot, which for presence is worse than no answer.
+   * Live calls, which are not meetings. A root of its own rather than a branch of `meetings`, and
+   * the reason is invalidation rather than taxonomy.
    */
   live: {
     all: ['live'] as const,
     /**
-     * One project's rooms.
-     *
-     * `includeEnded` is in the key because it is a different question rather
-     * than a wider view of the same one: the default response omits finished
-     * rooms entirely, so it is not a subset anything can be filtered out of.
+     * One project's rooms. `includeEnded` is in the key because it is a different question rather
+     * than a wider view of the same one: the default response omits finished rooms entirely.
      */
     list: (projectId: string, includeEnded: boolean) =>
       ['live', 'list', projectId, includeEnded] as const,
     detail: (roomId: string) => ['live', roomId] as const,
     /**
-     * The ICE servers, which are deployment configuration.
-     *
-     * Cached hard and never invalidated by anything a user does — it changes
-     * when the API is redeployed, which is when the whole app reloads anyway.
+     * The ICE servers, which are deployment configuration. Cached hard and never invalidated by
+     * anything a user does — it changes when the API is redeployed.
      */
     ice: ['live', 'ice'] as const,
   },
@@ -157,37 +120,19 @@ export const queryKeys = {
   meetings: {
     all: ['meetings'] as const,
     /**
-     * One calendar, as one entry.
-     *
-     * The board's day paging and name search are local filters over this
-     * snapshot, so they are deliberately *not* in the key: putting them there
-     * would make every arrow press a cache miss and a request.
-     *
-     * The scope is part of the key rather than just the id, because a project's
-     * calendar and a company's are different questions with overlapping
-     * answers — a company's includes the meetings of every project filed under
-     * it, so keying both on a bare id would have one overwrite the other the
-     * first time somebody opened a project from the company page.
+     * One calendar, as one entry. The board's day paging and name search are local filters over
+     * this snapshot, so they are deliberately *not* in the key.
      */
     list: (scope: 'project' | 'organization', id: string) =>
       ['meetings', 'list', scope, id] as const,
     /**
-     * The personal agenda, keyed by its one server-side filter.
-     *
-     * `projectId` *is* in the key, unlike the board's local filters above,
-     * because narrowing the agenda to a project is a different query rather
-     * than a different view of the same answer — the unfiltered response is
-     * capped, so it is not guaranteed to contain the filtered one.
+     * The personal agenda, keyed by its one server-side filter. `projectId` *is* in the key, unlike
+     * the board's local filters above.
      */
     agenda: (projectId?: string) => ['meetings', 'agenda', projectId ?? 'all'] as const,
     /**
-     * The bookable rooms of one calendar.
-     *
-     * Keyed by scope for the same reason the list above is, and with one extra
-     * consequence worth naming: a project's answer *includes* its company's
-     * rooms, so the two entries genuinely overlap. Keying them apart is what
-     * stops a project's inherited copy from overwriting the company's own list
-     * when somebody opens both pages.
+     * The bookable rooms of one calendar. Keyed by scope for the same reason the list above is, and
+     * with one extra consequence worth naming: a project's answer *includes* its company's rooms.
      */
     rooms: (scope: 'project' | 'organization', id: string) =>
       ['meetings', 'rooms', scope, id] as const,
@@ -219,26 +164,21 @@ export const queryKeys = {
   teams: {
     all: ['teams'] as const,
     /**
-     * One roster's teams, keyed by the altitude they belong to.
-     *
-     * The scope is in the key rather than just the id because an organization
-     * and a project can never share one: they are different rosters with
-     * different membership rules, and a bare id would let a project's teams
-     * answer a query for a company's.
+     * One roster's teams, keyed by the altitude they belong to. The scope is in the key rather than
+     * just the id because an organization and a project can never share one.
      */
     list: (scope: 'organization' | 'project', id: string) =>
       ['teams', 'list', scope, id] as const,
   },
 
+  inviteLinks: {
+    preview: (token: string) => ['invite-links', token] as const,
+  },
+
   invitations: {
     /**
-     * Project invitations addressed to the signed-in user.
-     *
-     * Kept apart from the organization ones below rather than merged into one
-     * key, because they come from two endpoints and are answered by two
-     * different routes — one cache entry holding both would have to be
-     * invalidated by every write to either, and a reply to one would refetch
-     * the other for nothing.
+     * Project invitations addressed to the signed-in user. Kept apart from the organization ones
+     * below rather than merged into one key.
      */
     mine: ['invitations', 'mine'] as const,
     organizations: ['invitations', 'organizations'] as const,
@@ -250,19 +190,8 @@ export const queryKeys = {
   },
 
   /**
-   * Things that reach outside this app on the user's behalf.
-   *
-   * A root of its own rather than branches of `projects` and `meetings`, and
-   * the reason is what invalidating each one is *for*. A finished import
-   * invalidates `projects.all` — it made a project — but the reverse must not
-   * hold: every rename, pin and roster change in the app invalidates
-   * `projects.all`, and an import tracker nested under it would refetch a
-   * live job list on each of them. The same argument the changelog makes.
-   *
-   * Neither key is per-user. Both are scoped to the session by the API, and
-   * `SessionProvider` clears the whole cache on sign-out — so a user id in the
-   * key would be a second mechanism guarding against something the first one
-   * already prevents.
+   * Things that reach outside this app on the user's behalf. A root of its own rather than branches
+   * of `projects` and `meetings`, and the reason is what invalidating each one is *for*.
    */
   integrations: {
     all: ['integrations'] as const,
@@ -272,46 +201,29 @@ export const queryKeys = {
     calendar: ['integrations', 'calendar'] as const,
     /** Their Spotify grant, and whether the deployment offers one. */
     spotify: ['integrations', 'spotify'] as const,
+    /** Their Trello and Jira accounts, and whether the deployment offers each. */
+    boards: ['integrations', 'boards'] as const,
+    boardChoices: (provider: string) => ['integrations', 'boards', provider] as const,
     /**
-     * What is playing right now.
-     *
-     * Its own key rather than a field on `spotify`, and for a stronger reason
-     * than the feed's below: this one is *polled* while a player is open and
-     * the connection is not. Sharing a key would either poll the connection
-     * every few seconds or leave the track stale — and the two have completely
-     * different lifetimes, one being a stored grant and the other being a fact
-     * about the last four seconds.
+     * What is playing right now. Its own key rather than a field on `spotify`, and for a stronger
+     * reason than the feed's below.
      */
     spotifyPlayback: ['integrations', 'spotify', 'playback'] as const,
     /**
-     * The subscribable feed's *status* — never its URL.
-     *
-     * A separate key from `calendar` rather than a field on it, because the
-     * two change for completely unrelated reasons: a background sync writes an
-     * error onto the connection every quarter hour, and a feed changes only
-     * when somebody presses rotate. Sharing a key would refetch one on every
-     * write to the other.
+     * The subscribable feed's *status* — never its URL. A separate key from `calendar` rather than
+     * a field on it, because the two change for completely unrelated reasons.
      */
     calendarFeed: ['integrations', 'calendar', 'feed'] as const,
     /**
-     * One project's outbound webhooks.
-     *
-     * Under `integrations` rather than under `projects`, even though the route
-     * hangs off a project — for the reason the changelog gives about itself:
-     * every write anywhere in the app invalidates `projects.all`, and a hook
-     * list nested there would refetch on every rename and every pin.
+     * One project's outbound webhooks. Under `integrations` rather than under `projects`, even
+     * though the route hangs off a project — for the reason the changelog gives about itself.
      */
     webhooks: (projectId: string) => ['integrations', 'webhooks', projectId] as const,
     /** This person's personal access tokens. */
     apiTokens: ['integrations', 'api-tokens'] as const,
     /**
-     * Whether this deployment offers Figma at all.
-     *
-     * One key with no project in it, because the answer has no project in it:
-     * the integration needs an encryption key on the server, and that is true
-     * or false for the whole instance. A project's *own* connection is not
-     * here — it is a field on the project, arriving with the roster and the
-     * description, because it is drawn beside the project's name.
+     * Whether this deployment offers Figma at all. One key with no project in it, because the
+     * answer has no project in it: the integration needs an encryption key on the server.
      */
     figma: ['integrations', 'figma'] as const,
   },

@@ -2,12 +2,8 @@ import { api } from '@/shared/api/client';
 import type { ApiToken, CreatedApiToken } from '../model/types';
 
 /**
- * Personal access tokens, for everything that is not a browser.
- *
- * Under `/auth` rather than `/integrations`, because a token *is* a credential
- * and belongs beside the other things that authenticate a person — the
- * password change, the session refresh. Filing it under optional features is
- * where somebody auditing authentication would not look.
+ * Personal access tokens, for everything that is not a browser. Under `/auth` rather than
+ * `/integrations`.
  */
 export const tokensApi = {
   async list(): Promise<ApiToken[]> {

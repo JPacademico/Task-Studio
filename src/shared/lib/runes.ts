@@ -1,21 +1,4 @@
-/**
- * Latin → Elder Futhark, for the one skin that writes in it.
- *
- * Real Unicode runes (U+16A0–16FF), not a picture font: the text stays text, so
- * it can be selected, searched by the browser's find, read out by a screen
- * reader that knows the block, and — the part that matters here — reflowed and
- * scaled like the type it is.
- *
- * The mapping is the ordinary scholarly transliteration run backwards, with two
- * digraphs (`th` → ᚦ, `ng` → ᛜ) because those are single runes and spelling
- * them as two is the tell that a transliterator was written in five minutes.
- * Letters with no rune of their own borrow the nearest sound, which is what the
- * alphabet itself did: `c` and `q` ride on ᚲ, `v` on ᚹ, `x` on ᛉ.
- *
- * Nothing here is reversible and nothing needs to be. This is decoration over
- * text the app still holds in Latin — every surface that renders runes keeps
- * the original for its tooltip, its `aria-label` and its hover state.
- */
+/** Latin → Elder Futhark, for the one skin that writes in it. */
 
 const DIGRAPHS: Record<string, string> = {
   th: 'ᚦ',
@@ -60,22 +43,12 @@ export interface RuneToken {
 }
 
 /**
- * Transliterate, one token at a time.
- *
- * Returned as tokens rather than a string because the skin lights *individual*
- * runes rather than whole words, and that needs each one to be its own element.
- * Callers that only want the text can join the glyphs.
+ * Transliterate, one token at a time. Returned as tokens rather than a string because the skin
+ * lights *individual* runes rather than whole words, and that needs each one to be its own element.
  */
 export const runeTokens = (text: string): RuneToken[] => {
-  /*
-   * Accents folded to their letter first: `ã` carves as ᚨ, `ç` as ᚲ.
-   *
-   * The alphabet has no diacritics, and without this every accented vowel
-   * stayed Latin in the middle of a carved word — "ᛊó", "ᚨçᚨᛟ" — which in the
-   * Portuguese interface is a Latin letter in almost every label. One code
-   * unit in, one out (a lone surrogate normalises to itself), so the indices
-   * still line up with `text` for the characters that are not runes.
-   */
+  // Accents folded to their letter first: `ã` carves as ᚨ, `ç` as ᚲ. The alphabet has no
+  // diacritics, and without this every accented vowel stayed Latin in the middle of a carved word.
   const lower = text
     .toLowerCase()
     .replace(/[^\u0000-\u007f]/g, (character) => character.normalize('NFD')[0] ?? character);
@@ -107,17 +80,8 @@ export const toRunes = (text: string): string =>
     .join('');
 
 /**
- * Which runes in a word are currently lit.
- *
- * Deterministic, and deliberately not evenly spaced: a fixed stride lights
- * every third rune in every label on screen, and a column of nav rows glowing
- * in lockstep reads as a loading state rather than as stone catching light. The
- * hash mixes the character with its position, so two different words of the
- * same length light differently and the same word always lights the same way —
- * which matters because the alternative is a label that reshuffles its glow
- * every time React re-renders it.
- *
- * Returns the animation delay in seconds, or `null` for a rune that stays dark.
+ * Which runes in a word are currently lit. Deterministic, and deliberately not evenly spaced: a
+ * fixed stride lights every third rune in every label on screen.
  */
 export const emberDelay = (glyph: string, index: number, seed: number): number | null => {
   const hash = (glyph.codePointAt(0) ?? 0) + index * 31 + seed * 17;

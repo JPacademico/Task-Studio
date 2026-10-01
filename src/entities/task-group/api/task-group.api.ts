@@ -10,11 +10,8 @@ const base = (projectId: string) => `/projects/${projectId}/task-groups`;
 
 export const taskGroupApi = {
   /**
-   * The columns alone — what the composer's tag picker needs.
-   *
-   * Separate from `board` because the two have completely different costs: this
-   * is a dozen short rows read whenever somebody opens the composer, and the
-   * board is every task on the project.
+   * The columns alone — what the composer's tag picker needs. Separate from `board` because the two
+   * have completely different costs.
    */
   async list(projectId: string): Promise<TaskGroup[]> {
     const { data } = await api.get<TaskGroup[]>(base(projectId));

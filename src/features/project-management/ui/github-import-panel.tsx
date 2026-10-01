@@ -25,53 +25,13 @@ interface GithubImportPanelProps {
   /** The accent the dialog's picker is on — overrides the assistant's choice. */
   color?: string;
   /**
-   * Called once the import has been *accepted*, not once it has finished.
-   *
-   * The distinction is the whole change: this used to hand over a project id
-   * because the request did not return until there was one. It now returns
-   * in milliseconds with a job, so there is no project to navigate to yet —
-   * and the dialog's job is simply to get out of the way. The tracker takes
-   * over from here, including the button that opens the finished project.
+   * Called once the import has been *accepted*, not once it has finished. The distinction is the
+   * whole change: this used to hand over a project id.
    */
   onStarted: () => void;
 }
 
-/**
- * Making a project out of a repository somebody already has.
- *
- * ## Why this is two steps and not one
- *
- * Because an import is not a small thing. It creates a project, up to three
- * tasks, up to five pages, and it sends invitations to real people — from one
- * pasted URL, and every one of those is somebody else's inbox. "Look it up,
- * then decide" costs one extra click and turns all of that from a surprise
- * into a choice: the preview names the repository that was actually found
- * (GitHub follows renames, so it is not always the one in the URL), lists the
- * files that would become pages, and shows exactly which contributors would be
- * invited and which would not.
- *
- * The lookup is also free of the assistant — six GitHub reads, no model, no
- * quota — which is what makes it reasonable to run it every time somebody
- * corrects a typo.
- *
- * ## And why pressing the second button ends the conversation
- *
- * It used to begin a wait. The import was the request, so the panel sat there
- * with a spinner in it for as long as reading a repository through a model
- * takes, and navigating away threw the whole thing in the bin.
- *
- * It now starts a background job and closes. Nothing here watches it — the
- * import tracker does, from the app shell, so the reader can go and do
- * something else while a project builds itself. What this panel is for ends at
- * "yes, that is the right repository".
- *
- * ## Why the contributor list says who will *not* be invited
- *
- * A contributor with no matched account is shown greyed rather than hidden.
- * Hiding them would make the list look like the repository's whole team, and
- * the honest answer to "why wasn't Ana invited" is "she has not signed in here
- * with GitHub" — which is only visible if Ana is on the list at all.
- */
+/** Making a project out of a repository somebody already has. */
 export const GithubImportPanel = ({
   organizationId,
   color,
@@ -81,20 +41,8 @@ export const GithubImportPanel = ({
   const [url, setUrl] = useState('');
   const [useAssistant, setUseAssistant] = useState(true);
   const [guidance, setGuidance] = useState('');
-  /*
-   * The overview is a dialog now, not a block under the field.
-   *
-   * It was six stacked sections of 10px type wedged into the create-project
-   * dialog under the URL input — the repository, a warning, the pages, the
-   * contributors, a switch and a button — and the panel it sat in already had
-   * a name field, a colour picker and an organization select above it. The
-   * most important screen in the whole flow, the one where somebody decides
-   * whether this is the right repository and who is about to be emailed, was
-   * the most cramped.
-   *
-   * Its own dialog gives it the room to be read. The lookup stays where it was,
-   * because that is a field somebody types in rather than a thing to look at.
-   */
+  // The overview is a dialog now, not a block under the field. It was six stacked sections of 10px
+  // type wedged into the create-project dialog under the URL input — the repository, a warning.
   const [isOverviewOpen, setIsOverviewOpen] = useState(false);
 
   const preview = usePreviewRepository();
@@ -119,20 +67,13 @@ export const GithubImportPanel = ({
       organizationId,
       color,
       useAssistant,
-      // Only when there is something to steer. An empty note and no note are
-      // the same thing, and sending `''` would put an empty fenced block in
-      // the prompt for nothing.
+      // Only when there is something to steer. An empty note and no note are the same thing, and
+      // sending `''` would put an empty fenced block in the prompt for nothing.
       ...(useAssistant && guidance.trim() ? { guidance: guidance.trim() } : {}),
     });
 
-    /*
-     * Close, and go nowhere.
-     *
-     * There is nothing to navigate to — the project will not exist for another
-     * half a minute — and keeping the dialog open to watch a progress bar
-     * would put the app right back where it was before any of this changed.
-     * The tracker takes it from here, on whatever page the reader moves to.
-     */
+    // Close, and go nowhere. There is nothing to navigate to — the project will not exist for
+    // another half a minute.
     setIsOverviewOpen(false);
     onStarted();
   };
@@ -147,9 +88,8 @@ export const GithubImportPanel = ({
           onChange={(event) => setUrl(event.target.value.slice(0, 300))}
           placeholder="github.com/owner/name"
           className="flex-1"
-          // Enter looks it up rather than submitting the dialog behind it,
-          // which would create an empty project named whatever was in the name
-          // field.
+          // Enter looks it up rather than submitting the dialog behind it, which would create an
+          // empty project named whatever was in the name field.
           onKeyDown={(event) => {
             if (event.key !== 'Enter') return;
             event.preventDefault();
@@ -172,14 +112,8 @@ export const GithubImportPanel = ({
         <p className="text-2xs leading-relaxed text-content-faint">{t('github.hint')}</p>
       )}
 
-      {/*
-        What was found, once the dialog has been dismissed.
-
-        Without this, closing the overview leaves the panel looking exactly as
-        it did before the lookup — the repository is still held, the import is
-        still one click away, and nothing on screen says so. One row that names
-        it and reopens the dialog is the whole fix.
-      */}
+      {/* What was found, once the dialog has been dismissed. Without this, closing the overview
+          leaves the panel looking exactly as it did before the lookup. */}
       {repo && !isOverviewOpen && (
         <button
           type="button"
@@ -197,14 +131,8 @@ export const GithubImportPanel = ({
         </button>
       )}
 
-      {/*
-        The overview, in a dialog of its own.
-
-        Opened by a successful lookup rather than by a second click: the reader
-        pressed "look it up" and this *is* the answer, so making them press
-        again to see it would be a step that exists only because the layout
-        used to be different.
-      */}
+      {/* The overview, in a dialog of its own. Opened by a successful lookup rather than by a
+          second click: the reader pressed "look it up" and this *is* the answer. */}
       <Modal
         isOpen={isOverviewOpen && Boolean(repo)}
         onClose={() => setIsOverviewOpen(false)}
@@ -304,14 +232,8 @@ export const GithubImportPanel = ({
             </div>
           )}
 
-          {/* --- The one choice worth offering ----------------------------
-
-              A row, and nothing under it. Both this and the contributor note
-              above used to carry a paragraph explaining themselves, and on a
-              panel that is already four stacked sections of 10px type they
-              read as a wall — the reader is trying to check a repository, not
-              study the feature. The label says what the switch does; what it
-              does in detail is discoverable by using it once. */}
+          {/* --- The one choice worth offering ---
+              A row, and nothing under it. */}
           {repo.canUseAssistant && (
             <div className="space-y-2.5 border-t border-edge/70 pt-2.5">
               <Switch
@@ -322,23 +244,8 @@ export const GithubImportPanel = ({
                 className="text-2xs"
               />
 
-              {/*
-                A note steering what the assistant reads, and only when there
-                is an assistant to steer.
-
-                Collapsed with the switch rather than greyed out beside it: a
-                disabled field for a feature that is off is a control asking to
-                be understood before it can be ignored, and the switch above it
-                already says why it is not there.
-
-                What it *cannot* do is worth being plain about in the hint. It
-                changes which files get attention; it cannot change what the
-                import produces, because the answer is bound to a fixed schema
-                and written into a project, three tasks and some pages either
-                way. The API states the same boundary to the model and strips
-                the characters that could break out of the block it is quoted
-                in — see `sanitiseGuidance` there.
-              */}
+              {/* A note steering what the assistant reads, and only when there is an assistant
+                  to steer. */}
               {useAssistant && (
                 <div className="space-y-1">
                   <Textarea
@@ -357,9 +264,7 @@ export const GithubImportPanel = ({
                     <p className="text-3xs leading-relaxed text-content-faint">
                       {t('github.guidanceHint')}
                     </p>
-                    {/* Only once it is close enough to matter — a counter that
-                        is always on is a limit the reader is asked to think
-                        about before they have written anything. */}
+                    {/* Only once it is close enough to matter. */}
                     {guidance.length > MAX_IMPORT_GUIDANCE * 0.75 && (
                       <span className="shrink-0 text-3xs tabular-nums text-content-faint">
                         {MAX_IMPORT_GUIDANCE - guidance.length}
@@ -393,14 +298,8 @@ export const GithubImportPanel = ({
             </Button>
           </div>
 
-          {/*
-            The hint no longer describes a wait, because there is not one.
-
-            It used to say "this takes a moment, stay on this screen" — which
-            was true and was also the problem. What the reader needs to know now
-            is the opposite: the work carries on somewhere else and they are
-            free to go, which is not obvious from a button that closes a dialog.
-          */}
+          {/* The hint no longer describes a wait, because there is not one. It used to say
+              "this takes a moment, stay on this screen". */}
           <p className="text-center text-3xs leading-relaxed text-content-faint">
             {t('github.backgroundHint')}
           </p>

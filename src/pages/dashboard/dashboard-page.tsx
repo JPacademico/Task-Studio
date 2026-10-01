@@ -33,17 +33,8 @@ import { Button, EmptyState, RunicText, Section, Skeleton, Switch } from '@/shar
 import { useT } from '@/shared/i18n';
 
 /**
- * What a counter is *about*, in colour.
- *
- * Semantic rather than decorative: finishing work is the green outcome and
- * running late is the red one, and a reader who has learned that anywhere else
- * in the app already knows it here. `open` keeps the brand accent because
- * "still to do" is the neutral state — it is the work, not a verdict on it.
- *
- * Overdue is red whether or not anything is overdue. The colour classifies the
- * *category*; the number underneath it reports the state, and "0" in a red
- * well is unambiguous in a way that a well which changes colour behind your
- * back is not.
+ * What a counter is *about*, in colour. Semantic rather than decorative: finishing work is the
+ * green outcome and running late is the red one.
  */
 const TONES = {
   open: 'bg-brand/12 text-brand',
@@ -52,29 +43,8 @@ const TONES = {
 } as const;
 
 /**
- * One counter on the masthead: a number at rest, a sentence on approach.
- *
- * ## Why the label hides
- *
- * Four labelled tiles were four lines of small uppercase text competing with
- * the greeting beside them, and none of it is read twice — "OPEN TASKS" tells
- * you nothing the second time you see it, while the number changes daily. So
- * the resting state is the icon and the figure, and the words come back when
- * the pointer arrives and somebody is actually asking what they mean.
- *
- * The reveal is `grid-template-columns: 0fr → 1fr`, the same mechanism the
- * project cards use: no JavaScript, no measurement, and it animates correctly
- * whatever the translated label turns out to be. `prefers-reduced-motion`
- * flattens it through the global rule.
- *
- * Where there is **no hover** — a phone — the label is simply always on. That
- * is what `@media (hover: hover)` gates: a control whose meaning is only
- * reachable by an interaction the device cannot perform is not a design, it is
- * a lockout.
- *
- * Sunken rather than raised, because it sits *inside* the plate. A raised card
- * on a raised panel is two shadows arguing; an inset well reads as something
- * stamped into the plate, which is what a counter on a masthead is.
+ * One counter on the masthead: a number at rest, a sentence on approach. Four labelled tiles were
+ * four lines of small uppercase text competing with the greeting beside them.
  */
 const StatTile = ({
   label,
@@ -114,15 +84,8 @@ const StatTile = ({
           <span className="truncate pl-0.5 text-3xs uppercase tracking-wide text-content-faint">
             {label}
           </span>
-          {/*
-            The arrow is the only thing here that goes anywhere.
-
-            Every one of these counters is a slice of the same list — the
-            personal task menu — so the tile does not need three destinations,
-            it needs one, and it is worth reaching only once somebody has
-            leaned in far enough to read the label. It keeps its own accessible
-            name because "→" announced on its own is not a destination.
-          */}
+          {/* The arrow is the only thing here that goes anywhere. Every one of these counters
+              is a slice of the same list — the personal task menu. */}
           <Link
             to="/tasks"
             aria-label={t('dash.openTaskMenuFor', { label })}
@@ -142,15 +105,8 @@ const StatTile = ({
 };
 
 /**
- * One company, at the size a dashboard can afford to give it.
- *
- * Deliberately a row and not the card the organizations page draws. This
- * surface already carries four counters, a grid of project cards and a task
- * list; a second grid of full-height cards with banners and bylines would push
- * the work — which is what anybody opened the dashboard for — below the fold.
- *
- * So it says the three things that decide whether to click: which company, how
- * many people, how much work. Everything else is one navigation away.
+ * One company, at the size a dashboard can afford to give it. Deliberately a row and not the card
+ * the organizations page draws.
  */
 const OrganizationTile = ({ organization }: { organization: Organization }) => {
   const t = useT();
@@ -197,18 +153,8 @@ const OrganizationTile = ({ organization }: { organization: Organization }) => {
 };
 
 /**
- * The greeting, with the reader's own name picked out of it.
- *
- * The name is coloured and sits on a soft brand wash — the highlighter idiom,
- * which is the right one on a surface built out of paper and Post-its, and the
- * cheapest way to make a line that every user sees feel addressed to *this*
- * one rather than generated for anybody.
- *
- * The sentence is split on the raw `{name}` token rather than assembled from
- * two half-sentence keys. Word order is not the same in every language — a
- * `greetingBefore` / `greetingAfter` pair would have quietly forced English
- * order onto every translation — and splitting the template keeps the whole
- * sentence in one string where a translator can see it.
+ * The greeting, with the reader's own name picked out of it. The name is coloured and sits on a
+ * soft brand wash — the highlighter idiom.
  */
 const Greeting = ({ name }: { name: string }) => {
   const t = useT();
@@ -218,17 +164,8 @@ const Greeting = ({ name }: { name: string }) => {
     <h1 className="ui-greeting text-balance text-xl font-semibold tracking-tight sm:text-2xl">
       {before}
       <span className="relative whitespace-nowrap">
-        {/*
-          The wash is behind the name by *document order*, not by a negative
-          z-index.
-
-          `-z-10` would have been the obvious way to write this and is the
-          fragile one: neither the plate nor the flex wrapper above establishes
-          a stacking context, so a negatively-stacked descendant is free to
-          paint behind the plate's own background and vanish entirely. Two
-          positioned siblings at the same level need no z-index at all — the
-          later one wins — and that holds wherever this heading is dropped.
-        */}
+        {/* The wash is behind the name by *document order*, not by a negative z-index. `-z-10`
+            would have been the obvious way to write this and is the fragile one. */}
         <span
           aria-hidden
           className="absolute inset-x-[-0.2em] bottom-0 top-[0.15em] rounded-[0.25em] bg-brand/12"
@@ -241,62 +178,19 @@ const Greeting = ({ name }: { name: string }) => {
 };
 
 /**
- * Home surface: who you are, where things stand, the projects you are on, and
- * the work that is due next across all of them.
- *
- * ## The shape of the page
- *
- * A masthead plate, then two columns: the projects on the left and a rail on
- * the right carrying what is on you next and the companies you belong to.
- *
- * It used to be five full-width sections stacked down the page, which on a
- * wide screen meant a column of content roughly 1400px across with nothing
- * beside it, and "what is on me next" — arguably the single most useful thing
- * here — below three sections of chrome. The rail puts it beside the projects
- * instead of under them, and the projects themselves are now collapsed cards
- * (see `ProjectCard`), so the whole surface fits a screen where it used to
- * take two.
- *
- * ## Pinned projects
- *
- * There is no pinned section any more. It was a second grid of the same
- * component, above a heading that then had to rename itself ("All projects"
- * when something was pinned, "Your projects" when not) — two lists, two
- * headings and a conditional title to express *an ordering*. Pinned projects
- * sort to the front of the one list, which is what pinning already means
- * everywhere else in the app, and the pin on the card says which they are.
+ * Home surface: who you are, where things stand, the projects you are on, and the work that is due
+ * next across all of them.
  */
 /**
- * How many of the reader's open tasks are pulled back to choose six from.
- *
- * Wide enough that the ordering below has something to order — the API's own
- * `dueAt ASC` puts undated work last, so a narrow window is a window with no
- * undated tasks in it — and small enough to stay a cheap request. Thirty rows
- * is a few kilobytes and covers anybody who is not drowning.
+ * How many of the reader's open tasks are pulled back to choose six from. Wide enough that the
+ * ordering below has something to order — the API's own `dueAt ASC` puts undated work last.
  */
 const UP_NEXT_FETCH = 30;
 
 /** How many actually get drawn. */
 const UP_NEXT_SHOWN = 6;
 
-/**
- * The reader's open work, in the order somebody asking "what next" means.
- *
- * Three bands, and the order between them is the whole point:
- *
- *   1. **Overdue**, most overdue first. Nothing else competes with a deadline
- *      that has already passed.
- *   2. **Dated and still ahead**, soonest first.
- *   3. **Undated**, newest first. This band is the fix: the API sorts these
- *      last and a truncated list therefore never showed one, which made a task
- *      created without a deadline invisible on the dashboard. Newest first
- *      inside the band because a task somebody just wrote is the one they are
- *      most likely to be looking for.
- *
- * Pinned work jumps to the front of whichever band it is in — pinning means
- * "keep this in front of me" everywhere else in the app, and a pin that did
- * nothing here would be the odd one out.
- */
+/** The reader's open work, in the order somebody asking "what next" means. */
 const rankUpNext = (tasks: Task[]): Task[] => {
   const now = Date.now();
 
@@ -329,50 +223,14 @@ const DashboardPage = () => {
   const navigate = useNavigate();
 
   const { data: overview, isLoading: overviewLoading } = useUserOverview();
-  /*
-   * Archived projects are off by default, and reachable.
-   *
-   * Archiving has existed on the server since the model was written —
-   * `isArchived` on the row, `includeArchived` on the list query, the flag on
-   * the update DTO — and nothing in the app could set it or see it, which made
-   * it a feature only an API client had. The two halves are this switch and
-   * the control in `ProjectSettingsDialog`; without both, archiving something
-   * would be a way to lose it.
-   *
-   * A separate query key (`list({ includeArchived: true })`) rather than a
-   * client-side filter over one list, because the server is the thing that
-   * decides: asking for the wider set is a different question, and caching it
-   * apart is what stops a reader who has never pressed this from paying for
-   * rows they will not see.
-   */
+  // Archived projects are off by default, and reachable. Archiving has existed on the server since
+  // the model was written — `isArchived` on the row, `includeArchived` on the list query.
   const [showArchived, setShowArchived] = useState(false);
   const { data: projects = [], isLoading: projectsLoading } = useProjects(
     showArchived ? { includeArchived: true } : {},
   );
   const { data: organizations = [] } = useOrganizations();
-  /*
-   * "Up next for you", and the two things that were wrong with how it asked.
-   *
-   * It used to fetch `{ scope: 'mine', status: 'TODO', limit: 6 }`, which had
-   * two separate ways of hiding work the reader had every reason to expect:
-   *
-   *  1. **`status: 'TODO'` excluded everything in progress.** Moving a card to
-   *     "In progress" — the exact moment it becomes the thing you are doing
-   *     next — took it out of the list called "up next for you". `hideCompleted`
-   *     says what was actually meant: everything still open.
-   *
-   *  2. **`limit: 6` truncated an ordering that exiles undated work.** The API
-   *     orders by `dueAt` ascending and Postgres sorts NULLs *last*, so a task
-   *     with no deadline sits behind every task that has one. Create a task
-   *     without setting a due date — which is the default in the composer — and
-   *     with six dated tasks already open, it never appears at all. That is the
-   *     "I made a task and it isn't there" case exactly.
-   *
-   * So the window is fetched wide and cut here instead. Ordering "up next" is a
-   * judgement this surface makes and no other one shares — the task menu buckets
-   * by day, the board groups by column — so it belongs to the surface rather
-   * than to a shared endpoint whose ordering every other caller depends on.
-   */
+  // "Up next for you", and the two things that were wrong with how it asked.
   const { data: openTasks = [] } = useTasks({
     scope: 'mine',
     hideCompleted: true,
@@ -381,19 +239,8 @@ const DashboardPage = () => {
 
   const myTasks = useMemo(() => rankUpNext(openTasks), [openTasks]);
 
-  /*
-   * Opening a task from here means leaving here.
-   *
-   * These cards were inert — the whole row of "what is on you next" was a
-   * read-only list, and the only way to act on any of it was to remember which
-   * project it belonged to and navigate there by hand. A task's home is its
-   * project's board, so that is where this goes, carrying the task id so the
-   * sheet opens on arrival rather than dropping the reader at the top of a
-   * board to go and find it again. See `ProjectPage`'s `?task=` handling.
-   *
-   * A *personal* task has no project and therefore no board; the task menu is
-   * its only home, so that is where it goes instead.
-   */
+  // Opening a task from here means leaving here. These cards were inert — the whole row of "what is
+  // on you next" was a read-only list, and the only way to act on any of it was to remember.
   const openTask = useCallback(
     (task: Task) => {
       navigate(
@@ -407,32 +254,10 @@ const DashboardPage = () => {
   const toggleTaskPin = useToggleTaskPin();
   const toggleCompletion = useToggleMyCompletion(user?.id);
 
-  /**
-   * Pinned first, everything else in the order the API sent.
-   *
-   * `sort` is stable in every engine this app runs on, so a plain
-   * pinned-minus-pinned comparator preserves the server's ordering *within*
-   * each half rather than reshuffling projects that are equally pinned. That
-   * matters because the list is otherwise sorted by the API, and a comparator
-   * that reordered ties would make the grid jump every time a pin was toggled.
-   */
+  /** Pinned first, everything else in the order the API sent. */
   const ordered = useMemo(() => {
-    /*
-     * The switch is a *filter*, not an inclusion.
-     *
-     * `includeArchived: true` is the widest question the API answers — every
-     * project, archived or not — and showing that whole set was reading the
-     * control as "and archived ones too". Nobody turns on a switch labelled
-     * "Archived" to be shown the same twelve live projects with three extra
-     * cards somewhere in the middle of them; they turn it on to go and find
-     * something they put away. So the wide answer is fetched and narrowed here
-     * to exactly the archived half.
-     *
-     * It stays a client-side narrowing rather than a third query parameter
-     * because the wide set is already cached under its own key (see the note
-     * on `showArchived`), and an `archivedOnly` flag would be a third list for
-     * the server to keep consistent with the other two for no new information.
-     */
+    // The switch is a *filter*, not an inclusion. `includeArchived: true` is the widest question
+    // the API answers — every project.
     const visible = showArchived
       ? projects.filter((project) => project.isArchived)
       : projects;
@@ -445,42 +270,17 @@ const DashboardPage = () => {
   const firstName = user?.displayName.split(' ')[0] ?? t('dash.greetingFallback');
 
   return (
-    /*
-      The trailing space is room for the bottom row to open into.
-
-      A card's detail panel is absolutely positioned below it (see
-      `ProjectCard`), so on the last row it opens past the end of the page —
-      either clipped by the viewport or, worse, growing the scroll container
-      for exactly as long as the pointer rests there, which makes a scrollbar
-      appear and disappear under the mouse.
-
-      Reserved only where there is a pointer to open it with: `hover: hover`
-      excludes touch, whose layout has no panel to make room for. On a
-      dashboard the space at the foot of the page costs nothing anyway.
-    */
+    /* The trailing space is room for the bottom row to open into. */
     <div className="space-y-5 pb-2 sm:space-y-6 [@media(hover:hover)]:pb-40">
       {/* --- The masthead ------------------------------------------------ */}
       <header className="panel board-grid relative overflow-hidden px-4 py-5 sm:px-6 sm:py-6">
-        {/*
-          The brand bloom that used to sit off the top-right corner has gone.
-
-          It was there to stop the masthead opening on a flat rectangle, which
-          is a real concern and was the wrong fix for it: the right-hand end of
-          this plate is where the three counters live, and a 256px wash of
-          accent behind them put a gradient under the one row on the page that
-          is pure numbers. Tinted digits read as a state - disabled, pending,
-          highlighted - and these are none of those.
-
-          The plate is not flat without it. `board-grid` is still on the header
-          and the skin's own `--panel-texture` still sits behind it, which is
-          the same job done by something that does not vary across the box.
-        */}
+        {/* The brand bloom that used to sit off the top-right corner has gone. It was there to
+            stop the masthead opening on a flat rectangle. */}
 
         <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
           <div className="min-w-0 space-y-1">
-            {/* The eyebrow over the title. Carved on the runic skin — the
-                heading underneath says the same thing in Latin, so nothing
-                is lost. */}
+            {/* The eyebrow over the title. Carved on the runic skin — the heading underneath
+                says the same thing in Latin, so nothing is lost. */}
             <p className="text-3xs uppercase tracking-[0.18em] text-content-faint sm:text-xs">
               <RunicText mode="always">{t('dash.title')}</RunicText>
             </p>
@@ -488,21 +288,8 @@ const DashboardPage = () => {
             <p className="hidden text-sm text-content-muted sm:block">{t('dash.subtitle')}</p>
           </div>
 
-          {/*
-            Three counters, not four.
-
-            The project count left this row entirely: it is a property of the
-            list two sections down, not a statistic about the reader's day, and
-            it now sits in that section's own heading where the thing it counts
-            is directly underneath it.
-
-            A flex row rather than a grid, because the tiles no longer have a
-            fixed size — each one grows when the pointer reaches it (see
-            `StatTile`) and its neighbours give up the space. A grid with fixed
-            tracks would have clipped the reveal instead. `flex-wrap` is the
-            safety net for the narrowest desktop, where three expanded tiles
-            plus the greeting genuinely do not fit on one line.
-          */}
+          {/* Three counters, not four. The project count left this row entirely: it is a
+              property of the list two sections down, not a statistic about the reader's day. */}
           <div className="flex shrink-0 flex-wrap justify-start gap-2 lg:justify-end">
             {overviewLoading || !overview ? (
               Array.from({ length: 3 }, (_, index) => (
@@ -541,12 +328,8 @@ const DashboardPage = () => {
           title={
             <span className="flex items-baseline gap-1.5">
               {t('dash.yourProjects')}
-              {/*
-                The count the masthead used to carry, returned to the thing it
-                counts. Hidden while the list is still loading rather than
-                shown as `(0)`, which would be a wrong answer rather than an
-                absent one.
-              */}
+              {/* The count the masthead used to carry, returned to the thing it counts. Hidden
+                  while the list is still loading rather than shown as `(0)`. */}
               {!projectsLoading && (
                 <span className="text-xs font-normal tabular-nums text-content-faint">
                   ({ordered.length})
@@ -556,19 +339,7 @@ const DashboardPage = () => {
           }
           action={
             <div className="flex items-center gap-3">
-              {/*
-                Always drawn, and the first draft of this was not.
-
-                Hiding it until `projects` contained something archived reads
-                as the considerate choice and is in fact a trap: the default
-                list is the one the *server* has already filtered — archived
-                projects are excluded by `isArchived: false` in
-                `ProjectsService.list` — so that condition is false exactly
-                when it matters, and the only control that could bring an
-                archived project back was hidden by the act of archiving one.
-                A switch that does nothing on an empty archive is a much
-                smaller cost than a one-way door.
-              */}
+              {/* Always drawn, and the first draft of this was not. */}
               <Switch
                 id="show-archived"
                 checked={showArchived}
@@ -590,15 +361,8 @@ const DashboardPage = () => {
               ))}
             </div>
           ) : ordered.length === 0 ? (
-            /*
-              Two empty states, because they are two different facts.
-
-              "No projects yet" with a button that makes one is right for
-              somebody who has never created anything. It is actively wrong for
-              somebody who has ten projects and has just asked to see the
-              archived ones: they are not empty-handed, their archive is, and
-              offering to create a project answers a question they did not ask.
-            */
+            /* Two empty states, because they are two different facts. "No projects yet" with a
+               button that makes one is right for somebody who has never created anything. */
             showArchived ? (
               <EmptyState
                 icon={<Archive className="h-6 w-6" />}
@@ -658,9 +422,8 @@ const DashboardPage = () => {
                     task={task}
                     compact
                     onOpen={openTask}
-                    /* These come from every project at once, so the card has to
-                       say which one — otherwise "Draft the brief" appears twice
-                       with no way to tell the two apart. */
+                    /* These come from every project at once, so the card has to say which one —
+                       otherwise "Draft the brief" appears twice with no way to tell the two apart. */
                     showProjectLink
                     onToggleComplete={() =>
                       toggleCompletion.mutate({
@@ -677,14 +440,8 @@ const DashboardPage = () => {
             )}
           </Section>
 
-          {/*
-            Where you belong, in the rail rather than above the work.
-
-            Rendered only when there is something to show. Somebody who runs no
-            company should not be given a permanent empty section explaining a
-            feature they have not asked for — the same rule the team picker
-            follows.
-          */}
+          {/* Where you belong, in the rail rather than above the work. Rendered only when there
+              is something to show. */}
           {organizations.length > 0 && (
             <Section
               title={t('org.title')}

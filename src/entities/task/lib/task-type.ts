@@ -5,9 +5,8 @@ const MICRO_MAX_MS = 8 * HOUR_MS;
 const MEGA_MIN_MS = 2 * 24 * HOUR_MS;
 
 /**
- * Mirror of the server's `TaskTypeResolver`, used purely to preview the type
- * live inside the composer. The API stays the source of truth — this only saves
- * a round-trip while the user is still typing.
+ * Mirror of the server's `TaskTypeResolver`, used purely to preview the type live inside the
+ * composer.
  */
 export const previewTaskType = (
   startAt: string | undefined,

@@ -4,24 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import { authApi } from '@/features/auth/api/auth.api';
 
 /**
- * The Cloudflare Turnstile widget, on the four forms a script would attack.
- *
- * ## Why the key is fetched rather than built in
- *
- * The site key and the API's secret are a pair, and Cloudflare checks one
- * against the other. A `VITE_TURNSTILE_SITE_KEY` baked into this bundle can be
- * deployed against an API whose secret was rotated, or disabled, or never set —
- * and every one of those renders a widget that can never be satisfied, on the
- * one screen where failing means nobody gets in at all. So the API is asked,
- * and a deployment with no keys answers `null` and gets no widget.
- *
- * ## Why a failed query means "no widget" rather than "no sign-in"
- *
- * Same reasoning as `oauthProviders`, and the same reasoning the API uses when
- * it cannot reach Cloudflare: this is the third layer of a defence whose first
- * two — the throttler and the account lockout — are local and unaffected. An
- * API that has not been redeployed with this endpoint yet should show the
- * ordinary form, not a dead one.
+ * The Cloudflare Turnstile widget, on the four forms a script would attack. The site key and the
+ * API's secret are a pair, and Cloudflare checks one against the other.
  */
 const SCRIPT_ID = 'cf-turnstile-script';
 const SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
@@ -48,12 +32,8 @@ declare global {
 }
 
 /**
- * Load the Turnstile script once per document, and resolve when it is usable.
- *
- * Shared rather than per-component because two forms can be mounted at once
- * (the sign-in page links straight to sign-up) and two copies of this script
- * is a console warning and a wasted round trip. The promise is memoised at
- * module scope for the same reason.
+ * Load the Turnstile script once per document, and resolve when it is usable. Shared rather than
+ * per-component because two forms can be mounted at once.
  */
 let scriptPromise: Promise<void> | null = null;
 
@@ -102,12 +82,8 @@ export const useBotProtection = () =>
 
 interface HumanCheckProps {
   /**
-   * Called with a fresh token, and with `undefined` when the old one expires.
-   *
-   * Turnstile tokens are single-use and time-limited, so a form left open for
-   * five minutes has a token the API will refuse. Clearing it on expiry means
-   * the submit button's `disabled` state tells the truth rather than the user
-   * discovering it from a 403.
+   * Called with a fresh token, and with `undefined` when the old one expires. Turnstile tokens are
+   * single-use and time-limited.
    */
   onToken: (token: string | undefined) => void;
 }
@@ -116,12 +92,8 @@ export const HumanCheck = ({ onToken }: HumanCheckProps) => {
   const { data: config } = useBotProtection();
   const hostRef = useRef<HTMLDivElement>(null);
 
-  /*
-   * The callback lives in a ref so that re-rendering the parent — which every
-   * keystroke in the form does — cannot tear down and rebuild the widget.
-   * Turnstile renders an iframe and scores the session inside it; remounting it
-   * on each character would be both slow and a good way to look like a bot.
-   */
+  // The callback lives in a ref so that re-rendering the parent — which every keystroke in the form
+  // does — cannot tear down and rebuild the widget.
   const onTokenRef = useRef(onToken);
   onTokenRef.current = onToken;
 
@@ -147,13 +119,8 @@ export const HumanCheck = ({ onToken }: HumanCheckProps) => {
         });
       })
       .catch(() => {
-        /*
-         * The script did not load — an ad blocker, a captive portal, an
-         * offline moment. Deliberately silent: the API fails open when it
-         * cannot reach Cloudflare either, so the form still works and the
-         * throttler is still in front of it. A red error here would tell the
-         * reader their sign-in is broken when it is not.
-         */
+        // The script did not load — an ad blocker, a captive portal, an offline moment.
+        // Deliberately silent: the API fails open when it cannot reach Cloudflare either.
       });
 
     return () => {

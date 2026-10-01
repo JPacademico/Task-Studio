@@ -1,19 +1,6 @@
 /**
- * MD5 of some bytes, as lowercase hex.
- *
- * ## Why MD5, of all things
- *
- * Not for anything to do with security — nothing here trusts it to resist a
- * collision. It is here because it is the fingerprint the *bucket* already
- * keeps: R2 reports the MD5 of every single-part upload as its ETag, so the API
- * can find a picture by it without ever reading or hashing a byte itself. The
- * client computing the same digest is what lets it ask "is this picture
- * already on the board?" *before* uploading it — and skip the upload when it
- * is. See `BoardFoldersService.lookup` on the API.
- *
- * Web Crypto deliberately offers no MD5, hence the few dozen lines below: the
- * RFC 1321 algorithm, over a `Uint8Array`, in one pass. A 1 MB WebP hashes in
- * a few milliseconds, which is noise next to the encode that produced it.
+ * MD5 of some bytes, as lowercase hex. Not for anything to do with security — nothing here trusts
+ * it to resist a collision.
  */
 
 /** Per-round left-rotation amounts. */

@@ -32,13 +32,8 @@ import { Badge, Button, EmptyState, Section, Select } from '@/shared/ui';
 import { useT, type Translate, type TranslationKey } from '@/shared/i18n';
 
 /**
- * The columns a project sorts itself into.
- *
- * Derived, never set — which is the whole reason this board has no drag and
- * drop while the task board does. A task's column *is* its status, so moving
- * the card is how you change it. A project's column is a reading of its
- * deadlines, and dragging a card from "Behind" to "On track" would be a gesture
- * that either lies or does nothing.
+ * The columns a project sorts itself into. Derived, never set — which is the whole reason this
+ * board has no drag and drop while the task board does.
  */
 type Lane = 'at-risk' | 'active' | 'archived';
 
@@ -62,17 +57,8 @@ const laneOf = (
   project: OrganizationProject,
   metrics: OrganizationProjectMetrics | undefined,
 ): Lane => {
-  /*
-   * A concluded project shares the archived lane: both are "not being worked
-   * on", which is the only question this grouping is asking.
-   *
-   * The two flags can no longer both be set — finishing clears `isArchived`,
-   * and the API refuses to archive a finished project (`ProjectsService.update`)
-   * — so this is now one condition rather than a collapse of an ambiguous
-   * pair. The `||` stays because rows written before that rule existed can
-   * still carry both, and a project that reads as neither active nor archived
-   * would simply vanish from the board.
-   */
+  // A concluded project shares the archived lane: both are "not being worked on", which is the only
+  // question this grouping is asking.
   if (project.isArchived || project.completedAt) return 'archived';
   return (metrics?.overdue ?? 0) > 0 ? 'at-risk' : 'active';
 };
@@ -86,13 +72,8 @@ interface ProjectCardProps {
 }
 
 /**
- * One project, as the company reads it.
- *
- * Deliberately not `entities/project/ui/project-card`. That card is drawn for
- * somebody who works on the project and answers "what do I do next"; this one
- * is drawn for somebody who runs the company and answers "does this need me" —
- * so it leads with the overdue count and the completion bar, and it has to cope
- * with being a project the reader cannot open at all.
+ * One project, as the company reads it. Deliberately not `entities/project/ui/project-card`. That
+ * card is drawn for somebody who works on the project and answers "what do I do next".
  */
 const OrganizationProjectCard = ({
   organizationId,
@@ -131,9 +112,8 @@ const OrganizationProjectCard = ({
                 aria-label={t('org.noAccess')}
               />
             )}
-            {/* Finished wins: a legacy row carrying both flags draws the
-                stronger, better-defined one rather than two badges that
-                appear to disagree. */}
+            {/* Finished wins: a legacy row carrying both flags draws the stronger,
+                better-defined one rather than two badges that appear to disagree. */}
             {project.isArchived && !project.completedAt && (
               <Archive
                 className="h-3 w-3 shrink-0 text-content-faint"
@@ -205,15 +185,8 @@ const OrganizationProjectCard = ({
         background: `linear-gradient(125deg, ${withAlpha(project.color, 0.09)}, transparent 58%)`,
       }}
     >
-      {/*
-        A project the reader is not on is a card, not a link.
-
-        The company's board lists everything the company runs — see the API's
-        `visibleProjects` — so some of these lead to a page that would refuse
-        them. Rendering those as links would be offering a navigation that
-        dead-ends in a 404; rendering them as plain cards says "this exists, you
-        are not on it" without pretending otherwise.
-      */}
+      {/* A project the reader is not on is a card, not a link. The company's board lists
+          everything the company runs — see the API's `visibleProjects`. */}
       {project.hasAccess ? (
         <Link
           to={`/projects/${project.id}`}
@@ -237,15 +210,8 @@ const OrganizationProjectCard = ({
           className={cn(
             'absolute right-1.5 top-1.5 rounded-lg p-1.5 text-content-faint',
             'transition-all hover:text-danger focus-visible:opacity-100',
-            /*
-              Drawn by default, and hidden behind hover only where hover exists.
-              It used to be `opacity-0` unconditionally, which on a phone or a
-              tablet made it permanently invisible and permanently unreachable —
-              the only way to unfile a project was a control nobody on a touch
-              device could see. The project's own settings sheet now carries the
-              same action for its owner; this is the company-side half, and it
-              has to be findable on the device somebody is holding.
-            */
+            /* Drawn by default, and hidden behind hover only where hover exists. It used to be
+               `opacity-0` unconditionally. */
             'sm:opacity-0 sm:group-hover/card:opacity-100',
           )}
         >
@@ -259,24 +225,15 @@ const OrganizationProjectCard = ({
 interface OrganizationProjectsBoardProps {
   organization: Organization;
   /**
-   * The metrics behind each card, when they have been fetched.
-   *
-   * Optional, and the board draws perfectly well without them. They come from
-   * the dashboard query, which is the expensive one — so the board renders
-   * immediately from the company payload it already has and fills the numbers
-   * in when they land, rather than holding the whole page behind them.
+   * The metrics behind each card, when they have been fetched. Optional, and the board draws
+   * perfectly well without them.
    */
   metrics?: OrganizationProjectMetrics[];
 }
 
 /**
- * The company's work, as a board.
- *
- * The counterpart of a project's task board, one level up: three lanes, sorted
- * by how much attention each project is asking for. What it deliberately does
- * **not** have is drag and drop — see `Lane`. A project's lane is a reading of
- * its deadlines rather than a field anybody can set, so a draggable card would
- * be a control with nothing behind it.
+ * The company's work, as a board. The counterpart of a project's task board, one level up: three
+ * lanes, sorted by how much attention each project is asking for.
  */
 export const OrganizationProjectsBoard = ({
   organization,
@@ -343,22 +300,12 @@ export const OrganizationProjectsBoard = ({
           />
         </label>
 
-        {/*
-          Filing is an admin's, and only over projects they own — see the API's
-          `OrganizationsService`. So the picker is hidden entirely for everybody
-          else rather than shown and then failing.
-        */}
+        {/* Filing is an admin's, and only over projects they own — see the API's
+            `OrganizationsService`. */}
         {organization.canManage && (
           <div className="ml-auto flex flex-wrap items-center gap-1.5">
-            {/*
-              Two different acts, and the order says which is the common one.
-
-              "New project" makes one that belongs here from the first second —
-              no picker, because being on this page has already answered the
-              question. "File a project" is for work that already exists
-              somewhere else and is being moved in, which is the rarer errand
-              and therefore the quieter button.
-            */}
+            {/* Two different acts, and the order says which is the common one. "New project"
+                makes one that belongs here from the first second — no picker. */}
             <Button variant="lava" size="sm" onClick={() => setIsCreating(true)}>
               <Plus className="h-3.5 w-3.5" strokeWidth={2.8} />
               {t('org.newProject')}

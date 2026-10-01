@@ -2,56 +2,12 @@ import type { WhiteboardStrokeData } from '@/entities/chat/model/types';
 import { paintStroke } from './ink-geometry';
 
 /**
- * The shared wall's ink, split across layers so a frame repaints only what
- * changed in it.
- *
- * ## What this replaced
- *
- * One `<canvas>`, cleared and repainted from the full stroke list on every
- * pointer sample — every committed stroke on the board, up to the five
- * thousand the scene endpoint returns, re-stroked sixty-plus times a second
- * while anybody drew. It was also scheduled once per pointer *event* rather
- * than once per frame, and repainted synchronously on every incoming frame of a
- * teammate's ink, so two people drawing at once could repaint the whole board
- * several times inside one frame. The cost grew with the history of the wall,
- * not with what was happening on it.
- *
- * ## The layers
- *
- *   - **base** (visible): every committed stroke, painted once. A new
- *     committed stroke is painted on top of it and nothing else is touched —
- *     strokes are append-only and an eraser only affects what is under it, so
- *     painting one more stroke onto the existing pixels is exactly what a full
- *     repaint with that stroke appended would produce.
- *   - **live** (visible, above base): the strokes still being drawn — this
- *     client's own and teammates' ghosts. Cleared and repainted per frame, but
- *     it only ever holds a handful of short paths.
- *   - **cache** (offscreen, only while a rubber is moving): see below.
- *
- * ## Why an eraser in progress needs the cache
- *
- * A pen stroke in progress can sit on its own layer because it only *adds*
- * ink. A rubber has to visibly take ink off the committed layer as it moves,
- * and `destination-out` on the live layer would rub out nothing but the live
- * layer. Painting it destructively onto the base instead cannot be undone if
- * the stroke is then discarded.
- *
- * So while any eraser is in progress, the base's committed pixels are kept in
- * an offscreen copy, and each frame the base is the copy blitted back plus the
- * erasers on top. One `drawImage` is a texture copy on the GPU, which is still
- * nothing next to re-stroking the whole history. The copy is taken from the
- * base itself (another blit, not a repaint) and dropped as soon as the last
- * rubber lifts, so a board costs its third canvas's memory only while somebody
- * is actually erasing.
+ * The shared wall's ink, split across layers so a frame repaints only what changed in it. One
+ * `<canvas>`, cleared and repainted from the full stroke list on every pointer sample.
  */
 /**
- * One committed stroke, as the layers keep it.
- *
- * `id` is the saved element's id — `null` for this client's own stroke until
- * the server acknowledges it — and `at` is when it was drawn. Both exist for
- * undo: a stroke taken back is found by its id (or, before the id arrives, by
- * this very object), and a stroke put back again has to return to its place
- * in the drawing order, because an eraser only rubs out what came before it.
+ * One committed stroke, as the layers keep it. `id` is the saved element's id — `null` for this
+ * client's own stroke until the server acknowledges it — and `at` is when it was drawn.
  */
 export interface InkEntry {
   id: string | null;
@@ -69,12 +25,8 @@ export interface InkLayers {
   /** Appends one committed stroke, painting only that stroke. */
   commit: (entry: InkEntry) => void;
   /**
-   * Takes strokes off the wall — undo, or a teammate's undo arriving.
-   *
-   * By id, or by the entry itself for a stroke whose id has not come back
-   * yet. The one operation here that repaints the committed layer from the
-   * list, since pixels cannot be un-painted; it happens once per undo, not per
-   * frame.
+   * Takes strokes off the wall — undo, or a teammate's undo arriving. By id, or by the entry itself
+   * for a stroke whose id has not come back yet.
    */
   remove: (target: { ids?: readonly string[]; entry?: InkEntry }) => void;
   /** Puts strokes back in drawing order — redo. Also a full repaint, once. */

@@ -1,14 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from '@/shared/lib/toast';
 
+import { useInviteLinkPreview } from '@/entities/project/model/invite-link.queries';
 import { authApi } from '@/features/auth/api/auth.api';
 import { useSessionStore } from '@/features/auth/model/session.store';
 import { HumanCheck } from '@/features/auth/ui/human-check';
 import { OAuthButtons } from '@/features/auth/ui/oauth-buttons';
+import { TermsCheckbox } from '@/features/auth/ui/terms-consent';
 import { errorMessage } from '@/shared/api/client';
 import { TEXT_LIMITS } from '@/shared/config/constants';
+import { pendingInvite, readInviteToken, rememberInvite } from '@/shared/lib/pending-invite';
 import { clampText } from '@/shared/lib/text';
 import { useT } from '@/shared/i18n';
 import { Button, Input, PasswordInput } from '@/shared/ui';
@@ -19,19 +22,22 @@ export const SignupPage = () => {
   const navigate = useNavigate();
   const setPendingEmail = useSessionStore((state) => state.setPendingEmail);
 
-  /*
-   * The address the footer's "Start free" field carried over, if there was one.
-   *
-   * Read once into the initial state rather than synced: this is a handoff, not
-   * a binding — somebody who then edits the field must not have it snap back on
-   * the next render, and clearing the box must not be undone by the URL.
-   */
+  // The address the footer's "Start free" field carried over, if there was one. Read once into the
+  // initial state rather than synced: this is a handoff, not a binding.
   const [searchParams] = useSearchParams();
 
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState(() => searchParams.get('email') ?? '');
   const [password, setPassword] = useState('');
   const [captchaToken, setCaptchaToken] = useState<string | undefined>();
+  const [acceptTerms, setAcceptTerms] = useState(false);
+
+  // Arrived from a project invite link: the join happens once the account is confirmed.
+  const [invite] = useState(() => readInviteToken(searchParams.get('invite')) ?? pendingInvite());
+  const invitePreview = useInviteLinkPreview(invite ?? '');
+  useEffect(() => {
+    if (invite) rememberInvite(invite);
+  }, [invite]);
 
   const register = useMutation({
     mutationFn: authApi.register,
@@ -48,7 +54,11 @@ export const SignupPage = () => {
   return (
     <AuthShell
       title={t('auth.signUp.title')}
-      subtitle={t('auth.signUp.subtitle')}
+      subtitle={
+        invitePreview.data
+          ? t('join.signUpSubtitle', { name: invitePreview.data.project.name })
+          : t('auth.signUp.subtitle')
+      }
       footer={
         <div className="flex items-center justify-between">
           <span className="text-content-muted">{t('auth.signUp.haveAccount')}</span>
@@ -62,8 +72,15 @@ export const SignupPage = () => {
         className="space-y-4"
         onSubmit={(event) => {
           event.preventDefault();
-          if (!passwordIsValid) return;
-          register.mutate({ displayName, email, password, captchaToken });
+          if (!passwordIsValid || !acceptTerms) return;
+          register.mutate({
+            displayName,
+            email,
+            password,
+            captchaToken,
+            invite: invite ?? undefined,
+            acceptTerms,
+          });
         }}
       >
         <Input
@@ -105,6 +122,8 @@ export const SignupPage = () => {
           error={password.length > 0 && !passwordIsValid ? t('auth.signUp.passwordError') : undefined}
         />
 
+        <TermsCheckbox checked={acceptTerms} onChange={setAcceptTerms} />
+
         {/* Nothing at all unless the API reports Turnstile keys. */}
         <HumanCheck onToken={setCaptchaToken} />
 
@@ -113,7 +132,7 @@ export const SignupPage = () => {
           className="w-full"
           size="lg"
           isLoading={register.isPending}
-          disabled={!passwordIsValid}
+          disabled={!passwordIsValid || !acceptTerms}
         >
           {t('auth.signUp.submit')}
         </Button>
@@ -125,7 +144,10 @@ export const SignupPage = () => {
 
       {/* The short way in: a provider has already confirmed the address, so
           signing up this way skips the inbox round trip entirely. */}
-      <OAuthButtons intent="signUp" className="mt-5" />
+      <OAuthButtons intent="signUp" className="mt-5" disabled={!acceptTerms} />
+      {!acceptTerms && (
+        <p className="mt-2 text-center text-2xs text-content-faint">{t('legal.accept.required')}</p>
+      )}
     </AuthShell>
   );
 };

@@ -21,17 +21,7 @@ const RAIL: Record<NavEdge, string> = {
   top: 'top-0 left-1/2 h-[0.625rem] w-40 rounded-b-full',
 };
 
-/**
- * The bulge that swells out of the rail.
- *
- * Long along the edge, shallow across it. The two measurements do different
- * jobs: the length is what makes the cue legible from the far side of the
- * screen, and the depth is the only part that reaches over the page — so the
- * depth is the part that was costing us. At 64px the wave crossed far enough
- * into the content to read as a permanent glow bolted to the window rather
- * than as a hint about something just off it. 38px still registers in
- * peripheral vision and stops well short of anything the user is reading.
- */
+/** The bulge that swells out of the rail. Long along the edge, shallow across it. */
 const SWELL: Record<NavEdge, string> = {
   left: 'left-0 top-1/2 h-52 w-[2.375rem] rounded-r-[100%] origin-left',
   right: 'right-0 top-1/2 h-52 w-[2.375rem] rounded-l-[100%] origin-right',
@@ -39,12 +29,8 @@ const SWELL: Record<NavEdge, string> = {
 };
 
 /**
- * The half-size shift that centres both layers on their edge.
- *
- * It has to be a motion value rather than a Tailwind `-translate-y-1/2` class:
- * Framer Motion writes the whole `transform` property, so the moment the swell
- * animates its scale the utility class is overwritten and the bulge slides off
- * centre — which is exactly why the thin rail looked right and the wave did not.
+ * The half-size shift that centres both layers on their edge. It has to be a motion value rather
+ * than a Tailwind `-translate-y-1/2` class: Framer Motion writes the whole `transform` property.
  */
 const CENTRE: Record<NavEdge, { x?: string; y?: string }> = {
   left: { y: '-50%' },
@@ -60,23 +46,8 @@ const GRADIENT: Record<NavEdge, string> = {
 };
 
 /**
- * The same bulge, in the deep field's material: a singularity sunk into the
- * edge, with its accretion light around it.
- *
- * Deliberately only a different gradient. The first version of this was its own
- * object — a four-layer disc with a turning accretion ring, sized and animated
- * by its own rules — and however good it looked in isolation, it was a second
- * thing on screen where every other skin had one. It read as heavier and larger
- * than the plain swell no matter what it was scaled to, because an opaque disc
- * next to a soft glow always will.
- *
- * So the shape, the size, the blur, the pulse and the lit rail are now shared
- * with every other skin, and the only thing the deep field brings is what the
- * bulge is made of: black at the edge itself, then the accretion colours — mint
- * closest in where the disc is hottest, violet further out — falling to nothing.
- * It works on both palettes without an override, because a black hole is the
- * one object that is defined by the light around it rather than by its own
- * value: on the void it is a halo, on a lit page it is a well.
+ * The same bulge, in the deep field's material: a singularity sunk into the edge, with its
+ * accretion light around it. Deliberately only a different gradient.
  */
 const VOID_GRADIENT: Record<NavEdge, string> = {
   left: 'bg-[radial-gradient(120%_65%_at_0%_50%,rgb(0_0_0/0.92)_0_24%,rgb(var(--brand)/0.7)_38%,rgb(var(--space-flare)/0.38)_56%,transparent_80%)]',
@@ -86,14 +57,8 @@ const VOID_GRADIENT: Record<NavEdge, string> = {
 };
 
 /**
- * The same bulge as an iris opening at the edge of the screen.
- *
- * Deliberately built the opposite way round from the deep field's: that one is
- * black at the edge and bright further out, because a singularity is defined
- * by the light around it. This one is bright at the edge and dark in the
- * middle — a pupil — so that even at the same size and blur the two skins
- * cannot be confused for one another, which is what happened when the eldritch
- * seam borrowed the void's radial well.
+ * The same bulge as an iris opening at the edge of the screen. Deliberately built the opposite way
+ * round from the deep field's: that one is black at the edge and bright further out.
  */
 const IRIS_GRADIENT: Record<NavEdge, string> = {
   left: 'bg-[radial-gradient(120%_65%_at_0%_50%,rgb(var(--brand)/0.75)_0_18%,rgb(var(--eldritch-ichor)/0.6)_32%,rgb(0_0_0/0.8)_46%,rgb(var(--eldritch-glow)/0.35)_62%,transparent_82%)]',
@@ -111,15 +76,7 @@ const RAIL_TONE = {
     'bg-gradient-to-b from-brand/0 via-[rgb(var(--eldritch-glow))] to-brand/0 shadow-[0_0_20px_rgb(var(--eldritch-glow)/0.9)]',
 };
 
-/**
- * Which axis the bulge grows along.
- *
- * The breath across the edge is narrower than it was (0.55 → 0.72 at the
- * trough) for the same reason the box is: a wave that doubles its reach every
- * three seconds is movement in the corner of your eye that never resolves into
- * anything. It still swells — it just no longer travels far enough to pull
- * attention off the page. The along-the-edge axis is untouched.
- */
+/** Which axis the bulge grows along. */
 const SWELL_KEYFRAMES: Record<NavEdge, Record<string, number[]>> = {
   left: { scaleX: [0.72, 1, 0.72], scaleY: [0.9, 1, 0.9] },
   right: { scaleX: [0.72, 1, 0.72], scaleY: [0.9, 1, 0.9] },
@@ -127,32 +84,12 @@ const SWELL_KEYFRAMES: Record<NavEdge, Record<string, number[]>> = {
 };
 
 /**
- * The hint that a menu lives just off-screen.
- *
- * A hidden-by-default chrome is only usable if something tells you it is there.
- * The previous version was a 7px sliver with a chevron fading in and out, which
- * asked the user to notice a 12px glyph in their peripheral vision. This one
- * takes real space instead: the rail breathes, and a soft protuberance swells
- * out of the edge like a wave pushing against it — the same signal, at a size
- * that registers without being read.
- *
- * Every skin draws the identical pair of layers at the identical size. A skin
- * only chooses what the bulge is made of — the deep field sinks a singularity
- * into the edge instead of a glow, and that is the whole of the difference.
+ * The hint that a menu lives just off-screen. A hidden-by-default chrome is only usable if
+ * something tells you it is there.
  */
 /**
- * Where the scroll rod sits, and how far it leans out.
- *
- * Matched to `SWELL` rather than chosen: the rod is a *replacement* for the
- * bulge, so it takes the same length along the edge (`h-52`) and a reach across
- * it inside the same 38px the wave was tuned to. Anything wider would be a new
- * decision about how much of the page the hint is allowed to cover, and that
- * decision was already made and already argued.
- *
- * Only the two side rails get one. The top bar is not a scroll — a hanging
- * scroll has rods at the left and right of the sheet and nothing along the top
- * — so the bar keeps the glow, which is also what stops three identical rods
- * framing the window like a picture.
+ * Where the scroll rod sits, and how far it leans out. Matched to `SWELL` rather than chosen: the
+ * rod is a *replacement* for the bulge, so it takes the same length along the edge.
  */
 const ROD: Record<'left' | 'right', string> = {
   left: 'left-0 top-1/2 h-52 w-[1.5rem] origin-left',
@@ -164,27 +101,12 @@ export const EdgeAffordance = ({ edge, isHidden, label }: EdgeAffordanceProps) =
   const skin = useSkin();
   const isSpace = skin === 'SPACE';
   const isEldritch = skin === 'ELDRITCH';
-  /*
-   * The one skin that replaces the object rather than its material.
-   *
-   * Every other skin here changes what the bulge is *made of* — a singularity,
-   * an iris, a glow — and that rule is deliberate and worth keeping: one shape
-   * at one size on every theme is why the hint is learnable at all.
-   *
-   * This is the exception it is worth making. The imperial skin has a literal
-   * object that means "there is more here, pull it open", and it is the object
-   * the rest of the skin is already built out of — every panel in it is mounted
-   * like a hanging scroll. A glow next to that reads as a hint bolted onto a
-   * theme; the rod reads as the edge of the sheet the whole page is printed on.
-   *
-   * The top bar is excluded; see `ROD`.
-   */
+  // The one skin that replaces the object rather than its material. Every other skin here changes
+  // what the bulge is *made of* — a singularity, an iris, a glow.
   const isScroll = skin === 'DRAGON' && edge !== 'top';
 
-  // Nothing to invite the user towards while the menu is already on screen, so
-  // the loops stop rather than running forever behind `opacity: 0` — three
-  // rails were otherwise holding six infinite animations open at all times,
-  // including for a menu the user had pinned permanently open.
+  // Nothing to invite the user towards while the menu is already on screen, so the loops stop
+  // rather than running forever behind `opacity: 0`.
   const isAnimating = isHidden && !reduceMotion;
 
   if (isScroll) {
@@ -197,19 +119,8 @@ export const EdgeAffordance = ({ edge, isHidden, label }: EdgeAffordanceProps) =
           isHidden ? 'opacity-100' : 'opacity-0',
         )}
       >
-        {/*
-          One element, not two.
-
-          The glow version is a wave plus a lit rail because a soft gradient has
-          no edge of its own and needs the strip to say where it comes from. A
-          drawn object has an edge, so the second layer would be a light behind
-          a solid thing — visible only as a smudge around it.
-
-          It breathes on the same three-second cycle as every other skin's hint,
-          and on the same two axes: a little along the edge, more across it. On
-          a rod that reads as the scroll being eased open and let back — which
-          is the gesture the hint is asking for.
-        */}
+        {/* One element, not two. The glow version is a wave plus a lit rail because a soft
+            gradient has no edge of its own and needs the strip to say where it comes from. */}
         <motion.span
           className={cn('fixed text-brand drop-shadow-[0_0_10px_rgb(var(--brand)/0.35)]', ROD[edge as 'left' | 'right'])}
           initial={false}
@@ -275,12 +186,8 @@ interface NavPinButtonProps {
 }
 
 /**
- * Drives the push pin into a menu so it stops hiding itself.
- *
- * The control is the pin, nothing else. A permanent tinted tile with a ring
- * around it competed with the header it sits in for no benefit — the glyph
- * already reads as a pin — so the container only materialises under the
- * pointer, and the pin itself is untouched in either state.
+ * Drives the push pin into a menu so it stops hiding itself. The control is the pin, nothing else.
+ * A permanent tinted tile with a ring around it competed with the header it sits in for no benefit.
  */
 export const NavPinButton = ({ isPinned, onToggle, className }: NavPinButtonProps) => (
   <button

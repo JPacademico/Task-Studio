@@ -18,30 +18,8 @@ interface FolderDocumentProps {
 }
 
 /**
- * A folder page: the pictures pinned to one page of the project whiteboard.
- *
- * ## What is on it
- *
- * Every picture, as a grid, in the order it went up on the wall. Each one opens
- * full-screen in the same viewer a task's attachment and a Post-it use, and can
- * be saved on its own; the whole folder can be saved at once as a zip, built by
- * the API when asked and never stored.
- *
- * ## Why removing is here, and what it means
- *
- * It is the "clear unused assets" gesture the Documents board's ceiling points
- * people at. Taking a picture out of the folder frees the board's space at
- * once — but the picture itself is only deleted when nothing else shows it, so
- * one still pinned on the whiteboard stays on the whiteboard. The button says
- * "remove from folder" rather than "delete" for exactly that reason.
- *
- * ## Why the grid draws the stored pictures rather than thumbnails
- *
- * There is no second, smaller copy to draw: storing one would double the
- * bucket cost of every picture, which is the cost this feature is built not to
- * have. Pictures arrive already downscaled to 1600px WebP (see
- * `prepareImage`), and the grid loads them lazily, so a folder only fetches
- * what is scrolled into view.
+ * A folder page: the pictures pinned to one page of the project whiteboard. Every picture, as a
+ * grid, in the order it went up on the wall.
  */
 export const FolderDocument = ({ documentId, folder, title }: FolderDocumentProps) => {
   const t = useT();
@@ -185,9 +163,8 @@ export const FolderDocument = ({ documentId, folder, title }: FolderDocumentProp
                     <Download className="h-3.5 w-3.5" />
                   </button>
 
-                  {/* Two-step, like every destructive control on this board —
-                      and it says "from folder", because that is all it does to
-                      a picture still pinned on the whiteboard. */}
+                  {/* Two-step, like every destructive control on this board — and it says "from
+                      folder". */}
                   {item.canRemove && (
                     <button
                       type="button"

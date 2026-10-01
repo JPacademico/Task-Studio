@@ -10,16 +10,7 @@ import { clampText } from '@/shared/lib/text';
 import { Avatar, Segmented } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
-/**
- * How many faces fit before the composer stops being a form.
- *
- * Twelve is three rows of chips at the width these dialogs are, which is about
- * as much as somebody can scan without losing the shape of the page. It is
- * deliberately not "as many as fit": a company of ninety used to render ninety
- * chips, and the picker became the whole dialog — the deadline fields, the
- * colour and the submit button all pushed below the fold by a control most
- * people touch twice.
- */
+/** How many faces fit before the composer stops being a form. */
 const PAGE_SIZE = 12;
 
 /** Anybody who can be named — a project roster row or a company staff row. */
@@ -32,11 +23,8 @@ interface InvitePickerProps {
   onTogglePerson: (userId: string) => void;
 
   /**
-   * Which teams to offer, or `null` for a surface with none to draw from.
-   *
-   * The teams tab disappears entirely when this is null or the scope has no
-   * teams — a permanent "no teams yet" tab is an advertisement for a feature
-   * somebody has already decided not to use.
+   * Which teams to offer, or `null` for a surface with none to draw from. The teams tab disappears
+   * entirely when this is null or the scope has no teams.
    */
   teamScope?: TeamScope | null;
   selectedTeams?: string[];
@@ -52,28 +40,8 @@ interface InvitePickerProps {
 type Tab = 'people' | 'teams';
 
 /**
- * Who is being invited: some people, or some teams.
- *
- * ## Why the two are one control
- *
- * They were two stacked lists — a row of team chips, then a row of every face
- * on the roster — which read as two unrelated questions and answered neither
- * well. They are the same question ("who is in on this?") asked at two
- * granularities, so they are two tabs of one control, and individuals is the
- * default because that is what most invitations are. A team is the shortcut for
- * the case where the answer happens to have a name already.
- *
- * ## Why the people list pages
- *
- * Because a company roster is unbounded and a dialog is not. See `PAGE_SIZE`.
- * Search narrows before paging does, so finding one person out of ninety is
- * typing three letters rather than clicking through eight pages — and the count
- * beside the label always reports the *whole* selection, not the page's share
- * of it, so somebody who selects two people and then searches can still see
- * that two are selected.
- *
- * Teams are not paged. A project with more than a dozen teams does not exist,
- * and a pager on a list of four is furniture.
+ * Who is being invited: some people, or some teams. They were two stacked lists — a row of team
+ * chips, then a row of every face on the roster.
  */
 export const InvitePicker = ({
   people,

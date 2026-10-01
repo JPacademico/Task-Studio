@@ -21,25 +21,8 @@ import { Segmented, Select } from '@/shared/ui';
 import { useT, type TranslationKey } from '@/shared/i18n';
 
 /**
- * `project` shows the whole roster's work, so it keeps the mine/all split.
- * `personal` is the task menu — that surface is about *you*, so the second tab
- * narrows to the work that is *only* yours: the tasks with no project behind
- * them at all.
- *
- * It used to be "With notes", which sat on the wrong axis. A note is a property
- * of a task, like a deadline or a priority, and belongs with the dropdowns that
- * filter by those; the tab strip is where the surface says *whose* work it is
- * showing, and a personal task is the one kind of work this page is the only
- * home for.
- *
- * ## Why there is no "With notes" or "Pinned" toggle any more
- *
- * Both were removed from this row on purpose. They were the two widest controls
- * on a line that already carries a tab strip, a search box, three dropdowns and
- * the layout switcher, and they earned the least: a board is read to find out
- * what state the work is in, and "has somebody stuck a note on it" is not that.
- * Sticking notes on a task and pinning one are both untouched — only the
- * filters are gone, and the row is legible on a laptop again.
+ * `project` shows the whole roster's work, so it keeps the mine/all split. `personal` is the task
+ * menu — that surface is about *you*, so the second tab narrows to the work that is *only* yours.
  */
 type FiltersVariant = 'project' | 'personal';
 
@@ -50,24 +33,8 @@ interface TaskFiltersProps {
   className?: string;
 }
 
-/*
- * Options carry keys, and the component resolves them.
- *
- * These tables are module constants — evaluated once, before any component and
- * therefore before any `t` exists — so the label cannot be translated where it
- * is declared. Holding the key and mapping over it at render is what lets a
- * static table stay static and still speak the reader's language.
- */
-/*
- * Two, not three.
- *
- * There used to be a "Team tasks" tab between these, meaning "everyone's work
- * except mine". Nobody reached for it: a board is opened either to see what is
- * on you or to see the whole picture, and the middle answer — the picture with
- * yourself cut out of it — is not a question people ask. It also cost a round
- * trip the client could not seed from cache, because excluding yourself is not
- * a predicate a cached task carries. `all` covers what it was reached for.
- */
+// Options carry keys, and the component resolves them. These tables are module constants —
+// evaluated once, before any component and therefore before any `t` exists. Two, not three.
 const PROJECT_SCOPES: { value: TaskScope; label: TranslationKey; icon: ReactNode }[] = [
   { value: 'mine', label: 'filters.myTasks', icon: <User className="h-3 w-3" /> },
   { value: 'all', label: 'filters.all', icon: <></> },
@@ -84,13 +51,8 @@ const PERSONAL_TABS: { value: PersonalTab; label: TranslationKey; icon: ReactNod
 const STATUSES: (TaskStatus | 'ALL')[] = ['ALL', 'TODO', 'IN_PROGRESS', 'COMPLETED'];
 const TYPES: (TaskType | 'ALL')[] = ['ALL', 'MEGA', 'MICRO', 'MULTI', 'STANDARD'];
 
-/*
- * Urgent first, which is the opposite of the enum's own order.
- *
- * A dropdown is read from the top and this one is opened with a question in
- * mind — "what is on fire" — far more often than its opposite. `LOW` last is
- * the rarely-wanted end, which is where a rarely-wanted option belongs.
- */
+// Urgent first, which is the opposite of the enum's own order. A dropdown is read from the top and
+// this one is opened with a question in mind — "what is on fire".
 const PRIORITIES: (TaskPriority | 'ALL')[] = ['ALL', 'URGENT', 'HIGH', 'NORMAL', 'LOW'];
 
 /** The ink each priority is written in elsewhere, as a dot in the dropdown. */
@@ -108,15 +70,8 @@ const STATUS_SWATCH: Record<TaskStatus, string> = {
   COMPLETED: '#10b981',
 };
 
-/*
- * The default option of each dropdown is the filter's own name.
- *
- * It used to spell out what "no filter" meant — "Any status", "Any type",
- * "Any time" — which is three words of qualifier on a control whose unset
- * state is already the common case. The bare noun reads as a label when
- * nothing is chosen and gets replaced by the choice when something is, which
- * is what a dropdown does anyway.
- */
+// The default option of each dropdown is the filter's own name. It used to spell out what "no
+// filter" meant — "Any status", "Any type", "Any time".
 const LATENESS: { value: TaskLateness | 'ALL'; label: TranslationKey; hint?: TranslationKey }[] = [
   { value: 'ALL', label: 'filters.time' },
   { value: 'LATE', label: 'filters.late', hint: 'filters.lateHint' },
@@ -134,14 +89,8 @@ export const TaskFilters = ({
   const patch = (next: Partial<ListTasksParams>) => onChange({ ...value, ...next });
   const isPersonal = variant === 'personal';
 
-  /*
-   * `pinnedOnly` and `hasNotes` are still counted, and still cleared.
-   *
-   * The two toggles that set them are gone from this row — see the note above
-   * the component — but the parameters themselves are not: a surface can still
-   * arrive here holding one (a deep link, a remembered view), and "Clear" has
-   * to be able to get rid of anything that is actually narrowing the list.
-   */
+  // `pinnedOnly` and `hasNotes` are still counted, and still cleared. The two toggles that set them
+  // are gone from this row — see the note above the component.
   const hasActiveFilters = Boolean(
     value.status ??
       value.type ??
@@ -152,15 +101,8 @@ export const TaskFilters = ({
       value.hasNotes,
   );
 
-  /*
-   * The row is measured, not padded out.
-   *
-   * The layout switcher sits on the same line, and the skins that run a wide
-   * face (the illustrated one, the serif, the pixel font) spend that width on
-   * every label — enough that the switcher used to drop onto a second row.
-   * So each dropdown is only as wide as its own longest option needs, the
-   * trigger truncates rather than growing, and the gaps are tightened.
-   */
+  // The row is measured, not padded out. The layout switcher sits on the same line, and the skins
+  // that run a wide face.
   return (
     <div className={cn('flex flex-wrap items-center gap-1.5', className)}>
       {isPersonal ? (
@@ -170,14 +112,8 @@ export const TaskFilters = ({
           onChange={(tab) =>
             patch({
               personalOnly: tab === 'personal' || undefined,
-              /*
-               * The scope goes with the tab.
-               *
-               * `mine` means "assigned to me", which a personal task always is
-               * — but the *assignment* is what the scope reads, and narrowing
-               * by both at once is one redundant predicate on every query. The
-               * personal tab is already the tightest filter there is.
-               */
+              // The scope goes with the tab. `mine` means "assigned to me", which a personal task
+              // always is — but the *assignment* is what the scope reads.
               scope: tab === 'personal' ? undefined : 'mine',
             })
           }
@@ -236,25 +172,10 @@ export const TaskFilters = ({
         }))}
       />
 
-      {/*
-        Priority, which the API has always accepted and nothing ever sent.
-
-        `ListTasksQueryDto` declares it, `TasksService.buildFilter` applies it
-        and `ListTasksParams` carries it — the control to set it was simply
-        never built, so the one question a board is most often opened with
-        could only be answered by reading every card. It goes last in the row
-        because it is the narrowest of the four: status and lateness describe
-        where work *is*, and priority describes what somebody decided about it.
-      */}
+      {/* Priority, which the API has always accepted and nothing ever sent. */}
       <Select
-        /*
-         * Narrower than its neighbours, because its words are shorter.
-         *
-         * The note above the row applies with force here: this is the fifth
-         * control on a line that also carries the layout switcher, and the
-         * width it takes is width the switcher does not have. "Urgent" and
-         * "Priority" are the longest strings it ever shows.
-         */
+        /* Narrower than its neighbours, because its words are shorter. The note above the row
+           applies with force here. */
         className="w-[6.5rem]"
         value={value.priority ?? 'ALL'}
         onChange={(priority) => patch({ priority: priority === 'ALL' ? undefined : priority })}

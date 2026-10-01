@@ -19,34 +19,18 @@ interface ModalProps {
   footer?: ReactNode;
   className?: string;
   /**
-   * How the header reads.
-   *
-   * `start` (the default) is the working shape: a title on the left, a close
-   * button on the right, tight enough that the form under it starts near the
-   * top. It is right for the dozens of dialogs that are a task somebody is in
-   * the middle of.
-   *
-   * `center` is for the handful that are an *arrival* rather than a step — the
-   * service connection dialogs, where the reader has just pressed a mark and
-   * the first question is "what am I connecting to". A mark above a centred
-   * title answers that before a word is read, and the close button moves into
-   * the corner so the title has the full width to be centred in.
+   * How the header reads. `start` (the default) is the working shape: a title on the left, a close
+   * button on the right, tight enough that the form under it starts near the top.
    */
   align?: 'start' | 'center';
   /**
-   * A mark to sit above the title. Only drawn by the centred header.
-   *
-   * Deliberately a node rather than a name: the service marks are SVGs with
-   * their own colours (see `service-marks.tsx`), and a dialog should not hold
-   * a table mapping strings to them.
+   * A mark to sit above the title. Only drawn by the centred header. Deliberately a node rather
+   * than a name: the service marks are SVGs with their own colours (see `service-marks.tsx`).
    */
   icon?: ReactNode;
   /**
-   * Drops the skin's surface pattern for this dialog, keeping everything else.
-   *
-   * For the dense forms — the task composer above all — where the material
-   * stops reading as atmosphere and starts reading as interference behind a
-   * grid of small labels, dates and swatches. See `.ui-modal--flat`.
+   * Drops the skin's surface pattern for this dialog, keeping everything else. For the dense forms
+   * — the task composer above all.
    */
   flat?: boolean;
 }
@@ -54,21 +38,7 @@ interface ModalProps {
 /** Matches the exit transition below, so the portal unmounts once it is done. */
 const EXIT_MS = 160;
 
-/**
- * Portal-based dialog.
- *
- * Two things were making these feel slow to open:
- *
- * 1. The portal was mounted for every dialog on the page at all times, so an
- *    unrelated state change re-rendered every closed modal's subtree. It is now
- *    created on demand and torn down once the exit animation finishes.
- * 2. A full-viewport `backdrop-filter` blur has to sample everything behind it
- *    on the first composite, which is the single most expensive thing a dialog
- *    can do on an integrated GPU. The scrim is a plain translucent layer now.
- *
- * Enter/exit still animate transform + opacity only, so opening a dialog never
- * triggers a layout pass on the page behind it.
- */
+/** Portal-based dialog. */
 export const Modal = ({
   isOpen,
   onClose,
@@ -83,14 +53,8 @@ export const Modal = ({
 }: ModalProps) => {
   const reduceMotion = useReducedMotion();
   const [isMounted, setIsMounted] = useState(isOpen);
-  /*
-   * Handed to the two skin decorations, which draw themselves over this box
-   * from outside it.
-   *
-   * The swarm used to be a child, and could not be one: the panel is
-   * `overflow-hidden`, so every bat was clipped at the border it was supposed
-   * to be leaving. See the note in `bat-swarm`.
-   */
+  // Handed to the two skin decorations, which draw themselves over this box from outside it. The
+  // swarm used to be a child, and could not be one: the panel is `overflow-hidden`.
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEscapeKey(onClose, isOpen);
@@ -127,15 +91,8 @@ export const Modal = ({
             aria-modal="true"
             aria-label={title}
             className={cn(
-              // `ui-modal` carries no styles of its own — it is a hook so a skin
-              // can treat a dialog differently from the cards behind it. A
-              // dialog is dense, temporary and read at close range, which is
-              // where a heavy material stops being atmosphere and starts being
-              // interference; see the underwater and volcano rules in
-              // `index.css`.
-              // `dvh`, not `vh`: as a bottom sheet on a phone, 92vh is measured
-              // against the viewport *without* the address bar, so the sheet
-              // ran under it and the footer buttons were the part that went.
+              // `ui-modal` carries no styles of its own — it is a hook so a skin can treat a dialog
+              // differently from the cards behind it.
               'ui-modal panel relative z-10 flex max-h-[92dvh] w-full flex-col overflow-hidden',
               flat && 'ui-modal--flat',
               'rounded-b-none sm:max-w-lg sm:rounded-3xl',
@@ -163,14 +120,8 @@ export const Modal = ({
                     : 'flex items-start justify-between gap-4',
                 )}
               >
-                {/*
-                  The mark, at a size that is recognisable rather than decorative.
-
-                  A 44px chip is the same treatment the Connections shelf gives
-                  a service, so pressing a card there and landing here is
-                  visibly the same object twice — which is most of what makes a
-                  dialog feel like it belongs to the thing that opened it.
-                */}
+                {/* The mark, at a size that is recognisable rather than decorative. A 44px chip
+                    is the same treatment the Connections shelf gives a service. */}
                 {align === 'center' && icon && (
                   <span
                     aria-hidden
@@ -183,33 +134,21 @@ export const Modal = ({
                   </span>
                 )}
 
-                {/*
-                  `min-w-0` and `break-words`, because the title is user text.
-
-                  A flex child refuses to shrink below its content's intrinsic
-                  width by default, and an unbroken 140-character string — a
-                  pasted URL, a base64 blob — has no break opportunity in it at
-                  all. Without both of these the header grew past the dialog,
-                  pushed the close button off the edge, and took the rounded
-                  corner with it. The clamp bounds the other direction: a title
-                  full of newlines is not allowed to become the whole sheet.
-                */}
+                {/* `min-w-0` and `break-words`, because the title is user text. A flex child
+                    refuses to shrink below its content's intrinsic width by default. */}
                 <div
                   className={cn(
                     'min-w-0 space-y-1',
-                    // Room for the corner button, so a long centred title is
-                    // centred against the dialog rather than against whatever
-                    // space the button left over.
+                    // Room for the corner button, so a long centred title is centred against the
+                    // dialog rather than against whatever space the button left over.
                     align === 'center' && 'w-full px-8',
                   )}
                 >
                   {title && (
                     <h2
                       className={cn(
-                        // `ui-modal-title` carries no styles of its own — it is
-                        // a hook, like `ui-task-title` and `ui-section-title`,
-                        // for the one skin whose display face cannot be read at
-                        // this size. See the foot of `index.css`.
+                        // `ui-modal-title` carries no styles of its own — it is a hook, like
+                        // `ui-task-title` and `ui-section-title`.
                         'ui-modal-title line-clamp-2 break-words font-semibold leading-tight',
                         align === 'center' ? 'text-lg tracking-tight' : 'text-base',
                       )}
@@ -254,18 +193,8 @@ export const Modal = ({
             )}
           </motion.div>
 
-          {/*
-            Bats off the edges of the dialog on one skin, paper lanterns off
-            them on another, and nothing at all on the other fourteen — see
-            `BatSwarm` and `LanternDrift`. Each returns `null` before doing any
-            work on a skin that is not its own, so the cost to everybody else is
-            two function calls per dialog opening.
-
-            Both are siblings of the panel rather than children of it, which is
-            the entire reason either effect works: the panel is
-            `overflow-hidden`, so anything launched from inside it was clipped
-            at exactly the border it was meant to be crossing.
-          */}
+          {/* Bats off the edges of the dialog on one skin, paper lanterns off them on another,
+              and nothing at all on the other fourteen — see `BatSwarm` and `LanternDrift`. */}
           <BatSwarm anchor={panelRef} />
           <LanternDrift anchor={panelRef} />
         </div>

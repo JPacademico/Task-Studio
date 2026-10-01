@@ -4,39 +4,13 @@ import { useReducedMotion } from 'framer-motion';
 import { useSkin } from '@/app/providers/theme-provider';
 
 /**
- * The one thing the volcano skin does that a stylesheet cannot.
- *
- * Everything else this skin owns — the crazed basalt, the hot seam under every
- * edge, the caldera glowing below the bottom of the page, the vent on the
- * horizon — is a variable or a background-image. What is left needs actual
- * objects in actual positions: embers going up off the whole page.
- *
- * Decorative and inert: `aria-hidden`, `pointer-events-none`, and it stops dead
- * under `prefers-reduced-motion`. Nothing here participates in layout.
- *
- * This is deliberately the autumn fall with the sign flipped, and the two are
- * meant to be recognisable as the same mechanic read in opposite directions —
- * one skin's world falls, the other's rises. What stops it being a recolour is
- * that an ember *cools* as it climbs: the CSS walks its colour down the
- * temperature ramp from core to crust, so the field is dense and bright at the
- * bottom of the screen and nearly gone by the top. A leaf is the same leaf all
- * the way down; an ember is not.
+ * The one thing the volcano skin does that a stylesheet cannot. Everything else this skin owns —
+ * the crazed basalt, the hot seam under every edge.
  */
 
 /**
- * Every ember currently in the air, hand-placed.
- *
- * Not `Math.random()`, for the same reason `AutumnFall` and `BubbleRise` are
- * not: a random field clumps, and a clumped field reads as a bug rather than as
- * weather.
- *
- * Weighted toward the bottom-centre of the screen — the lives are shortest and
- * the sizes largest in the middle columns, because that is where the vent is on
- * the page wash. A field spread evenly across the width would be embers coming
- * off nothing.
- *
- * The negative delays are what make the first frame look like something already
- * happening rather than a volley launched the moment the theme was picked.
+ * Every ember currently in the air, hand-placed. Not `Math.random()`, for the same reason
+ * `AutumnFall` and `BubbleRise` are not: a random field clumps.
  */
 const EMBERS: {
   left: number;
@@ -59,14 +33,8 @@ const EMBERS: {
 ];
 
 /**
- * Embers going up past the whole page.
- *
- * Mounted once by the app shell and inert on every other skin — on twelve of
- * the thirteen themes this returns `null` before rendering anything.
- *
- * Same z-25 band as the autumn fall and the bubbles, and for the same reason:
- * above the content so a card cannot hide it, below the chrome so it never
- * drifts across a menu or a dialog.
+ * Embers going up past the whole page. Mounted once by the app shell and inert on every other skin
+ * — on twelve of the thirteen themes this returns `null` before rendering anything.
  */
 export const EmberRise = () => {
   const reduceMotion = useReducedMotion();

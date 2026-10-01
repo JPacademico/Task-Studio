@@ -9,12 +9,8 @@ import type {
 } from '../model/types';
 
 /**
- * The rooms, not the calls.
- *
- * Everything that happens *during* a call goes over the socket — signalling,
- * mute state, hands — because it is either per-frame or has to reach seven
- * other browsers in the same instant. What is left here is the part that
- * outlives a call and belongs in a cache.
+ * The rooms, not the calls. Everything that happens *during* a call goes over the socket —
+ * signalling, mute state, hands.
  */
 export const liveRoomApi = {
   async list(projectId: string, includeEnded = false): Promise<LiveRoom[]> {
@@ -61,19 +57,12 @@ export const liveRoomApi = {
   },
 
   /**
-   * The STUN (and possibly TURN) servers this deployment offers.
-   *
-   * Fetched rather than compiled in, because a TURN credential is a credential
-   * and TURN relays bandwidth — putting one in the bundle publishes it to
-   * everybody who loads the marketing page. See the API's `LiveController.ice`.
+   * The STUN (and possibly TURN) servers this deployment offers. Fetched rather than compiled in,
+   * because a TURN credential is a credential and TURN relays bandwidth.
    */
   /**
-   * The ICE list and its expiry.
-   *
-   * Returns the whole envelope rather than unwrapping to the array, which it
-   * used to do. The expiry is not decoration: a TURN credential is minted per
-   * request now and the caller has to know when to ask for another one. See
-   * `useIceServers`.
+   * The ICE list and its expiry. Returns the whole envelope rather than unwrapping to the array,
+   * which it used to do.
    */
   async iceServers(): Promise<IceServerBundle> {
     const { data } = await api.get<IceServerBundle>('/live/ice');

@@ -18,21 +18,8 @@ import { VibecodedMark } from './vibecoded-icons';
 import { VolcanoMark } from './volcano-icons';
 
 /**
- * Hand-drawn stationery icons.
- *
- * These are objects the user manipulates — a pin they push into a menu, a note
- * somebody stuck on their task — so they are drawn as small illustrations with
- * their own motion rather than borrowed from the generic line-icon set.
- *
- * Two skins redraw these objects rather than restyle them, because a skin that
- * only recolours its icons is a skin you stop noticing:
- *
- *   - The arcade gets sprites. A pixel drawing is not a smooth shape with the
- *     anti-aliasing turned off — nothing is a curve, a peeled corner is a
- *     staircase, and a highlight is one lit square. See `PixelPaper`.
- *   - The deep field gets instruments. Nothing in orbit is made of paper that
- *     curls, so the sheet becomes a lit panel with a plasma rim and a clipped
- *     bevel. See `SlatePaper`.
+ * Hand-drawn stationery icons. These are objects the user manipulates — a pin they push into a
+ * menu, a note somebody stuck on their task.
  */
 
 interface PushPinProps {
@@ -98,13 +85,8 @@ export const PushPin = ({ isPinned, className }: PushPinProps) => {
 };
 
 /**
- * The type size for a count on a note, which has to fit two digits now.
- *
- * A task holds up to twenty notes, so two digits are an ordinary count, not an
- * overflow. It used to fall back to the ruled-lines glyph above nine, which
- * meant the one number that says "this list is full" was the one never shown.
- * Two digits are drawn at four fifths of the size and still fit inside every
- * paper below. Past 99, which nothing produces, the ruled lines come back.
+ * The type size for a count on a note, which has to fit two digits now. A task holds up to twenty
+ * notes, so two digits are an ordinary count, not an overflow.
  */
 const countSize = (size: number, count: number): number =>
   count > 9 ? Math.round(size * 0.8 * 10) / 10 : size;
@@ -146,11 +128,8 @@ const PixelPaper = ({ count }: { count?: number }) => (
 );
 
 /**
- * The deep field's square of paper: a hard-light data slate.
- *
- * Same object, different world — the sheet is a lit panel with a plasma edge
- * and the peeled corner becomes a clipped bevel, because nothing in orbit is
- * made of paper that curls.
+ * The deep field's square of paper: a hard-light data slate. Same object, different world — the
+ * sheet is a lit panel with a plasma edge and the peeled corner becomes a clipped bevel.
  */
 const SlatePaper = ({ count }: { count?: number }) => (
   <>
@@ -196,11 +175,8 @@ const SlatePaper = ({ count }: { count?: number }) => (
 );
 
 /**
- * The containment site's square of paper: a specimen label.
- *
- * Nothing gets stuck to anything here without being logged first, so the sheet
- * is a rectangular tag with a taped header bar and a hard border — no curl, no
- * tilt, and the count reads as a sample number rather than as a note count.
+ * The containment site's square of paper: a specimen label. Nothing gets stuck to anything here
+ * without being logged first.
  */
 const LabelPaper = ({ count }: { count?: number }) => (
   <>
@@ -238,11 +214,8 @@ const LabelPaper = ({ count }: { count?: number }) => (
 );
 
 /**
- * The newsroom's square of paper: a clipping.
- *
- * Cut out of the edition and kept — so the outline is a scissor line, the top
- * bar is a headline rather than a rule, and the body is set in two columns
- * because that is how the story it came from was set.
+ * The newsroom's square of paper: a clipping. Cut out of the edition and kept — so the outline is a
+ * scissor line, the top bar is a headline rather than a rule, and the body is set in two columns.
  */
 const ClippingPaper = ({ count }: { count?: number }) => (
   <>
@@ -281,11 +254,8 @@ const ClippingPaper = ({ count }: { count?: number }) => (
 );
 
 /**
- * The marginal note: a leaf out of the book, with an eye in it.
- *
- * Same silhouette as the drawn sheet, except the corners grew rather than
- * being cut — matching the asymmetric radii the whole skin runs on — and where
- * the second ruled line should be, something is looking out.
+ * The marginal note: a leaf out of the book, with an eye in it. Same silhouette as the drawn sheet,
+ * except the corners grew rather than being cut.
  */
 const LeafPaper = ({ count }: { count?: number }) => (
   <>
@@ -391,13 +361,8 @@ const DrawnPaper = ({ count }: { count?: number }) => (
 );
 
 /**
- * The autumn skin does not have squares of paper. It has leaves, and somebody
- * has written on this one.
- *
- * Kept to one mass with a midrib, because this is drawn at 16px next to a task
- * title: the maple silhouette the skin uses everywhere else has five lobes and
- * a serrated edge, neither of which survives at that size. The flutter the
- * marker already carries does more for the illusion than the outline would.
+ * The autumn skin does not have squares of paper. It has leaves, and somebody has written on this
+ * one.
  */
 const AutumnLeafPaper = ({ count }: { count?: number }) => (
   <>
@@ -440,12 +405,8 @@ const AutumnLeafPaper = ({ count }: { count?: number }) => (
 );
 
 /**
- * "Send", drawn as whatever sending is in the active skin.
- *
- * In the deep field that is a launch, so the paper plane becomes a rocket with
- * its engine lit — the one place the space skin gets to put an actual vehicle
- * on screen, and the only button in the app whose verb is already the same
- * word. Everywhere else it stays the plane the rest of the icon set uses.
+ * "Send", drawn as whatever sending is in the active skin. In the deep field that is a launch, so
+ * the paper plane becomes a rocket with its engine lit.
  */
 export const SendGlyph = ({ className }: { className?: string }) => {
   const isSpace = useSkin() === 'SPACE';
@@ -496,10 +457,8 @@ export const SendGlyph = ({ className }: { className?: string }) => {
 };
 
 /**
- * Which drawing of "a square of paper" each skin uses.
- *
- * Anything not listed keeps the drawn one — a skin earns its own object by
- * having a world where the drawn one would be wrong, not by existing.
+ * Which drawing of "a square of paper" each skin uses. Anything not listed keeps the drawn one — a
+ * skin earns its own object by having a world where the drawn one would be wrong, not by existing.
  */
 const PAPERS: Partial<Record<ThemeSkin, ComponentType<{ count?: number }>>> = {
   PIXEL: PixelPaper,
@@ -513,16 +472,8 @@ const PAPERS: Partial<Record<ThemeSkin, ComponentType<{ count?: number }>>> = {
 const paperFor = (skin: ThemeSkin) => PAPERS[skin] ?? DrawnPaper;
 
 /**
- * Paper that does not move.
- *
- * A sprite does not flutter, a hard-light panel does not curl, a label taped to
- * a drum is not going anywhere, a sheet of parchment has been pressed flat for
- * a thousand years, and a flake of cooled crust is the least fluttering object
- * in the catalogue — so those five skins lose the breeze and the tilt.
- *
- * A newsprint clipping keeps both: it is still paper. So does the underwater
- * one, deliberately — a sheet held under water moves *more* than one in air,
- * not less, and it is the one skin where the flutter is arguably understated.
+ * Paper that does not move. A sprite does not flutter, a hard-light panel does not curl, a label
+ * taped to a drum is not going anywhere.
  */
 const isRigidPaper = (skin: ThemeSkin): boolean =>
   skin === 'PIXEL' ||
@@ -540,14 +491,8 @@ interface PostItMarkProps {
 }
 
 /**
- * A small square of paper with a curled corner, tilted and gently fluttering,
- * used to mark a task somebody has attached notes to.
- *
- * The flutter is a CSS animation, not a Framer keyframe loop. This glyph is
- * rendered once per task with notes, so a list of two hundred was holding two
- * hundred JavaScript-driven animations open forever — each with its own frame
- * callback and React subscription. As a compositor animation the same list
- * costs the main thread nothing at all.
+ * A small square of paper with a curled corner, tilted and gently fluttering, used to mark a task
+ * somebody has attached notes to. The flutter is a CSS animation, not a Framer keyframe loop.
  */
 export const PostItMark = ({ count, className, size = 'sm' }: PostItMarkProps) => {
   const reduceMotion = useReducedMotion();
@@ -601,16 +546,8 @@ interface StudioMarkProps {
 }
 
 /**
- * Which skins introduce the product as something other than a square of paper.
- *
- * A note among stars, a note taped and stamped, a masthead on page one, a page
- * with an eye in it, a note with two leaves on it, a note cut into a slab, a
- * note gone soft in the water, a flake of cooling crust. Every one of them is
- * the *same object* rebuilt in that world's material rather than a different
- * object — which is the rule for earning one of these at all.
- *
- * They also all share one wrapper below, because they share one gesture: a lift
- * under the pointer. Anything not listed keeps the drawn Post-it.
+ * Which skins introduce the product as something other than a square of paper. A note among stars,
+ * a note taped and stamped, a masthead on page one.
  */
 const MARKS: Partial<Record<ThemeSkin, ComponentType<{ className?: string }>>> = {
   SPACE: SpaceMark,
@@ -627,34 +564,8 @@ const MARKS: Partial<Record<ThemeSkin, ComponentType<{ className?: string }>>> =
 };
 
 /**
- * The product mark: a Post-it with the product's initial on it.
- *
- * ## What changed, and what did not
- *
- * The drawing is the design team's: one sheet, the bottom-right corner rolled
- * under, and a handwritten `t`. What it replaces is a sheet carrying two ruled
- * lines, a pin head and a second sheet stacked behind it — four devices all
- * saying "this is a piece of paper" to somebody who could already see that it
- * was, and none of them saying which product it belonged to. A mark has one
- * job, and the letter is it.
- *
- * The pad behind and the pin are gone for that reason rather than to save
- * shapes: at the 20–28px this renders at in the rail and the top bar, a stack
- * edge and a pin head are two grey smudges competing with the one stroke that
- * has to be legible.
- *
- * ## Why it is still themed rather than a fixed yellow
- *
- * The reference art is a yellow sheet with navy ink, which is this product on
- * the studio skin and no other. The sheet takes `currentColor` and the ink
- * takes the page colour, exactly as before — so volcano gets a plate of cooling
- * crust with the same letter cut into it and hazard gets it stencilled on tape.
- * The fixed-palette rendering of the reference lives where it has to: the
- * favicon and the installed-app icons, which cannot ask a stylesheet anything.
- *
- * Several skins introduce themselves as something else entirely, for the same
- * reason a square of paper is not a thing the arcade or the deep field has.
- * Every one of them carries the letter. See `MARKS`.
+ * The product mark: a Post-it with the product's initial on it. The drawing is the design team's:
+ * one sheet, the bottom-right corner rolled under, and a handwritten `t`.
  */
 export const StudioMark = ({ className, interactive = false }: StudioMarkProps) => {
   const reduceMotion = useReducedMotion();
@@ -700,15 +611,8 @@ export const StudioMark = ({ className, interactive = false }: StudioMarkProps) 
         <rect x="28" y="24" width="4" height="4" fill="rgb(var(--surface))" />
         <rect x="24" y="24" width="4" height="4" fill="currentColor" fillOpacity="0.5" />
 
-        {/*
-          The letter, in squares.
-
-          `StudioLetter` is a curve, and a curve is the one thing this skin
-          cannot have — a sprite is not a smooth shape with the anti-aliasing
-          turned off. So the arcade spells the same letter out of four rects on
-          the same grid the peel uses: stem, bar, and a one-step foot where the
-          drawn version flicks right.
-        */}
+        {/* The letter, in squares. `StudioLetter` is a curve, and a curve is the one thing this
+            skin cannot have — a sprite is not a smooth shape with the anti-aliasing turned off. */}
         <g fill="rgb(var(--surface-raised))" fillOpacity="0.95">
           <rect x="15" y="9" width="4" height="15" />
           <rect x="10" y="13" width="13" height="3" />
@@ -730,21 +634,8 @@ export const StudioMark = ({ className, interactive = false }: StudioMarkProps) 
       transition={{ type: 'spring', stiffness: 320, damping: 20 }}
       style={{ transformOrigin: '50% 50%' }}
     >
-      {/*
-        The paper, with the bottom-right corner rolled under.
-
-        ## Why the corner is a curl and not a triangle
-
-        It was a triangle — the corner cut off on a straight diagonal — which is
-        the shorthand every "document" icon uses and which says *folded*, not
-        *peeled*. The design team's sheet lifts: the cut edge bows inward as the
-        paper rolls away from it, and the flap behind is a lens rather than a
-        wedge. Two curves instead of two straight lines, and the difference is
-        the whole reason the object reads as something you could pick up.
-
-        The edge and the flap are drawn from the same two control points, so the
-        fold line is shared and no seam can open between them.
-      */}
+      {/* The paper, with the bottom-right corner rolled under. It was a triangle — the corner
+          cut off on a straight diagonal. */}
       <path
         d="M6 6.5h27v19.1c-3.7 1-8 4.3-8.9 8.4H6V6.5Z"
         fill="currentColor"
@@ -763,14 +654,8 @@ export const StudioMark = ({ className, interactive = false }: StudioMarkProps) 
         strokeLinejoin="round"
       />
 
-      {/*
-        The letter, which is now what the mark says.
-
-        Two ruled lines and a pin head used to sit here, and between them they
-        were four shapes saying "this is a note" to somebody already looking at
-        a note. The sheet carries that on its own; what it could not carry was
-        the product's name. See `StudioLetter`.
-      */}
+      {/* The letter, which is now what the mark says. Two ruled lines and a pin head used to
+          sit here. */}
       <StudioLetter transform={LETTER_ON_SHEET} strokeOpacity={0.92} />
     </motion.svg>
   );

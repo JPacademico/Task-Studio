@@ -4,16 +4,8 @@ import { cn } from '@/shared/lib/cn';
 import type { SkinPreview } from '../model/skin-catalog';
 
 /**
- * A tiny screenshot of the app, drawn from one skin's tokens.
- *
- * Every measurement is derived from a single `scale`, so the same component is
- * the thumbnail on a settings card and the full-size mock in the gallery's
- * preview box. Two hand-tuned copies at two sizes is how the small one ends up
- * showing a different theme from the big one.
- *
- * Nothing here is a real component from the app: this is a *picture* of an
- * interface, and it has to paint itself in a palette that is not the active
- * one, which anything wired to the CSS variables could not do.
+ * A tiny screenshot of the app, drawn from one skin's tokens. Every measurement is derived from a
+ * single `scale`.
  */
 
 /** The corner-cut the arcade skin applies to every frame, at mock scale. */
@@ -24,11 +16,8 @@ const notch = (size: number): string =>
   `${size}px calc(100% - ${size}px), 0 calc(100% - ${size}px))`;
 
 /**
- * A leaf, at mock scale.
- *
- * The same shape the autumn loader is built from — a square with two opposite
- * corners rounded off entirely — because at eight pixels across that outline is
- * the whole of what makes a leaf a leaf, and anything more detailed is mush.
+ * A leaf, at mock scale. The same shape the autumn loader is built from — a square with two
+ * opposite corners rounded off entirely.
  */
 const leaf = (color: string, size: number, rotate: number): CSSProperties => ({
   position: 'absolute',
@@ -50,16 +39,8 @@ interface SkinMockProps {
   /** 1 is the settings thumbnail; the gallery's preview box runs at 2.4. */
   scale?: number;
   /**
-   * Whether to draw the still stand-ins for the things that move.
-   *
-   * A thumbnail has no room for an animation and no time to be watched, so it
-   * paints three bubbles frozen mid-rise and lets them say "this theme has
-   * bubbles". That is the right trade at 120 pixels.
-   *
-   * It is the wrong one under `SkinAmbience`. The showcase draws a *real* field
-   * of rising bubbles over this mock, and the frozen three then sit in the
-   * middle of it not moving — which does not read as a still, it reads as three
-   * bubbles that are stuck. Every surface with a live field passes `false`.
+   * Whether to draw the still stand-ins for the things that move. A thumbnail has no room for an
+   * animation and no time to be watched.
    */
   stillParticles?: boolean;
   className?: string;
@@ -74,28 +55,14 @@ export const SkinMock = ({
   const px = (value: number) => value * scale;
   const radius = preview.radius * Math.min(scale, 1.6);
 
-  /*
-   * What the mock paints where it would otherwise paint a flat accent.
-   *
-   * A gradient for the one skin whose identity *is* the gradient, and the plain
-   * brand for the other fourteen. Expressed once here rather than at the four
-   * call sites below, so the two stay in step — and written as a `background`
-   * shorthand because a `linear-gradient` is an image, not a colour, and
-   * `background: <colour>` and `background: <image>` are the only pair of
-   * values both call sites can accept without branching.
-   */
+  // What the mock paints where it would otherwise paint a flat accent. A gradient for the one skin
+  // whose identity *is* the gradient, and the plain brand for the other fourteen.
   const accent = preview.gradient
     ? `linear-gradient(135deg, ${preview.brand}, ${preview.gradient})`
     : preview.brand;
 
-  /*
-   * Corners that grew rather than being cut.
-   *
-   * The eldritch skin's radius tokens are asymmetric shorthand — big, small,
-   * big, small — and that is the single most recognisable thing about it. A
-   * mock that rounded all four corners evenly would be selling a teal palette
-   * and nothing else, so the same asymmetry is reproduced here.
-   */
+  // Corners that grew rather than being cut. The eldritch skin's radius tokens are asymmetric
+  // shorthand — big, small, big, small — and that is the single most recognisable thing about it.
   const corners = preview.organic
     ? `${radius}px ${radius / 4}px ${radius}px ${radius / 4}px`
     : `${radius}px`;
@@ -107,15 +74,8 @@ export const SkinMock = ({
     clipPath: preview.notched ? notch(px(3)) : undefined,
     padding: px(6),
     gap: px(4),
-    /*
-     * Dragon: every panel mounted like a hanging scroll.
-     *
-     * The same three inset rings the real skin draws — a hairline of gold at
-     * the edge, a band of the panel's own paper, then a second hairline — done
-     * here in the mock's own scaled pixels. It is the loudest thing this skin
-     * does to a surface, and a preview that painted only red and gold would be
-     * selling a colour scheme rather than a theme.
-     */
+    // Dragon: every panel mounted like a hanging scroll. The same three inset rings the real skin
+    // draws — a hairline of gold at the edge, a band of the panel's own paper.
     boxShadow: preview.scrollTrim
       ? [
           `inset 0 0 0 ${px(0.75)}px ${preview.scrollTrim}`,
@@ -147,10 +107,8 @@ export const SkinMock = ({
         fontFamily: preview.font,
       }}
     >
-      {/* Underwater: the caustic net over the whole page, at mock scale.
-          Same two crossed gradients as the real texture — the angles matter
-          more than the periods here, because at 96px tall the net has to read
-          as broken light in about four cells. */}
+      {/* Underwater: the caustic net over the whole page, at mock scale. Same two crossed
+          gradients as the real texture — the angles matter more than the periods here. */}
       {preview.caustic && (
         <span
           className="absolute inset-0"
@@ -184,9 +142,8 @@ export const SkinMock = ({
         />
       )}
 
-      {/* The singularity the deep field sinks into every screen edge, at mock
-          scale — same shape and same gradient as the real cue, so the card is
-          showing the thing the skin actually does. */}
+      {/* The singularity the deep field sinks into every screen edge, at mock scale — same
+          shape and same gradient as the real cue. */}
       {preview.singularity && (
         <span
           className="absolute left-0 top-1/2 -translate-y-1/2 rounded-r-[100%]"
@@ -205,12 +162,8 @@ export const SkinMock = ({
           style={{
             height: px(14),
             width: px(14),
-            /*
-             * Dragon's mark is cut from jade rather than painted in the accent
-             * — the one skin whose logo is a different colour from its brand,
-             * and therefore the one whose mock would be wrong without this.
-             * See `JadeMark`.
-             */
+            /* Dragon's mark is cut from jade rather than painted in the accent — the one skin whose
+               logo is a different colour from its brand. */
             background: preview.jade ?? accent,
             borderRadius: radius / 2.5,
           }}
@@ -300,10 +253,7 @@ export const SkinMock = ({
               />
             )}
 
-            {/* Volcano: the melt showing at the bottom seam of every plate.
-                Drawn on both cards rather than one, because on the real skin
-                it is on every raised object without exception — that is what
-                makes it read as a material property and not a highlight. */}
+            {/* Volcano: the melt showing at the bottom seam of every plate. */}
             {preview.molten && (
               <span
                 className="absolute inset-x-0 bottom-0"
@@ -340,9 +290,8 @@ export const SkinMock = ({
         />
       )}
 
-      {/* Underwater: three on their way up. Last but one in the mock, so they
-          pass in front of the cards — which is where the real ones are. Skipped
-          wherever a live field is drawn over this — see `stillParticles`. */}
+      {/* Underwater: three on their way up. Last but one in the mock, so they pass in front of
+          the cards — which is where the real ones are. */}
       {preview.caustic && stillParticles && (
         <>
           {[
@@ -367,9 +316,8 @@ export const SkinMock = ({
         </>
       )}
 
-      {/* Volcano: the caldera glowing under the bottom edge of the page. The
-          real skin anchors this below the viewport, so the mock anchors it
-          below its own frame — the point is that the source is off-screen. */}
+      {/* Volcano: the caldera glowing under the bottom edge of the page. The real skin anchors
+          this below the viewport, so the mock anchors it below its own frame. */}
       {preview.molten && (
         <span
           className="absolute inset-x-0 bottom-0"
@@ -380,10 +328,8 @@ export const SkinMock = ({
         />
       )}
 
-      {/* Autumn: the ones still in the air.
-          Last in the mock so they paint over the cards, which is where they
-          are in the real thing — the fall sits between the page content and
-          the chrome. */}
+      {/* Autumn: the ones still in the air. Last in the mock so they paint over the cards,
+          which is where they are in the real thing. */}
       {preview.leaves && (
         <>
           <span style={{ ...leaf(preview.leaves[1], px(8), 34), left: '16%', top: '30%', opacity: 0.75 }} />

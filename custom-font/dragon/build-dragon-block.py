@@ -1,78 +1,5 @@
 #!/usr/bin/env python3
-"""
-Builds `dragon-block.woff2` — the Dragon skin's typeface.
-
-Run from anywhere:
-
-    python custom-font/dragon/build-dragon-block.py
-
-It writes the font to `custom-font/dragon/` (the archive copy, beside its
-licence) and to `public/fonts/dragon/` (the served copy). Both are committed;
-this script exists so the derivation is reproducible and auditable rather than
-so it runs in CI.
-
-## What it does, and why any of it is necessary
-
-The face is ZCOOL KuaiLe (站酷快乐体) — a geometric rounded-square Chinese
-display face whose Latin, numerals and CJK are all drawn on one square grid
-with an even stroke and softened corners. SIL Open Font License 1.1, no
-Reserved Font Name, so it may be embedded, served and modified.
-
-Google Fonts already serves it pre-sliced, and its `latin` slice is 5 kB —
-which is the whole reason this skin can have a real face at all instead of a
-5 MB unsubsetted CJK download in front of first paint. But that slice covers
-**ASCII only**. It has no á, ã, ç, é, õ or ü.
-
-That is not a cosmetic gap, it is the specific failure the Halloween face's
-note already warns about: a missing glyph does not render as a missing glyph,
-it renders as *the next font in the stack appearing in the middle of a word*.
-The Portuguese interface needs a cedilla or a tilde in almost every other
-label — Conexões, Configurações, Ação — so an unpatched slice would have put
-Verdana inside every one of them.
-
-So the missing letters are built here, out of the font's own parts:
-
-  * The marks it already has are reused unmodified — `grave`, `circumflex`,
-    `tilde`, `dieresis`, `ring`. They are the designer's, drawn in the
-    designer's stroke, which is why the result looks like one typeface.
-  * `acute` is `grave` mirrored about its own centre. That is what an acute
-    *is* in a face whose accents are single even strokes, and deriving it
-    costs nothing and cannot drift from the original's weight.
-  * `cedilla` is the comma, scaled and hung under the baseline — the standard
-    derivation, and correct here because in this face the comma already has
-    the rounded hook shape a cedilla wants.
-  * `dotlessi` is `i` with its tittle dropped, so í and î do not end up with
-    a dot *and* an accent stacked over the stem.
-
-Everything else is a TrueType composite: two references and an offset, so an
-accented letter adds about 20 bytes rather than a second outline. The whole
-patched font is still under 8 kB.
-
-## The vertical constraint, which is what decides the accent sizes
-
-`usWinAscent` is 913 and `usWinDescent` is 152. On Windows, Chrome derives
-`line-height: normal` from those two numbers when the font does not set
-USE_TYPO_METRICS — so *raising* them to make room for accents would silently
-grow every line of text on this skin. They are therefore left exactly as they
-are, and the accents are fitted into the headroom that already exists.
-
-Above a capital there are 913 − 743 = 170 units, of which 16 go to the gap. So
-every uppercase mark is scaled to land in the same ~150-unit band between 759
-and 913: the circumflex shrinks the most, the dieresis not at all, and because
-they all finish at the same height the row reads as one design rather than as
-six accidents. Lowercase has room to spare and takes the marks at full size,
-sitting on one shared line at y=600 the way accents are supposed to align
-across âêôû.
-
-## Naming
-
-The output is renamed to **Dragon Block**, because it is a Modified Version and
-calling it ZCOOL KuaiLe would be a lie in two directions: `local()` would let a
-machine with the real font installed silently serve the *unpatched* one — the
-exact accent bug this script exists to fix — and the original's authors did not
-draw these accents. The OFL text ships beside it and the attribution is in the
-name table.
-"""
+"""Builds `dragon-block.woff2` — the Dragon skin's typeface."""
 
 from __future__ import annotations
 
@@ -102,30 +29,17 @@ UA = (
 FAMILY = "Dragon Block"
 POSTSCRIPT = "DragonBlock-Regular"
 
-# --- The vertical band the accents live in -----------------------------------
-#
-# See the module note. These are the numbers the font's own metrics allow, not
-# preferences: `CEILING` is `usWinAscent` and `FLOOR` is −`usWinDescent`.
+# --- The vertical band the accents live in ---
 CEILING = 913
 FLOOR = -152
 UPPER_TOP = 743          # the tallest capital that takes an accent, `A`
 UPPER_GAP = 16
 LOWER_MARK_BOTTOM = 600  # one shared line for every lowercase accent
-#
-# `i` is the exception, and it is the face's own doing: its stem stops at 420
-# — well below the 505 x-height — because the tittle above it is unusually
-# tall and occupies 480..610. Hanging í's accent on the shared lowercase line
-# would leave a 180-unit hole between the stem and the mark, which reads as a
-# typesetting fault rather than as a letter. Putting the mark where the tittle
-# was is what the designer already decided looks right over this stem, so í
-# and î sit exactly where i's dot does.
+# `i` is the exception, and it is the face's own doing: its stem stops at 420 — well below the 505
+# x-height — because the tittle above it is unusually tall and occupies 480..610.
 DOTLESS_MARK_BOTTOM = 500
 
-# --- What gets built ---------------------------------------------------------
-#
-# Latin-1 only, and deliberately not the whole of it: æ, ø, þ and ð need
-# outlines nobody can compose, and neither English nor Portuguese asks for one.
-# What is here is every letter the two interface languages actually set.
+# --- What gets built ---
 COMPOSITES: list[tuple[int, str, str, str]] = [
     # (codepoint, new glyph name, base glyph, mark glyph)
     (0x00C0, "Agrave", "A", "grave"),
@@ -195,13 +109,8 @@ def fetch(url: str) -> bytes:
 
 
 def latin_slice_url() -> str:
-    """
-    The URL of the `latin` slice, read out of the stylesheet rather than pinned.
-
-    Google versions these files by content hash, so a hard-coded URL rots the
-    moment the family is re-released. The stylesheet labels each slice with a
-    comment; the one we want is the last, and it is the only one whose
-    unicode-range starts at U+0000.
+    """The URL of the `latin` slice, read out of the stylesheet rather than pinned. Google
+    versions these files by content hash.
     """
     css = fetch(CSS_URL).decode("utf-8")
     blocks = css.split("@font-face")
@@ -248,13 +157,8 @@ def make_acute(font: TTFont) -> None:
 
 
 def make_cedilla(font: TTFont) -> None:
-    """
-    The comma, scaled and hung under the baseline.
-
-    Its top is left a little *above* zero on purpose: a cedilla is attached to
-    the letter it sits under, not floating below it, and the overlap is what
-    makes the join read. The bottom stops at `FLOOR` so the font's descent —
-    and therefore this skin's default line height — does not move.
+    """The comma, scaled and hung under the baseline. Its top is left a little *above* zero on
+    purpose.
     """
     x_min, y_min, x_max, y_max = bounds(font, "comma")
     top = 45
@@ -274,24 +178,8 @@ def make_cedilla(font: TTFont) -> None:
 
 
 def make_dotlessi(font: TTFont) -> None:
-    """
-    `i` with the tittle removed.
-
-    ## Why the contours are copied point-for-point rather than drawn through a pen
-
-    A pen has to be told what each point *means* — on-curve, off-curve, the
-    implied on-curve midpoint between two consecutive off-curve points — and
-    getting that reconstruction subtly wrong produces a stem with softened or
-    pinched corners that nobody notices until it is next to the unmodified `i`.
-    Lifting the coordinates and their flags verbatim cannot be wrong: it is the
-    same outline with one contour missing.
-
-    ## Why the tittle is found by height rather than by index
-
-    Contour order is a compiler's choice, not a guarantee. The dot is the
-    contour whose lowest point is the highest of the two, which is true of a
-    dotted `i` in any design and does not depend on a threshold that has to be
-    re-checked when the upstream font is re-released.
+    """`i` with the tittle removed. A pen has to be told what each point *means* — on-curve,
+    off-curve, the implied on-curve midpoint between two consecutive off-curve points.
     """
     source = font["glyf"]["i"]
     source.expand(font["glyf"])
@@ -322,12 +210,8 @@ def make_dotlessi(font: TTFont) -> None:
 
 
 def mark_scale(font: TTFont, mark: str, uppercase: bool) -> float:
-    """
-    How far a mark shrinks so the row of them lands on one line.
-
-    Lowercase never shrinks: there is room. Uppercase shrinks to whatever fits
-    between the tallest capital and the ceiling, which is what makes Â and Ä
-    finish at the same height instead of one of them poking out of the line.
+    """How far a mark shrinks so the row of them lands on one line. Lowercase never shrinks:
+    there is room.
     """
     if not uppercase:
         return 1.0

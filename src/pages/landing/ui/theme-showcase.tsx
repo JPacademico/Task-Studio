@@ -17,11 +17,8 @@ import { useT } from '@/shared/i18n';
 import { SkinAmbience } from './skin-ambience';
 
 /**
- * How far off centre a name is still drawn.
- *
- * Everything past this is hidden by the mask anyway, so computing a transform
- * for it is work nobody sees. Four rows either side of the middle is
- * comfortably more than the window shows.
+ * How far off centre a name is still drawn. Everything past this is hidden by the mask anyway, so
+ * computing a transform for it is work nobody sees.
  */
 const VISIBLE_RADIUS = 4;
 
@@ -33,82 +30,18 @@ const WINDOW_HEIGHT = 320;
 const REST_SPLIT = 50;
 
 /**
- * How large the two mocks are drawn.
- *
- * `SkinMock` is 96px tall at scale 1, so this is a 380px-high window. It went
- * to 4.5 when the box was made the evidence of the section and that overshot:
- * at 432px it was taller than the barrel and the description put together and
- * pulled the eye away from the control that drives it. This is still comfortably
- * the largest thing in the section without being the only thing in it.
+ * How large the two mocks are drawn. `SkinMock` is 96px tall at scale 1, so this is a 380px-high
+ * window.
  */
 const COMPARE_SCALE = 4;
 
 /**
- * How much wheel travel advances the barrel by one name.
- *
- * A mouse wheel notch is ~100px of `deltaY`; a trackpad emits a stream of
- * single-digit deltas for the same gesture. Stepping on every event would make
- * a trackpad flick tear through all thirteen skins, and stepping only on a full
- * notch would make it feel broken. So travel accumulates and a step is spent
- * when it crosses this, which lands both devices in the same place.
+ * How much wheel travel advances the barrel by one name. A mouse wheel notch is ~100px of `deltaY`;
+ * a trackpad emits a stream of single-digit deltas for the same gesture.
  */
 const WHEEL_STEP = 60;
 
-/**
- * The skins, on a barrel, next to a comparison you drag through.
- *
- * ## Why this section exists at all
- *
- * Because the skins are the most *demonstrable* thing this product does and
- * the page was describing them in a sentence on a Post-it. "Many ways to look"
- * is a claim; a shelf of palettes a reader can spin through, each drawn from
- * the app's own tokens, is the thing itself. It is also the one feature where a
- * static screenshot would be actively dishonest — a picture of one skin is a
- * picture of a thirteenth of the argument.
- *
- * ## Why the names are on a barrel and not in a list
- *
- * A plain list of thirteen names is a `<select>` wearing a border, and it makes
- * exactly the wrong promise: that these are options in a settings screen. The
- * barrel makes the promise the product makes — that this is a physical thing
- * you turn until you find the one you want. The rows curl away at the top and
- * bottom because they are on a cylinder, which is why the one in the middle is
- * the one you are looking at without anything having to be highlighted.
- *
- * ## Why the barrel is transformed rather than scrolled
- *
- * It used to be a real scroll container, and that was the bug. `overflow-y-auto`
- * means the browser owns the gesture: a wheel over the names scrolled the rows
- * out from under the centre rule while `index` — the state every transform,
- * the description panel and the preview are computed from — never changed. The
- * result was a list sliding past a highlight that stayed put and a selection
- * that never moved, which is exactly "it just goes past the options and does
- * not select anything".
- *
- * There is no scroll container now. The track is translated by
- * `index * ROW_HEIGHT`, so the selected name is on the centre line *by
- * construction*, and the wheel is read as what it always meant here — a request
- * to turn the barrel one name. Selection is the only state, so the barrel, the
- * panel and the preview cannot disagree.
- *
- * ## Why the wheel gives the page back at the ends
- *
- * Swallowing every wheel event over a control in the middle of a long page is
- * how a section becomes a trap: the reader scrolls, the page does not move, and
- * they have no idea why. So the event is only claimed while the barrel can
- * still turn in that direction. Reach the first or last name and the wheel goes
- * back to the document, which is the behaviour somebody scrolling *past* the
- * section wants and the only reason they can get out of it.
- *
- * ## Why the comparison is light against dark
- *
- * Not "before and after this theme". The obvious pairing would be the default
- * skin against the chosen one, and it collapses on the first row of the list,
- * where the chosen one *is* the default and the box shows two identical halves.
- * Light against dark is meaningful for every skin, and it says something true
- * that a single mock cannot: each one here is a complete palette twice over,
- * not a dark theme with a light mode bolted on.
- */
+/** The skins, on a barrel, next to a comparison you drag through. */
 export const ThemeShowcase = () => {
   const t = useT();
   const reduceMotion = useReducedMotion();
@@ -120,15 +53,8 @@ export const ThemeShowcase = () => {
   const skin = SKIN_CATALOG[index];
   const isApplied = activeSkin === skin.value;
 
-  /*
-   * A skin this visitor may keep is worn for good; any other is a preview.
-   *
-   * Every skin but Studio and Paper is part of the paid plans, and a visitor
-   * who is not on one can still try them all here — that is what this section
-   * is for. But a preview is only a preview: nothing is stored, and it ends
-   * when they leave this page, so it never follows them into sign-in or the
-   * studio wearing a theme their account does not include.
-   */
+  // A skin this visitor may keep is worn for good; any other is a preview. Every skin but Studio
+  // and Paper is part of the paid plans.
   const isKeepable = canWearSkin(skin.value);
 
   // The preview ends with the page.
@@ -136,22 +62,14 @@ export const ThemeShowcase = () => {
 
   const move = useCallback((delta: number) => {
     setIndex((current) =>
-      // Clamped rather than wrapped. A barrel with no beginning is a barrel
-      // nobody can tell they have reached the end of — and the clamp is also
-      // what lets the wheel hand the page back, below.
+      // Clamped rather than wrapped. A barrel with no beginning is a barrel nobody can tell they
+      // have reached the end of — and the clamp is also what lets the wheel hand the page back.
       Math.min(SKIN_CATALOG.length - 1, Math.max(0, current + delta)),
     );
   }, []);
 
-  /*
-   * The wheel, bound by hand rather than through `onWheel`.
-   *
-   * React attaches `wheel` at the root as a *passive* listener, so
-   * `preventDefault` inside a JSX `onWheel` is ignored and logs a console
-   * warning. Claiming the gesture — which is the whole point here — needs a
-   * non-passive listener, and the only way to ask for one is `addEventListener`
-   * with the option spelled out.
-   */
+  // The wheel, bound by hand rather than through `onWheel`. React attaches `wheel` at the root as a
+  // *passive* listener.
   useEffect(() => {
     const node = wheelRef.current;
     if (!node) return;
@@ -182,40 +100,13 @@ export const ThemeShowcase = () => {
   }, [index, move]);
 
   return (
-    /*
-     * Wider gaps than the rest of the page uses, and deliberately.
-     *
-     * These three are not a row of related cards; they are three different
-     * *kinds* of thing — a control, a description, and a preview — and at the
-     * page's usual 2rem they read as one panel with internal dividers. The air
-     * is what tells the eye where one ends.
-     *
-     * 3.5rem stacked and up to 6rem across. The previous 2.5/4 was still close
-     * enough that the barrel looked like a label for the description rather
-     * than a control in its own right.
-     */
+    /* Wider gaps than the rest of the page uses, and deliberately. These three are not a row of
+       related cards; they are three different *kinds* of thing — a control, a description. */
     <div className="grid gap-14 lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-20 xl:grid-cols-[12rem_17rem_minmax(0,1fr)] xl:gap-24">
-      {/* ---------------------------------------------------------------
-          The barrel
-          --------------------------------------------------------------- */}
+      {/* --- The barrel --- */}
       <div
-        /*
-         * `self-center` matters more than it looks. A grid item stretches to the
-         * row's height by default, and the rule marking the centre slot is
-         * positioned against *this* box — so when the column beside it was
-         * taller, the rule sat below the name it was supposed to be framing.
-         * Hugging the barrel makes the two centres the same centre by
-         * construction rather than by arithmetic.
-         *
-         * `min-w-0` is the other half, and it is not cosmetic. A grid item
-         * defaults to `min-width: auto`, meaning it refuses to shrink below its
-         * content's intrinsic width — and this column's content is a stack of
-         * `w-full` buttons whose longest name, rotated and scaled, measured
-         * 479px. On a 390px phone the column took that width, the single-column
-         * grid took it with it, and the whole document scrolled sideways by
-         * 105px. The wheel is `overflow-hidden`, so letting the column shrink
-         * clips a long name rather than breaking the page.
-         */
+        /* `self-center` matters more than it looks. A grid item stretches to the row's height by
+           default, and the rule marking the centre slot is positioned against *this* box. */
         className="relative min-w-0 self-center"
         style={{ perspective: '900px' }}
       >
@@ -242,21 +133,15 @@ export const ThemeShowcase = () => {
           }}
           className={cn(
             'relative overflow-hidden',
-            // Clipped top and bottom rather than faded to a colour. This page
-            // is drawn in thirteen palettes and a gradient overlay only works
-            // over a known background; a mask removes the pixels, so the rows
-            // curl away into whatever is behind the section in every skin.
+            // Clipped top and bottom rather than faded to a colour. This page is drawn in thirteen
+            // palettes and a gradient overlay only works over a known background.
             '[mask-image:linear-gradient(180deg,transparent,black_26%,black_74%,transparent)]',
             'cursor-ns-resize focus-visible:outline-none',
           )}
           style={{ height: WINDOW_HEIGHT, transformStyle: 'preserve-3d' }}
         >
-          {/*
-            The track. Centred by translating half the window less half a row and
-            then one row per name — so the selected row's centre is the window's
-            centre exactly, at every index, with no measurement and nothing to
-            drift out of step.
-          */}
+          {/* The track. Centred by translating half the window less half a row and then one row
+              per name — so the selected row's centre is the window's centre exactly. */}
           <motion.div
             className="absolute inset-x-0 top-0"
             animate={{ y: WINDOW_HEIGHT / 2 - ROW_HEIGHT / 2 - index * ROW_HEIGHT }}
@@ -272,13 +157,8 @@ export const ThemeShowcase = () => {
               const distance = Math.abs(offset);
               const isSelected = offset === 0;
 
-              /*
-               * The curvature. Every row is a slat on a cylinder, so its angle
-               * is proportional to how far round the barrel it has turned, and
-               * its scale and opacity fall off with the same distance — which is
-               * what makes the middle row read as nearest rather than merely as
-               * highlighted.
-               */
+              // The curvature. Every row is a slat on a cylinder, so its angle is proportional to
+              // how far round the barrel it has turned.
               const beyond = distance > VISIBLE_RADIUS;
 
               return (
@@ -316,9 +196,7 @@ export const ThemeShowcase = () => {
             })}
           </motion.div>
 
-          {/* Where the middle of the barrel is, drawn once rather than on the
-              selected row: a rule that stays put says "this slot is the
-              selection" more clearly than a highlight that moves with it. */}
+          {/* Where the middle of the barrel is, drawn once rather than on the selected row. */}
           <span
             aria-hidden
             className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2"
@@ -331,9 +209,7 @@ export const ThemeShowcase = () => {
         </div>
       </div>
 
-      {/* ---------------------------------------------------------------
-          What it is, and the button that puts it on
-          --------------------------------------------------------------- */}
+      {/* --- What it is, and the button that puts it on --- */}
       <div className="flex min-w-0 flex-col justify-center gap-5">
         <p className="text-2xs uppercase tracking-[0.16em] text-content-faint">
           {t('landing.themes.count', {
@@ -342,12 +218,8 @@ export const ThemeShowcase = () => {
           })}
         </p>
 
-        {/*
-          Keyed on the skin, so the block genuinely re-enters rather than having
-          its text swapped underneath a static box. Thirteen names that
-          cross-fade is thirteen names that read as one paragraph changing its
-          mind; a short rise per selection reads as turning to the next card.
-        */}
+        {/* Keyed on the skin, so the block genuinely re-enters rather than having its text
+            swapped underneath a static box. */}
         <motion.div
           key={skin.value}
           initial={reduceMotion ? false : { opacity: 0, y: 10 }}
@@ -363,26 +235,9 @@ export const ThemeShowcase = () => {
           </p>
         </motion.div>
 
-        {/*
-          ---- Wearing it ----------------------------------------------------
-
-          The section's whole argument is that a skin reinterprets the entire
-          app, and until this button existed the reader had to take that on
-          trust from two 300px mocks. Pressing it repaints the page they are
-          standing on — the nav, the belt, the Post-its, this panel — which is
-          the claim, performed, in the only way that settles it.
-
-          Two behaviours, decided by the plan. A skin the reader's account may
-          keep — Studio and Paper for everybody, every skin on a paid plan — is
-          worn through the app's own `setSkin`, stored exactly where the
-          settings screen stores it. Any other skin is a *preview*
-          (`previewSkin`): the whole page repaints just the same, but nothing
-          is stored and it ends when they leave this page, so a paid look never
-          follows a free account into sign-in or the studio.
-        */}
-        {/* Set apart from the description above it: the paragraph is something
-            to read and this is something to press, and a button tucked directly
-            under a paragraph reads as part of it. */}
+        {/* --- Wearing it --- */}
+        {/* Set apart from the description above it: the paragraph is something to read and this
+            is something to press. */}
         <div className="pt-3">
           <button
             type="button"
@@ -420,9 +275,7 @@ export const ThemeShowcase = () => {
         </div>
       </div>
 
-      {/* ---------------------------------------------------------------
-          Light against dark
-          --------------------------------------------------------------- */}
+      {/* --- Light against dark --- */}
       <div className="min-w-0 space-y-3 lg:col-span-2 xl:col-span-1">
         <SkinCompare
           key={skin.value}
@@ -434,16 +287,8 @@ export const ThemeShowcase = () => {
           hint={t('landing.themes.hint')}
         />
 
-        {/*
-          Under the preview, on the landing page as in settings.
-
-          Two of the themes on this wheel replace the reader's pointer, and this
-          is the moment they are deciding whether to wear one — so the opt-out
-          belongs here rather than being something they discover afterwards in a
-          settings page they have not reached yet. It writes through the same
-          provider the apply button does, so a choice made on this page is the
-          choice the app starts with.
-        */}
+        {/* Under the preview, on the landing page as in settings. Two of the themes on this
+            wheel replace the reader's pointer. */}
         <CursorToggle />
       </div>
     </div>
@@ -451,37 +296,8 @@ export const ThemeShowcase = () => {
 };
 
 /**
- * Two mocks of one skin, with the seam between them under the pointer.
- *
- * ## Why the wipe is a clip and not two widths
- *
- * The obvious build gives each half a percentage width and lets them share the
- * row. It looks identical until you move the seam, at which point both mocks
- * *reflow* — the type rewraps, the cards resize, and what the reader is
- * comparing changes as they compare it. Here both mocks are full width and
- * stacked; only how much of the top one is painted changes. Nothing inside
- * either of them moves at all.
- *
- * ## Why it follows the pointer rather than being dragged
- *
- * Because there is nothing to grab on a landing page. A handle asks for a
- * gesture the reader has to notice, decide to make, and aim at; following the
- * pointer costs them nothing and is discovered by accident, which is the only
- * way anything on a page like this gets discovered. The seam eases back to the
- * middle when the pointer leaves, so the box is never left half-showing
- * something.
- *
- * On touch it responds to a drag instead — `pointermove` covers both, and the
- * container is `touch-pan-y` so a finger that meant to scroll the page still
- * scrolls the page.
- *
- * ## Why the corners are barely rounded
- *
- * Because this is a *window onto an interface*, not a card in a layout. At
- * `rounded-2xl` it read as another panel on a page already full of them, and
- * the rounding fought the square corners of the mock inside it. A near-square
- * frame gets out of the way of what it is framing — and it is the shape a
- * screenshot has.
+ * Two mocks of one skin, with the seam between them under the pointer. The obvious build gives each
+ * half a percentage width and lets them share the row.
  */
 const SkinCompare = ({
   skin,
@@ -524,23 +340,9 @@ const SkinCompare = ({
           'cursor-ew-resize select-none shadow-md',
         )}
       >
-        {/*
-          The light half, whole, underneath.
-
-          `!rounded-none` is doing real work. `SkinMock` writes its own
-          `border-radius` as an *inline style*, taken from the skin's radius
-          token — 18px on Space, 16 on Paper — because a mock has to look like
-          the interface it is imitating. Inside a frame with much squarer
-          corners than that, the mock's own rounding pulled away from the frame
-          and left four visible notches of page showing through at the corners.
-
-          Inline styles only lose to `!important`, which is what the arbitrary
-          property below compiles to. The frame is `overflow-hidden`, so it
-          still does the rounding — there is simply nothing fighting it now.
-        */}
-        {/* `stillParticles={false}` on both halves: `SkinAmbience` below draws
-            the live field, and the mock's frozen stand-ins sitting inside it
-            read as bubbles that are stuck rather than as a still. */}
+        {/* The light half, whole, underneath. `!rounded-none` is doing real work. `SkinMock`
+            writes its own `border-radius` as an *inline style*. */}
+        {/* `stillParticles={false}` on both halves: `SkinAmbience` below draws the live field. */}
         <SkinMock
           preview={light}
           scale={COMPARE_SCALE}
@@ -548,15 +350,7 @@ const SkinCompare = ({
           className="w-full [border-radius:0!important]"
         />
 
-        {/*
-          The dark half, laid exactly on top and painted from the seam
-          rightwards. `inset()` rather than a width, so the mock underneath it
-          is the same size as the one above and neither ever reflows.
-
-          The transition is only on the way *back* — a seam that eases while it
-          is following the pointer lags behind it, which reads as the page being
-          slow rather than as the movement being smooth.
-        */}
+        {/* The dark half, laid exactly on top and painted from the seam rightwards. */}
         <div
           className="absolute inset-0"
           style={{
@@ -572,29 +366,7 @@ const SkinCompare = ({
           />
         </div>
 
-        {/*
-          What the skin does to the *room*, over both halves of the wipe.
-
-          ## Why it is over the seam rather than inside one half
-
-          Because it is not a property of the palette — it is a property of the
-          theme, and the box is showing one theme twice. Clipping the leaves to
-          the light half would say the dark half does not have them, which is
-          the opposite of true. Sitting above both, it also survives the wipe:
-          drag the seam and the weather stays put while the world under it
-          changes, which is a more honest demonstration than either half alone.
-
-          ## Why it is under the seam and the labels
-
-          The seam is a control and the labels are a legend; a bat crossing in
-          front of either would make the reader think the control had moved.
-          Everything below this line in the DOM paints over it.
-
-          Renders nothing at all for the seven skins with no ambient animation —
-          see `SkinAmbience`. `density` is under 1 because this box is a
-          fraction of the area the closing section has, and a count that reads
-          as weather across a page band reads as an infestation in a window.
-        */}
+        {/* What the skin does to the *room*, over both halves of the wipe. */}
         <SkinAmbience skin={skin} density={0.65} />
 
         {/* The seam itself, and the two labels that say which side is which. */}
@@ -613,14 +385,8 @@ const SkinCompare = ({
           </span>
         </div>
 
-        {/*
-          The two labels, smaller than they were.
-
-          They are a legend, not a heading: their whole job is to answer "which
-          side am I looking at" once, and then stop being read. At the previous
-          size they were the loudest thing in the box, competing with the
-          palettes they exist to caption.
-        */}
+        {/* The two labels, smaller than they were. They are a legend, not a heading: their
+            whole job is to answer "which side am I looking at" once, and then stop being read. */}
         <span className="pointer-events-none absolute left-1.5 top-1.5 rounded bg-black/45 px-1 py-px text-4xs font-medium uppercase tracking-[0.1em] text-white">
           {lightLabel}
         </span>

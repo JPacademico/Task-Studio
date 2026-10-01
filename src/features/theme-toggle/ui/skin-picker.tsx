@@ -11,17 +11,8 @@ import { SkinMock } from './skin-mock';
 import { useT } from '@/shared/i18n';
 
 /**
- * The theme control on the settings page.
- *
- * It used to be the whole catalogue, and every theme added to the product made
- * the settings page taller — eight mocks and eight names is a wall to read
- * through on the way to changing your password. So settings now shows one row:
- * whatever is active, plus enough of the others to make it obvious there are
- * others, and then it hands off.
- *
- * The active skin is pinned to the front deliberately. A picker that can be
- * showing a set the current choice is not in has no way to tell you what you
- * are using, which is the first question anybody opens it with.
+ * The theme control on the settings page. It used to be the whole catalogue, and every theme added
+ * to the product made the settings page taller.
  */
 export const SkinPicker = () => {
   const t = useT();
@@ -38,12 +29,7 @@ export const SkinPicker = () => {
         {shown.map((option) => {
           const isActive = skin === option.value;
           const preview = isDark ? option.dark : option.light;
-          /*
-           * Every skin but Studio and Paper is part of the paid plans. A locked
-           * tile still shows the look — that is what sells it — but choosing
-           * it says where to get it rather than silently doing nothing. The
-           * plan section is directly above this one on the settings page.
-           */
+          // Every skin but Studio and Paper is part of the paid plans.
           const isLocked = !canWearSkin(option.value);
 
           return (
@@ -101,19 +87,12 @@ export const SkinPicker = () => {
       {/* Directly under the tiles, which is the preview on this surface. */}
       <CursorToggle />
 
-      {/*
-        The way out of settings.
-
-        Deliberately a full-width bar rather than a fourth tile: a tile would
-        read as a fourth theme, and this is the opposite — it is the door to all
-        of them. The sheen is a single transform on a skewed span, so it costs a
-        compositor layer only while the pointer is actually over the control.
-      */}
+      {/* The way out of settings. Deliberately a full-width bar rather than a fourth tile: a
+          tile would read as a fourth theme, and this is the opposite. */}
       <Link
         to="/themes"
-        // Deliberately not wearing `ui-btn`: that hook hands the element the
-        // skin's button casing, and half the themes set it to uppercase — which
-        // would shout the subtitle underneath as well as the label.
+        // Deliberately not wearing `ui-btn`: that hook hands the element the skin's button casing,
+        // and half the themes set it to uppercase.
         className={cn(
           'group relative flex items-center gap-3 overflow-hidden rounded-2xl border-2 border-brand/40',
           'bg-gradient-to-r from-brand/15 via-brand/[0.07] to-transparent px-4 py-3',

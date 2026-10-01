@@ -16,11 +16,8 @@ interface ProjectCardProps {
 }
 
 /**
- * Everything the card holds back until it is asked for.
- *
- * Its own component because two layouts render it: the pointer one, where it
- * lives in a panel that opens downward over the grid, and the touch one, where
- * there is no hover to open anything and it simply sits in the card.
+ * Everything the card holds back until it is asked for. Its own component because two layouts
+ * render it: the pointer one, where it lives in a panel that opens downward over the grid.
  */
 const ProjectDetails = ({ project }: { project: ProjectListItem }) => {
   const t = useT();
@@ -36,15 +33,8 @@ const ProjectDetails = ({ project }: { project: ProjectListItem }) => {
 
       <div className="space-y-1.5">
         <div className="h-1.5 overflow-hidden rounded-full bg-surface-sunken">
-          {/*
-            Width from a style, not a motion animation.
-
-            The bar used to animate from zero on mount, which was right when
-            every card was expanded on arrival. Now the panel it lives in is
-            revealed on hover — so the animation would replay each time the
-            pointer crossed a card, and a progress bar that re-fills on every
-            hover reads as data changing rather than as decoration.
-          */}
+          {/* Width from a style, not a motion animation. The bar used to animate from zero on
+              mount, which was right when every card was expanded on arrival. */}
           <div
             className="h-full rounded-full transition-[width] duration-500 ease-studio"
             style={{ width: `${progress}%`, backgroundColor: project.color }}
@@ -74,50 +64,15 @@ const ProjectDetails = ({ project }: { project: ProjectListItem }) => {
 };
 
 /**
- * One project, at rest and opened.
- *
- * ## The two states
- *
- * A dashboard's job is to let somebody find the project they want, and the
- * thing that does that is the name. Description, progress, counts and roster
- * are what you read *once you have found it* — so the card is a banner, a pin
- * and a title until the pointer settles on it, at which point it opens
- * downward and shows the rest.
- *
- * Six cards at 228px each is a screen and a half of scrolling before the task
- * list below is reachable; six at 100px is one glance.
- *
- * ## Why it opens *over* the grid rather than pushing it
- *
- * The detail panel is absolutely positioned under the card. If it were in
- * normal flow, hovering would grow the grid row and shove every card on that
- * row and below it — a layout that moves under the pointer, on a surface whose
- * whole purpose is aiming at one of twelve similar targets. Opening over the
- * neighbours costs a `z-index` and keeps the grid still.
- *
- * The expansion is `grid-template-rows: 0fr → 1fr` rather than a measured
- * height: it needs no JavaScript, no layout read, and it animates correctly
- * whatever the description turns out to be. `prefers-reduced-motion` flattens
- * it through the global rule.
- *
- * ## Touch
- *
- * There is no hover on a phone, so there is nothing to open with. The touch
- * layout keeps every card expanded — which is what this surface has always
- * done — and the whole absolute-panel apparatus is simply not rendered.
+ * One project, at rest and opened. A dashboard's job is to let somebody find the project they want,
+ * and the thing that does that is the name.
  */
 export const ProjectCard = ({ project, onTogglePin }: ProjectCardProps) => {
   const t = useT();
   const isTouch = useIsTouchDevice();
 
-  /*
-   * A card the pointer settles on is very probably the next page.
-   *
-   * Spread onto the wrapper rather than the stretched link inside it, so the
-   * whole card is the target — the link is a transparent overlay and the mouse
-   * spends most of its time over the banner and the counters, not over it. The
-   * hook does the deciding about whether this actually fires.
-   */
+  // A card the pointer settles on is very probably the next page. Spread onto the wrapper rather
+  // than the stretched link inside it, so the whole card is the target.
   const intent = useProjectIntentPrefetch(project.id);
 
   const banner = (
@@ -151,15 +106,8 @@ export const ProjectCard = ({ project, onTogglePin }: ProjectCardProps) => {
     </button>
   );
 
-  /*
-    The card-wide hit target.
-
-    An overlay rather than wrapping the card in an anchor: the pin button and
-    the avatar stack live inside, and an <a> containing a <button> is invalid
-    markup that screen readers and keyboards both handle badly. This stays a
-    single stretched link, sits under the pin (z-10 vs z-20), and carries the
-    accessible name so the row still announces as one destination.
-  */
+  // The card-wide hit target. An overlay rather than wrapping the card in an anchor: the pin button
+  // and the avatar stack live inside.
   const link = (
     <Link
       to={`/projects/${project.id}`}
@@ -168,15 +116,8 @@ export const ProjectCard = ({ project, onTogglePin }: ProjectCardProps) => {
     />
   );
 
-  /*
-    The panel's own hit target, deliberately invisible to keyboards.
-
-    The stretched link above covers the collapsed box only, so without this the
-    half of the card somebody is actually reading would not be clickable. It is
-    `tabIndex={-1}` and `aria-hidden` because it leads exactly where the first
-    one does: a second tab stop and a second announcement of the same
-    destination is noise, not access.
-  */
+  // The panel's own hit target, deliberately invisible to keyboards. The stretched link above
+  // covers the collapsed box only.
   const panelLink = (
     <Link
       to={`/projects/${project.id}`}
@@ -186,16 +127,8 @@ export const ProjectCard = ({ project, onTogglePin }: ProjectCardProps) => {
     />
   );
 
-  /*
-    Archived says so on the card, because nothing else on screen would.
-
-    An archived project is only ever drawn when the reader has asked to see
-    archived projects, so this is not news — it is the answer to "which of
-    these are the archived ones", which a mixed grid cannot give any other way.
-    A muted chip rather than a dimmed card: the project is not disabled, and
-    fading the one thing somebody turned a switch on to look at would be
-    working against them.
-  */
+  // Archived says so on the card, because nothing else on screen would. An archived project is only
+  // ever drawn when the reader has asked to see archived projects, so this is not news.
   const title = (
     <p className="ui-project-name flex items-center gap-2 px-4 py-3 text-sm font-semibold leading-snug transition-colors group-hover:text-brand">
       <span className="min-w-0 flex-1 truncate">{project.name}</span>
@@ -231,13 +164,8 @@ export const ProjectCard = ({ project, onTogglePin }: ProjectCardProps) => {
   }
 
   return (
-    /*
-      The cell keeps the *collapsed* height, always.
-
-      This wrapper is what the grid measures, and nothing inside it grows — the
-      panel below is absolute. That is the whole reason hovering one card does
-      not move the eleven around it.
-    */
+    /* The cell keeps the *collapsed* height, always. This wrapper is what the grid measures, and
+       nothing inside it grows — the panel below is absolute. */
     <motion.div
       {...intent}
       layout
@@ -276,9 +204,8 @@ export const ProjectCard = ({ project, onTogglePin }: ProjectCardProps) => {
           <div
             className={cn(
               'relative rounded-2xl rounded-t-none border-x border-b border-edge bg-surface-raised shadow-lg',
-              // The link above stops at the collapsed box, so the panel gets
-              // its own copy — otherwise the half of the card somebody is
-              // actually reading would not be clickable.
+              // The link above stops at the collapsed box, so the panel gets its own copy —
+              // otherwise the half of the card somebody is actually reading would not be clickable.
               'pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto',
             )}
           >

@@ -51,20 +51,8 @@ const write = (dock: PersistedDock | null): void => {
 const restored = read();
 
 /**
- * Where the project conversation lives.
- *
- * The window used to be owned by the project page, which meant it could only
- * exist while you were looking at that project — the one place you least need
- * it, because the people in it are already on screen. Ownership now sits here,
- * and the layout renders the window, so the same conversation can stay open
- * while the user is on their dashboard, their own board or somebody else's
- * project.
- *
- * That reach is opt-in, and the opt-in is a physical gesture rather than a
- * setting: the pin. Unpinned, the window belongs to the page and closes with
- * it. Pinned, it is stuck to the screen and only the close button takes it
- * down — which is also why the pin survives a reload but the unread count does
- * not.
+ * Where the project conversation lives. The window used to be owned by the project page, which
+ * meant it could only exist while you were looking at that project.
  */
 export const useChatDock = create<ChatDockState>((set, get) => ({
   projectId: restored?.projectId ?? null,
@@ -77,9 +65,8 @@ export const useChatDock = create<ChatDockState>((set, get) => ({
 
   open: (projectId, projectName) => {
     const isSame = get().projectId === projectId;
-    // Opening a different project's chat moves the window rather than stacking
-    // a second one, and a move drops the pin: it was stuck to that other
-    // conversation, not to the frame.
+    // Opening a different project's chat moves the window rather than stacking a second one, and a
+    // move drops the pin: it was stuck to that other conversation, not to the frame.
     if (!isSame && get().isPinned) write(null);
 
     set({

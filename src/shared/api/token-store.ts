@@ -1,14 +1,8 @@
 import { STORAGE_KEYS } from '@/shared/config/constants';
 
 /**
- * Token custody for the SPA.
- *
- * The API and the PWA live on different origins (Render + Vercel), so
- * `httpOnly; SameSite=None` cookies would be blocked as third-party in Safari
- * and Chrome. Bearer tokens in `localStorage` are the workable option:
- *   - the access token is short-lived (15 min) and rotated on every refresh,
- *   - the refresh token is single-use and revoked server-side on reuse.
- * Secrets themselves never reach the client.
+ * Token custody for the SPA. The API and the PWA live on different origins (Render + Vercel), so
+ * `httpOnly; SameSite=None` cookies would be blocked as third-party in Safari and Chrome.
  */
 let accessToken: string | null = null;
 

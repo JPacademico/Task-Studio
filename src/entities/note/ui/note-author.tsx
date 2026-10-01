@@ -13,19 +13,8 @@ interface NoteAuthorStampProps {
 }
 
 /**
- * Whose handwriting this is.
- *
- * A shared wall with no attribution is a wall of anonymous paper, so every note
- * carries a permanent avatar in its bottom-right corner. The full credit —
- * name, address, when it went up — opens from *the avatar itself* rather than
- * from anywhere on the note: reading a wall means moving the pointer across a
- * lot of paper, and a card that appeared every time the pointer crossed a note
- * meant a trail of popovers the user never asked for. Now the stamp is a
- * target you aim at, and everything else on the note is left alone.
- *
- * It is focusable for the same reason — the credit has to be reachable without
- * a pointer — and the card is drawn in the app's own surface colours, because
- * it is chrome about the object rather than part of it.
+ * Whose handwriting this is. A shared wall with no attribution is a wall of anonymous paper, so
+ * every note carries a permanent avatar in its bottom-right corner.
  */
 export const NoteAuthorStamp = ({
   author,
@@ -46,9 +35,8 @@ export const NoteAuthorStamp = ({
     >
       <button
         type="button"
-        // Nothing to activate: the card is the whole point, and it opens on
-        // hover and on focus. A real button is still the right element — it is
-        // the thing the keyboard has to be able to reach.
+        // Nothing to activate: the card is the whole point, and it opens on hover and on focus. A
+        // real button is still the right element.
         tabIndex={0}
         aria-label={summary}
         title={summary}

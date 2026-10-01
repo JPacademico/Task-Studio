@@ -15,33 +15,20 @@ import type {
 } from './types';
 
 /**
- * How long a cached company stays fresh.
- *
- * A minute. Companies change on human timescales — somebody files a project,
- * invites a colleague, and nothing else happens for a fortnight — and unlike a
- * project board there is no socket room pushing changes in, so this is the only
- * thing keeping the page honest. A shorter window would buy a request every
- * time somebody flicks between tabs and nothing else.
+ * How long a cached company stays fresh. A minute. Companies change on human timescales — somebody
+ * files a project, invites a colleague, and nothing else happens for a fortnight.
  */
 const ORGANIZATIONS_STALE_TIME = 60_000;
 
 /**
- * The metrics board is cheaper to keep and more expensive to compute.
- *
- * Every tile on it is a `groupBy` across every project in the company, so it is
- * the one query here worth holding on to — and the numbers it reports move on
- * the timescale of somebody finishing a task, not of somebody watching. Two
- * minutes, and a manual refresh is a tab switch away.
+ * The metrics board is cheaper to keep and more expensive to compute. Every tile on it is a
+ * `groupBy` across every project in the company.
  */
 const DASHBOARD_STALE_TIME = 120_000;
 
 /**
- * Every company this user can see.
- *
- * `enabled` exists for the right rail, which mounts on every page: somebody who
- * has never switched it away from projects should never pay for this request,
- * and somebody who has is on a device that remembers the choice. Defaulted to
- * `true` so the pages that genuinely need it say nothing.
+ * Every company this user can see. `enabled` exists for the right rail, which mounts on every page:
+ * somebody who has never switched it away from projects should never pay for this request.
  */
 export const useOrganizations = (enabled = true) =>
   useQuery({
@@ -60,11 +47,8 @@ export const useOrganization = (organizationId: string | undefined) =>
   });
 
 /**
- * The company's numbers.
- *
- * `enabled` on the tab being open rather than on the page being mounted: this
- * is the most expensive read in the feature, and most visits to a company page
- * are to its projects board.
+ * The company's numbers. `enabled` on the tab being open rather than on the page being mounted:
+ * this is the most expensive read in the feature.
  */
 export const useOrganizationDashboard = (
   organizationId: string | undefined,
@@ -78,13 +62,8 @@ export const useOrganizationDashboard = (
   });
 
 /**
- * The company's staff list.
- *
- * `enabled` because the endpoint is staff-only: a guest — somebody who reached
- * this company through a project inside it rather than through its staff list —
- * gets a 404 from it, and an unconditional query would spend a request and two
- * retries collecting one on every visit. The caller knows whether the reader is
- * staff; the query should not have to find out the hard way.
+ * The company's staff list. `enabled` because the endpoint is staff-only: a guest — somebody who
+ * reached this company through a project inside it rather than through its staff list.
  */
 export const useOrganizationMembers = (
   organizationId: string | undefined,
@@ -98,11 +77,8 @@ export const useOrganizationMembers = (
   });
 
 /**
- * Invitations the company has sent and nobody has answered.
- *
- * Admin-only on the API, so this is asked for only when the caller says it is
- * worth asking — a member opening the staff list would otherwise spend a round
- * trip collecting a 403.
+ * Invitations the company has sent and nobody has answered. Admin-only on the API, so this is asked
+ * for only when the caller says it is worth asking.
  */
 export const useOrganizationInvitations = (
   organizationId: string | undefined,
@@ -116,11 +92,8 @@ export const useOrganizationInvitations = (
   });
 
 /**
- * Projects the picker can offer: owned, and not already filed somewhere.
- *
- * Only fetched while a picker is actually open (`enabled`), because it is the
- * one query here that goes stale the instant anybody uses it — filing a project
- * removes it from this list by definition.
+ * Projects the picker can offer: owned, and not already filed somewhere. Only fetched while a
+ * picker is actually open (`enabled`).
  */
 export const useAttachableProjects = (enabled: boolean) =>
   useQuery({
@@ -139,18 +112,8 @@ export const useMyOrganizationInvitations = () =>
   });
 
 /**
- * Everything that can change a company invalidates the same things.
- *
- * Organizations are almost never optimistic, and deliberately so: unlike a pin
- * or a Post-it, most of these are not gestures somebody performs mid-flow —
- * they are deliberate, occasional acts on a settings-shaped surface, where a
- * moment of "saving…" is honest rather than sluggish. Writing an optimistic
- * path for each would be several more ways to be wrong about a cache nobody is
- * staring at. The one exception is a role dropdown — see
- * `useUpdateOrganizationMember`.
- *
- * `projects.all` goes with them because filing a project changes what the
- * *project* says about itself — its header draws the company chip.
+ * Everything that can change a company invalidates the same things. Organizations are almost never
+ * optimistic.
  */
 const useOrganizationRefresh = () => {
   const queryClient = useQueryClient();
@@ -170,14 +133,8 @@ export const useCreateOrganization = () => {
       refresh();
       toast.success(translate('org.created', { name: organization.name }));
 
-      /*
-       * The invitations get their own line, and only when something went
-       * wrong with one.
-       *
-       * A batch that reports "5 invited" on every success is a toast people
-       * learn to ignore, at which point the one that says "1 skipped" is
-       * ignored too. So the happy path stays silent and the exception speaks.
-       */
+      // The invitations get their own line, and only when something went wrong with one. A batch
+      // that reports "5 invited" on every success is a toast people learn to ignore.
       const skipped = organization.invitations.filter(
         (outcome) => outcome.status !== 'invited',
       );
@@ -211,30 +168,8 @@ export const useUpdateOrganization = (organizationId: string) => {
 };
 
 /**
- * Destroy a company.
- *
- * ## Why this does not simply `refresh()`
- *
- * Every other mutation here invalidates the whole `organizations` prefix,
- * which is right when the company still exists: the list, the detail, the
- * staff and the metrics all want re-reading. After a *delete* it is the worst
- * possible thing to do. `organizations.detail(id)` is `['organizations', id]`
- * and the members, invitations and dashboard queries all nest under it — so
- * invalidating the prefix refetches four endpoints for a company the server
- * has just destroyed. All four 404, and because each carries its own
- * `onError` toast, deleting one organization put four red toasts on screen.
- * That is what the user was seeing, and it happened *because* they were still
- * on the company's page with those queries mounted.
- *
- * So the deleted company's subtree is **removed** rather than invalidated —
- * `removeQueries` drops the cache entries and cancels their observers instead
- * of asking again — and only the list and the projects (which carry an
- * `organization` ref that is now stale) are invalidated.
- *
- * Navigating away is the caller's job, not this hook's: it is a mutation, it
- * has no idea which route is mounted, and a hook that redirected would also
- * redirect the organizations index where the dialog is opened from a card.
- * See `handleDelete` in `OrganizationDialog`.
+ * Destroy a company. Every other mutation here invalidates the whole `organizations` prefix, which
+ * is right when the company still exists: the list, the detail.
  */
 export const useDeleteOrganization = () => {
   const queryClient = useQueryClient();
@@ -243,10 +178,8 @@ export const useDeleteOrganization = () => {
     mutationFn: organizationApi.remove,
     onSuccess: (_result, organizationId) => {
       queryClient.removeQueries({ queryKey: queryKeys.organizations.detail(organizationId) });
-      // The prefix is safe here only because the removal above ran first — it
-      // has no detail, members, invitations or dashboard entries left to ask
-      // the server about. Projects carry an `organization` ref that is now
-      // stale, so they are refreshed too.
+      // The prefix is safe here only because the removal above ran first — it has no detail,
+      // members, invitations or dashboard entries left to ask the server about.
       void queryClient.invalidateQueries({ queryKey: queryKeys.organizations.all });
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
       toast.success(translate('org.deleted'));
@@ -269,37 +202,7 @@ export const useAttachProject = (organizationId: string) => {
   });
 };
 
-/**
- * Take a project out of a company, without waiting to be told it worked.
- *
- * ## Why this one is optimistic and `useAttachProject` is not
- *
- * Because of what each can fail on. Filing a project is a *claim* — it needs
- * admin rights on the company and ownership of the project, and the server is
- * the only thing that knows whether the caller has both, so showing it as done
- * before the answer arrives is showing something that may well be refused.
- * Unfiling is a withdrawal: either party may do it, the caller is one of them
- * by construction (they are looking at a control that is only drawn for
- * somebody entitled to press it), and the API's own rule says as much. A
- * refusal here means something has changed underneath the page, which is
- * exactly the case a rollback is for.
- *
- * And the wait was the whole complaint. On a free-tier API that has gone to
- * sleep, "remove from organization" sat on a spinner for the length of a cold
- * boot before the card moved — for a change that is a single nullable column.
- *
- * ## What is rewritten, and why both halves
- *
- * Two caches show this fact from opposite directions and both have to move
- * together, or the app contradicts itself for the length of a round trip:
- *
- *   - the **company**, which lists the project on its board, and
- *   - the **project**, whose header draws a chip naming the company.
- *
- * Every cached copy of either is patched — the detail, the lists, the seeded
- * placeholder copies — by walking the two key prefixes rather than guessing
- * which queries happen to be mounted.
- */
+/** Take a project out of a company, without waiting to be told it worked. */
 export const useDetachProject = (organizationId: string) => {
   const queryClient = useQueryClient();
   const refresh = useOrganizationRefresh();
@@ -379,11 +282,8 @@ export const useDetachProject = (organizationId: string) => {
         queryClient.setQueryData(key, { ...project, organization: null });
       }
 
-      /*
-       * The toast fires here rather than in `onSuccess`, which is the point of
-       * the whole exercise: the user is told the thing they can already see has
-       * happened. `onError` corrects it if the server disagrees.
-       */
+      // The toast fires here rather than in `onSuccess`, which is the point of the whole exercise:
+      // the user is told the thing they can already see has happened.
       toast.success(translate('org.projectUnfiled'));
 
       return { previous };
@@ -433,26 +333,8 @@ export const useRevokeOrganizationInvitation = (organizationId: string) => {
 };
 
 /**
- * Change somebody's role, or retitle them.
- *
- * ## Why a role change is silent, and optimistic
- *
- * Picking a role from a dropdown is not a form somebody submits — the choice
- * *is* the answer, and it is already on screen the moment it is made. Toasting
- * "Member updated" a beat later only tells the user how long the server took,
- * which is the one thing they did not ask. So the row takes the new role
- * immediately and nothing is announced; the write still happens, and if it
- * fails the row goes back to what it was and *that* is announced, because a
- * silent failure is the only outcome worse than a redundant success.
- *
- * The job title keeps its confirmation. That one is typed into a field and
- * committed on blur, so there is a real question — did that save? — and a
- * moment where the answer is not obvious from the screen.
- *
- * This is the one optimistic path in the feature, and the note on
- * `useOrganizationRefresh` explains why the others are not: they are deliberate
- * acts on a settings-shaped surface where "saving…" is honest. A dropdown is
- * not one of those.
+ * Change somebody's role, or retitle them. Picking a role from a dropdown is not a form somebody
+ * submits — the choice *is* the answer, and it is already on screen the moment it is made.
  */
 export const useUpdateOrganizationMember = (organizationId: string) => {
   const queryClient = useQueryClient();
@@ -511,12 +393,8 @@ export const useRemoveOrganizationMember = (organizationId: string) => {
 };
 
 /**
- * Answering a company invitation.
- *
- * Invalidates the projects list as well as the organizations one: accepting
- * does not put anybody on a project roster, but it does change which companies
- * the sidebar can offer, and that list is drawn from the same fetch as the
- * projects one.
+ * Answering a company invitation. Invalidates the projects list as well as the organizations one:
+ * accepting does not put anybody on a project roster, but it does change.
  */
 export const useRespondToOrganizationInvitation = () => {
   const queryClient = useQueryClient();

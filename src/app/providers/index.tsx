@@ -9,36 +9,10 @@ import { RealtimeProvider } from './realtime-provider';
 import { SessionProvider } from './session-provider';
 import { ThemeProvider, useTheme } from './theme-provider';
 
+/** The toast layer, wearing the app's theme rather than its own. */
 /**
- * The toast layer, wearing the app's theme rather than its own.
- *
- * Two things had it looking like a different application every time it
- * appeared, and both are fixed here rather than by restyling toasts one by one.
- *
- * 1. **`theme="system"` ignored the app's own setting.** The palette in this
- *    app is a *preference* — LIGHT, DARK or SYSTEM, mirrored to the account and
- *    resolved by `ThemeProvider` — and only the third of those agrees with the
- *    OS. Someone reading a dark app on a light desktop got white toasts on it.
- *    Reading `isDark` means the toaster resolves the preference exactly once,
- *    in the same place everything else does.
- *
- * 2. **Its colours were literals.** Sonner ships `#fff` / `#000` and a fixed
- *    set of pastel accents, so even with the right light/dark half it had no
- *    idea the surface behind it might be newsprint, basalt or a CRT. The
- *    palette is redirected to the design tokens in `index.css` — see the
- *    `[data-sonner-toaster]` block there — which is what makes a toast land as
- *    part of whichever skin is on.
- *
- * `richColors` stays on: with the accents pointed at `--positive`, `--danger`
- * and `--warning`, a tinted toast now reads as this app's success or failure
- * rather than as Sonner's, and the tint is what makes the type of a message
- * legible at a glance without reading it.
- */
-/**
- * How long a toast stays, in one place.
- *
- * Read twice below: once by Sonner, which dismisses on it, and once by the
- * stylesheet, which draws it. See the note at the call site.
+ * How long a toast stays, in one place. Read twice below: once by Sonner, which dismisses on it,
+ * and once by the stylesheet, which draws it.
  */
 const TOAST_DURATION_MS = 4_200;
 
@@ -47,41 +21,20 @@ const AppToaster = () => {
   const { isDark } = useTheme();
 
   return (
-    /*
-      Bottom-centre on a phone, bottom-right everywhere else.
-
-      A corner toast on a 375px screen is not in a corner — it is a full-width
-      bar pinned to one side, which reads as misaligned rather than placed.
-      Centred is the convention there, and the offset lifts it clear of the home
-      indicator, which the toast would otherwise sit underneath in the installed
-      PWA.
-    */
+    /* Bottom-centre on a phone, bottom-right everywhere else. A corner toast on a 375px screen is
+       not in a corner — it is a full-width bar pinned to one side. */
     <Toaster
       position={isTouch ? 'bottom-center' : 'bottom-right'}
       offset={isTouch ? 'calc(1rem + env(safe-area-inset-bottom, 0px))' : undefined}
       theme={isDark ? 'dark' : 'light'}
       closeButton
       richColors
-      // Radius, material and shadow come from the skin — see index.css. Only the
-      // type scale is set here, because it is the one thing a toast should not
-      // inherit from a skin that sets display type in a poster face.
+      // Radius, material and shadow come from the skin — see index.css.
       toastOptions={{
         className: 'text-sm',
         duration: TOAST_DURATION_MS,
-        /*
-          The same number again, this time where CSS can read it.
-
-          The timer bar along the bottom of a toast is a CSS animation (see
-          `[data-content]::after` in `index.css`), so its length has to come
-          from somewhere, and the one thing worse than no progress bar is one
-          that finishes at a different moment from the thing it is measuring.
-          Handing the duration down as a custom property means there is one
-          number in the codebase and both clocks are set from it.
-
-          The cast is because `CSSProperties` has no index signature for custom
-          properties — the values are perfectly valid CSS, TypeScript simply has
-          no way to say so.
-        */
+        /* The same number again, this time where CSS can read it. The timer bar along the bottom of
+           a toast is a CSS animation (see `[data-content]::after` in `index.css`). */
         style: { '--ts-toast-duration': `${TOAST_DURATION_MS}ms` } as CSSProperties,
       }}
     />
@@ -93,15 +46,8 @@ const AppToaster = () => {
  * → theme (reads the user) → realtime (needs an authenticated session).
  */
 export const AppProviders = ({ children }: { children: ReactNode }) => {
-  /*
-   * Outside every provider on purpose.
-   *
-   * It needs no session, no cache and no theme — it is two passive document
-   * listeners that start the API booting when somebody begins typing, so that
-   * the cold start is paid for during the typing rather than after it. See
-   * `warm-on-intent` for why that is nearly free. Installed here because this
-   * is the one component guaranteed to be mounted for the life of the tab.
-   */
+  // Outside every provider on purpose. It needs no session, no cache and no theme — it is two
+  // passive document listeners that start the API booting when somebody begins typing.
   useEffect(installApiWarmOnIntent, []);
 
   return (

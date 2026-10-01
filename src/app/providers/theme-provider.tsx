@@ -30,12 +30,8 @@ interface ThemeContextValue {
   /** Wears a skin for good: stored on this device and on the profile. */
   setSkin: (skin: ThemeSkin) => void;
   /**
-   * Wears a skin *for now*, or stops (`null`).
-   *
-   * For the landing page's theme section, where anybody may try any skin.
-   * Nothing is stored — not on the device, not on the profile — so a preview
-   * ends where it was started and never follows the reader into sign-in or the
-   * studio. See `ThemeShowcase`.
+   * Wears a skin *for now*, or stops (`null`). For the landing page's theme section, where anybody
+   * may try any skin.
    */
   previewSkin: (skin: ThemeSkin | null) => void;
   /** Whether this account may *keep* a skin, as opposed to preview it. */
@@ -50,15 +46,8 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 /**
- * The skin on its own, in a context of its own.
- *
- * Most of the app asks only "which skin": every loader, every Post-it icon on
- * every task card, the decor layers, the motion presets. Reading that out of
- * `ThemeContext` tied them to its whole value, which changes on every light and
- * dark flip, so each flip re-rendered all of them at once, in the same frames
- * the palette wave was trying to draw. A string that only changes when the
- * skin does keeps them out of it. The default is the fallback `useSkin` has
- * always promised outside the provider.
+ * The skin on its own, in a context of its own. Most of the app asks only "which skin": every
+ * loader, every Post-it icon on every task card, the decor layers, the motion presets.
  */
 const SkinContext = createContext<ThemeSkin>('STUDIO');
 
@@ -79,18 +68,8 @@ const readStoredSkin = (): ThemeSkin => {
 };
 
 /**
- * Whether the skins that draw their own pointer are allowed to.
- *
- * On unless somebody turned it off: a skin that ships a cursor ships it as part
- * of the look, and a theme gallery whose previews lie about what you are about
- * to get is worse than one extra checkbox.
- *
- * Stored only on this device, deliberately, and this is the one preference in
- * this file that is *not* mirrored to the profile. A custom cursor is a
- * statement about the machine it is drawn on — a trackpad on a 4K laptop, a
- * borrowed desktop, a screen being shared in a meeting — rather than about the
- * person. Following somebody across devices is exactly the wrong behaviour for
- * it, and it would need a column on the user row to do the wrong thing.
+ * Whether the skins that draw their own pointer are allowed to. On unless somebody turned it off: a
+ * skin that ships a cursor ships it as part of the look.
  */
 const readStoredCursor = (): boolean => {
   try {
@@ -124,14 +103,8 @@ const SKIN_ATTRIBUTE: Record<ThemeSkin, string> = {
 };
 
 /**
- * Theme is two orthogonal axes, both applied to <html>: the palette through the
- * `dark` class and the skin through `data-skin`. Every colour, radius and font
- * in the design system resolves through CSS variables, so either swap costs one
- * attribute mutation — no React re-render and no repaint of component trees.
- *
- * Both preferences are mirrored to the user's profile so they follow them
- * across devices, but `localStorage` stays authoritative for first paint (see
- * the inline script in index.html).
+ * Theme is two orthogonal axes, both applied to <html>: the palette through the `dark` class and
+ * the skin through `data-skin`.
  */
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const user = useSessionStore((state) => state.user);
@@ -142,15 +115,8 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [preview, setPreview] = useState<ThemeSkin | null>(null);
   const [hasCustomCursor, setCursorState] = useState<boolean>(readStoredCursor);
 
-  /*
-   * Every skin but Studio and Paper is a paid look.
-   *
-   * The server is the authority — it will not store a paid skin for a free
-   * account and reports the default in its place (`effectiveThemeSkin`) — so
-   * this is only what the interface offers. An anonymous visitor is not
-   * entitled to anything beyond the free pair either: what they try on the
-   * landing page is a preview, and the preview ends there.
-   */
+  // Every skin but Studio and Paper is a paid look. The server is the authority — it will not store
+  // a paid skin for a free account and reports the default in its place (`effectiveThemeSkin`).
   const hasCustomThemes = status === 'authenticated' && Boolean(user?.plan) && user?.plan !== 'FREE';
   const canWearSkin = useCallback(
     (candidate: ThemeSkin) => isFreeSkin(candidate) || hasCustomThemes,
@@ -161,13 +127,8 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const shown = preview ?? skin;
 
   /**
-   * Puts the palette on the document, as a wave when somebody is watching.
-   *
-   * `animate` is false for the one change nobody asked to see: adopting the
-   * profile's preference while the session resolves, which would otherwise
-   * wash a wave over a page that has only just finished loading. A switch that
-   * was pressed and the operating system turning dark at sunset both animate.
-   * The wave itself, and why it needs View Transitions, is in `theme-wave.ts`.
+   * Puts the palette on the document, as a wave when somebody is watching. `animate` is false for
+   * the one change nobody asked to see.
    */
   const apply = useCallback((next: ThemePreference, animate = false) => {
     const dark = resolveIsDark(next);
@@ -182,12 +143,8 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
     switchPalette({
       flip: () => root.classList.toggle('dark', dark),
-      /*
-       * Non-urgent, so React renders the few components that read `isDark` in
-       * slices it can yield between, rather than as one task that blocks the
-       * frames the wave is being drawn in. The colours are already right the
-       * moment the class flips; this only catches the JavaScript up.
-       */
+      // Non-urgent, so React renders the few components that read `isDark` in slices it can yield
+      // between, rather than as one task that blocks the frames the wave is being drawn in.
       commit: () => startTransition(() => setIsDark(dark)),
       animate,
     });
@@ -197,15 +154,8 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     document.documentElement.dataset.skin = SKIN_ATTRIBUTE[next] ?? 'studio';
   }, []);
 
-  /*
-   * One attribute, and only when it is off.
-   *
-   * The cursor blocks in `index.css` are written as
-   * `html:not([data-cursor='off']) [data-skin='…']`, so the presence of this
-   * attribute drops every one of them and the system pointer comes back. The
-   * absent case is the default, which means a page that never runs this — a
-   * cached shell, a crashed bundle — still draws the skin as designed.
-   */
+  // One attribute, and only when it is off. The cursor blocks in `index.css` are written as
+  // `html:not([data-cursor='off']) [data-skin='…']`.
   const applyCursor = useCallback((enabled: boolean) => {
     if (enabled) delete document.documentElement.dataset.cursor;
     else document.documentElement.dataset.cursor = 'off';
@@ -215,16 +165,8 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   // a storage read that failed there (private mode) still lands.
   useEffect(() => applySkin(shown), [applySkin, shown]);
 
-  /*
-   * Nobody keeps a skin their plan does not cover.
-   *
-   * Two ways to arrive here with one. A visitor who is not signed in with a
-   * paid skin stored on this device — from before previews stopped being
-   * stored, or left behind by a paid account that signed out — and a free
-   * account whose stored skin the profile has not yet corrected. Either way
-   * the default goes on and is written back, so the next first paint is right
-   * too. A signed-in account's own profile is adopted by the effect below.
-   */
+  // Nobody keeps a skin their plan does not cover. Two ways to arrive here with one. A visitor who
+  // is not signed in with a paid skin stored on this device.
   useEffect(() => {
     if (status === 'loading') return;
     if (canWearSkin(skin)) return;
@@ -374,10 +316,7 @@ export const useTheme = (): ThemeContextValue => {
 };
 
 /**
- * The active skin, without requiring the provider.
- *
- * Loaders are the one thing that can legitimately render before the tree is
- * fully mounted — a Suspense fallback, an error boundary — so asking for the
- * skin must never be the thing that throws. Falls back to the default look.
+ * The active skin, without requiring the provider. Loaders are the one thing that can legitimately
+ * render before the tree is fully mounted — a Suspense fallback, an error boundary.
  */
 export const useSkin = (): ThemeSkin => useContext(SkinContext);

@@ -24,6 +24,10 @@ export const authApi = {
       email: string;
       password: string;
       displayName: string;
+      /** A project invite token, carried into the confirmation email. */
+      invite?: string;
+      /** The signup checkbox; the API refuses an account without it. */
+      acceptTerms: boolean;
     } & HumanChecked,
   ): Promise<{ message: string }> {
     const { data } = await api.post<{ message: string }>('/auth/register', payload);
@@ -41,10 +45,15 @@ export const authApi = {
     return data;
   },
 
-  async resendVerification(email: string, captchaToken?: string): Promise<{ message: string }> {
+  async resendVerification(
+    email: string,
+    captchaToken?: string,
+    invite?: string,
+  ): Promise<{ message: string }> {
     const { data } = await api.post<{ message: string }>('/auth/resend-verification', {
       email,
       captchaToken,
+      invite,
     });
     return data;
   },
@@ -79,21 +88,12 @@ export const authApi = {
   // --- Signing in with a provider -------------------------------------------
 
   /**
-   * Which buttons to draw.
-   *
-   * Asked rather than assumed: the keys live on the API, and a button that
-   * leads to a 503 is worse than no button. A failed request is read as "no
-   * providers", so an API that has not been redeployed with these endpoints
-   * yet simply shows the ordinary form.
+   * Which buttons to draw. Asked rather than assumed: the keys live on the API, and a button that
+   * leads to a 503 is worse than no button.
    */
   /**
-   * Whether the sign-in forms should render a human check, and with which key.
-   *
-   * Asked rather than built in, for the reason in `HumanCheck`: the site key
-   * and the API's secret are checked against each other, so a copy carried in
-   * this bundle can go stale against the deployment it is talking to. A failure
-   * is read as "no check" — the throttler and the account lockout are the
-   * layers this one sits on top of, and neither depends on it.
+   * Whether the sign-in forms should render a human check, and with which key. Asked rather than
+   * built in, for the reason in `HumanCheck`.
    */
   async botProtection(): Promise<BotProtectionConfig | null> {
     try {
@@ -109,14 +109,7 @@ export const authApi = {
     return data;
   },
 
-  /**
-   * Where to send the browser to start a provider sign-in.
-   *
-   * A full page navigation, not a request: the provider's consent screen is a
-   * website the user has to look at, and it sets cookies on its own origin that
-   * no `fetch` from here could carry. Built off `env.apiUrl` because it is the
-   * API — not the SPA — that owns the redirect and holds the client secret.
-   */
+  /** Where to send the browser to start a provider sign-in. */
   oauthStartUrl(provider: OAuthProvider): string {
     return `${env.apiUrl}/auth/oauth/${provider}`;
   },

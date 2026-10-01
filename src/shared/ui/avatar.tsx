@@ -17,13 +17,8 @@ const SIZES = {
 } as const;
 
 /**
- * A person, mounted the way the active skin mounts a picture.
- *
- * The frame is deliberately not props: `.avatar` resolves its radius, its
- * shadow, its clip and its overlay from CSS variables the skin sets, so the
- * arcade punches the photo out of a sprite sheet, the containment site tapes a
- * hazard band across it and the press screens it onto newsprint — all without
- * this component knowing any of them exist. See the avatar block in index.css.
+ * A person, mounted the way the active skin mounts a picture. The frame is deliberately not props:
+ * `.avatar` resolves its radius, its shadow.
  */
 export const Avatar = ({ name, src, size = 'sm', className, title }: AvatarProps) => (
   <span

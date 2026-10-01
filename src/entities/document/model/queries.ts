@@ -18,12 +18,8 @@ import type {
 import { translate } from '@/shared/i18n';
 
 /**
- * A text board's table of contents.
- *
- * `undefined` is a scope, not a missing argument: it asks for the caller's own
- * personal pages. That is why there is no `enabled` gate here any more — the
- * only surfaces that mount a text board are a project tab, which cannot render
- * before its id resolves, and the personal desk, which never has one.
+ * A text board's table of contents. `undefined` is a scope, not a missing argument: it asks for the
+ * caller's own personal pages.
  */
 export const useProjectDocuments = (projectId?: string, taskId?: string) =>
   useQuery({
@@ -32,14 +28,7 @@ export const useProjectDocuments = (projectId?: string, taskId?: string) =>
     staleTime: 15_000,
   });
 
-/**
- * How full the board is, for the gauge above it.
- *
- * The same scope argument the list takes, so a project tab and the personal
- * desk ask the same hook and get the answer for the board they are showing.
- * `staleTime` matches the list's: the two are read together and there is no
- * value in one of them being fresher than the other.
- */
+/** How full the board is, for the gauge above it. */
 export const useBoardUsage = (projectId?: string) =>
   useQuery({
     queryKey: queryKeys.documents.usage(projectId),
@@ -55,31 +44,14 @@ export const useProjectDocument = (documentId: string | undefined) =>
   });
 
 /**
- * Edits one document's row wherever it is cached, without a refetch.
- *
- * Every table of contents is its own query — personal, per project, per task —
- * and a saved page can legitimately appear in more than one of them. Rather
- * than work out which, this walks the cached lists and rewrites the matching
- * row in place. `setQueriesData` with a prefix touches only what is already in
- * memory, so it costs nothing for lists nobody has opened.
- *
- * List rows carry `excerpt` and no `content` (see `ProjectDocument`), so the
- * body is deliberately dropped on the way in — writing it into a list row would
- * quietly double the memory a long table of contents occupies and make the
- * list's shape disagree with what the API returns for it.
+ * Edits one document's row wherever it is cached, without a refetch. Every table of contents is its
+ * own query — personal, per project, per task.
  */
 const useDocumentListCache = () => {
   const queryClient = useQueryClient();
 
-  /*
-   * Both helpers are memoised, and the realtime hook below is why.
-   *
-   * They end up in that effect's dependency array, and a fresh function
-   * identity on every render would tear down and re-attach three socket
-   * listeners on every render of every component holding a text board. That is
-   * the quiet version of the bug this whole change set is about: not a wrong
-   * result, just continuous pointless work.
-   */
+  // Both helpers are memoised, and the realtime hook below is why. They end up in that effect's
+  // dependency array.
   const upsertRow = useCallback(
     (document: ProjectDocument | DocumentBroadcast) => {
       const { content: _content, ...row } = document;
@@ -91,16 +63,8 @@ const useDocumentListCache = () => {
 
           const index = rows.findIndex((entry) => entry.id === row.id);
           if (index === -1) {
-            /*
-             * A page created by somebody else. Newest first, matching the
-             * API's ordering, so it lands where a refetch would have put it.
-             *
-             * A socket row has no permission flags at all, and a *new* row has
-             * nothing to merge them from, so they default to false: this
-             * reader may not edit a page somebody else has just written, which
-             * is both the correct answer and the safe one to guess. Opening it
-             * fetches the real answer.
-             */
+            // A page created by somebody else. Newest first, matching the API's ordering, so it
+            // lands where a refetch would have put it.
             return [{ canEdit: false, canManageAccess: false, ...row } as ProjectDocument, ...rows];
           }
 
@@ -126,29 +90,7 @@ const useDocumentListCache = () => {
     [queryClient],
   );
 
-  /**
-   * Re-ask how full the board is, for the mutations that change its weight.
-   *
-   * ## Why it is not folded into `upsertRow`
-   *
-   * Because `upsertRow` also runs on a rename, on a permissions change, on a
-   * Figma sync and on every row that arrives over the socket — none of which
-   * move a single byte. Refreshing the gauge there would put a `SUM` over the
-   * whole board behind every save anybody on the project makes.
-   *
-   * The three things that genuinely change the total are a page appearing, a
-   * page being imported (which is where the bytes actually are), and a page
-   * going away. Those call this; nothing else does.
-   *
-   * `invalidateQueries` rather than a computed adjustment: the total is
-   * `sourceSize + octet_length(content)` summed on the server, and a client
-   * that tried to keep its own running total would be reimplementing the
-   * sanitiser to guess how long a body will be once it is stored.
-   *
-   * The prefix covers both boards. Adopting a personal page into a project
-   * moves weight from one to the other, and only one of the two ids is known
-   * at the call site.
-   */
+  /** Re-ask how full the board is, for the mutations that change its weight. */
   const refreshUsage = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: [...queryKeys.documents.all, 'usage'] });
   }, [queryClient]);
@@ -164,9 +106,8 @@ export const useCreateDocument = () => {
 
   return useMutation({
     mutationFn: (payload: CreateDocumentPayload) => documentApi.create(payload),
-    // The API returns the finished row, so the table of contents can be edited
-    // rather than thrown away and fetched again. The board's total is the one
-    // thing the response does not carry — see `refreshUsage`.
+    // The API returns the finished row, so the table of contents can be edited rather than thrown
+    // away and fetched again.
     onSuccess: (document) => {
       upsertRow(document);
       refreshUsage();
@@ -184,15 +125,8 @@ export const useUpdateDocument = () => {
       documentApi.update(documentId, payload),
 
     onSuccess: (document) => {
-      /*
-       * Both caches are written from the response, and neither is invalidated.
-       *
-       * This used to seed the detail cache and then invalidate `documents.all`,
-       * which refetched every table of contents in memory — on every keystroke-
-       * free save of a single page. The server has just told us exactly what
-       * changed; asking it again immediately is the definition of a wasted
-       * round trip, and on a cold Neon instance it is a slow one.
-       */
+      // Both caches are written from the response, and neither is invalidated. This used to seed
+      // the detail cache and then invalidate `documents.all`.
       queryClient.setQueryData<ProjectDocument>(queryKeys.documents.detail(document.id), document);
       upsertRow(document);
     },
@@ -202,11 +136,8 @@ export const useUpdateDocument = () => {
 };
 
 /**
- * Hand the pen to some of the roster, or take it back.
- *
- * The response is the whole page with a recomputed `canEdit` and `editors`, so
- * both caches are written from it and neither is invalidated — the same
- * reasoning as `useUpdateDocument`.
+ * Hand the pen to some of the roster, or take it back. The response is the whole page with a
+ * recomputed `canEdit` and `editors`.
  */
 export const useSetDocumentEditors = () => {
   const queryClient = useQueryClient();
@@ -227,13 +158,8 @@ export const useSetDocumentEditors = () => {
 };
 
 /**
- * Registers an uploaded file as a page.
- *
- * Deliberately not folded into `useCreateDocument` with an optional source.
- * The two differ in what has to happen first — an import is the second half of
- * a presigned upload — in which errors are worth showing, and in what the row
- * that comes back means: one is a blank page somebody is about to write, the
- * other is a document that already exists.
+ * Registers an uploaded file as a page. Deliberately not folded into `useCreateDocument` with an
+ * optional source.
  */
 export const useImportDocument = () => {
   const { upsertRow, refreshUsage } = useDocumentListCache();
@@ -244,26 +170,14 @@ export const useImportDocument = () => {
       upsertRow(document);
       refreshUsage();
     },
-    /*
-     * No `onError`, deliberately.
-     *
-     * An import is two requests — a presigned PUT to storage, then this — and
-     * only the caller knows which of them the person was waiting on. A handler
-     * here would toast for the second half while the caller's own `catch`
-     * toasts for both, which is how a single failure ends up saying the same
-     * thing twice. See `handleImport` in the text board.
-     */
+    // No `onError`, deliberately. An import is two requests — a presigned PUT to storage, then this
+    // — and only the caller knows which of them the person was waiting on.
   });
 };
 
 /**
- * What is inside an imported `.zip`.
- *
- * Cached for the session and never refetched on its own, because the object it
- * derives from is immutable: an archive's contents cannot change without
- * somebody uploading a different archive, which is a different page. The API
- * also serves it with a five-minute private cache, so flipping between pages
- * costs nothing at either end.
+ * What is inside an imported `.zip`. Cached for the session and never refetched on its own, because
+ * the object it derives from is immutable.
  */
 export const useDocumentArchive = (documentId: string | undefined, isArchive: boolean) =>
   useQuery({
@@ -271,29 +185,14 @@ export const useDocumentArchive = (documentId: string | undefined, isArchive: bo
     queryFn: () => documentApi.archive(documentId as string),
     enabled: Boolean(documentId) && isArchive,
     staleTime: Infinity,
-    /*
-     * Not retried.
-     *
-     * The one failure this route has is an archive the reader on the API could
-     * not follow, which is a 400 that will be a 400 next time as well —
-     * retrying it three times only delays the message that says to download
-     * the file instead.
-     */
+    // Not retried. The one failure this route has is an archive the reader on the API could not
+    // follow, which is a 400 that will be a 400 next time as well.
     retry: false,
   });
 
 /**
- * The pictures inside a written page.
- *
- * `enabled` is the whole design here: this is asked for by the download menu
- * when it opens, not by the page when it loads. A table of contents holding
- * thirty documents must not fire thirty requests for a section nobody has
- * looked at, and the answer is only interesting at the moment somebody is
- * deciding what to take out of the page.
- *
- * Keyed on the document alone rather than on its revision, and cached for a
- * minute: editing a page's text does not change its pictures, and the one case
- * that does — inserting an image — is a save the reader just made themselves.
+ * The pictures inside a written page. `enabled` is the whole design here: this is asked for by the
+ * download menu when it opens, not by the page when it loads.
  */
 export const useDocumentAssets = (documentId: string | undefined, enabled: boolean) =>
   useQuery({
@@ -305,12 +204,8 @@ export const useDocumentAssets = (documentId: string | undefined, enabled: boole
   });
 
 /**
- * A folder page's pictures.
- *
- * Fetched when the folder is opened, never with the table of contents — a
- * whiteboard page can hold dozens of pictures, and the list only needs the
- * count it already has. Kept fresh by `document:folder` (see the realtime hook
- * below) rather than by polling.
+ * A folder page's pictures. Fetched when the folder is opened, never with the table of contents — a
+ * whiteboard page can hold dozens of pictures, and the list only needs the count it already has.
  */
 export const useDocumentFolder = (documentId: string | undefined, enabled: boolean) =>
   useQuery({
@@ -321,11 +216,8 @@ export const useDocumentFolder = (documentId: string | undefined, enabled: boole
   });
 
 /**
- * Takes a picture out of a folder.
- *
- * Optimistic, because it is a pruning gesture — "clear what I do not need" is
- * usually several clicks in a row, and waiting out a round trip between each
- * makes it a chore. The gauge and the row's count follow from the refetch.
+ * Takes a picture out of a folder. Optimistic, because it is a pruning gesture — "clear what I do
+ * not need" is usually several clicks in a row.
  */
 export const useRemoveFolderItem = (documentId: string) => {
   const queryClient = useQueryClient();
@@ -370,9 +262,8 @@ export const useCreateFigmaPage = () => {
     mutationFn: (payload: CreateFigmaPagePayload) => documentApi.createFigmaPage(payload),
     onSuccess: (document) => {
       upsertRow(document);
-      // A design page holds a link rather than a file, so it barely moves the
-      // needle — but it is a page on the board, and a gauge that ignored one
-      // kind of page would be wrong in exactly the way nobody would look for.
+      // A design page holds a link rather than a file, so it barely moves the needle — but it is a
+      // page on the board.
       refreshUsage();
       toast.success(translate('figma.pageAdded'));
     },
@@ -381,16 +272,8 @@ export const useCreateFigmaPage = () => {
 };
 
 /**
- * Brings a design page back in step with Figma.
- *
- * Writes the answer into both caches rather than invalidating them: the API
- * hands back the whole page, and a refetch would ask for a node tree the
- * response is already carrying.
- *
- * The toast distinguishes the two outcomes, and that is the point of `changed`
- * travelling at all. "Design updated" on a file nobody has touched is a
- * message that teaches people the button lies; "already up to date" is the
- * answer they actually wanted, and it is the common one.
+ * Brings a design page back in step with Figma. Writes the answer into both caches rather than
+ * invalidating them: the API hands back the whole page.
  */
 export const useSyncFigmaDocument = () => {
   const queryClient = useQueryClient();
@@ -407,24 +290,7 @@ export const useSyncFigmaDocument = () => {
   });
 };
 
-/**
- * Rendered previews for one page of a design, as URLs the browser loads.
- *
- * ## Why the version is in the key
- *
- * Because it is what makes these safe to cache at all. Figma's render URLs
- * point at an object that reflects the file *as it was when they were minted*,
- * so a cache keyed on the node ids alone would keep showing yesterday's frames
- * after a sync. Keying on the version means a sync that changed something
- * invalidates every thumbnail on the page automatically, and a sync that
- * changed nothing costs no renders at all.
- *
- * ## Why one request for the whole page
- *
- * Figma rate-limits per call rather than per node, so a grid of twelve frames
- * fetched one at a time is twelve chances to be throttled for the same work.
- * The ids travel together and the answer is a map.
- */
+/** Rendered previews for one page of a design, as URLs the browser loads. */
 export const useFigmaImages = (
   documentId: string | undefined,
   nodeIds: string[],
@@ -434,24 +300,15 @@ export const useFigmaImages = (
     queryKey: ['documents', documentId ?? '', 'figma-images', version ?? 'none', nodeIds] as const,
     queryFn: () => documentApi.figmaImages(documentId as string, nodeIds),
     enabled: Boolean(documentId) && nodeIds.length > 0,
-    /*
-     * Ten minutes, which is shorter than the URLs live and longer than anybody
-     * spends flipping between a design's pages. It is a ceiling on staleness
-     * that the version key has already made unnecessary in the normal case —
-     * this is here for the abnormal one, where somebody edits in Figma and
-     * never syncs.
-     */
+    // Ten minutes, which is shorter than the URLs live and longer than anybody spends flipping
+    // between a design's pages.
     staleTime: 10 * 60_000,
     retry: false,
   });
 
 /**
- * The assistant's reading of a design's structure.
- *
- * A mutation rather than a query, the same call `usePreviewRepository` makes:
- * it fires on a button press, the answer belongs to that press, and it must
- * not be served from a cache when somebody asks again after a sync — the whole
- * reason to ask twice is that the file changed.
+ * The assistant's reading of a design's structure. A mutation rather than a query, the same call
+ * `usePreviewRepository` makes: it fires on a button press, the answer belongs to that press.
  */
 export const useFigmaBrief = () =>
   useMutation({
@@ -474,12 +331,8 @@ export const useDeleteDocument = () => {
 };
 
 /**
- * Accepts a version of a page that arrived over the socket.
- *
- * Separate from the realtime hook because adopting is a *decision*, not an
- * event: when a teammate's save lands on a page somebody has open for editing,
- * the hook deliberately refuses to touch the buffer and hands the choice to the
- * person whose words are at stake. This is what runs if they choose to take it.
+ * Accepts a version of a page that arrived over the socket. Separate from the realtime hook because
+ * adopting is a *decision*, not an event.
  */
 export const useAdoptDocument = () => {
   const queryClient = useQueryClient();
@@ -503,31 +356,8 @@ export const useAdoptDocument = () => {
 };
 
 /**
- * A project's text board, kept live.
- *
- * The API has emitted `document:created`, `document:updated` and
- * `document:deleted` into the project room since the feature shipped — see
- * `documents.service.ts` — and nothing on this side was listening. The result
- * was a board that looked live and was not: a teammate's save stayed invisible
- * until a `staleTime` expired and something happened to trigger a refetch,
- * which in practice meant switching windows.
- *
- * Modelled on `useProjectBoardRealtime`, which has done this correctly for the
- * Post-it board all along: apply the payload to the cache, never invalidate.
- * The event carries the whole row, so a refetch would fetch what we already
- * have.
- *
- * **The open editor is deliberately left alone.** Editing here is modal — read,
- * Edit, Save — precisely because there is no operational transform behind it
- * (see the note in `TextBoard`), and patching the detail cache under somebody
- * who is mid-sentence would destroy their draft to show them a version they did
- * not ask for. So an incoming update to the page you have open is written to
- * the *list* and announced, and the editor keeps your text until you decide.
- * Everything else patches silently.
- *
- * Personal pages never arrive here and that is correct rather than an omission:
- * they have no project, so there is no room to emit them into, and nobody but
- * their author can open them.
+ * A project's text board, kept live. The API has emitted `document:created`, `document:updated` and
+ * `document:deleted` into the project room since the feature shipped — see `documents.service.ts`.
  */
 export const useProjectDocumentsRealtime = (
   projectId: string | undefined,
@@ -554,15 +384,8 @@ export const useProjectDocumentsRealtime = (
         return;
       }
 
-      /*
-       * Merged over what is cached, never replacing it.
-       *
-       * The event carries no `canEdit` — see `DocumentBroadcast` — so writing
-       * it wholesale would blank this reader's own answer, and the toolbar
-       * reads that answer to decide whether to draw an Edit button. Nothing
-       * cached yet means nothing to correct; the detail fetch on open is
-       * authoritative either way.
-       */
+      // Merged over what is cached, never replacing it. The event carries no `canEdit` — see
+      // `DocumentBroadcast` — so writing it wholesale would blank this reader's own answer.
       queryClient.setQueryData<ProjectDocument>(
         queryKeys.documents.detail(document.id),
         (current) => (current ? { ...current, ...document } : undefined),
@@ -571,15 +394,8 @@ export const useProjectDocumentsRealtime = (
 
     const handleDelete = ({ documentId }: { documentId: string }) => removeRow(documentId);
 
-    /*
-     * A picture went up on the whiteboard and was filed on this board.
-     *
-     * The one event here that carries no row: the folder is written by the
-     * whiteboard's side of the API, which does not shape documents (see
-     * `BoardFoldersService.announce`). So this is the one place the hook
-     * refetches rather than patches — the table of contents for the new row or
-     * its count, the gauge for the bytes, and the folder for its pictures.
-     */
+    // A picture went up on the whiteboard and was filed on this board. The one event here that
+    // carries no row: the folder is written by the whiteboard's side of the API.
     const handleFolder = (event: { projectId: string; documentId: string }) => {
       if (event.projectId !== projectId) return;
       void queryClient.invalidateQueries({ queryKey: ['documents', 'list', projectId] });

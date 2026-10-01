@@ -1,51 +1,4 @@
-"""Builds the Terminal skin's cursor: Ubuntu's pointer and its hand.
-
-Run it after changing anything below:
-
-    python custom-cursor/terminal/build-cursors.py
-
-It writes `built/cursor.css` beside this file; paste that over the block in
-`src/app/styles/index.css` marked `Skin: TERMINAL - the pointer is Ubuntu's`.
-(A file rather than stdout, because the em dashes in the generated comments do
-not survive a Windows console pipe.)
-
-Requires Pillow (`pip install pillow`). Nothing in the application depends on
-this script at build or run time; it is a one-off tool that produces text.
-
-## What is being drawn
-
-The pointer Ubuntu ships with its Yaru theme, as closely as a drawing made from
-its description can be: a slim arrow with a long straight left edge, a barb, a
-tail that leaves the barb at an angle, softly rounded corners everywhere, a
-solid body inside a light rim, and a small soft shadow under it. Over anything
-clickable it is Yaru's hand: the index finger standing up, three fingers folded
-under it, a thumb out to the left.
-
-It is not the system's own image. That ships under the terms of the theme it
-belongs to and would have to be carried and credited; a pointer this simple is
-a shape, and the shape is drawn here from scratch.
-
-## How it is drawn
-
-Everything is built as a *mask* at eight times size, from polygons and
-capsules, and every colour is derived from that one mask:
-
-  - the rim is the mask dilated by a disc, which is what rounds every corner
-    of the outline the way Yaru's are rounded, with no corner special-cased;
-  - the shadow is the rim, blurred and dropped a pixel;
-  - the body is the mask itself.
-
-Then the whole thing is reduced with LANCZOS, which is the entire antialiasing
-strategy - the same one the Dragon script uses, for the same reason.
-
-## Two palettes
-
-Ubuntu's own pointer is dark with a white rim, and that is what the light
-palette uses: on a pale page the body is what you see and the rim is what
-keeps it off a dark control. The dark palette inverts it, the way the older
-DMZ-White theme Ubuntu shipped for years did: a white body with a dark rim,
-because a black arrow on a black-violet page is a rim with nothing in it.
-"""
+"""Builds the Terminal skin's cursor: Ubuntu's pointer and its hand."""
 import base64
 import io
 import math
@@ -63,12 +16,7 @@ S = 8
 # How thick the rim is, in screen pixels. Yaru's is a little over one.
 RIM = 1.25
 
-# ---------------------------------------------------------------------------
-# The arrow, in screen pixels, point first.
-#
-# 17 pixels from the point to the foot of the tail and 12.6 across at the
-# barb: the system arrow's own footprint, give or take the rim.
-# ---------------------------------------------------------------------------
+# --- The arrow, in screen pixels, point first. ---
 
 ARROW = [
     (2.0, 2.0),     # the point
@@ -82,14 +30,8 @@ ARROW = [
 
 ARROW_HOTSPOT = (2, 2)
 
-# ---------------------------------------------------------------------------
-# The hand, in screen pixels.
-#
-# Each finger is a capsule: a line with a round cap, which is what a fingertip
-# is. The palm is a rounded block the fingers stand on. Seams between the
-# fingers are drawn afterwards, in the rim colour, so the fused silhouette
-# still reads as four fingers rather than a mitten.
-# ---------------------------------------------------------------------------
+# --- The hand, in screen pixels. ---
+# Each finger is a capsule: a line with a round cap, which is what a fingertip is.
 
 # Drawn on a roomy grid and then scaled into place (see `hand()`), because the
 # proportions are easier to judge at this size than at the one it ships at.
@@ -110,18 +52,15 @@ THUMB_WIDTH = 3.5
 # The palm: left, top, right, bottom, corner radius.
 PALM = (7.8, 12.8, 21.4, 23.4, 3.4)
 
-# How much the whole hand is reduced from the grid above, and about where:
-# the fingertip, so the hotspot stays on it. 0.8 brings it to about 17x21,
-# which is the system hand's own footprint.
+# How much the whole hand is reduced from the grid above, and about where: the fingertip, so the
+# hotspot stays on it. 0.8 brings it to about 17x21, which is the system hand's own footprint.
 HAND_SCALE = 0.8
 HAND_ORIGIN = (9.6, 1.6)
 
 # The fingertip: the middle of the index finger's cap, after scaling.
 HAND_HOTSPOT = (10, 2)
 
-# ---------------------------------------------------------------------------
-# Palettes: body, rim, shadow alpha.
-# ---------------------------------------------------------------------------
+# --- Palettes: body, rim, shadow alpha. ---
 
 PALETTES = {
     'light': {'body': (22, 22, 24, 255), 'rim': (255, 255, 255, 255), 'shadow': 0.38},
@@ -180,10 +119,8 @@ def hand_seams() -> Image.Image:
     ):
         seam_x = (left_x + right_x) / 2
         start = max(left_top, right_top) + 1.2
-        # Beside the standing finger the seam runs down to the knuckles, which
-        # is what separates it from the fist. Between two folded fingers it is
-        # only the notch between their tips: any longer and the fist reads as
-        # a row of bars.
+        # Beside the standing finger the seam runs down to the knuckles, which is what separates it
+        # from the fist.
         end = 14.0 if index == 0 else start + 2.2
         draw.line([up(hand((seam_x, start))), up(hand((seam_x, end)))], fill=255, width=width)
     # The thumb's inner edge, where it folds against the index finger.

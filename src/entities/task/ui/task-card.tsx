@@ -31,11 +31,8 @@ import { TaskTypeTag } from './task-type-tag';
 import { translate, useT } from '@/shared/i18n';
 
 /**
- * The lateness stamp.
- *
- * Drawn as a slightly rotated, notched label so it reads as something stuck
- * onto the card after the fact — the way a real "OVERDUE" stamp would — instead
- * of another neutral pill in the badge row.
+ * The lateness stamp. Drawn as a slightly rotated, notched label so it reads as something stuck
+ * onto the card after the fact — the way a real "OVERDUE" stamp would.
  */
 export const LateTag = ({ variant }: { variant: 'late' | 'completed-late' }) => {
   const isOpen = variant === 'late';
@@ -73,22 +70,15 @@ interface TaskCardProps {
   className?: string;
   compact?: boolean;
   /**
-   * Surfaces the owning project as a link. On by default nowhere: inside a
-   * project board it would say the same thing on every card, but on the
-   * personal agenda — which mixes every project the user is on — it is the
-   * fastest way back to where the work actually lives.
+   * Surfaces the owning project as a link. On by default nowhere: inside a project board it would
+   * say the same thing on every card, but on the personal agenda.
    */
   showProjectLink?: boolean;
 }
 
 /**
- * The primary task surface. The colour the user picks tints the whole card via
- * a left rail plus a translucent wash, so a board stays scannable at a glance.
- *
- * Memoised: a board can hold a few hundred of these, and every one of them runs
- * a layout animation, so a filter keystroke or a layout switch re-rendering the
- * whole set is the difference between instant and janky. The callers hand down
- * one memoised handler object, which is what makes the comparison hold.
+ * The primary task surface. The colour the user picks tints the whole card via a left rail plus a
+ * translucent wash, so a board stays scannable at a glance.
  */
 const TaskCardBase = ({
   task,
@@ -104,43 +94,22 @@ const TaskCardBase = ({
   const t = useT();
   const isDone = task.status === 'COMPLETED';
 
-  /*
-   * A write of this task's own is still in the air.
-   *
-   * Subscribed here rather than passed down, so a board of several hundred
-   * cards costs no prop plumbing and re-renders exactly the one card whose
-   * answer changed. See `entities/task/model/sync.store`.
-   */
+  // A write of this task's own is still in the air. Subscribed here rather than passed down.
   const isSyncing = useIsTaskSyncing(task.id);
 
-  /*
-   * What the card marks in its corner, rather than spells out in its footer.
-   *
-   * Both of these answer "is there something else attached to this?", which is
-   * a yes/no a glyph says faster than a labelled pill — and the footer is where
-   * the card's genuinely varying information lives (deadline, priority,
-   * sign-off, progress). A note already worked this way; the attachment used to
-   * spend a whole badge and the word "Image" saying the same thing.
-   */
+  // What the card marks in its corner, rather than spells out in its footer. Both of these answer
+  // "is there something else attached to this?".
   const noteCount = task.notes.length;
   const hasNote = noteCount > 0;
   const markerCount = (hasNote ? 1 : 0) + (task.attachmentUrl ? 1 : 0);
 
-  // A task several people carry needs all of their ticks, so the card has to
-  // say how many it has — otherwise "why is this still open?" has no answer on
-  // the surface where it is asked. See `lib/completion.ts`.
+  // A task several people carry needs all of their ticks, so the card has to say how many it has —
+  // otherwise "why is this still open?" has no answer on the surface where it is asked.
   const isShared = isSharedTask(task);
   const signOff = completionProgress(task);
 
-  /*
-   * The whole card opens the task, not just the title.
-   *
-   * `useCardPress` is what makes that safe on a board where the same card is
-   * also a drag handle — it measures the press and refuses one that travelled
-   * or was held. The title below stays a real `<button>`: it is what a keyboard
-   * tabs to and what a screen reader announces, and the press hook steps aside
-   * for it rather than firing twice.
-   */
+  // The whole card opens the task, not just the title. `useCardPress` is what makes that safe on a
+  // board where the same card is also a drag handle.
   const openTask = useMemo(
     () => (onOpen ? () => onOpen(task) : undefined),
     [onOpen, task],
@@ -151,21 +120,8 @@ const TaskCardBase = ({
     <motion.article
       {...cardPress}
       layout="position"
-      /*
-       * No entrance animation, deliberately.
-       *
-       * Every card used to fade and rise on mount. On one card that reads as
-       * polish; on a board it is the whole point of the page arriving in a
-       * blur, and it made *already-cached* data look like it was still loading
-       * — the animation runs on mount regardless of where the data came from,
-       * so a list served instantly from cache was still hidden for the length
-       * of a spring. Now the tasks are simply there.
-       *
-       * `layout="position"` stays: that animates a card *moving* — reordering,
-       * a status change, a column drop — which is a real state change worth
-       * showing, and it never delays first paint. `transition` is kept because
-       * it configures that, not an entrance.
-       */
+      /* No entrance animation, deliberately. Every card used to fade and rise on mount. On one card
+         that reads as polish; on a board it is the whole point of the page arriving in a blur. */
       transition={{ type: 'spring', stiffness: 380, damping: 32 }}
       className={cn(
         'ui-card gpu group relative flex flex-col gap-3 overflow-hidden rounded-2xl border border-edge',
@@ -183,12 +139,8 @@ const TaskCardBase = ({
         style={{ backgroundColor: task.color }}
       />
 
-      {/* What is stuck to this card, marked on the corner the way a real note
-          or a clipped photograph would be, rather than hiding in the badge row.
-
-          Inside the padding box, not straddling it: the card clips its own
-          overflow (for the colour rail), so a marker hung off the corner was
-          being sliced in half. */}
+      {/* What is stuck to this card, marked on the corner the way a real note or a clipped
+          photograph would be, rather than hiding in the badge row. */}
       {markerCount > 0 && (
         <span className="absolute right-1.5 top-1.5 z-10 flex items-center gap-1">
           {task.attachmentUrl && (
@@ -237,15 +189,8 @@ const TaskCardBase = ({
         {onToggleComplete && (
           <button
             type="button"
-            /*
-             * Locked while its own write is in flight.
-             *
-             * The tick itself is already instant — the cache is patched before
-             * the request leaves — so this costs the user nothing they can
-             * feel. What it buys is that a second click cannot start a second
-             * write for the same row, which is what used to let a quick
-             * tick-untick settle as "done", flash back and settle again.
-             */
+            /* Locked while its own write is in flight. The tick itself is already instant — the
+               cache is patched before the request leaves. */
             disabled={!task.isMine || isSyncing}
             aria-busy={isSyncing || undefined}
             title={
@@ -268,14 +213,12 @@ const TaskCardBase = ({
               'mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md border transition-all duration-150',
               task.isCompletedByMe || isDone
                 ? 'border-positive bg-positive text-white'
-                // `border-check`, not `border-edge`: an empty box has nothing
-                // but its outline to be found by, and `--edge` is tuned to
-                // vanish. See the token note in `app/styles/index.css`.
+                // `border-check`, not `border-edge`: an empty box has nothing but its outline to be
+                // found by, and `--edge` is tuned to vanish.
                 : 'border-check bg-surface-sunken/40',
               task.isMine ? 'hover:border-brand' : 'cursor-default opacity-60',
-              // Not `opacity-50`: the box has just been ticked and the tick is
-              // the thing being confirmed, so it stays fully drawn. Only the
-              // cursor says the control is momentarily closed.
+              // Not `opacity-50`: the box has just been ticked and the tick is the thing being
+              // confirmed, so it stays fully drawn.
               isSyncing && 'cursor-progress',
             )}
           >
@@ -288,22 +231,10 @@ const TaskCardBase = ({
           onClick={() => onOpen?.(task)}
           className="flex-1 text-left focus-visible:outline-none"
         >
-          {/*
-            Title only.
-
-            The description used to sit under it on every card, which on a
-            board of twenty made the column a wall of prose to scan past — and
-            the two clamped lines were rarely the two that mattered. It belongs
-            to the task, not to the summary of it, so it lives in the detail
-            modal that opening the card already gives you.
-          */}
-          {/*
-            Truncated for layout, not for taste. `TEXT_LIMITS.taskTitle` keeps
-            new titles to a line, but rows written before that limit existed
-            can be arbitrarily long, and `text-balance` on an arbitrarily long
-            string is the most expensive line-breaking mode there is — paid
-            once per card, on a board that draws dozens.
-          */}
+          {/* Title only. The description used to sit under it on every card, which on a board
+              of twenty made the column a wall of prose to scan past. */}
+          {/* Truncated for layout, not for taste. `TEXT_LIMITS.taskTitle` keeps new titles to a
+              line, but rows written before that limit existed can be arbitrarily long. */}
           <h3
             title={task.title.length > TEXT_LIMITS.taskTitle ? task.title : undefined}
             className={cn(
@@ -354,37 +285,15 @@ const TaskCardBase = ({
       <footer className="flex flex-wrap items-center gap-2 pl-2">
         <TaskTypeTag type={task.type} />
 
-        {/*
-          No status badge.
-
-          Every surface that draws these cards already says the status *around*
-          them — the board by column, the list and the sprint view by grouped
-          heading — and the detail sheet says it again when you open one. So the
-          badge repeated, on every card, a fact the reader had just been told by
-          the thing they were looking at. The card keeps the two cues that carry
-          it without a label: a completed task fades and strikes its own title.
-        */}
+        {/* No status badge. Every surface that draws these cards already says the status
+            *around* them — the board by column. */}
 
         {/* Lateness gets its own loud tag rather than a whole extra column. */}
         {task.isLate && <LateTag variant="late" />}
         {task.isCompletedLate && <LateTag variant="completed-late" />}
 
-        {/*
-          Finished work says when it *was* finished; open work says when it is
-          due.
-
-          The badge used to show the deadline either way, and on a completed
-          card that is the wrong fact: the deadline is a prediction, and once
-          the work has landed the only interesting number is when it actually
-          landed. Reading "24 Sept" on something delivered on the 19th invites
-          exactly the wrong conclusion.
-
-          `completedAt` rather than `dueAt`, and the tick rather than the clock,
-          so the two states are distinguishable at a glance without reading the
-          number at all. A finished task with no `completedAt` — a row written
-          before the column existed — falls back to the old behaviour rather
-          than showing an empty badge.
-        */}
+        {/* Finished work says when it *was* finished; open work says when it is due. The badge
+            used to show the deadline either way. */}
         {isDone && task.completedAt ? (
           <Badge
             title={t('views.completedOn', { date: formatDateTime(task.completedAt) })}
@@ -402,9 +311,8 @@ const TaskCardBase = ({
           task.dueAt && (
             <Badge className={cn(task.isLate && 'border-danger/40 text-danger')}>
               <CalendarClock className="h-3 w-3" />
-              {/* A finished task with no recorded completion still gets the
-                  date it was due, not a running countdown — "2d late" on
-                  delivered work reads as still overdue. */}
+              {/* A finished task with no recorded completion still gets the date it was due,
+                  not a running countdown — "2d late" on delivered work reads as still overdue. */}
               {isDone ? formatDeadlineDate(task.dueAt) : formatDeadline(task.dueAt)}
             </Badge>
           )
@@ -456,9 +364,8 @@ const TaskCardBase = ({
             </span>
           )}
 
-          {/* Where this task actually lives. Carries the project's own colour so
-              a mixed agenda stays scannable by source, not just by date — or
-              says "Personal" when there is no project behind it at all. */}
+          {/* Where this task actually lives. Carries the project's own colour so a mixed agenda
+              stays scannable by source, not just by date. */}
           {showProjectLink && <TaskOrigin project={task.project} />}
 
           <AvatarStack people={task.assignees} max={3} />

@@ -4,13 +4,8 @@ import { useReducedMotion } from 'framer-motion';
 import { peerColor } from '@/features/notes-board/lib/peer-color';
 
 /**
- * Whether Lucy has already drawn her arrow in this page load.
- *
- * Module state, deliberately — not component state and not storage. The
- * animation plays once per *load*: leaving for another page of the site and
- * coming back remounts the section, and the arrow should simply be there, as
- * ink on a real wall would be. A reload clears it, which is the one thing that
- * should let it play again.
+ * Whether Lucy has already drawn her arrow in this page load. Module state, deliberately — not
+ * component state and not storage.
  */
 let hasDrawn = false;
 
@@ -45,13 +40,8 @@ interface Geometry {
 }
 
 /**
- * The arrow, laid out against the board as it actually is.
- *
- * Aimed at the top-right note's *measured* box rather than at fixed
- * coordinates, because the board is as wide as the window allows and the notes
- * are placed in percentages: a hard-coded path lands short on a wide screen
- * and inside the paper on a narrow one. Everything else is proportional to the
- * board, and kept out of the heading's box in the middle of it.
+ * The arrow, laid out against the board as it actually is. Aimed at the top-right note's *measured*
+ * box rather than at fixed coordinates.
  */
 const measure = (board: HTMLElement, target: HTMLElement): Geometry => {
   const box = board.getBoundingClientRect();
@@ -97,38 +87,7 @@ const measure = (board: HTMLElement, target: HTMLElement): Geometry => {
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
 const easeOut = (t: number) => 1 - (1 - t) ** 3;
 
-/**
- * Lucy, a teammate on the same board, drawing an arrow to the top-right note.
- *
- * ## Why it looks exactly like the live board
- *
- * Because it is the live board's pointer. The node is `.board-cursor` with the
- * same arrow and the same name tag that `PresenceCursors` draws for a real
- * colleague, and the ink is her colour, derived the way a real collaborator's
- * is. The section's claim is "other people are here with you", and the most
- * convincing way to make it is to show the actual thing rather than an
- * illustration of it.
- *
- * ## Under everything
- *
- * Rendered first inside the board with no z-index, so every note, the heading
- * and any sheet being dragged paint over both the ink and the pointer. It is
- * a scene *on* the wall, never a layer on top of the reader's hands, and it is
- * `pointer-events-none` throughout.
- *
- * ## When it plays
- *
- * Once per page load (see `hasDrawn`), only when at least 45% of the board is
- * actually on screen — a real observer, with no timer to trip it early — and
- * only on the desktop wall, where the notes are placed around the heading. On
- * the stacked phone layout there is no top-right note to point at. With
- * reduced motion it does not play at all: the finished drawing is simply
- * there.
- *
- * The animation is a small hand-rolled `requestAnimationFrame` timeline rather
- * than Framer: it drives one dash offset and one transform, and it needs the
- * exact length of a curve, which only the DOM can measure.
- */
+/** Lucy, a teammate on the same board, drawing an arrow to the top-right note. */
 export const LucyCursor = ({ boardRef }: { boardRef: RefObject<HTMLElement | null> }) => {
   const reduceMotion = useReducedMotion();
   const shaftRef = useRef<SVGPathElement>(null);
@@ -221,15 +180,8 @@ export const LucyCursor = ({ boardRef }: { boardRef: RefObject<HTMLElement | nul
     };
     const headStart = head.getPointAtLength(0);
 
-    /*
-     * The script, in milliseconds from the first frame:
-     *
-     *   0–400      she arrives at the start of the stroke
-     *   400–1800   the shaft
-     *   1800–2000  pen up, across to the first barb
-     *   2000–2450  the head, in one stroke
-     *   2650–3850  she wanders off to the bottom of the board and stays
-     */
+    // The script, in milliseconds from the first frame: 0–400 she arrives at the start of the
+    // stroke 400–1800 the shaft 1800–2000 pen up, across to the first barb 2000–2450 the head.
     const approach = { x: geometry.start.x - 70, y: geometry.start.y + 46 };
     let frame = 0;
     let startedAt = 0;

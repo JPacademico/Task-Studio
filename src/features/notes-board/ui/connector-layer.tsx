@@ -30,9 +30,8 @@ const centreOf = (note: Note, live?: Point): Point => ({
 });
 
 /**
- * A curve rather than a straight line: two notes side by side get a readable
- * arc instead of a segment that disappears behind them, and the control point
- * offset perpendicular to the run keeps parallel connectors from overlapping.
+ * A curve rather than a straight line: two notes side by side get a readable arc instead of a
+ * segment that disappears behind them.
  */
 const curveBetween = (from: Point, to: Point): { d: string; tip: Point; control: Point } => {
   const midX = (from.x + to.x) / 2;
@@ -58,11 +57,8 @@ const headTransform = (tip: Point, control: Point): string => {
 };
 
 /**
- * The connector layer.
- *
- * It subscribes to the drag bus and keeps its own copy of the live coordinates,
- * so a note being dragged repaints the arrows without re-rendering the board or
- * any of the other Post-its.
+ * The connector layer. It subscribes to the drag bus and keeps its own copy of the live
+ * coordinates.
  */
 export const ConnectorLayer = ({
   notes,

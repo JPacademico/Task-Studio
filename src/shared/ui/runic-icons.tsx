@@ -3,27 +3,12 @@ import { type GlyphProps } from './glyph-kit';
 import { LETTER_ON_SHEET, StudioLetter } from './studio-letter';
 
 /**
- * This skin's product mark. Its navigation set is gone.
- *
- * There used to be a full set of runic navigation glyphs here, exported as
- * `RUNIC_GLYPHS` and swapped in by `NavGlyph`. Every skin's set has
- * been withdrawn for the reason written up there: an icon is recognised by
- * shape, and a rail whose shapes change with the theme charges every user that
- * recognition again for a novelty that lands once.
- *
- * The mark is a different thing and stays. It is the *product's* signature
- * drawn in this world — one object, seen once, on a settings card and a theme
- * gallery tile — and nobody navigates by it.
+ * This skin's product mark. Its navigation set is gone. There used to be a full set of runic
+ * navigation glyphs here, exported as `RUNIC_GLYPHS` and swapped in by `NavGlyph`.
  */
 /**
- * The product mark: the same Post-it, cut into a slab.
- *
- * The pad, the peeled corner and the pin are the product's signature across
- * every skin, and a skin earns its own mark by changing what the object is
- * *made of* — not by replacing it with something else. So this is the studio
- * mark's geometry, in stone: the peel becomes a broken corner (rock does not
- * curl), the two written lines become cut ones with light in them, and the pin
- * is an iron nail driven into the block.
+ * The product mark: the same Post-it, cut into a slab. The pad, the peeled corner and the pin are
+ * the product's signature across every skin.
  */
 export const RunicMark = ({ className }: GlyphProps) => (
   <svg viewBox="0 0 40 40" fill="none" aria-hidden className={cn('h-10 w-10', className)}>
@@ -51,15 +36,7 @@ export const RunicMark = ({ className }: GlyphProps) => (
       strokeLinejoin="round"
     />
 
-    {/*
-      The letter, cut into the stone — and the light down in the cut.
-
-      Drawn twice, exactly as the two rules it replaces were: a wide stroke for
-      the channel and a narrow one inside it carrying the skin's pulse. One path
-      with an animated colour would light the whole cut at once; two give the
-      groove a lit floor and an unlit wall, which is what makes it look carved
-      rather than painted.
-    */}
+    {/* The letter, cut into the stone — and the light down in the cut. */}
     <StudioLetter transform={LETTER_ON_SHEET} strokeWidth={3.9} strokeOpacity={0.85} />
     <StudioLetter
       transform={LETTER_ON_SHEET}
@@ -82,12 +59,8 @@ export const RunicMark = ({ className }: GlyphProps) => (
 );
 
 /**
- * "Previous" and "next", cut into the rock.
- *
- * An arrow is the one glyph in the app that has to survive being 14px wide in
- * a toolbar, so this is a chevron and a stave and nothing else — the lit part
- * is the barb, which is the half that carries the direction. The tail glows a
- * beat later, so at rest the mark reads outward, the way it points.
+ * "Previous" and "next", cut into the rock. An arrow is the one glyph in the app that has to
+ * survive being 14px wide in a toolbar, so this is a chevron and a stave and nothing else.
  */
 export const RuneArrow = ({
   direction,

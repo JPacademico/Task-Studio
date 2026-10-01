@@ -47,14 +47,8 @@ interface BoardToolbarProps {
   onClearInk?: () => void;
   onClearAll: () => void;
 
-  /*
-   * Undo and redo, as an optional pair.
-   *
-   * Optional because the toolbar is shared with surfaces that do not keep a
-   * history, and a disabled control for something that does not exist is worse
-   * than no control. Both arrive together or neither does — a board with an
-   * undo and no redo is a trap.
-   */
+  // Undo and redo, as an optional pair. Optional because the toolbar is shared with surfaces that
+  // do not keep a history.
   onUndo?: () => void;
   onRedo?: () => void;
   canUndo?: boolean;
@@ -131,13 +125,8 @@ export const BoardToolbar = ({
 
       <span className="hidden h-6 w-px bg-edge sm:block" />
 
-      {/* The paper itself is the button. "+ Note" made the primary action of a
-          Post-it board read like a database row.
-
-          No pending state either: the note is on the wall on the next frame
-          and the request runs underneath it, so a spinner here would only ever
-          be a flash on a button whose job is already done. See
-          `useCreateBoardNote`. */}
+      {/* The paper itself is the button. "+ Note" made the primary action of a Post-it board
+          read like a database row. */}
       <Button
         size="sm"
         onClick={onAddNote}
@@ -222,19 +211,7 @@ export const BoardToolbar = ({
       )}
 
       <span className="ml-auto flex items-center gap-2">
-        {/*
-          The keyboard is the real interface here and this is its signpost.
-
-          Ctrl+Z is what people actually reach for, and a shortcut nobody can
-          see is a shortcut most people never learn they have. Two quiet icon
-          buttons carrying the shortcut in their tooltip cost almost no width
-          and are how somebody finds out the board has a history at all — the
-          same reason a text editor draws them even though nobody clicks them.
-
-          Disabled rather than hidden when there is nothing to reverse: a
-          control that vanishes moves everything beside it, and the greyed state
-          is itself the answer to "can I undo this?".
-        */}
+        {/* The keyboard is the real interface here and this is its signpost. */}
         {onUndo && onRedo && (
           <span className="flex items-center">
             <Button

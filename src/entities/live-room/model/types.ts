@@ -27,12 +27,8 @@ export interface LiveEntitlements {
 }
 
 /**
- * A live room as the tab reads it.
- *
- * Deliberately *not* a `Meeting`. A meeting is a diary entry with a place and
- * a guest list; this is the call itself, with a permission model and a
- * lifetime measured in minutes. The two live side by side — see the note on
- * `LiveRoom` in the API's schema.
+ * A live room as the tab reads it. Deliberately *not* a `Meeting`. A meeting is a diary entry with
+ * a place and a guest list; this is the call itself.
  */
 export interface LiveRoom {
   id: string;
@@ -78,14 +74,8 @@ export interface CreateLiveRoomPayload {
 }
 
 /**
- * Every field optional, and the three lists are replace-not-merge: sending
- * `taskIds` at all means "the tasks are now exactly these".
- *
- * The two clearable fields are `Omit`ted before being redeclared rather than
- * intersected on top. An intersection would have to satisfy *both* halves, so
- * `string | null` meeting `string | undefined` collapses back to
- * `string | undefined` — and null is the only way to take a linked document or
- * a closing time back off a room.
+ * Every field optional, and the three lists are replace-not-merge: sending `taskIds` at all means
+ * "the tasks are now exactly these".
  */
 export type UpdateLiveRoomPayload = Partial<
   Omit<CreateLiveRoomPayload, 'projectId' | 'closesAt' | 'documentId'>
@@ -102,9 +92,7 @@ export interface GrantLiveRoomPayload {
   isModerator?: boolean;
 }
 
-// ---------------------------------------------------------------------------
-// The call itself — everything below travels over the socket, never the API.
-// ---------------------------------------------------------------------------
+// --- The call itself — everything below travels over the socket, never the API. ---
 
 /** The four things a participant tile draws. */
 export interface LiveFlags {
@@ -115,13 +103,8 @@ export interface LiveFlags {
 }
 
 /**
- * One socket in a call.
- *
- * `participantId` is the socket id and is the address peers sign to. It is
- * *not* the user id: the same person on a phone and a laptop would be two
- * seats, and the gateway turns the older one out precisely so that never
- * happens — but the two ids still mean different things and conflating them is
- * how a peer connection ends up addressed to the wrong tab.
+ * One socket in a call. `participantId` is the socket id and is the address peers sign to. It is
+ * *not* the user id: the same person on a phone and a laptop would be two seats.
  */
 export interface LiveSeat {
   participantId: string;
@@ -132,11 +115,8 @@ export interface LiveSeat {
   isModerator: boolean;
   flags: LiveFlags;
   /**
-   * Arrival order in this room, monotonic and never reused.
-   *
-   * The whole negotiation protocol: **the peer with the lower `seq` sends the
-   * offer.** See `use-live-call.ts`, and the gateway's `joinRoom` for why this
-   * beats the usual polite/impolite dance.
+   * Arrival order in this room, monotonic and never reused. The whole negotiation protocol: **the
+   * peer with the lower `seq` sends the offer.** See `use-live-call.ts`.
    */
   seq: number;
 }
@@ -157,14 +137,8 @@ export interface IceServerConfig {
 }
 
 /**
- * The ICE list, plus when it stops being usable.
- *
- * `expiresAt` is epoch milliseconds, or `null` when nothing in the list can
- * expire — a STUN-only deployment, or one still on a static TURN credential.
- * It exists because a relay credential is now minted per request and lives a
- * few hours (see `LiveController.ice`), and a client that cached one forever
- * would hand an expired username to `RTCPeerConnection` and lose the relay
- * exactly when it needed it: on the retry after a direct route failed.
+ * The ICE list, plus when it stops being usable. `expiresAt` is epoch milliseconds, or `null` when
+ * nothing in the list can expire — a STUN-only deployment.
  */
 export interface IceServerBundle {
   iceServers: IceServerConfig[];
@@ -172,12 +146,8 @@ export interface IceServerBundle {
 }
 
 /**
- * How a connection to one peer is doing, as the tile draws it.
- *
- * Three states rather than a number, because a number invites the reader to
- * do arithmetic they have no basis for. What somebody watching a call needs to
- * know is whether this is fine, whether it is about to get worse, and whether
- * it is already broken.
+ * How a connection to one peer is doing, as the tile draws it. Three states rather than a number,
+ * because a number invites the reader to do arithmetic they have no basis for.
  */
 export type LiveQualityLevel = 'good' | 'weak' | 'bad';
 
@@ -190,12 +160,8 @@ export interface LiveQuality {
   /** What the congestion controller thinks this link can carry, in bits/s. */
   outgoingBitrate: number | null;
   /**
-   * Whether the media is going through the relay rather than straight there.
-   *
-   * Not a fault — it is the thing that makes the call work at all behind a
-   * symmetric NAT — but it is the single most useful fact when somebody asks
-   * why a call is worse than usual, and nothing else in the interface can say
-   * it. See `use-live-call`'s stats poll.
+   * Whether the media is going through the relay rather than straight there. Not a fault — it is
+   * the thing that makes the call work at all behind a symmetric NAT.
    */
   isRelayed: boolean;
 }

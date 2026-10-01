@@ -36,23 +36,14 @@ interface FigmaDocumentProps {
 }
 
 /**
- * How many objects on a page get a rendered thumbnail.
- *
- * Every one of them is a render Figma performs and an image the browser
- * downloads, and a page in a mature design file holds a hundred and fifty. Two
- * dozen is a screen and a half of grid — past the point anybody scans before
- * reaching for the filter — and the rest of the page is still listed, still
- * named and still downloadable, just without a picture.
+ * How many objects on a page get a rendered thumbnail. Every one of them is a render Figma performs
+ * and an image the browser downloads, and a page in a mature design file holds a hundred and fifty.
  */
 const MAX_THUMBNAILS = 24;
 
 /**
- * What a raster export is rendered at.
- *
- * Two, because the overwhelming reason somebody pulls a frame out of Figma is
- * to put it somewhere it will be looked at on a modern display, and a 1x PNG
- * of a screen is soft everywhere that matters. Figma allows up to 4; that is a
- * choice for somebody preparing print assets, who is already in Figma.
+ * What a raster export is rendered at. Two, because the overwhelming reason somebody pulls a frame
+ * out of Figma is to put it somewhere it will be looked at on a modern display.
  */
 const EXPORT_SCALE = 2;
 
@@ -71,16 +62,7 @@ const saveBlob = (blob: Blob, fileName: string): void => {
   setTimeout(() => URL.revokeObjectURL(url), 1_000);
 };
 
-/**
- * One object in the design, with its picture and a way to take it away.
- *
- * ## Why the download menu is per card rather than one shared control
- *
- * Because the thing being downloaded is *this* object, and a shared menu would
- * need a selection to act on — which is a second piece of state, a second
- * highlight to draw, and one more click before anybody gets a file. The whole
- * point of this surface is that pulling one frame out is a two-click job.
- */
+/** One object in the design, with its picture and a way to take it away. */
 const NodeCard = ({
   documentId,
   node,
@@ -109,14 +91,8 @@ const NodeCard = ({
         format === 'png' || format === 'jpg' ? EXPORT_SCALE : undefined,
       );
 
-      /*
-       * Named here as well as by the API.
-       *
-       * The response carries a `Content-Disposition` with the node's own name,
-       * which is what a direct hit on the endpoint gets — but the blob has
-       * already been read by the time this runs, so the anchor needs a name of
-       * its own. Deriving it from the same node name keeps the two in step.
-       */
+      // Named here as well as by the API. The response carries a `Content-Disposition` with the
+      // node's own name, which is what a direct hit on the endpoint gets.
       const stem = node.name.replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').slice(0, 60) || 'export';
       saveBlob(blob, `${stem}.${format}`);
       toast.success(t('figma.downloaded', { name: node.name }));
@@ -135,15 +111,8 @@ const NodeCard = ({
           'bg-surface-raised transition-colors hover:border-brand/40',
         )}
       >
-        {/*
-          A checkerboard behind the thumbnail rather than a solid fill.
-
-          Half of what gets exported out of a design file has a transparent
-          background — icons, logos, components — and against a flat surface
-          colour a white mark on transparency and a white mark on white are
-          indistinguishable. This is the same convention every image editor
-          uses, for the same reason.
-        */}
+        {/* A checkerboard behind the thumbnail rather than a solid fill. Half of what gets
+            exported out of a design file has a transparent background — icons, logos. */}
         <div
           className="relative grid h-28 place-items-center overflow-hidden border-b border-edge bg-surface-sunken"
           style={{
@@ -234,29 +203,8 @@ const NodeCard = ({
 };
 
 /**
- * A page that *is* a Figma file.
- *
- * ## What is on screen, and where each part comes from
- *
- * The structure — pages, and the frames and components on them — is the
- * snapshot cached on the row, so opening this costs a database read and no
- * network at all. The pictures are rendered by Figma on demand and loaded
- * straight from its CDN by the browser; they deliberately do not pass through
- * the API, which would put megabytes of somebody else's PNGs through a small
- * container to draw a sidebar.
- *
- * The one thing that *is* proxied is a download, because a cross-origin
- * `download` attribute is ignored and a direct link would navigate the tab to
- * a PNG instead of saving `Payment failed.png`.
- *
- * ## Why syncing is a button and not a background job
- *
- * A design is the only thing on a text board that changes without anybody here
- * touching it, so "as of when" is part of what the page says — the header
- * carries it. Refreshing costs one shallow request against Figma's version
- * marker, and usually stops there, which is what makes it reasonable to offer
- * to every reader rather than to editors. A poller would spend somebody's
- * shared rate limit on files nobody is looking at.
+ * A page that *is* a Figma file. The structure — pages, and the frames and components on them — is
+ * the snapshot cached on the row, so opening this costs a database read and no network at all.
  */
 export const FigmaDocument = ({ documentId, figma, onSaveBrief }: FigmaDocumentProps) => {
   const t = useT();
@@ -270,14 +218,8 @@ export const FigmaDocument = ({ documentId, figma, onSaveBrief }: FigmaDocumentP
   const sync = useSyncFigmaDocument();
   const brief = useFigmaBrief();
 
-  /*
-   * The first page with something on it, not simply the first page.
-   *
-   * Design files routinely open on a cover or a changelog page holding one
-   * text layer, and landing there shows an empty grid on a file full of work.
-   * Falling back to the first page keeps the behaviour sane for a file where
-   * every page is empty.
-   */
+  // The first page with something on it, not simply the first page. Design files routinely open on
+  // a cover or a changelog page holding one text layer.
   const pages = useMemo(() => snapshot?.pages ?? [], [snapshot]);
 
   useEffect(() => {
@@ -294,13 +236,8 @@ export const FigmaDocument = ({ documentId, figma, onSaveBrief }: FigmaDocumentP
 
   const page = pages.find((entry) => entry.id === pageId) ?? null;
 
-  /*
-   * A stable array of ids, memoised on the two things it depends on.
-   *
-   * It goes into a React Query key, and a fresh array on every render would
-   * make that key a new key on every render — a refetch loop against somebody
-   * else's rate limit, which is the worst possible place to have one.
-   */
+  // A stable array of ids, memoised on the two things it depends on. It goes into a React Query
+  // key, and a fresh array on every render would make that key a new key on every render.
   const thumbnailIds = useMemo(
     () => (page?.nodes ?? []).slice(0, MAX_THUMBNAILS).map((node) => node.id),
     [page],
@@ -346,15 +283,8 @@ export const FigmaDocument = ({ documentId, figma, onSaveBrief }: FigmaDocumentP
           {snapshot?.name ?? t('figma.design')}
         </span>
 
-        {/*
-          The staleness, stated rather than implied.
-
-          Every other page on this board is exactly what it was when it was
-          last saved. This one is a cache of a file somebody else is still
-          editing, so "synced 3 minutes ago" and "synced last Tuesday" are the
-          difference between trusting what is on screen and going to look at
-          the real thing.
-        */}
+        {/* The staleness, stated rather than implied. Every other page on this board is exactly
+            what it was when it was last saved. */}
         <span className="text-3xs text-content-faint">
           {figma.syncedAt
             ? t('figma.syncedAt', { when: formatRelative(figma.syncedAt) })
@@ -376,14 +306,7 @@ export const FigmaDocument = ({ documentId, figma, onSaveBrief }: FigmaDocumentP
           </span>
         </Button>
 
-        {/*
-          The assistant, and only where there is structure for it to read.
-
-          A file with no frames gives a model a filename to work from, and what
-          comes back is a confident paragraph about a product nobody described.
-          The API refuses that case; not drawing the button is the version of
-          the same answer that does not cost a round trip to hear.
-        */}
+        {/* The assistant, and only where there is structure for it to read. */}
         {pages.some((entry) => entry.nodes.length > 0) && (
           <Button
             size="sm"
@@ -421,9 +344,8 @@ export const FigmaDocument = ({ documentId, figma, onSaveBrief }: FigmaDocumentP
             : 'lg:grid-cols-[150px_minmax(0,1fr)]',
         )}
       >
-        {/* Pages. A rail rather than a dropdown: a design file's pages are its
-            table of contents, and hiding them behind a control makes the file
-            look like one screen. */}
+        {/* Pages. A rail rather than a dropdown: a design file's pages are its table of
+            contents, and hiding them behind a control makes the file look like one screen. */}
         <aside className="scrollbar-thin hidden min-h-0 flex-col gap-1 overflow-y-auto rounded-2xl border border-edge bg-surface-raised p-1.5 lg:flex">
           <p className="px-2 pb-1 pt-1.5 text-3xs font-semibold uppercase tracking-[0.16em] text-content-faint">
             {t('figma.pagesCount', { count: String(pages.length) })}

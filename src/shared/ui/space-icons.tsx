@@ -3,29 +3,12 @@ import { type GlyphProps } from './glyph-kit';
 import { StudioLetter } from './studio-letter';
 
 /**
- * This skin's product mark. Its navigation set is gone.
- *
- * There used to be a full set of space navigation glyphs here, exported as
- * `SPACE_GLYPHS` and swapped in by `NavGlyph`. Every skin's set has
- * been withdrawn for the reason written up there: an icon is recognised by
- * shape, and a rail whose shapes change with the theme charges every user that
- * recognition again for a novelty that lands once.
- *
- * The mark is a different thing and stays. It is the *product's* signature
- * drawn in this world — one object, seen once, on a settings card and a theme
- * gallery tile — and nobody navigates by it.
+ * This skin's product mark. Its navigation set is gone. There used to be a full set of space
+ * navigation glyphs here, exported as `SPACE_GLYPHS` and swapped in by `NavGlyph`.
  */
 /**
- * The product mark, in orbit: the same square of paper the rest of the app
- * introduces itself with, drawn as the deep field draws paper.
- *
- * This used to be a ringed planet, which was the one place the skin argued
- * with the product rather than dressing it: every other theme's mark is a
- * note, and a planet said "space app", not "Task Studio, in space". So the
- * object is a note again — a hard-light slate with a plasma rim and the
- * clipped corner the deep field puts on a sheet — and the *setting* is what
- * carries the skin: a scatter of stars around it and one flaring close enough
- * to catch the corner.
+ * The product mark, in orbit: the same square of paper the rest of the app introduces itself with,
+ * drawn as the deep field draws paper.
  */
 export const SpaceMark = ({ className }: GlyphProps) => (
   <svg viewBox="0 0 40 40" fill="none" aria-hidden className={cn('h-10 w-10', className)}>
@@ -40,9 +23,8 @@ export const SpaceMark = ({ className }: GlyphProps) => (
       strokeLinejoin="round"
     />
 
-    {/* The note. Same silhouette as `SlatePaper` — a clipped bevel where the
-        drawn skins curl a corner, because nothing out here is made of paper
-        that curls. */}
+    {/* The note. Same silhouette as `SlatePaper` — a clipped bevel where the drawn skins curl a
+        corner, because nothing out here is made of paper that curls. */}
     <path
       d="M6 6h21v15.5L20.5 28H6V6Z"
       fill="currentColor"
@@ -64,13 +46,8 @@ export const SpaceMark = ({ className }: GlyphProps) => (
       strokeLinejoin="round"
     />
 
-    {/*
-      The letter, etched into the panel.
-
-      Its own placement rather than `LETTER_ON_SHEET`: this note is 21×22 where
-      the drawn skins' sheet is 27×27.5, and the shared transform would push the
-      foot of the letter into the clipped corner.
-    */}
+    {/* The letter, etched into the panel. Its own placement rather than `LETTER_ON_SHEET`: this
+        note is 21×22 where the drawn skins' sheet is 27×27.5. */}
     <StudioLetter transform="translate(8.4 9.6) scale(0.64)" strokeOpacity={0.9} />
 
     {/* The field it hangs in — and one star flaring hard enough to have points. */}

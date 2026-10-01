@@ -30,27 +30,7 @@ import { sanitizeDocumentHtml } from '@/shared/lib/sanitize-html';
 import { Select, Spinner } from '@/shared/ui';
 import { useT, type TranslationKey } from '@/shared/i18n';
 
-/**
- * The document surface.
- *
- * Built on `contentEditable` and `document.execCommand`. That API is formally
- * deprecated and every browser still ships it, because the thing that would
- * replace it — a custom model with its own selection, undo stack, IME handling
- * and paste normalisation — is a library, not a component, and this feature
- * needs a text editor rather than an editor framework. The deprecation is
- * documented rather than hidden: if it is ever withdrawn, the seam to replace
- * is `exec()` below and nothing else in the app changes.
- *
- * Two things this owns that a naive contentEditable gets wrong:
- *
- *   - The body is written into the DOM once per *document*, never per
- *     keystroke. Re-assigning `innerHTML` from a controlled value on every
- *     change is what makes home-made editors jump the caret to the start on
- *     every character typed.
- *   - Toolbar buttons never take focus (`onMouseDown` is prevented), and the
- *     ones that open an input save and restore the selection range by hand.
- *     Otherwise "select a word, click Link" applies the link to nothing.
- */
+/** The document surface. Built on `contentEditable` and `document.execCommand`. */
 
 interface RichTextEditorProps {
   /**
@@ -129,14 +109,8 @@ export const RichTextEditor = ({
   const [isUploading, setIsUploading] = useState(false);
   const [fontSize, setFontSize] = useState('3');
 
-  /*
-   * Load the body once per document.
-   *
-   * `initialHtml` is deliberately not a dependency: it changes identity on
-   * every save response, and re-assigning `innerHTML` mid-edit would throw the
-   * caret to the top of the page. The document id is the only thing that means
-   * "this is a different page now".
-   */
+  // Load the body once per document. `initialHtml` is deliberately not a dependency: it changes
+  // identity on every save response.
   useEffect(() => {
     if (surfaceRef.current) surfaceRef.current.innerHTML = sanitizeDocumentHtml(initialHtml);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -180,9 +154,8 @@ export const RichTextEditor = ({
     setPrompt(null);
     if (!url) return;
 
-    // Only ever http(s). The sanitiser would drop anything else on save, so
-    // refusing here is the difference between "nothing happened" and "it
-    // vanished the next time you opened it".
+    // Only ever http(s). The sanitiser would drop anything else on save, so refusing here is the
+    // difference between "nothing happened" and "it vanished the next time you opened it".
     if (!/^https?:\/\//i.test(url)) {
       toast.error(t('editor.needsAbsoluteUrl'));
       return;
@@ -214,16 +187,8 @@ export const RichTextEditor = ({
     try {
       const { publicUrl, width, height } = await uploadImage(file, 'notes');
       restoreSelection();
-      /*
-       * Dimensions and lazy-loading travel with the tag.
-       *
-       * `width`/`height` let the browser reserve the right box before the bytes
-       * arrive, so inserting an image no longer shoves the rest of the document
-       * down when it loads — and `loading="lazy"` means a long page never
-       * fetches the pictures nobody has scrolled to. Both are attributes the
-       * sanitiser has to allow through, or a saved document loses them on the
-       * next load.
-       */
+      // Dimensions and lazy-loading travel with the tag. `width`/`height` let the browser reserve
+      // the right box before the bytes arrive.
       document.execCommand(
         'insertHTML',
         false,
@@ -257,10 +222,8 @@ export const RichTextEditor = ({
 
             <Divider />
 
-            {/* Blocks. `formatBlock` is the one execCommand that needs the tag
-                spelled with angle brackets in some engines and without in
-                others; the bracket form is the one every current browser
-                accepts. */}
+            {/* Blocks. `formatBlock` is the one execCommand that needs the tag spelled with
+                angle brackets in some engines and without in others. */}
             <ToolButton onAction={() => exec('formatBlock', '<h1>')} title={t('editor.heading1')}>
               <span className="text-2xs font-bold">H1</span>
             </ToolButton>
@@ -303,16 +266,7 @@ export const RichTextEditor = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
-            {/*
-              The app's listbox, not a native `<select>` — same reasoning as
-              the text board's: an OS-drawn dropdown is the one control on the
-              page that ignores the skin entirely.
-
-              `onMouseDownCapture` is what makes it usable here. Clicking any
-              button blurs the editor and destroys the selection, so the caret
-              range is saved in the capture phase — before focus moves — and
-              restored just before the command runs.
-            */}
+            {/* The app's listbox, not a native `<select>` — same reasoning as the text board's. */}
             <span onMouseDownCapture={rememberSelection}>
               <Select
                 className="w-28"
@@ -372,9 +326,8 @@ export const RichTextEditor = ({
             </ToolButton>
           </div>
 
-          {/* The one input the toolbar needs, shared by links and video. A
-              browser `prompt()` would lose the selection and look nothing like
-              the rest of the app. */}
+          {/* The one input the toolbar needs, shared by links and video. A browser `prompt()`
+              would lose the selection and look nothing like the rest of the app. */}
           {prompt && (
             <div className="flex items-center gap-1.5 rounded-xl border border-brand/40 bg-brand/[0.06] p-1.5">
               <input
@@ -426,9 +379,8 @@ export const RichTextEditor = ({
         aria-label={t('editor.documentBody')}
         onInput={emitChange}
         onBlur={emitChange}
-        // Paste is the main way hostile markup gets in, so it never arrives as
-        // markup: the clipboard's HTML flavour is sanitised before it lands,
-        // and anything without one falls back to plain text.
+        // Paste is the main way hostile markup gets in, so it never arrives as markup: the
+        // clipboard's HTML flavour is sanitised before it lands.
         onPaste={(event) => {
           if (readOnly) return;
           const html = event.clipboardData.getData('text/html');

@@ -20,17 +20,8 @@ import { Button, EmptyState, Input, Skeleton, Switch } from '@/shared/ui';
 import { useT, type TranslationKey } from '@/shared/i18n';
 
 /**
- * Every event a hook can subscribe to, with the sentence the composer shows.
- *
- * Duplicated from the API's `WEBHOOK_EVENTS` rather than fetched, and that is
- * a deliberate trade. Fetching would keep one list; it would also mean a
- * request before the composer can draw its checkboxes, and a slug arriving
- * from the server with no translation for it — which is the failure this
- * table's `TranslationKey` typing makes impossible at compile time instead.
- *
- * The API is still the authority: it drops slugs it does not recognise rather
- * than rejecting the request, so a client one release ahead degrades to the
- * events they have in common instead of breaking.
+ * Every event a hook can subscribe to, with the sentence the composer shows. Duplicated from the
+ * API's `WEBHOOK_EVENTS` rather than fetched, and that is a deliberate trade.
  */
 const EVENT_LABEL: Record<WebhookEvent, TranslationKey> = {
   'task.created': 'webhooks.event.taskCreated',
@@ -51,11 +42,8 @@ const FLAVOUR_LABEL: Record<WebhookFlavour, TranslationKey> = {
 };
 
 /**
- * A press on one of the destination cards beside this panel.
- *
- * `nonce` is what makes pressing the same card twice do something twice: the
- * effect below keys off it rather than off the flavour, so a repeated press is
- * a new request rather than an unchanged prop the effect ignores.
+ * A press on one of the destination cards beside this panel. `nonce` is what makes pressing the
+ * same card twice do something twice: the effect below keys off it rather than off the flavour.
  */
 export interface ComposeRequest {
   flavour: WebhookFlavour;
@@ -74,42 +62,13 @@ interface WebhooksPanelProps {
   /** Owner or admin. The API refuses everything here below that. */
   canManage: boolean;
   /**
-   * Open the composer, aimed at one destination.
-   *
-   * The Connections shelf draws a card per destination and this is how a press
-   * on one arrives. It carries no behaviour of its own — a Discord hook and a
-   * Slack hook are the same row with a different hostname — so all it changes
-   * is the example URL in the field, which is the one thing somebody pressing
-   * "Discord" actually needs to see.
+   * Open the composer, aimed at one destination. The Connections shelf draws a card per destination
+   * and this is how a press on one arrives.
    */
   composeRequest?: ComposeRequest | null;
 }
 
-/**
- * Where this project posts its events.
- *
- * ## Why one feature covers Discord, Slack and everything else
- *
- * Because all three take the same thing: a URL that accepts a POST. Discord
- * and Slack both hand one out from their own channel settings with no OAuth
- * and no app to install, and the only difference between them is the JSON
- * shape they want — which the API decides from the hostname and this panel
- * merely reports. Zapier, Make, n8n and somebody's own server are the same
- * again with no special-casing at all.
- *
- * That is why there is no list of supported services here and never will be: a
- * dropdown of vendors is a list somebody has to maintain, and it would be
- * wrong the week a new one appears.
- *
- * ## Why the delivery state is on the row
- *
- * Because a webhook that stops working is invisible from both ends. Nothing
- * happens, which looks exactly like nothing having happened. The last status,
- * the last error and the failure count are the only way somebody finds out the
- * URL they pasted has a typo in it — and after ten consecutive failures the
- * hook switches itself off and says so here, rather than costing a request per
- * event forever.
- */
+/** Where this project posts its events. */
 export const WebhooksPanel = ({ projectId, canManage, composeRequest }: WebhooksPanelProps) => {
   const t = useT();
 
@@ -126,13 +85,8 @@ export const WebhooksPanel = ({ projectId, canManage, composeRequest }: Webhooks
   const [copied, setCopied] = useState(false);
   const [placeholder, setPlaceholder] = useState(FLAVOUR_PLACEHOLDER.discord);
 
-  /*
-   * A press on a destination card opens the composer.
-   *
-   * Guarded by the nonce rather than by the whole object, because the parent
-   * builds a fresh one on every render and an effect depending on that would
-   * re-open a composer the reader had just closed.
-   */
+  // A press on a destination card opens the composer. Guarded by the nonce rather than by the whole
+  // object.
   const handledNonce = useRef<number | null>(null);
   const composerRef = useRef<HTMLDivElement>(null);
 
@@ -143,25 +97,15 @@ export const WebhooksPanel = ({ projectId, canManage, composeRequest }: Webhooks
     setPlaceholder(FLAVOUR_PLACEHOLDER[composeRequest.flavour]);
     setIsComposing(true);
 
-    /*
-     * Brought into view, because the card that opened it is beside this panel
-     * rather than above it — on a narrow window the composer can appear a
-     * screen below the thing that was pressed, which reads as nothing having
-     * happened. Deferred a frame so the element exists to scroll to.
-     */
+    // Brought into view, because the card that opened it is beside this panel rather than above it
+    // — on a narrow window the composer can appear a screen below the thing that was pressed.
     requestAnimationFrame(() =>
       composerRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }),
     );
   }, [composeRequest]);
 
-  /*
-   * Reading a project's webhooks is admin-only, and so is this panel.
-   *
-   * Not merely because the API refuses — it does — but because the URL *is*
-   * the credential for most destinations. A Discord incoming webhook URL
-   * visible to every member is a URL any member can post to as the project,
-   * forever, including after they leave.
-   */
+  // Reading a project's webhooks is admin-only, and so is this panel. Not merely because the API
+  // refuses — it does — but because the URL *is* the credential for most destinations.
   if (!canManage) {
     return (
       <EmptyState
@@ -328,9 +272,8 @@ export const WebhooksPanel = ({ projectId, canManage, composeRequest }: Webhooks
                 );
               })}
             </div>
-            {/* Empty means everything, which is the API's default and what
-                most people want from a notification hook. Said here so an
-                untouched selection does not read as "nothing selected". */}
+            {/* Empty means everything, which is the API's default and what most people want
+                from a notification hook. */}
             <p className="text-3xs text-content-faint">
               {events.length === 0 ? t('webhooks.allEvents') : t('webhooks.someEvents')}
             </p>
@@ -374,14 +317,8 @@ const WebhookRow = ({ hook, onToggle, onTest, isTesting, onRemove }: WebhookRowP
   const t = useT();
   const [isConfirmingRemove, setIsConfirmingRemove] = useState(false);
 
-  /*
-   * The path is hidden and the host is not.
-   *
-   * For Discord and Slack the path *is* the secret — anybody holding the whole
-   * URL can post to that channel — and this panel is read by every admin on
-   * the project and over anybody's shoulder. The host is what identifies which
-   * hook is which, which is the only thing the row actually needs to say.
-   */
+  // The path is hidden and the host is not. For Discord and Slack the path *is* the secret —
+  // anybody holding the whole URL can post to that channel.
   const host = (() => {
     try {
       return new URL(hook.url).host;

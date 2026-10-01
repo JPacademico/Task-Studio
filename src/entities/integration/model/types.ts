@@ -6,11 +6,8 @@ export interface RepositoryContributor {
   avatarUrl: string | null;
   contributions: number;
   /**
-   * The Task Studio account this contributor is, when they have linked one.
-   *
-   * Matched on the GitHub id stored against their sign-in — never on a name
-   * that happens to look similar. Null means "no account here that we can
-   * prove is them", which is the common case and is not a failure.
+   * The Task Studio account this contributor is, when they have linked one. Matched on the GitHub
+   * id stored against their sign-in — never on a name that happens to look similar.
    */
   matchedUser: { id: string; displayName: string; avatarUrl: string | null } | null;
 }
@@ -53,13 +50,8 @@ export interface RepositoryImportPayload {
   /** False to skip the assistant and take the repository's own name and blurb. */
   useAssistant?: boolean;
   /**
-   * A short note steering what the assistant reads.
-   *
-   * Only meaningful alongside `useAssistant` — there is nothing to steer
-   * otherwise — and capped at 400 characters by the API, which is the most
-   * load-bearing part of how it is kept safe. It changes *emphasis*, never
-   * what the import produces: the answer is bound to a fixed schema either
-   * way. See `sanitiseGuidance` on the API.
+   * A short note steering what the assistant reads. Only meaningful alongside `useAssistant` —
+   * there is nothing to steer otherwise — and capped at 400 characters by the API.
    */
   guidance?: string;
 }
@@ -68,39 +60,23 @@ export interface RepositoryImportPayload {
 export const MAX_IMPORT_GUIDANCE = 400;
 
 /**
- * Where an import has got to.
- *
- * `CANCELLED` and `FAILED` are separate for a reason the tracker depends on:
- * one is something the user chose and the other is something that went wrong,
- * and a toast that apologises for a button somebody deliberately pressed reads
- * as a bug in itself.
+ * Where an import has got to. `CANCELLED` and `FAILED` are separate for a reason the tracker
+ * depends on: one is something the user chose and the other is something that went wrong.
  */
 export type ImportStatus = 'QUEUED' | 'RUNNING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED';
 
 /**
- * Where an import is reading from.
- *
- * Every value is a format that needs no credential — a public repository
- * address, or a file the user already has. That is the property that makes an
- * importer cheap to own, and it is why the list is likely to grow rather than
- * be replaced.
+ * Where an import is reading from. Every value is a format that needs no credential — a public
+ * repository address, or a file the user already has.
  */
-export type ImportSource = 'GITHUB' | 'TRELLO_JSON' | 'BOARD_CSV';
+export type ImportSource = 'GITHUB' | 'TRELLO_JSON' | 'BOARD_CSV' | 'TRELLO_API' | 'JIRA_API';
 
 /** The two a file picker offers. `GITHUB` takes a URL and has its own panel. */
-export type BoardImportSource = Exclude<ImportSource, 'GITHUB'>;
+export type BoardImportSource = 'TRELLO_JSON' | 'BOARD_CSV';
 
 /**
- * The named stages, mirroring the API's `IMPORT_STEPS`.
- *
- * A union of the slugs rather than a free string, so that the lookup which
- * turns each one into a translated sentence is exhaustive — a step added on
- * the API without a string here becomes a compile error rather than a raw
- * slug rendered in somebody's toast.
- *
- * `stopped` is the API's terminal step for a job that did not finish. It is
- * never drawn as a sentence, because a stopped job shows its error or its
- * cancellation instead, but it has to be in the union to be assignable.
+ * The named stages, mirroring the API's `IMPORT_STEPS`. A union of the slugs rather than a free
+ * string, so that the lookup which turns each one into a translated sentence is exhaustive.
  */
 export type ImportStep =
   | 'queued'
@@ -113,22 +89,14 @@ export type ImportStep =
   | 'stopped';
 
 /**
- * One background import, as the tracker draws it.
- *
- * This is the whole reason importing a repository no longer holds the browser
- * hostage: the job is a row on the API, it is pushed over the socket as it
- * moves, and it is re-fetched on mount. Closing the tab, locking a phone or
- * switching device costs nothing.
+ * One background import, as the tracker draws it. This is the whole reason importing a repository
+ * no longer holds the browser hostage: the job is a row on the API.
  */
 export interface RepositoryImportJob {
   id: string;
   /**
-   * Which reader ran.
-   *
-   * The client uses it for exactly one thing — whether the summary line says
-   * "pages" or "columns" — which is why `documentCount` below is reused for
-   * both rather than the API carrying a fifth counter that is null on every
-   * GitHub row.
+   * Which reader ran. The client uses it for exactly one thing — whether the summary line says
+   * "pages" or "columns".
    */
   source: ImportSource;
   status: ImportStatus;
@@ -148,12 +116,8 @@ export interface RepositoryImportJob {
   documentCount: number;
   invitedCount: number;
   /**
-   * A cancel has been asked for and the job has not stopped yet.
-   *
-   * Its own field rather than a status, because the job genuinely is still
-   * running: the runner only notices a cancel at a step boundary. This is what
-   * lets the button say "cancelling…" and stop being pressable without the
-   * status having to lie.
+   * A cancel has been asked for and the job has not stopped yet. Its own field rather than a
+   * status, because the job genuinely is still running.
    */
   isCancelling: boolean;
   createdAt: string;
@@ -166,9 +130,7 @@ export interface CancelImportResult extends RepositoryImportJob {
   cancelling: boolean;
 }
 
-// ---------------------------------------------------------------------------
-// Calendar
-// ---------------------------------------------------------------------------
+// --- Calendar ----------------------------------------------------------------
 
 /** One person's linked calendar, minus anything secret. */
 export interface CalendarConnection {
@@ -184,12 +146,8 @@ export interface CalendarConnection {
   pullEnabled: boolean;
   lastSyncedAt: string | null;
   /**
-   * What went wrong last, cleared by the next clean sync.
-   *
-   * Shown rather than swallowed, because the two things that actually happen —
-   * a revoked grant, and a change refused because the person may not edit that
-   * meeting — are both things only the user can resolve, and a sync that
-   * silently stopped working is worse than one that says why.
+   * What went wrong last, cleared by the next clean sync. Shown rather than swallowed, because the
+   * two things that actually happen — a revoked grant, and a change refused.
    */
   lastError: string | null;
   createdAt: string;
@@ -213,11 +171,8 @@ export interface CalendarSyncResult extends CalendarConnection {
 }
 
 /**
- * Kept so the import panel can still name what an import produced.
- *
- * The synchronous import result no longer exists as a response — the endpoint
- * answers with a job now — but the *summary* is still what the success toast
- * says, assembled from the finished job's counters.
+ * Kept so the import panel can still name what an import produced. The synchronous import result no
+ * longer exists as a response — the endpoint answers with a job now.
  */
 export interface RepositoryImportSummary {
   project: Pick<Project, 'id' | 'name'> | null;
@@ -227,12 +182,8 @@ export interface RepositoryImportSummary {
 }
 
 /**
- * The subscribable calendar feed.
- *
- * `url` is present only in the response to *minting* one — the token behind it
- * is stored as a hash and is genuinely unrecoverable afterwards, so a status
- * read can say whether a feed exists and never what its address is. Somebody
- * who has lost the URL rotates; there is nothing to look up.
+ * The subscribable calendar feed. `url` is present only in the response to *minting* one — the
+ * token behind it is stored as a hash and is genuinely unrecoverable afterwards.
  */
 export interface CalendarFeedStatus {
   exists: boolean;
@@ -245,19 +196,14 @@ export interface CalendarFeedSecret {
   url: string;
 }
 
-// ---------------------------------------------------------------------------
-// Webhooks
-// ---------------------------------------------------------------------------
+// --- Webhooks ----------------------------------------------------------------
 
 /** Which chat product a hook points at, recognised from its hostname. */
 export type WebhookFlavour = 'generic' | 'slack' | 'discord';
 
 /**
- * The events a project can post.
- *
- * Mirrors the API's `WEBHOOK_EVENTS`. Deliberately short — see the note there
- * on the test each one had to pass, which is "would somebody who is not
- * looking at Task Studio want to be told this".
+ * The events a project can post. Mirrors the API's `WEBHOOK_EVENTS`. Deliberately short — see the
+ * note there on the test each one had to pass.
  */
 export type WebhookEvent =
   | 'task.created'
@@ -301,9 +247,7 @@ export interface WebhookTestResult {
   error: string | null;
 }
 
-// ---------------------------------------------------------------------------
-// Personal access tokens
-// ---------------------------------------------------------------------------
+// --- Personal access tokens --------------------------------------------------
 
 export interface ApiToken {
   id: string;
@@ -333,28 +277,17 @@ export interface CreatedApiToken {
 }
 
 
-// ---------------------------------------------------------------------------
-// Spotify
-// ---------------------------------------------------------------------------
+// --- Spotify -----------------------------------------------------------------
 
-/**
- * One person's connected account, as the API describes it.
- *
- * Nothing here is a credential — the refresh token never leaves the server and
- * no route returns it, which is what makes this shape safe to hold in a query
- * cache that lives in memory next to everything else.
- */
+/** One person's connected account, as the API describes it. */
 export interface SpotifyConnection {
   displayName: string;
   spotifyUserId: string;
   /** Where the person's own Spotify profile is, for the name to link to. */
   profileUrl: string;
   /**
-   * Whether the transport controls will work.
-   *
-   * Spotify refuses play, pause, skip and volume for everybody who is not
-   * Premium. Knowing before drawing them is the difference between a player
-   * with four buttons that fail and one that quietly shows what is playing.
+   * Whether the transport controls will work. Spotify refuses play, pause, skip and volume for
+   * everybody who is not Premium.
    */
   isPremium: boolean;
   /** The user's own switch: keeps the grant, hides the player. */
@@ -397,3 +330,81 @@ export interface SpotifySearchResults {
 
 /** The four verbs the API accepts. A closed list on both sides. */
 export type SpotifyTransport = 'play' | 'pause' | 'next' | 'previous';
+
+/* --- Trello and Jira ------------------------------------------------------- */
+
+export type BoardProvider = 'TRELLO' | 'JIRA';
+
+export interface BoardConnection {
+  accountName: string;
+  lastError: string | null;
+  connectedAt: string;
+}
+
+export interface BoardProviderStatus {
+  /** False when the deployment has no key for this provider. */
+  available: boolean;
+  connection: BoardConnection | null;
+}
+
+export type BoardStatus = Record<'trello' | 'jira', BoardProviderStatus>;
+
+/** A board or project the connected account can see. */
+export interface BoardChoice {
+  id: string;
+  name: string;
+  url: string | null;
+  siteId: string | null;
+  siteName: string | null;
+  updatedAt: string | null;
+}
+
+export interface BoardSyncSummary {
+  created: number;
+  updated: number;
+  adopted: number;
+  conflicts: number;
+  removed: number;
+  skippedTasks: number;
+  columns: number;
+  skippedColumns: number;
+}
+
+export interface BoardSyncLink {
+  provider: BoardProvider;
+  externalName: string;
+  externalUrl: string | null;
+  autoSync: boolean;
+  /** False after a file import, or once the account behind it disconnected. */
+  isConnected: boolean;
+  connectedAs: string | null;
+  isMine: boolean;
+  lastSyncedAt: string | null;
+  lastError: string | null;
+  lastSummary: BoardSyncSummary | null;
+}
+
+export interface BoardSyncStatus {
+  link: BoardSyncLink | null;
+  canManage: boolean;
+  intervalMinutes: number;
+}
+
+export interface LinkBoardPayload {
+  provider: BoardProvider;
+  externalId: string;
+  siteId?: string;
+  autoSync?: boolean;
+}
+
+export interface ConnectedImportPayload {
+  provider: BoardProvider;
+  externalId: string;
+  siteId?: string;
+  name?: string;
+  keepInSync?: boolean;
+  organizationId?: string;
+  color?: string;
+  startsAt?: string;
+  endsAt?: string;
+}

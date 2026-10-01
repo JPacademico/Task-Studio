@@ -1,81 +1,26 @@
 /**
- * The light/dark switch, drawn as a wave that pours out from under the header.
- *
- * ## What the reader sees
- *
- * On the first frame after the press, the header is already in the new
- * palette: it is where the switch lives, so the control answers at once. The
- * rest of the page is still in the old palette, and a wavy front emerges from
- * under the header's bottom border and rolls down to the bottom edge, turning
- * everything it crosses.
- *
- * ## Why View Transitions, and what happened to the overlay
- *
- * The first version laid a full-screen `<div>` in the *old background colour*
- * over the page and shrank it away. It read that colour off `<html>`, which is
- * transparent in every skin (they all paint `<body>`), so the overlay was
- * `rgba(0, 0, 0, 0)` and nothing visibly happened at all. With the right colour
- * it would still have been wrong: a flat fill hides every card, word and icon
- * for the length of the animation.
- *
- * What a colour change needs is a picture of the page as it was.
- * `document.startViewTransition` takes one: it snapshots the old state, runs
- * the update, and draws the old snapshot under a rendering of the new state.
- * The wave is a `clip-path` on that new layer. Same-document transitions ship
- * in Chromium, Safari 18 and Firefox 144. Anything older gets the instant swap.
- *
- * ## Why the header is its own layer
- *
- * Anything marked `data-theme-header` is given a `view-transition-name` for the
- * length of the switch, which lifts it out of the page snapshot into a layer of
- * its own, drawn above the wave. `index.css` hides its old picture and shows its
- * new one with no animation, so it swaps on the first frame. The wave's origin
- * is the bottom border of the widest such element, measured at the press, so
- * it starts under the landing bar, under the studio's top bar when that is
- * revealed, and at the top edge when the bar is hidden or there is none.
- *
- * ## Why nothing in the page moves while it runs
- *
- * The new state is a *live* rendering. Anything that changes in the DOM during
- * the transition makes the browser repaint that whole page picture, every
- * frame, which is what made the first cut stutter on its opening frames. So
- * the update does as little as possible (one class and one style sheet, with
- * React's re-render left to land whenever it lands) and the crest is a static
- * element in a layer of its own, with only its pseudo-element animated.
+ * The light/dark switch, drawn as a wave that pours out from under the header. On the first frame
+ * after the press, the header is already in the new palette: it is where the switch lives.
  */
 
 /** Header border to bottom edge. */
 const WAVE_MS = 640;
 
 /**
- * Moving from the first frame, then settling into the bottom edge.
- *
- * The previous curve eased *in*, so the front barely moved for the first
- * tenth of a second, which on top of the frame the snapshot costs read as the
- * switch having frozen. The keyframes are spaced evenly in progress, so this
- * one easing shapes the whole run.
+ * Moving from the first frame, then settling into the bottom edge. The previous curve eased *in*,
+ * so the front barely moved for the first tenth of a second.
  */
 const WAVE_EASING = 'cubic-bezier(0.25, 0.7, 0.3, 1)';
 
 /** Vertices along the front: one every 2.5% of the width. */
 const FRONT_POINTS = 40;
 
-/**
- * Keyframes across the run.
- *
- * Each is a complete polygon interpolated vertex by vertex. The front drifts
- * sideways as it falls, and a straight line between two distant phases of a
- * sine is visibly not a sine, so neighbours have to stay close. At 28 the drift
- * between two is under a fifth of a radian.
- */
+/** Keyframes across the run. Each is a complete polygon interpolated vertex by vertex. */
 const WAVE_FRAMES = 28;
 
 /**
- * How far the crest's glow reaches back from the front, in CSS pixels.
- *
- * Narrow, because the band is drawn solid (see `.theme-wave-crest`). The old
- * 26px was sized for a blur that faded most of it out; at full strength that
- * much reads as a stripe rather than an edge.
+ * How far the crest's glow reaches back from the front, in CSS pixels. Narrow, because the band is
+ * drawn solid (see `.theme-wave-crest`).
  */
 const CREST_DEPTH = 10;
 
@@ -89,12 +34,8 @@ const EDGE_MARGIN = 6;
 const MAX_HEADERS = 4;
 
 /**
- * How long the update may wait for the browser to take its snapshot.
- *
- * The snapshot is taken at the next rendered frame, which in a visible tab is
- * a few milliseconds away. A page that is not being rendered never gets there,
- * and the palette would wait with it. Past this the wave is abandoned and the
- * palette changes anyway.
+ * How long the update may wait for the browser to take its snapshot. The snapshot is taken at the
+ * next rendered frame, which in a visible tab is a few milliseconds away.
  */
 const STALL_MS = 400;
 
@@ -110,15 +51,8 @@ interface WaveShape {
 }
 
 /**
- * Where the front is at `x` (0 to 1 across) when the run is `progress` (0 to 1)
- * of the way through, in pixels from the top of the screen.
- *
- * Two sines with weights summing to one, so the swell never exceeds the
- * amplitude. The baseline starts a full amplitude and a margin *above* the
- * header's border and ends the same distance below the bottom edge, and every
- * vertex is held at or below the border. So the first frame reveals nothing,
- * the crests then push out from under the header one after another, and the
- * last frame reveals everything whatever the phase.
+ * Where the front is at `x` (0 to 1 across) when the run is `progress` (0 to 1) of the way through,
+ * in pixels from the top of the screen.
  */
 const frontAt = (x: number, progress: number, shape: WaveShape): number => {
   const reach = shape.amplitude + EDGE_MARGIN;
@@ -137,10 +71,8 @@ const frontAt = (x: number, progress: number, shape: WaveShape): number => {
 const vertex = (x: number, y: number): string => `${(x * 100).toFixed(2)}% ${y.toFixed(1)}px`;
 
 /**
- * Everything above the front: the part already in the new theme.
- *
- * Including the strip behind the header, from the first frame. A glass header
- * is translucent, and what shows through it should be the new page.
+ * Everything above the front: the part already in the new theme. Including the strip behind the
+ * header, from the first frame.
  */
 const revealedAt = (progress: number, shape: WaveShape): string => {
   const points = ['0% 0px', '100% 0px'];
@@ -170,12 +102,8 @@ const framesOf = (draw: (progress: number) => string): Keyframe[] =>
   }));
 
 /**
- * The last run's keyframes, keyed by the geometry they were drawn for.
- *
- * Somebody flipping back and forth to compare the two palettes asks for the
- * same wave every time: same screen, same header. Building it is some 2,300
- * vertices of trigonometry and string formatting, all of it in the click that
- * starts the transition, so the second press onwards reuses the first.
+ * The last run's keyframes, keyed by the geometry they were drawn for. Somebody flipping back and
+ * forth to compare the two palettes asks for the same wave every time: same screen, same header.
  */
 let cached: { key: string; revealed: Keyframe[]; crest: Keyframe[] } | null = null;
 
@@ -192,11 +120,8 @@ const keyframesFor = (shape: WaveShape) => {
 };
 
 /**
- * Runs `task` once the page has nothing better to do.
- *
- * For clean-up that is not free but has no deadline. Safari has no
- * `requestIdleCallback`, so there it is simply a short delay; either way the
- * work lands after the frames that matter rather than inside them.
+ * Runs `task` once the page has nothing better to do. For clean-up that is not free but has no
+ * deadline.
  */
 const whenIdle = (task: () => void) => {
   if (typeof window.requestIdleCallback === 'function') {
@@ -207,22 +132,8 @@ const whenIdle = (task: () => void) => {
 };
 
 /**
- * Turns every CSS transition off, and returns the switch to turn them back on.
- *
- * Several surfaces fade their colours over 110 to 260ms, which is right for a
- * hover and wrong here: the part the wave has crossed would spend its first
- * fifth of a second between palettes. The rule has to be *on* when the new
- * colours are computed.
- *
- * ## Why turning it back on waits for idle
- *
- * Removing a rule that matches `*` restyles every element on the page: 12 to
- * 15ms measured on a board of 650 nodes, and it grows with the page. Done
- * when the wave finishes, it landed in the same frame as the browser tearing
- * the transition down and repainting the real page, which is where the
- * stutter at the end came from. Nothing is moving once the wave is over, so
- * the same work at the next idle moment is invisible. Adding the rule costs
- * nothing extra: it rides the restyle the palette flip needs anyway.
+ * Turns every CSS transition off, and returns the switch to turn them back on. Several surfaces
+ * fade their colours over 110 to 260ms, which is right for a hover and wrong here.
  */
 const suspendTransitions = (): (() => void) => {
   const style = document.createElement('style');
@@ -245,13 +156,8 @@ const withoutTransitions = (change: () => void) => {
 };
 
 /**
- * The headers that should swap at once, and where the wave starts.
- *
- * Only ones on screen: the studio's top bar hides itself above the viewport
- * until the pointer comes near, and a hidden bar is neither worth a layer nor
- * a place for the wave to start from. Only a bar spanning the screen sets the
- * origin; a floating cluster of controls (the sign-in page's) swaps at once
- * but the wave still starts at the top edge.
+ * The headers that should swap at once, and where the wave starts. Only ones on screen: the
+ * studio's top bar hides itself above the viewport until the pointer comes near.
  */
 const measureHeaders = (): { elements: HTMLElement[]; top: number } => {
   const elements: HTMLElement[] = [];
@@ -279,12 +185,8 @@ const currentShape = (top: number): WaveShape => ({
 });
 
 /**
- * Builds the keyframes before they are needed.
- *
- * The switch calls this when the pointer arrives on it or it takes focus,
- * which is a good tenth of a second before any press, so even the first press
- * finds its wave already drawn. Harmless to call often: an unchanged screen is
- * a cache hit.
+ * Builds the keyframes before they are needed. The switch calls this when the pointer arrives on it
+ * or it takes focus, which is a good tenth of a second before any press.
  */
 export const prepareWave = () => {
   if (!canWave()) return;
@@ -308,11 +210,7 @@ interface WaveOptions {
   animate: boolean;
 }
 
-/**
- * Whether this browser can take the snapshot the wave needs, and whether
- * anybody would see it. A hidden tab (the operating system turning dark while
- * this one is in the background) has nothing to animate for.
- */
+/** Whether this browser can take the snapshot the wave needs, and whether anybody would see it. */
 const canWave = () =>
   typeof document.startViewTransition === 'function' &&
   document.visibilityState === 'visible' &&
@@ -322,17 +220,8 @@ const canWave = () =>
 let generation = 0;
 
 /**
- * Changes the palette, as a wave where the browser can draw one.
- *
- * ## Switching again mid-wave
- *
- * The pointer cannot, because a running transition takes the clicks, but the
- * keyboard can. Starting a transition while one runs skips the first to its
- * end, and its update has already run, so the second starts from a page fully
- * in the first one's palette. `clearStage` takes the first one's names and
- * crest down before the second is measured (two elements sharing a name would
- * make the browser refuse the transition), and `generation` stops the first
- * one's late clean-up from undoing the second.
+ * Changes the palette, as a wave where the browser can draw one. The pointer cannot, because a
+ * running transition takes the clicks, but the keyboard can.
  */
 export const switchPalette = ({ flip, commit, animate }: WaveOptions) => {
   if (!animate || !canWave()) {
@@ -365,16 +254,8 @@ export const switchPalette = ({ flip, commit, animate }: WaveOptions) => {
   // the first frame the transition draws. It changes nothing else.
   root.classList.add('theme-wave');
 
-  /*
-   * The update, guarded so it runs once whoever gets there first: the browser
-   * once its snapshot is taken, or the stall timer below if it never is.
-   *
-   * Deliberately small. The class flip is the change; React's state follows
-   * on its own schedule, because the new state is live and a commit that lands
-   * a frame later simply appears in it. Forcing it synchronously here, as the
-   * first cut did, re-rendered every theme consumer before the browser could
-   * draw its first frame of the wave.
-   */
+  // The update, guarded so it runs once whoever gets there first: the browser once its snapshot is
+  // taken, or the stall timer below if it never is. Deliberately small.
   let isUpdated = false;
   const update = (withCrest: boolean) => {
     if (isUpdated) return;
@@ -415,11 +296,8 @@ export const switchPalette = ({ flip, commit, animate }: WaveOptions) => {
         pseudoElement: '::view-transition-new(theme-wave-crest)',
       });
     })
-    /*
-     * Rejected when the browser skips the transition, which it does when
-     * another switch starts before this one is ready. The update still ran,
-     * so the palette is right and only the animation is lost.
-     */
+    // Rejected when the browser skips the transition, which it does when another switch starts
+    // before this one is ready.
     .catch(() => undefined);
 
   // `finished` rejects only if the update itself threw; the page still has to

@@ -10,34 +10,8 @@ import { useLocale, useT } from '@/shared/i18n';
 import { DOCS, type DocsSection } from './docs-content';
 
 /**
- * The CLI, documented in the product rather than in a README.
- *
- * ## Why this page exists
- *
- * Both places that offer the CLI — the project's Connections shelf and the
- * account's settings — linked "Read the docs" straight out to a GitHub README.
- * That is three problems in one link. It leaves the product for a page in a
- * different typeface with none of the reader's theme or language; it shows a
- * file whose audience is somebody browsing source, not somebody who has just
- * been handed four commands to run; and it is the one link on those panels that
- * could rot without anybody noticing, because nothing here fails when a
- * repository is renamed.
- *
- * The README stays where it is, for people reading the package. This is for
- * people using it.
- *
- * ## The shape, and why the sidebar is worth its width
- *
- * A command reference is read by *lookup*, not by reading — somebody arrives
- * knowing they want the thing that closes a task and not what it is called. A
- * persistent list of every section, with the one they are in marked, is the
- * cheapest possible answer to "what else is there", and it is the difference
- * between a page you scroll and a page you navigate.
- *
- * On a phone the sidebar becomes a scrolling strip above the content rather
- * than a drawer behind a button: there are nine entries, they are all one word,
- * and a menu that has to be opened to find out it is short is worse than the
- * strip it replaces.
+ * The CLI, documented in the product rather than in a README. Both places that offer the CLI — the
+ * project's Connections shelf and the account's settings.
  */
 const DocsPage = () => {
   const t = useT();
@@ -51,20 +25,8 @@ const DocsPage = () => {
 
   const [active, setActive] = useState(sections[0]?.id ?? '');
 
-  /*
-   * Which section the reader is in, from the browser rather than from scroll
-   * arithmetic.
-   *
-   * `IntersectionObserver` reports crossings on its own thread; the alternative
-   * — a scroll listener measuring every heading — runs on the main thread at
-   * scroll frequency to answer a question that changes nine times on the whole
-   * page.
-   *
-   * The root margin is what makes it feel right rather than merely correct: it
-   * shrinks the viewport to a band near the top, so a section becomes "current"
-   * when its heading reaches reading position, not when its last line finally
-   * leaves the bottom of the screen.
-   */
+  // Which section the reader is in, from the browser rather than from scroll arithmetic.
+  // `IntersectionObserver` reports crossings on its own thread; the alternative.
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -95,9 +57,8 @@ const DocsPage = () => {
           aria-label={t('docs.contents')}
           className={cn(
             'hidden shrink-0 lg:block lg:w-56',
-            // Sticky under the site header rather than scrolling away: a table
-            // of contents that leaves the screen is a table of contents you
-            // scroll back up to reach.
+            // Sticky under the site header rather than scrolling away: a table of contents that
+            // leaves the screen is a table of contents you scroll back up to reach.
             'lg:sticky lg:top-[4.5rem] lg:h-[calc(100dvh-6rem)] lg:overflow-y-auto lg:py-10',
           )}
         >
@@ -133,16 +94,8 @@ const DocsPage = () => {
 
         <main id="content" tabIndex={-1} className="min-w-0 flex-1 py-10 focus:outline-none">
           {/* --- The opening --------------------------------------------- */}
-          {/*
-            The heading, and nothing under it.
-
-            There was a sentence here — "Install it, sign the machine in, then
-            point it at a repository" — and the three numbered cards below are
-            *literally* those three steps, each with the command that performs
-            it. Prose that paraphrases the thing immediately beneath it costs a
-            line of vertical space and teaches nothing; the reader's eye had to
-            cross it to reach the steps it was describing.
-          */}
+          {/* The heading, and nothing under it. There was a sentence here — "Install it, sign
+              the machine in, then point it at a repository". */}
           <header>
             <h1 className="text-balance text-3xl font-bold tracking-tight sm:text-5xl">
               {doc.startTitle.split('taskstudio')[0]}
@@ -165,9 +118,8 @@ const DocsPage = () => {
                   </span>
                 </p>
                 <CommandLine>{step.command}</CommandLine>
-                {/* 12px, not 11. These lines carry the preconditions — which
-                    Node, what a login actually opens — and they were set at
-                    the smallest size in the app. */}
+                {/* 12px, not 11. These lines carry the preconditions — which Node, what a login
+                    actually opens — and they were set at the smallest size in the app. */}
                 <p className="text-xs leading-relaxed text-content-muted">{step.body}</p>
               </li>
             ))}
@@ -230,9 +182,8 @@ const Section = ({ section }: { section: DocsSection }) => {
       className="scroll-mt-24"
     >
       <h3 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
-        {/* The Figma mark keeps its own colours and therefore its own plate:
-            five brand colours inside a brand-tinted square is one tint too
-            many, and the mark is recognisable enough to need no help. */}
+        {/* The Figma mark keeps its own colours and therefore its own plate: five brand colours
+            inside a brand-tinted square is one tint too many. */}
         <span
           aria-hidden
           className={cn(
@@ -262,15 +213,8 @@ const Section = ({ section }: { section: DocsSection }) => {
               key={entry.command}
               className="ui-card rounded-2xl border border-edge bg-surface-raised p-3.5"
             >
-              {/*
-                The command first and full width, then what it does.
-
-                The obvious layout is a two-column table with the command on the
-                left, and it is wrong here for one practical reason: these are
-                copyable, and a copy button inside a narrow left column is a
-                target the width of a word. Stacked, the command gets the whole
-                row and the description gets a full measure to be read at.
-              */}
+              {/* The command first and full width, then what it does. The obvious layout is a
+                  two-column table with the command on the left. */}
               <CommandLine>{entry.command}</CommandLine>
               <p className="mt-2 text-sm leading-relaxed text-content-muted">{entry.body}</p>
 
@@ -278,9 +222,8 @@ const Section = ({ section }: { section: DocsSection }) => {
                 <ul className="mt-2.5 space-y-1 border-t border-edge/70 pt-2.5">
                   {entry.flags.map((flag) => (
                     <li key={flag.flag} className="flex flex-wrap items-baseline gap-x-2">
-                      {/* Was 11px faint-on-surface for both halves, which is
-                          the lowest-contrast, smallest text on the page and
-                          carries the flags people actually come looking for. */}
+                      {/* Was 11px faint-on-surface for both halves, which is the
+                          lowest-contrast. */}
                       <code className="font-mono text-xs text-brand">{flag.flag}</code>
                       <span className="text-xs leading-relaxed text-content-muted">
                         {flag.body}
@@ -299,9 +242,8 @@ const Section = ({ section }: { section: DocsSection }) => {
           {section.notes.map((note) => (
             <div
               key={note.title}
-              /* A quieter surface than a command card, and a rule down the left
-                 rather than a full border: these are asides about the commands
-                 above, and drawing them as equals would flatten the section. */
+              /* A quieter surface than a command card, and a rule down the left rather than a full
+                 border: these are asides about the commands above. */
               className="border-l-2 border-edge pl-3.5"
             >
               <p className="text-sm font-semibold">{note.title}</p>

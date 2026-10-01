@@ -27,12 +27,8 @@ export const PageLoader = ({ label = 'Loading' }: { label?: string }) => {
 };
 
 /**
- * A placeholder block.
- *
- * The sheen is a `::after` declared in CSS rather than a second element here:
- * a dashboard renders a dozen of these at once, and halving the node count of
- * the thing you show *because* the page is not ready yet is the cheap win.
- * Each skin restyles the fill and the sweep — see `.skeleton` in index.css.
+ * A placeholder block. The sheen is a `::after` declared in CSS rather than a second element here:
+ * a dashboard renders a dozen of these at once.
  */
 export const Skeleton = ({ className }: { className?: string }) => (
   <div className={cn('skeleton', className)} />
@@ -154,11 +150,8 @@ interface SwitchProps {
   checked: boolean;
   onChange: (checked: boolean) => void;
   /**
-   * `ReactNode` rather than `string`, so a label can carry an icon.
-   *
-   * The alternative — laying the icon out beside the switch — puts it outside
-   * the `<label>` this renders, which silently costs the row its click target:
-   * the words would toggle the control and the icon next to them would not.
+   * `ReactNode` rather than `string`, so a label can carry an icon. The alternative — laying the
+   * icon out beside the switch — puts it outside the `<label>` this renders.
    */
   label?: ReactNode;
   id?: string;
@@ -167,31 +160,8 @@ interface SwitchProps {
 }
 
 /**
- * A two-state toggle.
- *
- * ## Why the knob is a flex child and not an absolute one
- *
- * It used to be `absolute top-0.5` inside a `relative` track, with no `left` —
- * so its horizontal origin was its *static position*, which is a function of
- * the button's own box model rather than of anything stated here. Under a skin
- * that gives buttons padding, or a browser that resolves the static position of
- * an out-of-flow first child differently, the knob drifts out of its track and
- * lands on whatever is beside it. That is exactly what it did on the repository
- * import panel: a white circle sitting on top of the label, over text nobody
- * could then read.
- *
- * As a flex child with `items-center` there is no static position to resolve:
- * the knob is laid out inside the track, centred vertically by the container,
- * and the only thing left for `translate-x` to express is the travel. The
- * geometry is then arithmetic anybody can check — 36px track, 16px knob, 2px of
- * clearance at either end.
- *
- * ## Why the label does not set its own size
- *
- * It did, at `text-sm`, and every caller that put one of these on a compact
- * surface got a control shouting one size larger than the panel around it.
- * `className` on the row means the *surface* decides, which is where that
- * decision belongs — the switch's job is the track and the knob.
+ * A two-state toggle. It used to be `absolute top-0.5` inside a `relative` track, with no `left` —
+ * so its horizontal origin was its *static position*.
  */
 export const Switch = ({ checked, onChange, label, id, className }: SwitchProps) => (
   <label
@@ -235,10 +205,8 @@ interface StepperProps {
 }
 
 /**
- * A number with an explicit − and + on either side.
- *
- * A bare range slider gives no clue which way is "more"; two signed buttons
- * read instantly and are far easier to hit on a phone than a 4px track.
+ * A number with an explicit − and + on either side. A bare range slider gives no clue which way is
+ * "more"; two signed buttons read instantly and are far easier to hit on a phone than a 4px track.
  */
 export const Stepper = ({
   value,
@@ -297,10 +265,8 @@ interface CollapsibleProps {
 }
 
 /**
- * An accordion drawn in the design system rather than in browser defaults: the
- * trigger is a full-width surface that lights up on hover, the marker is the
- * app's own chevron with a spring rotation, and the body reveals by height so
- * the rows below settle instead of jumping.
+ * An accordion drawn in the design system rather than in browser defaults: the trigger is a
+ * full-width surface that lights up on hover.
  */
 export const Collapsible = ({
   title,
@@ -363,23 +329,7 @@ export const Collapsible = ({
   );
 };
 
-/**
- * Horizontal segmented control (My Tasks / Team / All, status filters…).
- *
- * ## Why the buttons say `aria-pressed` and not `role="tab"`
- *
- * Because half the places this is used are not tabs. It is a view switcher on
- * the meetings panel, a scope filter on the task list, and a genuine tab row on
- * the project page — and `role="tab"` is a promise about the *rest* of the
- * markup: a `tablist` container, a `tabpanel` with a matching id, and arrow-key
- * navigation between the buttons. Declaring the role without those is worse
- * than declaring nothing, because a screen reader then announces "tab 3 of 12"
- * and the arrow keys it tells the user to press do nothing.
- *
- * `aria-pressed` is true of every use: this is a group of buttons, one of which
- * is currently on. It is what makes the selected option audible at all — before
- * it, the state was carried entirely by a background colour.
- */
+/** Horizontal segmented control (My Tasks / Team / All, status filters…). */
 interface SegmentedProps<T extends string> {
   value: T;
   options: { value: T; label: string; icon?: ReactNode }[];
@@ -387,76 +337,11 @@ interface SegmentedProps<T extends string> {
   className?: string;
   /** Names the group for assistive technology. "Filter", "View", "Section". */
   label?: string;
-  /**
-   * The material the strip is made of.
-   *
-   * ## Why this is opt-in rather than the new default
-   *
-   * Because most of the places this control appears are *in* a page rather than
-   * over one: the scope filter above a task list, the view switcher on the
-   * meetings panel, the range picker on a chart. Those sit on a surface, they
-   * scroll with it, and the sunken well is the honest material for them — it is
-   * a groove cut into the thing they belong to.
-   *
-   * A project's tab strip is the exception, and it is the one this exists for.
-   * It is the primary navigation of the busiest screen in the product, twelve
-   * options wide, and it floats above a board that is constantly moving
-   * underneath it. Glass is what a floating control is made of here — see
-   * `.ui-liquid-glass` in `index.css` — and it is the same material the theme
-   * switch, the notification pane and a toast are made of, which is what makes
-   * "this is above the page" one idea in the interface rather than four
-   * unrelated treatments.
-   */
+  /** The material the strip is made of. */
   variant?: 'sunken' | 'glass';
   /**
-   * How much room the strip takes.
-   *
-   * ## Why a project's tabs are not the same size as a filter
-   *
-   * `sm` is a control *on* a page — the scope filter over a task list, the
-   * range picker on a chart. It should be quiet, because the page is the
-   * subject and the filter is an adjustment to it.
-   *
-   * `lg` is for a strip that *is* the page's navigation: a project's Board,
-   * Groups, Documents, Live. Twelve options of 12px type in a 36px strip is
-   * the right size for a filter and too small for the control every visit to
-   * the busiest screen in the product starts with — the labels read as a
-   * caption under the project name rather than as the tabs they are.
-   *
-   * ## Why it is one step and not a scale
-   *
-   * Because the root font size already does the scaling (see the note on
-   * `html { font-size }` in `index.css`): every value here is in `rem`, so the
-   * strip measures 49px at 1600x860 and 60px at 2560x1440 without a second
-   * number being written down. What `lg` changes is the *proportion* — one
-   * type step up and more vertical padding — which is the part a viewport
-   * cannot infer.
-   *
-   * ## What it deliberately does not grow
-   *
-   * Horizontal padding, gaps and icons. A project's twelve tabs are the
-   * widest thing this control ever holds, and growing all four dimensions put
-   * them at about 105% of the content column — so the strip wrapped to two
-   * rows at 1024, at 1280 and at 1440 alike, because the root scale grows the
-   * column and the type together and that ratio barely moves with the
-   * viewport. 91px of navigation on a 900px-tall laptop is a worse trade than
-   * the small type it was fixing. Taller and larger-typed but no wider comes
-   * in at about 96% of the column, which fits on one line with room to spare.
-   *
-   * The icons stay at their 12px: beside 14px type that is a ratio of 0.86,
-   * which is where an icon belongs next to a label anyway.
-   *
-   * ## Where the step happens
-   *
-   * `min-[1600px]:`, measured rather than chosen. It is the width at which
-   * the page shell's `78vw` term starts winning over its `rem` cap (see
-   * `app-layout`) and gives the column room the type does not take with it —
-   * the first width where twelve tabs and their labels fit on one line in
-   * Portuguese, which is the longer of the two languages and therefore the
-   * one that decides.
-   *
-   * Below it both sizes are identical, so every laptop keeps exactly the strip
-   * it has today.
+   * How much room the strip takes. `sm` is a control *on* a page — the scope filter over a task
+   * list, the range picker on a chart.
    */
   size?: 'sm' | 'lg';
 }
@@ -495,15 +380,8 @@ export const Segmented = <T extends string>({
           size === 'lg' &&
             'min-[1600px]:rounded-xl min-[1600px]:py-2 min-[1600px]:text-sm min-[1600px]:font-semibold',
           'transition-colors duration-150',
-          /*
-           * A focus ring, because there was none.
-           *
-           * These are bespoke `<button>`s rather than the shared `Button`, so
-           * they fell through to whatever the browser draws — which on `pixel`
-           * and `newspaper`, both of which square every corner in the product,
-           * is a rounded halo that reads as a rendering fault. Matched to
-           * `buttonClasses` so the whole app keeps one focus language.
-           */
+          /* A focus ring, because there was none. These are bespoke `<button>`s rather than the
+             shared `Button`, so they fell through to whatever the browser draws. */
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
           'focus-visible:ring-offset-1 focus-visible:ring-offset-surface',
           value === option.value

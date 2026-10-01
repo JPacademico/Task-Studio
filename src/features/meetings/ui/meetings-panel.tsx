@@ -74,11 +74,8 @@ interface MeetingRowProps {
   meeting: Meeting;
   canManage: boolean;
   /**
-   * Draw the project this came from.
-   *
-   * Off on a project's own board, where it would be the same name on every row,
-   * and on for a company's calendar, which mixes meetings from several projects
-   * with meetings that belong to no project at all.
+   * Draw the project this came from. Off on a project's own board, where it would be the same name
+   * on every row, and on for a company's calendar.
    */
   showSource: boolean;
   /** The row is one click from vanishing — see the two-step in the panel. */
@@ -91,14 +88,8 @@ interface MeetingRowProps {
 }
 
 /**
- * One entry on the calendar.
- *
- * Memoised, and the whole panel is arranged so that the memo holds: every
- * handler below is a `useCallback` that takes an id, and the meetings
- * themselves only change identity when the row genuinely changes — the
- * realtime layer patches one element of the cached array rather than replacing
- * it (see `upsertMeeting`). Typing in the search box therefore re-renders the
- * input and nothing else.
+ * One entry on the calendar. Memoised, and the whole panel is arranged so that the memo holds:
+ * every handler below is a `useCallback` that takes an id.
  */
 const MeetingRowBase = ({
   meeting,
@@ -169,10 +160,8 @@ const MeetingRowBase = ({
         {/* The paper everybody is asked to read beforehand. */}
         {meeting.file && <FileAttachmentRow file={meeting.file} />}
 
-        {/* Where this one came from, carrying that project's own colour so a
-            company's week stays scannable by source as well as by time. A
-            meeting the company booked for itself names no project, and says so
-            rather than leaving a gap the reader has to interpret. */}
+        {/* Where this one came from, carrying that project's own colour so a company's week
+            stays scannable by source as well as by time. */}
         {showSource &&
           (meeting.project ? (
             <Link
@@ -221,9 +210,8 @@ const MeetingRowBase = ({
             <CheckCircle2 className="h-3.5 w-3.5" />
           </Button>
 
-          {/* Two-step rather than a dialog, matching the text board: a meeting
-              is not recoverable anywhere in this UI, and one stray click on a
-              toolbar is exactly how it would go. */}
+          {/* Two-step rather than a dialog, matching the text board: a meeting is not
+              recoverable anywhere in this UI. */}
           <Button
             size={isConfirmingDelete ? 'sm' : 'icon'}
             variant={isConfirmingDelete ? 'danger' : 'ghost'}
@@ -249,12 +237,8 @@ MeetingRow.displayName = 'MeetingRow';
 
 interface MeetingsPanelProps {
   /**
-   * Which calendar this panel is showing. Exactly one of the two.
-   *
-   * A company's is the *union* of what it booked and what every project filed
-   * under it booked, assembled by the API — which is how a meeting posted on a
-   * project turns up on its company's tab without anything having been copied
-   * there. See the API's `MeetingsService`.
+   * Which calendar this panel is showing. Exactly one of the two. A company's is the *union* of
+   * what it booked and what every project filed under it booked, assembled by the API.
    */
   projectId?: string;
   organizationId?: string;
@@ -266,30 +250,7 @@ interface MeetingsPanelProps {
   canManage: boolean;
 }
 
-/**
- * The project's meetings.
- *
- * Three ways to read the same list, because "when is the next one" and "how
- * loaded is the 14th" are different questions and neither is answered well by
- * the other's layout:
- *
- *   - **Upcoming** is the whole schedule as a list, in day buckets.
- *   - **By day** is the same list one day at a time, with a pager — the
- *     per-day paging, and the only view where an empty day is a statement
- *     rather than a gap.
- *   - **Calendar** is a month at a glance, with the picked day underneath.
- *
- * ## Where the work happens
- *
- * All three read one cached snapshot of the project's live meetings, and the
- * search box and the day pager are *local filters over it*. That is deliberate
- * and it is the whole performance story of this tab: a request per arrow press
- * would be a round trip to answer a question the client can already answer, on
- * a surface people scrub back and forth through. The snapshot is capped by the
- * API, kept fresh for a minute, warmed by a prefetch while the user is still
- * on the board, and patched in place by the realtime layer — the same
- * arrangement the Post-it board and the text board already use.
- */
+/** The project's meetings. */
 export const MeetingsPanel = ({
   projectId,
   organizationId,
@@ -299,18 +260,8 @@ export const MeetingsPanel = ({
 }: MeetingsPanelProps) => {
   const t = useT();
 
-  /*
-   * Both hooks are always called, and one of them is always disabled.
-   *
-   * Hooks cannot be called conditionally, so the branch has to be in the
-   * argument rather than around the call. The disabled one issues no request
-   * and holds no cache entry, so the cost of the arrangement is a hook that
-   * returns `undefined`.
-   *
-   * The project side reads the snapshot the project page already holds and
-   * keeps live — see `useProjectMeetings`. The company side has no socket room
-   * and refetches on open, which is the same trade the personal agenda makes.
-   */
+  // Both hooks are always called, and one of them is always disabled. Hooks cannot be called
+  // conditionally, so the branch has to be in the argument rather than around the call.
   const projectCalendar = useProjectMeetings(projectId);
   const organizationCalendar = useOrganizationMeetings(organizationId);
   const calendar = projectId ? projectCalendar : organizationCalendar;
@@ -330,15 +281,8 @@ export const MeetingsPanel = ({
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [isRoomsOpen, setIsRoomsOpen] = useState(false);
 
-  /*
-   * The filter runs behind the keystroke rather than in front of it.
-   *
-   * `useDeferredValue` lets the input update at full priority and re-filters
-   * the list in a lower-priority pass, which is exactly the shape of this
-   * problem: the typing has to feel immediate and the results do not have to
-   * land on the same frame. A debounce would achieve something similar by
-   * making *everything* late, including the character being typed.
-   */
+  // The filter runs behind the keystroke rather than in front of it. `useDeferredValue` lets the
+  // input update at full priority and re-filters the list in a lower-priority pass.
   const query = useDeferredValue(search).trim().toLowerCase();
 
   const matches = useMemo(
@@ -454,28 +398,13 @@ export const MeetingsPanel = ({
           ]}
         />
 
-        {/*
-          Whether these meetings are reaching the reader's own calendar.
-
-          Here rather than in a menu, because this is the surface on which the
-          question occurs to somebody — looking at a meeting and wondering
-          whether it will be on their phone tomorrow. The *controls* are in
-          settings, one click away, because a calendar connection is a fact
-          about the account rather than about this project. See the badge.
-
-          `ml-auto` moves to the badge when there is no compose button, so the
-          right-hand group is anchored either way.
-        */}
+        {/* Whether these meetings are reaching the reader's own calendar. Here rather than in a
+            menu, because this is the surface on which the question occurs to somebody. */}
         <div className={canManage ? 'ml-auto flex items-center gap-2' : 'ml-auto'}>
           <CalendarSyncBadge />
 
-          {/*
-            The room registry, one press from the calendar it feeds.
-
-            Not in project settings, because a room is only ever thought about
-            while booking one — the moment somebody notices the picker does not
-            offer the room they are standing in. See `RoomsManager`.
-          */}
+          {/* The room registry, one press from the calendar it feeds. Not in project settings,
+              because a room is only ever thought about while booking one. */}
           {canManage && (
             <Button
               size="sm"

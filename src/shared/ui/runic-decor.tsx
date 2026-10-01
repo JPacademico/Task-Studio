@@ -4,20 +4,8 @@ import { useReducedMotion } from 'framer-motion';
 import { useSkin } from '@/app/providers/theme-provider';
 
 /**
- * Something keeps carving runes on the walls.
- *
- * Every few seconds a rune cuts itself into the page somewhere, holds its
- * light, and weathers away. It is the one piece of this skin that is not a
- * property of a surface — it happens *to* the page, on its own schedule, and
- * that is what stops a stone theme reading as a grey theme.
- *
- * The mechanics are the eldritch watcher's, for the reason recorded there: the
- * fade is a CSS animation the element carries for its whole life, and removal
- * is arithmetic on a timestamp rather than an exit transition. `AnimatePresence`
- * will not unmount a child until its exit animation *completes*, Framer drives
- * that on `requestAnimationFrame`, and rAF stops in a backgrounded tab — so an
- * exit-driven version leaves runes stranded on the page for as long as the user
- * is away.
+ * Something keeps carving runes on the walls. Every few seconds a rune cuts itself into the page
+ * somewhere, holds its light, and weathers away.
  */
 
 /** Six staves, each a handful of straight cuts. Nothing here is curved. */
@@ -37,13 +25,8 @@ const STAVES: string[] = [
 ];
 
 /**
- * How often one appears, and how long it lasts.
- *
- * Five seconds is deliberately shorter than the twenty the eldritch eye waits:
- * that one is a fright and works by being rare, this one is weather and works
- * by being ongoing. The life is a little under the interval, so there is
- * usually exactly one on screen and occasionally two overlapping — which is
- * what keeps it from reading as a metronome.
+ * How often one appears, and how long it lasts. Five seconds is deliberately shorter than the
+ * twenty the eldritch eye waits: that one is a fright and works by being rare.
  */
 const APPEARANCE_INTERVAL = 5_200;
 const APPEARANCE_LIFE = 4_600;
@@ -83,15 +66,8 @@ export const RuneScribe = () => {
       return;
     }
 
-    /*
-     * One timer, and it does the sweeping as well as the adding.
-     *
-     * Expiring old marks on the same tick that adds a new one means there is no
-     * second scheduler to leak, and no per-mark timeout to strand. A mark whose
-     * life has run out is already invisible — its animation ends at zero
-     * opacity and holds there — so the few hundred milliseconds it waits to be
-     * removed cost nothing and are never seen.
-     */
+    // One timer, and it does the sweeping as well as the adding. Expiring old marks on the same
+    // tick that adds a new one means there is no second scheduler to leak.
     const timer = setInterval(() => {
       const now = Date.now();
       setMarks((current) => [
@@ -146,58 +122,58 @@ export const RuneScribe = () => {
   );
 };
 
+/** How long the arrow burns at least, and at most while the button is held. */
+const RUNE_LIT_MIN_MS = 240;
+const RUNE_LIT_MAX_MS = 700;
+
 /**
- * The rune pointer's click: a brief, weak glow where it was pressed.
- *
- * ## Why this is not a cursor frame
- *
- * A CSS cursor is a still image. The other skins that react to a press swap
- * in an `:active` frame, which holds for as long as the button is down — a
- * pose, not a flash. What was asked for here is a quick glow, and that needs a
- * thing on the page that can fade: one small element per press, drawn at the
- * pointer, carrying a quarter-second CSS animation and removed when the
- * animation reports it has finished. Nothing is scheduled, nothing is held in
- * React state, and the listener is only attached while this skin is on.
- *
- * ## Why it is centred off the hotspot
- *
- * The hotspot is the arrow's point, at the top-left of the drawing. A glow
- * centred there would light the empty corner beside the pointer; centred a
- * third of the way down the stave, it lights the mark itself, which is what
- * reads as the rune glowing.
- *
- * Mouse and pen only, primary button only, and not over a surface that keeps
- * the system pointer (`[data-native-cursor]`) or when the reader has turned
- * the themed pointer off — the glow belongs to the rune pointer, and where
- * there is no rune pointer there is nothing to glow.
+ * The rune pointer's click: the arrow itself lights up. `data-rune-lit` swaps in the burning frames;
+ * a still frame swap, so it runs under reduced motion too.
  */
 export const RuneClickGlow = () => {
   const skin = useSkin();
-  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
-    if (skin !== 'RUNIC' || reduceMotion) return;
+    if (skin !== 'RUNIC') return;
+
+    const root = document.documentElement;
+    let litAt = 0;
+    let release = 0;
+    let ceiling = 0;
+
+    const douse = () => {
+      window.clearTimeout(release);
+      window.clearTimeout(ceiling);
+      delete root.dataset.runeLit;
+    };
 
     const onPointerDown = (event: PointerEvent) => {
       if (event.pointerType === 'touch' || event.button !== 0) return;
-      if (document.documentElement.dataset.cursor === 'off') return;
-      if (event.target instanceof Element && event.target.closest('[data-native-cursor]')) return;
+      if (root.dataset.cursor === 'off') return;
 
-      const glow = document.createElement('span');
-      glow.className = 'rune-click-glow';
-      glow.setAttribute('aria-hidden', 'true');
-      glow.style.left = `${event.clientX}px`;
-      glow.style.top = `${event.clientY}px`;
-      glow.addEventListener('animationend', () => glow.remove(), { once: true });
-      // And a timer behind it: an animation that never ran (a frame that was
-      // never drawn) never ends, and the glow must not outlive its moment.
-      window.setTimeout(() => glow.remove(), 400);
-      document.body.appendChild(glow);
+      douse();
+      litAt = performance.now();
+      root.dataset.runeLit = '';
+      // Held past the flash, it goes out anyway: a drag should not carry a burning arrow.
+      ceiling = window.setTimeout(douse, RUNE_LIT_MAX_MS);
+    };
+
+    const onPointerUp = () => {
+      if (!('runeLit' in root.dataset)) return;
+      window.clearTimeout(release);
+      release = window.setTimeout(douse, Math.max(0, RUNE_LIT_MIN_MS - (performance.now() - litAt)));
     };
 
     window.addEventListener('pointerdown', onPointerDown, { capture: true, passive: true });
-    return () => window.removeEventListener('pointerdown', onPointerDown, { capture: true });
-  }, [reduceMotion, skin]);
+    window.addEventListener('pointerup', onPointerUp, { capture: true, passive: true });
+    window.addEventListener('pointercancel', onPointerUp, { capture: true, passive: true });
+    return () => {
+      window.removeEventListener('pointerdown', onPointerDown, { capture: true });
+      window.removeEventListener('pointerup', onPointerUp, { capture: true });
+      window.removeEventListener('pointercancel', onPointerUp, { capture: true });
+      douse();
+    };
+  }, [skin]);
 
   return null;
 };

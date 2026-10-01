@@ -8,11 +8,8 @@ import { teamApi } from '../api/team.api';
 import type { CreateTeamPayload, TeamScope, UpdateTeamPayload } from './types';
 
 /**
- * Teams change about as often as the roster they are drawn from.
- *
- * A minute, matching the roster and the organization itself. There is no socket
- * traffic for them, and the surfaces that read them — a composer's picker, the
- * teams tab — are opened deliberately rather than watched.
+ * Teams change about as often as the roster they are drawn from. A minute, matching the roster and
+ * the organization itself.
  */
 const TEAMS_STALE_TIME = 60_000;
 
@@ -23,11 +20,8 @@ const keyFor = (scope: TeamScope) =>
     : queryKeys.teams.list('project', scope.projectId as string);
 
 /**
- * One roster's teams.
- *
- * `enabled` because both composers want this list *only while their picker is
- * on screen*, and the task composer in particular is mounted behind every board
- * in the app. A picker nobody has opened should cost nothing.
+ * One roster's teams. `enabled` because both composers want this list *only while their picker is
+ * on screen*, and the task composer in particular is mounted behind every board in the app.
  */
 export const useTeams = (scope: TeamScope | null, enabled = true) =>
   useQuery({
@@ -38,13 +32,8 @@ export const useTeams = (scope: TeamScope | null, enabled = true) =>
   });
 
 /**
- * Every write refreshes the one list it could have changed.
- *
- * Not optimistic anywhere, and deliberately so — the same reasoning the
- * organization mutations carry. These are occasional, deliberate acts on a
- * settings-shaped surface, where a moment of "saving…" is honest rather than
- * sluggish, and where an optimistic path would be several more ways to be wrong
- * about a cache nobody is staring at.
+ * Every write refreshes the one list it could have changed. Not optimistic anywhere, and
+ * deliberately so — the same reasoning the organization mutations carry.
  */
 const useTeamRefresh = (scope: TeamScope) => {
   const queryClient = useQueryClient();

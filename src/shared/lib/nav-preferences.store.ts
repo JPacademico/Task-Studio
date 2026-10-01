@@ -8,13 +8,8 @@ export type NavEdge = 'left' | 'top' | 'right';
 type PinnedEdges = Record<NavEdge, boolean>;
 
 /**
- * What the right rail is a list *of*.
- *
- * Projects by default, because that is what the rail has always been and what
- * most people open it for — a company is a place you visit occasionally, a
- * project is a place you work. The choice persists per device for the same
- * reason the pins do: it describes how somebody has arranged this screen, not
- * anything about their account.
+ * What the right rail is a list *of*. Projects by default, because that is what the rail has always
+ * been and what most people open it for — a company is a place you visit occasionally.
  */
 export type RailScope = 'projects' | 'organizations';
 
@@ -28,34 +23,14 @@ interface NavPreferencesState {
 }
 
 /**
- * The top bar starts pinned; the two side rails do not.
- *
- * The bar carries the things a person looks for when they do not yet know
- * where anything is: the logo, the new-project button, the notification bell,
- * the account menu. Hiding all four behind a hover on an edge nobody has been
- * told about is a first run that looks like a page with no controls on it —
- * several people got as far as "how do I sign out" before finding the bar at
- * all. The rails are different: they are navigation between places you already
- * know exist, and there is a visible edge affordance pointing at each.
- *
- * The pin button in the bar is untouched, so this is a starting position and
- * not a decision — one click puts the bar back to hiding, and that choice
- * persists.
+ * The top bar starts pinned; the two side rails do not. The bar carries the things a person looks
+ * for when they do not yet know where anything is: the logo, the new-project button.
  */
 const DEFAULTS: PinnedEdges = { left: false, top: true, right: false };
 
 /**
- * Bumped when a *default* changes, not when the shape does.
- *
- * Stored preferences are the whole reason a changed default needs a version:
- * everybody who has ever opened the app has `{"left":false,"top":false,...}`
- * in localStorage, and merging that over a new default reinstates the old one
- * for exactly the existing users the change was made for. So a blob written
- * before this version is read as "these are last version's defaults, not
- * choices", and the edges whose defaults have moved are re-seeded.
- *
- * `left` and `right` are still honoured from an old blob: their defaults have
- * not changed, so a `true` there can only have come from a deliberate pin.
+ * Bumped when a *default* changes, not when the shape does. Stored preferences are the whole reason
+ * a changed default needs a version.
  */
 const VERSION = 1;
 
@@ -89,11 +64,8 @@ const write = (pinned: PinnedEdges): void => {
 };
 
 /**
- * Which menus the user has pinned open.
- *
- * Hidden-by-default menus are the point of the layout, but a user working in
- * one place all day should be able to nail one down. The choice is per device,
- * so it lives in localStorage rather than on the profile.
+ * Which menus the user has pinned open. Hidden-by-default menus are the point of the layout, but a
+ * user working in one place all day should be able to nail one down.
  */
 const readRailScope = (): RailScope => {
   try {
@@ -108,14 +80,8 @@ const readRailScope = (): RailScope => {
 export const useNavPreferences = create<NavPreferencesState>((set) => {
   const initial = read();
 
-  /*
-   * Written back at once, before anything is toggled.
-   *
-   * Otherwise the migration above re-runs on every load until the user happens
-   * to touch a pin, and a bar they deliberately unpinned in one session would
-   * come back pinned in the next — which is the opposite of leaving them the
-   * choice.
-   */
+  // Written back at once, before anything is toggled. Otherwise the migration above re-runs on
+  // every load until the user happens to touch a pin.
   write(initial);
 
   return {
@@ -135,15 +101,8 @@ export const useNavPreferences = create<NavPreferencesState>((set) => {
         return { pinned };
       }),
 
-    /*
-     * Read lazily rather than written back on boot, unlike the pins above.
-     *
-     * The pins need an eager write because a *default* moved and the migration
-     * has to be recorded. Nothing has moved here — there is one default and it
-     * has always been `projects` — so an absent key and the string `projects`
-     * mean exactly the same thing, and writing one on every load would be a
-     * storage write per page view to record that nothing happened.
-     */
+    // Read lazily rather than written back on boot, unlike the pins above. The pins need an eager
+    // write because a *default* moved and the migration has to be recorded.
     railScope: readRailScope(),
 
     setRailScope: (scope) => {

@@ -31,12 +31,8 @@ import { Button, DirectionArrow, EmptyState, RunicText } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
 /**
- * Six to a page.
- *
- * Not a performance number — the whole catalogue is eight rows of static data.
- * It is a *shopping* number: a grid you can take in without scrolling is a grid
- * you compare, and comparing is the entire job of this screen. Pagination also
- * gives the page a rhythm the settings list never had.
+ * Six to a page. Not a performance number — the whole catalogue is eight rows of static data. It is
+ * a *shopping* number: a grid you can take in without scrolling is a grid you compare.
  */
 const PAGE_SIZE = 6;
 
@@ -51,14 +47,8 @@ interface GalleryCardProps {
 }
 
 /**
- * One theme on the shelf.
- *
- * The whole card previews; nothing on it applies. Applying repaints the entire
- * app underneath the pointer, so browsing with an Apply button on every tile
- * made the shelf feel like eight ways to have an accident — and a card that
- * offers both actions makes you read it before you can click it. There is now
- * exactly one Apply in the room, in the preview box, next to the full-size
- * picture of what it will do.
+ * One theme on the shelf. The whole card previews; nothing on it applies. Applying repaints the
+ * entire app underneath the pointer.
  */
 const GalleryCard = ({
   skin,
@@ -136,13 +126,8 @@ const GalleryCard = ({
 };
 
 /**
- * The theme gallery.
- *
- * Everything a theme is lives in one catalogue (`skin-catalog.ts`) and this
- * page is a view over it: search filters, pagination slices, and the preview
- * box renders whichever row is selected at four times the thumbnail's scale.
- * Nothing on this screen knows what a specific theme looks like, which is why
- * adding the ninth one is a data change and not a UI change.
+ * The theme gallery. Everything a theme is lives in one catalogue (`skin-catalog.ts`) and this page
+ * is a view over it: search filters, pagination slices.
  */
 const ThemeGalleryPage = () => {
   const t = useT();
@@ -233,18 +218,8 @@ const ThemeGalleryPage = () => {
             />
           ) : (
             <>
-              {/*
-                Keyed by the query and the page, so React remounts the grid and
-                the enter animation runs per page — the whole sheet slides in as
-                one object rather than six cards crossfading independently.
-
-                Deliberately *not* wrapped in <AnimatePresence mode="wait">.
-                That is the same trap the route transitions in `app-layout.tsx`
-                document: the outgoing sheet has to finish exiting before the
-                next one mounts, and a stalled exit leaves the grid showing a
-                set of themes the search no longer matches — which is what this
-                did the first time it was wired up. A remount cannot stall.
-              */}
+              {/* Keyed by the query and the page, so React remounts the grid and the enter
+                  animation runs per page. */}
               <motion.div
                 key={`${query}:${page}`}
                 initial={{ opacity: 0, x: 12 }}
@@ -346,9 +321,8 @@ const ThemeGalleryPage = () => {
             </div>
 
             <div className="p-3.5">
-              {/* The stage. Keyed by theme *and* palette so a switch animates
-                  rather than swapping colours under a static frame — and a
-                  remount for the same reason as the grid above. */}
+              {/* The stage. Keyed by theme *and* palette so a switch animates rather than
+                  swapping colours under a static frame. */}
               <motion.div
                 key={`${detail.value}:${String(previewDark)}`}
                 initial={{ opacity: 0, scale: 0.97 }}
@@ -367,22 +341,16 @@ const ThemeGalleryPage = () => {
                   </span>
                 </div>
 
-                {/* The description, and nothing else. The tag chips were a
-                    second, worse description of the same theme sitting under
-                    the first one — they still earn their keep as search terms,
-                    which is where they now live and nowhere else. */}
+                {/* The description, and nothing else. The tag chips were a second, worse
+                    description of the same theme sitting under the first one. */}
                 {/* `pre-line`: a description written as verse keeps its
                     lines — the Dragon's is. See its catalogue entry. */}
                 <p className="whitespace-pre-line text-xs leading-relaxed text-content-muted">
                   {t(detail.description)}
                 </p>
 
-                {/*
-                  A paid skin on a free account: the preview above is the whole
-                  of the look, and the button says where to get it rather than
-                  pretending to apply it. The plan panel is on the settings
-                  page.
-                */}
+                {/* A paid skin on a free account: the preview above is the whole of the look,
+                    and the button says where to get it rather than pretending to apply it. */}
                 {!canWearSkin(detail.value) ? (
                   <Link
                     to="/settings"

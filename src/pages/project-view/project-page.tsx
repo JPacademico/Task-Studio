@@ -98,62 +98,26 @@ type Tab =
 
 const TABS: { value: Tab; label: TranslationKey; icon: ReactNode }[] = [
   { value: 'board', label: 'project.tabBoard', icon: <KanbanSquare className="h-3 w-3" /> },
-  // Next to the board, because it *is* the board — the same tasks, grouped by a
-  // label the project invented instead of by the state they are in. Anywhere
-  // else on this row would suggest it answers a different question about a
-  // different set of things.
+  // Next to the board, because it *is* the board — the same tasks, grouped by a label the project
+  // invented instead of by the state they are in.
   { value: 'groups', label: 'project.tabGroups', icon: <Columns3 className="h-3 w-3" /> },
   { value: 'dashboard', label: 'project.tabMetrics', icon: <BarChart3 className="h-3 w-3" /> },
   { value: 'roster', label: 'project.tabRoster', icon: <Users className="h-3 w-3" /> },
   // Beside the roster, because a team is a subset of it — the same reasoning
   // that puts the company's teams tab next to its staff list.
   { value: 'teams', label: 'project.tabTeams', icon: <UsersRound className="h-3 w-3" /> },
-  // Next to the roster rather than to the board: a meeting is an appointment
-  // between people, and the question it answers is "who, and when" — not
-  // "what state is this work in".
+  // Next to the roster rather than to the board: a meeting is an appointment between people, and
+  // the question it answers is "who, and when" — not "what state is this work in".
   { value: 'meetings', label: 'project.tabMeetings', icon: <CalendarDays className="h-3 w-3" /> },
-  /*
-   * Immediately after the calendar, because the pair is the point.
-   *
-   * A meeting is an appointment — a time, a place, a list of people
-   * expected. This is the call itself, which is a different thing and not a
-   * better one: a team books the fortnightly review next door and opens a
-   * live room for the ten minutes they need to look at something together.
-   * Anywhere else on the row would suggest the two answer unrelated
-   * questions, and putting it *before* the calendar would suggest a call is
-   * the normal way to arrange one.
-   */
+  // Immediately after the calendar, because the pair is the point. A meeting is an appointment — a
+  // time, a place, a list of people expected.
   { value: 'live', label: 'project.tabLive', icon: <Radio className="h-3 w-3" /> },
   { value: 'whiteboard', label: 'project.tabWhiteboard', icon: <PenTool className="h-3 w-3" /> },
   // Next to the whiteboard on purpose: the two are the same idea in different
   // materials — one is what the project draws, the other is what it writes.
   { value: 'text', label: 'project.tabText', icon: <FileText className="h-3 w-3" /> },
-  /*
-   * Second from last, and never first.
-   *
-   * A changelog is what you open when something has already gone wrong or
-   * gone missing — "when did that task disappear", "who let this person in" —
-   * which makes it a reference, not a workspace. Putting it at the end of the
-   * row keeps it a click away without ever competing with the board, and next
-   * to the assistant because both are read rather than worked in.
-   */
-  /*
-   * Beside the changelog, and that is the argument for it being here at all.
-   *
-   * This was "Webhooks", which named a mechanism nobody arrives looking for.
-   * What people want is the board posting into Discord, the meetings on their
-   * phone, a way back to the repository — three things that lived in three
-   * different places with no screen that answered "what does this project
-   * connect to". See `ConnectionsPanel`.
-   *
-   * Still next to the log, because the largest thing on it is still the
-   * changelog forwarded somewhere else.
-   *
-   * Admin-only, and the tab itself is hidden rather than the panel being
-   * shown empty: for most destinations the URL *is* the credential, and a
-   * tab that exists to refuse people is a tab that teaches them there is
-   * something here they cannot have.
-   */
+  // Second from last, and never first. A changelog is what you open when something has already gone
+  // wrong or gone missing — "when did that task disappear", "who let this person in".
   { value: 'connections', label: 'project.tabConnections', icon: <Plug className="h-3 w-3" /> },
   { value: 'changelog', label: 'project.tabChangelog', icon: <History className="h-3 w-3" /> },
   { value: 'ai', label: 'project.tabAssistant', icon: <Sparkles className="h-3 w-3" /> },
@@ -167,53 +131,22 @@ const ProjectPage = () => {
   const t = useT();
   const { projectId } = useParams<{ projectId: string }>();
   useProjectRoom(projectId);
-  /*
-   * Keeps the two marks beside the project's name honest for the whole room.
-   *
-   * Both link services have always announced themselves on the socket and
-   * nothing was listening, so a repository connected by an admin appeared for
-   * everybody else on their next reload. See `useProjectMarksRealtime`.
-   */
+  // Keeps the two marks beside the project's name honest for the whole room. Both link services
+  // have always announced themselves on the socket and nothing was listening.
   useProjectMarksRealtime(projectId);
 
-  /*
-   * Whether this deployment can offer Figma at all — an environment question,
-   * not a project one, and cached for an hour. Read here rather than inside
-   * `FigmaLink` so the header does not fire a request per render of a control
-   * that is usually not drawn.
-   */
+  // Whether this deployment can offer Figma at all — an environment question, not a project one,
+  // and cached for an hour.
   const figmaAvailability = useFigmaAvailability();
 
   const currentUser = useCurrentUser();
 
-  /*
-   * The open tab lives in the URL, not in state.
-   *
-   * Two things need it there. A link from somewhere else in the app has to be
-   * able to say *which* tab — the task sheet's "open on the text board" button
-   * is exactly that, and with the tab in component state the only thing it
-   * could do was land the reader on the board and ask them to find it. And a
-   * reload, or a shared link, now comes back to the tab somebody was actually
-   * on rather than to the task board.
-   *
-   * `replace` on the write, so flipping between tabs does not build a history
-   * stack that takes eight back presses to escape.
-   */
+  // The open tab lives in the URL, not in state.
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
 
-  /*
-   * A call in this project outlives the Live tab being shown.
-   *
-   * The panel used to mount only while its tab was open, so pressing "Board"
-   * mid-call unmounted the stage and hung up — and the call's own "open the
-   * linked page" button, which switches to the text board, hung up the call it
-   * was pressed from. While this project has a call up, the panel stays
-   * mounted and is only hidden. Hidden tiles report themselves off screen, so
-   * every peer stops sending us video until the tab comes back, and the voices
-   * carry on. Leaving the *project* is what ends it, and `LiveCallGuard` asks
-   * first.
-   */
+  // A call in this project outlives the Live tab being shown. The panel used to mount only while
+  // its tab was open, so pressing "Board" mid-call unmounted the stage and hung up.
   const liveCall = useLiveCallStore((state) => state.active);
   const isInCallHere = liveCall !== null && liveCall.projectId === projectId;
   const tab: Tab = TABS.some((entry) => entry.value === tabParam)
@@ -240,18 +173,8 @@ const ProjectPage = () => {
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
 
-  /*
-   * A task named in the URL opens its sheet on arrival.
-   *
-   * This is how the dashboard's "up next" list lands somewhere useful: a task
-   * there belongs to some project the reader may not have open, so the card
-   * navigates to `/projects/:id?task=:taskId` and the board opens on the
-   * actual task rather than dropping them at the top of a board to go find it.
-   *
-   * The parameter is consumed rather than kept: once the sheet is open the
-   * state owns it, and leaving `?task=` in the address would reopen the sheet
-   * every time the reader closed it and touched a filter.
-   */
+  // A task named in the URL opens its sheet on arrival. This is how the dashboard's "up next" list
+  // lands somewhere useful: a task there belongs to some project the reader may not have open.
   const taskParam = searchParams.get('task');
 
   useEffect(() => {
@@ -269,12 +192,8 @@ const ProjectPage = () => {
   }, [setSearchParams, taskParam]);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-  /*
-   * The chat window belongs to the app shell, not to this page — that is what
-   * lets a pinned conversation follow the user off the project. This page only
-   * drives it: it opens it, it keeps the title in step with a rename, and it
-   * takes it down again on the way out *unless* the user has pinned it.
-   */
+  // The chat window belongs to the app shell, not to this page — that is what lets a pinned
+  // conversation follow the user off the project.
   const openChat = useChatDock((state) => state.open);
   const closeChat = useChatDock((state) => state.close);
   const syncChatName = useChatDock((state) => state.syncName);
@@ -286,38 +205,19 @@ const ProjectPage = () => {
   usePrefetchProjectChat(projectId);
 
   const { data: project, isLoading } = useProject(projectId);
-  /*
-   * `isPlaceholderData` is the whole point of reading it here.
-   *
-   * The board now paints from whatever tasks the app already held (see
-   * `seedTasksFor`), which on a project is only ever the current user's own —
-   * the dashboard had no reason to fetch the rest of the roster's. So the list
-   * on screen is real but knowingly short until the request lands, and this
-   * flag is what lets the surface say so instead of quietly growing.
-   */
+  // `isPlaceholderData` is the whole point of reading it here. The board now paints from whatever
+  // tasks the app already held (see `seedTasksFor`).
   const {
     data: tasks = [],
     isPlaceholderData: tasksArePartial,
     isLoading: tasksLoading,
   } = useTasks({ ...filters, projectId });
 
-  /*
-   * Derived up here rather than after the loading guard below, because the
-   * prefetch is a hook and hooks cannot sit behind an early return. Optional
-   * chaining covers the render where `project` has not arrived: the prefetch
-   * simply skips the invitations half until it has, and re-runs when it does.
-   */
+  // Derived up here rather than after the loading guard below, because the prefetch is a hook and
+  // hooks cannot sit behind an early return.
   const canManage = project?.myRole === 'OWNER' || project?.myRole === 'ADMIN';
-  /*
-   * Deleting is still the owner's alone; editing is not.
-   *
-   * The settings dialog used to open for the owner only, which was stricter
-   * than the API has ever been — `ProjectsService.update` has always accepted
-   * an ADMIN. That left an admin able to run the project day to day and unable
-   * to fix a typo in its name. The dialog now opens for both and hides its own
-   * danger zone from anybody who is not the owner, which is the same split the
-   * organization dialog already uses.
-   */
+  // Deleting is still the owner's alone; editing is not. The settings dialog used to open for the
+  // owner only, which was stricter than the API has ever been.
   const isOwner = project?.myRole === 'OWNER';
   /** Concluded: readable everywhere, writable nowhere. See `project.completedAt`. */
   const isFinished = Boolean(project?.completedAt);
@@ -325,18 +225,8 @@ const ProjectPage = () => {
   // Warm the roster tab while the user is reading the board.
   usePrefetchProjectCollaboration(projectId, canManage);
 
-  /*
-   * The calendar, read here rather than inside its own tab.
-   *
-   * Two surfaces want it — the meetings tab and the text board, where a page
-   * can be the minutes of a meeting and the "where does this go" picker has to
-   * list the ones still open. Holding it at the page means one request feeds
-   * both, and both open full rather than spending a round trip empty.
-   *
-   * The subscription sits here for the same reason: a colleague posting a
-   * meeting should land on the calendar whichever tab happens to be open, and
-   * one listener per project page is one listener.
-   */
+  // The calendar, read here rather than inside its own tab. Two surfaces want it — the meetings tab
+  // and the text board.
   useProjectMeetingsRealtime(projectId);
   const { data: meetings = [] } = useProjectMeetings(projectId);
 
@@ -352,23 +242,8 @@ const ProjectPage = () => {
     if (projectId && project?.name) syncChatName(projectId, project.name);
   }, [project?.name, projectId, syncChatName]);
 
-  /*
-   * `?chat=open` — how a mention notification arrives here.
-   *
-   * The bell deep-links to the project with this set (see its `deepLink`),
-   * because the conversation is a floating dock rather than a route: there is
-   * no URL that *is* the chat, and landing on the board with the window shut
-   * leaves somebody who was just summoned with nothing to open.
-   *
-   * Gated on the project having loaded, because the dock is opened with a name
-   * as well as an id and it draws that name in its header — opening early puts
-   * an empty title bar on screen for the length of the fetch.
-   *
-   * The parameter is consumed on the way in. Left in the URL it would reopen
-   * the window on every reload and, worse, fight the reader who just closed it;
-   * `replace` keeps the whole thing out of history, so Back goes wherever they
-   * came from rather than to the same page with the chat opening again.
-   */
+  // `?chat=open` — how a mention notification arrives here. The bell deep-links to the project with
+  // this set (see its `deepLink`), because the conversation is a floating dock rather than a route.
   useEffect(() => {
     if (searchParams.get('chat') !== 'open') return;
     if (!projectId || !project?.name) return;
@@ -394,11 +269,8 @@ const ProjectPage = () => {
     [],
   );
 
-  // One object shared by every layout, so switching shape never changes what a
-  // card can do — and so a new view is a rendering decision, not a rewiring.
-  // Keyed off the `mutate` functions rather than the mutation objects: React
-  // Query hands back a fresh object every render, so depending on those would
-  // rebuild this every time and defeat the memo on the cards below.
+  // One object shared by every layout, so switching shape never changes what a card can do — and so
+  // a new view is a rendering decision, not a rewiring.
   const taskHandlers = useMemo(
     () => ({
       onOpen: (task: Task) => setDetailTaskId(task.id),
@@ -429,14 +301,8 @@ const ProjectPage = () => {
                   {project.myRole.toLowerCase()} · {project.roster.length} member(s)
                 </span>
 
-                {/* Which company this belongs to. A link rather than a label:
-                    the company page is the fastest route to the sibling
-                    projects, the shared calendar and the people — which is the
-                    reason to have filed it there in the first place.
-
-                    Straight to that company rather than to the list of them:
-                    the reader already knows which one, and the list would be a
-                    step they have to take before getting anywhere. */}
+                {/* Which company this belongs to. A link rather than a label: the company page
+                    is the fastest route to the sibling projects. */}
                 {project.organization && (
                   <Link
                     to={`/organizations/${project.organization.id}`}
@@ -454,14 +320,8 @@ const ProjectPage = () => {
                   </Link>
                 )}
 
-                {/* When the project is meant to run from and to.
-
-                    On the same line as the role and the company because it is
-                    the same kind of fact — context about the project rather
-                    than about the work in it — and because the alternative was
-                    a fourth line on a header that is already four deep on a
-                    phone. Renders nothing at all when no window is set, which
-                    is most projects. */}
+                {/* When the project is meant to run from and to. On the same line as the role
+                    and the company because it is the same kind of fact. */}
                 <ProjectWindowChip
                   startsAt={project.startsAt}
                   endsAt={project.endsAt}
@@ -469,14 +329,8 @@ const ProjectPage = () => {
                   className="normal-case tracking-normal"
                 />
               </p>
-              {/*
-                The name, and the way to the code beside it.
-
-                `min-w-0` on the heading so the repository button never gets
-                squeezed out by a long project name — the truncation belongs to
-                the title, and a control that disappears on a narrow screen is
-                worse than a name that ends in an ellipsis.
-              */}
+              {/* The name, and the way to the code beside it. `min-w-0` on the heading so the
+                  repository button never gets squeezed out by a long project name. */}
               <div className="flex items-center gap-1.5">
                 <h1 className="ui-project-name ui-project-name--hero min-w-0 truncate text-xl font-semibold tracking-tight sm:text-2xl">
                   {project.name}
@@ -486,15 +340,8 @@ const ProjectPage = () => {
                   repository={project.repository}
                   canManage={canManage}
                 />
-                {/*
-                  The design, beside the code.
-
-                  Two halves of the same question — where does this project's
-                  work actually live — so they sit together rather than one on
-                  the title and one two clicks into a tab. Draws nothing at
-                  all on a project with no design connected, unless the reader
-                  is somebody who could connect one.
-                */}
+                {/* The design, beside the code. Two halves of the same question — where does
+                    this project's work actually live. */}
                 <FigmaLink
                   projectId={projectId}
                   figma={project.figma}
@@ -522,10 +369,8 @@ const ProjectPage = () => {
               ))}
             </div>
 
-            {/* The launcher lives here rather than in a floating bubble, which
-                used to sit on top of whichever tab was open. The window it
-                opens is mounted by the shell — pin it and it stays with you
-                after you leave this page. */}
+            {/* The launcher lives here rather than in a floating bubble, which used to sit on
+                top of whichever tab was open. */}
             <Button
               variant={isChatOpen ? 'primary' : 'outline'}
               size="sm"
@@ -554,9 +399,8 @@ const ProjectPage = () => {
               <Pin className={cn('h-4 w-4', project.isPinned && 'fill-current')} />
             </Button>
 
-            {/* Next to the pin, because both are things you do *to* the project
-                rather than inside it. Everybody on the roster gets it: a member
-                sees the one section that is theirs, leaving. */}
+            {/* Next to the pin, because both are things you do *to* the project rather than
+                inside it. */}
             <Button
               variant="ghost"
               size="icon"
@@ -567,9 +411,8 @@ const ProjectPage = () => {
               <Settings2 className="h-4 w-4" />
             </Button>
 
-            {/* A finished project takes no new work — the API refuses the
-                write either way, so the button is absent rather than present
-                and rejected. See `ProjectsService.complete`. */}
+            {/* A finished project takes no new work — the API refuses the write either way, so
+                the button is absent rather than present and rejected. */}
             {canManage && !isFinished && (
               /* The one action this whole screen exists to support, so it is
                  the other button that carries the moving fill. See `LavaButton`. */
@@ -587,15 +430,8 @@ const ProjectPage = () => {
           </div>
         </div>
 
-        {/*
-          Said once, at the top, rather than by disabling forty controls.
-
-          A finished project still reads normally — that is the point of
-          finishing rather than deleting — so the honest thing is one line
-          explaining why the board is empty and why nothing can be added,
-          instead of a page full of greyed-out affordances with no explanation
-          between them.
-        */}
+        {/* Said once, at the top, rather than by disabling forty controls. A finished project
+            still reads normally — that is the point of finishing rather than deleting. */}
         {isFinished && (
           <div className="flex flex-wrap items-center gap-2 rounded-xl border border-edge bg-surface-sunken px-3.5 py-2.5">
             <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-positive" />
@@ -613,21 +449,14 @@ const ProjectPage = () => {
         <Segmented
           value={tab}
           options={TABS
-            /*
-             * The connections tab is not merely disabled for members, it is
-             * absent. Every destination this posts to treats its URL as the
-             * credential, so a tab that exists to say "ask an admin" is one
-             * that advertises a secret to the people who may not see it.
-             */
+            /* The connections tab is not merely disabled for members, it is absent. Every
+               destination this posts to treats its URL as the credential. */
             .filter((entry) => entry.value !== 'connections' || canManage)
             .map((entry) => ({
               ...entry,
               label: t(entry.label),
-              /*
-               * A live dot on the Live tab while its call carries on behind
-               * another one, so the way back is obvious. The ping is
-               * transform and opacity only, and it is gone with the call.
-               */
+              // A live dot on the Live tab while its call carries on behind another one, so the way
+              // back is obvious.
               icon:
                 entry.value === 'live' && isInCallHere ? (
                   <span className="relative inline-flex h-2.5 w-2.5" title={t('live.inCall')}>
@@ -640,41 +469,13 @@ const ProjectPage = () => {
             }))}
           onChange={setTab}
           label={t('project.tabsLabel')}
-          /*
-           * The one segmented control in the app made of glass.
-           *
-           * It is the primary navigation of the busiest screen in the product
-           * and it sits directly over a board that moves under it — so it is
-           * the case the material was written for. Everything else that uses
-           * this control is a filter sitting *in* a page and keeps the sunken
-           * well. See `Segmented`'s `variant`.
-           */
+          /* The one segmented control in the app made of glass. */
           variant="glass"
-          /*
-           * The larger step, and the only place in the app that asks for it.
-           *
-           * This strip is where every visit to a project starts and it was
-           * drawn at filter size: 12px labels and 12px icons in a 36px well,
-           * under a project title set at 30px. It read as a caption rather
-           * than as navigation, and on a 2K panel — where the root scale makes
-           * everything else grow — it was the one control that still looked
-           * like a footnote.
-           *
-           * `lg` is a no-op below 1600px, so the phone layout described
-           * immediately below is untouched: same twelve tabs, same one
-           * scrolling row, same 12px type at the distance a phone is read
-           * from. See `Segmented`'s `size`.
-           */
+          /* The larger step, and the only place in the app that asks for it. This strip is where
+             every visit to a project starts and it was drawn at filter size. */
           size="lg"
-          /*
-           * A scrolling strip on a phone, a wrapping row above it.
-           *
-           * Twelve tabs wrapped is four or five stacked rows on a 390px screen
-           * — a third of the viewport spent on navigation before the board is
-           * reached, on the surface where vertical space is scarcest. Scrolled,
-           * it is one row, which is the same answer the task board already
-           * gives for its own columns one section below this.
-           */
+          /* A scrolling strip on a phone, a wrapping row above it. Twelve tabs wrapped is four or
+             five stacked rows on a 390px screen. */
           className={cn(
             'flex w-full flex-nowrap overflow-x-auto',
             'sm:inline-flex sm:w-auto sm:flex-wrap sm:overflow-visible',
@@ -697,16 +498,8 @@ const ProjectPage = () => {
           {layout === 'board' && (
             <TaskBoard
               tasks={tasks}
-              /*
-               * Two waits, two weights.
-               *
-               * `tasksLoading` is a cold board with nothing painted yet, so
-               * each column gets two cards' worth of grey and looks like a
-               * board loading. `tasksArePartial` means the reader's own tasks
-               * are already on screen and the rest of the roster's are a round
-               * trip behind — one placeholder per column is enough to say
-               * "not finished" without overstating how many are missing.
-               */
+              /* Two waits, two weights. `tasksLoading` is a cold board with nothing painted yet, so
+                 each column gets two cards' worth of grey and looks like a board loading. */
               pendingPerColumn={tasksLoading ? 2 : tasksArePartial ? 1 : 0}
               onStatusChange={(taskId, status) => updateStatus.mutate({ taskId, status })}
               {...taskHandlers}
@@ -736,39 +529,19 @@ const ProjectPage = () => {
           {layout === 'list' && <TaskListView tasks={tasks} {...taskHandlers} />}
           {layout === 'calendar' && <TaskCalendarView tasks={tasks} {...taskHandlers} />}
 
-          {/* The roster's work, still in flight. See `PendingTasks`.
-
-              The board layout is excluded: it draws its own placeholders
-              inside the columns, where they read as a board filling up rather
-              than as a fourth block under it. The other three layouts are flat
-              lists with no columns to put anything in, so for them a strip of
-              grey after the content is still the right shape. */}
+          {/* The roster's work, still in flight. */}
           {layout !== 'board' && (tasksArePartial || tasksLoading) && (
             <PendingTasks compact={layout === 'list'} />
           )}
         </div>
       )}
 
-      {/*
-        The same tasks, grouped by a label the project invented.
-
-        Given the project id and a way to open a task, and nothing else: the
-        board reads its own data and owns its own gestures, and the task sheet
-        it opens is the one every other surface opens. See `GroupsBoard`.
-      */}
+      {/* The same tasks, grouped by a label the project invented. Given the project id and a
+          way to open a task, and nothing else. */}
       {tab === 'groups' && projectId && (
         <GroupsBoard
-          /*
-           * Keyed on the project, so moving between two of them starts the
-           * board over.
-           *
-           * The route is the same and only the parameter changes, so React
-           * keeps this component mounted and hands it a new id — which would
-           * otherwise carry the page number, the open/completed filter and,
-           * worst of the three, a half-open "new task in this column" composer
-           * still holding a column id that belongs to the project you just
-           * left.
-           */
+          /* Keyed on the project, so moving between two of them starts the board over. The route is
+             the same and only the parameter changes. */
           key={projectId}
           projectId={projectId}
           // For the composer the board's own "+" opens, with the column
@@ -795,12 +568,8 @@ const ProjectPage = () => {
         <MeetingsPanel projectId={projectId} roster={project.roster} canManage={canManage} />
       )}
       {projectId && (tab === 'live' || isInCallHere) && (
-        /*
-         * `contents` while shown, so the wrapper adds nothing to the layout
-         * the panel had before it existed; `hidden` otherwise. One class, not
-         * the `hidden` attribute beside `contents`: the utility would win that
-         * contest and the panel would never hide.
-         */
+        /* `contents` while shown, so the wrapper adds nothing to the layout the panel had before it
+           existed; `hidden` otherwise. */
         <div className={tab === 'live' ? 'contents' : 'hidden'}>
           <LivePanel
             projectId={projectId}

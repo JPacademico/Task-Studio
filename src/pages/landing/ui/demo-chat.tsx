@@ -6,16 +6,8 @@ import { useT, type TranslationKey } from '@/shared/i18n';
 import { useDemoClock } from './demo-frame';
 
 /**
- * The conversation, as a short exchange that goes somewhere.
- *
- * Three messages and a typing indicator, and the content is doing work: it is
- * a question, an answer, and a *decision* — which is the argument for having
- * chat attached to a project at all. Three lines of "hey"/"hi"/"how are you"
- * would demonstrate the same widget and none of the point.
- *
- * `mine` is the last one on purpose. The reader's own message arriving last is
- * what makes the panel read as *theirs* rather than as a screenshot of two
- * strangers talking.
+ * The conversation, as a short exchange that goes somewhere. Three messages and a typing indicator,
+ * and the content is doing work: it is a question, an answer, and a *decision*.
  */
 const MESSAGES: { key: TranslationKey; author: string; mine?: boolean }[] = [
   { key: 'landing.chat.one', author: 'Ana' },
@@ -23,24 +15,7 @@ const MESSAGES: { key: TranslationKey; author: string; mine?: boolean }[] = [
   { key: 'landing.chat.three', author: 'You', mine: true },
 ];
 
-/**
- * The project conversation, filling in on a loop.
- *
- * ## Why the typing indicator is there
- *
- * Because the feature is that the conversation is *live and attached to the
- * project* — not that the app has a message list. Three bubbles appearing in
- * sequence could be a rendered transcript; three dots pulsing before the last
- * one is the only cheap way to say "somebody else is at the other end of
- * this", which is the whole claim.
- *
- * ## Why it never scrolls
- *
- * The panel is sized for exactly this exchange. A demo that scrolls is a demo
- * where the first thing you were meant to read has left the frame by the time
- * you look at it — and on a landing page nobody scrolls a nested box to catch
- * up with an animation.
- */
+/** The project conversation, filling in on a loop. */
 export const DemoChat = () => {
   const t = useT();
   const reduceMotion = useReducedMotion();
@@ -55,29 +30,10 @@ export const DemoChat = () => {
   const isTyping = step === MESSAGES.length - 1;
 
   return (
-    /*
-     * A fixed height, not a minimum.
-     *
-     * The panel used to grow by a row for about a third of a second every time
-     * the last message landed, which shoved the whole section — and everything
-     * below it on the page — down and back. The cause is that the typing
-     * indicator's *exit* overlaps the third message's *enter*: `AnimatePresence`
-     * keeps the leaving row mounted until its animation finishes, so for that
-     * moment the list genuinely holds four rows instead of three.
-     *
-     * Two changes make that impossible rather than merely unlikely. The box no
-     * longer measures itself from its contents, so a transient fourth row
-     * cannot change its size; and the list below clips, so the overlap is
-     * absorbed instead of pushing. `popLayout` on the list handles the third
-     * cause — see there.
-     */
+    /* A fixed height, not a minimum. The panel used to grow by a row for about a third of a second
+       every time the last message landed, which shoved the whole section. */
     <div className="flex h-[15.5rem] flex-col">
-      {/* --- Which project this belongs to -------------------------------
-
-          The header is not decoration: a chat panel with a project name on it
-          is the difference between "we have messaging" and "the conversation
-          lives with the work", which is the only reason to build it into a
-          project tool rather than telling people to use Slack. */}
+      {/* --- Which project this belongs to --- */}
       <div className="flex items-center gap-2 border-b border-edge pb-2">
         <span aria-hidden className="h-2 w-2 shrink-0 rounded-full bg-positive" />
         <p className="truncate text-2xs font-semibold">{t('landing.chat.project')}</p>
@@ -86,18 +42,11 @@ export const DemoChat = () => {
         </span>
       </div>
 
-      {/* `justify-end` stacks from the bottom, so what a clipped list loses is
-          the oldest message off the top — the same direction a real transcript
-          scrolls. */}
+      {/* `justify-end` stacks from the bottom, so what a clipped list loses is the oldest
+          message off the top — the same direction a real transcript scrolls. */}
       <ul className="flex flex-1 flex-col justify-end gap-2 overflow-hidden pt-3">
-        {/*
-          `popLayout`, so the typing indicator is lifted out of layout flow the
-          instant it starts leaving rather than holding a row open until it has
-          finished fading. This is the one place in the app where that mode is
-          the right answer: these rows are full-width and stacked, so there is no
-          horizontal alignment for absolute positioning to break — unlike the
-          headline's grid cells, where it caused a bug of its own.
-        */}
+        {/* `popLayout`, so the typing indicator is lifted out of layout flow the instant it
+            starts leaving rather than holding a row open until it has finished fading. */}
         <AnimatePresence mode="popLayout" initial={false}>
           {MESSAGES.slice(0, visible).map((message) => (
             <motion.li
@@ -158,10 +107,8 @@ export const DemoChat = () => {
         </AnimatePresence>
       </ul>
 
-      {/* A composer that does not work, and is not pretending to — no cursor,
-          no focus ring, and it never receives a keystroke. It is there because
-          a message list with nothing under it does not read as a place you can
-          say something. */}
+      {/* A composer that does not work, and is not pretending to — no cursor, no focus ring,
+          and it never receives a keystroke. */}
       <div
         aria-hidden
         className="mt-3 flex items-center gap-2 rounded-xl border border-edge bg-surface-sunken/60 px-3 py-2"

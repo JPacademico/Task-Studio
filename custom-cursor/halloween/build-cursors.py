@@ -1,19 +1,4 @@
-"""Builds the Halloween knife cursor from the two drawings in this folder.
-
-Run it after changing either PNG:
-
-    python custom-cursor/halloween/build-cursors.py
-
-It writes `built/cursor.css` beside the drawings; paste that over the block in
-`src/app/styles/index.css` marked `Skin: HALLOWEEN - the pointer is a knife`.
-(A file rather than stdout, because the em dashes in the generated comments do
-not survive a Windows console pipe.) The drawings are never redrawn here -
-everything below is rotation, cropping, scaling and placement, so what ships is
-the design team's artwork and not an impression of it.
-
-Requires Pillow (`pip install pillow`). Nothing in the application depends on
-this script at build or run time; it is a one-off tool that produces text.
-"""
+"""Builds the Halloween knife cursor from the two drawings in this folder."""
 import base64
 import io
 import math
@@ -23,32 +8,15 @@ from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-# 40 rather than the 48 this used to be.
-#
-# The first pass at these cursors was too big: a 48px blade covers the word it
-# is pointing at and reads as a sticker rather than a pointer. 40 keeps the
-# guard, the three notches in the grip and the pommel legible while sitting
-# inside the footprint of a system arrow. Every current browser accepts a
-# cursor image up to 128px; past that the declaration is dropped and the
-# fallback keyword takes over.
-#
-# 32 since 2026-09-30: every custom pointer now sits in the system cursor's own
-# 32px box (see the Paper script). At 27px the guard and the pommel still read;
-# the grip's notches are the first detail to go, and they are the right one.
+# 40 rather than the 48 this used to be. The first pass at these cursors was too big: a 48px blade
+# covers the word it is pointing at and reads as a sticker rather than a pointer.
 BOX = 32
 KNIFE = 27        # the drawing's long side inside the canvas
 REST = 3          # where the resting frame sits, leaving room to lunge into
 THRUST = 3        # how far the click frame drives forward, in canvas pixels
 
-# Where the blade should point, measured the way `axis()` measures: 0 is right,
-# 90 is straight up, 135 is up and to the left.
-#
-# 135 is the diagonal the system arrow sits on, and matching it is the whole of
-# the angle correction. The artwork is drawn at roughly 143, which is close
-# enough to look deliberate and far enough to look *wrong* next to an ordinary
-# pointer - the blade appears to lie back. The turn applied is the difference
-# between the two, computed below rather than typed, so re-drawn artwork at any
-# angle lands on the same diagonal without this file changing.
+# Where the blade should point, measured the way `axis()` measures: 0 is right, 90 is straight up,
+# 135 is up and to the left.
 TARGET_DEGREES = 135
 
 clean = Image.open(f"{HERE}/facaNova.png").convert("RGBA")   # the knife
@@ -66,19 +34,7 @@ def opaque_points(image: Image.Image) -> list[tuple[int, int]]:
 
 
 def axis(image: Image.Image) -> float:
-    """Which way the blade points, in degrees, 0 = right and 90 = up.
-
-    The principal axis of the drawing's opaque pixels gives the *line* the
-    knife lies on; the point of it is whichever end of that line is narrower,
-    which is what separates a blade from a grip without anything here knowing
-    it is looking at a knife.
-
-    Measured from the clean drawing only. The bloodied one is the same artwork
-    with red added along one edge, and that red is enough to make the blade end
-    measure wider than the grip - so asking it the same question yields the
-    knife backwards. Both frames then take the clean drawing's answer, which is
-    also what keeps them registered against each other.
-    """
+    """Which way the blade points, in degrees, 0 = right and 90 = up."""
     points = opaque_points(image)
     count = len(points)
     cx = sum(x for x, _ in points) / count
@@ -108,14 +64,8 @@ def axis(image: Image.Image) -> float:
     return math.degrees(math.atan2(-(nose[1] - tail[1]), nose[0] - tail[0]))
 
 
-# One crop box for both drawings.
-#
-# Cropping each frame to its own content would register them against
-# *themselves*: the bloodied knife's ink spills further left and lower than the
-# clean one, so its blade would land a pixel or two off once both were scaled
-# into the same canvas - and the knife would visibly jump the moment the
-# pointer crossed onto a link. One box taken from both keeps the blade still
-# and lets only the blood appear.
+# One crop box for both drawings. Cropping each frame to its own content would register them against
+# *themselves*: the bloodied knife's ink spills further left and lower than the clean one.
 def union(*images: Image.Image) -> tuple[int, int, int, int]:
     boxes = [image.getbbox() for image in images]
     return (
@@ -131,11 +81,8 @@ TURN = TARGET_DEGREES - axis(clean)
 
 
 def frame(image: Image.Image, offset: int) -> Image.Image:
-    """One cursor frame: turned onto the arrow's diagonal, scaled, placed.
-
-    The rotation is the only change to the artwork, and it is a few degrees
-    rather than the quarter turn the previous set needed - these drawings
-    already point up and to the left, the way the pointer they replace does.
+    """One cursor frame: turned onto the arrow's diagonal, scaled, placed. The rotation is the
+    only change to the artwork.
     """
     turned = image.crop(CROP).rotate(TURN, expand=True, resample=Image.BICUBIC)
     # The turn leaves transparent corners; drop them so `KNIFE` measures the
@@ -154,18 +101,8 @@ def frame(image: Image.Image, offset: int) -> Image.Image:
 
 
 def haloed(image: Image.Image) -> Image.Image:
-    """The same frame with a dark rim behind it, for the cream page.
-
-    Light-mode Halloween is a warm cream - `--surface: 240 231 216` - and the
-    blade is drawn near-white. The artist's ink outline carries the shape at
-    full size, but scaled to 34px that outline is under a pixel wide in places
-    and the knife starts to dissolve into the page.
-
-    So: the drawing's own silhouette, blackened and laid down one pixel out in
-    each direction, with the untouched drawing composited back on top. Nothing
-    is recoloured and no line is redrawn - the result is the artist's frame
-    with a rim of its own shape behind it, which is the cheapest thing that
-    survives both a cream page and a screenshot of one.
+    """The same frame with a dark rim behind it, for the cream page. Light-mode Halloween is a
+    warm cream - `--surface: 240 231 216` - and the blade is drawn near-white.
     """
     silhouette = Image.new("RGBA", image.size, (0, 0, 0, 0))
     alpha = image.getchannel("A")
@@ -198,12 +135,7 @@ FRAMES = {
 
 
 def tip(image: Image.Image) -> tuple[int, int]:
-    """The point of the blade: the opaque pixel nearest the top-left corner.
-
-    Measured rather than assumed, because it becomes the hotspot - a cursor
-    whose hotspot is off its point makes every click land somewhere the reader
-    did not aim.
-    """
+    """The point of the blade: the opaque pixel nearest the top-left corner."""
     pixels = image.load()
     best, coords = 10**9, (0, 0)
     for y in range(image.height):
@@ -213,16 +145,8 @@ def tip(image: Image.Image) -> tuple[int, int]:
     return coords
 
 
-# One hotspot for all six, taken from the resting frame.
-#
-# It deliberately does *not* follow the point into the stab frame. If it did,
-# the tip would stay under the pointer and the lunge would be invisible; fixed,
-# the blade drives forward while the button is held and snaps back on release.
-# That is the whole of the stab - one frame, no loop.
-#
-# Taken from the dark frame rather than the light one because the halo adds a
-# pixel on every side: hotspotting on the rim would put the click a pixel above
-# and left of the point it is drawn on.
+# One hotspot for all six, taken from the resting frame. It deliberately does *not* follow the point
+# into the stab frame.
 HOTSPOT = tip(FRAMES["dark-rest"])
 
 built = f"{HERE}/built"
@@ -255,14 +179,8 @@ input[type='button']:not(:disabled),
 
 point = f"{HOTSPOT[0]} {HOTSPOT[1]}"
 
-# Every rule is gated on the opt-out, so the checkbox in the theme picker can
-# hand the system pointer back without a second copy of this block existing.
-#
-# Compound, with no space before `[data-skin]`: both attributes and the `dark`
-# class live on the *same* element. `ThemeProvider` writes all three onto
-# `document.documentElement`, which is the `html` element this gate names, so a
-# descendant combinator here matches nothing at all and the whole block
-# silently does not apply.
+# Every rule is gated on the opt-out, so the checkbox in the theme picker can hand the system
+# pointer back without a second copy of this block existing.
 GATE = "html:not([data-cursor='off'])[data-skin='halloween']"
 GATE_DARK = "html:not([data-cursor='off'])[data-skin='halloween'].dark"
 
@@ -376,10 +294,8 @@ css = f'''
 }}
 '''
 
-# The prose above is written with ASCII hyphens so that this file stays pure
-# ASCII, and the stylesheet it lands in uses em dashes throughout. One pass
-# converts them: " - " cannot occur inside a selector or inside base64, whose
-# alphabet has no hyphen, so the substitution can only touch the comments.
+# The prose above is written with ASCII hyphens so that this file stays pure ASCII, and the
+# stylesheet it lands in uses em dashes throughout.
 css = css.replace(" - ", f" {chr(0x2014)} ")
 
 io.open(f"{built}/cursor.css", "w", encoding="utf-8", newline="").write(css)

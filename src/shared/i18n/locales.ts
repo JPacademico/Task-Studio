@@ -1,33 +1,6 @@
 /**
- * Every user-facing string the translated surfaces draw, in both languages.
- *
- * ## Why there is no i18n library here
- *
- * The usual ones (i18next and friends) are 40–60 kB of runtime to solve
- * problems this app does not have: no lazy-loaded namespaces, no plural rules
- * beyond what `Intl.PluralRules` already does natively, no translator tooling
- * in the loop, two languages. The whole mechanism needed is a lookup and a
- * token substitution, and shipping a framework for that on a bundle this
- * carefully chunked is a poor trade.
- *
- * ## Flat keys, and why `en` is the schema
- *
- * `en` is declared `as const` and every other locale is typed as
- * `Record<TranslationKey, string>`. That inverts the usual failure mode: a
- * missing Portuguese string is a **compile error**, not a screen that silently
- * renders English to somebody who does not read it. Adding a key to `en` breaks
- * the build until `ptBR` answers for it, which is exactly the moment to write
- * the translation rather than the moment to forget.
- *
- * Keys are dotted by surface (`auth.*`, `nav.*`, `chat.*`) so a screen's strings
- * sit together and an unused one is easy to spot.
- *
- * ## Placeholders
- *
- * `{name}` style, substituted by `t()`. Kept deliberately dumb — no nesting, no
- * formatting directives. Anything that needs real locale-aware formatting
- * (dates, numbers, plurals) should use `Intl` at the call site, where the value
- * still has its type, rather than being smuggled through a string table.
+ * Every user-facing string the translated surfaces draw, in both languages. The usual ones (i18next
+ * and friends) are 40–60 kB of runtime to solve problems this app does not have.
  */
 
 export const LOCALES = ['en', 'pt-BR'] as const;
@@ -93,6 +66,44 @@ const en = {
   'auth.signUp.confirmNote':
     'We send one confirmation email. Accounts stay locked until the address is verified.',
   'auth.signUp.failed': 'Could not create the account.',
+
+  // ---- Deleting your own account ---------------------------------------
+  'deletion.section': 'Delete account',
+  'deletion.intro':
+    'Permanently delete your account and everything you own. It is scheduled 24 hours ahead, and you can change your mind until then.',
+  'deletion.open': 'Delete account',
+  'deletion.dialogTitle': 'Delete your account?',
+  'deletion.factWindow':
+    'Your account keeps working for 24 hours, then it is deleted for good. You can cancel any time before that.',
+  'deletion.factContent':
+    'Projects and organizations you own are deleted with it, including their files, and so are tasks and documents you created in other people\'s projects.',
+  'deletion.factBilling': 'A paid plan ends with the account and is not refunded.',
+  'deletion.typeEmail': 'Type {email} to confirm',
+  'deletion.policyLead': 'How deletion and retention work is described in the',
+  'deletion.confirm': 'Delete in 24 hours',
+  'deletion.scheduled': 'Your account will be deleted in 24 hours. You can still keep it from Settings.',
+  'deletion.pendingTitle': 'Your account is scheduled for deletion',
+  'deletion.pendingBody':
+    'Everything keeps working until the clock runs out. Then the account and the data it owns are erased permanently.',
+  'deletion.keep': 'Keep my account',
+  'deletion.kept': 'Deletion cancelled. Your account stays.',
+  'deletion.bannerLead': 'Your account will be deleted in',
+  'deletion.bannerDetails': 'Details',
+  'deletion.hours': 'hours',
+  'deletion.minutes': 'min',
+  'deletion.seconds': 'sec',
+  'deletion.timerLabel': 'Time left before deletion: {time}',
+
+  // ---- Legal: the Terms, the Privacy Policy and accepting them ---------------
+  'legal.terms': 'Terms of Service',
+  'legal.privacy': 'Privacy Policy',
+  'legal.eyebrow': 'Legal',
+  'legal.updated': 'Last updated {date}',
+  'legal.home': 'Back to Task Studio',
+  'legal.accept.lead': 'I have read and agree to the',
+  'legal.accept.and': 'and the',
+  'legal.accept.required': 'Accept the Terms and the Privacy Policy to create your account.',
+  'legal.notice.lead': 'By continuing, you agree to the',
 
   // ---- Auth: signing in with a provider ---------------------------------
   'auth.oauth.divider': 'or',
@@ -390,11 +401,8 @@ const en = {
   'cli.showCommands': 'Commands',
   'cli.hideCommands': 'Hide',
   'cli.docs': 'Read the docs',
-  // --- Approving a terminal ----------------------------------------------
-  //
-  // The device grant's browser half. Every string here is read by somebody
-  // deciding whether to hand a machine a credential, so none of them is
-  // reassuring: the warning says what is actually granted.
+  // --- Approving a terminal ---
+  // The device grant's browser half.
   'cliAuth.heading': 'Sign a terminal in',
   'cliAuth.subheading': 'Check the machine below is the one you are sitting at.',
   'cliAuth.codeLabel': 'The code your terminal is showing',
@@ -513,12 +521,8 @@ const en = {
     'Your meetings and your Google Calendar are kept in step, both ways. Turn it off in settings.',
   'calendar.badgeOffHint': 'Keep these meetings and your Google Calendar in step, both ways.',
 
-  // ---- The landing page ---------------------------------------------------
-  //
+  // --- The landing page ---
   // The only surface in the app written for somebody who is not a user yet.
-  // Every claim on it is checkable in the product; nothing here describes a
-  // feature that does not exist, which is why there is no pricing section and
-  // no testimonials.
 
   // ---- The repository a project stands for -------------------------------
   'repo.open': 'Open the repository',
@@ -604,19 +608,8 @@ const en = {
   'landing.nav.signIn': 'Sign in',
   'landing.nav.getStarted': 'Get started',
   'landing.nav.home': 'Task Studio — back to the top',
-  /*
-   * The maker's mark at the foot of the page.
-   *
-   * Split into `before` and `after` rather than being one string with a
-   * placeholder, because the name does not sit in the same place in both
-   * languages: English puts it before the noun ("A Pitico. solution") and
-   * Portuguese after it ("Uma solução Pitico."). A `{name}` token would have
-   * forced one word order onto both.
-   *
-   * `after` carries the full stop. It cannot live in the metal — the mask is
-   * clipped from the right to reveal the word, so a stop inside it would have to
-   * travel from behind the P to behind the o. See `PiticoMark`.
-   */
+  // The maker's mark at the foot of the page. Split into `before` and `after` rather than being one
+  // string with a placeholder, because the name does not sit in the same place in both languages.
   'landing.pitico.before': 'A',
   'landing.pitico.after': ' solution',
   'landing.pitico.letter': 'P.',
@@ -733,8 +726,10 @@ const en = {
   'landing.svc.slack': 'Slack',
   'landing.svc.slackWhat': 'The same, in your workspace',
   'landing.svc.trello': 'Trello',
-  'landing.svc.trelloWhat': 'Import a whole board with its lists',
-  'landing.svc.exports': 'Jira, Asana & CSV',
+  'landing.svc.trelloWhat': 'Import a board and keep it in sync',
+  'landing.svc.jira': 'Jira',
+  'landing.svc.jiraWhat': 'Import a Jira Cloud project and keep it in sync',
+  'landing.svc.exports': 'Asana & CSV',
   'landing.svc.exportsWhat': 'Bring a board over from an export',
   'landing.svc.webhooks': 'Webhooks & API',
   'landing.svc.webhooksWhat': 'Signed events, and tokens for your scripts',
@@ -795,12 +790,110 @@ const en = {
   'boardImport.readsCsv': 'read as a board export',
   'boardImport.whatComesTitle': 'What comes across',
   'boardImport.whatComes':
-    'Lists become columns, cards become tasks, and due dates and completed cards carry over.',
+    'Lists or statuses become columns and cards become tasks, with due dates, status, priority, checklists (as steps) and assignees who are on this project.',
   'boardImport.whatDoesNot':
-    'Labels, checklists and assignees are written into each task’s description rather than dropped — this app has one set of columns and no way to represent the rest.',
+    'Labels, comments, attachment links and anyone not on this project are written into each task’s description rather than dropped.',
   'boardImport.start': 'Create the project',
   'boardImport.summary': '{tasks} tasks · {documents} columns',
   'boardImport.failed': 'Could not read that export.',
+  'activity.projectSynced': '{actor} synced changes from {target}',
+  'boardImport.fromFile': 'Export file',
+  'boardImport.whatSyncs':
+    'With “keep in sync” on, later changes in the source come across too. Edits made here are never overwritten.',
+  'boards.adminOnly': 'Only the project’s owner and admins can link a board.',
+  'boards.adoptNote': 'Tasks already here with the same title are linked instead of duplicated.',
+  'boards.autoSync': 'Keep in sync automatically',
+  'boards.autoSyncHint': 'Pulls changes about every {minutes} minutes. “Sync now” works any time.',
+  'boards.autoSyncOff': 'Scheduled syncing is switched off on this deployment. Use “Sync now”.',
+  'boards.autoSyncShort': 'Pull later changes on a schedule, as well as now.',
+  'boards.backToSettings': 'Back to settings',
+  'boards.connect': 'Connect',
+  'boards.connectFailed': 'Could not connect that account. Try again.',
+  'boards.connectFailedTitle': 'Connection failed',
+  'boards.connectedAs': 'Connected as {name}',
+  'boards.disconnect': 'Disconnect',
+  'boards.disconnectFailed': 'Could not disconnect that account.',
+  'boards.disconnected': 'Account disconnected. Synced projects keep their tasks.',
+  'boards.dormant':
+    'This project came from an export of “{name}”. Connect the account and link the same board to keep it in sync without duplicates.',
+  'boards.jiraConnected': 'Jira connected.',
+  'boards.jiraNoSite': 'That Atlassian account has no Jira Cloud site to read.',
+  'boards.jiraPitch': 'Import Jira Cloud projects and keep them in sync.',
+  'boards.keepInSync': 'Keep in sync',
+  'boards.keepInSyncHint': 'Keep pulling changes from the source after the import.',
+  'boards.lastSynced': 'Synced {when}',
+  'boards.linkAndSync': 'Link and sync',
+  'boards.linked': 'Board linked and synced.',
+  'boards.listFailed': 'Could not load the boards for that account.',
+  'boards.mergeRule':
+    'One way: changes in the source come here. A field edited here is never overwritten — if both sides changed it, this side wins. Deleted tasks stay deleted.',
+  'boards.neverSynced': 'Not synced yet',
+  'boards.noJiraProjects': 'That account cannot see any Jira projects.',
+  'boards.noMatch': 'Nothing matches that search.',
+  'boards.noTrelloBoards': 'That account has no open Trello boards.',
+  'boards.notEnabled': 'Not enabled here',
+  'boards.openSource': 'Open',
+  'boards.readOnlyNote': 'Read-only access. Task Studio never writes to your boards.',
+  'boards.reconnect': 'Reconnect',
+  'boards.searchBoards': 'Search boards',
+  'boards.searchProjects': 'Search projects',
+  'boards.summary':
+    'Last run: {created} new · {updated} updated · {conflicts} kept local · {removed} gone from the source.',
+  'boards.summaryColumns': 'Columns over the limit of 10: {count}.',
+  'boards.summarySkipped': 'Skipped by the plan’s task limit: {count}.',
+  'boards.syncBody': 'Bring a board’s cards in as tasks and keep them up to date.',
+  'boards.syncFailed': 'The sync did not finish.',
+  'boards.syncNow': 'Sync now',
+  'boards.syncTitleJira': 'Sync with Jira',
+  'boards.syncTitleTrello': 'Sync with Trello',
+  'boards.synced': 'Synced.',
+  'boards.throughAccount': 'through {name}',
+  'boards.trelloCancelled': 'Trello was not connected.',
+  'boards.trelloConnected': 'Trello connected.',
+  'boards.trelloFinishing': 'Connecting Trello',
+  'boards.trelloFinishingBody': 'Saving the authorisation…',
+  'boards.trelloPitch': 'Import Trello boards and keep them in sync.',
+  'boards.unavailable': '{name} is not enabled on this deployment',
+  'boards.unavailableHint':
+    'The administrator can switch it on — see SETUP.md. Export files still work.',
+  'boards.unlink': 'Unlink',
+  'boards.unlinkConfirm': 'Unlink? Tasks stay',
+  'boards.unlinked': 'Board unlinked. Every task stays as it is.',
+  'connections.svc.jira': 'Jira',
+  'inviteLink.copied': 'Invite link copied.',
+  'inviteLink.copiedShort': 'Copied',
+  'inviteLink.copy': 'Copy link',
+  'inviteLink.copyManually': 'Press Ctrl+C to copy the selected link.',
+  'inviteLink.create': 'Create invite link',
+  'inviteLink.expires1': 'Expires in 1 day',
+  'inviteLink.expires30': 'Expires in 30 days',
+  'inviteLink.expires7': 'Expires in 7 days',
+  'inviteLink.expiresNever': 'Never expires',
+  'inviteLink.expiresOn': 'Expires {date}',
+  'inviteLink.explain':
+    'Anyone with this link can join as a member. People without an account are asked to create one first.',
+  'inviteLink.failed': 'Could not update the invite link.',
+  'inviteLink.neverExpires': 'Never expires',
+  'inviteLink.reset': 'Reset link',
+  'inviteLink.resetConfirm': 'Old link stops working',
+  'inviteLink.revoked': 'Invite link turned off.',
+  'inviteLink.title': 'Invite link',
+  'inviteLink.turnOff': 'Turn off',
+  'inviteLink.uses': 'Joined with it: {count}',
+  'join.accept': 'Join project',
+  'join.askAgain': 'Ask whoever sent it for a new link.',
+  'join.failed': 'Could not join that project.',
+  'join.goHome': 'Go to Task Studio',
+  'join.invalidBody': 'This invite link is invalid or has expired.',
+  'join.invalidTitle': 'Link not valid',
+  'join.joined': 'You joined {name}.',
+  'join.loading': 'Opening the invitation',
+  'join.members': 'Members: {count}',
+  'join.notNow': 'Not now',
+  'join.signUpSubtitle': 'Create an account to join {name}.',
+  'join.signedInAs': 'You will join as {email}.',
+  'join.subtitle': '{name} invited you to this project.',
+  'join.title': 'Join {name}',
 
   // ---- A calendar feed anything can subscribe to --------------------------
   'feed.title': 'Calendar feed',
@@ -1154,9 +1247,8 @@ const en = {
   'figma.name': 'Figma',
   'figma.connectedTitle': 'Figma is connected',
   'figma.securityLabel': 'About this token',
-  /* The way out of the dialog for somebody who has neither half of the form
-     yet. Opens the documentation in a new tab, deliberately: a step-by-step
-     that navigated away would take the fields already filled in with it. */
+  // The way out of the dialog for somebody who has neither half of the form yet. Opens the
+  // documentation in a new tab, deliberately.
   'figma.howTo': 'How to set this up',
   'figma.open': 'Open in Figma',
   'figma.connect': 'Connect Figma',
@@ -1815,15 +1907,7 @@ const en = {
   'common.loading': 'Loading…',
   'common.you': 'You',
   'common.somethingWentWrong': 'Something went wrong.',
-  /*
-   * What a failure says when the server's own words are not fit to show.
-   *
-   * Each of these is the honest reading of one status code and nothing more -
-   * they are what is left after `errorMessage` rejects a class-validator
-   * string or one of Nest's spelled-out status words. A caller that knows what
-   * was being attempted passes its own fallback instead, and should: "Could
-   * not save the document" is worth more than any of these.
-   */
+  // What a failure says when the server's own words are not fit to show.
   'error.badRequest': 'That could not be completed. Check the details and try again.',
   'error.invalid': 'Some of the details are not valid. Check the form and try again.',
   'error.unauthorized': 'You need to be signed in to do that.',
@@ -1835,12 +1919,7 @@ const en = {
   'error.server': 'Something went wrong on our side. Try again in a moment.',
   'error.unavailable': 'The server is unavailable right now. Try again in a moment.',
   'common.showPassword': 'Show password',
-  /*
-   * The phone notice. See `MobileGate`.
-   *
-   * "Being built" rather than "not supported": the first is a date and the
-   * second is a decision, and only one of them is true.
-   */
+  // The phone notice.
   'mobile.title': 'The phone version is still being built',
   'mobile.body':
     'Task Studio is a desk tool for now — boards you drag, a whiteboard, a chat dock. The phone build is coming, and we would rather finish it than hand you half of it.',
@@ -1895,12 +1974,8 @@ const en = {
   'common.notificationsUnread': 'Notifications ({count} unread)',
   'common.notesFrom': '{count} note(s) from {names}',
   'common.notesCount': '{count} note(s)',
-  // ---- Task taxonomy -----------------------------------------------------
-  //
-  // The type, status and priority vocabularies. These live in
-  // `shared/config/constants.ts` as metadata, which is where the colours and
-  // the accents belong — but the words are words, so the metadata carries the
-  // key and the call site resolves it.
+  // --- Task taxonomy ---
+  // The type, status and priority vocabularies.
   'type.MEGA': 'MegaTask',
   'type.MEGA.short': 'Mega',
   'type.MEGA.hint': 'Longer than 2 days',
@@ -2092,33 +2167,20 @@ const en = {
   'live.exitFullscreen': 'Exit full screen',
   'live.listenOnly': 'You are listening only. Ask to speak and a moderator can hand you the microphone.',
 
-  /*
-   * The connection readout.
-   *
-   * Both strings lead with what the reader can *do* and put the numbers last,
-   * because the numbers are for the one person in ten who wants to know why
-   * and the advice is for the other nine. Packet loss and jitter are named
-   * rather than rolled into a score: a score would have to be explained, and
-   * these two terms are searchable.
-   */
+  // The connection readout. Both strings lead with what the reader can *do* and put the numbers
+  // last.
   'live.qualityWeak': 'Connection is struggling - {loss}% of packets lost, {jitter}ms jitter. Turning your camera off will help.',
   'live.qualityBad': 'Connection is bad - {loss}% of packets lost, {jitter}ms jitter. Audio only may be the best this link can do.',
   'live.relayed': 'Going through the relay rather than directly, which adds a little delay. Usually means one side is behind a strict firewall.',
 
-  /*
-   * The camera held back for the voice. Said as what happened and that it
-   * will undo itself, because the reader's first question is whether they
-   * have to do something, and the answer is no.
-   */
+  // The camera held back for the voice. Said as what happened and that it will undo itself, because
+  // the reader's first question is whether they have to do something, and the answer is no.
   'live.cameraHeld': 'Your connection is weak, so your camera is paused for some people to keep your voice clear. It comes back on its own.',
   'live.peerCameraHeld': 'Their connection is weak, so their camera is paused to keep their voice clear.',
   'live.stopShareWithAudio': 'Stop sharing (screen and sound)',
 
-  /*
-   * Leaving the project mid-call. The title is the question, the body names
-   * the call and the consequence, and the hint says what is still allowed,
-   * because the reader's next thought is "so where can I go".
-   */
+  // Leaving the project mid-call. The title is the question, the body names the call and the
+  // consequence, and the hint says what is still allowed.
   'live.guardTitle': 'Leave the live call?',
   'live.guardBody': 'You are in "{room}". Going outside this project hangs up the call.',
   'live.guardHint': "The project's own tabs are fine: the board, the text board and the rest keep you in the call.",
@@ -2147,13 +2209,7 @@ const en = {
   'project.tabAssistant': 'Assistant',
   'project.tabChangelog': 'Changelog',
 
-  // ---- Project changelog --------------------------------------------------
-  //
-  // Every one of these is a *whole sentence* with the names substituted in,
-  // rather than a fragment the component glues together. Word order is not a
-  // property that survives translation: "Ana joined" and "Entrou Ana" put the
-  // subject in different places, and a component that concatenated a name and
-  // a verb would be a component that only works in English.
+  // --- Project changelog -------------------------------------------------------
   'task.afterProjectEnd': 'This project finishes on {date}. Pick an earlier deadline.',
 
   'activity.title': 'Changelog',
@@ -2169,7 +2225,7 @@ const en = {
   'activity.somethingUnnamed': 'something',
 
   'activity.projectCreated': '{actor} created this project',
-  'activity.projectImported': '{actor} imported this project from GitHub',
+  'activity.projectImported': '{actor} imported this project from {target}',
   'activity.projectRenamed': '{actor} renamed the project from “{from}” to “{subject}”',
   'activity.projectCompleted': '{actor} concluded the project',
   'activity.projectReopened': '{actor} reopened the project',
@@ -2375,11 +2431,7 @@ const en = {
   'meetings.roomPlaceholder': 'Meeting room 2',
   'meetings.roomElsewhere': 'Somewhere else',
 
-  // --- Rooms -------------------------------------------------------------
-  //
-  // A room is registered once and booked many times, which is why the strings
-  // here are short: the picker shows a name, and everything else about a room
-  // is context under it.
+  // --- Rooms -------------------------------------------------------------------
   'rooms.title': 'Rooms',
   'rooms.manage': 'Rooms',
   'rooms.manageHint': 'Register the rooms this calendar can book',
@@ -2621,18 +2673,8 @@ const en = {
 export type TranslationKey = keyof typeof en;
 
 /**
- * Brazilian Portuguese.
- *
- * Written for the register the app uses in English — direct, second person,
- * no ceremony. A few notes where the choice was not mechanical:
- *
- *   - "Board" is left as *Quadro*, and the notes board as *Mural*, because the
- *     app treats them as two different objects and collapsing both onto one
- *     word would lose that.
- *   - "Recycle bin" is *Lixeira*, the Windows term, which is what the audience
- *     for this app will recognise — not the more literal *Reciclagem*.
- *   - Placeholders keep the English name inside the braces; only the sentence
- *     around them is translated.
+ * Brazilian Portuguese. Written for the register the app uses in English — direct, second person,
+ * no ceremony.
  */
 const ptBR: Record<TranslationKey, string> = {
   'lang.label': 'Idioma',
@@ -2683,6 +2725,44 @@ const ptBR: Record<TranslationKey, string> = {
   'auth.signUp.confirmNote':
     'Enviamos um único e-mail de confirmação. As contas ficam bloqueadas até o endereço ser verificado.',
   'auth.signUp.failed': 'Não foi possível criar a conta.',
+
+  // ---- Excluir a própria conta -------------------------------------------
+  'deletion.section': 'Excluir conta',
+  'deletion.intro':
+    'Exclua definitivamente sua conta e tudo o que é seu. A exclusão é agendada para 24 horas depois, e você pode desistir até lá.',
+  'deletion.open': 'Excluir conta',
+  'deletion.dialogTitle': 'Excluir sua conta?',
+  'deletion.factWindow':
+    'Sua conta continua funcionando por 24 horas e depois é excluída de vez. Você pode cancelar a qualquer momento antes disso.',
+  'deletion.factContent':
+    'Os projetos e organizações que são seus são excluídos junto, com os arquivos, assim como as tarefas e documentos que você criou em projetos de outras pessoas.',
+  'deletion.factBilling': 'Um plano pago termina junto com a conta e não é reembolsado.',
+  'deletion.typeEmail': 'Digite {email} para confirmar',
+  'deletion.policyLead': 'Como a exclusão e a retenção funcionam está descrito na',
+  'deletion.confirm': 'Excluir em 24 horas',
+  'deletion.scheduled': 'Sua conta será excluída em 24 horas. Você ainda pode mantê-la em Configurações.',
+  'deletion.pendingTitle': 'Sua conta está agendada para exclusão',
+  'deletion.pendingBody':
+    'Tudo continua funcionando até o tempo acabar. Depois disso, a conta e os dados que são dela são apagados definitivamente.',
+  'deletion.keep': 'Manter minha conta',
+  'deletion.kept': 'Exclusão cancelada. Sua conta continua.',
+  'deletion.bannerLead': 'Sua conta será excluída em',
+  'deletion.bannerDetails': 'Detalhes',
+  'deletion.hours': 'horas',
+  'deletion.minutes': 'min',
+  'deletion.seconds': 'seg',
+  'deletion.timerLabel': 'Tempo restante até a exclusão: {time}',
+
+  // ---- Jurídico: os Termos, a Política de Privacidade e o aceite -------------
+  'legal.terms': 'Termos de Uso',
+  'legal.privacy': 'Política de Privacidade',
+  'legal.eyebrow': 'Jurídico',
+  'legal.updated': 'Atualizado em {date}',
+  'legal.home': 'Voltar ao Task Studio',
+  'legal.accept.lead': 'Li e aceito os',
+  'legal.accept.and': 'e a',
+  'legal.accept.required': 'Aceite os Termos e a Política de Privacidade para criar sua conta.',
+  'legal.notice.lead': 'Ao continuar, você concorda com os',
 
   // ---- Auth: entrar com um provedor -------------------------------------
   'auth.oauth.divider': 'ou',
@@ -3194,16 +3274,8 @@ const ptBR: Record<TranslationKey, string> = {
   'landing.word.projects': 'projetos',
   'landing.word.work': 'trabalho',
 
-  /*
-   * Sem possessivo, de propósito.
-   *
-   * O inglês carrega o "your" aqui porque uma palavra serve para os cinco
-   * substantivos. O português precisaria de três — suas tarefas, seus projetos,
-   * seu trabalho — e trocar o determinante junto com o substantivo era
-   * exatamente o que quebrava a linha: duas colunas de largura variável girando
-   * ao mesmo tempo. O título fica com o substantivo sozinho, que é o que a
-   * frase estava dizendo de qualquer jeito.
-   */
+  // Sem possessivo, de propósito. O inglês carrega o "your" aqui porque uma palavra serve para os
+  // cinco substantivos.
   'landing.hero.titleLead': 'Organize',
   'landing.hero.titleTail': 'como você faria no papel.',
   'landing.hero.body':
@@ -3305,8 +3377,10 @@ const ptBR: Record<TranslationKey, string> = {
   'landing.svc.slack': 'Slack',
   'landing.svc.slackWhat': 'O mesmo, no seu workspace',
   'landing.svc.trello': 'Trello',
-  'landing.svc.trelloWhat': 'Importe um quadro inteiro com suas listas',
-  'landing.svc.exports': 'Jira, Asana e CSV',
+  'landing.svc.trelloWhat': 'Importe um quadro e mantenha-o sincronizado',
+  'landing.svc.jira': 'Jira',
+  'landing.svc.jiraWhat': 'Importe um projeto do Jira Cloud e mantenha-o sincronizado',
+  'landing.svc.exports': 'Asana e CSV',
   'landing.svc.exportsWhat': 'Traga um quadro por exportação',
   'landing.svc.webhooks': 'Webhooks e API',
   'landing.svc.webhooksWhat': 'Eventos assinados e tokens para seus scripts',
@@ -3365,12 +3439,113 @@ const ptBR: Record<TranslationKey, string> = {
   'boardImport.readsCsv': 'lido como exportação de quadro',
   'boardImport.whatComesTitle': 'O que vem junto',
   'boardImport.whatComes':
-    'Listas viram colunas, cartões viram tarefas, e prazos e cartões concluídos são preservados.',
+    'Listas ou status viram colunas e cartões viram tarefas, com prazos, status, prioridade, checklists (como etapas) e responsáveis que estão neste projeto.',
   'boardImport.whatDoesNot':
-    'Etiquetas, checklists e responsáveis vão para a descrição de cada tarefa em vez de serem descartados — este app tem um único conjunto de colunas e nenhuma forma de representar o resto.',
+    'Etiquetas, comentários, links de anexos e quem não está neste projeto vão para a descrição de cada tarefa em vez de serem descartados.',
   'boardImport.start': 'Criar o projeto',
   'boardImport.summary': '{tasks} tarefas · {documents} colunas',
   'boardImport.failed': 'Não foi possível ler essa exportação.',
+  'activity.projectSynced': '{actor} sincronizou mudanças de {target}',
+  'boardImport.fromFile': 'Arquivo exportado',
+  'boardImport.whatSyncs':
+    'Com “manter sincronizado” ativo, mudanças posteriores na origem também chegam. Edições feitas aqui nunca são sobrescritas.',
+  'boards.adminOnly': 'Só o dono e os administradores do projeto podem vincular um quadro.',
+  'boards.adoptNote':
+    'Tarefas que já existem aqui com o mesmo título são vinculadas em vez de duplicadas.',
+  'boards.autoSync': 'Sincronizar automaticamente',
+  'boards.autoSyncHint':
+    'Busca mudanças a cada {minutes} minutos, aproximadamente. “Sincronizar agora” funciona a qualquer momento.',
+  'boards.autoSyncOff':
+    'A sincronização agendada está desativada nesta instalação. Use “Sincronizar agora”.',
+  'boards.autoSyncShort': 'Buscar mudanças futuras periodicamente, além de agora.',
+  'boards.backToSettings': 'Voltar às configurações',
+  'boards.connect': 'Conectar',
+  'boards.connectFailed': 'Não foi possível conectar essa conta. Tente de novo.',
+  'boards.connectFailedTitle': 'Falha na conexão',
+  'boards.connectedAs': 'Conectado como {name}',
+  'boards.disconnect': 'Desconectar',
+  'boards.disconnectFailed': 'Não foi possível desconectar essa conta.',
+  'boards.disconnected': 'Conta desconectada. Os projetos sincronizados mantêm suas tarefas.',
+  'boards.dormant':
+    'Este projeto veio de uma exportação de “{name}”. Conecte a conta e vincule o mesmo quadro para mantê-lo sincronizado sem duplicatas.',
+  'boards.jiraConnected': 'Jira conectado.',
+  'boards.jiraNoSite': 'Essa conta Atlassian não tem nenhum site do Jira Cloud para ler.',
+  'boards.jiraPitch': 'Importe projetos do Jira Cloud e mantenha-os sincronizados.',
+  'boards.keepInSync': 'Manter sincronizado',
+  'boards.keepInSyncHint': 'Continuar trazendo mudanças da origem depois da importação.',
+  'boards.lastSynced': 'Sincronizado {when}',
+  'boards.linkAndSync': 'Vincular e sincronizar',
+  'boards.linked': 'Quadro vinculado e sincronizado.',
+  'boards.listFailed': 'Não foi possível carregar os quadros dessa conta.',
+  'boards.mergeRule':
+    'Mão única: mudanças na origem chegam aqui. Um campo editado aqui nunca é sobrescrito — se os dois lados mudaram, vale o daqui. Tarefas excluídas continuam excluídas.',
+  'boards.neverSynced': 'Ainda não sincronizado',
+  'boards.noJiraProjects': 'Essa conta não enxerga nenhum projeto do Jira.',
+  'boards.noMatch': 'Nada corresponde a essa busca.',
+  'boards.noTrelloBoards': 'Essa conta não tem quadros abertos no Trello.',
+  'boards.notEnabled': 'Não ativado aqui',
+  'boards.openSource': 'Abrir',
+  'boards.readOnlyNote': 'Acesso somente leitura. O Task Studio nunca escreve nos seus quadros.',
+  'boards.reconnect': 'Reconectar',
+  'boards.searchBoards': 'Buscar quadros',
+  'boards.searchProjects': 'Buscar projetos',
+  'boards.summary':
+    'Última execução: {created} novas · {updated} atualizadas · {conflicts} mantidas daqui · {removed} saíram da origem.',
+  'boards.summaryColumns': 'Colunas acima do limite de 10: {count}.',
+  'boards.summarySkipped': 'Ignoradas pelo limite de tarefas do plano: {count}.',
+  'boards.syncBody': 'Traga os cartões de um quadro como tarefas e mantenha-os atualizados.',
+  'boards.syncFailed': 'A sincronização não terminou.',
+  'boards.syncNow': 'Sincronizar agora',
+  'boards.syncTitleJira': 'Sincronizar com o Jira',
+  'boards.syncTitleTrello': 'Sincronizar com o Trello',
+  'boards.synced': 'Sincronizado.',
+  'boards.throughAccount': 'pela conta de {name}',
+  'boards.trelloCancelled': 'O Trello não foi conectado.',
+  'boards.trelloConnected': 'Trello conectado.',
+  'boards.trelloFinishing': 'Conectando o Trello',
+  'boards.trelloFinishingBody': 'Salvando a autorização…',
+  'boards.trelloPitch': 'Importe quadros do Trello e mantenha-os sincronizados.',
+  'boards.unavailable': '{name} não está ativado nesta instalação',
+  'boards.unavailableHint':
+    'O administrador pode ativá-lo — veja o SETUP.md. Arquivos exportados continuam funcionando.',
+  'boards.unlink': 'Desvincular',
+  'boards.unlinkConfirm': 'Desvincular? As tarefas ficam',
+  'boards.unlinked': 'Quadro desvinculado. Todas as tarefas continuam como estão.',
+  'connections.svc.jira': 'Jira',
+  'inviteLink.copied': 'Link de convite copiado.',
+  'inviteLink.copiedShort': 'Copiado',
+  'inviteLink.copy': 'Copiar link',
+  'inviteLink.copyManually': 'Pressione Ctrl+C para copiar o link selecionado.',
+  'inviteLink.create': 'Criar link de convite',
+  'inviteLink.expires1': 'Expira em 1 dia',
+  'inviteLink.expires30': 'Expira em 30 dias',
+  'inviteLink.expires7': 'Expira em 7 dias',
+  'inviteLink.expiresNever': 'Nunca expira',
+  'inviteLink.expiresOn': 'Expira em {date}',
+  'inviteLink.explain':
+    'Qualquer pessoa com este link pode entrar como membro. Quem não tem conta é convidado a criar uma primeiro.',
+  'inviteLink.failed': 'Não foi possível atualizar o link de convite.',
+  'inviteLink.neverExpires': 'Nunca expira',
+  'inviteLink.reset': 'Gerar novo link',
+  'inviteLink.resetConfirm': 'O link antigo deixa de funcionar',
+  'inviteLink.revoked': 'Link de convite desativado.',
+  'inviteLink.title': 'Link de convite',
+  'inviteLink.turnOff': 'Desativar',
+  'inviteLink.uses': 'Entraram por ele: {count}',
+  'join.accept': 'Entrar no projeto',
+  'join.askAgain': 'Peça um novo link a quem enviou.',
+  'join.failed': 'Não foi possível entrar nesse projeto.',
+  'join.goHome': 'Ir para o Task Studio',
+  'join.invalidBody': 'Este link de convite é inválido ou expirou.',
+  'join.invalidTitle': 'Link inválido',
+  'join.joined': 'Você entrou em {name}.',
+  'join.loading': 'Abrindo o convite',
+  'join.members': 'Membros: {count}',
+  'join.notNow': 'Agora não',
+  'join.signUpSubtitle': 'Crie uma conta para entrar em {name}.',
+  'join.signedInAs': 'Você vai entrar como {email}.',
+  'join.subtitle': '{name} convidou você para este projeto.',
+  'join.title': 'Entrar em {name}',
 
   'feed.title': 'Link de agenda',
   'feed.pitch':
@@ -4644,7 +4819,7 @@ const ptBR: Record<TranslationKey, string> = {
   'activity.somethingUnnamed': 'algo',
 
   'activity.projectCreated': '{actor} criou este projeto',
-  'activity.projectImported': '{actor} importou este projeto do GitHub',
+  'activity.projectImported': '{actor} importou este projeto de {target}',
   'activity.projectRenamed': '{actor} renomeou o projeto de “{from}” para “{subject}”',
   'activity.projectCompleted': '{actor} encerrou o projeto',
   'activity.projectReopened': '{actor} reabriu o projeto',

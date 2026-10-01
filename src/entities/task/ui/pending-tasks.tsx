@@ -2,27 +2,8 @@ import { Skeleton } from '@/shared/ui';
 import { cn } from '@/shared/lib/cn';
 
 /**
- * The tasks this client cannot know about yet.
- *
- * A board is now drawn immediately from whatever the app already had — see
- * `seedTasksFor` — and on a project board that head start is, by construction,
- * only the current user's own work: the dashboard never fetched anybody else's.
- * So the first paint is real but short, and the rest of the roster's tasks
- * arrive a round trip later.
- *
- * Without something here that reads as "more coming", the short list is
- * indistinguishable from a complete one, and a board that silently grows after
- * you have started reading it is worse than a board that made you wait. These
- * placeholders are the difference between an incomplete answer and a wrong one.
- *
- * Capped at three regardless of how many are actually missing, because the
- * count is not knowable — the point is to say "not finished", not to predict a
- * number, and a screenful of grey would overstate it.
- *
- * Used by the flat layouts only — the list, the sprint and the calendar, which
- * have nowhere else to put this. The *board* draws its own placeholders inside
- * its columns instead: see `TaskBoard.pendingPerColumn`, and the note there for
- * why a strip of grey beneath three columns was the wrong shape.
+ * The tasks this client cannot know about yet. A board is now drawn immediately from whatever the
+ * app already had — see `seedTasksFor`.
  */
 const MAX_PLACEHOLDERS = 3;
 

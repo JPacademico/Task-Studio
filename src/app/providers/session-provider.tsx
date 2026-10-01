@@ -16,17 +16,15 @@ import { disconnectSocket } from '@/shared/api/socket';
 import { translate } from '@/shared/i18n';
 
 /**
- * Bootstraps the session on cold start and reacts to a definitive 401 from the
- * axios refresh chain (`onSessionExpired`), so an expired session is cleaned up
- * in exactly one place.
+ * Bootstraps the session on cold start and reacts to a definitive 401 from the axios refresh chain
+ * (`onSessionExpired`), so an expired session is cleaned up in exactly one place.
  */
 export const SessionProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
   const { setUser, setStatus, endSession } = useSessionStore();
   const userId = useSessionStore((state) => state.user?.id);
-  // Hydration happens once per signed-in user, on the render that first knows
-  // who they are — never again, or a later pass would write a stale copy back
-  // over caches the app has since updated.
+  // Hydration happens once per signed-in user, on the render that first knows who they are — never
+  // again, or a later pass would write a stale copy back over caches the app has since updated.
   const hydratedFor = useRef<string | null>(null);
 
   useEffect(() => {
@@ -53,16 +51,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [endSession, setStatus, setUser]);
 
-  /*
-   * Last session's tasks, boards and projects, put back before the first paint
-   * that could use them.
-   *
-   * Keyed on the user, and deliberately after `authApi.me()` rather than before
-   * it: the blob is only ours to read once we know whose it is. In practice
-   * that call is warm and returns long before any page has finished asking for
-   * its own data, so the agenda still draws from cache rather than from a
-   * spinner. See `query-persist.ts` for what is stored and what is not.
-   */
+  // Last session's tasks, boards and projects, put back before the first paint that could use them.
   useEffect(() => {
     if (!userId || hydratedFor.current === userId) return;
 
@@ -79,9 +68,8 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
         disconnectSocket();
         queryClient.clear();
         void purgeApiCache();
-        // The persisted copy outlives memory by design, so clearing the cache
-        // without clearing this would put the expired session's data straight
-        // back on screen at the next reload.
+        // The persisted copy outlives memory by design, so clearing the cache without clearing this
+        // would put the expired session's data straight back on screen at the next reload.
         clearPersistedQueries();
         hydratedFor.current = null;
         toast.error(translate('session.expired'));

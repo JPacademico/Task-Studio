@@ -1,85 +1,5 @@
 #!/usr/bin/env python3
-"""
-Builds `studio-runic.woff2` and `studio-runic-bold.woff2` — the Runic skin's
-typeface.
-
-Run from the repository root:
-
-    python custom-font/runic/build-studio-runic.py
-
-It writes both fonts to `custom-font/runic/` (the archive copy) and to
-`public/fonts/runic/` (the served copy), plus `preview.png` beside this file.
-Requires fontTools and brotli (`pip install fonttools brotli`), numpy, and
-Pillow. Nothing in the application runs this; it produces two files.
-
-## Why the skin draws its own face
-
-The Runic skin named 'Norse' first in all three of its font stacks — and no
-file for it was ever shipped, so every visitor fell through to Bahnschrift, a
-DIN-style engineering sans. The skin's colours, borders and ornaments said
-"carved"; its letters said "motorway sign". The runes themselves (the Elder
-Futhark labels `RunicText` draws) were never the problem — they have their own
-face. The Latin was.
-
-Sourcing a carved face was the first option and the wrong one. The obvious
-candidates are display faces with personal-use or unclear web licences, and
-`custom-font/README.md` is explicit that a face whose licence does not permit
-web embedding does not go in this repository whatever it looks like. So this
-one is drawn here, the same way the Pixel face is: original work, shipped
-under the application's own terms.
-
-## What it is
-
-A carved Latin: every stroke straight, every curve replaced by a facet, the
-way letters come out when they are cut into wood or stone with a blade rather
-than written with a pen. Three runes lend their shapes to Latin letters that
-already look like them — ᛒ to **B**, ᚱ to **R**, ᚹ to **P** — and **O** is the
-long hexagon a carver makes of a circle. Wherever a stroke meets the cap
-height, the x-height or the baseline it is cut *flat*, along the line, which is
-the single detail that most makes a face read as carved rather than drawn.
-
-It is also a face that has to set a task list, not just a heading. So:
-
-  * **A real lowercase**, not small capitals. An interface is mostly
-    lowercase, and a face without one is a face nobody can read a paragraph
-    in. Every lowercase letter keeps the ordinary skeleton people read by —
-    only the curves are facetted.
-  * **UI proportions.** Cap height 0.70 em and x-height 0.51 em, within a
-    hundredth of Bahnschrift, the face it replaces — so nothing in a layout
-    that fitted before overflows now.
-  * **An `l` with a foot**, so it never reads as a capital `I` in a label.
-  * **Tabular figures by default**: every digit has the same advance, so a
-    column of counts lines up without `tabular-nums` having to find a feature.
-  * **Latin-1 accents**, composed from the face's own marks, because the
-    Portuguese interface needs a cedilla or a tilde in almost every label and
-    a missing glyph renders as the *next* font in the stack in the middle of a
-    word.
-
-## How the outlines are made
-
-Each glyph is drawn as stroke centrelines — polylines with a width, mitred
-where they turn — and the outline is their *union*. There is no polygon-union
-library in this toolchain, and a glyph shipped as a pile of overlapping
-contours renders with seams and darkened joins on some rasterisers, so the
-union is computed by painting: every stroke is rasterised at 2 pixels per font
-unit (union is simply "painted by any stroke"), the painted region is traced
-back into closed contours along pixel edges, and Ramer–Douglas–Peucker
-collapses each staircase back into the straight edge it came from. At this
-resolution the recovered edges are within a fraction of a font unit of the
-drawn geometry, and every diagonal comes out as one clean segment.
-
-The flat cuts fall out of the same step: each glyph has a vertical band — the
-baseline to the cap height, the x-height or an ascender — and anything painted
-outside it is cleared before tracing. A stroke is simply drawn past the line
-and the band cuts it square.
-
-## Weights
-
-Two, because the interface asks for two: 400 for running text and 700 for
-`font-semibold` and headings. The drawings are identical; only the stroke
-width changes (84 and 124 units), which is how a carver makes a heavier letter
-— a wider blade, the same cuts.
-"""
+"""Builds `studio-runic.woff2` and `studio-runic-bold.woff2` — the Runic skin's typeface."""
 
 from __future__ import annotations
 
@@ -118,10 +38,8 @@ TOLERANCE = 1.3  # RDP tolerance, in raster pixels
 CHISEL_LEAN = 0.75
 CHISEL_REACH = 0.45
 
-# How much narrower than drawn each group is set. Condensing is done here,
-# once, by scaling the centrelines — the stroke keeps its width — rather than
-# by re-measuring eighty drawings: a carved face is tall and narrow, because a
-# blade cuts downward strokes more easily than long horizontals.
+# How much narrower than drawn each group is set. Condensing is done here, once, by scaling the
+# centrelines — the stroke keeps its width — rather than by re-measuring eighty drawings.
 CONDENSE = {'upper': 0.86, 'lower': 0.9, 'figure': 0.9}
 
 WEIGHTS = {
@@ -130,19 +48,15 @@ WEIGHTS = {
 }
 
 
-# ---------------------------------------------------------------------------
-# Drawing primitives
-# ---------------------------------------------------------------------------
+# --- Drawing primitives ---
 
 
 @dataclass
 class Stroke:
     points: list[tuple[float, float]]
     closed: bool = False
-    # How a free end is finished. `chisel` (the default) cuts it on a slant,
-    # the way a blade leaves the end of a groove, and is most of what makes
-    # the face read as carved; `square` extends it by half the width; `butt`
-    # stops at it. Ends that meet the band are cut flat by it regardless.
+    # How a free end is finished. `chisel` (the default) cuts it on a slant, the way a blade leaves
+    # the end of a groove, and is most of what makes the face read as carved.
     cap: str = 'chisel'
     # Width as a fraction of the weight's stroke — marks are drawn finer.
     scale: float = 1.0
@@ -184,10 +98,8 @@ def lozenge(cx, cy, r):
 
 
 def transformed(parts, sx=1.0, sy=1.0, dx=0.0, dy=0.0, keep_width=False):
-    """Scaled and moved copies of some parts — superscripts, rotations.
-
-    `keep_width` leaves the stroke as wide as it was, which is what condensing
-    wants; otherwise a scaled-down copy (a superscript) gets a finer stroke.
+    """Scaled and moved copies of some parts — superscripts, rotations. `keep_width` leaves the
+    stroke as wide as it was, which is what condensing wants; otherwise a scaled-down copy.
     """
     out = []
     for part in parts:
@@ -200,18 +112,12 @@ def transformed(parts, sx=1.0, sy=1.0, dx=0.0, dy=0.0, keep_width=False):
     return out
 
 
-# ---------------------------------------------------------------------------
-# The drawings
-# ---------------------------------------------------------------------------
+# --- The drawings ---
 
 
 def define(W: float) -> dict[str, GlyphDef]:
-    """Every glyph, drawn for a stroke of width W.
-
-    Coordinates are stroke *centrelines*, with x = 0 at the left edge of the
-    letter's body and `bw` at its right. A line meant to sit on the cap height
-    is drawn at `t` (half a stroke below it) so its top edge lands on the line;
-    anything meant to be cut by a line is drawn past it and cut by the band.
+    """Every glyph, drawn for a stroke of width W. Coordinates are stroke *centrelines*, with x =
+    0 at the left edge of the letter's body and `bw` at its right.
     """
     h = W / 2
     t, b = CAP - h, h
@@ -227,11 +133,8 @@ def define(W: float) -> dict[str, GlyphDef]:
     deep = (DESC, XH)
 
     def hexagon(bw, top, bottom, shoulder):
-        """A carver's O: a long hexagon, pointed at the top and the bottom.
-
-        The points are drawn a stroke's width inside the lines so that their
-        tips — the mitre — land just past them, the way a round letter
-        overshoots in any face. The glyph's band is widened to let them.
+        """A carver's O: a long hexagon, pointed at the top and the bottom. The points are drawn
+        a stroke's width inside the lines so that their tips — the mitre.
         """
         height = top - bottom
         return S(
@@ -777,10 +680,7 @@ def define(W: float) -> dict[str, GlyphDef]:
                                                                      (400, 210))], (0, CAP + 20))
     g['checkmark'] = GlyphDef(460, [S((0, 300), (170, 40), (460, CAP * 0.92), limit=3.0)], None)
 
-    # ---- Marks, for the accented letters ------------------------------------
-    #
-    # Drawn around x = 0 with their foot at y = 0, advance zero; `compose`
-    # centres them over the letter and lifts them to the right height.
+    # --- Marks, for the accented letters ---
 
     g['acutecomb'] = GlyphDef(0, [S((-50, 0), (60, 130), scale=0.85)], None, mark=True)
     g['gravecomb'] = GlyphDef(0, [S((50, 0), (-60, 130), scale=0.85)], None, mark=True)
@@ -862,9 +762,7 @@ for base, marks in {
         ACCENTED[letter] = (base, mark)
 
 
-# ---------------------------------------------------------------------------
-# From strokes to outlines
-# ---------------------------------------------------------------------------
+# --- From strokes to outlines ---
 
 
 def stroke_polygons(stroke: Stroke, W: float) -> list[list[tuple[float, float]]]:
@@ -885,9 +783,8 @@ def stroke_polygons(stroke: Stroke, W: float) -> list[list[tuple[float, float]]]
         dx, dy = unit(p, q)
         nx, ny = -dy, dx
         start, end = p, q
-        # Offsets along the stroke for the two corners of each end: equal for
-        # a square or butt end, opposite for a chisel — one edge runs on past
-        # the other, which is the slanted cut.
+        # Offsets along the stroke for the two corners of each end: equal for a square or butt end,
+        # opposite for a chisel — one edge runs on past the other, which is the slanted cut.
         lean_start = lean_end = (0.0, 0.0)
         is_first = index == 0 and not stroke.closed
         is_last = index == len(segments) - 1 and not stroke.closed
@@ -1095,9 +992,7 @@ def outline(defn: GlyphDef, W: float, origin_x: float):
     return contours
 
 
-# ---------------------------------------------------------------------------
-# The font
-# ---------------------------------------------------------------------------
+# --- The font ---
 
 
 def build(weight: str):

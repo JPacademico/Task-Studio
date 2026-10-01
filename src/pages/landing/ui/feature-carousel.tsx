@@ -18,11 +18,7 @@ import {
 } from './demo-more';
 
 /**
- * One demo: the tab it wears, the claim it makes, and the loop that shows it.
- *
- * No `body` any more. Each of these carried a paragraph explaining the
- * mechanism the loop beside it was already playing — see the note on
- * `DemoFrame` for why that is a paragraph nobody can afford to read.
+ * One demo: the tab it wears, the claim it makes, and the loop that shows it. No `body` any more.
  */
 interface Feature {
   tab: TranslationKey;
@@ -31,17 +27,8 @@ interface Feature {
 }
 
 /**
- * The nine, in the order somebody meets the product.
- *
- * The first three are the ones that were already here and they stay first for a
- * reason: moving work, starting from something you already have, and talking
- * about it are the three things everybody does in the first week. The six after
- * them are what the product turns out to be once you are in it.
- *
- * Themes are deliberately absent. They are the most *demonstrable* thing this
- * app does and they are getting a section of their own — putting a tenth loop
- * here would spend the reader's attention on the thing that is about to be
- * shown properly.
+ * The nine, in the order somebody meets the product. The first three are the ones that were already
+ * here and they stay first for a reason: moving work, starting from something you already have.
  */
 const FEATURES: Feature[] = [
   {
@@ -95,32 +82,7 @@ const FEATURES: Feature[] = [
 const PER_PAGE = 3;
 const PAGES = Math.ceil(FEATURES.length / PER_PAGE);
 
-/**
- * Nine demos in the height of three.
- *
- * ## Why paging rather than a longer section
- *
- * Because a landing page is a *sequence*, and nine full-width demos stacked is
- * a sequence nobody finishes. The three that were here already occupied most of
- * a screen each; nine would have been the page. Paging keeps the section's
- * height fixed — which is what the brief asked for, and it is the right ask —
- * so everything below it stays where the reader left it, and the six extra
- * features are available to anybody curious enough to press an arrow.
- *
- * ## Why a page of three and not one at a time
- *
- * A carousel showing one thing is a slideshow, and a slideshow is a thing
- * people leave. Three at a time keeps the *comparison* the original section was
- * making — these are different surfaces of one product — and makes the arrow an
- * offer of more rather than the only way to see anything at all.
- *
- * ## Why it does not advance on its own
- *
- * Every loop inside it is already moving. An auto-advancing container around
- * nine self-animating panels is two clocks competing for the same attention,
- * and it takes the page away from somebody mid-sentence. The arrows are the
- * only thing that moves it.
- */
+/** Nine demos in the height of three. */
 export const FeatureCarousel = () => {
   const t = useT();
   const reduceMotion = useReducedMotion();
@@ -138,27 +100,12 @@ export const FeatureCarousel = () => {
 
   return (
     <div
-      /*
-       * Half the arrow's width, which is what centring it in the page margin
-       * needs — see `ArrowButton`. It lives here rather than on the button
-       * because the button's size is a breakpoint decision and an inline style
-       * cannot hold a media query.
-       */
+      /* Half the arrow's width, which is what centring it in the page margin needs — see
+         `ArrowButton`. */
       className="relative space-y-8 [--arrow-half:2rem] xl:[--arrow-half:3rem]"
     >
-      {/* --- The controls -------------------------------------------------
-
-          Two halves, in two places, because they answer two different
-          questions. *Where am I* belongs above the demos, where the reader
-          meets it before deciding the section is finished. *Take me on*
-          belongs beside them.
-
-          The arrows used to sit up here too, tucked into the right-hand end of
-          this row: a pair of small buttons a long way from anything they act
-          on, and a long way from the pointer by the time somebody had read
-          three panels. They are pinned to the vertical middle of the whole
-          section now, one on each edge, which is where a hand reaches for
-          "next" and where the eye already is. */}
+      {/* --- The controls ---
+          Two halves, in two places, because they answer two different questions. */}
       <div className="flex items-center gap-3">
         <p className="text-2xs uppercase tracking-[0.16em] text-content-faint">
           {t('landing.how.page', { page: String(page + 1), total: String(PAGES) })}
@@ -188,45 +135,7 @@ export const FeatureCarousel = () => {
 
       </div>
 
-      {/*
-        A ceiling as well as a floor.
-
-        Three demos are not all the same height, so a page of shorter ones would
-        let the section collapse and drag the rest of the document up — the same
-        class of jump the chat demo used to cause on its own. The minimum is the
-        tallest page's height, so the arrows never move under the pointer.
-
-        The number is the *tallest page's* height at each width, measured,
-        rather than a round figure — which is the whole of what makes the
-        section stop moving. It was 42rem, which no page has ever been: every
-        page overflowed the floor, so the floor did nothing and the section
-        was simply as tall as whichever page was showing. Paging then resized
-        the document under the reader, and so did every loop inside a page
-        that grew a row mid-cycle — which is what put everything below this
-        section on a five-second rise and fall. The loops no longer change
-        their own height either; see the note at the top of `demo-more`.
-
-        Three values because the frames stack below `lg` and the copy rewraps
-        below `sm`, and one page of three demos is nearly twice as tall
-        stacked as it is in two columns. They are floors, not ceilings, so
-        copy that grows later makes the section taller rather than being cut
-        off — the failure worth designing for, given these strings are
-        translated and Portuguese runs longer than English.
-
-        `overflow-hidden` therefore never clips content: a `min-height` box
-        grows with whatever is in it. What it clips is the 28px the pages
-        slide sideways as they change, which on a phone is wider than the
-        page's own padding.
-
-        The floor lives on the *page* rather than on this box, and that pairing
-        with `justify-between` is what stops a short page leaving a hole. A
-        floor on the box would hold the section's height and stack three demos
-        at the top of it, so page two would end a third of a screen above page
-        one did — a void on a phone. On the page itself the same floor is a
-        flex container taller than its contents, and the free space goes into
-        the gaps between the demos instead of all of it to the bottom. Every
-        page is the same height and every page looks deliberate.
-      */}
+      {/* A ceiling as well as a floor. */}
       <div className="relative overflow-hidden">
         <AnimatePresence mode="wait" initial={false} custom={direction}>
           <motion.div
@@ -238,42 +147,19 @@ export const FeatureCarousel = () => {
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
             className={cn(
               'gpu flex flex-col justify-between gap-14 sm:gap-20',
-              /*
-               * Room for the arrows, and only as much as is actually missing.
-               *
-               * `(100vw - 100%) / 2` is the space outside this column: the page
-               * margin plus the section's own gutter. Subtract it from what an
-               * arrow needs — 20px of inset, its own width, 16px of clearance,
-               * and 8px of slack because `vw` counts the scrollbar — and clamp
-               * at zero. Above about 1400px that is negative, so the padding is
-               * nothing at all and the frames keep every pixel they had before
-               * the arrows were ever moved. Below it, the inset opens by exactly
-               * the shortfall and no more.
-               *
-               * One value per breakpoint because the arrow itself changes size
-               * at each one; the formula in between is continuous, so there is
-               * no width at which a control lands on a heading. Nothing below
-               * `lg`, because no arrow is drawn there to make room for.
-               */
+              /* Room for the arrows, and only as much as is actually missing. `(100vw - 100%) / 2`
+                 is the space outside this column: the page margin plus the section's own gutter. */
               'lg:[padding-inline:max(0px,calc(6.75rem-(100vw-100%)/2))]',
               'xl:[padding-inline:max(0px,calc(8.75rem-(100vw-100%)/2))]',
-              // The tallest page at each width, measured. See the note above.
-              // Re-measured every time the column width moves, which by now is
-              // three times: when the demo paragraphs were removed, when the
-              // arrows were given a lane, and when that lane was replaced by
-              // the shortfall inset above. Tallest page measured 75.97rem at
-              // 360, 76.94 at 640, 71.66 at 768, 59.83 at 1024 and 59.03 at
-              // 1440 — so `sm` carries the same figure as the base because the
-              // 640 case, not the 768 one, is the widest point of that range.
+              // The tallest page at each width, measured.
               'min-h-[78rem] sm:min-h-[78rem] lg:min-h-[61rem]',
             )}
           >
             {shown.map((feature, index) => (
               <DemoFrame
                 key={feature.tab}
-                // Still alternating down the page, and now the parity is
-                // computed from the position *within the page* so page two does
-                // not start on whichever side page one happened to end on.
+                // Still alternating down the page, and now the parity is computed from the position
+                // *within the page*.
                 side={index % 2 === 1 ? 'right' : 'left'}
                 tab={t(feature.tab)}
                 title={t(feature.title)}
@@ -285,78 +171,8 @@ export const FeatureCarousel = () => {
         </AnimatePresence>
       </div>
 
-      {/* --- The arrows ---------------------------------------------------
-
-          A layer as wide as the *window*, not as wide as the column.
-
-          ## Why this is not padding on the content
-
-          It was, and that was the wrong trade. Insetting the demos to open a
-          lane put the controls comfortably outside them and cost the frames up
-          to a third of their width, which is the one thing this section cannot
-          spend: the panels are the argument, and a narrower panel is a smaller
-          demo. The arrows are furniture around the content; furniture does not
-          get to shrink the room.
-
-          ## Why a full-bleed layer instead of negative offsets
-
-          Because the honest constraint is that the page margin is not a fixed
-          size. `max-w-6xl` stops growing at 1152px, so the space beside it is
-          zero below that width, 64px at 1280 and 192px at 1536 — and a negative
-          offset large enough to clear the column at one of those widths hangs
-          off the document at another. An earlier attempt did exactly that and
-          put four pixels of button past the left edge, which is a horizontal
-          scrollbar for the whole page.
-
-          This layer is `w-screen`, centred on the column, so its edges *are*
-          the window's edges at every width with no arithmetic at all. The
-          arrows sit 20px inside it and are therefore always as far apart as the
-          screen allows — which is what was actually asked for — and always
-          fully visible. Twenty rather than twelve because `vw` counts the
-          scrollbar: the layer runs about 15px wider than the visible area, so
-          half of that comes off each inset and 12 measured as 4px from the
-          edge.
-
-          ## What this concedes
-
-Two things, and they are worth stating plainly.
-
-          The arrows are hidden below `lg`. Under a thousand pixels the column
-          fills the window, so an edge control has nowhere to be that is not on
-          top of a panel — and buying it room there would mean spending a fifth
-          of the demo's width on a button. The dots in the header row are a
-          complete control by themselves, so below `lg` they are the whole of
-          it and the frames keep every pixel they ever had.
-
-          From `lg` up the pages carry an inset that opens only as far as the
-          *shortfall* — see the `padding-inline` on the track. At `lg` and at
-          1280 that is a real but small reduction; from about 1400px upward it
-          computes to zero and the demos are exactly as wide as they were before
-          the arrows moved anywhere.
-
-          ## Where in the margin they sit
-
-          Not flush to the window. A `w-screen` layer with the buttons pinned
-          20px inside it put them 13px from the glass on a 1440 screen, which
-          reads as "fell off the side of the page" rather than as a control
-          placed there — and it spent the whole 168px margin on one side of the
-          button, leaving 68px of air between the arrow and the demo it moves.
-
-          They are placed against the *column* now and offered two positions,
-          with `max()` choosing between them:
-
-            A  -(margin) + 1.75rem   — 20px from the window's edge
-            B  -(margin)/2 - half    — dead centre of the margin
-
-          `max` takes whichever is nearer the content. Where the margin is
-          generous B wins and the button sits midway between the glass and the
-          demo, with symmetric air on both sides; where the margin is thin B
-          would hang off the document, so A wins and the button hugs the edge as
-          it did before. The changeover needs no breakpoint — it happens exactly
-          when the margin is wide enough to hold the button twice.
-
-          Because A is what the cramped case falls back to, the demo inset above
-          is still computed against A and costs nothing extra for this. */}
+      {/* --- The arrows ---
+          A layer as wide as the *window*, not as wide as the column. */}
       <ArrowButton
         side="left"
         label={t('landing.how.previous')}
@@ -376,20 +192,8 @@ Two things, and they are worth stating plainly.
 };
 
 /**
- * One arrow. A square, not a disc, and big enough to be one.
- *
- * The pair began as 32px circles in the corner of a header row, became 56px
- * squares at the section's edges, and reach 96px here. Every step answered the
- * same complaint: at the smaller sizes they read as decoration sitting near the
- * demos rather than as the control that moves them. With the app's own card
- * rounding — the shape the rest of the page is made of — they are unmistakably
- * a pair of buttons.
- *
- * `top-1/2` with `-translate-y-1/2` rather than a flex centre, because the
- * thing being centred on is the section's whole height and the button is out of
- * its flow entirely. Nothing else on this element animates a transform, so the
- * translate is safe here in a way it was not on the theme switch.
- *
+ * One arrow. A square, not a disc, and big enough to be one. The pair began as 32px circles in the
+ * corner of a header row, became 56px squares at the section's edges, and reach 96px here.
  */
 const ArrowButton = ({
   side,
@@ -407,31 +211,16 @@ const ArrowButton = ({
     onClick={onClick}
     aria-label={label}
     title={label}
-    /*
-     * The offset as a value rather than a utility class.
-     *
-     * Tailwind can express this — `left-[max(calc(-1_*_(50vw_-_50%)...))]` — and
-     * the result is a sixty-character token with underscores standing in for
-     * the spaces `calc` requires around its operators, which nobody can read or
-     * safely edit. A style object costs one property and says what it means.
-     *
-     * `50%` here resolves against the containing block, which is the carousel
-     * wrapper, so `50vw - 50%` is exactly half the space outside the column:
-     * the page margin plus the section's gutter. `--arrow-half` is set on the
-     * wrapper per breakpoint below, because the button's own width changes and
-     * centring it in the margin needs to know half of it.
-     */
+    /* The offset as a value rather than a utility class. Tailwind can express this —
+       `left-[max(calc(-1_*_(50vw_-_50%)...))]`. */
     style={{
       [side]:
         'max(calc(-1 * (50vw - 50%) + 1.75rem), calc(-1 * (50vw - 50%) / 2 - var(--arrow-half)))',
     }}
     className={cn(
       'absolute top-1/2 z-20 hidden -translate-y-1/2 lg:grid',
-      /*
-       * Sized to the room that exists. `lg` has no page margin at all, so a
-       * smaller button there means a smaller inset on the demos; from `xl` up
-       * the margin arrives and it can be the full 96px the brief asked for.
-       */
+      /* Sized to the room that exists. `lg` has no page margin at all, so a smaller button there
+         means a smaller inset on the demos. */
       'h-16 w-16 xl:h-24 xl:w-24',
       'place-items-center rounded-2xl border border-edge bg-surface-raised/90',
       'text-content-muted shadow-md backdrop-blur',

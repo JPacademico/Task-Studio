@@ -24,14 +24,45 @@ chipped, eroded silhouette, and it stays legible at small sizes.
 ## Where it is used
 
 `--font-display` on the Volcano skin: page titles (`h1`) and the landing page's
-large display lines. It runs at about 0.94em per character — nearly twice the
-width of the Impact those headings used to fall back to — so the 14px section
-and card headings (`h2`–`h4`) use `--font-display-small` instead, a solid black
-stack. See the Volcano heading rules in `src/app/styles/index.css`.
+large display lines, as Frijole, unmodified.
+
+Every section title — `h2`–`h4`, `.ui-section-title`, `.ui-modal-title`,
+`.ui-doc-title` — uses `--font-display-small`, which is **Studio Basalt**, the
+recut below. Task and room titles (`.ui-task-title`) are user text read in
+bulk, so they keep a solid black (`--font-display-solid`): small caps would
+erase their case.
+
+## Studio Basalt — the small-size recut
+
+`studio-basalt.woff2`, built by `build-studio-basalt.py` from `frijole.woff2`
+and copied to `public/fonts/volcano/`. Re-run it after any change:
+
+```
+python custom-font/volcano/build-studio-basalt.py
+```
+
+What it changes, all of it aimed at 11–18px:
+
+- **The flake ring is gone.** Every Frijole letter is wrapped in a broken ring
+  of small filled contours. At 14px that ring is under a pixel wide and renders
+  as grey fuzz round each letter. Filled contours under `FLAKE_MAX` are dropped;
+  real parts — accents, dots, the comma — start well above it.
+- **Sub-pixel cracks are filled.** Holes under `CRACK_MIN` only grey the letter
+  at small sizes. Counters and the larger chips stay, so the rough edge is
+  still basalt.
+- **Condensed to 84%** and re-spaced to a fixed side bearing, now that the ring
+  no longer needs room. Frijole sets at about 0.94em per letter; a section title
+  in a sidebar has to fit.
+- **Hinting removed.** The outlines changed, so the original bytecode would
+  steer the wrong points; `gasp` asks for smoothing at every size instead.
+
+Fewer contours and no bytecode take the file from 92 kB to about 57 kB.
 
 ## Licence
 
-SIL Open Font License 1.1, with Reserved Font Name "Frijole". That reservation
-is why the file ships unmodified: subsetting it is a modification, and a
-modified version could not keep the name. At 92 kB it is fetched only when the
-Volcano skin renders a heading, with `font-display: swap`.
+SIL Open Font License 1.1, with Reserved Font Name "Frijole". `frijole.woff2`
+ships unmodified under that name. Studio Basalt is a Modified Version, which the
+OFL allows on two conditions this folder meets: it does not use the reserved
+name (the family and PostScript names are `Studio Basalt` /
+`StudioBasalt-Regular`, and the name table credits Frijole as its source), and it
+is released under the same licence — `LICENCE.txt` covers both files.

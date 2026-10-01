@@ -27,14 +27,8 @@ import type {
 import { translate } from '@/shared/i18n';
 
 /**
- * Applies a change to one task everywhere it is currently cached.
- *
- * The same task lives in three differently shaped caches — a flat `Task[]` for
- * every board and list, a `TaskAgenda` of day buckets for the task menu, and a
- * lone `Task` for the detail modal — so an optimistic update that only knew
- * about arrays left the agenda and the open modal showing the old value until
- * the refetch landed. That was most of the lag on ticking a box: the write was
- * optimistic on one surface and pessimistic on the two next to it.
+ * Applies a change to one task everywhere it is currently cached. The same task lives in three
+ * differently shaped caches — a flat `Task[]` for every board and list.
  */
 const patchCachedTask = (
   queryClient: QueryClient,
@@ -62,12 +56,8 @@ const patchCachedTask = (
 };
 
 /**
- * The first cached copy of a task, whatever shape the cache holding it is.
- *
- * Needed because an optimistic write has to know what it is changing *from*:
- * the dashboard counters move by a delta, and a delta computed against a task
- * we never read is a guess. Every cache holds the same server object, so the
- * first hit is as good as any.
+ * The first cached copy of a task, whatever shape the cache holding it is. Needed because an
+ * optimistic write has to know what it is changing *from*: the dashboard counters move by a delta.
  */
 const findCachedTask = (queryClient: QueryClient, taskId: string): Task | undefined => {
   for (const [, data] of queryClient.getQueriesData({ queryKey: queryKeys.tasks.all })) {
@@ -102,16 +92,8 @@ interface TaskRollback {
 }
 
 /**
- * One optimistic task write: patch every cache, and move the counters with it.
- *
- * Both callers were doing the first half already. The second half is what the
- * dashboard was missing — the tiles are server-computed counts, so they cannot
- * be derived from the patched task and used to sit at the old number until a
- * second round trip replaced them.
- *
- * Returns everything needed to undo it, including the counters: rolling the
- * task back but not the tile it moved would leave the dashboard claiming a
- * completion that failed.
+ * One optimistic task write: patch every cache, and move the counters with it. Both callers were
+ * doing the first half already.
  */
 const applyOptimisticTaskWrite = async (
   queryClient: QueryClient,
@@ -139,21 +121,8 @@ const rollbackTaskWrite = (queryClient: QueryClient, context: TaskRollback | und
 };
 
 /**
- * Whether a freshly created task belongs in a list that was fetched with
- * `params` — or whether we cannot tell.
- *
- * Three answers, not two. `false` means the server would not have returned this
- * task for that query and inserting it would put a card somewhere it does not
- * belong; `'unknown'` means the filter is one this function will not try to
- * reproduce, and the caller should leave that cache alone and let the
- * background refetch settle it.
- *
- * The list is deliberately short. Re-implementing the server's filtering on the
- * client is how the two quietly drift apart, and a card that appears in the
- * wrong column and then vanishes is worse than a card that takes another moment
- * to appear. So only the filters that are a plain equality check on a field the
- * task already carries are answered here; `search`, `lateness` and `from`/`to`
- * are all conceded to the refetch.
+ * Whether a freshly created task belongs in a list that was fetched with `params` — or whether we
+ * cannot tell. Three answers, not two.
  */
 const matchesListParams = (task: Task, params: ListTasksParams): boolean | 'unknown' => {
   if (params.search || params.lateness || params.from || params.to) return 'unknown';
@@ -172,20 +141,8 @@ const matchesListParams = (task: Task, params: ListTasksParams): boolean | 'unkn
 };
 
 /**
- * Puts a newly created task into every cache that should already be showing it.
- *
- * Creating a task used to cost two sequential round trips: the POST, and then
- * the refetch its invalidation triggered. The card could not appear until both
- * had landed, which on a free-tier API is most of a second on a good day and
- * conspicuous on a bad one — and the second trip was spent re-downloading a
- * list to learn something the first trip had already returned in full.
- *
- * So the server's own response is written straight into the caches and the
- * invalidation is kept behind it. The card is on screen immediately; the
- * refetch that follows confirms it and repairs anything `matchesListParams`
- * declined to judge. Nothing here has to be exactly right for the UI to end up
- * correct — it only has to be right often enough that the common case feels
- * instant.
+ * Puts a newly created task into every cache that should already be showing it. Creating a task
+ * used to cost two sequential round trips: the POST.
  */
 const insertCachedTask = (queryClient: QueryClient, task: Task): void => {
   for (const [key, data] of queryClient.getQueriesData({ queryKey: queryKeys.tasks.all })) {
@@ -201,9 +158,8 @@ const insertCachedTask = (queryClient: QueryClient, task: Task): void => {
       const verdict = matchesListParams(task, params);
       if (verdict !== true) continue;
 
-      // Appended, not prepended: every board and list here reads oldest-first
-      // within a column, so the newest card belongs at the bottom — which is
-      // also where the person who just created it is looking.
+      // Appended, not prepended: every board and list here reads oldest-first within a column, so
+      // the newest card belongs at the bottom.
       queryClient.setQueryData(key, [...list, task]);
       continue;
     }
@@ -245,17 +201,8 @@ const insertCachedTask = (queryClient: QueryClient, task: Task): void => {
 
 
 /**
- * Every task this client already holds, wherever it came from.
- *
- * The same task object appears in several caches at once — the dashboard's
- * "Up next", the task menu's agenda, a project board's list — because the API
- * builds all of them from one `taskInclude` and one `shape()`. So a task the
- * dashboard fetched is, field for field, the task the project board is about
- * to ask for.
- *
- * Deduped on id, keeping whichever copy was fetched most recently: two caches
- * can legitimately disagree if one was invalidated and the other was not, and
- * the newer one is the better guess by definition.
+ * Every task this client already holds, wherever it came from. The same task object appears in
+ * several caches at once — the dashboard's "Up next", the task menu's agenda.
  */
 const collectCachedTasks = (queryClient: QueryClient): Map<string, Task> => {
   const byId = new Map<string, Task>();
@@ -293,33 +240,8 @@ const collectCachedTasks = (queryClient: QueryClient): Map<string, Task> => {
 };
 
 /**
- * The subset of what we already hold that a given query would return.
- *
- * ## Why this exists
- *
- * Arriving at the task menu or a project board meant a blank surface until its
- * own request landed — even though the dashboard the user had just come from
- * had already fetched most of the very same rows. The data was in memory; the
- * page simply had no way to reach it, because React Query caches by key and a
- * different filter is a different key.
- *
- * ## What it is, and what it is not
- *
- * It is a *placeholder*: shown immediately, never written to the cache, and
- * always followed by the real request. It is not a substitute for that request
- * and cannot be — this client cannot know about tasks it has never seen, which
- * on a project board is most of them, since the dashboard only ever fetched
- * the user's own. That gap is the honest part: the surfaces that use this also
- * show `PendingTasks` while the fetch completes, so a partial list never
- * pretends to be a whole one.
- *
- * ## Correctness
- *
- * `matchesListParams` is the same predicate that decides where a newly created
- * task belongs, and only a definite `true` is accepted here. A filter it
- * declines to reproduce (`search`, `lateness`, a date window) seeds nothing at
- * all rather than seeding a guess — showing the wrong rows for
- * a moment is worse than showing none.
+ * The subset of what we already hold that a given query would return. Arriving at the task menu or
+ * a project board meant a blank surface until its own request landed.
  */
 const seedTasksFor = (queryClient: QueryClient, params: ListTasksParams): Task[] | undefined => {
   const matched: Task[] = [];
@@ -345,13 +267,8 @@ const seedTasksFor = (queryClient: QueryClient, params: ListTasksParams): Task[]
 };
 
 /**
- * The same seed, in the agenda's shape.
- *
- * Mirrors `TasksService.agenda` exactly — bucket on `dueAt ?? startAt`, one
- * bucket per calendar day, everything undated in `unscheduled` — because a
- * placeholder that groups differently from the response would reshuffle the
- * whole page the moment the real data arrived, which is louder than the blank
- * screen it replaced.
+ * The same seed, in the agenda's shape. Mirrors `TasksService.agenda` exactly — bucket on `dueAt ??
+ * startAt`, one bucket per calendar day, everything undated in `unscheduled`.
  */
 const seedAgendaFor = (
   queryClient: QueryClient,
@@ -388,37 +305,11 @@ const seedAgendaFor = (
   return { days, unscheduled };
 };
 
-/*
- * How long a task list is trusted without asking again.
- *
- * Raised from 15s, and the reason it can be is that this cache is not really
- * kept fresh by polling — it is kept fresh by the socket. `task:created`,
- * `task:updated`, `task:deleted` and `task-notes:changed` all invalidate
- * `tasks.all` in the realtime provider, and every mutation writes the server's
- * own response straight into the cache. A short `staleTime` on top of that does
- * not make anything more correct; it just means every navigation between two
- * surfaces that show the same work pays for the same rows again.
- *
- * A minute is comfortably inside the window where the only thing that could
- * have changed without telling us is something changed on another device while
- * this one was disconnected — which `refetchOnReconnect` already covers.
- */
+// How long a task list is trusted without asking again. Raised from 15s, and the reason it can be
+// is that this cache is not really kept fresh by polling — it is kept fresh by the socket.
 const TASK_STALE_TIME = 60_000;
 
-/*
- * Two fallbacks, in order of how close they are to the truth.
- *
- * 1. The previous data for this same hook — a filter changed, and the rows on
- *    screen are the right *shape*, just the wrong selection. Holding them keeps
- *    a filter feeling like a control rather than a page reload.
- * 2. Failing that, whatever other caches already hold that this query would
- *    have returned. That is what stops a surface the user navigates *to* from
- *    starting empty when the surface they came *from* already fetched the rows.
- *
- * Both are placeholders: neither is cached, and the request goes out either
- * way. `isPlaceholderData` is what the surfaces read to admit the list may
- * still be short.
- */
+// Two fallbacks, in order of how close they are to the truth.
 export const useTasks = (params: ListTasksParams = {}) => {
   const queryClient = useQueryClient();
 
@@ -444,25 +335,8 @@ export const useTaskAgenda = (params: ListTasksParams = {}) => {
 };
 
 /**
- * One task, opened from a card that was already holding it.
- *
- * The detail modal used to mount, find an empty cache and render a spinner
- * while it fetched — despite the fact that the card the user just clicked was
- * drawn from `tasks.list`, which holds the *same object*. The API builds list
- * rows and detail responses from one `taskInclude` and passes both through the
- * same `shape()`, so there is no field the modal needs that the list does not
- * already have. The wait was for data the app was sitting on.
- *
- * `placeholderData` rather than `initialData`, and the distinction is the whole
- * behaviour. `initialData` is written into the cache and treated as a real
- * fetch, so it would inherit `staleTime` and could leave the modal showing a
- * stale copy without ever going to the network. `placeholderData` is displayed
- * but never cached and never counts as fresh: the request still goes out, and
- * the modal simply has something correct to draw while it does.
- *
- * So the common case — open a card you can see — is instant, and the case that
- * needs the network — a deep link, a task scrolled out of a truncated list —
- * behaves exactly as it did before, because there is nothing cached to stand in.
+ * One task, opened from a card that was already holding it. The detail modal used to mount, find an
+ * empty cache and render a spinner while it fetched.
  */
 export const useTask = (taskId: string | undefined) => {
   const queryClient = useQueryClient();
@@ -482,13 +356,8 @@ export const useRecycleBin = (projectId?: string) =>
   });
 
 /**
- * Everything a task write touches: lists, agenda, dashboards, counters.
- *
- * This is reconciliation, not the update. The mutations above have already put
- * the correct values on screen — the task in every cache that holds it, and the
- * dashboard counters by delta — so what this refetch is actually for is the
- * things a client cannot know: which rows a filtered list should now contain,
- * and whether anybody else changed something in the meantime.
+ * Everything a task write touches: lists, agenda, dashboards, counters. This is reconciliation, not
+ * the update.
  */
 const useInvalidateTasks = () => {
   const queryClient = useQueryClient();
@@ -520,12 +389,8 @@ export const useCreateTask = () => {
 };
 
 /**
- * Puts tasks the server has just created into every cache showing them.
- *
- * The AI panel accepts suggestions in bulk and gets the created rows back, so
- * it is in exactly the position `useCreateTask` is in: holding authoritative
- * objects while the board behind it still shows the old list. Same treatment —
- * write them in, then let the invalidation reconcile.
+ * Puts tasks the server has just created into every cache showing them. The AI panel accepts
+ * suggestions in bulk and gets the created rows back.
  */
 export const useAddCreatedTasks = () => {
   const queryClient = useQueryClient();
@@ -557,21 +422,8 @@ export const useUpdateTaskStatus = () => {
   const invalidate = useInvalidateTasks();
 
   return useMutation({
-    /*
-     * The request waits its turn; the card does not.
-     *
-     * Two drags of the same card in quick succession used to produce a visible
-     * lie: the card landed where it was dropped, then flipped back to the
-     * previous column for a second or two, then forward again. Both causes are
-     * handled here and neither is fixed by the other — see `write-order.ts`.
-     *
-     * `inWriteOrder` is inside `mutationFn` rather than on the mutation's
-     * `scope` deliberately. `scope` would queue the *whole mutation*, including
-     * `onMutate`, so the second drag would apply no optimistic update until the
-     * first round trip finished — the card would snap back to its old column
-     * and sit there. Queueing only the request keeps every drag instant while
-     * still guaranteeing the server sees the moves in the order they were made.
-     */
+    // The request waits its turn; the card does not. Two drags of the same card in quick succession
+    // used to produce a visible lie: the card landed where it was dropped.
     mutationFn: ({ taskId, status }: { taskId: string; status: TaskStatus }) =>
       inWriteOrder(`task-status:${taskId}`, () => taskApi.updateStatus(taskId, status)),
 
@@ -600,14 +452,8 @@ export const useUpdateTaskStatus = () => {
     },
 
     onError: (error, variables, context) => {
-      /*
-       * A superseded write does not roll anything back.
-       *
-       * Its snapshot is of a board two moves ago, and restoring it would undo
-       * the move the user has since made and is currently looking at. The write
-       * that is still current owns the rollback; if it also fails, it has its
-       * own snapshot and will say so.
-       */
+      // A superseded write does not roll anything back. Its snapshot is of a board two moves ago,
+      // and restoring it would undo the move the user has since made and is currently looking at.
       if (context && !writeSequence.isCurrent(`task-status:${variables.taskId}`, context.token)) {
         return;
       }
@@ -616,44 +462,23 @@ export const useUpdateTaskStatus = () => {
       toast.error(errorMessage(error, translate('toast.statusFailed')));
     },
 
-    // The server's own copy, written straight in: the refetch below is then
-    // reconciliation nobody is waiting on rather than the thing that finally
-    // makes the card correct.
+    // The server's own copy, written straight in: the refetch below is then reconciliation nobody
+    // is waiting on rather than the thing that finally makes the card correct.
     onSuccess: (task, variables, context) => {
-      /*
-       * …unless the answer is already out of date.
-       *
-       * This is the half of the bug people actually see. The first request
-       * answers `COMPLETED`, which is a correct answer to the question it was
-       * asked and the wrong thing to paint over a card the user has since
-       * dragged back to To do. A newer request is already on its way with the
-       * answer that matches the screen, so the honest thing is to drop this one.
-       */
+      // …unless the answer is already out of date. This is the half of the bug people actually see.
       if (context && !writeSequence.isCurrent(`task-status:${variables.taskId}`, context.token)) {
         return;
       }
 
       patchCachedTask(queryClient, task.id, () => task);
 
-      /*
-       * A finished task that named a branch gets one offer to go and open it.
-       *
-       * Announced from here rather than from the five surfaces that complete a
-       * task, all of which come through this mutation — see
-       * `useCommitPrompt`. Gated on the *server's* task rather than the
-       * optimistic one, so a completion that was rejected never raises it.
-       */
+      // A finished task that named a branch gets one offer to go and open it. Announced from here
+      // rather than from the five surfaces that complete a task.
       if (variables.status === 'COMPLETED') useCommitPrompt.getState().present(task);
     },
 
-    // `onSettled`, not `onSuccess`: a failed write has just been rolled back
-    // from a snapshot that may itself be stale, and that is exactly when the
-    // caches most need to be told to go and look again.
-    //
-    // Skipped entirely while a newer write for this row is outstanding: a
-    // refetch now would ask the server for a task it has not finished being
-    // told about, and paint that answer over an optimistic state that is
-    // already right. The last write out does the reconciling.
+    // `onSettled`, not `onSuccess`: a failed write has just been rolled back from a snapshot that
+    // may itself be stale.
     onSettled: (task, _error, variables, context) => {
       const key = `task-status:${variables.taskId}`;
       if (context && !writeSequence.isCurrent(key, context.token)) return;
@@ -665,43 +490,16 @@ export const useUpdateTaskStatus = () => {
 };
 
 /**
- * Ticking your own box.
- *
- * Optimistic, because this is the single most-used control in the app and it
- * used to be the slowest: the box waited for a round trip to the API *and* for
- * the refetch that followed it before anything on screen moved, which on a
- * remote database reads as the click not having registered. The whole rule the
- * server applies is reproduced here — my assignment flips, and the task itself
- * only completes once every assignment has — so the optimistic state is the
- * state the server is about to return, not an approximation of it.
- *
- * `currentUserId` is a parameter rather than a read of the session store
- * because that store lives in `features/`, and an entity that reaches upwards
- * into a feature is the one import that unpicks the whole dependency rule. The
- * pages calling this already hold the user.
+ * Ticking your own box. Optimistic, because this is the single most-used control in the app and it
+ * used to be the slowest.
  */
 export const useToggleMyCompletion = (currentUserId?: string) => {
   const queryClient = useQueryClient();
   const invalidate = useInvalidateTasks();
 
   return useMutation({
-    /*
-     * Ordered per row, not across the app.
-     *
-     * This used to carry `scope: { id: 'task-completion' }` — one queue for
-     * every completion in the application — because `scope` is fixed when the
-     * hook is created and cannot read the variables it would need to be
-     * per-task. That bought the ordering guarantee at the price of a real bug:
-     * `onMutate` runs when a mutation is *dequeued*, so ticking your box on one
-     * card while another card's write was in the air left the second box empty
-     * under the finger until the first round trip finished.
-     *
-     * `inWriteOrder` is keyed by the taskId the caller actually passed, so two
-     * writes to the same row still cannot land out of order and two writes to
-     * *different* rows never wait for each other. `onMutate` runs on the click
-     * either way. Same arrangement as `useUpdateTaskStatus`; see
-     * `write-order.ts`.
-     */
+    // Ordered per row, not across the app. This used to carry `scope: { id: 'task-completion' }` —
+    // one queue for every completion in the application.
     mutationFn: ({ taskId, completed }: { taskId: string; completed: boolean }) =>
       inWriteOrder(`task-completion:${taskId}`, () =>
         taskApi.setMyCompletion(taskId, completed),
@@ -742,9 +540,8 @@ export const useToggleMyCompletion = (currentUserId?: string) => {
     },
 
     onError: (error, variables, context) => {
-      // A superseded write's snapshot is of a card two clicks ago; restoring it
-      // would undo the state the user is currently looking at. See
-      // `useUpdateTaskStatus`, which makes the same call for the same reason.
+      // A superseded write's snapshot is of a card two clicks ago; restoring it would undo the
+      // state the user is currently looking at.
       if (context && !writeSequence.isCurrent(`task-completion:${variables.taskId}`, context.token)) {
         return;
       }
@@ -768,22 +565,8 @@ export const useToggleMyCompletion = (currentUserId?: string) => {
     onSettled: (task, _error, variables, context) => {
       taskSync.end(variables.taskId);
 
-      /*
-       * The refetch belongs to the last write out.
-       *
-       * A second toggle for the same task may still be in flight. Invalidating
-       * now would refetch a server that has heard about the first write and not
-       * the second, and paint that answer over an optimistic state that is
-       * already correct — the card would visibly flip back and then forward
-       * again, which is the exact symptom being fixed.
-       *
-       * This used to be asked of `queryClient.isMutating` with a predicate
-       * matching any pending mutation carrying the same `taskId`, which is both
-       * broader than the question (a status drag and a note tick on the same
-       * task are unrelated writes) and harder to reason about than it looks —
-       * the mutation asking always counts itself. The write sequence answers it
-       * exactly: am I still the newest write for this row?
-       */
+      // The refetch belongs to the last write out. A second toggle for the same task may still be
+      // in flight.
       const key = `task-completion:${variables.taskId}`;
       if (context && !writeSequence.isCurrent(key, context.token)) return;
 
@@ -794,15 +577,8 @@ export const useToggleMyCompletion = (currentUserId?: string) => {
 };
 
 /**
- * The same fix as the project pin, for the same reason.
- *
- * This had the identical shape — write, then invalidate, and nothing on screen
- * moves until both have landed — so the pin on a task card was as unresponsive
- * as the one on a project, just less often noticed. `patchCachedTask` already
- * knows how to reach a task in all three cache shapes, so the optimistic half
- * is a two-line change.
- *
- * No overview delta: pinning changes nothing the dashboard counters count.
+ * The same fix as the project pin, for the same reason. This had the identical shape — write, then
+ * invalidate, and nothing on screen moves until both have landed.
  */
 export const useToggleTaskPin = () => {
   const queryClient = useQueryClient();
@@ -878,26 +654,7 @@ export const usePurgeTask = () => {
   });
 };
 
-/**
- * The note checklist on one task: add a step, tick one off, tear one up.
- *
- * ## Why this replaced `useChecklistMutations`
- *
- * Because the two lists it used to sit between are one list now. A task carried
- * a sub-checklist of plain rows *and* a wall of Post-its, and neither could see
- * the other — so "is this step done" had two answers on one sheet and the card's
- * progress badge only counted one of them. The merge kept the note, and this
- * hook is what the sheet drives it with.
- *
- * ## Why the writes go to `noteApi` and the reads come from the task
- *
- * A step is a `Note` row, so creating and deleting one is the notes API's job.
- * But the *list* arrives inside the task — `task.notes`, alongside the progress
- * the card draws — because the sheet and the card need it in the same payload
- * they were already fetching. So every write here invalidates the task rather
- * than a notes query: there is no separate notes cache for a task to keep in
- * step.
- */
+/** The note checklist on one task: add a step, tick one off, tear one up. */
 export const useTaskNoteMutations = (taskId: string) => {
   const queryClient = useQueryClient();
 
@@ -927,31 +684,8 @@ export const useTaskNoteMutations = (taskId: string) => {
     }),
 
     /**
-     * Ticking a step, felt on the click.
-     *
-     * Optimistic for the same reason the card's own box is: the tick *is* the
-     * feedback, and a checkbox that does nothing until a PATCH and the refetch
-     * behind it have both landed turns working down three steps into three
-     * visible waits.
-     *
-     * ## Why this stopped using `scope`
-     *
-     * It used to carry `scope: { id: 'task-notes:<taskId>' }`, which serialises
-     * every write on the sheet — and that is what made the boxes roll back.
-     * React Query runs `onMutate` when a mutation is *dequeued*, not when
-     * `mutate()` is called, so ticking a second step while the first was still
-     * in the air applied no optimistic update at all: the box stayed empty
-     * under the finger, the first write's `onSettled` then refetched a task
-     * that genuinely did not have that step ticked yet, and the tick appeared,
-     * vanished, and appeared again. Running down a three-item checklist made it
-     * happen twice.
-     *
-     * The scope was there for a real reason — two writes to *the same row* must
-     * not land out of order — and it was solving it with an instrument that
-     * ordered the whole sheet. `inWriteOrder` orders only the requests, and only
-     * per note, so every box still ticks on the click while no row can be
-     * written out of sequence. Exactly the arrangement `useUpdateTaskStatus`
-     * arrived at for the board; see `write-order.ts` for the full argument.
+     * Ticking a step, felt on the click. Optimistic for the same reason the card's own box is: the
+     * tick *is* the feedback.
      */
     toggle: useMutation({
       mutationFn: ({ noteId, isCompleted }: { noteId: string; isCompleted: boolean }) =>
@@ -984,13 +718,8 @@ export const useTaskNoteMutations = (taskId: string) => {
       },
 
       onError: (error, variables, context) => {
-        /*
-         * A superseded write rolls nothing back.
-         *
-         * Its snapshot is of a sheet two ticks ago, and restoring it would undo
-         * the tick the user has since made and is currently looking at. The
-         * write that is still current owns the rollback.
-         */
+        // A superseded write rolls nothing back. Its snapshot is of a sheet two ticks ago, and
+        // restoring it would undo the tick the user has since made and is currently looking at.
         if (context && !writeSequence.isCurrent(`task-note:${variables.noteId}`, context.token)) {
           return;
         }
@@ -999,14 +728,8 @@ export const useTaskNoteMutations = (taskId: string) => {
         toast.error(errorMessage(error));
       },
 
-      /*
-       * The refetch belongs to the last write out.
-       *
-       * Refetching while a newer tick for the same box is still in flight asks
-       * the server for a note it has not finished being told about, and paints
-       * that answer over an optimistic state that is already right — which is
-       * the rollback this whole hook was rewritten to stop.
-       */
+      // The refetch belongs to the last write out. Refetching while a newer tick for the same box
+      // is still in flight asks the server for a note it has not finished being told about.
       onSettled: (_data, _error, variables, context) => {
         const key = `task-note:${variables.noteId}`;
         if (context && !writeSequence.isCurrent(key, context.token)) return;

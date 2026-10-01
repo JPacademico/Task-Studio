@@ -15,13 +15,8 @@ import { Avatar, Button, ColorPicker, Modal } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
 /**
- * How many steps are still drawn as Post-its.
- *
- * Three fit side by side on one row of the sheet, and at that size a Post-it
- * is the nicer way to read a step. Past that the wall wraps into rows of paper
- * that have to be scanned in two dimensions, and at twenty it is taller than
- * the dialog. So from the fourth step on the same notes are drawn as a plain
- * checklist, one line each, still in their paper colour, still openable.
+ * How many steps are still drawn as Post-its. Three fit side by side on one row of the sheet, and
+ * at that size a Post-it is the nicer way to read a step.
  */
 const WALL_MAX_NOTES = 3;
 
@@ -32,34 +27,8 @@ interface NoteChecklistProps {
 }
 
 /**
- * A task's steps, written on Post-its that can be ticked off.
- *
- * ## What this replaced
- *
- * Two sections that were the same list. The sheet used to carry a sub-checklist
- * of plain rows *and*, below it, a wall of notes — so people wrote steps on
- * notes, ticked steps off in the checklist, and neither surface could see the
- * other. "Is this done" had two answers on one screen, and the progress badge
- * on the card counted only one of them.
- *
- * This is the merge, and it kept the note rather than the row, because a note
- * already carried the two things a checklist row could not: a colour, and an
- * author. A step written by somebody else on work you are carrying is a
- * different thing from a step you wrote yourself, and the handwriting is how
- * you tell.
- *
- * ## The three gestures, and why each is where it is
- *
- * - **Add** opens a modal with an empty Post-it in it, rather than an inline
- *   field. A note is a small piece of writing with a colour, and a one-line
- *   input at the bottom of a section cannot offer either without becoming a
- *   form. Capped at `MAX_TASK_NOTES`, which the API enforces independently.
- * - **Tap a note** opens it at reading size — the same idea as
- *   `ZoomableImage`, for the same reason: a wall of notes side by side is a
- *   summary, and a summary has to be openable when the thing it summarises is
- *   longer than the box.
- * - **The checkbox** is on the note itself and never opens it. Ticking is the
- *   most frequent thing anybody does here, and it must not cost a modal.
+ * A task's steps, written on Post-its that can be ticked off. Two sections that were the same list.
+ * The sheet used to carry a sub-checklist of plain rows *and*, below it, a wall of notes.
  */
 export const NoteChecklist = ({ task, isAiEnabled }: NoteChecklistProps) => {
   const t = useT();
@@ -97,22 +66,14 @@ export const NoteChecklist = ({ task, isAiEnabled }: NoteChecklistProps) => {
       await notes.add.mutateAsync({ content, color: draftColor });
       setIsComposing(false);
     } catch {
-      // `onError` on the mutation has already said what went wrong — most
-      // often that the task is full. Swallowed so the composer stays open
-      // with the text still in it rather than raising an unhandled rejection.
+      // `onError` on the mutation has already said what went wrong — most often that the task is
+      // full.
     }
   };
 
   /**
-   * Asks the model for steps and files whichever ones fit, in one press.
-   *
-   * Deliberately not a two-step "suggest, then review, then accept". That flow
-   * exists on the project's assistant tab, where the model is proposing *whole
-   * tasks* and getting one wrong is expensive. Here it is proposing at most
-   * three short lines onto a capped list, every one of which can be torn up
-   * with one click — so a review step would be a dialog asking permission for
-   * something cheaper to undo than to confirm. Only as many as there is room
-   * for are filed; the API trims the rest.
+   * Asks the model for steps and files whichever ones fit, in one press. Deliberately not a
+   * two-step "suggest, then review, then accept".
    */
   const handleSuggest = async () => {
     try {
@@ -141,14 +102,8 @@ export const NoteChecklist = ({ task, isAiEnabled }: NoteChecklistProps) => {
         )}
 
         <span className="ml-auto flex items-center gap-1.5">
-          {/*
-            The suggester, offered only where it can work.
-
-            Hidden rather than disabled when the model is not configured: a
-            greyed-out sparkle on a server with no API key is a promise the
-            deployment cannot keep. Hidden when the list is full for the same
-            reason — there is nowhere for a suggestion to go.
-          */}
+          {/* The suggester, offered only where it can work. Hidden rather than disabled when
+              the model is not configured. */}
           {isAiEnabled && !isFull && (
             <Button
               type="button"
@@ -315,13 +270,8 @@ export const NoteChecklist = ({ task, isAiEnabled }: NoteChecklistProps) => {
               className="mx-auto w-full max-w-[18.75rem] rounded-[3px] p-4 shadow-postit"
               style={{ backgroundColor: reading.color, color: readableInk(reading.color) }}
             >
-              {/*
-                `break-words` as well as `whitespace-pre-wrap`.
-
-                The second honours the newlines somebody typed; without the
-                first, a pasted URL with no spaces in it runs straight off the
-                side of the note and takes the dialog's layout with it.
-              */}
+              {/* `break-words` as well as `whitespace-pre-wrap`. The second honours the
+                  newlines somebody typed; without the first. */}
               <p
                 className={cn(
                   'max-h-[50vh] overflow-y-auto whitespace-pre-wrap break-words font-hand text-[0.9375rem] leading-relaxed',
@@ -373,29 +323,7 @@ interface NoteCardProps {
   onDelete: () => void;
 }
 
-/**
- * One step, as a Post-it.
- *
- * The whole face is a button that opens it, with the checkbox and the bin
- * layered *over* that button rather than inside it — nested interactive
- * elements are invalid HTML and, more practically, a checkbox inside a button
- * fires both handlers on one tap. `stopPropagation` on the two overlays is what
- * keeps ticking from also opening.
- *
- * ## What the closed note does not show
- *
- * Its author. There is a 150×112 square here, and it was spending its bottom
- * quarter on a 16px avatar and a name at 9px — text below the size anybody
- * reads, on the one surface in the app where the writing is the whole point.
- * Three lines of somebody's step, clamped, with a face under it is a note you
- * have to open to read; four lines without one usually is not.
- *
- * The author has not gone anywhere: the note is a button, and opening it puts
- * the avatar, the full name and the time it was written under the text at
- * reading size — see the reading dialog above. That is the right altitude for
- * it. "Who wrote this" is a question you ask *about* a step you have already
- * read, not one you need answered on every tile of a wall you are scanning.
- */
+/** One step, as a Post-it. */
 const NoteCard = ({ note, isMine, onOpen, onToggle, onDelete }: NoteCardProps) => {
   const t = useT();
 
@@ -466,13 +394,8 @@ const NoteCard = ({ note, isMine, onOpen, onToggle, onDelete }: NoteCardProps) =
 };
 
 /**
- * One step, as a checklist row: what a note becomes once there are more than
- * `WALL_MAX_NOTES` of them.
- *
- * Same three gestures as the Post-it, in the same places relative to the text:
- * the box ticks, the text opens the note at reading size, and the bin (the
- * author's only) tears it up. The paper colour survives as a strip on the
- * leading edge, so a step somebody wrote on pink is still the pink one.
+ * One step, as a checklist row: what a note becomes once there are more than `WALL_MAX_NOTES` of
+ * them.
  */
 const NoteRow = ({ note, isMine, onOpen, onToggle, onDelete }: NoteCardProps) => {
   const t = useT();

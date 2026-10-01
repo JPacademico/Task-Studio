@@ -8,16 +8,8 @@ export type TaskScope = 'mine' | 'all';
 export type TaskLateness = 'LATE' | 'COMPLETED_LATE' | 'ON_TIME';
 
 /**
- * One step on a task's note checklist: a Post-it that can be ticked off.
- *
- * Replaces `ChecklistItem`, which was the same list drawn twice — a column of
- * plain rows next to a wall of notes, neither of which could see the other. The
- * merge kept the note, because a note already carried the two things a
- * checklist row could not: a colour, and an author.
- *
- * `author` and `completedBy` are different people far more often than not, and
- * that is the point on a shared task — whoever wrote the step down is rarely
- * whoever finished it.
+ * One step on a task's note checklist: a Post-it that can be ticked off. Replaces `ChecklistItem`,
+ * which was the same list drawn twice — a column of plain rows next to a wall of notes.
  */
 export interface TaskNote {
   id: string;
@@ -38,15 +30,8 @@ export interface TaskAssignee extends UserSummary {
 
 export interface Task {
   /**
-   * When this task is destroyed for good. Only ever set on a recycle-bin row.
-   *
-   * Absent everywhere else, because a task on a board has no expiry — see the
-   * note in `TasksService.recycleBin` for why the field is added there rather
-   * than carried as a null through every task list in the application.
-   *
-   * Computed on the server: a client with its own copy of the retention window
-   * is a client that will eventually disagree with the sweeper about when
-   * something disappears.
+   * When this task is destroyed for good. Only ever set on a recycle-bin row. Absent everywhere
+   * else, because a task on a board has no expiry.
    */
   purgeAt?: string | null;
 
@@ -62,18 +47,13 @@ export interface Task {
   completedAt: string | null;
   attachmentUrl: string | null;
   /**
-   * Small rendition of the attachment, drawn inline on the task sheet.
-   *
-   * Null for anything uploaded before thumbnails existed; the sheet falls back
-   * to `attachmentUrl` in that case. See `ZoomableImage`.
+   * Small rendition of the attachment, drawn inline on the task sheet. Null for anything uploaded
+   * before thumbnails existed; the sheet falls back to `attachmentUrl` in that case.
    */
   attachmentThumbUrl: string | null;
   /**
-   * The attached document, if there is one.
-   *
-   * Separate from `attachmentUrl` because the two are read in completely
-   * different ways: a picture is drawn on the sheet, a document is something
-   * you take away and open in another application.
+   * The attached document, if there is one. Separate from `attachmentUrl` because the two are read
+   * in completely different ways: a picture is drawn on the sheet.
    */
   file: AttachedFile | null;
   order: number;
@@ -83,34 +63,22 @@ export interface Task {
   createdAt: string;
   updatedAt: string;
   /**
-   * `null` on a personal task — work with no project behind it, which lives
-   * only on its owner's task menu. Every surface that links back to a board
-   * has to check this before drawing the link.
+   * `null` on a personal task — work with no project behind it, which lives only on its owner's
+   * task menu. Every surface that links back to a board has to check this before drawing the link.
    */
   /**
-   * The project this belongs to, or `null` for a personal task.
-   *
-   * `endsAt` rides along with the name and the colour, and earns its place: it
-   * is the ceiling every deadline on this task is checked against, so the
-   * composer can bound its own date picker instead of discovering the rule by
-   * being refused. Null when the project has no finish date, which is most of
-   * them.
+   * The project this belongs to, or `null` for a personal task. `endsAt` rides along with the name
+   * and the colour, and earns its place.
    */
   project: { id: string; name: string; color: string; endsAt: string | null } | null;
   /**
-   * The git branch this task's work happens on, when the project has a
-   * repository linked and somebody named one.
-   *
-   * Free text: the branch is routinely created *after* the task that names it,
-   * so nothing checks it against what exists today.
+   * The git branch this task's work happens on, when the project has a repository linked and
+   * somebody named one.
    */
   branch: string | null;
   /**
-   * Where that branch lives, or null.
-   *
-   * Built by the API rather than here, because it needs the project's
-   * repository — which a task only carries half of — and because a branch name
-   * containing a slash has to be percent-encoded before it is a path.
+   * Where that branch lives, or null. Built by the API rather than here, because it needs the
+   * project's repository.
    */
   branchUrl: string | null;
   createdBy: UserSummary;
@@ -123,13 +91,7 @@ export interface Task {
   isLate: boolean;
   /** Finished, but after the deadline. */
   isCompletedLate: boolean;
-  /**
-   * Which column this sits in on the project's grouping board, or `null`.
-   *
-   * Spelled out rather than sent as an id, because every surface that draws
-   * the tag draws a coloured chip with a name on it — see the API's
-   * `taskInclude`.
-   */
+  /** Which column this sits in on the project's grouping board, or `null`. */
   group: TaskGroupRef | null;
   /** The note checklist, whole. Capped at `MAX_TASK_NOTES` by the API. */
   notes: TaskNote[];
@@ -179,30 +141,21 @@ export interface CreateTaskPayload {
   color?: string;
   priority?: TaskPriority;
   /**
-   * The git branch this work happens on.
-   *
-   * Only accepted on a project with a repository linked — the API refuses it
-   * otherwise rather than dropping it silently, so a field that is offered is
-   * a field that saves. An empty string clears it.
+   * The git branch this work happens on. Only accepted on a project with a repository linked — the
+   * API refuses it otherwise rather than dropping it silently.
    */
   branch?: string;
   startAt?: string;
   dueAt?: string;
   assigneeIds?: string[];
   /**
-   * Project teams to assign wholesale, merged into `assigneeIds` by the API.
-   *
-   * Create only. Editing a task edits the people on it — a team was a way of
-   * naming them once, and re-expanding it later would silently re-add somebody
-   * who had been taken off. See the API's `TeamsService`.
+   * Project teams to assign wholesale, merged into `assigneeIds` by the API. Create only. Editing a
+   * task edits the people on it — a team was a way of naming them once.
    */
   teamIds?: string[];
   /**
-   * Starting steps for the note checklist, as plain lines.
-   *
-   * Still `checklist` on the wire: the composer sends a list of steps, which is
-   * what it has always meant, and the API turns them into Post-its. Capped by
-   * `MAX_TASK_NOTES`.
+   * Starting steps for the note checklist, as plain lines. Still `checklist` on the wire: the
+   * composer sends a list of steps, which is what it has always meant.
    */
   checklist?: string[];
   /** Which grouping-board column to file it under. Projects only. */
@@ -219,11 +172,8 @@ export interface UpdateTaskPayload {
   color?: string;
   priority?: TaskPriority;
   /**
-   * The git branch this work happens on.
-   *
-   * Only accepted on a project with a repository linked — the API refuses it
-   * otherwise rather than dropping it silently, so a field that is offered is
-   * a field that saves. An empty string clears it.
+   * The git branch this work happens on. Only accepted on a project with a repository linked — the
+   * API refuses it otherwise rather than dropping it silently.
    */
   branch?: string;
   status?: TaskStatus;
@@ -239,9 +189,8 @@ export interface UpdateTaskPayload {
   file?: { key: string; name: string; size: number } | null;
   order?: number;
   /**
-   * Three states, like `file`: an id files the task under a column, `null`
-   * untags it back into the grouping board's dynamic lane, and omitting the
-   * field leaves the tag alone.
+   * Three states, like `file`: an id files the task under a column, `null` untags it back into the
+   * grouping board's dynamic lane, and omitting the field leaves the tag alone.
    */
   groupId?: string | null;
 }

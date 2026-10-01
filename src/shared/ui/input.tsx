@@ -53,51 +53,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
 Input.displayName = 'Input';
 
-/**
- * A password field you can look at.
- *
- * ## Why every password field in the product gets one
- *
- * Because the alternative is typing a 20-character generated string into a row
- * of dots and finding out whether you got it right by being refused. Masking
- * defends against somebody reading the screen over your shoulder, which is a
- * real threat in an office and no threat at all on the laptop most of this is
- * typed on — and it is the user, who can see their own room, who is in a
- * position to decide which of those they are in. So the mask stays on by
- * default and the decision is offered rather than made for them.
- *
- * It matters most on the fields that are hardest: `new-password` on sign-up and
- * on reset, where there is no saved value to fall back on, nothing to compare
- * against, and a typo costs the whole flow.
- *
- * ## Why the state is never lifted or persisted
- *
- * It resets to masked on every mount, and there is deliberately no way to ask
- * for "always visible". A revealed password that is still revealed when you come
- * back to the tab tomorrow is the shoulder-surfing case the mask exists for,
- * arrived at by a preference nobody remembers setting.
- *
- * ## Why `type` is swapped rather than a CSS `-webkit-text-security`
- *
- * Because the attribute is what password managers, autofill and the browser's
- * own "save this password" prompt read. A field that looks masked but is typed
- * `text` is invisible to all three, which trades a real feature for a styling
- * convenience.
- */
+/** A password field you can look at. */
 export type PasswordInputProps = Omit<InputProps, 'type'>;
 
 export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
   ({ label, hint, error, className, wrapperClassName, id, ...props }, ref) => {
     const [isRevealed, setIsRevealed] = useState(false);
-    /*
-     * `useId` rather than falling back to `name` the way `Input` does.
-     *
-     * Two password fields on one form is the normal case here, not the odd one
-     * — "current" and "new" sit together in settings — and the label has to
-     * point at the right one. `name` would be unique across that pair, but the
-     * reset screen has two fields that are *both* the new password, so it is
-     * not unique in general.
-     */
+    // `useId` rather than falling back to `name` the way `Input` does. Two password fields on one
+    // form is the normal case here, not the odd one — "current" and "new" sit together in settings.
     const generated = useId();
     const fieldId = id ?? `${generated}-password`;
 
@@ -127,16 +90,8 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
 
           <button
             type="button"
-            /*
-             * `tabIndex={-1}`, deliberately.
-             *
-             * The tab order through a sign-in form is email, password, submit.
-             * Putting a decoration between the password and the button means
-             * everybody who tabs to submit now presses Enter on an eye instead,
-             * which at best does nothing and at worst reveals the password to
-             * the room. It stays reachable by pointer, and by a screen reader's
-             * own cursor, which is where it is actually wanted.
-             */
+            /* `tabIndex={-1}`, deliberately. The tab order through a sign-in form is email,
+               password, submit. */
             tabIndex={-1}
             onClick={() => setIsRevealed((revealed) => !revealed)}
             aria-label={translate(isRevealed ? 'common.hidePassword' : 'common.showPassword')}
@@ -149,12 +104,8 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40',
             )}
           >
-            {/*
-              The icon shows the *state*, not the action, which is the way round
-              every browser's own reveal control works: a crossed-out eye means
-              "this is hidden". The label and the tooltip say the action, so the
-              two together answer both readings.
-            */}
+            {/* The icon shows the *state*, not the action, which is the way round every
+                browser's own reveal control works: a crossed-out eye means "this is hidden". */}
             {isRevealed ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
           </button>
         </div>

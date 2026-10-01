@@ -19,9 +19,8 @@ interface SessionState {
 }
 
 /**
- * Session identity lives in Zustand rather than React Query: it is client state
- * (who am I right now) that many unrelated trees read, and it must survive
- * cache invalidation.
+ * Session identity lives in Zustand rather than React Query: it is client state (who am I right
+ * now) that many unrelated trees read, and it must survive cache invalidation.
  */
 export const useSessionStore = create<SessionState>((set) => ({
   status: tokenStore.isAuthenticated ? 'loading' : 'unauthenticated',

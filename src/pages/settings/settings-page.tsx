@@ -8,9 +8,11 @@ import { uploadImage, userApi } from '@/entities/user/api/user.api';
 import type { ThemePreference } from '@/entities/user/model/types';
 import { authApi } from '@/features/auth/api/auth.api';
 import { PlanPanel } from '@/features/billing/ui/plan-panel';
+import { DeleteAccountPanel } from '@/features/account-deletion/ui/delete-account-panel';
 import { useSessionStore } from '@/features/auth/model/session.store';
 import { CalendarConnectionPanel } from '@/features/calendar-sync/ui/calendar-connection-panel';
 import { SpotifyConnectionPanel } from '@/features/spotify/ui/spotify-connection-panel';
+import { BoardAccountCard } from '@/features/board-sync/ui/board-account-card';
 import { CliMachinesPanel } from '@/features/cli/ui/cli-machines-panel';
 import { CliPanel } from '@/features/cli/ui/cli-panel';
 import { SkinPicker } from '@/features/theme-toggle/ui/skin-picker';
@@ -172,20 +174,7 @@ const SettingsPage = () => {
         </form>
       </Section>
 
-      {/* --- Plan -----------------------------------------------------------
-
-          Directly under the profile and above every preference, and the
-          position is the argument.
-
-          Below the appearance controls it would read as another preference,
-          which is what a plan is least like: it is the only thing on this page
-          that changes what the account can *do*, it is the only thing on it
-          that costs money, and it is the thing somebody who has just been
-          refused a sixteenth task came here to find. A reader hunting for it
-          should not have to scroll past thirteen skins.
-
-          Above identity would be worse in the other direction — the first thing
-          on a settings page should be who you are, not what you are paying. */}
+      {/* --- Plan --- */}
       <Section title={t('billing.section')} description={t('billing.sectionHint')}>
         <PlanPanel />
       </Section>
@@ -219,72 +208,28 @@ const SettingsPage = () => {
         </div>
       </Section>
 
-      {/* --- Connected services --------------------------------------------
-
-          Above the password section rather than below it, and that ordering is
-          deliberate: everything under "password" is the account's *danger
-          zone* — changing a credential and signing every device out — and a
-          new section wedged underneath it reads as part of that. This is a
-          preference, so it sits with the preferences.
-
-          Renders nothing at all on a deployment with no calendar credentials
-          configured, so the heading is drawn by the panel rather than here. */}
+      {/* --- Connected services --- */}
       <Section
         title={t('settings.integrations')}
         description={t('settings.integrationsHint')}
       >
-        {/*
-          Two panels, where there were three and then one.
-
-          The generic "personal access tokens" panel that used to sit here was
-          taken out on a good argument: a bearer token offered to everybody, in
-          a page most people open to change their name, for a script nobody was
-          writing. The note left behind said it was worth building properly
-          against a real use somebody has.
-
-          `CliPanel` is that. The tokens in it are not an abstraction waiting
-          for a purpose — they are the machines somebody has run `taskstudio
-          login` on, created by the command rather than by this page, and all
-          the panel offers is the two operations that belong to a person rather
-          than to a terminal: seeing them, and killing one.
-
-          The subscribable calendar feed is still gone, and stays gone, for the
-          reason that has not changed about it.
-        */}
-        {/*
-          The calendar first, the terminal second.
-
-          They were the other way round, which put four lines of shell above the
-          one connection most readers of this page will ever make — and left the
-          CLI row a whole section away from the list of machines it produces.
-          Ordered like this, the two halves of the same subject are adjacent:
-          the offer to install a CLI sits directly on top of the inventory of
-          every machine that has accepted it.
-        */}
+        {/* Two panels, where there were three and then one. The generic "personal access
+            tokens" panel that used to sit here was taken out on a good argument. */}
+        {/* The calendar first, the terminal second. */}
         <div className="space-y-3">
           <CalendarConnectionPanel />
-          {/* Spotify between the calendar and the terminal, which is where it
-              belongs by weight: it is the second *personal* connection on the
-              page — one account, connected once, visible to nobody else — and
-              the CLI below is a different kind of thing entirely. Renders a
-              single line on a deployment with no Spotify application. */}
+          {/* Spotify between the calendar and the terminal, which is where it belongs by
+              weight: it is the second *personal* connection on the page — one account. */}
           <SpotifyConnectionPanel />
+          {/* Trello and Jira: personal accounts that projects are synced through. */}
+          <BoardAccountCard provider="TRELLO" />
+          <BoardAccountCard provider="JIRA" />
           <CliPanel />
         </div>
       </Section>
 
-      {/* --- Signed-in machines ---------------------------------------------
-
-          Its own section, and not a block inside the CLI panel above.
-
-          The two were one panel and the fusion made it argue with itself: the
-          install offer wants to fold away for the majority who will never open
-          a terminal, and a list of credentials that can currently reach this
-          account must not fold at all. One border could obey one of those.
-
-          Placed directly under Connected services because that is what it is a
-          consequence of, and still above the password section, which is the
-          account's danger zone and should stay the last thing on the page. */}
+      {/* --- Signed-in machines ---
+          Its own section, and not a block inside the CLI panel above. */}
       <Section title={t('cli.machines')}>
         <CliMachinesPanel />
       </Section>
@@ -319,9 +264,7 @@ const SettingsPage = () => {
             hint={t('auth.reset.hint')}
           />
           <div className="flex justify-end">
-            {/* The section lost its subtitle, but the consequence is real and
-                irreversible — so it moves onto the control that causes it
-                rather than disappearing with the prose. */}
+            {/* The section lost its subtitle, but the consequence is real and irreversible. */}
             <Button
               type="submit"
               variant="secondary"
@@ -333,6 +276,10 @@ const SettingsPage = () => {
             </Button>
           </div>
         </form>
+      </Section>
+
+      <Section title={t('deletion.section')}>
+        <DeleteAccountPanel />
       </Section>
     </div>
   );

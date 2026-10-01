@@ -9,12 +9,8 @@ import { SkinLoader } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
 /**
- * What this browser was told last time, if anything.
- *
- * The set of configured providers is a property of the *deployment* — it
- * changes when somebody adds a client secret to the API, which is roughly
- * never — so last visit's answer is very nearly always this visit's answer.
- * Reading it synchronously is what lets the buttons exist on the first frame.
+ * What this browser was told last time, if anything. The set of configured providers is a property
+ * of the *deployment* — it changes when somebody adds a client secret to the API.
  */
 const readRemembered = (): OAuthAvailability | undefined => {
   try {
@@ -22,9 +18,8 @@ const readRemembered = (): OAuthAvailability | undefined => {
     if (!raw) return undefined;
 
     const parsed = JSON.parse(raw) as Partial<OAuthAvailability>;
-    // Shaped, not trusted: this is user-writable storage, and a hand-edited
-    // value must not be able to put a button on the sign-in screen for a
-    // provider the API has never heard of.
+    // Shaped, not trusted: this is user-writable storage, and a hand-edited value must not be able
+    // to put a button on the sign-in screen for a provider the API has never heard of.
     return {
       google: parsed.google === true,
       github: parsed.github === true,
@@ -34,25 +29,12 @@ const readRemembered = (): OAuthAvailability | undefined => {
   }
 };
 
-/**
- * The optimistic guess, used only on a browser that has never asked.
- *
- * Both on, because both are the common deployment and a button that appears a
- * beat late is a worse first impression than one that turns out not to be
- * offered. The real answer overwrites this the moment it lands, and from then
- * on this browser never guesses again.
- */
+/** The optimistic guess, used only on a browser that has never asked. */
 const ASSUME_BOTH: OAuthAvailability = { google: true, github: true };
 
 /**
- * The two marks, inlined.
- *
- * Not from `lucide-react`, which has no brand glyphs, and not from a CDN: a
- * sign-in screen is the one page that must render before anything else is
- * trusted, and two paths of SVG are cheaper than any way of fetching them.
- * Google's is the four-colour G at its published proportions — the one mark in
- * this app that does not take the skin's palette, because a recoloured
- * provider mark reads as a phishing page.
+ * The two marks, inlined. Not from `lucide-react`, which has no brand glyphs, and not from a CDN: a
+ * sign-in screen is the one page that must render before anything else is trusted.
  */
 const GoogleMark = () => (
   <svg viewBox="0 0 48 48" className="h-4 w-4" aria-hidden>
@@ -95,46 +77,15 @@ interface OAuthButtonsProps {
   /** Changes only the wording: the flow is identical either way. */
   intent: 'signIn' | 'signUp';
   className?: string;
+  /** Inert until the caller allows it — on signup, until the terms are accepted. */
+  disabled?: boolean;
 }
 
 /**
- * "Continue with Google / GitHub", when the API has been given the keys.
- *
- * ## Why the list is fetched
- *
- * The client ids live on the API, not in this bundle, so the SPA genuinely does
- * not know which providers are available — and a button that leads to a 503 is
- * worse than an absent one. `/auth/oauth/providers` answers in a few bytes, it
- * is cached for the session, and a failed request renders nothing at all, which
- * is also the right answer for an API deployed before these endpoints existed.
- *
- * ## Why this is a link and not a mutation
- *
- * The provider's consent screen is a page the user has to see, on the
- * provider's own origin, setting the provider's own cookies. There is nothing
- * an XHR could do with it. So the button hands the browser to the API, which
- * redirects onward — see `authApi.oauthStartUrl` and the callback screen.
- *
- * ## Why the navigation waits
- *
- * That handover is a *full page navigation*, and on a free-tier host the
- * container it lands on is asleep. The browser leaves the app immediately and
- * then sits on the hosting platform's own loading page — unbranded, silent,
- * for the length of a Node boot plus a Neon connect — before Google is ever
- * reached. From the user's side that is indistinguishable from having clicked
- * a broken link into somebody else's website, which is exactly the moment a
- * sign-in screen cannot afford to look untrustworthy.
- *
- * So the click waits for `/health` to answer before it navigates, and says so
- * while it waits. The wait is usually zero: `AuthShell` starts the same boot
- * on mount, `ensureApiAwake` shares that one promise, and by the time anybody
- * has read the form and chosen a provider the container is normally up.
- *
- * `href` stays real. Middle-click, ⌘-click and "open in new tab" go straight
- * through — a modified click is not intercepted — because taking those away
- * to add a spinner would be a bad trade.
+ * "Continue with Google / GitHub", when the API has been given the keys. The client ids live on the
+ * API, not in this bundle, so the SPA genuinely does not know which providers are available.
  */
-export const OAuthButtons = ({ intent, className }: OAuthButtonsProps) => {
+export const OAuthButtons = ({ intent, className, disabled = false }: OAuthButtonsProps) => {
   const t = useT();
   /** The provider whose click is waiting on the container, if any. */
   const [waking, setWaking] = useState<OAuthProvider | null>(null);
@@ -146,30 +97,13 @@ export const OAuthButtons = ({ intent, className }: OAuthButtonsProps) => {
     // looking at a login form.
     staleTime: Infinity,
     retry: false,
-    /*
-     * Drawn first, confirmed second.
-     *
-     * This used to render nothing until the request came back — and on a
-     * free-tier host that request is very often the one waking the container,
-     * so "Continue with Google" appeared tens of seconds after the rest of the
-     * form. The buttons are the fastest way in for somebody who has an account
-     * already, and they were the slowest thing on the screen.
-     *
-     * `placeholderData` is the right hook rather than `initialData`: it fills
-     * the render without being written into the cache, so the query still
-     * counts as never-fetched and still goes and gets the real answer. What is
-     * remembered from last visit wins over the blind guess.
-     */
+    // Drawn first, confirmed second. This used to render nothing until the request came back — and
+    // on a free-tier host that request is very often the one waking the container.
     placeholderData: readRemembered() ?? ASSUME_BOTH,
   });
 
-  /*
-   * Remember what the server actually said, for the next visit.
-   *
-   * Only on a real success — a failed request means "we do not know", and
-   * writing that down would turn one bad round trip into a sign-in screen
-   * with no provider buttons on it until storage was cleared.
-   */
+  // Remember what the server actually said, for the next visit. Only on a real success — a failed
+  // request means "we do not know".
   useEffect(() => {
     if (!isSuccess || !providers) return;
     try {
@@ -186,6 +120,10 @@ export const OAuthButtons = ({ intent, className }: OAuthButtonsProps) => {
   if (available.length === 0) return null;
 
   const start = async (event: MouseEvent<HTMLAnchorElement>, provider: OAuthProvider) => {
+    if (disabled) {
+      event.preventDefault();
+      return;
+    }
     // A modified click means "open this somewhere else" — leave it alone.
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 
@@ -198,9 +136,7 @@ export const OAuthButtons = ({ intent, className }: OAuthButtonsProps) => {
     }
 
     setWaking(provider);
-    // Navigate either way. A boot that could not be confirmed is still far
-    // more likely to answer than not, and refusing to continue would strand
-    // somebody who has already decided how they want to sign in.
+    // Navigate either way.
     await ensureApiAwake();
     window.location.assign(url);
   };
@@ -215,15 +151,8 @@ export const OAuthButtons = ({ intent, className }: OAuthButtonsProps) => {
         <span className="h-px flex-1 bg-edge" />
       </div>
 
-      {/*
-        One per row, always. These used to sit two-up on a half-width cell,
-        which left roughly 170px for a string nobody controls the length of —
-        "Continue with Google", "Criar conta com GitHub" — so the label was
-        ellipsised on every render rather than in some edge case. A stacked
-        list gives each button the card's full width, which every locale's
-        wording fits at the normal text size, and the marks stay optically
-        aligned down the left edge instead of floating mid-cell.
-      */}
+      {/* One per row, always. These used to sit two-up on a half-width cell, which left roughly
+          170px for a string nobody controls the length of — "Continue with Google". */}
       <div className="grid gap-2">
         {available.map((provider) => {
           const Mark = MARKS[provider];
@@ -231,19 +160,21 @@ export const OAuthButtons = ({ intent, className }: OAuthButtonsProps) => {
           return (
             <a
               key={provider}
-              href={authApi.oauthStartUrl(provider)}
+              href={disabled ? undefined : authApi.oauthStartUrl(provider)}
               onClick={(event) => void start(event, provider)}
               aria-busy={waking === provider || undefined}
+              aria-disabled={disabled || undefined}
+              tabIndex={disabled ? -1 : undefined}
               className={cn(
                 'ui-btn inline-flex h-10 w-full select-none items-center justify-center gap-2.5 rounded-xl',
                 'border border-edge px-4 text-sm font-medium text-content',
                 'transition-[transform,background-color,border-color] duration-150 ease-studio',
                 'hover:border-brand/50 hover:bg-surface-sunken active:scale-[0.98]',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
-                // A second click during the wait would start a second
-                // navigation; the whole row goes inert rather than just the
-                // one that was pressed.
+                // A second click during the wait would start a second navigation; the whole row
+                // goes inert rather than just the one that was pressed.
                 waking && 'pointer-events-none',
+                disabled && 'pointer-events-none opacity-50',
                 waking && waking !== provider && 'opacity-50',
               )}
             >
@@ -260,15 +191,8 @@ export const OAuthButtons = ({ intent, className }: OAuthButtonsProps) => {
         })}
       </div>
 
-      {/*
-        Said only once the wait is real.
-
-        Rendering this permanently would be an apology for a delay that, on a
-        warm container, does not happen — and a sign-in screen that opens by
-        explaining that it might be slow is worse than one that is
-        occasionally slow. It appears when a boot is actually being waited on,
-        which is also the only moment it is true.
-      */}
+      {/* Said only once the wait is real. Rendering this permanently would be an apology for a
+          delay that, on a warm container, does not happen. */}
       {waking && (
         <p
           role="status"

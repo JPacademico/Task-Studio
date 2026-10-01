@@ -26,10 +26,8 @@ export interface Note {
   groupId: string | null;
   isPinned: boolean;
   /**
-   * Ticked off, on a task's note checklist.
-   *
-   * Meaningless outside `scope: 'TASK'` — a note on a board is a thought, not
-   * a step, and nothing draws a checkbox on one.
+   * Ticked off, on a task's note checklist. Meaningless outside `scope: 'TASK'` — a note on a board
+   * is a thought, not a step, and nothing draws a checkbox on one.
    */
   isCompleted: boolean;
   completedAt: string | null;
@@ -48,28 +46,14 @@ export interface Note {
   author?: UserSummary;
 
   /**
-   * Where the Documents board filed this picture — on the response to
-   * creating a picture note on a project whiteboard, and nowhere else.
-   *
-   * Never on a note read back or broadcast: it describes the person's own
-   * action, and the whiteboard reads it once to decide whether to tell them
-   * the Documents board was full. See `FolderFiling`.
+   * Where the Documents board filed this picture — on the response to creating a picture note on a
+   * project whiteboard, and nowhere else.
    */
   folder?: FolderFiling;
 
   /**
-   * The id this sheet was *first* drawn under, which is not always its id.
-   *
-   * Client-only: the API never sends it and never sees it. It exists because a
-   * note is drawn on the wall before the server has heard of it, under a
-   * `pending-…` id, and is later replaced by the real row. Keying React on
-   * `id` meant that swap unmounted the sheet and mounted a new one — which,
-   * if the user was still dragging it, tore the drag out from under the
-   * pointer and dropped the note back where it started.
-   *
-   * Keying on `clientKey ?? id` instead keeps one element for the whole life of
-   * the sheet: the id underneath it changes, the DOM node does not, and the
-   * gesture in progress never notices. See `adoptServerNote`.
+   * The id this sheet was *first* drawn under, which is not always its id. Client-only: the API
+   * never sends it and never sees it.
    */
   clientKey?: string;
 }
@@ -108,10 +92,8 @@ export interface BoardSnapshot {
 }
 
 /**
- * The project whiteboard's Post-it layer, one page of it.
- *
- * `pageLimit` is the project *owner's* plan ceiling — the same number for
- * everybody on the roster, whatever their own plan is.
+ * The project whiteboard's Post-it layer, one page of it. `pageLimit` is the project *owner's* plan
+ * ceiling — the same number for everybody on the roster, whatever their own plan is.
  */
 export interface ProjectBoardSnapshot {
   projectId: string;

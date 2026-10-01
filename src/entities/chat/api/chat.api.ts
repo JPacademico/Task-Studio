@@ -3,10 +3,8 @@ import type { ChatMessage, WhiteboardElement } from '../model/types';
 
 export const chatApi = {
   /**
-   * Oldest-first, ready to append.
-   *
-   * `before` pages backwards into older history; `after` asks only for what
-   * is newer than a message already held. See `loadConversation`.
+   * Oldest-first, ready to append. `before` pages backwards into older history; `after` asks only
+   * for what is newer than a message already held.
    */
   async history(
     projectId: string,

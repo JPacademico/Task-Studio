@@ -11,6 +11,7 @@ import { errorMessage } from '@/shared/api/client';
 import { Button, Input, Spinner } from '@/shared/ui';
 import { AuthShell } from './auth-shell';
 import { TEXT_LIMITS } from '@/shared/config/constants';
+import { afterSignIn, pendingInvite, readInviteToken, rememberInvite } from '@/shared/lib/pending-invite';
 import { clampText } from '@/shared/lib/text';
 import { useT } from '@/shared/i18n';
 
@@ -25,6 +26,8 @@ export const VerifyEmailPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get('token');
+  // The confirmation email carries the invite, so it survives opening on another device.
+  const invite = readInviteToken(searchParams.get('invite')) ?? pendingInvite();
 
   const { startSession, pendingEmail, user } = useSessionStore();
   const [phase, setPhase] = useState<Phase>(token ? 'verifying' : 'idle');
@@ -37,8 +40,9 @@ export const VerifyEmailPage = () => {
       startSession(session);
       setPhase('verified');
       toast.success(t('auth.verify.welcome'));
+      if (invite) rememberInvite(invite);
       // Brief pause so the success state is actually readable.
-      setTimeout(() => navigate('/', { replace: true }), 1200);
+      setTimeout(() => navigate(afterSignIn(), { replace: true }), 1200);
     },
     onError: (error) => {
       setPhase('failed');
@@ -49,15 +53,9 @@ export const VerifyEmailPage = () => {
   const [captchaToken, setCaptchaToken] = useState<string | undefined>();
 
   const resend = useMutation({
-    /*
-     * Wrapped rather than passed by reference.
-     *
-     * React Query calls `mutationFn(variables, context)`, so handing it a
-     * function whose second parameter is the Turnstile token would quietly
-     * feed it the query context instead — which typechecks as `unknown` in
-     * some versions and would have shipped a token that is never sent.
-     */
-    mutationFn: (address: string) => authApi.resendVerification(address, captchaToken),
+    // Wrapped rather than passed by reference. React Query calls `mutationFn(variables, context)`.
+    mutationFn: (address: string) =>
+      authApi.resendVerification(address, captchaToken, invite ?? undefined),
     onSuccess: (response) => toast.success(response.message),
     onError: (error) => toast.error(errorMessage(error)),
   });

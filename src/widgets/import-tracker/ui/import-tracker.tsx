@@ -36,57 +36,15 @@ const STEP_LABEL: Record<ImportStep, TranslationKey> = {
 };
 
 /**
- * How long a finished import keeps its card.
- *
- * Successes and cancellations clear themselves; failures do not. The asymmetry
- * is the point — a success has already handed over a button to the new project
- * and said what it made, and a cancellation is something the reader chose, so
- * both are answered questions. A failure is the one outcome nobody has read
- * yet, and clearing it after eight seconds is how an app loses an error
- * message.
+ * How long a finished import keeps its card. Successes and cancellations clear themselves; failures
+ * do not.
  */
 const AUTO_DISMISS_MS = 9_000;
 
 const isLive = (job: RepositoryImportJob): boolean =>
   job.status === 'QUEUED' || job.status === 'RUNNING';
 
-/**
- * A repository import, tracked without holding the app hostage.
- *
- * ## What this replaced
- *
- * A modal panel with a spinner in it, and a request the browser had to keep
- * open for as long as reading a repository through a model takes. While it ran
- * you could not do anything else — not because anything technical forbade it,
- * but because navigating away threw the import in the bin.
- *
- * This is the other half of that fix. The API turned the import into a job
- * (see `ImportRunner`); this is what makes the job *visible* while somebody
- * gets on with their afternoon. It is mounted by the app layout, so it
- * survives navigation; it is fed by a query and a socket, so it survives a
- * reload; and it can be moved out of the way, because "out of the way" is
- * different for every screen and every person.
- *
- * ## Why it is draggable rather than docked
- *
- * A fixed corner is always wrong for somebody. Bottom-right is where the chat
- * dock lives, bottom-centre is where toasts land on a phone, and top-right is
- * the notification bell. Rather than pick a corner and be wrong a third of the
- * time, it starts bottom-left and moves wherever it is put — with the position
- * remembered per device, exactly as the chat window's is.
- *
- * Only the title bar is a handle (`dragControls` + `dragListener={false}`).
- * The card carries a cancel button and a link to the finished project, and a
- * whole-surface drag would mean every attempt to press one of those nudged the
- * card instead.
- *
- * ## Why touch gets no drag
- *
- * On a phone the card is nearly the full width, so there is nowhere to park it
- * — and a drag handle there competes with the page's own scroll. It docks
- * above the safe-area inset instead, which is the same choice the chat window
- * makes on the same reasoning.
- */
+/** A repository import, tracked without holding the app hostage. */
 export const ImportTracker = () => {
   const t = useT();
   const navigate = useNavigate();
@@ -111,20 +69,8 @@ export const ImportTracker = () => {
 
   const visible = jobs.filter((job) => !dismissed.has(job.id));
 
-  /*
-   * The success and failure announcements live here, not in the mutation.
-   *
-   * The mutation that starts an import returns a job that has done nothing
-   * yet, so it has nothing true to announce. This component is watching the
-   * job to completion anyway — on whichever tab happens to be open, including
-   * one that did not start it — which makes it the only place that knows the
-   * project now exists.
-   *
-   * `announced` is a ref rather than state on purpose: firing a toast must not
-   * itself cause a render, and the set only ever grows within the life of a
-   * tab. Toasts are keyed by job id so a socket redelivering the final event
-   * across a reconnect cannot produce a second one.
-   */
+  // The success and failure announcements live here, not in the mutation. The mutation that starts
+  // an import returns a job that has done nothing yet, so it has nothing true to announce.
   const announced = useRef(new Set<string>());
 
   useEffect(() => {
@@ -156,13 +102,8 @@ export const ImportTracker = () => {
     }
   }, [jobs, t]);
 
-  /*
-   * Finished cards clear themselves, except the ones nobody has read.
-   *
-   * One timer per job rather than one for the list: they finish at different
-   * moments, and a shared timer would clear a failure that arrived a second
-   * ago because a success from ten seconds earlier was due to go.
-   */
+  // Finished cards clear themselves, except the ones nobody has read. One timer per job rather than
+  // one for the list: they finish at different moments.
   useEffect(() => {
     const timers = visible
       .filter((job) => job.status === 'SUCCEEDED' || job.status === 'CANCELLED')
@@ -185,15 +126,8 @@ export const ImportTracker = () => {
       dragControls={dragControls}
       dragMomentum={false}
       dragElastic={0}
-      /*
-       * Keeps the card inside the viewport whatever the screen size, so the
-       * handle can always be reached again — a card dragged fully off-screen is
-       * one the reader has to clear their site data to get back.
-       *
-       * Measured rather than written out. The four literals this replaces
-       * assumed a 360px card and "about 160" of height, and the card grows a
-       * row per running import. See `useViewportDragBounds`.
-       */
+      /* Keeps the card inside the viewport whatever the screen size, so the handle can always be
+         reached again. */
       dragConstraints={dragBounds}
       onDragStart={measureDragBounds}
       style={isTouch ? undefined : { x, y }}
@@ -203,11 +137,8 @@ export const ImportTracker = () => {
       exit={{ opacity: 0, scale: 0.96 }}
       transition={{ type: 'spring', stiffness: 420, damping: 34 }}
       className={cn(
-        // `panel` rather than a hand-rolled border and shadow: it is the class
-        // every floating surface in the app wears, and it is what carries the
-        // active skin's radius, border style and paper texture. A card built
-        // out of raw utilities would be the one window that stayed a Studio
-        // card while the rest of the app turned into newsprint.
+        // `panel` rather than a hand-rolled border and shadow: it is the class every floating
+        // surface in the app wears, and it is what carries the active skin's radius.
         'panel gpu fixed z-40 overflow-hidden',
         isTouch
           ? 'inset-x-3 bottom-[calc(1rem+env(safe-area-inset-bottom,0px))]'
@@ -291,25 +222,12 @@ const ImportRow = ({ job, onCancel, onDismiss, onOpen }: ImportRowProps) => {
   const cancelled = job.status === 'CANCELLED';
   const done = job.status === 'SUCCEEDED';
 
-  /*
-   * The repository's canonical name once GitHub has answered, and whatever was
-   * pasted before that.
-   *
-   * The fallback matters more than it looks: the first two seconds of an
-   * import are spent resolving the URL, and a card that says nothing at all
-   * during them reads as broken. Showing the raw paste is honest and is
-   * replaced by the real name the moment there is one.
-   */
+  // The repository's canonical name once GitHub has answered, and whatever was pasted before that.
+  // The fallback matters more than it looks.
   const label = job.fullName ?? job.payloadName ?? job.sourceUrl;
 
-  /*
-   * A repository produces pages; a board produces columns.
-   *
-   * The API reuses one counter for both rather than carrying a fifth field
-   * that is null on every GitHub row — see `documentCount` on the job — so the
-   * *noun* is chosen here, from the source. It is the only thing this
-   * component does with `source`, and the reason the field exists at all.
-   */
+  // A repository produces pages; a board produces columns. The API reuses one counter for both
+  // rather than carrying a fifth field that is null on every GitHub row.
   const summaryKey =
     job.source === 'GITHUB' ? 'github.importedSummary' : 'boardImport.summary';
 
@@ -375,11 +293,8 @@ const ImportRow = ({ job, onCancel, onDismiss, onOpen }: ImportRowProps) => {
           aria-label={t('importTracker.title')}
           className="h-1 overflow-hidden rounded-full bg-surface-sunken"
         >
-          {/*
-            Animated by width rather than by a CSS transition on a transform,
-            because the track is what the number means: a bar scaled from the
-            centre reads as a loading shimmer, and this is a real proportion.
-          */}
+          {/* Animated by width rather than by a CSS transition on a transform, because the
+              track is what the number means. */}
           <motion.div
             className={cn('h-full rounded-full', job.isCancelling ? 'bg-warning' : 'bg-brand')}
             initial={false}
@@ -396,9 +311,8 @@ const ImportRow = ({ job, onCancel, onDismiss, onOpen }: ImportRowProps) => {
             size="sm"
             variant="ghost"
             onClick={onCancel}
-            // A cancel already asked for cannot be asked for again — the runner
-            // notices it at the next step boundary and the button has nothing
-            // left to say until then.
+            // A cancel already asked for cannot be asked for again — the runner notices it at the
+            // next step boundary and the button has nothing left to say until then.
             disabled={job.isCancelling}
             className="h-6 px-2 text-3xs"
           >

@@ -5,25 +5,14 @@ import { toast } from '@/shared/lib/toast';
 import { authApi } from '@/features/auth/api/auth.api';
 import { useSessionStore } from '@/features/auth/model/session.store';
 import { errorMessage } from '@/shared/api/client';
+import { afterSignIn } from '@/shared/lib/pending-invite';
 import { Button, SkinLoader } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 import { AuthShell } from './auth-shell';
 
 /**
- * Where a provider sign-in lands.
- *
- * The API has already done everything that matters — checked the state, traded
- * the code with the provider, found or created the account, issued the tokens —
- * and parked the result under a single-use code. All this screen does is hand
- * that code back over POST and start the session with what comes out. It is
- * deliberately the only place in the app that reads `?code`, and it does so
- * exactly once: `exchangedRef` guards against React's development double-invoke
- * of effects, which would otherwise spend the code on the first run and show
- * "that sign-in has expired" on the second.
- *
- * There is no automatic retry. A code is single-use, so a retry cannot succeed;
- * the honest response to a failure is to say so and offer the way back to the
- * sign-in screen.
+ * Where a provider sign-in lands. The API has already done everything that matters — checked the
+ * state, traded the code with the provider, found or created the account, issued the tokens.
  */
 export const OAuthCallbackPage = () => {
   const t = useT();
@@ -62,7 +51,7 @@ export const OAuthCallbackPage = () => {
       try {
         const session = await authApi.exchangeOAuthCode(code);
         startSession(session);
-        navigate('/', { replace: true });
+        navigate(afterSignIn(), { replace: true });
         toast.success(
           t('auth.signIn.welcomeBack', { name: session.user.displayName.split(' ')[0] }),
         );

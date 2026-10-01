@@ -61,20 +61,11 @@ import { GroupTaskCard } from './group-task-card';
 
 interface GroupsBoardProps {
   projectId: string;
-  /**
-   * The project's people, for the composer this board opens.
-   *
-   * Passed down rather than read here: the board would be asking for the roster
-   * a second time on a page that already holds it, and the composer is the only
-   * thing on this surface that needs it.
-   */
+  /** The project's people, for the composer this board opens. */
   roster?: RosterMember[];
   /**
-   * The project's finish date, for the composer's deadline ceiling.
-   *
-   * Passed down for the same reason the roster is: the page above already
-   * holds the project, and this board's only interest in it is handing it to
-   * the composer. See `TaskComposerProps.projectDeadline`.
+   * The project's finish date, for the composer's deadline ceiling. Passed down for the same reason
+   * the roster is: the page above already holds the project.
    */
   projectDeadline?: string | null;
   /** Passed straight through to the composer, so a task can name a branch. */
@@ -87,11 +78,8 @@ interface GroupsBoardProps {
 const UNTAGGED = 'untagged';
 
 /**
- * The two pager arrows, as drop targets.
- *
- * Prefixed so `handleDragEnd` can tell them apart from a column id at a glance
- * — a drop *on* one of these is a page turn that has already happened, not a
- * request to file the card into a lane called "prev".
+ * The two pager arrows, as drop targets. Prefixed so `handleDragEnd` can tell them apart from a
+ * column id at a glance — a drop *on* one of these is a page turn that has already happened.
  */
 const PAGE_PREV = 'page:prev';
 const PAGE_NEXT = 'page:next';
@@ -100,77 +88,13 @@ const PAGE_NEXT = 'page:next';
 const PAGE_FLIP_MS = 650;
 
 /**
- * Which half of the board is being looked at.
- *
- * Two states rather than a three-way with "everything", because "everything" is
- * the arrangement this filter exists to get rid of: a column with its live work
- * at the top and a quarter's worth of struck-through cards under it is a column
- * people stop scrolling.
+ * Which half of the board is being looked at. Two states rather than a three-way with "everything".
  */
 type StatusFilter = 'open' | 'done';
 
 /**
- * The grouping board: columns a project invents for itself.
- *
- * ## What it is for, and how it differs from the task board
- *
- * The task board answers "what state is this work in", and its three columns
- * are `TaskStatus` — the same three on every project in the system. That is a
- * good question and it is not the only one. A project also wants to say *this
- * is the wireframe work, that is the back end*, and there is no fixed set of
- * words for that: it is different for every project, and it is the project's
- * own to invent.
- *
- * So this is a second board over the same tasks, grouped by a label the project
- * writes for itself, with the **state carried on the card as a ribbon** rather
- * than as a column. That is the load-bearing decision, and everything else
- * follows from it: dragging a card here changes only its group, so no gesture
- * on this board can mark somebody's work done by accident. The card's tick box
- * can — deliberately, with a label on it — see `GroupTaskCard`.
- *
- * ## Finished work is not on the board
- *
- * A completed task leaves the columns and is reachable through the filter
- * instead. The columns are a picture of what is *left*, and a lane whose bottom
- * two thirds are struck-through cards is a lane you stop reading — the live
- * work at the top gets scrolled past to reach an archive nobody asked for.
- *
- * The filter shows the finished work back in **its own columns** rather than in
- * a single "Completed" lane, which is the whole point: "what did the back-end
- * work amount to" is a question about a category, and collapsing every category
- * into one pile is the one arrangement that cannot answer it.
- *
- * ## The untagged lane
- *
- * Not a column, and not a row in the database — it is where a task is when it
- * has not been filed. It appears only when something is in it, so a project
- * that has tagged everything sees a clean board rather than a permanent empty
- * lane; and it is the source anybody drags *from* when they first set the
- * columns up. It collapses rather than blinking out — see the `AnimatePresence`
- * around the lanes.
- *
- * ## Paging, rather than a strip that scrolls forever
- *
- * Ten columns at a readable width is roughly two laptop screens, and the half
- * you cannot see is a half people lose work in: a column eight screens to the
- * right is functionally invisible, and a horizontal scrollbar is the only thing
- * that ever admits it exists. So the board fills its width with one page of
- * lanes and says how many pages there are.
- *
- * A narrow screen keeps the snapping strip *within* a page — one lane per swipe
- * at a width a card is readable at — and pages with the same arrows the desktop
- * uses. Dropping the pager there would leave the smallest screen as the only
- * one where half the columns cannot be reached; and since a card in hand cannot
- * press a button, the arrows are drop targets too. See `Pager`.
- *
- * ## Why the columns reorder with buttons rather than by dragging
- *
- * Because the cards already own the drag gesture. Nesting a second draggable
- * axis inside the same `DndContext` means every column header becomes a place
- * where "did you mean to move the column or the card in it" has to be guessed
- * from a few pixels of pointer travel — and guessed on touch, where the answer
- * is least recoverable. Two arrows in the column's own footer are unambiguous,
- * work from a keyboard, and cost one row nobody has to open.
+ * The grouping board: columns a project invents for itself. The task board answers "what state is
+ * this work in", and its three columns are `TaskStatus`.
  */
 export const GroupsBoard = ({
   projectId,
@@ -214,11 +138,8 @@ export const GroupsBoard = ({
   const isFull = groups.length >= MAX_GROUPS_PER_PROJECT;
 
   /**
-   * The filter, applied.
-   *
-   * One predicate rather than one per lane, so the untagged pile and the
-   * columns can never disagree about what "open" means — which is exactly the
-   * kind of thing that drifts when the same `!==` is written in two places.
+   * The filter, applied. One predicate rather than one per lane, so the untagged pile and the
+   * columns can never disagree about what "open" means.
    */
   const visible = useMemo(() => {
     const keep = (task: GroupedTask) =>
@@ -266,20 +187,8 @@ export const GroupsBoard = ({
     );
   }, [activeId, board]);
 
-  /*
-   * Turning the page with a card in hand.
-   *
-   * Paging and dragging are in direct conflict: a lane on page two is not on
-   * screen, so without this the board would be one where half the columns
-   * cannot be dropped into. The arrows are therefore drop targets as well as
-   * buttons — hovering one with a card held turns the page under it, the same
-   * way dragging to the edge of a list scrolls it.
-   *
-   * Throttled, because `onDragOver` fires on every pointer move: unthrottled it
-   * would flick through ten pages in the time it takes to notice the first one
-   * turned. The ref rather than state so reading it does not re-render the
-   * board mid-drag.
-   */
+  // Turning the page with a card in hand. Paging and dragging are in direct conflict: a lane on
+  // page two is not on screen.
   const lastFlipRef = useRef(0);
 
   const handleDragOver = (event: DragOverEvent) => {
@@ -318,11 +227,8 @@ export const GroupsBoard = ({
   };
 
   /**
-   * Which of the two writes a tick becomes, decided once.
-   *
-   * An assignee signs off their own row; an owner or admin who is not on the
-   * task closes it outright. Nobody else gets a box at all — the card is passed
-   * no handler, so there is nothing to press. See `useToggleGroupTaskCompletion`.
+   * Which of the two writes a tick becomes, decided once. An assignee signs off their own row; an
+   * owner or admin who is not on the task closes it outright.
    */
   const completionHandler = (task: GroupedTask) => {
     if (!task.isMine && !canManage) return undefined;
@@ -345,14 +251,8 @@ export const GroupsBoard = ({
     );
   }
 
-  /*
-   * Nothing has been set up yet.
-   *
-   * Deliberately a full empty state rather than an empty board with one "add"
-   * button in the corner: this is a feature most people arrive at without
-   * knowing what it does, and the one screen where explaining it costs nothing
-   * is the one where there is nothing else to draw.
-   */
+  // Nothing has been set up yet. Deliberately a full empty state rather than an empty board with
+  // one "add" button in the corner.
   if (groups.length === 0) {
     return (
       <>
@@ -385,14 +285,8 @@ export const GroupsBoard = ({
   const untaggedIsVisible = visible.untagged.length > 0;
 
   return (
-    /*
-     * The whole surface is one drag context, toolbar included.
-     *
-     * Not a stylistic choice: the pager arrows are drop targets as well as
-     * buttons (see `Pager`), and `useDroppable` outside a `DndContext` silently
-     * registers with nothing — the arrow would look like a target and never be
-     * one, which is the worst of the three possible outcomes.
-     */
+    /* The whole surface is one drag context, toolbar included. Not a stylistic choice: the pager
+       arrows are drop targets as well as buttons (see `Pager`). */
     <DndContext
       sensors={sensors}
       collisionDetection={closestCorners}
@@ -421,16 +315,7 @@ export const GroupsBoard = ({
             ]}
           />
 
-          {/*
-            The way back from hiding, and only when there is one.
-
-            A permanent "hidden columns" control on a board with nothing hidden is
-            a button that teaches a feature by refusing to do anything. This
-            appears the moment the first column is folded away and goes when the
-            last one comes back — which is also what makes hiding safe to offer:
-            the undo is never more than one click away and it is impossible to
-            miss.
-          */}
+          {/* The way back from hiding, and only when there is one. */}
           {hiddenCount > 0 && (
             <>
               <Button
@@ -456,14 +341,7 @@ export const GroupsBoard = ({
           )}
 
           <div className="ml-auto flex items-center gap-2">
-            {/*
-              Paging applies at every width, so the arrows do too.
-
-              A phone still swipes between the lanes of the page it is on; the
-              arrows are how it reaches the next four. Hiding them there would
-              leave the small screen — the one with least room — as the only place
-              where half the columns are unreachable.
-            */}
+            {/* Paging applies at every width, so the arrows do too. */}
             {pageCount > 1 && (
               <span className="inline-flex items-center gap-1">
                 <Pager
@@ -492,15 +370,8 @@ export const GroupsBoard = ({
               </span>
             )}
 
-            {/*
-              "Add column" lives here rather than at the end of the line.
-
-              It used to sit where a new column would appear, which was the right
-              place on a board that scrolled forever. With paging, "the end of the
-              line" is the end of *this page* — so the button would move as you
-              paged, and on any page but the last it would point at a spot the new
-              column does not go to.
-            */}
+            {/* "Add column" lives here rather than at the end of the line. It used to sit where
+                a new column would appear. */}
             {canManage && (
               <Button
                 size="sm"
@@ -520,21 +391,8 @@ export const GroupsBoard = ({
 
         <div
           className={cn(
-            /*
-             * Two layouts, and `lg` is where they change over.
-             *
-             * Below it the board is the snapping strip the task board uses: one
-             * lane per swipe, at a width you can actually read a card in. The
-             * pager still applies there — it is how a phone reaches the columns
-             * on page two — so the strip is a page's worth of lanes rather than
-             * all of them.
-             *
-             * From `lg` the lanes share the width instead, and that is what
-             * makes paging worth having at all: a page becomes the whole board
-             * rather than the first slice of a scroller. The changeover is at
-             * `lg` rather than `sm` because five lanes need roughly a thousand
-             * pixels before each one is still a column and not a ribbon.
-             */
+            /* Two layouts, and `lg` is where they change over. Below it the board is the snapping
+               strip the task board uses: one lane per swipe. */
             '-mx-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-3 pb-2',
             'lg:mx-0 lg:snap-none lg:overflow-x-visible lg:px-0',
             // `relative` for the exiting lanes, which `popLayout` takes out of
@@ -542,45 +400,11 @@ export const GroupsBoard = ({
             'relative items-stretch',
           )}
         >
-          {/*
-            `popLayout`, and this is the fix for the lane that used to blink out.
-
-            The untagged pile disappearing the instant it empties is correct
-            behaviour drawn badly: the lane was simply unmounted, so every
-            column to its right teleported one lane leftwards in a single frame.
-
-            `popLayout` takes the departing lane out of the layout flow the
-            moment it starts to go, so its neighbours are given their new
-            positions on that same frame — and `layout="position"` on every lane
-            turns that reflow into a glide instead of a jump. The two together
-            are what make the board settle rather than snap.
-
-            `initial={false}` so the first paint of the board is not an
-            animation: arriving on the tab should show a board, not build one.
-
-            ## Why only this lane is wrapped
-
-            Because it is the only one that *leaves*. The columns beside it come
-            and go by paging, and a page turn is not eight lanes dissolving — it
-            is a different view of the same board, and it should land at once
-            the way a page does. Wrapping them too would have every arrow press
-            run four exits and four entrances, for an effect nobody asked for
-            and a window in which a half-departed lane is still a live drop
-            target. They still glide, because `layout` does not need
-            `AnimatePresence` to notice that a neighbour has gone.
-          */}
+          {/* `popLayout`, and this is the fix for the lane that used to blink out. The untagged
+              pile disappearing the instant it empties is correct behaviour drawn badly. */}
           <AnimatePresence initial={false} mode="popLayout">
-            {/*
-              The untagged lane, first and only when it has something in it.
-
-              First because it is the pile you are working *from* when you set
-              the board up — it reads as an inbox, and an inbox belongs at the
-              start of the line rather than after eight columns of filed work.
-
-              It is not paged and it cannot be hidden: it is not a column
-              anybody created, and a board that could tidy away the pile of
-              unfiled work would be one where a task can be lost by hiding it.
-            */}
+            {/* The untagged lane, first and only when it has something in it. First because it
+                is the pile you are working *from* when you set the board up. */}
             {untaggedIsVisible && (
               <Lane
                 key={UNTAGGED}
@@ -657,13 +481,7 @@ export const GroupsBoard = ({
           )}
         </DragOverlay>
 
-        {/*
-          Every column on this board is hidden, or the filter has emptied it.
-
-          Worth its own sentence rather than an empty strip: the two causes have
-          completely different fixes, and a board that just went blank tells the
-          reader neither of them.
-        */}
+        {/* Every column on this board is hidden, or the filter has emptied it. */}
         {pageColumns.length === 0 && !untaggedIsVisible && (
           <EmptyState
             icon={filter === 'done' ? <CheckCircle2 className="h-6 w-6" /> : <EyeOff className="h-6 w-6" />}
@@ -697,14 +515,8 @@ export const GroupsBoard = ({
           }}
         />
 
-        {/*
-          A new task, already filed.
-
-          The board's own composer rather than the page's, because the column is
-          the whole point of pressing "+" *here*: the tag arrives locked to the
-          lane the button was in, which is the one thing the page's own "new task"
-          button cannot say. See `lockedGroupId` on the composer.
-        */}
+        {/* A new task, already filed. The board's own composer rather than the page's, because
+            the column is the whole point of pressing "+" *here*. */}
         <TaskComposer
           isOpen={creatingIn !== null}
           onClose={() => setCreatingIn(null)}
@@ -719,9 +531,7 @@ export const GroupsBoard = ({
   );
 };
 
-// ---------------------------------------------------------------------------
-// Pieces
-// ---------------------------------------------------------------------------
+// --- Pieces ------------------------------------------------------------------
 
 interface LaneProps {
   id: string;
@@ -738,11 +548,8 @@ interface LaneProps {
   /** The one card whose completion write is in flight, if any. */
   syncingTaskId?: string | null;
   /**
-   * What an empty lane says.
-   *
-   * Passed in rather than fixed at `groups.dropHere`, because under the
-   * "completed" filter that sentence is a lie: dropping a live task here would
-   * file it correctly and it still would not appear.
+   * What an empty lane says. Passed in rather than fixed at `groups.dropHere`, because under the
+   * "completed" filter that sentence is a lie.
    */
   emptyLabel?: string;
   /** Folded away by this reader, and only on screen because they are looking. */
@@ -772,14 +579,8 @@ const Lane = ({
   const t = useT();
   const { setNodeRef, isOver } = useDroppable({ id });
 
-  /*
-   * The lane shows the work due soonest and offers the rest.
-   *
-   * Per-lane state rather than per-board: opening "Blocked" says nothing about
-   * wanting "Done" opened too, and on this board a column is a category the
-   * project invented, so how much of each one matters is entirely the reader's
-   * business. See `column-overflow.tsx` for why the cap is measured.
-   */
+  // The lane shows the work due soonest and offers the rest. Per-lane state rather than per-board:
+  // opening "Blocked" says nothing about wanting "Done" opened too.
   const capacity = useColumnCapacity();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -789,17 +590,8 @@ const Lane = ({
   return (
     <motion.section
       ref={setNodeRef}
-      /*
-       * `layout="position"`, not plain `layout`.
-       *
-       * The full version animates the *box*, which it does by scaling — and a
-       * lane's box changes height every time a card is added, ticked or
-       * filtered out. Scaling a lane vertically stretches every word inside it
-       * for the length of the animation, so a board in ordinary use would have
-       * its type breathing on and off all day. Position-only gives exactly what
-       * this is here for: when a neighbour leaves, the lanes beside it glide
-       * across instead of teleporting, and nothing gets distorted doing it.
-       */
+      /* `layout="position"`, not plain `layout`. The full version animates the *box*, which it does
+         by scaling — and a lane's box changes height every time a card is added. */
       layout="position"
       initial={{ opacity: 0, scale: 0.96 }}
       animate={{ opacity: 1, scale: 1 }}
@@ -812,19 +604,8 @@ const Lane = ({
         'lg:min-h-[13.75rem] lg:w-auto lg:min-w-[10.625rem] lg:shrink lg:flex-1 lg:basis-0 lg:p-3',
         'transition-colors duration-150',
         isOver ? 'border-brand bg-brand/[0.06]' : 'border-edge bg-surface-sunken/60',
-        /*
-         * A revealed-but-hidden column reads as a ghost of itself: it is on
-         * screen so it can be brought back, not because it is part of the
-         * board.
-         *
-         * The fade is on the lane's *children* rather than on the lane. Two
-         * things own `opacity` here and only one of them can win: `animate`
-         * writes it inline for the enter and exit, and an inline style beats
-         * any utility however specific — so an `opacity-55` on this element
-         * would simply never be applied. Dimming what is inside the box leaves
-         * the box's own opacity to the animation, and neither has to know
-         * about the other.
-         */
+        /* A revealed-but-hidden column reads as a ghost of itself: it is on screen so it can be
+           brought back, not because it is part of the board. */
         isHidden && 'border-dashed [&>*]:opacity-60',
       )}
     >
@@ -850,36 +631,11 @@ const Lane = ({
           {count}
         </span>
 
-        {/*
-          The two controls that belong at the top of a column.
-
-          "+" is here because writing a task *into this category* is the most
-          frequent thing anybody wants from a column they are looking at, and
-          the eye is beside it because hiding is the other thing you do to a
-          whole column. The ones that change what the column *is* — rename,
-          recolour, reorder, delete — moved to the footer: they are rare, they
-          are destructive, and they were previously one mis-tap away from the
-          spot the pointer lands on when reaching for the header.
-        */}
+        {/* The two controls that belong at the top of a column. */}
         {(onAddTask || onToggleHidden) && (
           <span className="flex shrink-0 items-center gap-1">
             {onAddTask && (
-              /*
-                Drawn as a filled control, not as a hover-only glyph.
-
-                It was a 24px icon in `--content-faint` that only took the brand
-                colour once the pointer was already on it, sitting beside a
-                second 24px icon that looked identical until then. Which meant
-                the most-used control on a column was the least visible thing in
-                its header, and on touch — where there is no hover at all — it
-                never announced itself as a button in the first place.
-
-                So it now carries the brand tint at rest, is a 28px target
-                rather than 24, and the hover *fills* rather than merely tints:
-                the state change reads as a press being invited. The eye beside
-                it keeps the quiet treatment, which is what makes this one the
-                obvious primary action of the two.
-              */
+              /* Drawn as a filled control, not as a hover-only glyph. */
               <button
                 type="button"
                 onClick={onAddTask}
@@ -932,9 +688,8 @@ const Lane = ({
           />
         ))}
 
-        {/* The rest of the column, folded away. Still inside the droppable, so
-            a card can be dropped into a lane that is showing four of twenty —
-            see the same arrangement on the status board. */}
+        {/* The rest of the column, folded away. Still inside the droppable, so a card can be
+            dropped into a lane that is showing four of twenty. */}
         <ColumnOverflow isOpen={isOpen}>
           {ordered.slice(capacity).map((task) => (
             <DraggableCard
@@ -1012,12 +767,8 @@ const DraggableCard = ({
 };
 
 /**
- * One pager arrow: a button, and a drop target for the same page turn.
- *
- * Both, because the board pages and the cards drag, and a page you cannot reach
- * with a card in your hand is a page you cannot file into. Hovering one of
- * these mid-drag turns the page under it — the throttle lives on the board, in
- * `handleDragOver`.
+ * One pager arrow: a button, and a drop target for the same page turn. Both, because the board
+ * pages and the cards drag.
  */
 const Pager = ({
   id,
@@ -1056,12 +807,8 @@ const Pager = ({
 };
 
 /**
- * What a column *is*: its order, its name, and whether it goes on existing.
- *
- * At the foot of the lane rather than in its header. These are the rare and the
- * destructive controls, and the header is where the pointer lands when somebody
- * reaches for a column — putting "delete" there and "add a task" nowhere had it
- * exactly backwards.
+ * What a column *is*: its order, its name, and whether it goes on existing. At the foot of the lane
+ * rather than in its header.
  */
 const ColumnControls = ({
   canMoveLeft,
@@ -1139,11 +886,8 @@ const ColumnControls = ({
 };
 
 /**
- * One dialog for creating and for renaming.
- *
- * The two differ by a title and by what the fields start as, which is not two
- * dialogs' worth of difference — and keeping them together is what stops the
- * name limit, the colour palette and the submit guard from drifting apart.
+ * One dialog for creating and for renaming. The two differ by a title and by what the fields start
+ * as, which is not two dialogs' worth of difference.
  */
 const ColumnDialog = ({
   state,
@@ -1162,9 +906,8 @@ const ColumnDialog = ({
   const [name, setName] = useState('');
   const [color, setColor] = useState<string>(TASK_COLORS[0]);
 
-  // Re-seeded on every open: the dialog is mounted by the board, so its state
-  // would otherwise be whatever was last typed into it — including the name of
-  // a different column.
+  // Re-seeded on every open: the dialog is mounted by the board, so its state would otherwise be
+  // whatever was last typed into it — including the name of a different column.
   useEffect(() => {
     if (!state) return;
     setName(isNew ? '' : state.name);
@@ -1178,9 +921,8 @@ const ColumnDialog = ({
     try {
       await onSubmit({ name: trimmed, color });
     } catch {
-      // The mutation's `onError` has already said what went wrong — most often
-      // that the name is taken. Swallowed so the dialog stays open with the
-      // text in it rather than raising an unhandled rejection.
+      // The mutation's `onError` has already said what went wrong — most often that the name is
+      // taken.
     }
   };
 

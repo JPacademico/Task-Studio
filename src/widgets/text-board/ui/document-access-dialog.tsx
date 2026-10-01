@@ -16,31 +16,7 @@ interface DocumentAccessDialogProps {
   roster: RosterMember[];
 }
 
-/**
- * Who else may rewrite this page.
- *
- * ## What this dialog is not
- *
- * It is not a sharing dialog. Everybody on the project can already *read* every
- * page on the board and always could; nothing here changes that, and the copy
- * says so, because "share" is the word people read as "let them see it" and
- * they would then wonder what the rest of the roster is currently missing.
- *
- * What it hands out is the pen. A page is one person's argument at a particular
- * moment — a spec, a proposal, a set of minutes — and until this existed
- * anybody on the roster could open somebody else's and overwrite it. The author
- * decides who helps.
- *
- * ## Why the whole list is sent
- *
- * Granting and revoking are the same act, so the dialog holds a draft set and
- * saves it in one call. A checkbox that fired a mutation per click would make a
- * quick pass down a roster of twelve into twelve requests, each of which can
- * fail on its own and leave the row disagreeing with the screen.
- *
- * The author is not in the list. They already hold the pen, permanently, and a
- * checkbox that cannot be unticked is a control that lies about what it does.
- */
+/** Who else may rewrite this page. */
 export const DocumentAccessDialog = ({
   isOpen,
   onClose,

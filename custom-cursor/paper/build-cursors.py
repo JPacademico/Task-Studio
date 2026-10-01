@@ -1,31 +1,4 @@
-"""Builds the Paper skin's cursor from the two drawings in this folder.
-
-Run it after changing either PNG:
-
-    python custom-cursor/paper/build-cursors.py
-
-It writes `built/cursor.css` beside the drawings; paste that over the block in
-`src/app/styles/index.css` marked `Skin: PAPER - the pointer is a paper plane`.
-(A file rather than stdout, because the em dashes in the generated comments do
-not survive a Windows console pipe.)
-
-## Why this replaced an inline SVG
-
-The first version of this cursor was two `<path>`s written by hand in the
-stylesheet - a four-point dart approximating the design. It was legible and it
-was not the drawing: the folded nose, the shadowed underside and the weight of
-the ink were all absent, because they cannot be had from four points. These are
-the design team's files, turned and scaled and nothing else.
-
-PNG rather than the SVG they could have stayed as, for one reason that only
-shows up on other people's machines: an SVG cursor is rasterised by the browser
-at whatever size it decides, and Chrome and Safari disagree - the same
-`viewBox` lands a pixel apart, which moves the hotspot off the nose. A PNG at a
-fixed size is the same cursor everywhere.
-
-Requires Pillow (`pip install pillow`). Nothing in the application depends on
-this script at build or run time; it is a one-off tool that produces text.
-"""
+"""Builds the Paper skin's cursor from the two drawings in this folder."""
 import base64
 import io
 import math
@@ -35,30 +8,15 @@ from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-# Smaller than the Halloween knife's 40, and deliberately.
-#
-# A knife is an illustration with parts that have to survive - a guard, notches
-# in the grip, a pommel. A paper plane is a silhouette with one fold in it, so
-# it stays readable much further down, and Paper is the quiet skin: the cursor
-# should be a plane you notice once, not furniture.
-#
-# 32 since 2026-09-30, down from 36 with a 30px plane: every custom pointer in
-# the product now sits in the system cursor's own 32px box, because a pointer
-# bigger than the one people are used to reads as a toy and covers the word it
-# is aimed at. A plane survives the reduction better than anything else here.
+# Smaller than the Halloween knife's 40, and deliberately. A knife is an illustration with parts
+# that have to survive - a guard, notches in the grip, a pommel.
 BOX = 32
 PLANE = 24        # the drawing's long side inside the canvas
 REST = 2          # where the resting frame sits, leaving room to fly into
 THROW = 2         # how far the click frame flies forward, in canvas pixels
 
-# Where each drawing should point, in the same terms `axis()` reports: 0 is
-# right, 90 is straight up, 135 is up and to the left.
-#
-# The arrow takes the diagonal the system pointer sits on; the pointer-state
-# plane stands straight up, which is what the hand it replaces does. Both are a
-# few degrees off as drawn - 127 and 83 - and the difference is computed below
-# rather than typed, so re-drawn artwork lands on the same angles without this
-# file changing.
+# Where each drawing should point, in the same terms `axis()` reports: 0 is right, 90 is straight
+# up, 135 is up and to the left.
 ARROW_DEGREES = 135
 POINTER_DEGREES = 90
 
@@ -77,12 +35,7 @@ def opaque_points(image: Image.Image) -> list[tuple[int, int]]:
 
 
 def axis(image: Image.Image) -> float:
-    """Which way the plane points, in degrees, 0 = right and 90 = up.
-
-    The principal axis of the opaque pixels gives the line the plane lies on,
-    and the narrower end of that line is its nose - which is what separates
-    nose from tail without anything here knowing it is looking at a plane.
-    """
+    """Which way the plane points, in degrees, 0 = right and 90 = up."""
     points = opaque_points(image)
     count = len(points)
     cx = sum(x for x, _ in points) / count
@@ -135,13 +88,7 @@ def frame(image: Image.Image, target: float, offset: tuple[int, int]) -> Image.I
 
 
 def nose(image: Image.Image) -> tuple[int, int]:
-    """The tip of the plane: the opaque pixel nearest the top of the canvas.
-
-    Measured rather than assumed, because it becomes the hotspot - a cursor
-    whose hotspot is off its nose makes every click land somewhere the reader
-    did not aim. Ties go to the leftmost pixel of the topmost row, which is the
-    nose of the diagonal plane and the fold of the upright one.
-    """
+    """The tip of the plane: the opaque pixel nearest the top of the canvas."""
     pixels = image.load()
     for y in range(image.height):
         for x in range(image.width):
@@ -157,12 +104,8 @@ FRAMES = {
     "pointer-throw": frame(pointer, POINTER_DEGREES, (REST, max(0, REST - THROW))),
 }
 
-# Two hotspots, one per drawing, and neither moves into its thrown frame.
-#
-# Fixing the hotspot is what makes the throw visible: the plane travels forward
-# while the button is held and springs back on release, instead of dragging the
-# pointer along with it. One frame each way, no loop, because a cursor cannot
-# tween and does not need to.
+# Two hotspots, one per drawing, and neither moves into its thrown frame. Fixing the hotspot is what
+# makes the throw visible.
 ARROW_POINT = nose(FRAMES["arrow"])
 POINTER_POINT = nose(FRAMES["pointer"])
 
@@ -194,14 +137,8 @@ input[type='submit']:not(:disabled),
 input[type='button']:not(:disabled),
 .cursor-pointer"""
 
-# Every rule is gated on the opt-out, so the checkbox in the theme picker can
-# hand the system pointer back without a second copy of this block existing.
-#
-# Compound, with no space before `[data-skin]`: both attributes live on the
-# *same* element. `ThemeProvider` writes `data-skin` onto `document
-# .documentElement`, which is the `html` element this gate names, so a
-# descendant combinator here matches nothing at all and the whole block
-# silently does not apply.
+# Every rule is gated on the opt-out, so the checkbox in the theme picker can hand the system
+# pointer back without a second copy of this block existing.
 GATE = "html:not([data-cursor='off'])[data-skin='paper']"
 
 arrow_point = f"{ARROW_POINT[0]} {ARROW_POINT[1]}"
@@ -293,10 +230,8 @@ css = f'''
 }}
 '''
 
-# The prose above is written with ASCII hyphens so that this file stays pure
-# ASCII, and the stylesheet it lands in uses em dashes throughout. One pass
-# converts them: " - " cannot occur inside a selector or inside base64, whose
-# alphabet has no hyphen, so the substitution can only touch the comments.
+# The prose above is written with ASCII hyphens so that this file stays pure ASCII, and the
+# stylesheet it lands in uses em dashes throughout.
 css = css.replace(" - ", f" {chr(0x2014)} ")
 
 io.open(f"{built}/cursor.css", "w", encoding="utf-8", newline="").write(css)

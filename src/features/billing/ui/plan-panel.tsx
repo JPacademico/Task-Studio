@@ -25,16 +25,8 @@ import { useLocale, useT, type Translate, type TranslationKey } from '@/shared/i
 import { formatBytesCeiling, formatBytesUsed, formatPrice, usageFraction } from '../lib/format';
 
 /**
- * Which currency a reader is offered first.
- *
- * Guessed from the language they are reading in, and only as a *starting
- * point* — the picker is right there. A Portuguese reader is overwhelmingly
- * likely to want reais, and making them find a dropdown to see a price in a
- * currency they can actually pay in is a worse default than occasionally
- * guessing wrong for a Brazilian who prefers dollars.
- *
- * Not derived from geolocation, which would need permission for something this
- * unimportant, and not from the browser's currency (there is no such thing).
+ * Which currency a reader is offered first. Guessed from the language they are reading in, and only
+ * as a *starting point* — the picker is right there.
  */
 const preferredCurrency = (locale: string): Currency => (locale.startsWith('pt') ? 'brl' : 'usd');
 
@@ -51,27 +43,7 @@ const PLAN_NAME: Record<Plan, TranslationKey> = {
   BARON: 'billing.plan.BARON',
 };
 
-/**
- * The rows of the comparison table, in the order they are drawn.
- *
- * ## Why nine rows and not the whole `PlanLimits` object
- *
- * Because a comparison table is a sales document, and the fields it leaves out
- * are as considered as the ones it keeps. `projectsPerOwnerIncludingBinned` and
- * `teamsPerScope` are real ceilings that nobody has ever chosen a plan over —
- * putting them here would push the row somebody *does* care about below the
- * fold to make room for a number about the recycle bin.
- *
- * They are still enforced, still in the API's own catalogue, and still named in
- * the refusal if anybody meets one. This list is about what to *show*.
- *
- * ## Why `render` is a function per row
- *
- * Because the nine values are four different kinds of thing — a count, a byte
- * ceiling, a boolean, and a count that may be uncapped — and a table that
- * printed them all with one formatter would render `documentBoardBytes` as
- * "83886080".
- */
+/** The rows of the comparison table, in the order they are drawn. */
 interface FeatureRow {
   key: TranslationKey;
   render: (limits: PlanLimits, t: Translate) => string | boolean;
@@ -86,14 +58,8 @@ const FEATURES: FeatureRow[] = [
     render: (l, t) => count(l.membersPerOrganization, t),
   },
   { key: 'billing.feature.tasksPerProject', render: (l, t) => count(l.tasksPerProject, t) },
-  /*
-   * Directly under the task row on purpose.
-   *
-   * These two are the pair a reader is actually comparing: one is now uncapped
-   * on the top tier and the other is the tightest step in the table, so putting
-   * them together is what makes the shape of the offer legible rather than
-   * making the reader hold two rows apart in their head.
-   */
+  // Directly under the task row on purpose. These two are the pair a reader is actually comparing:
+  // one is now uncapped on the top tier and the other is the tightest step in the table.
   { key: 'billing.feature.boardPages', render: (l, t) => count(l.boardPagesPerUser, t) },
   {
     key: 'billing.feature.whiteboardPages',
@@ -107,16 +73,8 @@ const FEATURES: FeatureRow[] = [
         : formatBytesCeiling(l.documentBoardBytes),
   },
   { key: 'billing.feature.ai', render: (l, t) => count(l.aiCallsPerMonth, t) },
-  /*
-   * Two rows for broadcasting, not one.
-   *
-   * A single "Discord, Slack & custom endpoints" row would have to render a
-   * tick on the free tier (it has Discord) or a dash (it lacks the other two),
-   * and both are lies. Splitting it is the only honest rendering, and it also
-   * happens to be the better sales table: a free reader sees a tick they
-   * already have next to a dash they could buy, which is a far more legible
-   * offer than one ambiguous row.
-   */
+  // Two rows for broadcasting, not one. A single "Discord, Slack & custom endpoints" row would have
+  // to render a tick on the free tier (it has Discord) or a dash (it lacks the other two).
   { key: 'billing.feature.discord', render: (l) => allowsFlavour(l.broadcastFlavours, 'discord') },
   {
     key: 'billing.feature.broadcast',
@@ -135,35 +93,7 @@ const FEATURES: FeatureRow[] = [
 const count = (limit: Limit, t: Translate): string =>
   limit === null ? t('billing.limit.unlimited') : String(limit);
 
-/**
- * The plan somebody is on, what it allows, and how to change it.
- *
- * ## Why this is one panel and not a page
- *
- * Because changing plan is a *setting*. It is the same kind of act as changing
- * a password or connecting a calendar — infrequent, about the account rather
- * than about any project, and reached by somebody who came to Settings on
- * purpose. A dedicated `/billing` route would be a second place to navigate to
- * for something that belongs beside the other things you can change about
- * yourself.
- *
- * The comparison table folds away for the same reason the skin gallery does:
- * the common visit is somebody checking what they are on or what is left, and
- * three columns of ceilings on top of that is a wall in front of the answer.
- *
- * ## Why the usage meters are here rather than where the limits bite
- *
- * They are in both places, and they are different things in each. A project
- * that is full says so at the moment somebody tries to add to it — that is an
- * error, and it is the API's job. These are the *inventory*: what you own
- * against what you are allowed, in one place, so somebody deciding whether to
- * pay can see the answer without visiting six projects.
- *
- * The three shown are the three that are facts about *this account* — projects
- * owned, organizations owned, assistant calls spent, and the reader's own desk.
- * A per-project ceiling cannot be drawn here because there is no one project to
- * draw it for.
- */
+/** The plan somebody is on, what it allows, and how to change it. */
 export const PlanPanel = () => {
   const t = useT();
   const locale = useLocale();
@@ -178,34 +108,15 @@ export const PlanPanel = () => {
   const [interval, setInterval] = useState<BillingInterval>('MONTH');
   const [currency, setCurrency] = useState<Currency>(() => preferredCurrency(locale));
 
-  /*
-   * The currency, corrected once the deployment says what it sells.
-   *
-   * The initial guess is from the reader's language and can name a currency
-   * this deployment has no prices in — at which point every plan would draw as
-   * unbuyable for a reason that is not the reader's fault. This settles on the
-   * first currency actually on offer.
-   *
-   * Depends on the catalogue rather than running once, because the catalogue
-   * arrives after the first render.
-   */
+  // The currency, corrected once the deployment says what it sells.
   const available = catalogue.data?.currencies ?? [];
   useEffect(() => {
     if (available.length === 0 || available.includes(currency)) return;
     setCurrency(available[0]);
   }, [available, currency]);
 
-  /*
-   * What the redirect back from Stripe says, said once and then removed.
-   *
-   * Stripping the parameter matters for the same reason it does on the calendar
-   * panel: without it, a reader who reloads the page — or comes back to the tab
-   * an hour later — is congratulated on a payment they made this morning.
-   *
-   * The refetch is the interesting half. The webhook that grants the plan is a
-   * *separate* request from Stripe to the API, racing the browser's redirect,
-   * and on a cold container it frequently loses. See `useRefreshPlanAfterCheckout`.
-   */
+  // What the redirect back from Stripe says, said once and then removed. Stripping the parameter
+  // matters for the same reason it does on the calendar panel.
   useEffect(() => {
     const outcome = params.get('checkout');
     if (!outcome) return;
@@ -251,16 +162,8 @@ export const PlanPanel = () => {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="flex items-center gap-2 text-sm font-semibold">
-              {/*
-                Money, not magic.
-
-                `Sparkles` is the icon this product uses for the assistant — it
-                is on the AI panel, the checklist suggestion and the project
-                tab — so spending it here said "something clever happens" above
-                a line about what the account is paying for. A coin says the
-                one thing this section is about, and gives the sparkle back to
-                the feature that had earned it.
-              */}
+              {/* Money, not magic. `Sparkles` is the icon this product uses for the assistant —
+                  it is on the AI panel, the checklist suggestion and the project tab. */}
               <Coins className="h-3.5 w-3.5 shrink-0 text-brand" />
               {t('billing.currentPlan', { plan: t(PLAN_NAME[current.plan]) })}
             </p>
@@ -268,15 +171,8 @@ export const PlanPanel = () => {
               {t(BLURB[current.plan])}
             </p>
 
-            {/*
-              What happens next, when anything does.
-
-              Four mutually exclusive states, and only one of them is drawn.
-              Ordered by urgency rather than by likelihood: a failed payment is
-              the only one that asks the reader to do something, so it wins over
-              a cancellation notice, which in turn wins over an ordinary renewal
-              date nobody needs to act on.
-            */}
+            {/* What happens next, when anything does. Four mutually exclusive states, and only
+                one of them is drawn. */}
             {isGranted ? (
               <p className="mt-2 text-2xs text-content-faint">
                 {t('billing.grantedByAdmin')} {t('billing.grantedByAdminHint')}
@@ -341,18 +237,8 @@ export const PlanPanel = () => {
             note={t('billing.usage.resets', { date: formatCalendarDate(current.usage.ai.resetsAt) })}
             t={t}
           />
-          {/*
-            Your own desk, and only your own desk.
-
-            The note under it is doing real work rather than decorating. This
-            meter is the reader's plan applied to the reader's pages, which is
-            correct here and is *not* how a project board works: a project's
-            pages share one allowance sized by the project owner's plan, for
-            every member of the project. Without the line, somebody on Baron
-            reasonably reads "1 GB" as their personal share of every board they
-            can write to. The board's own gauge says the rest — see
-            `BoardGauge`.
-          */}
+          {/* Your own desk, and only your own desk. The note under it is doing real work rather
+              than decorating. */}
           <Meter
             label={t('billing.usage.personalBoard')}
             used={current.usage.personalBoardBytes}
@@ -387,12 +273,8 @@ export const PlanPanel = () => {
               ]}
             />
 
-            {/*
-              The currency picker appears only when there is a choice.
-
-              A deployment selling in one currency has nothing to ask, and a
-              one-option control is a control that looks broken.
-            */}
+            {/* The currency picker appears only when there is a choice. A deployment selling in
+                one currency has nothing to ask. */}
             {available.length > 1 && (
               <Segmented<Currency>
                 label={t('billing.currency')}
@@ -416,9 +298,8 @@ export const PlanPanel = () => {
             {plans.map((offer) => {
               const price = priceFor(offer);
               const isCurrent = offer.plan === current.plan;
-              // Free is never bought, a plan already held is never re-bought,
-              // and a plan with no price in this currency cannot be. The three
-              // reasons are different and the button is absent for all of them.
+              // Free is never bought, a plan already held is never re-bought, and a plan with no
+              // price in this currency cannot be.
               const canBuy =
                 paymentsEnabled && !isGranted && !isCurrent && offer.plan !== 'FREE' && price;
 
@@ -489,34 +370,14 @@ export const PlanPanel = () => {
                   </ul>
 
                   {canBuy && (
-                    /*
-                     * Routed, not charged — payments are switched off while the
-                     * rest of the product is built out.
-                     *
-                     * The mutation above is deliberately left wired up rather
-                     * than deleted: turning this back into a checkout is one
-                     * `onClick` and nothing else, and a half-removed payment
-                     * path is a far worse thing to come back to than an unused
-                     * one. `useStartCheckout` is still exercised by its own
-                     * tests either way.
-                     *
-                     * A `Link` rather than a `Button onClick={navigate}`,
-                     * because it is a navigation: middle-click, open-in-new-tab
-                     * and a visible address are all things a person reasonably
-                     * expects from something that takes them somewhere.
-                     */
+                    /* Routed, not charged — payments are switched off while the rest of the product
+                       is built out. */
                     <Link
                       to={`/plans/soon?plan=${offer.plan}`}
                       className={buttonClasses({ variant: 'lava', size: 'sm', className: 'w-full' })}
                     >
-                      {/*
-                        The wax. `buttonClasses` hands over the tube, the edge
-                        and the hover fill, and a class cannot put children
-                        inside an anchor — so without this the button was a
-                        *still* lamp, which reads as a broken gradient rather
-                        than as a missing child. Same composition `LavaLink`
-                        does on the landing page.
-                      */}
+                      {/* The wax. `buttonClasses` hands over the tube, the edge and the hover
+                          fill, and a class cannot put children inside an anchor. */}
                       <LavaSurface />
                       <span className="relative inline-flex items-center justify-center gap-1.5">
                         {t('billing.choosePlan', { plan: t(PLAN_NAME[offer.plan]) })}
@@ -533,23 +394,7 @@ export const PlanPanel = () => {
   );
 };
 
-/**
- * One "x of y" reading, with a bar under it.
- *
- * ## Why an unmetered limit draws no bar
- *
- * Because there is nothing for it to be a fraction *of*. A full-width bar would
- * say "you have used everything" and an empty one would say "you have used
- * nothing", and both are claims about a ceiling that does not exist. The word
- * is the honest rendering.
- *
- * ## Why the bar can be full but never over
- *
- * An account that was downgraded holds more than its new plan allows, so
- * `used > limit` is a real and reachable state. The number tells the truth; the
- * bar is clamped, because a fill overflowing its track reads as a rendering
- * fault rather than as a message. See `usageFraction`.
- */
+/** One "x of y" reading, with a bar under it. */
 const Meter = ({
   label,
   used,
@@ -595,9 +440,8 @@ const Meter = ({
           <div
             className={cn(
               'h-full rounded-full',
-              // Three bands, because "nearly full" is the state worth noticing
-              // and a single colour cannot say it. The threshold is where a
-              // reader still has time to act rather than where they are stuck.
+              // Three bands, because "nearly full" is the state worth noticing and a single colour
+              // cannot say it.
               fraction >= 1 ? 'bg-danger' : fraction >= 0.8 ? 'bg-warning' : 'bg-brand',
             )}
             style={{ width: `${Math.max(2, fraction * 100)}%` }}

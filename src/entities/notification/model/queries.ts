@@ -20,17 +20,8 @@ export const useUnreadCount = () =>
   });
 
 /**
- * Takes one notification out of every cached list, and off the badge.
- *
- * Both cache entries have to move together, and neither can wait for the
- * server: the panel is open and under the pointer when this runs, so a row
- * that lingers for a round trip reads as a click that did not register — and
- * the usual response to that is a second click on whatever has slid into its
- * place.
- *
- * The badge is only decremented for a notification that was actually unread;
- * dismissing one already marked read must not take the count below what is
- * genuinely outstanding.
+ * Takes one notification out of every cached list, and off the badge. Both cache entries have to
+ * move together, and neither can wait for the server.
  */
 const dropNotification = (queryClient: QueryClient, id: string): void => {
   let wasUnread = false;
@@ -65,15 +56,8 @@ export const useNotificationActions = () => {
     markRead: useMutation({ mutationFn: notificationApi.markRead, onSuccess: refresh }),
     markAllRead: useMutation({ mutationFn: notificationApi.markAllRead, onSuccess: refresh }),
 
-    /*
-     * Optimistic, and deliberately quiet on failure.
-     *
-     * A dismissal that does not reach the server is worth exactly one
-     * reconciliation: the row comes back on the next fetch and the user
-     * dismisses it again. Rolling it back under the pointer mid-gesture — or
-     * worse, toasting about it — would make a disappearing list item flicker
-     * back into a list somebody is still clicking through.
-     */
+    // Optimistic, and deliberately quiet on failure. A dismissal that does not reach the server is
+    // worth exactly one reconciliation.
     dismiss: useMutation({
       mutationFn: notificationApi.dismiss,
       onMutate: (id: string) => dropNotification(queryClient, id),

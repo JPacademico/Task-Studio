@@ -8,25 +8,15 @@ import { LOCALES, LOCALE_META, useLocaleStore, useT, type Locale } from '@/share
 interface LanguageToggleProps {
   className?: string;
   /**
-   * Draw the current language beside the icon.
-   *
-   * On the auth screens the control sits alone in a corner with nothing to
-   * explain it, so it says what it is. In the account menu the surrounding
-   * rows already carry labels and a second one would just be noise.
+   * Draw the current language beside the icon. On the auth screens the control sits alone in a
+   * corner with nothing to explain it, so it says what it is.
    */
   withLabel?: boolean;
 }
 
 /**
- * Picking the interface language.
- *
- * A popover rather than a cycling button, which is what the theme toggle next
- * to it uses. Two options today makes cycling tempting, but a language control
- * that changes the language *without saying to what* is a control you have to
- * click twice to understand — and the moment a third language exists, cycling
- * stops working entirely. The list also lets each language name itself, which
- * is the one bit of a language picker that must never be translated: somebody
- * looking for Portuguese is looking for the word "Português".
+ * Picking the interface language. A popover rather than a cycling button, which is what the theme
+ * toggle next to it uses.
  */
 export const LanguageToggle = ({ className, withLabel = false }: LanguageToggleProps) => {
   const t = useT();

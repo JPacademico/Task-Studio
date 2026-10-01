@@ -40,13 +40,8 @@ interface TaskDetailModalProps {
 }
 
 /**
- * Everything attached to a single task: its note checklist, the documents
- * pinned to it, and the pages written against it on the text board.
- *
- * The sheet used to carry two lists — a sub-checklist of plain rows and, below
- * it, a wall of Post-its. They were the same list, and neither half could see
- * the other, so a step written on a note and a step ticked in the checklist
- * were two different answers to one question. `NoteChecklist` is the merge.
+ * Everything attached to a single task: its note checklist, the documents pinned to it, and the
+ * pages written against it on the text board.
  */
 export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProps) => {
   const t = useT();
@@ -57,14 +52,8 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
   // `useAiStatus`, which is cached across every surface that asks.
   const { data: aiStatus } = useAiStatus();
 
-  /*
-   * Pages somebody has written against this task, on the project's text board.
-   *
-   * Scoped to the task, so this is a short list — usually none, sometimes one.
-   * Only asked for once there is a project to ask about: a personal task has no
-   * text board behind it, and the endpoint would answer with the caller's own
-   * desk, which is a different thing entirely.
-   */
+  // Pages somebody has written against this task, on the project's text board. Scoped to the task,
+  // so this is a short list — usually none, sometimes one.
   const { data: linkedDocuments = [] } = useProjectDocuments(
     task?.project?.id,
     task?.project ? task.id : undefined,
@@ -118,17 +107,8 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
             </span>
           </div>
 
-          {/*
-            Wrapped, and bounded in height.
-
-            `whitespace-pre-wrap` alone was the bug: it honours every newline
-            and every space in a pasted block, and it does *not* break a long
-            unbroken token — so a description pasted from a web page either ran
-            off the side of the sheet or turned into a thousand-line column
-            that pushed the checklist, the notes and the attachments out of
-            reach. `break-words` handles the first, the height cap and its own
-            scroller handle the second.
-          */}
+          {/* Wrapped, and bounded in height. `whitespace-pre-wrap` alone was the bug: it
+              honours every newline and every space in a pasted block. */}
           {task.description && (
             <p className="scrollbar-thin max-h-64 overflow-y-auto whitespace-pre-wrap break-words rounded-xl bg-surface-sunken p-3.5 text-sm leading-relaxed text-content-muted">
               {task.description}
@@ -145,21 +125,11 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
             />
           )}
 
-          {/* The attached paper. A row rather than a preview: rendering a PDF
-              inline is a second document viewer to build and a megabyte to
-              fetch before anybody has said they want it. */}
+          {/* The attached paper. */}
           {task.file && <FileAttachmentRow file={task.file} />}
 
-          {/*
-            Pages written against this task, on the project's text board.
-
-            The link was one-directional until now: the board could say which
-            task a page belonged to, and the task could not say a page existed.
-            So somebody reading a task with a whole spec attached to it had no
-            way to reach the spec except by opening the text board and reading
-            titles. `?tab=text&doc=` is what makes that one click — see
-            `ProjectPage` for why the tab lives in the URL.
-          */}
+          {/* Pages written against this task, on the project's text board. The link was
+              one-directional until now: the board could say. */}
           {linkedDocuments.length > 0 && task.project && (
             <section className="space-y-2">
               <h3 className="flex items-center gap-2 text-sm font-semibold">
@@ -176,9 +146,7 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
                     <button
                       type="button"
                       onClick={() => {
-                        // Closed first: the sheet is a modal over the board, and
-                        // leaving it mounted over the tab we just navigated to
-                        // would hide the thing the click asked for.
+                        // Closed first: the sheet is a modal over the board.
                         onClose();
                         navigate(
                           `/projects/${task.project?.id}?tab=text&doc=${entry.id}`,
@@ -217,17 +185,8 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
             </section>
           )}
 
-          {/*
-            Who and when, on one line.
-
-            This was four sentences in a two-column grid — "Created by Ana",
-            "Starts 3 Mar 2026 · 14:00", "Due …", "Completed …" — which spent
-            four rows of the sheet restating labels the icons carry. The
-            creator becomes a face, and the dates become a rail read left to
-            right: start, then deadline, then the tick if it landed. Each stamp
-            still carries the full, spelled-out timestamp as its tooltip, so
-            nothing is actually lost.
-          */}
+          {/* Who and when, on one line. This was four sentences in a two-column grid — "Created
+              by Ana", "Starts 3 Mar 2026 · 14:00", "Due …", "Completed …". */}
           <div className="flex flex-wrap items-center gap-1.5 text-2xs">
             <span
               title={t('common.createdBy', {
@@ -290,10 +249,8 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
             )}
           </div>
 
-          {/* --- Sign-off --------------------------------------------------
-              Only for work several people carry. On a single-assignee task the
-              tick on the card already says everything this section would, and
-              a roster of one is not a roster. */}
+          {/* --- Sign-off ---
+              Only for work several people carry. */}
           {isSharedTask(task) && (
             <section className="space-y-2">
               <h3 className="flex items-center gap-2 text-sm font-semibold">
@@ -332,14 +289,8 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
             </section>
           )}
 
-          {/*
-            The note checklist.
-
-            One section where there were two. The sheet used to carry a
-            sub-checklist of plain rows *and*, below it, a wall of Post-its —
-            the same list drawn twice, neither half aware of the other. See
-            `NoteChecklist`.
-          */}
+          {/* The note checklist. One section where there were two. The sheet used to carry a
+              sub-checklist of plain rows *and*. */}
           <NoteChecklist task={task} isAiEnabled={Boolean(aiStatus?.enabled)} />
 
         </div>

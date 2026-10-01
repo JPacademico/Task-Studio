@@ -46,18 +46,8 @@ const phaseOf = (room: LiveRoom): RoomPhase => {
 };
 
 /**
- * The Live tab.
- *
- * ## Why the list and the call share a surface rather than a route
- *
- * Joining a call is not navigation. A call has a `getUserMedia` permission, a
- * set of peer connections and a microphone attached to it, and a route change
- * — which unmounts the tree — would tear all of that down and rebuild it every
- * time somebody pressed back. So the stage replaces the list *in place*, and
- * leaving a call is a state change rather than a history entry.
- *
- * The deep link from a notification is the exception and is handled by opening
- * the room the id names, once, on arrival — see the effect below.
+ * The Live tab. Joining a call is not navigation. A call has a `getUserMedia` permission, a set of
+ * peer connections and a microphone attached to it, and a route change — which unmounts the tree.
  */
 export const LivePanel = ({
   projectId,
@@ -85,38 +75,21 @@ export const LivePanel = ({
     [activeRoomId, rooms],
   );
 
-  /*
-   * The deep link, honoured exactly once.
-   *
-   * A notification points at a specific room, and landing on the list with it
-   * three rows down is not what was asked for. Guarded on `rooms.length` so it
-   * runs after the first fetch rather than against an empty array, and it does
-   * not re-fire when the list refreshes — `activeRoomId` having been set is
-   * what stops that.
-   */
+  // The deep link, honoured exactly once. A notification points at a specific room, and landing on
+  // the list with it three rows down is not what was asked for.
   useEffect(() => {
     if (!initialRoomId || activeRoomId || rooms.length === 0) return;
     if (rooms.some((room) => room.id === initialRoomId)) setActiveRoomId(initialRoomId);
   }, [activeRoomId, initialRoomId, rooms]);
 
-  /*
-   * A room that ends while somebody is looking at its stage.
-   *
-   * The call hook notices the socket event and tears the call down, but the
-   * panel still has the id selected — so without this the reader is left on a
-   * stage for a call that no longer exists.
-   */
+  // A room that ends while somebody is looking at its stage. The call hook notices the socket event
+  // and tears the call down, but the panel still has the id selected.
   useEffect(() => {
     if (activeRoom?.endedAt) setActiveRoomId(null);
   }, [activeRoom?.endedAt]);
 
-  /*
-   * Stable, because the call hook keeps it in a dependency list.
-   *
-   * An inline arrow here is a new function on every render of this panel —
-   * which happens whenever the room list refreshes — and that would tear down
-   * and rebuild every socket listener in `useLiveCall` mid-call.
-   */
+  // Stable, because the call hook keeps it in a dependency list. An inline arrow here is a new
+  // function on every render of this panel — which happens whenever the room list refreshes.
   const leaveStage = useCallback(() => setActiveRoomId(null), []);
 
   if (activeRoom) {
@@ -153,9 +126,8 @@ export const LivePanel = ({
             onChange={setIncludeEnded}
             label={t('live.showEnded')}
           />
-          {/* The lamp, because this is the one "make a new thing" on the tab
-              — the same rule that puts it on "New project" and "New task"
-              rather than on Save. See `Button`'s `lava` variant. */}
+          {/* The lamp, because this is the one "make a new thing" on the tab — the same rule
+              that puts it on "New project" and "New task" rather than on Save. */}
           {canCreate && (
             <Button variant="lava" size="sm" onClick={() => openComposer(null)}>
               <Plus className="h-3.5 w-3.5" strokeWidth={2.8} />
@@ -316,10 +288,8 @@ export const LivePanel = ({
                   <Button
                     size="sm"
                     onClick={() => setActiveRoomId(room.id)}
-                    // A scheduled room is joinable by its host early — somebody
-                    // has to be able to test a microphone — and the API is what
-                    // enforces that, so the button is offered and the refusal
-                    // is explained if it comes.
+                    // A scheduled room is joinable by its host early — somebody has to be able to
+                    // test a microphone.
                     variant={phase === 'live' ? 'primary' : 'secondary'}
                   >
                     <Radio className="h-3.5 w-3.5" />

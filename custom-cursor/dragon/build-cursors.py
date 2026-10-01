@@ -1,45 +1,4 @@
-"""Builds the Dragon skin's guan dao cursor.
-
-Run it after changing anything below:
-
-    python custom-cursor/dragon/build-cursors.py
-
-It writes `built/cursor.css` beside this file; paste that over the block in
-`src/app/styles/index.css` marked `Skin: DRAGON - the pointer is a guan dao`.
-(A file rather than stdout, because the em dashes in the generated comments do
-not survive a Windows console pipe.)
-
-Requires Pillow (`pip install pillow`). Nothing in the application depends on
-this script at build or run time; it is a one-off tool that produces text.
-
-## How this differs from its two siblings
-
-`halloween/` and `paper/` start from artwork a designer drew and do nothing but
-rotate, crop, scale and place it. There is no drawing for this one, so the
-weapon is constructed here - which changes what the file is for but not what it
-has to guarantee, and the guarantees are the interesting part:
-
-  - **One canvas, one crop, one scale, one placement** for every frame, and one
-    hotspot for all of them. Frames registered against their own bounding boxes
-    drift by a pixel or two between states, and the pointer visibly twitches
-    the moment it crosses onto a link.
-  - **Rotation about the ferrule** - the brass collar where the blade meets the
-    shaft - so the blade sweeps through a real arc and the shaft counter-swings
-    behind it. See the note on PIVOT for why this is not the blade tip.
-  - **Supersampled 4x and reduced with LANCZOS**, because a 44px weapon drawn
-    directly has no antialiasing on a curve and a guan dao is nothing but
-    curves.
-
-## The three states
-
-  - **at rest**, on the 135-degree diagonal the system arrow sits on;
-  - **over anything pressable**, brought up to 106 degrees - a weapon raised,
-    the blade swung up and forward off the carrying diagonal;
-  - **while the button is held**, whipped anticlockwise to 160 degrees - down
-    and away to the left - with the arc of the swing drawn behind it. A cursor
-    cannot tween, so the arc is what makes one frame read as motion: the blade
-    is somewhere new *and* there is a bright trail showing where it came from.
-"""
+"""Builds the Dragon skin's guan dao cursor."""
 import base64
 import io
 import math
@@ -50,23 +9,9 @@ from PIL import Image, ImageDraw
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-# ---------------------------------------------------------------------------
-# Sizes
-# ---------------------------------------------------------------------------
+# --- Sizes ---
 
-# The delivered cursor, in CSS pixels. 42 rather than the knife's 40: a polearm
-# is mostly shaft, so the *blade* - the part that has to be recognisable - is a
-# smaller fraction of the footprint than a knife's is. Every current browser
-# accepts a cursor image up to 128px; past that the declaration is dropped and
-# the fallback keyword takes over.
-# Bigger than the 42 it was, and the increase is bought rather than spent: the
-# frames now sweep a much wider arc (see PIVOT), so one crop box covering all
-# three is larger than it used to be and the weapon inside it reduces further.
-# 48 keeps the blade at roughly the size it was on screen.
-#
-# 32 since 2026-09-30, down from 48: every custom pointer now sits in the
-# system cursor's own 32px box (see the Paper script). The swing arc still has
-# to fit, so the weapon comes down in proportion with it.
+# The delivered cursor, in CSS pixels. 42 rather than the knife's 40: a polearm is mostly shaft.
 BOX = 32
 # The composition's long side inside that box.
 WEAPON = 30
@@ -77,26 +22,15 @@ REST = 1
 # the end, which is the entire antialiasing strategy.
 S = 4
 
-# The working canvas, in supersampled pixels, large enough that rotating about
-# the blade tip never clips the butt of the shaft.
-#
-# Sized from the geometry rather than guessed: the shaft ends about 640
-# supersampled pixels from the tip, and a rotation can swing it to either side,
-# so the canvas has to hold the tip plus that radius in every direction.
+# The working canvas, in supersampled pixels, large enough that rotating about the blade tip never
+# clips the butt of the shaft.
 WORK = 1400
 
 REST_DEGREES = 135
 HOVER_DEGREES = 106
 SLASH_DEGREES = 160
 
-# ---------------------------------------------------------------------------
-# Palette
-#
-# Read as a weapon rather than as a theme: steel is steel under any lighting,
-# and recolouring it to the skin's gold would produce a golden prop. What the
-# skin contributes is the tassel and the brass fittings, which are the parts
-# that are genuinely imperial.
-# ---------------------------------------------------------------------------
+# --- Palette ---
 
 STEEL = (216, 221, 227, 255)
 STEEL_EDGE = (246, 249, 252, 255)
@@ -109,62 +43,23 @@ TASSEL = (179, 36, 28, 255)
 TASSEL_LIT = (226, 73, 58, 255)
 OUTLINE = (24, 16, 12, 255)
 
-# ---------------------------------------------------------------------------
-# Geometry, drawn vertically with the blade at the top
-# ---------------------------------------------------------------------------
+# --- Geometry, drawn vertically with the blade at the top ---
 
-# The blade's centreline is an arc, so that the edge curves the way a crescent
-# blade does instead of being a triangle with a bent side.
-#
-# ## Which side the edge is on, and why it moved
-#
-# `belly` is measured along the *outward* normal - away from the arc centre -
-# so the cutting edge is always on the far side of the blade from that centre.
-# Putting the centre to the left of the weapon therefore put the edge on the
-# right, which is what it was and what was wrong with it: a guan dao held on
-# the pointer's up-left diagonal has its edge facing forward along the swing,
-# and the swing goes left.
-#
-# The centre is now to the RIGHT of the shaft, so the arc sweeps up and to the
-# right, the belly bulges left, and the bright edge is the left-hand side of
-# the silhouette in every frame.
+# The blade's centreline is an arc, so that the edge curves the way a crescent blade does instead of
+# being a triangle with a bent side.
 ARC_CENTRE = (-10 * S, 70 * S)
 ARC_RADIUS = 72 * S
 ARC_FROM = 180.0   # degrees; the socket, level with the arc centre
 ARC_TO = 118.0     # the tip
 
-# Everything is drawn shifted by this, in supersampled pixels, so the layout
-# sits clear of the canvas edges before anything is rotated.
-#
-# ## Why the x term is so much larger than the drawing is wide
-#
-# Because it has to clear the *rotated* extent, not the drawn one, and the
-# rotation is about the ferrule - a point near the top of a composition that is
-# mostly below it. Swinging a 90-unit shaft anticlockwise throws its butt a long
-# way to the left of anything in the vertical layout.
-#
-# It was 120, which was enough for the vertical drawing and not enough for two
-# of the three poses: the resting frame lost 54 supersampled pixels off the left
-# edge of the canvas and the slash frame lost 102. Both losses landed on the
-# blade's belly - the widest, most recognisable part of the silhouette - so the
-# delivered cursor had a crescent with a flat side.
-#
-# The clipping was invisible in the generated PNGs because `union` crops to the
-# content that survived: a frame clipped at x=0 reports a bounding box starting
-# at x=0, which looks exactly like a frame that happens to touch the edge. The
-# `crop (0, ...)` in this script's own output was the tell, and the assertion
-# below now makes it an error rather than a thing to notice.
+# Everything is drawn shifted by this, in supersampled pixels, so the layout sits clear of the
+# canvas edges before anything is rotated.
 OFFSET = (170 * S, 40 * S)
 
 
 def along(t: float) -> float:
-    """A position on the blade as a fraction from socket (0) to tip (1).
-
-    The arc now runs *backwards* in degrees - 180 down to 118 - because the
-    centre moved to the other side of the weapon. Every place that used to say
-    `ARC_FROM + n` to mean "a little way along the blade" would now walk off
-    the socket end instead, so they ask for a fraction and this does the
-    arithmetic in one place.
+    """A position on the blade as a fraction from socket (0) to tip (1). The arc now runs
+    *backwards* in degrees - 180 down to 118.
     """
     return ARC_FROM + (ARC_TO - ARC_FROM) * t
 
@@ -185,11 +80,8 @@ def arc_normal(degrees: float) -> tuple[float, float]:
 
 
 def belly(t: float) -> float:
-    """How far the cutting edge bulges out, as a function of position (0..1).
-
-    Zero at the socket and zero at the tip, peaking a little past the middle -
-    which is where a guan dao is widest and is what makes the silhouette read
-    as a blade rather than as a thickened line.
+    """How far the cutting edge bulges out, as a function of position (0..1). Zero at the socket
+    and zero at the tip, peaking a little past the middle.
     """
     return 30 * S * math.sin(t ** 0.85 * math.pi) ** 1.25
 
@@ -202,36 +94,10 @@ def spine(t: float) -> float:
 BLADE_TIP = on_arc(ARC_TO)
 SOCKET = on_arc(ARC_FROM)
 
-# ---------------------------------------------------------------------------
-# The pivot
-# ---------------------------------------------------------------------------
+# --- The pivot ---
 
-# The brass ferrule, a few units below the socket: the collar that binds the
-# blade to the shaft, and the point the whole weapon now turns about.
-#
-# ## Why not the blade tip, which is where it used to be
-#
-# Because rotating about the tip is *why* the complaint was "only the shaft
-# moves". It is geometrically true: a rotation leaves its centre fixed, so with
-# the centre on the point of the blade the blade turns in place through a few
-# degrees while the ninety-unit shaft sweeps a visible arc behind it. The
-# reading is exactly what the picture shows - a stick waving behind a blade
-# that is going nowhere.
-#
-# Moving the centre to the ferrule puts roughly seventy units of blade on one
-# side of it and ninety of shaft on the other, so both ends travel and the
-# blade is the end the eye follows, because it is the bright one. The hover
-# state now genuinely raises the blade and the slash genuinely swings it.
-#
-# ## What this costs, and why it is affordable
-#
-# The hotspot can no longer be the tip in every frame, because the tip moves.
-# It is the *rest* frame's tip, held fixed for all three - so the point lands
-# under the pointer where a pointer is at rest, and pressing or crossing onto a
-# link swings the weapon around that same screen position rather than dragging
-# the position with it. A click still lands exactly where it landed before,
-# which is the property that actually matters; what changes is that the reader
-# can see the weapon move.
+# The brass ferrule, a few units below the socket: the collar that binds the blade to the shaft, and
+# the point the whole weapon now turns about.
 PIVOT = (SOCKET[0], SOCKET[1] + 5.5 * S)
 
 
@@ -286,10 +152,8 @@ def draw_weapon(canvas: Image.Image) -> None:
         width=max(1, S // 2),
     )
 
-    # --- the tassel ------------------------------------------------------
-    #
-    # Under the socket, falling along the shaft. Drawn before the ferrule so
-    # the ferrule caps it, which is how it is actually bound on.
+    # --- the tassel ---
+    # Under the socket, falling along the shaft.
     for index, (dx, length, tone) in enumerate(
         ((-3.2, 20, TASSEL), (-1.0, 26, TASSEL_LIT), (1.4, 22, TASSEL), (3.4, 16, TASSEL_LIT))
     ):
@@ -320,11 +184,8 @@ def draw_weapon(canvas: Image.Image) -> None:
         width=max(1, S // 2),
     )
 
-    # --- the back flange -------------------------------------------------
-    #
-    # The small hooked spur on the spine near the socket. It is the one detail
-    # that separates a guan dao from a generic crescent blade on a stick, and
-    # it survives being scaled to 38px because it breaks the silhouette.
+    # --- the back flange ---
+    # The small hooked spur on the spine near the socket.
     base = on_arc(along(0.1))
     nx, ny = arc_normal(along(0.1))
     pen.polygon(
@@ -375,27 +236,15 @@ def draw_weapon(canvas: Image.Image) -> None:
 
 
 def draw_swing(canvas: Image.Image) -> None:
-    """The arc the blade has just come through. Slash frame only.
-
-    Three concentric strokes falling off in opacity, swept by the *tip* about
-    the ferrule the frames rotate about - which is now the path the cutting
-    edge actually took, rather than the path the butt of the shaft took. Drawn
-    *before* the weapon so the blade sits on top of its own trail.
-
-    The sweep runs backwards from the tip's current position through the angle
-    the blade covered between the raised pose and this one. `HOVER` rather than
-    `REST` as the far end, because the frame before a press is almost always
-    the raised one: a press happens on something pressable.
+    """The arc the blade has just come through. Slash frame only. Three concentric strokes
+    falling off in opacity, swept by the *tip* about the ferrule the frames rotate about.
     """
     pivot = PIVOT
 
     radius = math.dist(BLADE_TIP, pivot)
     start = math.degrees(math.atan2(-(BLADE_TIP[1] - pivot[1]), BLADE_TIP[0] - pivot[0]))
-    # Four fifths of the actual travel rather than all of it. A trail that
-    # reaches the whole way back to the raised pose leaves a bright arc hanging
-    # in space with nothing at its far end; stopping short makes it a wake
-    # behind the blade, which is what it is meant to read as - and it keeps the
-    # slash frame's bounding box, and therefore every frame's scale, tighter.
+    # Four fifths of the actual travel rather than all of it. A trail that reaches the whole way
+    # back to the raised pose leaves a bright arc hanging in space with nothing at its far end.
     sweep = (SLASH_DEGREES - HOVER_DEGREES) * 0.8
 
     for offset, alpha, width in ((0.0, 165, 2.6), (7.0 * S, 105, 1.9), (14.0 * S, 55, 1.3)):
@@ -408,15 +257,8 @@ def draw_swing(canvas: Image.Image) -> None:
                 (pivot[0] + reach * math.cos(radians), pivot[1] - reach * math.sin(radians))
             )
 
-        # Each stroke on its own scratch layer, composited.
-        #
-        # `ImageDraw.Draw(image, 'RGBA')` looks like the obvious way to draw a
-        # translucent line and is wrong on a transparent canvas: its blend is
-        # `src*a + dst*(1-a)` against a destination of (0,0,0,0), so a white
-        # line at 60% alpha comes out mid-grey at *full* opacity. That is what
-        # turned the swing arc into a dark smear in the first build. Drawing at
-        # full strength and scaling the alpha channel afterwards keeps the
-        # colour and makes the transparency real.
+        # Each stroke on its own scratch layer, composited. `ImageDraw.Draw(image, 'RGBA')` looks
+        # like the obvious way to draw a translucent line and is wrong on a transparent canvas.
         scratch = Image.new('RGBA', canvas.size, (0, 0, 0, 0))
         ImageDraw.Draw(scratch).line(
             points,
@@ -429,20 +271,16 @@ def draw_swing(canvas: Image.Image) -> None:
 
 
 def pose(degrees: float, with_swing: bool) -> Image.Image:
-    """One frame, at `degrees`, rotated about the ferrule.
-
-    The ferrule is the fixed point in every frame, so the blade sweeps a real
-    arc and the shaft counter-swings behind it. See the note on PIVOT for why
-    this is no longer the blade tip, and what it costs.
+    """One frame, at `degrees`, rotated about the ferrule. The ferrule is the fixed point in
+    every frame, so the blade sweeps a real arc and the shaft counter-swings behind it.
     """
     canvas = Image.new('RGBA', (WORK, WORK), (0, 0, 0, 0))
     if with_swing:
         draw_swing(canvas)
     draw_weapon(canvas)
 
-    # The weapon is drawn pointing up, i.e. at 90 degrees in the convention the
-    # target angles use, so the turn is the difference. `rotate` is
-    # counter-clockwise and takes its centre in image coordinates.
+    # The weapon is drawn pointing up, i.e. at 90 degrees in the convention the target angles use,
+    # so the turn is the difference.
     return canvas.rotate(
         degrees - 90,
         center=PIVOT,
@@ -451,9 +289,7 @@ def pose(degrees: float, with_swing: bool) -> Image.Image:
     )
 
 
-# ---------------------------------------------------------------------------
-# Assembly
-# ---------------------------------------------------------------------------
+# --- Assembly ---
 
 POSES = {
     'rest': pose(REST_DEGREES, with_swing=False),
@@ -463,12 +299,8 @@ POSES = {
 
 
 def union(*images: Image.Image) -> tuple[int, int, int, int]:
-    """One crop box covering every frame.
-
-    Cropping each frame to its own content would register them against
-    themselves, and the pointer would jump by a pixel or two every time it
-    crossed onto a link. One box taken from all three keeps the tip still and
-    lets only the shaft move.
+    """One crop box covering every frame. Cropping each frame to its own content would register
+    them against themselves.
     """
     boxes = [image.getbbox() for image in images if image.getbbox()]
     return (
@@ -483,25 +315,8 @@ CROP = union(*POSES.values())
 
 
 def assert_uncropped() -> None:
-    """Refuse to build a frame that the working canvas has cut into.
-
-    ## Why this cannot be left to the eye
-
-    A pose that runs off the canvas is silently *repaired* by every step after
-    it. `getbbox` reports the content that survived, so a frame clipped at x=0
-    has a bounding box starting at x=0 - which is indistinguishable from a
-    frame that merely touches the edge. `union` then takes that box, `place`
-    scales it to fit, and the delivered PNG is a perfectly clean, perfectly
-    wrong cursor: a crescent blade with one side flattened, at the correct size
-    and in the correct place.
-
-    That is exactly what shipped. The resting frame lost 54 supersampled pixels
-    and the slash frame 102, both off the belly of the blade, and the only sign
-    anywhere in the pipeline was a `0` in this script's own printed crop box.
-
-    So the check is on the *pose* canvases, before the crop: if any opaque pixel
-    sits on the outermost row or column, something was thrown away and the
-    answer is a larger `WORK` or `OFFSET`, not a smaller weapon.
+    """Refuse to build a frame that the working canvas has cut into. A pose that runs off the
+    canvas is silently *repaired* by every step after it.
     """
     for name, image in POSES.items():
         box = image.getbbox()
@@ -533,18 +348,8 @@ SCALE = (WEAPON * S) / max(CROP[2] - CROP[0], CROP[3] - CROP[1])
 
 
 def premultiplied(image: Image.Image) -> Image.Image:
-    """RGB scaled by alpha, so a reduction cannot darken a translucent stroke.
-
-    `Image.resize` filters each channel on its own, with no idea that the RGB
-    under a transparent pixel is meaningless. For an opaque shape that is
-    harmless — every neighbour it averages with is the shape. For a *thin
-    translucent* one it is ruinous: the swing arc is a two-pixel light line
-    surrounded by (0,0,0,0), so LANCZOS mixed its colour with black and the
-    trail came out as a dark smear instead of a bright one.
-
-    Premultiplying puts the alpha into the colour before the filter runs, which
-    makes averaging with a transparent neighbour mean "less of this colour"
-    rather than "more black". `straight` below undoes it afterwards.
+    """RGB scaled by alpha, so a reduction cannot darken a translucent stroke. `Image.resize`
+    filters each channel on its own.
     """
     pixels = np.asarray(image, dtype=np.float32)
     alpha = pixels[:, :, 3:4] / 255.0
@@ -582,16 +387,8 @@ def place(image: Image.Image) -> Image.Image:
 
 
 def haloed(image: Image.Image) -> Image.Image:
-    """The same frame with a dark rim behind it, for the light page.
-
-    Light-mode Dragon is raw silk - `--surface: 231 219 194` - and the blade is
-    near-white steel. The drawn outline carries the shape at full size, but
-    reduced to 38px it is under a pixel wide along the cutting edge and the
-    blade starts to dissolve into the paper.
-
-    So: the frame's own silhouette, blackened and laid down one pixel out in
-    each direction, with the untouched frame composited back on top. Nothing is
-    recoloured and no line is redrawn.
+    """The same frame with a dark rim behind it, for the light page. Light-mode Dragon is raw
+    silk - `--surface: 231 219 194` - and the blade is near-white steel.
     """
     silhouette = Image.new('RGBA', image.size, (0, 0, 0, 0))
     silhouette.putalpha(image.getchannel('A').point(lambda value: int(value * 0.55)))
@@ -609,12 +406,7 @@ FRAMES.update({f'light-{name}': haloed(image) for name, image in DARK.items()})
 
 
 def tip(image: Image.Image) -> tuple[int, int]:
-    """The point of the blade: the opaque pixel nearest the top-left corner.
-
-    Measured rather than assumed, because it becomes the hotspot - a cursor
-    whose hotspot is off its point makes every click land somewhere the reader
-    did not aim.
-    """
+    """The point of the blade: the opaque pixel nearest the top-left corner."""
     pixels = image.load()
     best, coords = 10**9, (0, 0)
     for y in range(image.height):
@@ -624,20 +416,8 @@ def tip(image: Image.Image) -> tuple[int, int]:
     return coords
 
 
-# One hotspot for all six, taken from the resting frame in the dark palette.
-#
-# Dark rather than light because the halo adds a pixel on every side, and
-# hotspotting on the rim would put the click a pixel above and left of the
-# point it is drawn on.
-#
-# Resting rather than hovering or slashing, and that choice now carries weight
-# it did not before. With the frames turning about the ferrule the tip is in a
-# different place in each of them, so there is no single point that is the tip
-# of all three - one of them has to be picked, and the resting frame is the one
-# the pointer spends its life in. Holding the hotspot there is also what makes
-# the other two states visible: the weapon swings around a fixed screen
-# position instead of carrying it along, which is the whole point of the
-# change. See PIVOT.
+# One hotspot for all six, taken from the resting frame in the dark palette. Dark rather than light
+# because the halo adds a pixel on every side.
 HOTSPOT = tip(FRAMES['dark-rest'])
 
 built = f'{HERE}/built'
@@ -801,10 +581,8 @@ css = f'''
 }}
 '''
 
-# The prose above is written with ASCII hyphens so that this file stays pure
-# ASCII, and the stylesheet it lands in uses em dashes throughout. One pass
-# converts them: " - " cannot occur inside a selector or inside base64, whose
-# alphabet has no hyphen, so the substitution can only touch the comments.
+# The prose above is written with ASCII hyphens so that this file stays pure ASCII, and the
+# stylesheet it lands in uses em dashes throughout.
 css = css.replace(' - ', f' {chr(0x2014)} ')
 
 io.open(f'{built}/cursor.css', 'w', encoding='utf-8', newline='').write(css)

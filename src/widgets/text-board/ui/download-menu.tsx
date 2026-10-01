@@ -22,21 +22,15 @@ import { Button, SkinLoader } from '@/shared/ui';
 interface DownloadMenuProps {
   documentId: string;
   /**
-   * The page's title, used as the filename stem.
-   *
-   * Taken from what is on screen rather than from the response, so renaming a
-   * page and downloading it without saving first still produces a file called
-   * what the reader just called it. The API names the file too — that is what
-   * a direct hit on the endpoint gets — and this overrides it locally.
+   * The page's title, used as the filename stem. Taken from what is on screen rather than from the
+   * response.
    */
   title: string;
   /** Set when the page was imported, so the original can be offered too. */
   source: DocumentSource | null;
   /**
-   * The editor's buffer, when there is one.
-   *
-   * Downloading mid-edit gives what is on the screen rather than the last
-   * save, which is what the person looking at it means by "this document".
+   * The editor's buffer, when there is one. Downloading mid-edit gives what is on the screen rather
+   * than the last save, which is what the person looking at it means by "this document".
    */
   draft?: string;
 }
@@ -58,11 +52,8 @@ const PASSTHROUGH_MIME: Partial<Record<DocumentExportFormat, string>> = {
 };
 
 /**
- * Saves a blob the browser has already been handed.
- *
- * `download` on an `<a>` is only honoured same-origin, which is exactly what a
- * `blob:` URL is — so this works where a link straight to the storage host
- * would silently navigate instead.
+ * Saves a blob the browser has already been handed. `download` on an `<a>` is only honoured
+ * same-origin.
  */
 export const saveBlob = (blob: Blob, fileName: string): void => {
   const url = URL.createObjectURL(blob);
@@ -86,36 +77,8 @@ const stem = (title: string): string =>
     .slice(0, 60) || 'document';
 
 /**
- * Choosing what a page is downloaded *as*, and what can be taken out of it.
- *
- * It used to be one button that always produced HTML, which is the right
- * answer for exactly one audience — somebody who wanted to open it in a
- * browser — and no help at all to the three who wanted to print it, keep
- * editing it, or paste it into something else. So the button became a choice
- * of four, rendered from one code path on the API so they all agree about what
- * a heading and a list item are.
- *
- * ## Why an unavailable format is drawn rather than hidden
- *
- * The three text formats used to disappear on a page that *is* an uploaded
- * file, which is tidy and teaches nothing: a reader who has downloaded a
- * typed page as a PDF, opens a scanned one, and finds a menu with a single
- * entry has no way to tell "this page cannot do that" from "the app forgot".
- * Worse, the set of entries changed shape between pages, so the position of
- * the one option people use moved.
- *
- * Every format is now always listed and the ones that cannot work are drawn as
- * refused, with the reason on them. The menu is the same height and the same
- * order on every page, and it answers the question rather than avoiding it.
- *
- * ## Why the pictures are here
- *
- * Because this is where somebody already comes to get something *out* of a
- * page, and a picture pasted into a document was the one thing that could not
- * leave it: images live on the bucket's own origin, where a `download`
- * attribute is ignored, so right-clicking one saved nothing useful. The list
- * is only fetched when the menu is opened — a table of contents should not
- * make a request per page for a section nobody has looked at.
+ * Choosing what a page is downloaded *as*, and what can be taken out of it. It used to be one
+ * button that always produced HTML, which is the right answer for exactly one audience.
  */
 export const DocumentDownloadMenu = ({
   documentId,
@@ -141,25 +104,11 @@ export const DocumentDownloadMenu = ({
     return () => window.removeEventListener('keydown', handleKey);
   }, [isOpen]);
 
-  /*
-   * Whether there is a page here to render into a file at all.
-   *
-   * False only for an import that never got a body — a PDF, a `.docx`, a
-   * picture, an archive — which this board keeps exactly as it was uploaded.
-   * `draft` overrides it: if somebody has typed into the editor, what is on
-   * screen is a document whatever the row says.
-   */
+  // Whether there is a page here to render into a file at all. False only for an import that never
+  // got a body — a PDF, a `.docx`, a picture, an archive.
   const hasRenderableBody = !source || source.hasBody || Boolean(draft);
 
-  /**
-   * What each format can do with *this* page, and why not when it cannot.
-   *
-   * Two things make a format work: a body to typeset, or an uploaded file that
-   * already is that format — the API hands the original straight back in the
-   * second case rather than inventing a conversion (see its `isSameFormat`).
-   * Everything else is refused there, so refusing it here is the same rule
-   * drawn one step earlier, where it costs no round trip.
-   */
+  /** What each format can do with *this* page, and why not when it cannot. */
   const availability = useMemo(
     () =>
       FORMATS.map((format) => ({
@@ -221,13 +170,8 @@ export const DocumentDownloadMenu = ({
   };
 
   /**
-   * Everything in the page, in one file.
-   *
-   * The saved count comes back from the API rather than being taken from the
-   * list on screen: a picture whose object has gone missing from the bucket is
-   * skipped there rather than failing the whole archive, so the two numbers can
-   * legitimately differ and only one of them is true. When the header is absent
-   * the message drops the number instead of guessing at one.
+   * Everything in the page, in one file. The saved count comes back from the API rather than being
+   * taken from the list on screen.
    */
   const downloadAllAssets = async () => {
     setPending('assets');
@@ -286,9 +230,8 @@ export const DocumentDownloadMenu = ({
               transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
               className={cn(
                 'panel absolute right-0 top-10 z-50 w-64 overflow-hidden p-1.5',
-                // A page with a dozen pictures would otherwise run off the
-                // bottom of a short window; the formats stay reachable and the
-                // list scrolls under them.
+                // A page with a dozen pictures would otherwise run off the bottom of a short
+                // window; the formats stay reachable and the list scrolls under them.
                 'max-h-[min(28rem,70dvh)] overflow-y-auto scrollbar-thin',
               )}
             >
@@ -378,26 +321,7 @@ export const DocumentDownloadMenu = ({
                     </li>
                   )}
 
-                  {/*
-                    Take the lot, offered only where it is worth offering.
-
-                    ## Why it is above the list rather than under it
-
-                    Because it is the answer to the question the section poses,
-                    and a list of a dozen filenames is a long way to scroll past
-                    to find out that it exists. Somebody who opened this heading
-                    wants the pictures; the first row should be "all of them".
-
-                    ## Why three, and not two
-
-                    The threshold is what the brief asked for — the row appears
-                    once a page has more than two pictures — and it is the right
-                    number for a reason worth writing down: at one picture the
-                    archive is strictly worse than the file (an extra step, a
-                    folder to open, the same bytes), and at two it saves a single
-                    click while costing an unzip. The chore this exists to end
-                    starts at the third.
-                  */}
+                  {/* Take the lot, offered only where it is worth offering. */}
                   {(assets.data?.length ?? 0) > 2 && (
                     <li>
                       <button
@@ -430,10 +354,8 @@ export const DocumentDownloadMenu = ({
                       >
                         <ImageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-content-faint" />
                         <span className="min-w-0 flex-1">
-                          {/* The author's alt text where there is one — it is
-                              the only thing anybody ever wrote about the
-                              picture, and a list of filenames is a list of
-                              UUIDs with a friendlier stem. */}
+                          {/* The author's alt text where there is one — it is the only thing
+                              anybody ever wrote about the picture. */}
                           <span className="block truncate font-semibold">
                             {asset.alt ||
                               t('doc.imageUntitled', { index: String(asset.index + 1) })}

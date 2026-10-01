@@ -3,25 +3,12 @@ import { type GlyphProps } from './glyph-kit';
 import { StudioLetter } from './studio-letter';
 
 /**
- * This skin's product mark. Its navigation set is gone.
- *
- * There used to be a full set of newspaper navigation glyphs here, exported as
- * `NEWSPAPER_GLYPHS` and swapped in by `NavGlyph`. Every skin's set has
- * been withdrawn for the reason written up there: an icon is recognised by
- * shape, and a rail whose shapes change with the theme charges every user that
- * recognition again for a novelty that lands once.
- *
- * The mark is a different thing and stays. It is the *product's* signature
- * drawn in this world — one object, seen once, on a settings card and a theme
- * gallery tile — and nobody navigates by it.
+ * This skin's product mark. Its navigation set is gone. There used to be a full set of newspaper
+ * navigation glyphs here, exported as `NEWSPAPER_GLYPHS` and swapped in by `NavGlyph`.
  */
 /**
- * The product mark: the masthead itself.
- *
- * The rest of the app introduces itself with a Post-it; a newspaper introduces
- * itself with the nameplate at the top of page one — a ruled box, a solid
- * banner where the title sits, and the spot colour the press ran alongside
- * black.
+ * The product mark: the masthead itself. The rest of the app introduces itself with a Post-it; a
+ * newspaper introduces itself with the nameplate at the top of page one — a ruled box.
  */
 export const NewspaperMark = ({ className }: GlyphProps) => (
   <svg viewBox="0 0 40 40" fill="none" aria-hidden className={cn('h-10 w-10', className)}>
@@ -54,15 +41,8 @@ export const NewspaperMark = ({ className }: GlyphProps) => (
     <rect x="7.5" y="15.5" width="21" height="1.4" fill="currentColor" fillOpacity="0.75" />
     <rect x="7.5" y="17.8" width="21" height="0.8" fill="currentColor" fillOpacity="0.45" />
 
-    {/*
-      The letter, set where the lead photograph was — and in the spot colour.
-
-      This is the one skin whose ink is not the page colour, and it is the right
-      exception: a front page prints in black and keeps its second plate for the
-      one thing worth the extra pass. Making that thing the product's initial is
-      both what a newspaper would do and the only way this mark carries brand
-      colour at all, now that the photograph's spot rule has gone.
-    */}
+    {/* The letter, set where the lead photograph was — and in the spot colour. This is the one
+        skin whose ink is not the page colour, and it is the right exception. */}
     <StudioLetter
       transform="translate(3.9 18.5) scale(0.665)"
       stroke="rgb(var(--brand))"
