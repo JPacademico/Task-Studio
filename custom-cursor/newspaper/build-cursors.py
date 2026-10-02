@@ -10,7 +10,8 @@ from PIL import Image, ImageDraw, ImageFilter
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 # The delivered cursor, in CSS pixels, and the supersampling factor everything is drawn at.
-BOX = 32
+# 36 rather than the usual 32: the larger pen's four poses span 31px between them.
+BOX = 36
 S = 8
 # The working canvas, in screen pixels. The pen turns about its nib at the centre, so anything
 # within half of this of the nib survives every rotation.
@@ -28,8 +29,8 @@ MARGIN = 1
 RIM = 1.0
 
 # --- The pen, drawn pointing up with the nib's point at the origin. ---
-# Drawn on a roomy grid and scaled by PEN, which brings it to about 22px: the system arrow's length.
-PEN = 0.82
+# Drawn on a roomy grid and scaled by PEN, which brings it to about 25px: a touch past the system arrow.
+PEN = 0.92
 
 NIB = [(0.0, 0.0), (0.85, 2.0), (1.65, 5.6), (1.95, 9.2), (-1.95, 9.2), (-1.65, 5.6), (-0.85, 2.0)]
 SLIT = ((0.0, 1.1), (0.0, 6.0))

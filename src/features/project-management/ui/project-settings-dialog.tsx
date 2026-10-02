@@ -9,6 +9,7 @@ import {
   FolderMinus,
   LogOut,
   RotateCcw,
+  Timer,
   Trash2,
 } from 'lucide-react';
 
@@ -23,6 +24,7 @@ import {
 import type { Project } from '@/entities/project/model/types';
 import { useTasks } from '@/entities/task/model/queries';
 import { TASK_COLORS, TEXT_LIMITS } from '@/shared/config/constants';
+import { cn } from '@/shared/lib/cn';
 import { fromDateInput, toDateInput } from '@/shared/lib/dates';
 import { clampText } from '@/shared/lib/text';
 import { useCurrentUser } from '@/features/auth/model/session.store';
@@ -33,11 +35,22 @@ import {
   Modal,
   PasswordInput,
   Select,
+  Switch,
   Textarea,
 } from '@/shared/ui';
 import { InviteLinkSection } from './invite-link-section';
 import { ProjectWindowFields } from './project-window-fields';
 import { useT } from '@/shared/i18n';
+
+/** The window a project starts with, and the bounds the API accepts. */
+const AUTO_BIN_DEFAULT = 30;
+const AUTO_BIN_MIN = 1;
+const AUTO_BIN_MAX = 365;
+const AUTO_BIN_PRESETS = [7, 14, 30, 90];
+
+/** `undefined` is an API older than the setting, which binned after the default. */
+const storedAutoBin = (project: Project): number | null =>
+  project.autoBinAfterDays === undefined ? AUTO_BIN_DEFAULT : project.autoBinAfterDays;
 
 interface ProjectSettingsDialogProps {
   isOpen: boolean;
@@ -95,6 +108,9 @@ export const ProjectSettingsDialog = ({
   // `yyyy-mm-dd`, or empty. Both optional — see `ProjectWindowFields`.
   const [startsAt, setStartsAt] = useState(toDateInput(project.startsAt));
   const [endsAt, setEndsAt] = useState(toDateInput(project.endsAt));
+  /** Whether completed tasks bin themselves, and after how many days (as typed). */
+  const [autoBinOn, setAutoBinOn] = useState(storedAutoBin(project) !== null);
+  const [autoBinDays, setAutoBinDays] = useState(String(storedAutoBin(project) ?? AUTO_BIN_DEFAULT));
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [confirmation, setConfirmation] = useState('');
   const [isConfirmingFinish, setIsConfirmingFinish] = useState(false);
@@ -136,6 +152,8 @@ export const ProjectSettingsDialog = ({
     setColor(project.color);
     setStartsAt(toDateInput(project.startsAt));
     setEndsAt(toDateInput(project.endsAt));
+    setAutoBinOn(storedAutoBin(project) !== null);
+    setAutoBinDays(String(storedAutoBin(project) ?? AUTO_BIN_DEFAULT));
     setIsConfirmingDelete(false);
     setConfirmation('');
     setIsConfirmingFinish(false);
@@ -148,17 +166,29 @@ export const ProjectSettingsDialog = ({
     // `successors` is derived from the roster on every render; re-seeding on
     // its identity would reset the picker mid-choice.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, project.color, project.description, project.endsAt, project.name, project.startsAt]);
+  }, [
+    isOpen,
+    project.autoBinAfterDays,
+    project.color,
+    project.description,
+    project.endsAt,
+    project.name,
+    project.startsAt,
+  ]);
 
   const trimmedName = name.trim();
+  const days = Number(autoBinDays);
+  const daysAreValid = Number.isInteger(days) && days >= AUTO_BIN_MIN && days <= AUTO_BIN_MAX;
+  const nextAutoBin = autoBinOn ? days : null;
   const isDirty =
     trimmedName !== project.name ||
     description.trim() !== (project.description ?? '') ||
     color !== project.color ||
     startsAt !== toDateInput(project.startsAt) ||
-    endsAt !== toDateInput(project.endsAt);
+    endsAt !== toDateInput(project.endsAt) ||
+    nextAutoBin !== storedAutoBin(project);
 
-  const canSave = trimmedName.length >= 2 && isDirty;
+  const canSave = trimmedName.length >= 2 && isDirty && (!autoBinOn || daysAreValid);
   // Case-insensitive: this is a speed bump, not a spelling test.
   const canDelete = confirmation.trim().toLowerCase() === project.name.trim().toLowerCase();
 
@@ -175,6 +205,7 @@ export const ProjectSettingsDialog = ({
       // contract — an instant sets it, `null` clears it, absent leaves it alone.
       startsAt: fromDateInput(startsAt, 'start') ?? null,
       endsAt: fromDateInput(endsAt, 'end') ?? null,
+      ...(nextAutoBin !== storedAutoBin(project) ? { autoBinAfterDays: nextAutoBin } : {}),
     });
 
     onClose();
@@ -252,6 +283,8 @@ export const ProjectSettingsDialog = ({
       title={t('project.settingsTitle')}
       description={t(canEdit ? 'project.settingsSubtitle' : 'project.settingsSubtitleMember')}
       flat
+      // Taped off once "Delete project" is armed, and untaped on cancel.
+      danger={isConfirmingDelete}
       footer={
         canEdit ? (
           <>
@@ -320,6 +353,78 @@ export const ProjectSettingsDialog = ({
           </>
         )}
 
+        {/* --- Completed tasks: how long they stay before the bin takes them, if ever. --- */}
+        {canEdit && (
+          <section className="space-y-2.5 rounded-xl border border-edge bg-surface-sunken/50 p-3.5">
+            <header className="flex items-center gap-2">
+              <Timer className="h-3.5 w-3.5 shrink-0 text-content-faint" />
+              <h3 className="ui-panel-title text-xs font-semibold">{t('project.autoBinTitle')}</h3>
+            </header>
+
+            <p className="text-2xs leading-relaxed text-content-muted">
+              {t(autoBinOn ? 'project.autoBinExplain' : 'project.autoBinOff')}
+            </p>
+
+            <Switch
+              id="project-auto-bin"
+              checked={autoBinOn}
+              onChange={setAutoBinOn}
+              label={<span className="text-xs">{t('project.autoBinToggle')}</span>}
+            />
+
+            {autoBinOn && (
+              <div className="flex flex-wrap items-center gap-2">
+                <label htmlFor="project-auto-bin-days" className="text-xs text-content-muted">
+                  {t('project.autoBinAfter')}
+                </label>
+                <input
+                  id="project-auto-bin-days"
+                  type="number"
+                  inputMode="numeric"
+                  min={AUTO_BIN_MIN}
+                  max={AUTO_BIN_MAX}
+                  value={autoBinDays}
+                  onChange={(event) => setAutoBinDays(event.target.value.slice(0, 3))}
+                  aria-invalid={!daysAreValid}
+                  className={cn(
+                    'field h-8 w-[4.5rem] text-center text-xs tabular-nums',
+                    !daysAreValid && 'border-danger focus:border-danger',
+                  )}
+                />
+                <span className="text-xs text-content-muted">{t('project.autoBinDaysUnit')}</span>
+
+                <span className="flex flex-wrap gap-1">
+                  {AUTO_BIN_PRESETS.map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setAutoBinDays(String(preset))}
+                      aria-pressed={days === preset}
+                      className={cn(
+                        'rounded-lg border px-2 py-0.5 text-3xs font-semibold tabular-nums transition-colors',
+                        days === preset
+                          ? 'border-brand bg-brand/12 text-brand'
+                          : 'border-edge text-content-muted hover:text-content',
+                      )}
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </span>
+
+                {!daysAreValid && (
+                  <p className="w-full text-2xs text-danger">
+                    {t('project.autoBinRange', {
+                      min: String(AUTO_BIN_MIN),
+                      max: String(AUTO_BIN_MAX),
+                    })}
+                  </p>
+                )}
+              </div>
+            )}
+          </section>
+        )}
+
         {/* --- Invite link: owners and admins, the same people who can invite. --- */}
         {canEdit && <InviteLinkSection projectId={project.id} isOpen={isOpen} />}
 
@@ -329,7 +434,9 @@ export const ProjectSettingsDialog = ({
           <section className="space-y-2.5 rounded-xl border border-edge bg-surface-sunken/50 p-3.5">
             <header className="flex items-center gap-2">
               <Building2 className="h-3.5 w-3.5 shrink-0 text-content-faint" />
-              <h3 className="text-xs font-semibold">{t('project.filedUnderTitle')}</h3>
+              <h3 className="ui-panel-title text-xs font-semibold">
+                {t('project.filedUnderTitle')}
+              </h3>
               <span className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-edge px-2 py-0.5 text-3xs text-content-muted">
                 <span
                   aria-hidden
@@ -365,7 +472,7 @@ export const ProjectSettingsDialog = ({
           <section className="space-y-2.5 rounded-xl border border-edge bg-surface-sunken/50 p-3.5">
             <header className="flex items-center gap-2">
               <Archive className="h-3.5 w-3.5 shrink-0 text-content-faint" />
-              <h3 className="text-xs font-semibold">
+              <h3 className="ui-panel-title text-xs font-semibold">
                 {t(project.isArchived ? 'project.archivedTitle' : 'project.archiveTitle')}
               </h3>
             </header>
@@ -396,7 +503,7 @@ export const ProjectSettingsDialog = ({
         <section className="space-y-2.5 rounded-xl border border-edge bg-surface-sunken/50 p-3.5">
           <header className="flex items-center gap-2">
             <LogOut className="h-3.5 w-3.5 shrink-0 text-content-faint" />
-            <h3 className="text-xs font-semibold">{t('project.leaveTitle')}</h3>
+            <h3 className="ui-panel-title text-xs font-semibold">{t('project.leaveTitle')}</h3>
           </header>
 
           {isOwner && successors.length === 0 ? (
@@ -462,7 +569,9 @@ export const ProjectSettingsDialog = ({
         <section className="space-y-2.5 rounded-xl border border-danger/30 bg-danger/[0.04] p-3.5">
           <header className="flex items-center gap-2">
             <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-danger" />
-            <h3 className="text-xs font-semibold text-danger">{t('project.dangerZone')}</h3>
+            <h3 className="ui-panel-title text-xs font-semibold text-danger">
+              {t('project.dangerZone')}
+            </h3>
           </header>
 
           {/* Finishing, above deleting. A project that is over is the common case and deleting

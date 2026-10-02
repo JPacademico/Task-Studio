@@ -12,6 +12,8 @@ export { LavaSurface } from './lava-surface';
 export { Input, PasswordInput, Textarea, type PasswordInputProps } from './input';
 export { Modal } from './modal';
 export { ConfirmDialog } from './confirm-dialog';
+export { DangerTape } from './danger-tape';
+export { Pager, usePagedList } from './pager';
 export { Avatar, AvatarStack } from './avatar';
 export {
   Badge,

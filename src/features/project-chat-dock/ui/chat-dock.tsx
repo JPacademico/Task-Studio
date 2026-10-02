@@ -11,6 +11,7 @@ import { queryKeys } from '@/shared/api/query-keys';
 import { ProjectChat } from '@/widgets/project-chat/ui/project-chat';
 import { useChatDock } from '../model/chat-dock.store';
 import { useChatOutbox } from '../model/chat-outbox';
+import { useTaskCommentStream } from '../model/use-task-comment-stream';
 
 /**
  * Mounts the project conversation for the whole app. It sits in the layout rather than on the
@@ -29,6 +30,8 @@ export const ChatDock = () => {
   // The unsent-message queue drains from here: the one component that is always mounted, so a
   // message typed offline goes out on reconnect even if its window has since been closed.
   useChatOutbox();
+  // Task threads stay current from here too: cards and buttons count unread with the window shut.
+  useTaskCommentStream();
 
   // Every open is a catch-up, said explicitly. The window's own `refetchOnMount` covers the
   // ordinary reopen, but not all of them.

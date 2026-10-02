@@ -110,7 +110,7 @@ export interface SkinDefinition {
    */
   tagsPtBR?: string[];
   /**
-   * Whether this theme replaces the mouse pointer. Nine do, and it is the one thing a theme can
+   * Whether this theme replaces the mouse pointer. Ten do, and it is the one thing a theme can
    * change that the reader cannot ignore.
    */
   drawsCursor?: boolean;
@@ -459,6 +459,7 @@ export const SKIN_CATALOG: SkinDefinition[] = [
       'mysterious',
       'gothic',
     ],
+    drawsCursor: true,
     tagsPtBR: [
       'lovecraft',
       'cósmico',

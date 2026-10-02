@@ -163,6 +163,9 @@ export const MAX_BOARD_PAGES = 10;
  */
 export const MAX_TASK_NOTES = 20;
 
+/** Steps shown per page once a checklist is a list. Twenty rows was a wall of its own. */
+export const CHECKLIST_PAGE_SIZE = 5;
+
 /**
  * How many columns one project's grouping board may hold. Mirrored from the API's
  * `MAX_GROUPS_PER_PROJECT`, which is the authority. Ten, down from twelve.

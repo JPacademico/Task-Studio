@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ImagePlus, Lock, Minus, Plus, Sparkles, X } from 'lucide-react';
+import { Check, ImagePlus, Lock, MessagesSquare, Minus, Plus, Sparkles, X } from 'lucide-react';
 import { toast } from '@/shared/lib/toast';
 
 import type { ProjectRepository, RosterMember } from '@/entities/project/model/types';
@@ -17,6 +17,7 @@ import {
 } from '@/features/ai-suggestions/model/queries';
 import { InvitePicker } from '@/features/invite-picker/ui/invite-picker';
 import {
+  CHECKLIST_PAGE_SIZE,
   MAX_TASK_NOTES,
   TASK_COLORS,
   TASK_PRIORITY_META,
@@ -42,9 +43,11 @@ import {
   FileAttachmentField,
   Input,
   Modal,
+  Pager,
   Select,
   Spinner,
   Textarea,
+  usePagedList,
   type SelectOption,
 } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
@@ -132,6 +135,8 @@ export const TaskComposer = ({
    * `null`, because it is bound to a `<select>` and that is what an unselected option's value is.
    */
   const [groupId, setGroupId] = useState<string>('');
+  /** A comment thread in the project chat. Off unless asked for; never on a personal task. */
+  const [commentsEnabled, setCommentsEnabled] = useState(false);
   // The picture on the form, in as much detail as this session knows. `key` is empty when the state
   // was hydrated from an existing task: there is a picture.
   const [attachment, setAttachment] = useState<{
@@ -163,6 +168,7 @@ export const TaskComposer = ({
     // The lock wins on a fresh task, and is ignored on an edit. Editing is opened from a card, not
     // from a column.
     setGroupId(task?.group?.id ?? (task ? '' : (lockedGroupId ?? '')));
+    setCommentsEnabled(Boolean(task?.commentsEnabled));
     setAttachment(
       task?.attachmentUrl
         ? {
@@ -283,7 +289,7 @@ export const TaskComposer = ({
       dueAt: fromDateTimeInput(dueAt),
       // A personal task has no roster to pick from; the server assigns it to
       // its creator and rejects anybody else, so the field is simply omitted.
-      ...(isPersonal ? {} : { assigneeIds }),
+      ...(isPersonal ? {} : { assigneeIds, commentsEnabled }),
     };
 
     if (task) {
@@ -352,6 +358,7 @@ export const TaskComposer = ({
   const canSuggestSteps =
     title.trim().length >= 2 && description.trim().length >= 2;
   const checklistIsFull = checklist.length >= MAX_TASK_NOTES;
+  const checklistPage = usePagedList(checklist, CHECKLIST_PAGE_SIZE, true);
 
   /**
    * One more starting step, if there is room for it. The cap is `MAX_TASK_NOTES`, which is what
@@ -624,6 +631,44 @@ export const TaskComposer = ({
           </div>
         )}
 
+        {/* The thread, which lives under Chat → Tasks. A project's chat is where it is read, so
+            a personal task has no such switch. */}
+        {!isPersonal && (
+          <button
+            type="button"
+            role="checkbox"
+            aria-checked={commentsEnabled}
+            onClick={() => setCommentsEnabled((on) => !on)}
+            className={cn(
+              'flex w-full items-start gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors',
+              commentsEnabled
+                ? 'border-brand/50 bg-brand/[0.06]'
+                : 'border-edge bg-surface-sunken hover:border-brand/40',
+            )}
+          >
+            <span
+              aria-hidden
+              className={cn(
+                'mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded border transition-colors',
+                commentsEnabled
+                  ? 'border-brand bg-brand text-brand-contrast'
+                  : 'border-check bg-surface',
+              )}
+            >
+              {commentsEnabled && <Check className="h-3 w-3" strokeWidth={3} />}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="flex items-center gap-1.5 text-xs font-semibold text-content">
+                <MessagesSquare className="h-3.5 w-3.5 text-content-faint" aria-hidden />
+                {t('task.allowComments')}
+              </span>
+              <span className="mt-0.5 block text-2xs leading-relaxed text-content-muted">
+                {t('task.allowCommentsHint')}
+              </span>
+            </span>
+          </button>
+        )}
+
         {!task && (
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
@@ -714,26 +759,35 @@ export const TaskComposer = ({
 
             {checklist.length > 0 && (
               <ul className="space-y-1.5">
-                {checklist.map((item, index) => (
-                  <li
-                    key={`${item}-${index}`}
-                    className="flex items-center justify-between gap-2 rounded-lg bg-surface-sunken px-3 py-2 text-xs"
-                  >
-                    <span className="min-w-0 flex-1 break-words">{item}</span>
-                    <button
-                      type="button"
-                      aria-label={t('task.removeStep', { step: item })}
-                      onClick={() =>
-                        setChecklist((items) => items.filter((_, at) => at !== index))
-                      }
-                      className="grid h-5 w-5 shrink-0 place-items-center rounded-md text-content-faint transition-colors hover:bg-danger/10 hover:text-danger"
+                {checklistPage.items.map((item, pageIndex) => {
+                  const index = checklistPage.offset + pageIndex;
+                  return (
+                    <li
+                      key={`${item}-${index}`}
+                      className="flex items-center justify-between gap-2 rounded-lg bg-surface-sunken px-3 py-2 text-xs"
                     >
-                      <Minus className="h-3.5 w-3.5" strokeWidth={3} />
-                    </button>
-                  </li>
-                ))}
+                      <span className="min-w-0 flex-1 break-words">{item}</span>
+                      <button
+                        type="button"
+                        aria-label={t('task.removeStep', { step: item })}
+                        onClick={() =>
+                          setChecklist((items) => items.filter((_, at) => at !== index))
+                        }
+                        className="grid h-5 w-5 shrink-0 place-items-center rounded-md text-content-faint transition-colors hover:bg-danger/10 hover:text-danger"
+                      >
+                        <Minus className="h-3.5 w-3.5" strokeWidth={3} />
+                      </button>
+                    </li>
+                  );
+                })}
               </ul>
             )}
+
+            <Pager
+              page={checklistPage.page}
+              pages={checklistPage.pages}
+              onChange={checklistPage.setPage}
+            />
           </div>
         )}
 

@@ -704,6 +704,7 @@ const AdminPage = () => {
         onClose={() => setTarget(null)}
         title={`Suspend ${target?.displayName ?? ''}`}
         description="They are emailed this reason, verbatim, and lose access immediately."
+        danger
         footer={
           <>
             <Button variant="ghost" onClick={() => setTarget(null)}>

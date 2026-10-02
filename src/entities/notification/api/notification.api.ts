@@ -27,7 +27,8 @@ export const notificationApi = {
     await api.delete(`/notifications/${id}`);
   },
 
-  async clear(): Promise<void> {
-    await api.delete('/notifications');
+  /** Everything, or only what was created at or before `before`. */
+  async clear(before?: string): Promise<void> {
+    await api.delete('/notifications', { params: before ? { before } : undefined });
   },
 };

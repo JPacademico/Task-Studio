@@ -6,12 +6,17 @@ import { useSuggestSubtasks, useAcceptSubtasks } from '@/features/ai-suggestions
 import { useTaskNoteMutations } from '@/entities/task/model/queries';
 import type { Task, TaskNote } from '@/entities/task/model/types';
 import { useCurrentUser } from '@/features/auth/model/session.store';
-import { MAX_TASK_NOTES, NOTE_COLORS, TEXT_LIMITS } from '@/shared/config/constants';
+import {
+  CHECKLIST_PAGE_SIZE,
+  MAX_TASK_NOTES,
+  NOTE_COLORS,
+  TEXT_LIMITS,
+} from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
 import { readableInk } from '@/shared/lib/colors';
 import { formatDateTime, formatRelative } from '@/shared/lib/dates';
 import { clampText, clampOnPaste } from '@/shared/lib/text';
-import { Avatar, Button, ColorPicker, Modal } from '@/shared/ui';
+import { Avatar, Button, ColorPicker, Modal, Pager, usePagedList } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 
 /**
@@ -47,6 +52,9 @@ export const NoteChecklist = ({ task, isAiEnabled }: NoteChecklistProps) => {
 
   const isFull = task.notes.length >= MAX_TASK_NOTES;
   const isWall = task.notes.length <= WALL_MAX_NOTES;
+  // A new step lands on the last page, so the one just added is the one on screen.
+  const paged = usePagedList(task.notes, CHECKLIST_PAGE_SIZE, true);
+  const shown = isWall ? task.notes : paged.items;
   const done = task.noteProgress.done;
   const total = task.noteProgress.total;
 
@@ -142,15 +150,15 @@ export const NoteChecklist = ({ task, isAiEnabled }: NoteChecklistProps) => {
         </p>
       ) : (
         <ul
-          // Keyed by layout: crossing the threshold swaps the whole list at
-          // once, rather than fading Post-its out inside a checklist.
-          key={isWall ? 'wall' : 'list'}
+          // Keyed by layout and page: crossing the threshold or turning a page swaps the whole
+          // list at once, rather than fading the old rows out beside the new ones.
+          key={isWall ? 'wall' : `list-${paged.page}`}
           className={cn(
             isWall ? 'flex flex-wrap gap-2.5' : 'divide-y divide-edge rounded-xl border border-edge',
           )}
         >
           <AnimatePresence initial={false}>
-            {task.notes.map((note) => {
+            {shown.map((note) => {
               const handlers = {
                 note,
                 isMine: note.userId === currentUser?.id,
@@ -176,6 +184,8 @@ export const NoteChecklist = ({ task, isAiEnabled }: NoteChecklistProps) => {
           </AnimatePresence>
         </ul>
       )}
+
+      {!isWall && <Pager page={paged.page} pages={paged.pages} onChange={paged.setPage} />}
 
       {/* --- Composing a new one -------------------------------------- */}
       <Modal

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowLeft, Github, HardHat } from 'lucide-react';
@@ -6,7 +6,7 @@ import { ArrowLeft, Github, HardHat } from 'lucide-react';
 import { useSessionStore } from '@/features/auth/model/session.store';
 import { useT } from '@/shared/i18n';
 import { cn } from '@/shared/lib/cn';
-import { LavaSurface, buttonClasses } from '@/shared/ui';
+import { DangerTape, LavaSurface, buttonClasses } from '@/shared/ui';
 
 /** The plans this page knows how to name. Anything else is named generically. */
 const PLAN_LABEL: Record<string, string> = {
@@ -31,41 +31,12 @@ export const PlanSoonPage = () => {
     document.title = `${t('planSoon.title')} · Task Studio`;
   }, [t]);
 
-  // A fixed set of tilts, not random ones. A layout somebody has looked at and approved should be
-  // the same layout on the next load — the same argument `HeroField` makes about its scatter.
-  const tape = useMemo(
-    () => [
-      { top: '18%', rotate: -7, delay: 0 },
-      { top: '74%', rotate: 5, delay: 0.12 },
-    ],
-    [],
-  );
-
   return (
     /* Full height, not the shell's height minus its bar: this route sits
        outside `AppLayout` now, so there is no top bar to subtract. */
     <div className="relative flex min-h-dvh items-center justify-center overflow-hidden px-4 py-12">
-      {/* Hazard tape, running off both edges. Two bands rather than a border, because a border
-          says "this box is special" and tape says "this area is being worked on". */}
-      {tape.map((band, index) => (
-        <motion.div
-          key={index}
-          aria-hidden
-          initial={reduceMotion ? false : { opacity: 0, x: index % 2 ? 60 : -60 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.7, delay: band.delay, ease: [0.16, 1, 0.3, 1] }}
-          className="pointer-events-none absolute left-[-10%] w-[120%] opacity-[0.16]"
-          style={{
-            top: band.top,
-            rotate: `${band.rotate}deg`,
-            height: '3.25rem',
-            /* The stripes are the warning token rather than a literal yellow, so the band belongs
-               to whichever skin is active — on `terminal` it is green, on `volcano` it is orange. */
-            backgroundImage:
-              'repeating-linear-gradient(45deg, rgb(var(--warning)) 0 1.25rem, transparent 1.25rem 2.5rem)',
-          }}
-        />
-      ))}
+      {/* Tape rather than a border: a border says "this box is special", tape says "being worked on". */}
+      <DangerTape />
 
       <motion.div
         initial={reduceMotion ? false : { opacity: 0, y: 24 }}

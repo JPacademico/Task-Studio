@@ -23,6 +23,7 @@ import {
 import { TASK_PRIORITY_META, TEXT_LIMITS } from '@/shared/config/constants';
 import { truncateText } from '@/shared/lib/text';
 import { AvatarStack, Badge, PostItMark } from '@/shared/ui';
+import { useTaskUnread } from '@/entities/task-comment/model/queries';
 import { completionProgress, isSharedTask, outstandingAssignees } from '../lib/completion';
 import { useIsTaskSyncing } from '../model/sync.store';
 import type { Task } from '../model/types';
@@ -97,11 +98,12 @@ const TaskCardBase = ({
   // A write of this task's own is still in the air. Subscribed here rather than passed down.
   const isSyncing = useIsTaskSyncing(task.id);
 
-  // What the card marks in its corner, rather than spells out in its footer. Both of these answer
-  // "is there something else attached to this?".
-  const noteCount = task.notes.length;
-  const hasNote = noteCount > 0;
-  const markerCount = (hasNote ? 1 : 0) + (task.attachmentUrl ? 1 : 0);
+  // What the card marks in its corner. The Post-it is the thread's unread count; the steps live
+  // in the footer's checklist badge.
+  const unreadComments = useTaskUnread(task.commentsEnabled ? task.id : undefined);
+  const hasUnread = unreadComments > 0;
+  // The paperclip counts too: a task with only a document used to draw no corner at all.
+  const markerCount = (hasUnread ? 1 : 0) + (task.attachmentUrl ? 1 : 0) + (task.file ? 1 : 0);
 
   // A task several people carry needs all of their ticks, so the card has to say how many it has —
   // otherwise "why is this still open?" has no answer on the surface where it is asked.
@@ -165,19 +167,13 @@ const TaskCardBase = ({
             </span>
           )}
 
-          {hasNote && (
+          {hasUnread && (
             <span
-              title={
-                task.noteAuthors.length > 0
-                  ? t('common.notesFrom', {
-                      count: String(noteCount),
-                      names: task.noteAuthors.map((author) => author.displayName).join(', '),
-                    })
-                  : t('common.notesCount', { count: String(noteCount) })
-              }
+              title={t('threads.unread', { count: String(unreadComments) })}
+              aria-label={t('threads.unread', { count: String(unreadComments) })}
               className="text-amber-400 drop-shadow-[0_2px_3px_rgb(0_0_0/0.35)]"
             >
-              <PostItMark count={noteCount} className="h-[1.125rem] w-[1.125rem]" />
+              <PostItMark count={unreadComments} className="h-[1.125rem] w-[1.125rem]" />
             </span>
           )}
         </span>
@@ -254,6 +250,7 @@ const TaskCardBase = ({
             // or two, so the row does not slide under them.
             markerCount === 1 && 'mr-5',
             markerCount === 2 && 'mr-11',
+            markerCount === 3 && 'mr-16',
           )}
         >
           {onTogglePin && (

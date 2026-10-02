@@ -26,6 +26,8 @@ export interface Project {
    */
   startsAt: string | null;
   endsAt: string | null;
+  /** Days a completed task stays before it is binned on its own; `null` never. */
+  autoBinAfterDays?: number | null;
   createdAt: string;
   updatedAt: string;
   owner: UserSummary;

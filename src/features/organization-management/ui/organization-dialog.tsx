@@ -300,6 +300,7 @@ export const OrganizationDialog = ({
       description={t(isEditing ? 'org.editSubtitle' : 'org.newSubtitle')}
       className={cn(!isEditing && 'sm:max-w-2xl')}
       flat
+      danger={isConfirmingDelete}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
@@ -385,7 +386,9 @@ export const OrganizationDialog = ({
           <section className="space-y-2.5 rounded-xl border border-danger/30 bg-danger/[0.04] p-3.5">
             <header className="flex items-center gap-2">
               <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-danger" />
-              <h3 className="text-xs font-semibold text-danger">{t('org.dangerZone')}</h3>
+              <h3 className="ui-panel-title text-xs font-semibold text-danger">
+                {t('org.dangerZone')}
+              </h3>
             </header>
 
             {!isConfirmingDelete ? (

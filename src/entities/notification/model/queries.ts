@@ -47,6 +47,25 @@ const dropNotification = (queryClient: QueryClient, id: string): void => {
   );
 };
 
+/** Takes every notification up to `before` out of the caches, and recounts the badge. */
+const dropUpTo = (queryClient: QueryClient, before: string): void => {
+  let remainingUnread = 0;
+
+  for (const [key, data] of queryClient.getQueriesData<AppNotification[]>({
+    queryKey: queryKeys.notifications.all,
+  })) {
+    if (!Array.isArray(data)) continue;
+    const kept = data.filter((notification) => notification.createdAt > before);
+    // The full list (not the unread-only one) is what the badge counts from.
+    if (key[1] === 'list' && key[2] === false) {
+      remainingUnread = kept.filter((notification) => !notification.readAt).length;
+    }
+    queryClient.setQueryData(key, kept);
+  }
+
+  queryClient.setQueryData<number>(queryKeys.notifications.unreadCount, remainingUnread);
+};
+
 export const useNotificationActions = () => {
   const queryClient = useQueryClient();
   const refresh = () =>
@@ -64,6 +83,13 @@ export const useNotificationActions = () => {
       onError: refresh,
     }),
 
-    clear: useMutation({ mutationFn: notificationApi.clear, onSuccess: refresh }),
+    clear: useMutation({ mutationFn: () => notificationApi.clear(), onSuccess: refresh }),
+
+    // Read and gone in one go, for everything the bell was showing. Optimistic, like `dismiss`.
+    sweep: useMutation({
+      mutationFn: (before: string) => notificationApi.clear(before),
+      onMutate: (before: string) => dropUpTo(queryClient, before),
+      onError: refresh,
+    }),
   };
 };

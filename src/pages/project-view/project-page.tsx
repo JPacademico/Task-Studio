@@ -48,6 +48,7 @@ import {
   useProjectChatUnread,
   usePrefetchProjectChat,
 } from '@/features/project-chat-dock/ui/chat-dock';
+import { useProjectThreadUnread } from '@/entities/task-comment/model/queries';
 import { useLiveCallStore } from '@/features/live-rooms/model/live-call.store';
 import { LivePanel } from '@/features/live-rooms/ui/live-panel';
 import { MeetingsPanel } from '@/features/meetings/ui/meetings-panel';
@@ -75,7 +76,7 @@ import { ProjectWindowChip } from '@/entities/project/ui/project-window-chip';
 import { ConnectionsPanel } from '@/features/connections/ui/connections-panel';
 import { cn } from '@/shared/lib/cn';
 import { formatDateTime } from '@/shared/lib/dates';
-import { Avatar, Button, LavaButton, PageLoader, Segmented } from '@/shared/ui';
+import { Avatar, Button, LavaButton, PageLoader, PostItMark, Segmented } from '@/shared/ui';
 import { ProjectChangelog } from '@/widgets/project-changelog/ui/project-changelog';
 import { ProjectDashboard } from '@/widgets/project-dashboard/ui/project-dashboard';
 import { TextBoard } from '@/widgets/text-board/ui/text-board';
@@ -200,7 +201,8 @@ const ProjectPage = () => {
   const isChatOpen = useChatDock(
     (state) => state.isOpen && state.projectId === projectId,
   );
-  const chatUnread = useProjectChatUnread(projectId);
+  // Live chat that arrived while the window was shut, plus unseen task-thread comments.
+  const chatUnread = useProjectChatUnread(projectId) + useProjectThreadUnread(projectId);
   // Warm the conversation while the user is reading the board.
   usePrefetchProjectChat(projectId);
 
@@ -371,23 +373,34 @@ const ProjectPage = () => {
 
             {/* The launcher lives here rather than in a floating bubble, which used to sit on
                 top of whichever tab was open. */}
-            <Button
-              variant={isChatOpen ? 'primary' : 'outline'}
-              size="sm"
-              onClick={() =>
-                isChatOpen ? closeChat() : openChat(projectId, project.name)
-              }
-              className="relative"
-              aria-pressed={isChatOpen}
-            >
-              <MessageCircle className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Chat</span>
+            {/* The unread Post-it hangs off the button's corner, outside it: inside, `Button`
+                would seat it on the label. */}
+            <span className="relative inline-flex">
+              <Button
+                variant={isChatOpen ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() =>
+                  isChatOpen ? closeChat() : openChat(projectId, project.name)
+                }
+                aria-pressed={isChatOpen}
+                aria-label={
+                  chatUnread > 0 && !isChatOpen
+                    ? `Chat — ${t('chat.unreadCount', { count: String(chatUnread) })}`
+                    : undefined
+                }
+              >
+                <MessageCircle className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Chat</span>
+              </Button>
               {chatUnread > 0 && !isChatOpen && (
-                <span className="absolute -right-1.5 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-danger px-1 text-4xs font-bold text-white">
-                  {chatUnread > 9 ? '9+' : chatUnread}
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute -right-2 -top-2.5 text-amber-400 drop-shadow-[0_2px_3px_rgb(0_0_0/0.35)]"
+                >
+                  <PostItMark count={chatUnread} className="h-5 w-5" />
                 </span>
               )}
-            </Button>
+            </span>
 
             <Button
               variant="ghost"

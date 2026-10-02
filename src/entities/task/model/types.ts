@@ -93,6 +93,8 @@ export interface Task {
   isCompletedLate: boolean;
   /** Which column this sits in on the project's grouping board, or `null`. */
   group: TaskGroupRef | null;
+  /** Whether the task has a comment thread in its project's chat. Optional for older caches. */
+  commentsEnabled?: boolean;
   /** The note checklist, whole. Capped at `MAX_TASK_NOTES` by the API. */
   notes: TaskNote[];
   /** How many of those steps are ticked. */
@@ -164,6 +166,8 @@ export interface CreateTaskPayload {
   attachmentThumbKey?: string;
   /** The uploaded document to pin to it — key, filename and size. */
   file?: { key: string; name: string; size: number };
+  /** Opens a comment thread. Project tasks only; off when omitted. */
+  commentsEnabled?: boolean;
 }
 
 export interface UpdateTaskPayload {
@@ -193,4 +197,6 @@ export interface UpdateTaskPayload {
    * grouping board's dynamic lane, and omitting the field leaves the tag alone.
    */
   groupId?: string | null;
+  /** Turns the comment thread on or off; the comments themselves are kept. */
+  commentsEnabled?: boolean;
 }

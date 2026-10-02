@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Bell, CheckCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -18,6 +18,11 @@ import { formatRelative } from '@/shared/lib/dates';
 import { Button, EmptyState } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 import { NotificationOptIn } from './notification-opt-in';
+
+/** The sweep: each row leaves a beat after the one above it, the first eight at most. */
+const SWEEP_STAGGER_S = 0.045;
+const SWEEP_ROW_S = 0.3;
+const SWEEP_MAX_STAGGERED = 8;
 
 const deepLink = (notification: AppNotification): string | null => {
   const { payload } = notification;
@@ -52,7 +57,31 @@ export const NotificationBell = () => {
 
   const { data: unread = 0 } = useUnreadCount();
   const { data: notifications = [], isLoading } = useNotifications();
-  const { dismiss, markAllRead } = useNotificationActions();
+  const { dismiss, sweep } = useNotificationActions();
+  const reduceMotion = useReducedMotion();
+  /** Rows are sliding out; the caches are emptied once they are gone. */
+  const [isSweeping, setIsSweeping] = useState(false);
+  const sweepTimer = useRef<number | undefined>(undefined);
+
+  useEffect(() => () => window.clearTimeout(sweepTimer.current), []);
+
+  /** "Mark all as read" also clears: everything on screen swipes left, then leaves the caches. */
+  const sweepAll = () => {
+    if (isSweeping || notifications.length === 0) return;
+
+    const newest = notifications.reduce(
+      (latest, notification) => (notification.createdAt > latest ? notification.createdAt : latest),
+      notifications[0].createdAt,
+    );
+    const rows = Math.min(notifications.length, SWEEP_MAX_STAGGERED);
+    const duration = reduceMotion ? 0 : ((rows - 1) * SWEEP_STAGGER_S + SWEEP_ROW_S) * 1000;
+
+    setIsSweeping(true);
+    sweepTimer.current = window.setTimeout(() => {
+      sweep.mutate(newest);
+      setIsSweeping(false);
+    }, duration);
+  };
 
   return (
     <div className="relative">
@@ -100,13 +129,13 @@ export const NotificationBell = () => {
             >
               {/* No heading, and no row where one used to be. The pane hangs off a bell, under
                   a badge counting unread items, and every row in it is a notification. */}
-              {unread > 0 && (
+              {notifications.length > 0 && (
                 <header className="flex items-center justify-end border-b border-edge px-3 py-2">
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => markAllRead.mutate()}
-                    isLoading={markAllRead.isPending}
+                    onClick={sweepAll}
+                    disabled={isSweeping}
                   >
                     <CheckCheck className="h-3.5 w-3.5" />
                     {t('notif.markAllRead')}
@@ -118,7 +147,9 @@ export const NotificationBell = () => {
                   somebody has shown they care about notifications. */}
               <NotificationOptIn />
 
-              <div className="scrollbar-thin max-h-[23.75rem] overflow-y-auto">
+              {/* `overflow-x-hidden`: a sweeping row is clipped at the panel's edge, never drawn
+                  outside it. */}
+              <div className="scrollbar-thin max-h-[23.75rem] overflow-y-auto overflow-x-hidden">
                 {isLoading && (
                   <p className="px-4 py-6 text-center text-xs text-content-faint">{t('common.loading')}</p>
                 )}
@@ -131,7 +162,7 @@ export const NotificationBell = () => {
                   />
                 )}
 
-                {notifications.map((notification) => {
+                {notifications.map((notification, index) => {
                   const link = deepLink(notification);
                   // Both read the row rather than the raw columns — the API sends a deadline as an
                   // instant, not as prose.
@@ -139,52 +170,66 @@ export const NotificationBell = () => {
                   const deadline = notificationDeadline(notification);
 
                   return (
-                    <button
+                    <motion.div
                       key={notification.id}
-                      type="button"
-                      /* Clicking one deals with it and takes it away. This used to mark the row
-                         read and leave it in place. */
-                      onClick={() => {
-                        dismiss.mutate(notification.id);
-                        if (link) {
-                          navigate(link);
-                          setIsOpen(false);
-                        }
+                      initial={false}
+                      animate={isSweeping ? { x: '-105%', opacity: 0 } : { x: 0, opacity: 1 }}
+                      transition={{
+                        duration: reduceMotion ? 0 : SWEEP_ROW_S,
+                        delay: isSweeping
+                          ? Math.min(index, SWEEP_MAX_STAGGERED - 1) * SWEEP_STAGGER_S
+                          : 0,
+                        ease: [0.55, 0, 0.75, 0.2],
                       }}
-                      /* Rows in a card again, now that the card is opaque. A drawn rule and a solid
-                         hover fill are what a list on a surface is supposed to use. */
-                      className={cn(
-                        'flex w-full gap-3 border-b border-edge px-4 py-3 text-left transition-colors last:border-b-0',
-                        notification.readAt
-                          ? 'hover:bg-surface-sunken'
-                          : 'bg-brand/[0.08] hover:bg-brand/[0.14]',
-                      )}
+                      className="border-b border-edge last:border-b-0"
                     >
-                      <span
+                      <button
+                        type="button"
+                        disabled={isSweeping}
+                        /* Clicking one deals with it and takes it away. This used to mark the row
+                           read and leave it in place. */
+                        onClick={() => {
+                          dismiss.mutate(notification.id);
+                          if (link) {
+                            navigate(link);
+                            setIsOpen(false);
+                          }
+                        }}
+                        /* Rows in a card again, now that the card is opaque. A drawn rule and a solid
+                           hover fill are what a list on a surface is supposed to use. */
                         className={cn(
-                          'mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full',
-                          notification.readAt ? 'bg-transparent' : 'bg-brand',
+                          'flex w-full gap-3 px-4 py-3 text-left transition-colors',
+                          notification.readAt
+                            ? 'hover:bg-surface-sunken'
+                            : 'bg-brand/[0.08] hover:bg-brand/[0.14]',
                         )}
-                      />
-                      <span className="flex-1 space-y-0.5">
-                        <span className="block text-xs font-medium leading-snug">
-                          {notification.title}
-                        </span>
-                        {body && (
-                          <span className="block text-2xs text-content-muted">
-                            {body}
+                      >
+                        <span
+                          className={cn(
+                            'mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full',
+                            notification.readAt ? 'bg-transparent' : 'bg-brand',
+                          )}
+                        />
+                        <span className="flex-1 space-y-0.5">
+                          <span className="block text-xs font-medium leading-snug">
+                            {notification.title}
                           </span>
-                        )}
-                        {deadline && (
-                          <span className="block text-2xs font-medium text-warning">
-                            {deadline}
+                          {body && (
+                            <span className="block text-2xs text-content-muted">
+                              {body}
+                            </span>
+                          )}
+                          {deadline && (
+                            <span className="block text-2xs font-medium text-warning">
+                              {deadline}
+                            </span>
+                          )}
+                          <span className="block text-3xs uppercase tracking-wide text-content-faint">
+                            {formatRelative(notification.createdAt)}
                           </span>
-                        )}
-                        <span className="block text-3xs uppercase tracking-wide text-content-faint">
-                          {formatRelative(notification.createdAt)}
                         </span>
-                      </span>
-                    </button>
+                      </button>
+                    </motion.div>
                   );
                 })}
               </div>

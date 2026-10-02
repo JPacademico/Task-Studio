@@ -87,6 +87,8 @@ export const projectApi = {
        */
       startsAt?: string | null;
       endsAt?: string | null;
+      /** Days before completed tasks are binned; `null` turns it off. */
+      autoBinAfterDays?: number | null;
     },
   ): Promise<Project> {
     const { data } = await api.patch<Project>(`/projects/${projectId}`, payload);

@@ -5,6 +5,7 @@ import { X } from 'lucide-react';
 
 import { cn } from '@/shared/lib/cn';
 import { BatSwarm } from './bat-swarm';
+import { DangerTape } from './danger-tape';
 import { LanternDrift } from './lantern-drift';
 import { useEscapeKey } from '@/shared/lib/hooks';
 import { Button } from './button';
@@ -33,6 +34,8 @@ interface ModalProps {
    * — the task composer above all.
    */
   flat?: boolean;
+  /** Tapes off the backdrop. For confirmations that destroy something; toggling it animates. */
+  danger?: boolean;
 }
 
 /** Matches the exit transition below, so the portal unmounts once it is done. */
@@ -50,6 +53,7 @@ export const Modal = ({
   flat = false,
   align = 'start',
   icon,
+  danger = false,
 }: ModalProps) => {
   const reduceMotion = useReducedMotion();
   const [isMounted, setIsMounted] = useState(isOpen);
@@ -84,6 +88,12 @@ export const Modal = ({
             transition={{ duration: reduceMotion ? 0 : 0.14 }}
             onClick={onClose}
           />
+
+          {/* Over the backdrop, under the panel, and click-through to the backdrop. `propagate`
+              lets the tape fade with the dialog instead of vanishing when it closes. */}
+          <AnimatePresence propagate>
+            {danger && <DangerTape key="tape" opacity={0.5} />}
+          </AnimatePresence>
 
           <motion.div
             ref={panelRef}

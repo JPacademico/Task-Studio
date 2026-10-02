@@ -103,6 +103,7 @@ export const CliMachinesPanel = () => {
         title={t('cli.revokeTitle', { name: pending?.name ?? '' })}
         description={t('cli.revokeBody')}
         flat
+        danger
         footer={
           <>
             <Button variant="ghost" onClick={() => setPending(null)}>

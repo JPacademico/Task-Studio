@@ -45,6 +45,7 @@ export const ConfirmDialog = ({
       description={description}
       align="center"
       flat
+      danger
       icon={
         <span className="grid h-11 w-11 place-items-center rounded-2xl bg-danger/12 text-danger">
           <Trash2 className="h-5 w-5" />

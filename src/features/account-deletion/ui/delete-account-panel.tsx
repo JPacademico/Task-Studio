@@ -90,7 +90,7 @@ export const DeleteAccountPanel = () => {
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         title={t('deletion.dialogTitle')}
-        icon={<Trash2 className="h-4 w-4 text-danger" />}
+        danger
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setIsOpen(false)}>

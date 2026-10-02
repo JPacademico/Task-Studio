@@ -8,7 +8,17 @@ import {
 } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, useDragControls, useMotionValue } from 'framer-motion';
-import { AlertCircle, Check, Clock3, GripHorizontal, Pin, RotateCcw, X } from 'lucide-react';
+import {
+  AlertCircle,
+  Check,
+  Clock3,
+  GripHorizontal,
+  ListChecks,
+  MessageCircle,
+  Pin,
+  RotateCcw,
+  X,
+} from 'lucide-react';
 
 import { useRealtime } from '@/app/providers/realtime-provider';
 import {
@@ -29,7 +39,9 @@ import {
 import type { ChatMessage } from '@/entities/chat/model/types';
 import { useRoster } from '@/entities/project/model/queries';
 import type { RosterMember } from '@/entities/project/model/types';
+import { useProjectThreadUnread } from '@/entities/task-comment/model/queries';
 import { useCurrentUser } from '@/features/auth/model/session.store';
+import { useChatDock, type ChatView } from '@/features/project-chat-dock/model/chat-dock.store';
 import { enqueueChatMessage } from '@/features/project-chat-dock/model/chat-outbox';
 import {
   TYPING_VISIBLE_MS,
@@ -45,8 +57,9 @@ import { STORAGE_KEYS, TEXT_LIMITS } from '@/shared/config/constants';
 import { clampText } from '@/shared/lib/text';
 import { useIsTouchDevice, useLocalStorage } from '@/shared/lib/hooks';
 import { useViewportDragBounds } from '@/shared/lib/use-viewport-drag-bounds';
-import { Avatar, Button, SendGlyph, SkinLoader } from '@/shared/ui';
+import { Avatar, Button, PostItMark, SendGlyph, SkinLoader } from '@/shared/ui';
 import { MentionPicker } from './mention-picker';
+import { TaskThreads } from './task-threads';
 
 interface ProjectChatProps {
   projectId: string;
@@ -84,6 +97,13 @@ export const ProjectChat = ({
 
   const queryClient = useQueryClient();
   const typingSignal = useTypingSignal(projectId);
+
+  // Which conversation is on screen: the live chat, or the task threads.
+  const view = useChatDock((state) => state.view);
+  const setView = useChatDock((state) => state.setView);
+  const taskUnread = useProjectThreadUnread(projectId);
+  /** Live-chat messages that arrived while "Tasks" was showing. */
+  const [generalUnseen, setGeneralUnseen] = useState(0);
 
   const [draft, setDraft] = useState('');
   /** Whether "load earlier" has anything left to load. Unknown until a short page says no. */
@@ -188,6 +208,9 @@ export const ProjectChat = ({
     const handleMessage = (message: ChatMessage) => {
       if (message.projectId !== projectId) return;
       upsertChatMessages(queryClient, projectId, [message]);
+      if (message.userId !== user?.id && useChatDock.getState().view !== 'general') {
+        setGeneralUnseen((count) => count + 1);
+      }
       // A sentence arriving is the end of that person's typing.
       setTypingUsers((current) => {
         if (!(message.userId in current)) return current;
@@ -241,6 +264,13 @@ export const ProjectChat = ({
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [lastMessageKey]);
+
+  // Back on the live chat: what arrived meanwhile is seen, and the newest line is in view.
+  useEffect(() => {
+    if (view !== 'general') return;
+    setGeneralUnseen(0);
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
+  }, [view]);
 
   /*
    * Older messages go in *above* the reader, so the scroll offset is moved by
@@ -451,7 +481,7 @@ export const ProjectChat = ({
                   <span aria-hidden>·</span>
                 </>
               )}
-              {typingCount > 0
+              {typingCount > 0 && view === 'general'
                 ? t('chat.typing', { count: typingCount })
                 : isConnected
                   ? t('chat.connected')
@@ -471,174 +501,250 @@ export const ProjectChat = ({
           </Button>
         </header>
 
-        <div ref={scrollRef} className="scrollbar-thin flex-1 space-y-3 overflow-y-auto px-3 py-3">
-          {/* Waiting, rather than an empty box that looks like an empty room. `isLoading` and
-              not `isPending`: the query is gated on `projectId`. */}
-          {isLoadingHistory && messages.length === 0 && (
-            <div className="flex flex-col items-center gap-2 py-10">
-              <SkinLoader label={t('chat.loading')} />
-              <p className="text-2xs text-content-faint">{t('chat.loading')}</p>
-            </div>
-          )}
+        <ChatViewSwitch
+          view={view}
+          onChange={setView}
+          generalUnread={generalUnseen}
+          tasksUnread={taskUnread}
+        />
 
-          {!isLoadingHistory && messages.length === 0 && (
-            <p className="py-8 text-center text-xs text-content-faint">
-              {t('chat.empty')}
-            </p>
-          )}
-
-          {/*
-            Older history, on request. Only offered once there is a full page
-            on screen — a conversation shorter than that is already all here.
-          */}
-          {hasEarlier && messages.length >= CHAT_PAGE && (
-            <div className="flex justify-center">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => void loadEarlier()}
-                disabled={isLoadingEarlier}
-                className="text-2xs"
-              >
-                {isLoadingEarlier ? t('chat.loadingEarlier') : t('chat.loadEarlier')}
-              </Button>
-            </div>
-          )}
-
-          {messages.map((message) => {
-            const isMine = message.userId === user?.id;
-
-            return (
-              <div
-                // The client id where there is one, so a bubble keeps its
-                // element when the server's copy replaces it.
-                key={message.clientId ?? message.id}
-                /* `content-visibility` rather than a virtualised list: rows scrolled out of view
-                   skip layout and paint, which is the cost a long history actually has. */
-                className={cn(
-                  'flex items-end gap-2 [contain-intrinsic-size:auto_3.5rem] [content-visibility:auto]',
-                  isMine && 'flex-row-reverse',
-                )}
-              >
-                <Avatar name={message.user.displayName} src={message.user.avatarUrl} size="xs" />
-                <div
-                  className={cn(
-                    'max-w-[72%] rounded-2xl px-3 py-2 text-xs leading-relaxed',
-                    isMine
-                      ? 'rounded-br-corner bg-brand text-brand-contrast'
-                      : 'rounded-bl-corner bg-surface-sunken text-content',
-                    // A failed send is the one state that must survive being glanced at, so it
-                    // changes the bubble rather than adding a detail inside it.
-                    message.delivery === 'failed' && 'opacity-80 ring-1 ring-danger',
-                  )}
-                >
-                  {!isMine && (
-                    <p className="mb-0.5 text-3xs font-semibold opacity-70">
-                      {message.user.displayName}
-                    </p>
-                  )}
-                  <p className="whitespace-pre-wrap break-words">
-                    {splitMentions(message.content, roster).map((segment, index) =>
-                      segment.member ? (
-                        <mark
-                          key={index}
-                          /* Three treatments, because a mention means three different things
-                             depending on who is reading it. */
-                          className={cn(
-                            'rounded px-0.5 font-semibold',
-                            isMine
-                              ? 'bg-brand-contrast/25 text-brand-contrast'
-                              : segment.member.id === user?.id
-                                ? 'bg-brand text-brand-contrast'
-                                : 'bg-brand/15 text-brand',
-                          )}
-                        >
-                          {segment.text}
-                        </mark>
-                      ) : (
-                        segment.text
-                      ),
-                    )}
-                  </p>
-                  <p className="mt-1 flex items-center gap-1 text-4xs opacity-60">
-                    {formatTime(message.createdAt)}
-                    {/* Only our own messages carry a delivery mark, and only while there is
-                        something to say about it: pending, failed. */}
-                    {isMine && message.delivery === 'pending' && (
-                      <Clock3 className="h-2.5 w-2.5" aria-label={t('chat.sending')} />
-                    )}
-                    {isMine && message.delivery === undefined && !message.id.startsWith('local:') && (
-                      <Check className="h-2.5 w-2.5" aria-label={t('chat.sent')} />
-                    )}
-                  </p>
+        {view === 'tasks' ? (
+          <TaskThreads projectId={projectId} />
+        ) : (
+          <>
+            <div ref={scrollRef} className="scrollbar-thin flex-1 space-y-3 overflow-y-auto px-3 py-3">
+              {/* Waiting, rather than an empty box that looks like an empty room. `isLoading` and
+                  not `isPending`: the query is gated on `projectId`. */}
+              {isLoadingHistory && messages.length === 0 && (
+                <div className="flex flex-col items-center gap-2 py-10">
+                  <SkinLoader label={t('chat.loading')} />
+                  <p className="text-2xs text-content-faint">{t('chat.loading')}</p>
                 </div>
-                {message.delivery === 'failed' && (
-                  <button
-                    type="button"
-                    onClick={() => retry(message)}
-                    title={t('chat.notSentHelp')}
-                    aria-label={t('chat.retry')}
-                    className="group/retry flex items-center rounded-full p-0.5 text-danger hover:bg-danger/10"
+              )}
+
+              {!isLoadingHistory && messages.length === 0 && (
+                <p className="py-8 text-center text-xs text-content-faint">
+                  {t('chat.empty')}
+                </p>
+              )}
+
+              {/*
+                Older history, on request. Only offered once there is a full page
+                on screen — a conversation shorter than that is already all here.
+              */}
+              {hasEarlier && messages.length >= CHAT_PAGE && (
+                <div className="flex justify-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => void loadEarlier()}
+                    disabled={isLoadingEarlier}
+                    className="text-2xs"
                   >
-                    <AlertCircle className="h-3.5 w-3.5 group-hover/retry:hidden" />
-                    <RotateCcw className="hidden h-3.5 w-3.5 group-hover/retry:block" />
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                    {isLoadingEarlier ? t('chat.loadingEarlier') : t('chat.loadEarlier')}
+                  </Button>
+                </div>
+              )}
 
-        <form
-          // `relative` so the mention list can hang off the top of this row.
-          className="relative flex items-center gap-2 border-t border-edge p-2.5"
-          onSubmit={(event) => {
-            event.preventDefault();
-            send();
-          }}
-        >
-          {isPickerOpen && (
-            <MentionPicker
-              members={suggestions}
-              activeIndex={mentionIndex}
-              onActiveIndexChange={setMentionIndex}
-              onPick={pickMention}
-            />
-          )}
+              {messages.map((message) => {
+                const isMine = message.userId === user?.id;
 
-          <input
-            ref={inputRef}
-            value={draft}
-            onChange={(event) => {
-              setDraft(clampText(event.target.value, TEXT_LIMITS.chatMessage));
-              // Read off the event's own target rather than from a later DOM read: by the time an
-              // effect could look, the value and the selection have both moved on.
-              setCaret(event.target.selectionStart ?? event.target.value.length);
-              // Throttled and stopped on idle — see `useTypingSignal`.
-              if (isConnected) typingSignal.keystroke();
-            }}
-            /* `onSelect` fires for every caret move — clicking into the middle of the draft,
-               arrowing along it, selecting a word. */
-            onSelect={(event) =>
-              setCaret(event.currentTarget.selectionStart ?? draft.length)
-            }
-            onKeyDown={handleComposerKeyDown}
-            // Offline no longer disables the field: what is written goes into
-            // the outbox and is sent on reconnect. See `send`.
-            placeholder={isConnected ? t('chat.placeholder') : t('chat.offlineQueued')}
-            maxLength={TEXT_LIMITS.chatMessage}
-            className="field h-9 text-xs"
-          />
-          <Button
-            type="submit"
-            size="icon"
-            disabled={!draft.trim()}
-            aria-label={t('chat.send')}
-          >
-            <SendGlyph />
-          </Button>
-        </form>
+                return (
+                  <div
+                    // The client id where there is one, so a bubble keeps its
+                    // element when the server's copy replaces it.
+                    key={message.clientId ?? message.id}
+                    /* `content-visibility` rather than a virtualised list: rows scrolled out of view
+                       skip layout and paint, which is the cost a long history actually has. */
+                    className={cn(
+                      'flex items-end gap-2 [contain-intrinsic-size:auto_3.5rem] [content-visibility:auto]',
+                      isMine && 'flex-row-reverse',
+                    )}
+                  >
+                    <Avatar name={message.user.displayName} src={message.user.avatarUrl} size="xs" />
+                    <div
+                      className={cn(
+                        'max-w-[72%] rounded-2xl px-3 py-2 text-xs leading-relaxed',
+                        isMine
+                          ? 'rounded-br-corner bg-brand text-brand-contrast'
+                          : 'rounded-bl-corner bg-surface-sunken text-content',
+                        // A failed send is the one state that must survive being glanced at, so it
+                        // changes the bubble rather than adding a detail inside it.
+                        message.delivery === 'failed' && 'opacity-80 ring-1 ring-danger',
+                      )}
+                    >
+                      {!isMine && (
+                        <p className="mb-0.5 text-3xs font-semibold opacity-70">
+                          {message.user.displayName}
+                        </p>
+                      )}
+                      <p className="whitespace-pre-wrap break-words">
+                        {splitMentions(message.content, roster).map((segment, index) =>
+                          segment.member ? (
+                            <mark
+                              key={index}
+                              /* Three treatments, because a mention means three different things
+                                 depending on who is reading it. */
+                              className={cn(
+                                'rounded px-0.5 font-semibold',
+                                isMine
+                                  ? 'bg-brand-contrast/25 text-brand-contrast'
+                                  : segment.member.id === user?.id
+                                    ? 'bg-brand text-brand-contrast'
+                                    : 'bg-brand/15 text-brand',
+                              )}
+                            >
+                              {segment.text}
+                            </mark>
+                          ) : (
+                            segment.text
+                          ),
+                        )}
+                      </p>
+                      <p className="mt-1 flex items-center gap-1 text-4xs opacity-60">
+                        {formatTime(message.createdAt)}
+                        {/* Only our own messages carry a delivery mark, and only while there is
+                            something to say about it: pending, failed. */}
+                        {isMine && message.delivery === 'pending' && (
+                          <Clock3 className="h-2.5 w-2.5" aria-label={t('chat.sending')} />
+                        )}
+                        {isMine && message.delivery === undefined && !message.id.startsWith('local:') && (
+                          <Check className="h-2.5 w-2.5" aria-label={t('chat.sent')} />
+                        )}
+                      </p>
+                    </div>
+                    {message.delivery === 'failed' && (
+                      <button
+                        type="button"
+                        onClick={() => retry(message)}
+                        title={t('chat.notSentHelp')}
+                        aria-label={t('chat.retry')}
+                        className="group/retry flex items-center rounded-full p-0.5 text-danger hover:bg-danger/10"
+                      >
+                        <AlertCircle className="h-3.5 w-3.5 group-hover/retry:hidden" />
+                        <RotateCcw className="hidden h-3.5 w-3.5 group-hover/retry:block" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <form
+              // `relative` so the mention list can hang off the top of this row.
+              className="relative flex items-center gap-2 border-t border-edge p-2.5"
+              onSubmit={(event) => {
+                event.preventDefault();
+                send();
+              }}
+            >
+              {isPickerOpen && (
+                <MentionPicker
+                  members={suggestions}
+                  activeIndex={mentionIndex}
+                  onActiveIndexChange={setMentionIndex}
+                  onPick={pickMention}
+                />
+              )}
+
+              <input
+                ref={inputRef}
+                value={draft}
+                onChange={(event) => {
+                  setDraft(clampText(event.target.value, TEXT_LIMITS.chatMessage));
+                  // Read off the event's own target rather than from a later DOM read: by the time an
+                  // effect could look, the value and the selection have both moved on.
+                  setCaret(event.target.selectionStart ?? event.target.value.length);
+                  // Throttled and stopped on idle — see `useTypingSignal`.
+                  if (isConnected) typingSignal.keystroke();
+                }}
+                /* `onSelect` fires for every caret move — clicking into the middle of the draft,
+                   arrowing along it, selecting a word. */
+                onSelect={(event) =>
+                  setCaret(event.currentTarget.selectionStart ?? draft.length)
+                }
+                onKeyDown={handleComposerKeyDown}
+                // Offline no longer disables the field: what is written goes into
+                // the outbox and is sent on reconnect. See `send`.
+                placeholder={isConnected ? t('chat.placeholder') : t('chat.offlineQueued')}
+                maxLength={TEXT_LIMITS.chatMessage}
+                className="field h-9 text-xs"
+              />
+              <Button
+                type="submit"
+                size="icon"
+                disabled={!draft.trim()}
+                aria-label={t('chat.send')}
+              >
+                <SendGlyph />
+              </Button>
+            </form>
+          </>
+        )}
       </aside>
     </motion.div>
+  );
+};
+
+interface ChatViewSwitchProps {
+  view: ChatView;
+  onChange: (view: ChatView) => void;
+  generalUnread: number;
+  tasksUnread: number;
+}
+
+/** "General" and "Tasks": two halves of one strip, the active one lifted onto a sliding plate. */
+const ChatViewSwitch = ({ view, onChange, generalUnread, tasksUnread }: ChatViewSwitchProps) => {
+  const t = useT();
+  const options = [
+    { value: 'general' as const, label: t('chat.general'), icon: MessageCircle, unread: generalUnread },
+    { value: 'tasks' as const, label: t('chat.tasks'), icon: ListChecks, unread: tasksUnread },
+  ];
+
+  return (
+    <div
+      role="tablist"
+      aria-label={t('chat.viewsLabel')}
+      className="grid grid-cols-2 gap-1 border-b border-edge bg-surface-sunken/60 p-1.5"
+    >
+      {options.map((option) => {
+        const isActive = view === option.value;
+        const Icon = option.icon;
+
+        return (
+          <button
+            key={option.value}
+            type="button"
+            role="tab"
+            aria-selected={isActive}
+            onClick={() => onChange(option.value)}
+            className={cn(
+              'relative flex h-8 items-center justify-center gap-1.5 rounded-xl text-xs font-semibold',
+              'transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
+              isActive ? 'text-brand-contrast' : 'text-content-muted hover:text-content',
+            )}
+          >
+            {isActive && (
+              <motion.span
+                layoutId="chat-view-plate"
+                aria-hidden
+                className="absolute inset-0 rounded-xl bg-brand shadow-[0_4px_12px_-6px_rgb(var(--brand)/0.8)]"
+                transition={{ type: 'spring', stiffness: 520, damping: 38 }}
+              />
+            )}
+            <Icon className="relative h-3.5 w-3.5" aria-hidden />
+            <span className="relative">{option.label}</span>
+            {option.unread > 0 && (
+              <span
+                className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-amber-400 drop-shadow-[0_2px_3px_rgb(0_0_0/0.35)]"
+                title={t('chat.unreadCount', { count: String(option.unread) })}
+              >
+                <PostItMark count={option.unread} className="h-[1.125rem] w-[1.125rem]" />
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
   );
 };

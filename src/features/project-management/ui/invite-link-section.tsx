@@ -58,7 +58,7 @@ export const InviteLinkSection = ({ projectId, isOpen }: { projectId: string; is
     <section className="space-y-2.5 rounded-xl border border-edge bg-surface-sunken/50 p-3.5">
       <header className="flex items-center gap-2">
         <Link2 className="h-3.5 w-3.5 shrink-0 text-content-faint" />
-        <h3 className="text-xs font-semibold">{t('inviteLink.title')}</h3>
+        <h3 className="ui-panel-title text-xs font-semibold">{t('inviteLink.title')}</h3>
       </header>
 
       <p className="text-2xs leading-relaxed text-content-muted">{t('inviteLink.explain')}</p>

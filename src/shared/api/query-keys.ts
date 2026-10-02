@@ -77,6 +77,13 @@ export const queryKeys = {
     history: (projectId: string) => ['chat', projectId] as const,
   },
 
+  /** Task comment threads: every reachable thread's summary, and one thread's comments. */
+  taskComments: {
+    all: ['task-comments'] as const,
+    threads: ['task-comments', 'threads'] as const,
+    thread: (taskId: string) => ['task-comments', 'thread', taskId] as const,
+  },
+
   whiteboard: {
     scene: (projectId: string, pageIndex = 0) => ['whiteboard', projectId, pageIndex] as const,
   },

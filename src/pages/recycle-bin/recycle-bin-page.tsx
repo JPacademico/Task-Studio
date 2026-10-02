@@ -559,6 +559,7 @@ const RecycleBinPage = () => {
         onClose={() => setPurgeTarget(null)}
         title={t('bin.purgeProjectTitle', { name: purgeTarget?.name ?? '' })}
         flat
+        danger
         footer={
           <>
             <Button variant="ghost" onClick={() => setPurgeTarget(null)}>

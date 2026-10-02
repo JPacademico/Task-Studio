@@ -2,6 +2,9 @@ import { create } from 'zustand';
 
 import { STORAGE_KEYS } from '@/shared/config/constants';
 
+/** Which conversation the window shows: the project's live chat, or its task threads. */
+export type ChatView = 'general' | 'tasks';
+
 interface ChatDockState {
   /** Which project's conversation is on screen, if any. */
   projectId: string | null;
@@ -14,8 +17,16 @@ interface ChatDockState {
   isPinned: boolean;
   /** Messages that arrived while the window was closed. */
   unread: number;
+  view: ChatView;
+  /** The task thread open under "Tasks", or `null` for the list of threads. */
+  threadTaskId: string | null;
 
   open: (projectId: string, projectName: string) => void;
+  /** Opens the window straight onto one task's thread. */
+  openThread: (projectId: string, projectName: string, taskId: string) => void;
+  setView: (view: ChatView) => void;
+  /** Picks a thread under "Tasks", or `null` to go back to the list. */
+  showThread: (taskId: string | null) => void;
   close: () => void;
   setPinned: (isPinned: boolean) => void;
   setUnread: (unread: number) => void;
@@ -62,6 +73,8 @@ export const useChatDock = create<ChatDockState>((set, get) => ({
   isOpen: Boolean(restored),
   isPinned: Boolean(restored),
   unread: 0,
+  view: 'general',
+  threadTaskId: null,
 
   open: (projectId, projectName) => {
     const isSame = get().projectId === projectId;
@@ -75,9 +88,21 @@ export const useChatDock = create<ChatDockState>((set, get) => ({
       isOpen: true,
       unread: 0,
       isPinned: isSame ? get().isPinned : false,
+      // A fresh window opens on the live chat; another project's threads are not this one's.
+      ...(isSame && get().isOpen ? {} : { view: 'general' as const, threadTaskId: null }),
     });
   },
 
+  openThread: (projectId, projectName, taskId) => {
+    get().open(projectId, projectName);
+    set({ view: 'tasks', threadTaskId: taskId });
+  },
+
+  setView: (view) => set({ view }),
+
+  showThread: (threadTaskId) => set({ view: 'tasks', threadTaskId }),
+
+  // The view is left as it was, so a window fading out does not flip to the live chat.
   close: () => {
     write(null);
     set({ isOpen: false, isPinned: false, unread: 0 });

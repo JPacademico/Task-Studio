@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { CalendarClock, Check, ListChecks, Pin, Trash2 } from 'lucide-react';
 
 import { useIsTaskSyncing } from '@/entities/task/model/sync.store';
+import { useTaskUnread } from '@/entities/task-comment/model/queries';
 import type { Task, TaskStatus } from '@/entities/task/model/types';
 import { TaskOrigin } from '@/entities/task/ui/task-origin';
 import { TASK_PRIORITY_META, TASK_STATUS_META } from '@/shared/config/constants';
@@ -44,6 +45,7 @@ const TaskRowBase = ({
   const isDone = task.status === 'COMPLETED';
   // A write of this task's own is still in the air — see the store's note.
   const isSyncing = useIsTaskSyncing(task.id);
+  const unreadComments = useTaskUnread(task.commentsEnabled ? task.id : undefined);
 
   return (
     <motion.li
@@ -88,8 +90,13 @@ const TaskRowBase = ({
           )}
         >
           {task.title}
-          {task.notes.length > 0 && (
-            <PostItMark count={task.notes.length} className="h-3.5 w-3.5 shrink-0 text-amber-400" />
+          {unreadComments > 0 && (
+            <span
+              title={t('threads.unread', { count: String(unreadComments) })}
+              className="inline-flex shrink-0 text-amber-400"
+            >
+              <PostItMark count={unreadComments} className="h-3.5 w-3.5" />
+            </span>
           )}
         </span>
       </button>

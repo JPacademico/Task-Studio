@@ -404,11 +404,18 @@ export const useAddCreatedTasks = () => {
 
 export const useUpdateTask = () => {
   const invalidate = useInvalidateTasks();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ taskId, payload }: { taskId: string; payload: UpdateTaskPayload }) =>
       taskApi.update(taskId, payload),
-    onSuccess: (task) => invalidate(task.project?.id),
+    onSuccess: (task, { payload }) => {
+      invalidate(task.project?.id);
+      // A thread switched on or off joins or leaves the thread list.
+      if (payload.commentsEnabled !== undefined) {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.taskComments.threads });
+      }
+    },
     onError: (error) => toast.error(errorMessage(error, translate('toast.taskUpdateFailed'))),
   });
 };

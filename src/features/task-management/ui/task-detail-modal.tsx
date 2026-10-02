@@ -4,6 +4,7 @@ import {
   Check,
   FileText,
   Flag,
+  MessagesSquare,
   Pencil,
   Play,
   UserCheck,
@@ -12,10 +13,12 @@ import {
 import { useProjectDocuments } from '@/entities/document/model/queries';
 import { completionProgress, isSharedTask } from '@/entities/task/lib/completion';
 import { useTask } from '@/entities/task/model/queries';
+import { useTaskUnread } from '@/entities/task-comment/model/queries';
 import { useAiStatus } from '@/features/ai-suggestions/model/queries';
 import type { Task } from '@/entities/task/model/types';
 import { TaskTypeTag } from '@/entities/task/ui/task-type-tag';
 import { useCurrentUser } from '@/features/auth/model/session.store';
+import { useChatDock } from '@/features/project-chat-dock/model/chat-dock.store';
 import { TASK_STATUS_META, TEXT_LIMITS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
 import { truncateText } from '@/shared/lib/text';
@@ -27,6 +30,7 @@ import {
   Button,
   FileAttachmentRow,
   Modal,
+  PostItMark,
   Spinner,
   ZoomableImage,
 } from '@/shared/ui';
@@ -51,6 +55,8 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
   // Only to decide whether the note checklist draws its suggest button — see
   // `useAiStatus`, which is cached across every surface that asks.
   const { data: aiStatus } = useAiStatus();
+  const openThread = useChatDock((state) => state.openThread);
+  const unreadComments = useTaskUnread(taskId ?? undefined);
 
   // Pages somebody has written against this task, on the project's text board. Scoped to the task,
   // so this is a short list — usually none, sometimes one.
@@ -74,6 +80,36 @@ export const TaskDetailModal = ({ taskId, onClose, onEdit }: TaskDetailModalProp
       footer={
         task && (
           <>
+            {/* The task's thread, in the project chat. Bottom left, apart from close and edit. */}
+            {task.project && task.commentsEnabled && (
+              <span className="relative mr-auto inline-flex">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const project = task.project;
+                    if (!project) return;
+                    onClose();
+                    openThread(project.id, project.name, task.id);
+                  }}
+                  aria-label={
+                    unreadComments > 0
+                      ? `${t('task.taskChat')} — ${t('threads.unread', { count: String(unreadComments) })}`
+                      : undefined
+                  }
+                >
+                  <MessagesSquare className="h-3.5 w-3.5" />
+                  {t('task.taskChat')}
+                </Button>
+                {unreadComments > 0 && (
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute -right-2 -top-2.5 text-amber-400 drop-shadow-[0_2px_3px_rgb(0_0_0/0.35)]"
+                  >
+                    <PostItMark count={unreadComments} className="h-5 w-5" />
+                  </span>
+                )}
+              </span>
+            )}
             <Button variant="ghost" onClick={onClose}>
               {t('common.close')}
             </Button>
