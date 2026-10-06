@@ -60,6 +60,8 @@ const loadTurnstile = (): Promise<void> => {
       // Let a later mount try again rather than caching the failure forever —
       // this is exactly the case where the reader's network was briefly out.
       scriptPromise = null;
+      // Gone too, or the retry finds this dead tag and waits on a `load` that never comes.
+      script.remove();
       reject(new Error('Turnstile failed to load'));
     });
 

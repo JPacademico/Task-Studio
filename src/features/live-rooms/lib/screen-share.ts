@@ -21,26 +21,39 @@ export class ScreenAudioMix {
   /** What the audio sender carries while this mix is in use. */
   readonly track: MediaStreamTrack;
 
-  constructor(screen: MediaStreamTrack, microphone: MediaStreamTrack) {
-    /*
-     * 48kHz because that is what Opus encodes and what both inputs arrive at,
-     * so nothing is resampled on the way in or on the way out.
-     */
-    this.context = new AudioContext({ latencyHint: 'interactive', sampleRate: 48_000 });
-    const destination = this.context.createMediaStreamDestination();
-    // Mixed in mono, which is what the call's Opus sends anyway.
-    destination.channelCount = 1;
+  /**
+   * 48kHz by default, because that is what Opus encodes. Pass `null` for the device's own rate:
+   * Firefox refuses to mix a source whose rate differs from the context's.
+   */
+  constructor(
+    screen: MediaStreamTrack,
+    microphone: MediaStreamTrack,
+    sampleRate: number | null = 48_000,
+  ) {
+    this.context = new AudioContext({
+      latencyHint: 'interactive',
+      ...(sampleRate ? { sampleRate } : {}),
+    });
+    try {
+      const destination = this.context.createMediaStreamDestination();
+      // Mixed in mono, which is what the call's Opus sends anyway.
+      destination.channelCount = 1;
 
-    const voice = this.context.createMediaStreamSource(new MediaStream([microphone]));
-    voice.connect(destination);
+      const voice = this.context.createMediaStreamSource(new MediaStream([microphone]));
+      voice.connect(destination);
 
-    const sound = this.context.createMediaStreamSource(new MediaStream([screen]));
-    const level = this.context.createGain();
-    level.gain.value = SCREEN_UNDER_VOICE;
-    sound.connect(level).connect(destination);
+      const sound = this.context.createMediaStreamSource(new MediaStream([screen]));
+      const level = this.context.createGain();
+      level.gain.value = SCREEN_UNDER_VOICE;
+      sound.connect(level).connect(destination);
 
-    this.sources = [voice, sound];
-    this.track = destination.stream.getAudioTracks()[0];
+      this.sources = [voice, sound];
+      this.track = destination.stream.getAudioTracks()[0];
+    } catch (error) {
+      // A context left open on failure is never closed: browsers cap how many may exist.
+      void this.context.close().catch(() => undefined);
+      throw error;
+    }
 
     // A context made outside a click can start suspended; this one is made
     // to be sent at once.

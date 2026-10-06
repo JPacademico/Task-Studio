@@ -1,16 +1,16 @@
-# Graph Report - Task-Studio-UI  (2026-10-05)
+# Graph Report - Task-Studio-UI  (2026-10-02)
 
 ## Corpus Check
-- 402 files · ~358,897 words
+- 394 files · ~351,604 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2790 nodes · 4021 edges · 255 communities (173 shown, 82 thin omitted)
-- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 100 edges (avg confidence: 0.7)
+- 2725 nodes · 3919 edges · 257 communities (177 shown, 80 thin omitted)
+- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 97 edges (avg confidence: 0.71)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `e9413751`
+- Built from commit: `0ff1fce7`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -34,7 +34,7 @@
 - groups-board.tsx
 - DnD Board Columns
 - Task Views & Layouts
-- halloween-icons.tsx
+- modal.tsx
 - edge-affordance.tsx
 - dependencies
 - build-studio-runic.py
@@ -53,7 +53,7 @@
 - boards.queries.ts
 - router/index.tsx
 - use-live-call.ts
-- task-comment/model/queries.ts
+- terminal/build-cursors.py
 - Task Studio README
 - theme-wave.ts
 - meetings-panel.tsx
@@ -96,7 +96,7 @@
 - query-persist.ts
 - toast.ts
 - autumn-decor.tsx
-- build-dragon-block.py
+- favicon.svg (browser tab icon)
 - realtime-provider.tsx
 - oauth-buttons.tsx
 - live-panel.tsx
@@ -176,7 +176,7 @@
 - skin-motion.ts
 - use-card-press.ts
 - halloween-decor.tsx
-- eldritch/build-cursors.py
+- runic-text.tsx
 - build-studio-basalt.py
 - vite.config.ts
 - Knife source artwork (facaNova.png)
@@ -201,9 +201,9 @@
 - react
 - react-router-dom
 - @react-three/fiber
-- RouteBoundary
-- select.tsx
-- pitico-mark.tsx
+- auth-scene.tsx
+- warm-on-intent.ts
+- report-client-error.ts
 - Hidden Edge Menus design
 - query-keys.ts
 - Dragon Dark Hover Cursor
@@ -235,11 +235,13 @@
 - Pixel Font Preview
 - Pixel Font Info
 - CSS-variable Theme System (light/dark)
-- space-decor.tsx
+- socket.ts
+- landing-nav.tsx
 - volcano — Frijole
 - @dnd-kit/core
 - pending-invite.ts
 - tokens.api.ts
+- nav-glyph.tsx
 - clsx
 - date-fns
 - @dnd-kit/modifiers
@@ -265,15 +267,15 @@
 10. `GlyphProps` - 11 edges
 
 ## Surprising Connections (you probably didn't know these)
+- `StudioLetter()` --shares_data_with--> `Handwritten 't' glyph stroke paths`  [INFERRED]
+  src/shared/ui/studio-letter.tsx → public/favicon.svg
 - `drawIcon()` --conceptually_related_to--> `Apple Touch Icon (Task Studio Brand Mark)`  [INFERRED]
   scripts/generate-icons.mjs → public/apple-touch-icon.png
 - `drawIcon()` --shares_data_with--> `Icon-192 Brand Mark`  [INFERRED]
   scripts/generate-icons.mjs → public/icons/icon-192.png
-- `StudioLetter()` --shares_data_with--> `Handwritten 't' glyph stroke paths`  [INFERRED]
+- `StudioLetter()` --shares_data_with--> `favicon.svg (browser tab icon)`  [INFERRED]
   src/shared/ui/studio-letter.tsx → public/favicon.svg
 - `Task Studio README` --references--> `@dnd-kit/core`  [EXTRACTED]
-  README.md → package.json
-- `Task Studio README` --references--> `framer-motion`  [EXTRACTED]
   README.md → package.json
 
 ## Import Cycles
@@ -288,7 +290,7 @@
 - **Performance-first Interaction Design Pattern** — readme_useedgereveal, readme_drag_and_drop_design, readme_60fps_rules [INFERRED 0.85]
 - **PWA/iOS Delivery Flow** — readme_pwa_workbox, readme_ios_safari_specifics, readme_npm_scripts, readme_vercel_deployment [INFERRED 0.75]
 
-## Communities (255 total, 82 thin omitted)
+## Communities (257 total, 80 thin omitted)
 
 ### Community 0 - "project-board-queries.ts"
 Cohesion: 0.05
@@ -300,7 +302,7 @@ Nodes (63): taskApi, blockingAssigneeCount(), canCompleteTask(), completionBlock
 
 ### Community 2 - "ui/index.ts"
 Cohesion: 0.04
-Nodes (58): Avatar(), AvatarProps, AvatarStack(), AvatarStackProps, SIZES, ExpandableStage(), ExpandableStageProps, ExpandToggle() (+50 more)
+Nodes (55): Avatar(), AvatarProps, AvatarStack(), AvatarStackProps, SIZES, ExpandableStage(), ExpandableStageProps, ExpandToggle() (+47 more)
 
 ### Community 3 - "text-board.tsx"
 Cohesion: 0.06
@@ -315,16 +317,16 @@ Cohesion: 0.07
 Nodes (34): documentApi, useAdoptDocument(), useCreateDocument(), useCreateFigmaPage(), useDeleteDocument(), useDocumentListCache(), useImportDocument(), useProjectDocumentsRealtime() (+26 more)
 
 ### Community 6 - "client.ts"
-Cohesion: 0.07
-Nodes (29): LandingPage(), api, apiIsWarm(), ensureApiAwake(), errorMessage(), CLIENT_ID, CLIENT_ID_HEADER, isApiWarm() (+21 more)
+Cohesion: 0.12
+Nodes (10): errorMessage(), CLIENT_ID, CLIENT_ID_HEADER, isReadable(), MACHINE_MESSAGE, RetriableConfig, sessionExpiredHandlers, SIGN_IN_PATHS (+2 more)
 
 ### Community 7 - "Document API & Queries"
 Cohesion: 0.06
 Nodes (40): BOARD_EXPORT_MIME, classifyImportFile(), DOCUMENT_ACCEPT, DOCUMENT_MIME_TYPES, EXTENSION_MIME, IMPORT_ACCEPT, IMPORT_ARCHIVE_MIME, IMPORT_DOCUMENT_MIME (+32 more)
 
 ### Community 8 - "studio-icons.tsx"
-Cohesion: 0.09
-Nodes (37): favicon.svg (browser tab icon), Gold paper linearGradient definition, Rotated Post-it note shape with peeled corner, Handwritten 't' glyph stroke paths, AutumnMark(), EldritchMark(), GlyphProps, HazardMark() (+29 more)
+Cohesion: 0.11
+Nodes (32): AutumnMark(), EldritchMark(), GlyphProps, HazardMark(), NewspaperMark(), RunicMark(), SpaceMark(), AutumnLeafPaper() (+24 more)
 
 ### Community 9 - "integration/model/queries.ts"
 Cohesion: 0.06
@@ -366,33 +368,33 @@ Nodes (24): DEFAULTS, LAYOUTS_FOR, LayoutSurface, read(), Stored, TaskLayout, us
 Cohesion: 0.12
 Nodes (23): COLUMNS, DemoBoard(), LANES, RESIDENTS, DemoChat(), MESSAGES, DemoFrame(), DemoFrameProps (+15 more)
 
-### Community 19 - "halloween-icons.tsx"
-Cohesion: 0.29
-Nodes (5): BatSwarm(), BatSwarmProps, Box, BatGlyph(), HalloweenMark()
+### Community 19 - "modal.tsx"
+Cohesion: 0.13
+Nodes (13): BatSwarm(), BatSwarmProps, Box, ConfirmDialog(), ConfirmDialogProps, LanternGlyph(), BatGlyph(), HalloweenMark() (+5 more)
 
 ### Community 20 - "edge-affordance.tsx"
-Cohesion: 0.07
-Nodes (31): DragonFlight(), Flight, nextFlight(), amplitude(), bodyOrder, DragonGlyph(), GlyphProps, JadeMark() (+23 more)
+Cohesion: 0.08
+Nodes (27): DragonFlight(), Flight, nextFlight(), amplitude(), bodyOrder, DragonGlyph(), GlyphProps, JadeMark() (+19 more)
 
 ### Community 21 - "dependencies"
 Cohesion: 0.15
 Nodes (13): axios, dependencies, axios, @shadergradient/react, sonner, tailwind-merge, three, zod (+5 more)
 
 ### Community 22 - "build-studio-runic.py"
-Cohesion: 0.06
-Nodes (50): arrow_mask(), capsule(), compose(), dilate(), hand(), hand_mask(), hand_seams(), Image (+42 more)
+Cohesion: 0.07
+Nodes (53): hand(), parse(), Image, ndarray, Builds the Vintage skin's cursor: the Windows XP arrow and link hand, pixel for…, The hand's fill from its spans, with a 4-neighbour outline round it., render(), add_glyph() (+45 more)
 
 ### Community 23 - "compilerOptions"
 Cohesion: 0.07
 Nodes (27): DOM, DOM.Iterable, src, vite/client, vite-plugin-pwa/client, compilerOptions, baseUrl, isolatedModules (+19 more)
 
 ### Community 24 - "chat-outbox.ts"
-Cohesion: 0.13
-Nodes (24): ChatDockState, ChatView, PersistedDock, restored, useChatDock, write(), bump(), enqueueChatMessage() (+16 more)
+Cohesion: 0.14
+Nodes (21): ChatDockState, PersistedDock, restored, useChatDock, write(), bump(), enqueueChatMessage(), listeners (+13 more)
 
 ### Community 25 - "auth-shell.tsx"
-Cohesion: 0.10
-Nodes (7): AuthScene(), DeskObject(), DeskObjectProps, floatTransition(), AuthShell(), AuthShellProps, Phase
+Cohesion: 0.15
+Nodes (4): AuthScene(), AuthShell(), AuthShellProps, Phase
 
 ### Community 26 - "live-room/model/types.ts"
 Cohesion: 0.13
@@ -442,9 +444,9 @@ Nodes (22): AdminPage, CliAuthorizePage, DashboardPage, DocsPage, InvitationsPag
 Cohesion: 0.14
 Nodes (15): DISPLAY_MEDIA_OPTIONS, ScreenAudioMix, applyPlan(), AUDIO_CONSTRAINTS, Connection, FALLBACK_ICE, labelOf(), LiveCallStatus (+7 more)
 
-### Community 38 - "task-comment/model/queries.ts"
-Cohesion: 0.14
-Nodes (15): taskCommentApi, byTime(), COMMENT_PAGE, indexes, indexOf(), loadEarlierComments(), mergePage(), sameComment() (+7 more)
+### Community 38 - "terminal/build-cursors.py"
+Cohesion: 0.19
+Nodes (16): arrow_mask(), capsule(), compose(), dilate(), hand(), hand_mask(), hand_seams(), Image (+8 more)
 
 ### Community 39 - "Task Studio README"
 Cohesion: 0.18
@@ -471,12 +473,12 @@ Cohesion: 0.19
 Nodes (15): detectLocale(), LocaleState, substitute(), syncDocumentLang(), Translate, useLocale(), useLocaleStore, useT() (+7 more)
 
 ### Community 45 - "constants.ts"
-Cohesion: 0.11
-Nodes (17): RFC-5321, BOARD_INK_COLORS, CHECKLIST_PAGE_SIZE, CONNECTOR_COLORS, EDGE_REVEAL_PX, GROUP_COLUMNS_PER_PAGE, MAX_BOARD_PAGES, MAX_GROUPS_PER_PROJECT (+9 more)
+Cohesion: 0.12
+Nodes (16): RFC-5321, BOARD_INK_COLORS, CONNECTOR_COLORS, EDGE_REVEAL_PX, GROUP_COLUMNS_PER_PAGE, MAX_BOARD_PAGES, MAX_GROUPS_PER_PROJECT, MAX_TASK_NOTES (+8 more)
 
 ### Community 46 - "create-project-dialog.tsx"
 Cohesion: 0.10
-Nodes (18): BoardImportPanel(), BoardImportPanelProps, FileImport(), Source, sourceFor(), CreateProjectDialogProps, Mode, GithubImportPanel() (+10 more)
+Nodes (15): BoardImportPanel(), BoardImportPanelProps, FileImport(), Source, sourceFor(), CreateProjectDialogProps, Mode, GithubImportPanel() (+7 more)
 
 ### Community 47 - "skin-ambience.tsx"
 Cohesion: 0.15
@@ -515,8 +517,8 @@ Cohesion: 0.18
 Nodes (6): App(), ALWAYS_OPEN, MobileGate(), AppRouter(), container, Gate
 
 ### Community 56 - "notification/model/queries.ts"
-Cohesion: 0.20
-Nodes (7): notificationApi, dropNotification(), dropUpTo(), useNotificationActions(), AppNotification, NotificationPayload, NotificationType
+Cohesion: 0.21
+Nodes (6): notificationApi, dropNotification(), useNotificationActions(), AppNotification, NotificationPayload, NotificationType
 
 ### Community 57 - "team/model/queries.ts"
 Cohesion: 0.30
@@ -535,8 +537,8 @@ Cohesion: 0.19
 Nodes (8): deepLink(), NotificationBell(), NotificationOptIn(), DesktopNotice, hasDeclinedNotifications(), isSupported(), NotificationAccess, requestNotificationAccess()
 
 ### Community 61 - "landing-page.tsx"
-Cohesion: 0.24
-Nodes (9): FOOTER_NOTES, COLUMN, COLUMN_NARROW, COLUMN_WIDE, FeatureCarousel(), LandingNav(), scrollToSection(), scrollToTop() (+1 more)
+Cohesion: 0.20
+Nodes (7): FOOTER_NOTES, COLUMN, COLUMN_NARROW, COLUMN_WIDE, FeatureCarousel(), PiticoMark(), Reveal()
 
 ### Community 62 - "eldritch-decor.tsx"
 Cohesion: 0.16
@@ -610,9 +612,9 @@ Nodes (9): AppToast, base, emit(), Level, Notify, prune(), recent, toast (+1 mor
 Cohesion: 0.20
 Nodes (7): AutumnFall(), AutumnHedge(), AutumnHedgeProps, FALLING, LeafProps, LeafTone, TONE_FILL
 
-### Community 81 - "build-dragon-block.py"
-Cohesion: 0.28
-Nodes (19): add_glyph(), bounds(), compose(), compose_cedilla(), fetch(), latin_slice_url(), main(), make_acute() (+11 more)
+### Community 81 - "favicon.svg (browser tab icon)"
+Cohesion: 0.50
+Nodes (5): favicon.svg (browser tab icon), Gold paper linearGradient definition, Rotated Post-it note shape with peeled corner, Handwritten 't' glyph stroke paths, StudioMark()
 
 ### Community 82 - "realtime-provider.tsx"
 Cohesion: 0.25
@@ -635,8 +637,8 @@ Cohesion: 0.25
 Nodes (4): NoteCardProps, NoteChecklist(), NoteChecklistProps, TaskDetailModalProps
 
 ### Community 87 - "pricing-table.tsx"
-Cohesion: 0.33
-Nodes (7): GAPS, LavaLink(), LavaLinkProps, featuresOf(), preferredCurrency(), PricingTable(), useFocusedPlan()
+Cohesion: 0.70
+Nodes (4): featuresOf(), preferredCurrency(), PricingTable(), useFocusedPlan()
 
 ### Community 88 - "import-tracker.tsx"
 Cohesion: 0.33
@@ -779,8 +781,8 @@ Cohesion: 0.40
 Nodes (5): clamp(), ImageViewer(), ImageViewerProps, ZoomableImage(), ZoomableImageProps
 
 ### Community 126 - "project-chat.tsx"
-Cohesion: 0.18
-Nodes (6): MentionPicker(), MentionPickerProps, ChatViewSwitchProps, ProjectChatProps, SOURCE_LABEL, TaskThreads()
+Cohesion: 0.40
+Nodes (3): MentionPicker(), MentionPickerProps, ProjectChatProps
 
 ### Community 127 - "project-rail.tsx"
 Cohesion: 0.40
@@ -835,8 +837,8 @@ Cohesion: 0.40
 Nodes (3): chains, sequences, writeSequence
 
 ### Community 146 - "button.tsx"
-Cohesion: 0.08
-Nodes (24): Button, buttonClasses(), ButtonProps, GAPS, Size, SIZES, Variant, VARIANTS (+16 more)
+Cohesion: 0.09
+Nodes (19): Button, buttonClasses(), ButtonProps, GAPS, Size, SIZES, Variant, VARIANTS (+11 more)
 
 ### Community 147 - "lava-goo SVG metaball filter"
 Cohesion: 0.50
@@ -870,9 +872,9 @@ Nodes (3): CardPressHandlers, isOwnedByInnerControl(), useCardPress()
 Cohesion: 0.67
 Nodes (3): nextSighting(), NightEyes(), Sighting
 
-### Community 163 - "eldritch/build-cursors.py"
-Cohesion: 0.18
-Nodes (15): draw_tentacle(), fit(), pose(), premultiplied(), Image, Builds the Eldritch skin's cursor: a tentacle, tip first, that lashes when…, Down to screen pixels without dark fringes on the translucent edge., Where to cut the box from the work canvas so every frame fits. (+7 more)
+### Community 163 - "runic-text.tsx"
+Cohesion: 0.67
+Nodes (3): RunicText(), RunicTextProps, seedOf()
 
 ### Community 164 - "build-studio-basalt.py"
 Cohesion: 0.42
@@ -882,13 +884,25 @@ Nodes (8): build(), contains(), keep(), measure(), TTFont, The contours that sur
 Cohesion: 0.67
 Nodes (3): Halloween custom cursor asset set, Knife source artwork variant (bloody blade), Knife source artwork (facaNova.png)
 
-### Community 191 - "select.tsx"
-Cohesion: 0.40
-Nodes (4): PopupBox, Select(), SelectOption, SelectProps
+### Community 190 - "auth-scene.tsx"
+Cohesion: 0.25
+Nodes (3): DeskObject(), DeskObjectProps, floatTransition()
 
-### Community 237 - "space-decor.tsx"
-Cohesion: 0.67
-Nodes (3): nextStreak(), ShootingStar(), Streak
+### Community 191 - "warm-on-intent.ts"
+Cohesion: 0.36
+Nodes (8): LandingPage(), apiIsWarm(), ensureApiAwake(), isApiWarm(), wakeApi(), installApiWarmOnIntent(), isTextEntry(), maybeWake()
+
+### Community 192 - "report-client-error.ts"
+Cohesion: 0.28
+Nodes (5): api, clip(), LIMITS, reportClientError(), tokenStore
+
+### Community 237 - "socket.ts"
+Cohesion: 0.33
+Nodes (6): refreshAccessToken(), refreshSession(), connectSocket(), emitWithAck(), getSocket(), reviveSocket()
+
+### Community 238 - "landing-nav.tsx"
+Cohesion: 0.36
+Nodes (6): LandingNav(), scrollToSection(), scrollToTop(), GAPS, LavaLink(), LavaLinkProps
 
 ### Community 239 - "volcano — Frijole"
 Cohesion: 0.29
@@ -906,25 +920,29 @@ Nodes (3): afterSignIn(), pendingInvite(), readInviteToken()
 Cohesion: 0.50
 Nodes (3): tokensApi, ApiToken, CreatedApiToken
 
+### Community 244 - "nav-glyph.tsx"
+Cohesion: 0.67
+Nodes (3): NavGlyphKey, NavGlyph(), NavGlyphProps
+
 ## Knowledge Gaps
-- **783 isolated node(s):** `name`, `private`, `version`, `type`, `description` (+778 more)
+- **772 isolated node(s):** `name`, `private`, `version`, `type`, `description` (+767 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **82 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **80 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `wakeApi()` connect `client.ts` to `auth-shell.tsx`?**
-  _High betweenness centrality (0.019) - this node is a cross-community bridge._
-- **Why does `LandingPage()` connect `client.ts` to `landing-page.tsx`?**
-  _High betweenness centrality (0.018) - this node is a cross-community bridge._
-- **Why does `installApiWarmOnIntent()` connect `client.ts` to `providers/index.tsx`?**
+- **Why does `wakeApi()` connect `warm-on-intent.ts` to `auth-shell.tsx`, `client.ts`?**
   _High betweenness centrality (0.015) - this node is a cross-community bridge._
+- **Why does `LandingPage()` connect `warm-on-intent.ts` to `landing-page.tsx`?**
+  _High betweenness centrality (0.015) - this node is a cross-community bridge._
+- **Why does `installApiWarmOnIntent()` connect `warm-on-intent.ts` to `providers/index.tsx`?**
+  _High betweenness centrality (0.013) - this node is a cross-community bridge._
 - **What connects `name`, `private`, `version` to the rest of the system?**
-  _783 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _772 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `project-board-queries.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.05116279069767442 - nodes in this community are weakly interconnected._
 - **Should `task/model/queries.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.054340396445659606 - nodes in this community are weakly interconnected._
 - **Should `ui/index.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.0418622848200313 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.043459174714661986 - nodes in this community are weakly interconnected._

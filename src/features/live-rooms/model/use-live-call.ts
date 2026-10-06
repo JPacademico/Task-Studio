@@ -489,7 +489,17 @@ export const useLiveCall = ({
     const sound = screenAudio.current;
 
     if (sound && microphone && isVoiceLive && !screenMix.current) {
-      screenMix.current = new ScreenAudioMix(sound, microphone);
+      try {
+        screenMix.current = new ScreenAudioMix(sound, microphone);
+      } catch {
+        // Firefox refuses a 48kHz mix of a mic at another rate: retry at the device's own rate,
+        // and failing that the voice is sent alone.
+        try {
+          screenMix.current = new ScreenAudioMix(sound, microphone, null);
+        } catch {
+          screenMix.current = null;
+        }
+      }
     }
     screenMix.current?.setRunning(Boolean(sound && isVoiceLive));
 

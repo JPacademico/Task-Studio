@@ -581,9 +581,9 @@ const ProjectPage = () => {
         <MeetingsPanel projectId={projectId} roster={project.roster} canManage={canManage} />
       )}
       {projectId && (tab === 'live' || isInCallHere) && (
-        /* `contents` while shown, so the wrapper adds nothing to the layout the panel had before it
-           existed; `hidden` otherwise. */
-        <div className={tab === 'live' ? 'contents' : 'hidden'}>
+        /* A real box, not `contents`: the page's `space-y` margin is ignored on a `contents` box.
+           The `hidden` attribute (not class) also drops it out of that spacing while a call runs. */
+        <div hidden={tab !== 'live'}>
           <LivePanel
             projectId={projectId}
             initialRoomId={searchParams.get('room')}

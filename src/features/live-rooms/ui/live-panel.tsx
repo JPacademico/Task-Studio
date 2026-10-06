@@ -42,6 +42,8 @@ type RoomPhase = 'live' | 'scheduled' | 'ended';
 
 const phaseOf = (room: LiveRoom): RoomPhase => {
   if (room.endedAt) return 'ended';
+  // Past its closing time the server refuses to seat anyone, so it is over here too.
+  if (room.closesAt && new Date(room.closesAt).getTime() <= Date.now()) return 'ended';
   return new Date(room.opensAt).getTime() <= Date.now() ? 'live' : 'scheduled';
 };
 
@@ -74,6 +76,9 @@ export const LivePanel = ({
     () => rooms.find((room) => room.id === activeRoomId) ?? null,
     [activeRoomId, rooms],
   );
+
+  // The API only drops rooms ended by hand; one past its closing time is hidden here the same way.
+  const listed = includeEnded ? rooms : rooms.filter((room) => phaseOf(room) !== 'ended');
 
   // The deep link, honoured exactly once. A notification points at a specific room, and landing on
   // the list with it three rows down is not what was asked for.
@@ -145,7 +150,7 @@ export const LivePanel = ({
         </div>
       )}
 
-      {!isLoading && rooms.length === 0 && (
+      {!isLoading && listed.length === 0 && (
         <EmptyState
           icon={<Radio className="h-6 w-6" />}
           title={t('live.emptyTitle')}
@@ -162,7 +167,7 @@ export const LivePanel = ({
       )}
 
       <ul className="space-y-2">
-        {rooms.map((room) => {
+        {listed.map((room) => {
           const phase = phaseOf(room);
           const isHost = room.createdBy.id === currentUser?.id;
           const canManage = isHost || room.you.isModerator;
@@ -218,7 +223,9 @@ export const LivePanel = ({
                         ? t('live.opensIn', { when: formatRelative(room.opensAt) })
                         : phase === 'live'
                           ? t('live.openedAt', { when: formatDateTime(room.opensAt) })
-                          : t('live.endedAt', { when: formatDateTime(room.endedAt as string) })}
+                          : t('live.endedAt', {
+                            when: formatDateTime((room.endedAt ?? room.closesAt) as string),
+                          })}
                     </span>
 
                     <span className="inline-flex items-center gap-1">
@@ -297,16 +304,18 @@ export const LivePanel = ({
                   </Button>
                 )}
 
+                {/* A room closed only by its clock can still be edited to reopen it. */}
+                {canManage && !room.endedAt && (
+                  <Button size="sm" variant="ghost" onClick={() => openComposer(room)}>
+                    <Pencil className="h-3.5 w-3.5" />
+                    {t('common.edit')}
+                  </Button>
+                )}
+
                 {canManage && phase !== 'ended' && (
-                  <>
-                    <Button size="sm" variant="ghost" onClick={() => openComposer(room)}>
-                      <Pencil className="h-3.5 w-3.5" />
-                      {t('common.edit')}
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => end.mutate(room.id)}>
-                      {t('live.end')}
-                    </Button>
-                  </>
+                  <Button size="sm" variant="ghost" onClick={() => end.mutate(room.id)}>
+                    {t('live.end')}
+                  </Button>
                 )}
 
                 {canManage && phase === 'ended' && (

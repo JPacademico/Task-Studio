@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
+import { isAxiosError } from 'axios';
 import { Users, XCircle } from 'lucide-react';
 
 import { inviteLinkApi } from '@/entities/project/api/invite-link.api';
@@ -30,6 +31,13 @@ const JoinPage = () => {
   useEffect(() => {
     if (token && !signedIn && status !== 'loading') rememberInvite(token);
   }, [signedIn, status, token]);
+
+  // A dead link is dropped, or every later sign-in is sent back to this error page.
+  const previewStatus = isAxiosError(preview.error) ? (preview.error.response?.status ?? 0) : 0;
+  const isDeadLink = previewStatus >= 400 && previewStatus < 500;
+  useEffect(() => {
+    if (isDeadLink) forgetInvite();
+  }, [isDeadLink]);
 
   if (!token || preview.isError) {
     return (
@@ -68,6 +76,7 @@ const JoinPage = () => {
       navigate(`/projects/${result.projectId}`, { replace: true });
     } catch (error) {
       setIsJoining(false);
+      if (isAxiosError(error) && error.response?.status === 404) forgetInvite();
       toast.error(errorMessage(error, t('join.failed')));
     }
   };
