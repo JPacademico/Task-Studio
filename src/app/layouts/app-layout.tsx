@@ -17,6 +17,8 @@ import {
   EmberRise,
   HazardDrift,
   DragonFlight,
+  KaijuBreath,
+  KaijuGlowLetters,
   KrakenRise,
   NightEyes,
   PageLoader,
@@ -31,6 +33,7 @@ import { SpotifyPlayer } from '@/widgets/spotify-player/ui/spotify-player';
 import { ProjectRail } from '@/widgets/project-rail/ui/project-rail';
 import { TopNavigation } from '@/widgets/top-navigation/ui/top-navigation';
 import { DeletionBanner } from '@/features/account-deletion/ui/deletion-banner';
+import { TourGate } from '@/features/onboarding-tour/ui/tour-gate';
 import { useShellPrefetch } from './use-shell-prefetch';
 
 /**
@@ -131,6 +134,11 @@ export const AppLayout = () => {
           to the other and is gone. */}
       <DragonFlight />
 
+      {/* Every thirty seconds on the kaiju skin, the breath crosses the page; between beams, a
+          letter of some title sparks violet. Same contract as the decor above. */}
+      <KaijuBreath />
+      <KaijuGlowLetters />
+
       {/* And once a minute on the space skin, a shooting star crosses the sky from left to
           right in under a second. */}
       <ShootingStar />
@@ -183,6 +191,9 @@ export const AppLayout = () => {
         onClose={() => setIsCreateProjectOpen(false)}
         initialBoardSource={resumedBoard}
       />
+
+      {/* The first-run tour: nothing at all unless this account has it to take, or asked for it. */}
+      <TourGate />
     </div>
   );
 };

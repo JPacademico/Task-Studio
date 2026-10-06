@@ -28,6 +28,11 @@ const leaf = (color: string, size: number, rotate: number): CSSProperties => ({
   transform: `rotate(${rotate}deg)`,
 });
 
+/** A dorsal plate, the same outline the real ridge clips its plates to. */
+const PLATE =
+  'polygon(50% 0%, 62% 18%, 56% 24%, 74% 42%, 66% 47%, 86% 70%, 76% 73%, 100% 100%, ' +
+  '0% 100%, 24% 73%, 14% 70%, 34% 47%, 26% 42%, 44% 24%, 38% 18%)';
+
 /** Three star layers, matching the real skin's page wash. */
 const STARFIELD =
   'radial-gradient(1.2px 1.2px at 18% 24%, rgb(255 255 255 / 0.85), transparent 100%),' +
@@ -55,11 +60,8 @@ export const SkinMock = ({
   const px = (value: number) => value * scale;
   const radius = preview.radius * Math.min(scale, 1.6);
 
-  // What the mock paints where it would otherwise paint a flat accent. A gradient for the one skin
-  // whose identity *is* the gradient, and the plain brand for the other fourteen.
-  const accent = preview.gradient
-    ? `linear-gradient(135deg, ${preview.brand}, ${preview.gradient})`
-    : preview.brand;
+  const accent = preview.brand;
+  const kaiju = preview.kaiju;
 
   // Corners that grew rather than being cut. The eldritch skin's radius tokens are asymmetric
   // shorthand — big, small, big, small — and that is the single most recognisable thing about it.
@@ -326,6 +328,36 @@ export const SkinMock = ({
             background: `radial-gradient(110% 100% at 50% 118%, ${preview.molten[0]}80, transparent 66%)`,
           }}
         />
+      )}
+
+      {/* Kaiju: the breath across the page, caught mid-beam behind the cards. */}
+      {kaiju && (
+        <span
+          className="absolute inset-x-0"
+          style={{
+            top: '58%',
+            height: px(7),
+            background: `linear-gradient(to bottom, transparent, ${kaiju.beam}aa 35%, #eef4ff 50%, ${kaiju.beam}aa 65%, transparent)`,
+            opacity: 0.7,
+          }}
+        />
+      )}
+
+      {/* Kaiju: a ridge of plates standing off the top of the second card, lit. */}
+      {kaiju && (
+        <span className="absolute flex items-end" style={{ right: px(14), top: px(23), gap: px(2) }}>
+          {[6, 9, 12, 9, 6].map((height, index) => (
+            <span
+              key={index}
+              style={{
+                width: px(height * 0.64),
+                height: px(height),
+                clipPath: PLATE,
+                background: `linear-gradient(to top, ${kaiju.plate}, ${kaiju.beam})`,
+              }}
+            />
+          ))}
+        </span>
       )}
 
       {/* Autumn: the ones still in the air. Last in the mock so they paint over the cards,

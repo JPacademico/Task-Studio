@@ -27,6 +27,8 @@ export const STORAGE_KEYS = {
   locale: 'task-studio:locale',
   /** A project invite link opened before signing in, joined once there is a session. */
   pendingInvite: 'task-studio:pending-invite',
+  /** Account ids that finished the tour on this device, so a failed save does not replay it. */
+  tutorialDone: 'task-studio:tutorial-done',
   /**
    * Which provider sign-in buttons the API offered last time. Cached so the sign-in screen can draw
    * them on the first frame instead of after a round trip to a container that may be asleep.

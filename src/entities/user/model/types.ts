@@ -19,9 +19,10 @@ export type ThemeSkin =
   | 'UNDERWATER'
   | 'VOLCANO'
   | 'HALLOWEEN'
-  | 'VIBECODED'
   /** Imperial China: lacquer red, jade and gold, scroll borders, a dragon. */
-  | 'DRAGON';
+  | 'DRAGON'
+  /** A monster come ashore: scaled hide, dorsal plates that charge, an atomic beam. */
+  | 'KAIJU';
 
 /** The one place a skin's human name is written down. */
 export const SKIN_LABELS: Record<ThemeSkin, string> = {
@@ -39,8 +40,8 @@ export const SKIN_LABELS: Record<ThemeSkin, string> = {
   UNDERWATER: 'Underwater',
   VOLCANO: 'Volcano',
   HALLOWEEN: 'Halloween',
-  VIBECODED: 'Vibecoded',
   DRAGON: 'Dragon',
+  KAIJU: 'Kaiju',
 };
 
 /**
@@ -57,6 +58,8 @@ export const isFreeSkin = (skin: ThemeSkin): boolean => FREE_SKINS.includes(skin
 
 export const normaliseSkin = (value: string | null | undefined): ThemeSkin => {
   if (value === 'STEAMPUNK') return 'VINTAGE';
+  // Kaiju took Vibecoded's place; a device that last wore it wears the replacement.
+  if (value === 'VIBECODED') return 'KAIJU';
   return value && value in SKIN_LABELS ? (value as ThemeSkin) : 'STUDIO';
 };
 
@@ -78,6 +81,8 @@ export interface CurrentUser {
   deletionDueAt?: string | null;
   /** False for accounts that only ever signed in through Google or GitHub. */
   hasPassword?: boolean;
+  /** When the first-run tour was finished or skipped; null shows it on the dashboard. */
+  tutorialCompletedAt?: string | null;
   createdAt: string;
 }
 

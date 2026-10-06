@@ -39,12 +39,11 @@ const REVEAL: Record<ThemeSkin, Transition> = {
   // A startle: nothing, then all at once, then it settles. The overshoot is
   // the point — this is the one skin where things are supposed to jump.
   HALLOWEEN: { type: 'spring', stiffness: 520, damping: 17, mass: 0.6 },
-  // The default `ease-in-out` of every tutorial, at the default 300ms. Every other curve in this
-  // table was chosen: stone accelerates, water refuses to stop dead, the arcade quantises.
-  VIBECODED: { duration: 0.3, ease: 'easeInOut' },
   // Ceremony. Slow to start, unhurried through the middle, and it settles rather than stopping. The
   // reference is a hanging scroll being unrolled: nothing in an imperial hall moves abruptly.
   DRAGON: { duration: 0.42, ease: [0.32, 0, 0.16, 1] },
+  // A footfall: slow to lift, then it comes down all at once and stays down.
+  KAIJU: { duration: 0.34, ease: [0.7, 0, 0.2, 1] },
 };
 
 const MARKER: Record<ThemeSkin, Transition> = {
@@ -62,8 +61,8 @@ const MARKER: Record<ThemeSkin, Transition> = {
   UNDERWATER: { type: 'spring', stiffness: 150, damping: 15, mass: 1.2 },
   VOLCANO: { duration: 0.32, ease: [0.85, 0, 0.12, 1] },
   HALLOWEEN: { type: 'spring', stiffness: 560, damping: 18, mass: 0.6 },
-  VIBECODED: { duration: 0.3, ease: 'easeInOut' },
   DRAGON: { duration: 0.3, ease: [0.32, 0, 0.16, 1] },
+  KAIJU: { duration: 0.24, ease: [0.7, 0, 0.2, 1] },
 };
 
 // There is deliberately no `stage` curve here. Taking a board to the full screen and back used to

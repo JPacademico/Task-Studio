@@ -72,12 +72,14 @@ export { ShootingStar } from './space-decor';
 export { SpaceCursor } from './space-cursor';
 export { UnderwaterMark } from './underwater-icons';
 export { BubbleRise } from './underwater-decor';
-export { VibecodedMark } from './vibecoded-icons';
 export { VolcanoMark } from './volcano-icons';
 export { EmberRise } from './volcano-decor';
 export { JadeMark, LanternGlyph, ScrollHandle } from './dragon-icons';
 // Something long crosses the page once a minute, on the dragon skin only.
 export { DragonFlight } from './dragon-decor';
+export { KaijuMark, KaijuRidge } from './kaiju-icons';
+// The kaiju skin's plates round a dialog, its breath across the page and its sparking letters.
+export { KaijuBreath, KaijuGlowLetters, KaijuSpikes } from './kaiju-decor';
 // The one arrow every surface asks for. `GazeArrow` and `RuneArrow` are the drawings behind it and
 // are not exported: a page should ask for "next", not for a particular skin's idea of it.
 export { DirectionArrow } from './direction-arrow';

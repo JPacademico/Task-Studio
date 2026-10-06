@@ -25,11 +25,8 @@ export interface SkinPreview {
   font: string;
   /** Border weight of the mock's cards. */
   border: number;
-  /**
-   * Vibecoded only: the second half of the gradient. The skin's whole identity is a 135-degree
-   * indigo-to-fuchsia sweep.
-   */
-  gradient?: string;
+  /** Kaiju only: the dorsal plates along the mock's top edge, and the beam across it. */
+  kaiju?: { plate: string; beam: string };
   /** Arcade only: the mock's cards lose their corner pixels, like the real thing. */
   notched?: boolean;
   /** Space only: the mock sits on a star field rather than a flat surface. */
@@ -110,7 +107,7 @@ export interface SkinDefinition {
    */
   tagsPtBR?: string[];
   /**
-   * Whether this theme replaces the mouse pointer. Ten do, and it is the one thing a theme can
+   * Whether this theme replaces the mouse pointer. Eleven do, and it is the one thing a theme can
    * change that the reader cannot ignore.
    */
   drawsCursor?: boolean;
@@ -715,63 +712,65 @@ export const SKIN_CATALOG: SkinDefinition[] = [
     },
   },
 
-  // The fifteenth theme, and the only one that is a genre rather than a place. Everything else in
-  // this catalogue is somewhere you could stand: a newsroom, a volcano, the deep field.
+  // A monster rather than a place: what the city looks like with something very large walking in it.
   {
-    value: 'VIBECODED',
-    name: 'Vibecoded',
-    tagline: 'skin.VIBECODED.tagline',
-    description: 'skin.VIBECODED.body',
+    value: 'KAIJU',
+    name: 'Kaiju',
+    tagline: 'skin.KAIJU.tagline',
+    description: 'skin.KAIJU.body',
     tags: [
-      'vibecoded',
-      'ai',
-      'generated',
-      'gradient',
-      'indigo',
+      'kaiju',
+      'godzilla',
+      'monster',
+      'atomic',
+      'breath',
+      'beam',
+      'spikes',
+      'scales',
+      'dinosaur',
+      'tokyo',
+      'blue',
       'purple',
-      'fuchsia',
-      'saas',
-      'startup',
-      'glassmorphism',
-      'modern',
-      'slop',
-      'generic',
-      'template',
-      'joke',
+      'electric',
+      'loud',
+      'dark',
     ],
     tagsPtBR: [
-      'vibecoded',
-      'ia',
-      'gerado',
-      'gradiente',
+      'kaiju',
+      'godzilla',
+      'monstro',
+      'atômico',
+      'sopro',
+      'raio',
+      'espinhos',
+      'escamas',
+      'dinossauro',
+      'azul',
       'roxo',
-      'indigo',
-      'startup',
-      'moderno',
-      'generico',
-      'piada',
+      'elétrico',
     ],
+    drawsCursor: true,
     light: {
-      surface: '#f8fafc',
-      raised: '#ffffff',
-      edge: '#e2e8f0',
-      brand: '#6366f1',
-      content: '#0f172a',
-      radius: 16,
-      font: "'Inter', 'Segoe UI', system-ui, sans-serif",
+      surface: '#e2e6ec',
+      raised: '#f1f3f7',
+      edge: '#808a9c',
+      brand: '#2454c8',
+      content: '#12161e',
+      radius: 4,
+      font: "'Studiozilla', 'Archivo Black', Impact, sans-serif",
       border: 1,
-      gradient: '#d946ef',
+      kaiju: { plate: '#d6dce6', beam: '#3e78ff' },
     },
     dark: {
-      surface: '#020617',
-      raised: '#0f172a',
-      edge: '#334155',
-      brand: '#818cf8',
-      content: '#f8fafc',
-      radius: 16,
-      font: "'Inter', 'Segoe UI', system-ui, sans-serif",
+      surface: '#0a0d13',
+      raised: '#141922',
+      edge: '#2e384a',
+      brand: '#6898ff',
+      content: '#e6ecf5',
+      radius: 4,
+      font: "'Studiozilla', 'Archivo Black', Impact, sans-serif",
       border: 1,
-      gradient: '#e879f9',
+      kaiju: { plate: '#c8d2e4', beam: '#5c96ff' },
     },
   },
   {

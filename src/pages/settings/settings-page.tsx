@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { ImagePlus, Monitor, Moon, Sun, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Compass, ImagePlus, Monitor, Moon, Sun, Trash2 } from 'lucide-react';
 import { toast } from '@/shared/lib/toast';
 
 import { useTheme } from '@/app/providers/theme-provider';
@@ -16,6 +17,7 @@ import { BoardAccountCard } from '@/features/board-sync/ui/board-account-card';
 import { CliMachinesPanel } from '@/features/cli/ui/cli-machines-panel';
 import { CliPanel } from '@/features/cli/ui/cli-panel';
 import { SkinPicker } from '@/features/theme-toggle/ui/skin-picker';
+import { useTour } from '@/features/onboarding-tour/model/tour.store';
 import { errorMessage } from '@/shared/api/client';
 import { TEXT_LIMITS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
@@ -37,6 +39,8 @@ const SettingsPage = () => {
   const t = useT();
   const { user, setUser } = useSessionStore();
   const { preference, setPreference } = useTheme();
+  const navigate = useNavigate();
+  const startTour = useTour((state) => state.start);
 
   const [displayName, setDisplayName] = useState(user?.displayName ?? '');
   const [bio, setBio] = useState(user?.bio ?? '');
@@ -205,6 +209,23 @@ const SettingsPage = () => {
               {t(option.label)}
             </button>
           ))}
+        </div>
+      </Section>
+
+      <Section title={t('settings.tutorial')} description={t('settings.tutorialHint')}>
+        <div className="rounded-2xl border border-edge bg-surface-raised p-4">
+          {/* On the dashboard, because two of its steps point at what is there. */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              navigate('/');
+              startTour();
+            }}
+          >
+            <Compass className="h-3.5 w-3.5" />
+            {t('settings.tutorialReplay')}
+          </Button>
         </div>
       </Section>
 

@@ -11,8 +11,8 @@
     const dark = stored === 'DARK' || ((!stored || stored === 'SYSTEM') && prefersDark);
     root.classList.toggle('dark', dark);
 
-    // Kept in step with SKIN_ATTRIBUTE in theme-provider.tsx. STEAMPUNK is the old name for VINTAGE
-    // and still sits in stored preferences.
+    // Kept in step with SKIN_ATTRIBUTE in theme-provider.tsx. STEAMPUNK and VIBECODED are retired
+    // names that still sit in stored preferences.
     const SKINS = {
       PAPER: 'paper',
       TERMINAL: 'terminal',
@@ -28,8 +28,9 @@
       UNDERWATER: 'underwater',
       VOLCANO: 'volcano',
       HALLOWEEN: 'halloween',
-      VIBECODED: 'vibecoded',
       DRAGON: 'dragon',
+      KAIJU: 'kaiju',
+      VIBECODED: 'kaiju',
       STUDIO: 'studio',
     };
     root.dataset.skin = SKINS[localStorage.getItem('task-studio:theme-skin')] || 'studio';

@@ -49,6 +49,12 @@ export const userApi = {
     return data;
   },
 
+  /** The first-run tour is done, finished or skipped. Idempotent. */
+  async completeTutorial(): Promise<CurrentUser> {
+    const { data } = await api.post<CurrentUser>('/users/me/tutorial');
+    return data;
+  },
+
   async setAvatar(key: string): Promise<CurrentUser> {
     const { data } = await api.put<CurrentUser>('/users/me/avatar', { key });
     return data;

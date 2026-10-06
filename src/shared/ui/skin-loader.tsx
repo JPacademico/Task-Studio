@@ -161,13 +161,6 @@ const BODY: Record<ThemeSkin, ReactElement> = {
     </span>
   ),
 
-  // A gradient ring, spinning. The single most-shipped loading indicator on the web, and the only
-  // honest one for this skin.
-  VIBECODED: (
-    <span className="loader-vibe">
-      <i />
-    </span>
-  ),
 
   // A scroll unrolling, and rolling back. The loop is the gesture the whole skin is built on: two
   // lacquered rods and a sheet of silk between them.
@@ -175,6 +168,15 @@ const BODY: Record<ThemeSkin, ReactElement> = {
     <span className="loader-scroll">
       <i />
       <b />
+      <i />
+    </span>
+  ),
+
+  // Three dorsal plates charging in turn, the way they light before the breath.
+  KAIJU: (
+    <span className="loader-kaiju">
+      <i />
+      <i />
       <i />
     </span>
   ),

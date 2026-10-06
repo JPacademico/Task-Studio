@@ -2428,8 +2428,9 @@ const en = {
   'skin.UNDERWATER.tagline': 'Held under',
   'skin.UNDERWATER.body':
     'Broken light from a surface somewhere above you, corners water has had a long time to round off, colour that drains toward blue with depth — and bubbles going up past all of it.',
-  'skin.VIBECODED.tagline': 'Looks like every other app',
-  'skin.VIBECODED.body': 'i did not write a single line for this one',
+  'skin.KAIJU.tagline': 'Something has come ashore',
+  'skin.KAIJU.body':
+    'Scaled hide on every panel, dorsal plates that charge one by one around a dialog, violet current down the rails, lettering that sparks — and every thirty seconds, the breath.',
   'skin.HALLOWEEN.tagline': 'Something moved in the corner',
   'skin.HALLOWEEN.body':
     'Candlelit dark with a carved lantern for a mark. Webs gather on the doors you have not opened, and opening anything startles whatever was sleeping in it.',
@@ -2703,6 +2704,57 @@ const en = {
   'project.leaveFailed': 'Could not leave the project.',
   // The empty card at the foot of To do — see `AddTaskSlot`.
   'board.addTask': 'Add a task',
+  // ---- First-run tutorial --------------------------------------------------
+  'tour.label': 'Task Studio tour',
+  'tour.step': 'Step {current} of {total}',
+  'tour.next': 'Next',
+  'tour.back': 'Back',
+  'tour.skip': 'Skip tour',
+  'tour.finish': "Let's go",
+  'tour.welcome.title': 'Welcome to Task Studio',
+  'tour.welcome.body':
+    'A quick look at the essentials: where things live and what each main button does. Ten short steps — skip whenever you like.',
+  'tour.stats.title': 'Your day at a glance',
+  'tour.stats.body':
+    'Open, completed and overdue tasks across every project you are in. This dashboard is home: your projects and what is due next sit just below.',
+  'tour.newProject.title': 'Start a project',
+  'tour.newProject.body':
+    'Bring the pointer to the top edge and this bar slides in. “New project” starts one from scratch or imports it from GitHub, Trello or Jira.',
+  'tour.menu.title': 'The main menu',
+  'tour.menu.body':
+    'The left edge opens it: the dashboard, the task menu with everything assigned to you, your personal notes board and your meetings.',
+  'tour.rail.title': 'Your projects, one edge away',
+  'tour.rail.body':
+    'The right edge lists every project, soonest deadline first. Drag one out to pin it to the screen as a shortcut.',
+  'tour.tabs.title': 'Inside a project',
+  'tour.tabs.body':
+    'Each project has its tabs: the board, groups, metrics, the team, meetings, live rooms, documents and more.',
+  'tour.newTask.title': 'Add the work',
+  'tour.newTask.body':
+    'Create tasks with assignees, a deadline, a priority and files, then drag them across the columns as they move along.',
+  'tour.chat.title': 'Talk it through',
+  'tour.chat.body':
+    'The project chat, with a comment thread on every task. For a quick call with voice, camera or screen, open a room in the Live tab.',
+  'tour.tools.title': 'Stay in the loop',
+  'tour.tools.body':
+    'Notifications, language, and light or dark mode live here. Whole new looks are in the main menu, under Themes.',
+  'tour.pin.title': 'Keep a menu open',
+  'tour.pin.body':
+    'Menus tuck themselves away to give your work the whole screen. Press the pin to keep one open. You can replay this tour from Settings.',
+  'tour.sample.project': 'Product launch',
+  'tour.sample.owner': 'Owner · 4 members',
+  'tour.sample.todo': 'To do',
+  'tour.sample.doing': 'In progress',
+  'tour.sample.done': 'Done',
+  'tour.sample.task1': 'Write the launch post',
+  'tour.sample.task2': 'Design the pricing page',
+  'tour.sample.task3': 'Record the demo video',
+  'tour.sample.task4': 'Set up the waitlist',
+  'tour.sample.project2': 'Mobile app',
+  'tour.sample.project3': 'Q4 planning',
+  'settings.tutorial': 'Tutorial',
+  'settings.tutorialHint': 'A ten-step tour of the main buttons, shown once when an account is new.',
+  'settings.tutorialReplay': 'Replay the tour',
 } as const;
 
 export type TranslationKey = keyof typeof en;
@@ -5052,8 +5104,9 @@ const ptBR: Record<TranslationKey, string> = {
   'skin.UNDERWATER.tagline': 'Mantido sob a água',
   'skin.UNDERWATER.body':
     'Luz quebrada vinda de uma superfície lá em cima, cantos que a água teve muito tempo para arredondar, cores que escorrem para o azul conforme a profundidade — e bolhas subindo por tudo.',
-  'skin.VIBECODED.tagline': 'Igualzinho a todo outro app',
-  'skin.VIBECODED.body': 'não escrevi uma única linha para esse aqui',
+  'skin.KAIJU.tagline': 'Algo chegou à costa',
+  'skin.KAIJU.body':
+    'Couro de escamas em cada painel, placas dorsais que carregam uma a uma em volta de cada diálogo, corrente violeta descendo as barras, letras que faíscam — e, a cada trinta segundos, o sopro atômico.',
   'skin.HALLOWEEN.tagline': 'Algo se mexeu no canto',
   'skin.HALLOWEEN.body':
     'Escuridão à luz de vela, com uma lanterna esculpida como marca. Teias se formam nas portas que você não abriu, e abrir qualquer coisa assusta o que dormia lá dentro.',
@@ -5325,6 +5378,57 @@ const ptBR: Record<TranslationKey, string> = {
   'project.leaveFailed': 'Não foi possível sair do projeto.',
   // The empty card at the foot of To do — see `AddTaskSlot`.
   'board.addTask': 'Adicionar uma tarefa',
+  // ---- Tutorial de primeiro acesso ----------------------------------------
+  'tour.label': 'Tour do Task Studio',
+  'tour.step': 'Passo {current} de {total}',
+  'tour.next': 'Próximo',
+  'tour.back': 'Voltar',
+  'tour.skip': 'Pular tour',
+  'tour.finish': 'Vamos lá',
+  'tour.welcome.title': 'Boas-vindas ao Task Studio',
+  'tour.welcome.body':
+    'Um olhar rápido pelo essencial: onde as coisas ficam e o que cada botão principal faz. São dez passos curtos — pule quando quiser.',
+  'tour.stats.title': 'Seu dia num relance',
+  'tour.stats.body':
+    'Tarefas abertas, concluídas e atrasadas de todos os seus projetos. Este painel é a sua casa: seus projetos e os próximos prazos ficam logo abaixo.',
+  'tour.newProject.title': 'Comece um projeto',
+  'tour.newProject.body':
+    'Leve o cursor até a borda de cima e esta barra aparece. “Novo projeto” cria um do zero ou importa do GitHub, Trello ou Jira.',
+  'tour.menu.title': 'O menu principal',
+  'tour.menu.body':
+    'A borda esquerda abre o menu: o painel, o menu de tarefas com tudo o que é seu, seu mural de notas e suas reuniões.',
+  'tour.rail.title': 'Seus projetos, a uma borda de distância',
+  'tour.rail.body':
+    'A borda direita lista todos os projetos, o prazo mais próximo primeiro. Arraste um para fora para fixá-lo na tela como atalho.',
+  'tour.tabs.title': 'Dentro de um projeto',
+  'tour.tabs.body':
+    'Cada projeto tem suas abas: o quadro, grupos, métricas, a equipe, reuniões, salas ao vivo, documentos e mais.',
+  'tour.newTask.title': 'Adicione o trabalho',
+  'tour.newTask.body':
+    'Crie tarefas com responsáveis, prazo, prioridade e arquivos, e arraste-as entre as colunas conforme avançam.',
+  'tour.chat.title': 'Converse sobre isso',
+  'tour.chat.body':
+    'O chat do projeto, com uma conversa em cada tarefa. Para uma chamada rápida com voz, câmera ou tela, abra uma sala na aba Ao vivo.',
+  'tour.tools.title': 'Fique por dentro',
+  'tour.tools.body':
+    'Notificações, idioma e modo claro ou escuro ficam aqui. Visuais completos estão no menu principal, em Temas.',
+  'tour.pin.title': 'Mantenha um menu aberto',
+  'tour.pin.body':
+    'Os menus se recolhem para deixar a tela toda para o seu trabalho. Use o alfinete para manter um aberto. Dá para rever este tour em Configurações.',
+  'tour.sample.project': 'Lançamento do produto',
+  'tour.sample.owner': 'Dono · 4 membros',
+  'tour.sample.todo': 'A fazer',
+  'tour.sample.doing': 'Em andamento',
+  'tour.sample.done': 'Concluído',
+  'tour.sample.task1': 'Escrever o post de lançamento',
+  'tour.sample.task2': 'Desenhar a página de preços',
+  'tour.sample.task3': 'Gravar o vídeo de demonstração',
+  'tour.sample.task4': 'Montar a lista de espera',
+  'tour.sample.project2': 'App mobile',
+  'tour.sample.project3': 'Planejamento do 4º tri',
+  'settings.tutorial': 'Tutorial',
+  'settings.tutorialHint': 'Um tour de dez passos pelos botões principais, mostrado uma vez quando a conta é nova.',
+  'settings.tutorialReplay': 'Rever o tour',
 };
 
 export const DICTIONARIES: Record<Locale, Record<TranslationKey, string>> = {

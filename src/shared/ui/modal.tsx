@@ -6,6 +6,7 @@ import { X } from 'lucide-react';
 import { cn } from '@/shared/lib/cn';
 import { BatSwarm } from './bat-swarm';
 import { DangerTape } from './danger-tape';
+import { KaijuSpikes } from './kaiju-decor';
 import { LanternDrift } from './lantern-drift';
 import { useEscapeKey } from '@/shared/lib/hooks';
 import { Button } from './button';
@@ -204,9 +205,10 @@ export const Modal = ({
           </motion.div>
 
           {/* Bats off the edges of the dialog on one skin, paper lanterns off them on another,
-              and nothing at all on the other fourteen — see `BatSwarm` and `LanternDrift`. */}
+              dorsal plates round them on a third — see `BatSwarm`, `LanternDrift`, `KaijuSpikes`. */}
           <BatSwarm anchor={panelRef} />
           <LanternDrift anchor={panelRef} />
+          <KaijuSpikes anchor={panelRef} />
         </div>
       )}
     </AnimatePresence>,

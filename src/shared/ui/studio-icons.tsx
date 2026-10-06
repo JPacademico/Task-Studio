@@ -7,6 +7,7 @@ import { cn } from '@/shared/lib/cn';
 import { LETTER_ON_SHEET, StudioLetter } from './studio-letter';
 import { AutumnMark } from './autumn-icons';
 import { JadeMark } from './dragon-icons';
+import { KaijuMark } from './kaiju-icons';
 import { HalloweenMark } from './halloween-icons';
 import { EldritchMark } from './eldritch-icons';
 import { HazardMark } from './hazard-icons';
@@ -14,7 +15,6 @@ import { NewspaperMark } from './newspaper-icons';
 import { RunicMark } from './runic-icons';
 import { SpaceMark } from './space-icons';
 import { UnderwaterMark } from './underwater-icons';
-import { VibecodedMark } from './vibecoded-icons';
 import { VolcanoMark } from './volcano-icons';
 
 /**
@@ -559,8 +559,8 @@ const MARKS: Partial<Record<ThemeSkin, ComponentType<{ className?: string }>>> =
   UNDERWATER: UnderwaterMark,
   VOLCANO: VolcanoMark,
   HALLOWEEN: HalloweenMark,
-  VIBECODED: VibecodedMark,
   DRAGON: JadeMark,
+  KAIJU: KaijuMark,
 };
 
 /**

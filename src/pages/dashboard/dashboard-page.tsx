@@ -290,7 +290,7 @@ const DashboardPage = () => {
 
           {/* Three counters, not four. The project count left this row entirely: it is a
               property of the list two sections down, not a statistic about the reader's day. */}
-          <div className="flex shrink-0 flex-wrap justify-start gap-2 lg:justify-end">
+          <div data-tour="dash-stats" className="flex shrink-0 flex-wrap justify-start gap-2 lg:justify-end">
             {overviewLoading || !overview ? (
               Array.from({ length: 3 }, (_, index) => (
                 <Skeleton key={index} className="h-[3.625rem] w-[6.5rem] rounded-xl" />

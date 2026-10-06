@@ -19,8 +19,10 @@ CENTRE = (WORK / 2, WORK / 2)
 # Angles in degrees, 90 = tip straight up, 135 = up and to the left like the system arrow.
 REST_DEGREES = 135
 HOVER_DEGREES = 116
-# The lash: on a press the body swings down about the tip, which stays on the hotspot.
-SWING_DEGREES = 26
+# The lash: on a press the base stays rooted in its rift and the tip strikes, forward past the
+# hotspot and hooked, in drawing units (up is forward). The body is not turned at all.
+LASH = (-1.0, -2.4)
+LASH_CURL = 7.0
 # Clear pixels between the widest frame and the edge of the box.
 MARGIN = 1
 # The rim that keeps the tentacle legible over a control of its own tone, in screen pixels.
@@ -60,10 +62,37 @@ PALETTES = {
 }
 
 
-def spine(curl: float):
+# How far down the body a lash reaches, as a fraction tip to base. Everything past it is the rest
+# pose exactly, so the root and the rift hold still on a press.
+LASH_REACH = 0.5
+
+
+def spine(curl: float, lash: tuple[float, float] | None = None, lash_curl: float = 0.0):
     """Points, unit tangents and half-widths along the body, tip (t=0) to base (t=1)."""
-    # A cubic: the tip hooks by `curl`, the middle sways the other way, the base settles.
-    p0, p1, p2, p3 = (0.0, 0.0), (curl, 6.0), (-5.2, 13.5), (3.0, LENGTH)
+    points, _, halves = curve(curl, (0.0, 0.0))
+    if lash is None:
+        return curve(curl, (0.0, 0.0))
+
+    # The struck body, eased into the resting one over the first half: the tip moves, the root does not.
+    struck, _, _ = curve(lash_curl, lash)
+    blended = []
+    for index, ((rx, ry), (sx, sy)) in enumerate(zip(points, struck)):
+        weight = max(0.0, 1 - (index / SAMPLES) / LASH_REACH) ** 2
+        blended.append((rx + (sx - rx) * weight, ry + (sy - ry) * weight))
+
+    tangents = []
+    for index in range(len(blended)):
+        (ax, ay), (bx, by) = blended[max(0, index - 1)], blended[min(len(blended) - 1, index + 1)]
+        norm = math.hypot(bx - ax, by - ay) or 1.0
+        tangents.append(((bx - ax) / norm, (by - ay) / norm))
+    return blended, tangents, halves
+
+
+def curve(curl: float, tip: tuple[float, float]):
+    """The cubic itself, with its tip moved to `tip`."""
+    # The tip hooks by `curl`, the middle sways the other way, the base settles.
+    p0, p1 = tip, (curl + tip[0] * 0.5, 6.0 + tip[1] * 0.5)
+    p2, p3 = (-5.2, 13.5), (3.0, LENGTH)
     points, tangents, halves = [], [], []
     for index in range(SAMPLES + 1):
         t = index / SAMPLES
@@ -93,16 +122,21 @@ def side(points, tangents, halves, sign: float, inner: float = 0.0, outer: float
     return near, far
 
 
-def draw_tentacle(canvas: Image.Image, palette: dict, curl: float, pressed: bool) -> None:
+def draw_tentacle(
+    canvas: Image.Image, palette: dict, curl: float, pressed: bool, rest_curl: float
+) -> None:
     pen = ImageDraw.Draw(canvas)
-    points, tangents, halves = spine(curl)
+    points, tangents, halves = spine(curl, LASH, LASH_CURL) if pressed else spine(curl)
 
     if pressed:
-        # Two faint wakes off the base, the way it came: the swing, drawn into the still frame.
-        for offset, width in ((2.6, 0.55), (4.6, 0.4)):
-            arc = []
-            for (x, y), (tx, ty) in list(zip(points, tangents))[SAMPLES // 2 :]:
-                arc.append(to_canvas(x + ty * offset, y - tx * offset))
+        # Where the tip was a moment ago, as two faint wakes: the strike, drawn into the still frame.
+        ghost, ghost_tangents, _ = spine(rest_curl)
+        reach = SAMPLES * 2 // 5
+        for offset, width in ((0.0, 0.7), (1.6, 0.45)):
+            arc = [
+                to_canvas(x + ty * offset, y - tx * offset)
+                for (x, y), (tx, ty) in list(zip(ghost, ghost_tangents))[:reach]
+            ]
             pen.line(arc, fill=palette['trail'], width=max(1, round(width * S)), joint='curve')
 
     left = [to_canvas(x - ty * h, y + tx * h) for (x, y), (tx, ty), h in zip(points, tangents, halves)]
@@ -143,7 +177,7 @@ def draw_tentacle(canvas: Image.Image, palette: dict, curl: float, pressed: bool
 
 def pose(degrees: float, palette: dict, curl: float, pressed: bool = False) -> Image.Image:
     canvas = Image.new('RGBA', (WORK * S, WORK * S), (0, 0, 0, 0))
-    draw_tentacle(canvas, palette, curl, pressed)
+    draw_tentacle(canvas, palette, curl, pressed, rest_curl=curl)
     # Drawn pointing up (90 degrees); the turn is the difference, about the tip.
     turned = canvas.rotate(degrees - 90, center=(CENTRE[0] * S, CENTRE[1] * S), resample=Image.BICUBIC)
 
@@ -179,12 +213,9 @@ for name, palette in PALETTES.items():
     # Resting with a slight hook; over a pressable it rises and beckons; a press lashes.
     POSES[f'{name}-rest'] = reduce(pose(REST_DEGREES, palette, curl=2.2))
     POSES[f'{name}-hover'] = reduce(pose(HOVER_DEGREES, palette, curl=4.2))
-    POSES[f'{name}-press'] = reduce(
-        pose(REST_DEGREES + SWING_DEGREES, palette, curl=5.2, pressed=True)
-    )
-    POSES[f'{name}-press-hover'] = reduce(
-        pose(HOVER_DEGREES + SWING_DEGREES, palette, curl=6.0, pressed=True)
-    )
+    # Same turn as the pose it lashes from, so the root and its rift do not move.
+    POSES[f'{name}-press'] = reduce(pose(REST_DEGREES, palette, curl=2.2, pressed=True))
+    POSES[f'{name}-press-hover'] = reduce(pose(HOVER_DEGREES, palette, curl=4.2, pressed=True))
 
 
 def fit() -> tuple[int, int]:
@@ -201,7 +232,8 @@ CUT = fit()
 FRAMES = {
     name: image.crop((CUT[0], CUT[1], CUT[0] + BOX, CUT[1] + BOX)) for name, image in POSES.items()
 }
-# The tip, in every frame: the lash swings the body about it, so a click lands where it points.
+# The tip at rest. A press strikes just past it and the root stays put, so a click lands where it
+# pointed.
 HOTSPOT = (round(CENTRE[0] - CUT[0]), round(CENTRE[1] - CUT[1]))
 
 built = f'{HERE}/built'
@@ -213,6 +245,15 @@ for name, image in FRAMES.items():
     buffer = io.BytesIO()
     image.save(buffer, format='PNG', optimize=True)
     uris[name] = base64.b64encode(buffer.getvalue()).decode()
+
+# A contact sheet of every frame at 4x, on both page tones, for checking by eye.
+sheet = Image.new('RGBA', (BOX * 4 * 4 + 50, BOX * 4 * 2 + 30), (128, 128, 128, 255))
+for row, (name, tone) in enumerate((('light', (238, 232, 214, 255)), ('dark', (8, 10, 14, 255)))):
+    for col, frame in enumerate(('rest', 'hover', 'press', 'press-hover')):
+        tile = Image.new('RGBA', (BOX, BOX), tone)
+        tile.alpha_composite(FRAMES[f'{name}-{frame}'])
+        sheet.paste(tile.resize((BOX * 4, BOX * 4), Image.NEAREST), (10 + col * (BOX * 4 + 10), 10 + row * (BOX * 4 + 10)))
+sheet.save(f'{built}/preview.png')
 
 point = f'{HOTSPOT[0]} {HOTSPOT[1]}'
 

@@ -49,9 +49,6 @@ export const RotatingWord = ({ className }: { className?: string }) => {
 
   return (
     <span
-      /* Opts this whole cell out of a skin that clips a gradient through its headings — Vibecoded
-         does, and this is the one thing in a heading that moves. */
-      data-no-gradient
       className={cn(
         'relative inline-grid',
         /* The hand, at the headline's own size. The noun is the only word in the headline that

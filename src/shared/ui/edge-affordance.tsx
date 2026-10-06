@@ -5,6 +5,7 @@ import { cn } from '@/shared/lib/cn';
 import { translate } from '@/shared/i18n';
 import type { NavEdge } from '@/shared/lib/nav-preferences.store';
 import { ScrollHandle } from './dragon-icons';
+import { KaijuRidge } from './kaiju-icons';
 import { PushPin } from './studio-icons';
 
 interface EdgeAffordanceProps {
@@ -101,15 +102,17 @@ export const EdgeAffordance = ({ edge, isHidden, label }: EdgeAffordanceProps) =
   const skin = useSkin();
   const isSpace = skin === 'SPACE';
   const isEldritch = skin === 'ELDRITCH';
-  // The one skin that replaces the object rather than its material. Every other skin here changes
-  // what the bulge is *made of* — a singularity, an iris, a glow.
+  // The two skins that replace the object rather than its material: a scroll rod, a ridge of
+  // plates. Both stand still — no swell, which read as the edge inflating.
   const isScroll = skin === 'DRAGON' && edge !== 'top';
+  const isRidge = skin === 'KAIJU' && edge !== 'top';
 
   // Nothing to invite the user towards while the menu is already on screen, so the loops stop
   // rather than running forever behind `opacity: 0`.
   const isAnimating = isHidden && !reduceMotion;
 
-  if (isScroll) {
+  if (isScroll || isRidge) {
+    const side = edge as 'left' | 'right';
     return (
       <div
         aria-hidden
@@ -119,21 +122,21 @@ export const EdgeAffordance = ({ edge, isHidden, label }: EdgeAffordanceProps) =
           isHidden ? 'opacity-100' : 'opacity-0',
         )}
       >
-        {/* One element, not two. The glow version is a wave plus a lit rail because a soft
-            gradient has no edge of its own and needs the strip to say where it comes from. */}
-        <motion.span
-          className={cn('fixed text-brand drop-shadow-[0_0_10px_rgb(var(--brand)/0.35)]', ROD[edge as 'left' | 'right'])}
-          initial={false}
-          style={CENTRE[edge]}
-          animate={
-            isAnimating
-              ? { scaleX: [0.88, 1, 0.88], scaleY: [0.97, 1, 0.97], opacity: [0.72, 1, 0.72] }
-              : { opacity: 0.85 }
-          }
-          transition={{ duration: 3, repeat: isAnimating ? Infinity : 0, ease: [0.4, 0, 0.2, 1] }}
+        {/* One still element. The glow version is a wave plus a lit rail because a soft gradient
+            has no edge of its own; an object does. */}
+        <span
+          className={cn(
+            'fixed -translate-y-1/2',
+            ROD[side],
+            isScroll
+              ? 'text-brand opacity-90 drop-shadow-[0_0_10px_rgb(var(--brand)/0.35)]'
+              : 'drop-shadow-[0_0_8px_rgb(var(--kaiju-atomic)/0.45)]',
+            // The ridge's light sweep stops with the menu on screen, like every loop here.
+            !isAnimating && '[&_.kaiju-cue-lit]:[animation:none]',
+          )}
         >
-          <ScrollHandle edge={edge as 'left' | 'right'} />
-        </motion.span>
+          {isScroll ? <ScrollHandle edge={side} /> : <KaijuRidge edge={side} />}
+        </span>
       </div>
     );
   }

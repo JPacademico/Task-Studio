@@ -1,4 +1,4 @@
-"""Builds the Newsprint skin's cursor: a classic fountain pen, nib first."""
+"""Builds the Newsprint skin's cursor: the system arrow cut as a pen nib, slit and breather hole."""
 import base64
 import io
 import math
@@ -10,148 +10,113 @@ from PIL import Image, ImageDraw, ImageFilter
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 # The delivered cursor, in CSS pixels, and the supersampling factor everything is drawn at.
-# 36 rather than the usual 32: the larger pen's four poses span 31px between them.
-BOX = 36
+BOX = 32
 S = 8
-# The working canvas, in screen pixels. The pen turns about its nib at the centre, so anything
-# within half of this of the nib survives every rotation.
+# The working canvas, in screen pixels. The nib turns about its point at the centre.
 WORK = 72
 CENTRE = (WORK / 2, WORK / 2)
 
-# Angles in degrees, 90 = nib straight up, 135 = up and to the left like the system arrow.
-REST_DEGREES = 135
-HOVER_DEGREES = 113
-# How far the press drives the pen along its own axis, in screen pixels.
-THRUST = 2.4
+# How far the hover frame tilts the nib towards writing, in degrees, about its point.
+HOVER_TILT = 14
+# How far the press drives the nib along its own axis, past the point, in screen pixels.
+THRUST = 1.6
 # Clear pixels between the widest frame and the edge of the box.
 MARGIN = 1
-# The rim that keeps the pen legible over a control of its own tone, in screen pixels.
+# The rim that keeps the nib legible over a control of its own tone, in screen pixels.
 RIM = 1.0
 
-# --- The pen, drawn pointing up with the nib's point at the origin. ---
-# Drawn on a roomy grid and scaled by PEN, which brings it to about 25px: a touch past the system arrow.
-PEN = 0.92
-
-NIB = [(0.0, 0.0), (0.85, 2.0), (1.65, 5.6), (1.95, 9.2), (-1.95, 9.2), (-1.65, 5.6), (-0.85, 2.0)]
-SLIT = ((0.0, 1.1), (0.0, 6.0))
-BREATHER = ((0.0, 6.5), 0.62)
-# Grip section: top y, bottom y, half-width at top, half-width at bottom.
-SECTION = (9.0, 12.6, 1.55, 1.85)
-BAND = (12.6, 13.8, 2.15)
-BARREL = (13.8, 27.4, 2.0)
-FINIAL = (27.4, 28.8, 1.25)
-# The clip, on the barrel's right flank: top, bottom, x offset, width.
-CLIP = (15.4, 23.6, 1.45, 0.6)
+# The nib-arrow in drawing units, point at the origin: traced from the reference, the left flank is
+# the nib's edge and the stem its feed. 190 units tall; UNIT brings it to about 22px.
+UNIT = 0.116
+BODY = [
+    (0, 0),
+    (118, 106),   # the right wing
+    (72, 114),    # the notch where the wing meets the stem
+    (92, 176),    # the stem's foot, right
+    (64, 188),    # the stem's foot, left
+    (47, 126),    # the stem's root on the left
+    (4, 160),     # the left flank's foot
+]
+# The slit runs from just behind the point to the breather hole, along the nib's axis.
+SLIT_FROM = (4.0, 9.0)
+HOLE = (34.0, 92.0)
+# Thicker than the reference's hairline: at 23px a true-scale slit is under half a pixel.
+SLIT_WIDTH = 11.0
+HOLE_RADIUS = 17.5
 
 PALETTES = {
-    # Black lacquer and gold on the newsprint, with a sheet-coloured rim for dark controls.
+    # Printer's ink on the newsprint; the cuts show the sheet, and a sheet-coloured rim for dark
+    # controls. The red is the masthead's, which is also the editor's pencil.
     'light': {
-        'barrel': (24, 22, 20, 255),
-        'barrel_lit': (96, 90, 82, 255),
-        'section': (14, 13, 12, 255),
-        'gold': (214, 172, 84, 255),
-        'gold_deep': (142, 104, 36, 255),
-        'band': (178, 30, 34, 255),
-        'ink': (16, 14, 12, 255),
+        'body': (18, 16, 14, 255),
+        'cut': (244, 240, 230, 255),
+        'red': (196, 32, 36, 255),
         'rim': (244, 240, 230, 255),
     },
-    # Ivory resin on the night edition, with an ink rim for light controls.
+    # The night edition reverses the plate: an ivory nib with ink in its cuts and an ink rim.
     'dark': {
-        'barrel': (234, 228, 214, 255),
-        'barrel_lit': (255, 253, 246, 255),
-        'section': (40, 37, 34, 255),
-        'gold': (222, 182, 96, 255),
-        'gold_deep': (150, 112, 44, 255),
-        'band': (232, 96, 88, 255),
-        'ink': (16, 14, 12, 255),
-        'rim': (16, 14, 12, 255),
+        'body': (238, 232, 218, 255),
+        'cut': (18, 16, 14, 255),
+        'red': (236, 92, 84, 255),
+        'rim': (18, 16, 14, 255),
     },
 }
 
 
-def up(x: float, y: float, forward: float = 0.0) -> tuple[float, float]:
-    """A pen-space point on the supersampled canvas, nib at the centre, moved `forward` px."""
-    return ((CENTRE[0] + x * PEN) * S, (CENTRE[1] + y * PEN - forward) * S)
+def to_canvas(x: float, y: float, forward: float = 0.0) -> tuple[float, float]:
+    """A drawing-unit point on the supersampled canvas, point at the centre, pushed `forward` px."""
+    # The axis the nib is driven along: point towards the hole, normalised.
+    length = math.hypot(*HOLE)
+    ax, ay = -HOLE[0] / length, -HOLE[1] / length
+    return (
+        (CENTRE[0] + x * UNIT + ax * forward) * S,
+        (CENTRE[1] + y * UNIT + ay * forward) * S,
+    )
 
 
-def draw_pen(canvas: Image.Image, palette: dict, forward: float, pressed: bool) -> None:
+def draw_nib(canvas: Image.Image, palette: dict, forward: float, inked: bool, pressed: bool) -> None:
     pen = ImageDraw.Draw(canvas)
+    pen.polygon([to_canvas(x, y, forward) for x, y in BODY], fill=palette['body'])
 
-    def poly(points, fill):
-        pen.polygon([up(x, y, forward) for x, y in points], fill=fill)
-
-    def rect(top, bottom, half_top, half_bottom, fill):
-        poly([(-half_top, top), (half_top, top), (half_bottom, bottom), (-half_bottom, bottom)], fill)
-
-    # Barrel, with a rounded end and a lit stripe down its left flank.
-    top, bottom, half = BARREL
-    pen.rounded_rectangle(
-        [*up(-half, top - 0.6, forward), *up(half, bottom, forward)],
-        radius=half * PEN * S * 0.9,
-        fill=palette['barrel'],
-    )
-    pen.rounded_rectangle(
-        [*up(-half + 0.55, top + 0.6, forward), *up(-half + 1.35, bottom - 1.4, forward)],
-        radius=0.4 * PEN * S,
-        fill=palette['barrel_lit'],
-    )
-    # Finial cap at the end.
-    f_top, f_bottom, f_half = FINIAL
-    pen.rounded_rectangle(
-        [*up(-f_half, f_top - 0.8, forward), *up(f_half, f_bottom, forward)],
-        radius=f_half * PEN * S * 0.8,
-        fill=palette['gold'],
-    )
-    # The clip: a gold strip on the right flank with a ball at its foot.
-    c_top, c_bottom, c_x, c_w = CLIP
-    pen.rounded_rectangle(
-        [*up(c_x - c_w / 2, c_top, forward), *up(c_x + c_w / 2, c_bottom, forward)],
-        radius=c_w * PEN * S / 2,
-        fill=palette['gold'],
-    )
-    bx, by = up(c_x, c_bottom - 0.3, forward)
-    radius = 0.8 * PEN * S
-    pen.ellipse([bx - radius, by - radius, bx + radius, by + radius], fill=palette['gold'])
-
-    # Gold band with the masthead's red line through it.
-    b_top, b_bottom, b_half = BAND
-    rect(b_top, b_bottom, b_half, b_half, palette['gold'])
-    rect(b_top + 0.35, b_bottom - 0.35, b_half, b_half, palette['band'])
-
-    # Grip section, tapering into the nib.
-    s_top, s_bottom, s_half_top, s_half_bottom = SECTION
-    rect(s_top, s_bottom, s_half_top, s_half_bottom, palette['section'])
-
-    # The nib: two-tone gold, so the flat plate reads as curved.
-    nib = NIB
+    width = max(1, round(SLIT_WIDTH * UNIT * S))
     if pressed:
-        # Under pressure the tines part: the point splits and the shoulders spread a little.
-        nib = [(x * 1.08, y) for x, y in NIB]
-    poly(nib, palette['gold'])
-    poly([(0.0, 0.0), *[(x, y) for x, y in nib if x > 0], (0.0, 7.4)], palette['gold_deep'])
+        # Under pressure the tines part: the slit opens into a wedge that is widest at the point.
+        hx, hy = HOLE
+        length = math.hypot(hx, hy)
+        nx, ny = -hy / length, hx / length
+        # Starts behind the point, so the point itself survives the split.
+        start = (SLIT_FROM[0] + 3.0, SLIT_FROM[1] + 9.0)
+        spread = SLIT_WIDTH * 0.95
+        wedge = [
+            (start[0] + nx * spread, start[1] + ny * spread),
+            (start[0] - nx * spread, start[1] - ny * spread),
+            (hx - nx * SLIT_WIDTH * 0.45, hy - ny * SLIT_WIDTH * 0.45),
+            (hx + nx * SLIT_WIDTH * 0.45, hy + ny * SLIT_WIDTH * 0.45),
+        ]
+        pen.polygon([to_canvas(x, y, forward) for x, y in wedge], fill=palette['cut'])
+    else:
+        pen.line([to_canvas(*SLIT_FROM, forward), to_canvas(*HOLE, forward)], fill=palette['cut'], width=width)
 
-    # Slit and breather hole.
-    (sx0, sy0), (sx1, sy1) = SLIT
-    slit_width = max(1, round((0.6 if pressed else 0.45) * PEN * S))
-    pen.line([up(sx0, sy0 - (0.9 if pressed else 0), forward), up(sx1, sy1, forward)],
-             fill=palette['ink'], width=slit_width)
-    (hx, hy), hr = BREATHER
-    cx, cy = up(hx, hy, forward)
-    hr *= PEN * S
-    pen.ellipse([cx - hr, cy - hr, cx + hr, cy + hr], fill=palette['ink'])
+    cx, cy = to_canvas(*HOLE, forward)
+    radius = HOLE_RADIUS * UNIT * S
+    pen.ellipse([cx - radius, cy - radius, cx + radius, cy + radius], fill=palette['cut'])
+    if inked:
+        # Over a pressable the hole holds a drop of red: the pen is charged.
+        inner = radius * 0.62
+        pen.ellipse([cx - inner, cy - inner, cx + inner, cy + inner], fill=palette['red'])
 
     if pressed:
-        # A bead of ink where the point meets the page.
-        ix, iy = up(0.0, -0.5, forward)
-        bead = 1.0 * S
-        pen.ellipse([ix - bead, iy - bead, ix + bead, iy + bead], fill=palette['ink'])
+        # A spot of red where the point meets the page, struck just ahead of it.
+        ix, iy = to_canvas(-2.0, -5.0, forward)
+        spot = 1.15 * S
+        pen.ellipse([ix - spot, iy - spot, ix + spot, iy + spot], fill=palette['red'])
 
 
-def pose(degrees: float, palette: dict, pressed: bool = False) -> Image.Image:
+def pose(tilt: float, palette: dict, inked: bool, pressed: bool) -> Image.Image:
     canvas = Image.new('RGBA', (WORK * S, WORK * S), (0, 0, 0, 0))
-    draw_pen(canvas, palette, THRUST if pressed else 0.0, pressed)
-    # Drawn pointing up (90 degrees); the turn is the difference, about the nib.
-    turned = canvas.rotate(degrees - 90, center=(CENTRE[0] * S, CENTRE[1] * S), resample=Image.BICUBIC)
+    draw_nib(canvas, palette, THRUST if pressed else 0.0, inked, pressed)
+    # PIL turns counter-clockwise for a positive angle; the tilt swings the stem down and under.
+    turned = canvas.rotate(-tilt, center=(CENTRE[0] * S, CENTRE[1] * S), resample=Image.BICUBIC)
 
     alpha = turned.getchannel('A')
     size = int(RIM * S) * 2 + 1
@@ -182,10 +147,10 @@ def reduce(image: Image.Image) -> Image.Image:
 
 POSES = {}
 for name, palette in PALETTES.items():
-    POSES[f'{name}-rest'] = reduce(pose(REST_DEGREES, palette))
-    POSES[f'{name}-hover'] = reduce(pose(HOVER_DEGREES, palette))
-    POSES[f'{name}-press'] = reduce(pose(REST_DEGREES, palette, pressed=True))
-    POSES[f'{name}-press-hover'] = reduce(pose(HOVER_DEGREES, palette, pressed=True))
+    POSES[f'{name}-rest'] = reduce(pose(0, palette, inked=False, pressed=False))
+    POSES[f'{name}-hover'] = reduce(pose(HOVER_TILT, palette, inked=True, pressed=False))
+    POSES[f'{name}-press'] = reduce(pose(0, palette, inked=False, pressed=True))
+    POSES[f'{name}-press-hover'] = reduce(pose(HOVER_TILT, palette, inked=True, pressed=True))
 
 
 def fit() -> tuple[int, int]:
@@ -214,6 +179,15 @@ for name, image in FRAMES.items():
     buffer = io.BytesIO()
     image.save(buffer, format='PNG', optimize=True)
     uris[name] = base64.b64encode(buffer.getvalue()).decode()
+
+# A contact sheet of every frame at 4x, on both page tones, for checking by eye.
+sheet = Image.new('RGBA', (BOX * 4 * 4 + 50, BOX * 4 * 2 + 30), (128, 128, 128, 255))
+for row, (name, tone) in enumerate((('light', (244, 240, 230, 255)), ('dark', (24, 22, 20, 255)))):
+    for col, frame in enumerate(('rest', 'hover', 'press', 'press-hover')):
+        tile = Image.new('RGBA', (BOX, BOX), tone)
+        tile.alpha_composite(FRAMES[f'{name}-{frame}'])
+        sheet.paste(tile.resize((BOX * 4, BOX * 4), Image.NEAREST), (10 + col * (BOX * 4 + 10), 10 + row * (BOX * 4 + 10)))
+sheet.save(f'{built}/preview.png')
 
 point = f'{HOTSPOT[0]} {HOTSPOT[1]}'
 
@@ -255,8 +229,8 @@ def rule(selectors: str, frame: str, fallback: str) -> str:
 
 
 css = f'''
-/* --- Skin: NEWSPAPER - the pointer is a fountain pen. ---
-   Generated by `custom-cursor/newspaper/build-cursors.py`. Upright over pressables; a press stabs. */
+/* --- Skin: NEWSPAPER - the pointer is a pen nib cut as the arrow. ---
+   Generated by `custom-cursor/newspaper/build-cursors.py`. It tilts and takes red ink over pressables. */
 
 {rule(GATE, 'light-rest', 'auto')}
 
@@ -266,8 +240,8 @@ css = f'''
 
 {rule(inside(GATE_DARK, PRESSABLE), 'dark-hover', 'pointer')}
 
-/* The stab. `:active` on the page itself, and again on the pressable list, which
-   otherwise outranks it on the one surface a press matters most. */
+/* The press: the tines split and mark the page. `:active` on the page, and again on the pressable
+   list, which otherwise outranks it on the one surface a press matters most. */
 {rule(f'{GATE} :active', 'light-press', 'auto')}
 
 {rule(f'{GATE_DARK} :active', 'dark-press', 'auto')}
@@ -276,7 +250,7 @@ css = f'''
 
 {rule(inside(GATE_DARK, PRESSABLE, ':active'), 'dark-press-hover', 'pointer')}
 
-/* The three the pen must not swallow. */
+/* The three the nib must not swallow. */
 {inside(GATE, TEXT)} {{
   cursor: text;
 }}
