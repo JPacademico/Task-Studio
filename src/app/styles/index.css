@@ -84,6 +84,22 @@
   font-weight: 400;
   font-style: normal;
   font-display: swap;
+  /* Same 1.566em line box, split so capitals sit on its centre; stock, they ride 0.055em high. */
+  ascent-override: 116.58%;
+  descent-override: 40.02%;
+  line-gap-override: 0%;
+}
+
+/* --- Kaiju Sans — the system's Bahnschrift with its capitals centred in the line box. ---
+   Stock, caps sit 0.065em high, so an all-caps label rides above the icon beside it. */
+@font-face {
+  font-family: 'Kaiju Sans';
+  src: local('Bahnschrift');
+  font-weight: 300 700;
+  font-style: normal;
+  ascent-override: 85.94%;
+  descent-override: 14.06%;
+  line-gap-override: 20%;
 }
 
 /* Theme tokens. Two independent axes: - palette -> `dark` class on <html> (light / dark) - skin ->
@@ -1961,26 +1977,28 @@
   }
 
   /* --- Skin: KAIJU — something very large has come ashore. ---
-     Black hide, electric violet current: violet is the brand, the volt is what glows. */
+     Day is a monster-movie poster: coral sky, cream, a green beast, bronze and gold. Night is violet. */
   [data-skin='kaiju'] {
-    /* Day: lilac concrete under a storm, with ink the colour of the night it will become. */
-    --surface: 232 226 245;
-    --surface-raised: 247 244 253;
-    --surface-sunken: 216 208 236;
-    --edge: 132 112 176;
+    /* The page is the poster's lighter coral (its deep coral fails muted ink and links, so it is the
+       city). Insets — fields, tiles, tracks — sit in blush cream, or every input is a coral block. */
+    --kaiju-page: 243 176 160;
+    --surface: 249 233 225;
+    --surface-raised: 253 244 237;
+    --surface-sunken: 244 222 211;
+    --edge: 186 112 92;
     --check-edge: var(--edge);
-    --content: 18 8 38;
-    --content-muted: 70 54 108;
-    --content-faint: 100 84 138;
+    --content: 44 20 12;
+    --content-muted: 96 44 28;
+    --content-faint: 122 62 44;
 
-    /* Electric violet, readable: 6.7:1 on a panel, and a filled control's white label is 7.3:1 on
-       it. The bright volt is a light source and lives in `--kaiju-volt`, never behind text. */
-    --brand: 104 32 226;
-    --brand-soft: 230 216 255;
-    --brand-contrast: 255 255 255;
-    --positive: 18 116 70;
-    --warning: 146 90 0;
-    --danger: 184 28 64;
+    /* The monster's green, deepened to 7.7:1 on a panel and 4.7:1 on the page; cream on it is 8:1.
+       Success leans leaf-green so it never reads as the brand. */
+    --brand: 14 88 70;
+    --brand-soft: 208 236 224;
+    --brand-contrast: 255 248 240;
+    --positive: 46 100 26;
+    --warning: 128 76 6;
+    --danger: 168 28 40;
 
     /* Hide and plate: angular, barely eased. */
     --radius-sm: 3px;
@@ -1993,8 +2011,8 @@
     /* Studiozilla for titles; body and task titles stay in a plain, condensed sans. */
     --font-display: 'Studiozilla', 'Archivo Black', 'Anton', 'Impact', 'Haettenschweiler',
       sans-serif;
-    --font-sans: 'Bahnschrift', 'DIN Alternate', 'Roboto Condensed', 'Segoe UI', system-ui,
-      sans-serif;
+    --font-sans: 'Kaiju Sans', 'Bahnschrift', 'DIN Alternate', 'Roboto Condensed', 'Segoe UI',
+      system-ui, sans-serif;
     /* Post-its and task notes are the reader's own words: the sans, not the cracked titles. */
     --font-hand: var(--font-sans);
     --heading-transform: uppercase;
@@ -2003,32 +2021,35 @@
     --panel-border-width: 1px;
     --shadow-panel:
       inset 0 1px 0 rgb(255 255 255 / 0.7),
-      0 12px 28px -18px rgb(44 14 110 / 0.55);
+      0 12px 28px -18px rgb(110 40 20 / 0.45);
     --press-travel: 1px;
 
     /* Scales: rows of shallow arcs, each row offset by half a scale. Panels add a sheen; rails
        wear the scales alone. */
-    --kaiju-scales: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='18' viewBox='0 0 28 18'%3E%3Cg fill='none' stroke='%2342208a' stroke-opacity='.11'%3E%3Cpath d='M0 0a14 8 0 0 0 28 0M-14 9a14 8 0 0 0 28 0M14 9a14 8 0 0 0 28 0M0 18a14 8 0 0 0 28 0'/%3E%3C/g%3E%3C/svg%3E");
+    --kaiju-scales: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='18' viewBox='0 0 28 18'%3E%3Cg fill='none' stroke='%23966030' stroke-opacity='.14'%3E%3Cpath d='M0 0a14 8 0 0 0 28 0M-14 9a14 8 0 0 0 28 0M14 9a14 8 0 0 0 28 0M0 18a14 8 0 0 0 28 0'/%3E%3C/g%3E%3C/svg%3E");
     --panel-texture:
       var(--kaiju-scales),
-      linear-gradient(180deg, rgb(var(--kaiju-volt) / 0.07), transparent 40%);
+      linear-gradient(180deg, rgb(var(--kaiju-volt) / 0.08), transparent 40%);
     --panel-texture-size: 28px 18px, auto;
 
-    /* Storm light over the bay, and a violet glow rising off the water. */
+    /* Warm light off the bay, and a little gold in the sky. */
     --page-wash:
-      radial-gradient(90% 55% at 50% 118%, rgb(var(--kaiju-volt) / 0.2), transparent 62%),
-      radial-gradient(60% 40% at 88% -6%, rgb(var(--kaiju-charge) / 0.12), transparent 60%);
+      radial-gradient(90% 55% at 50% 118%, rgb(255 230 210 / 0.5), transparent 62%),
+      radial-gradient(60% 40% at 88% -6%, rgb(var(--kaiju-volt) / 0.22), transparent 60%);
 
     /* The rails carry scales, not a wash. */
     --rail-wash-left: none;
     --rail-wash-right: none;
 
-    /* The city along the foot of the page; see `body::after`. */
-    --kaiju-skyline: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='960' height='120' viewBox='0 0 960 120'%3E%3Cpath d='M3 19h31v101h-31Z M43 57h20v63h-20Z M70 29h34v91h-34Z M86 17h2v12h-2Z M106 34h16v86h-16Z M132 30h15v90h-15Z M154 21h34v99h-34Z M170 13h2v8h-2Z M196 65h16v55h-16Z M203 54h2v11h-2Z M221 19h14v101h-14Z M242 56h32v64h-32Z M281 26h14v94h-14Z M287 8h2v18h-2Z M299 33h27v87h-27Z M330 20h24v100h-24Z M336 15h12v5h-12Z M341 6h2v9h-2Z M360 50h17v70h-17Z M377 55h14v65h-14Z M383 47h2v8h-2Z M398 23h26v97h-26Z M410 5h2v18h-2Z M427 47h22v73h-22Z M437 34h2v13h-2Z M449 20h27v100h-27Z M461 11h2v9h-2Z M476 39h15v81h-15Z M493 56h31v64h-31Z M507 46h2v10h-2Z M530 44h34v76h-34Z M540 36h14v8h-14Z M546 19h2v17h-2Z M568 55h14v65h-14Z M574 38h2v17h-2Z M592 62h32v58h-32Z M597 54h22v8h-22Z M624 47h33v73h-33Z M658 55h16v65h-16Z M677 30h14v90h-14Z M700 60h28v60h-28Z M737 44h18v76h-18Z M745 34h2v10h-2Z M759 16h21v104h-21Z M783 21h19v99h-19Z M810 25h20v95h-20Z M837 63h33v57h-33Z M852 55h2v8h-2Z M878 53h22v67h-22Z M906 42h22v78h-22Z M937 50h21v70h-21Z' fill='%23c6b6ea' fill-opacity='.6'/%3E%3Cpath d='M6 95h44v25h-44Z M14 84h28v11h-28Z M52 88h34v32h-34Z M56 80h26v8h-26Z M86 95h32v25h-32Z M118 73h58v47h-58Z M146 65h2v8h-2Z M180 89h49v31h-49Z M231 77h62v43h-62Z M295 120L295 95L314 95L319 104L326 99L332 110L340 102L345 107L357 105L357 120Z M360 70h37v50h-37Z M398 89h37v31h-37Z M439 63h38v57h-38Z M444 52h28v11h-28Z M457 40h2v12h-2Z M481 63h43v57h-43Z M490 54h25v9h-25Z M527 87h61v33h-61Z M534 81h47v6h-47Z M591 79h41v41h-41Z M636 76h32v44h-32Z M640 71h24v5h-24Z M671 90h27v30h-27Z M699 66h29v54h-29Z M728 99h48v21h-48Z M777 96h28v24h-28Z M785 88h12v8h-12Z M808 87h44v33h-44Z M820 80h20v7h-20Z M856 84h41v36h-41Z M862 79h29v5h-29Z M899 74h59v46h-59Z' fill='%23ab97da' fill-opacity='.75'/%3E%3Cpath d='M28 25h2v3h-2Z M21 33h2v3h-2Z M7 41h2v3h-2Z M21 41h2v3h-2Z M14 65h2v3h-2Z M14 89h2v3h-2Z M21 89h2v3h-2Z M47 95h2v3h-2Z M74 51h2v3h-2Z M74 67h2v3h-2Z M74 75h2v3h-2Z M88 83h2v3h-2Z M110 56h2v3h-2Z M117 88h2v3h-2Z M136 52h2v3h-2Z M136 60h2v3h-2Z M136 92h2v3h-2Z M136 100h2v3h-2Z M172 27h2v3h-2Z M172 51h2v3h-2Z M158 67h2v3h-2Z M165 75h2v3h-2Z M207 79h2v3h-2Z M200 87h2v3h-2Z M246 62h2v3h-2Z M267 110h2v3h-2Z M317 71h2v3h-2Z M317 79h2v3h-2Z M341 90h2v3h-2Z M334 98h2v3h-2Z M381 69h2v3h-2Z M381 93h2v3h-2Z M409 29h2v3h-2Z M409 45h2v3h-2Z M409 77h2v3h-2Z M416 77h2v3h-2Z M416 85h2v3h-2Z M402 101h2v3h-2Z M416 101h2v3h-2Z M431 85h2v3h-2Z M460 26h2v3h-2Z M453 34h2v3h-2Z M453 90h2v3h-2Z M467 90h2v3h-2Z M453 106h2v3h-2Z M511 70h2v3h-2Z M497 86h2v3h-2Z M511 86h2v3h-2Z M497 94h2v3h-2Z M504 94h2v3h-2Z M534 58h2v3h-2Z M541 90h2v3h-2Z M555 106h2v3h-2Z M572 101h2v3h-2Z M603 68h2v3h-2Z M610 92h2v3h-2Z M596 108h2v3h-2Z M603 108h2v3h-2Z M649 69h2v3h-2Z M662 61h2v3h-2Z M669 61h2v3h-2Z M669 93h2v3h-2Z M704 66h2v3h-2Z M741 50h2v3h-2Z M741 74h2v3h-2Z M794 35h2v3h-2Z M787 99h2v3h-2Z M794 99h2v3h-2Z M814 39h2v3h-2Z M821 103h2v3h-2Z M841 85h2v3h-2Z M855 93h2v3h-2Z M882 67h2v3h-2Z M882 99h2v3h-2Z M941 80h2v3h-2Z M948 80h2v3h-2Z M24 101h2v3h-2Z M24 109h2v3h-2Z M77 102h2v3h-2Z M104 101h2v3h-2Z M104 109h2v3h-2Z M111 109h2v3h-2Z M122 79h2v3h-2Z M157 87h2v3h-2Z M136 95h2v3h-2Z M164 111h2v3h-2Z M198 95h2v3h-2Z M205 95h2v3h-2Z M212 103h2v3h-2Z M270 107h2v3h-2Z M364 84h2v3h-2Z M385 92h2v3h-2Z M402 111h2v3h-2Z M464 69h2v3h-2Z M457 77h2v3h-2Z M471 101h2v3h-2Z M485 93h2v3h-2Z M506 93h2v3h-2Z M538 93h2v3h-2Z M531 109h2v3h-2Z M545 109h2v3h-2Z M573 109h2v3h-2Z M595 109h2v3h-2Z M647 98h2v3h-2Z M710 104h2v3h-2Z M753 105h2v3h-2Z M760 105h2v3h-2Z M788 102h2v3h-2Z M795 102h2v3h-2Z M840 109h2v3h-2Z M881 98h2v3h-2Z M874 106h2v3h-2Z M888 106h2v3h-2Z M924 88h2v3h-2Z M952 88h2v3h-2Z M903 104h2v3h-2Z' fill='%23ffffff' fill-opacity='.75'/%3E%3Cpath d='M85.5 16a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M169.5 12a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M202.5 53a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M286.5 7a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M340.5 5a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M382.5 46a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M409.5 4a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M436.5 33a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M460.5 10a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M506.5 45a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M545.5 18a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M573.5 37a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M744.5 33a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M851.5 54a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M145.5 64a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M456.5 39a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0' fill='%237a36f0'/%3E%3C/svg%3E");
+    /* The city along the foot of the page, in pale coral like the poster's; see `body::after`. */
+    --kaiju-skyline: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='960' height='120' viewBox='0 0 960 120'%3E%3Cpath d='M3 19h31v101h-31Z M43 57h20v63h-20Z M70 29h34v91h-34Z M86 17h2v12h-2Z M106 34h16v86h-16Z M132 30h15v90h-15Z M154 21h34v99h-34Z M170 13h2v8h-2Z M196 65h16v55h-16Z M203 54h2v11h-2Z M221 19h14v101h-14Z M242 56h32v64h-32Z M281 26h14v94h-14Z M287 8h2v18h-2Z M299 33h27v87h-27Z M330 20h24v100h-24Z M336 15h12v5h-12Z M341 6h2v9h-2Z M360 50h17v70h-17Z M377 55h14v65h-14Z M383 47h2v8h-2Z M398 23h26v97h-26Z M410 5h2v18h-2Z M427 47h22v73h-22Z M437 34h2v13h-2Z M449 20h27v100h-27Z M461 11h2v9h-2Z M476 39h15v81h-15Z M493 56h31v64h-31Z M507 46h2v10h-2Z M530 44h34v76h-34Z M540 36h14v8h-14Z M546 19h2v17h-2Z M568 55h14v65h-14Z M574 38h2v17h-2Z M592 62h32v58h-32Z M597 54h22v8h-22Z M624 47h33v73h-33Z M658 55h16v65h-16Z M677 30h14v90h-14Z M700 60h28v60h-28Z M737 44h18v76h-18Z M745 34h2v10h-2Z M759 16h21v104h-21Z M783 21h19v99h-19Z M810 25h20v95h-20Z M837 63h33v57h-33Z M852 55h2v8h-2Z M878 53h22v67h-22Z M906 42h22v78h-22Z M937 50h21v70h-21Z' fill='%23f7c3b6' fill-opacity='.9'/%3E%3Cpath d='M6 95h44v25h-44Z M14 84h28v11h-28Z M52 88h34v32h-34Z M56 80h26v8h-26Z M86 95h32v25h-32Z M118 73h58v47h-58Z M146 65h2v8h-2Z M180 89h49v31h-49Z M231 77h62v43h-62Z M295 120L295 95L314 95L319 104L326 99L332 110L340 102L345 107L357 105L357 120Z M360 70h37v50h-37Z M398 89h37v31h-37Z M439 63h38v57h-38Z M444 52h28v11h-28Z M457 40h2v12h-2Z M481 63h43v57h-43Z M490 54h25v9h-25Z M527 87h61v33h-61Z M534 81h47v6h-47Z M591 79h41v41h-41Z M636 76h32v44h-32Z M640 71h24v5h-24Z M671 90h27v30h-27Z M699 66h29v54h-29Z M728 99h48v21h-48Z M777 96h28v24h-28Z M785 88h12v8h-12Z M808 87h44v33h-44Z M820 80h20v7h-20Z M856 84h41v36h-41Z M862 79h29v5h-29Z M899 74h59v46h-59Z' fill='%23fad6cc' fill-opacity='.9'/%3E%3Cpath d='M28 25h2v3h-2Z M21 33h2v3h-2Z M7 41h2v3h-2Z M21 41h2v3h-2Z M14 65h2v3h-2Z M14 89h2v3h-2Z M21 89h2v3h-2Z M47 95h2v3h-2Z M74 51h2v3h-2Z M74 67h2v3h-2Z M74 75h2v3h-2Z M88 83h2v3h-2Z M110 56h2v3h-2Z M117 88h2v3h-2Z M136 52h2v3h-2Z M136 60h2v3h-2Z M136 92h2v3h-2Z M136 100h2v3h-2Z M172 27h2v3h-2Z M172 51h2v3h-2Z M158 67h2v3h-2Z M165 75h2v3h-2Z M207 79h2v3h-2Z M200 87h2v3h-2Z M246 62h2v3h-2Z M267 110h2v3h-2Z M317 71h2v3h-2Z M317 79h2v3h-2Z M341 90h2v3h-2Z M334 98h2v3h-2Z M381 69h2v3h-2Z M381 93h2v3h-2Z M409 29h2v3h-2Z M409 45h2v3h-2Z M409 77h2v3h-2Z M416 77h2v3h-2Z M416 85h2v3h-2Z M402 101h2v3h-2Z M416 101h2v3h-2Z M431 85h2v3h-2Z M460 26h2v3h-2Z M453 34h2v3h-2Z M453 90h2v3h-2Z M467 90h2v3h-2Z M453 106h2v3h-2Z M511 70h2v3h-2Z M497 86h2v3h-2Z M511 86h2v3h-2Z M497 94h2v3h-2Z M504 94h2v3h-2Z M534 58h2v3h-2Z M541 90h2v3h-2Z M555 106h2v3h-2Z M572 101h2v3h-2Z M603 68h2v3h-2Z M610 92h2v3h-2Z M596 108h2v3h-2Z M603 108h2v3h-2Z M649 69h2v3h-2Z M662 61h2v3h-2Z M669 61h2v3h-2Z M669 93h2v3h-2Z M704 66h2v3h-2Z M741 50h2v3h-2Z M741 74h2v3h-2Z M794 35h2v3h-2Z M787 99h2v3h-2Z M794 99h2v3h-2Z M814 39h2v3h-2Z M821 103h2v3h-2Z M841 85h2v3h-2Z M855 93h2v3h-2Z M882 67h2v3h-2Z M882 99h2v3h-2Z M941 80h2v3h-2Z M948 80h2v3h-2Z M24 101h2v3h-2Z M24 109h2v3h-2Z M77 102h2v3h-2Z M104 101h2v3h-2Z M104 109h2v3h-2Z M111 109h2v3h-2Z M122 79h2v3h-2Z M157 87h2v3h-2Z M136 95h2v3h-2Z M164 111h2v3h-2Z M198 95h2v3h-2Z M205 95h2v3h-2Z M212 103h2v3h-2Z M270 107h2v3h-2Z M364 84h2v3h-2Z M385 92h2v3h-2Z M402 111h2v3h-2Z M464 69h2v3h-2Z M457 77h2v3h-2Z M471 101h2v3h-2Z M485 93h2v3h-2Z M506 93h2v3h-2Z M538 93h2v3h-2Z M531 109h2v3h-2Z M545 109h2v3h-2Z M573 109h2v3h-2Z M595 109h2v3h-2Z M647 98h2v3h-2Z M710 104h2v3h-2Z M753 105h2v3h-2Z M760 105h2v3h-2Z M788 102h2v3h-2Z M795 102h2v3h-2Z M840 109h2v3h-2Z M881 98h2v3h-2Z M874 106h2v3h-2Z M888 106h2v3h-2Z M924 88h2v3h-2Z M952 88h2v3h-2Z M903 104h2v3h-2Z' fill='%23ffffff' fill-opacity='.55'/%3E%3Cpath d='M85.5 16a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M169.5 12a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M202.5 53a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M286.5 7a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M340.5 5a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M382.5 46a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M409.5 4a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M436.5 33a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M460.5 10a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M506.5 45a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M545.5 18a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M573.5 37a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M744.5 33a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M851.5 54a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M145.5 64a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M456.5 39a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0' fill='%23e8aa34'/%3E%3C/svg%3E");
+    /* The breath's crackle and the rail's bolt, which are drawings and cannot read a token. */
+    --kaiju-arc: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='56' viewBox='0 0 160 56'%3E%3Cpath d='M0 28 14 18 26 34 40 20 52 36 66 16 80 30 94 22 108 38 122 18 136 32 150 24 160 28' fill='none' stroke='%23fff6e6' stroke-width='1.4' stroke-linejoin='round' stroke-opacity='.85'/%3E%3Cpath d='M0 30 18 40 30 26 46 38 60 24 74 40 90 26 104 34 118 22 132 38 146 28 160 30' fill='none' stroke='%23e8aa34' stroke-width='1' stroke-linejoin='round' stroke-opacity='.7'/%3E%3C/svg%3E");
+    --kaiju-bolt: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='144' viewBox='0 0 12 144'%3E%3Cpath d='M6 0 9 14 3 26 10 40 2 55 9 68 4 82 10 96 3 110 8 124 6 144' fill='none' stroke='%230e5846' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
 
-    --btn-overlay: linear-gradient(180deg, rgb(255 255 255 / 0.18), transparent 60%);
-    --btn-shadow: 0 2px 0 rgb(30 8 80 / 0.4);
-    --btn-shadow-active: 0 1px 0 rgb(30 8 80 / 0.4);
+    --btn-overlay: linear-gradient(180deg, rgb(255 255 255 / 0.2), transparent 60%);
+    --btn-shadow: 0 2px 0 rgb(90 36 18 / 0.35);
+    --btn-shadow-active: 0 1px 0 rgb(90 36 18 / 0.35);
     --btn-tracking: 0.06em;
     --btn-transform: uppercase;
     --btn-weight: 700;
@@ -2039,23 +2060,28 @@
 
     /* --- The skin's own materials ---------------------------------------- */
 
-    /* The breath and the lit plates: electric violet, and the near-white lilac at its core. */
-    --kaiju-volt: 112 40 240;
-    --kaiju-volt-core: 236 224 255;
-    /* The charge that runs down the rails. */
-    --kaiju-charge: 150 60 255;
-    /* The letter that catches it: deep enough to be seen on a pale page. */
-    --kaiju-spark: 96 24 214;
-    /* Dorsal plates: lilac at the tip, black hide at the root. */
-    --kaiju-plate: 132 84 236;
-    --kaiju-plate-deep: 74 38 150;
-    --kaiju-hide: 26 12 52;
+    /* What glows — lit plates, the breath, the edges — is gold, with cream at its core. */
+    --kaiju-volt: 232 170 52;
+    --kaiju-volt-core: 255 246 228;
+    /* The charge down the rails is the monster's own green. */
+    --kaiju-charge: 30 144 120;
+    /* The letter that catches it, deep enough to read on cream. */
+    --kaiju-spark: 14 88 70;
+    /* Dorsal plates: bronze, green hide at the root. */
+    --kaiju-plate: 196 134 74;
+    --kaiju-plate-deep: 150 96 48;
+    --kaiju-hide: 24 72 56;
+    /* The mark: lit and shaded hide, outline, scale lines and yellow eyes. */
+    --kaiju-hide-lit: 30 144 120;
+    --kaiju-rim: 24 54 36;
+    --kaiju-scale-ink: 18 96 76;
+    --kaiju-eye: 246 196 70;
     /* How hard glows bloom: a pale page turns a full-strength halo into a smudge. */
     --kaiju-halo: 0.45;
-    /* The wordmark: ink down to violet, over a pale extrusion. */
-    --kaiju-word-top: 70 24 150;
-    --kaiju-word-bottom: 112 40 240;
-    --kaiju-word-shadow: 196 168 255;
+    /* The wordmark: the monster's green over a bronze extrusion. */
+    --kaiju-word-top: 30 144 120;
+    --kaiju-word-bottom: 14 88 70;
+    --kaiju-word-shadow: 150 96 48;
 
     color-scheme: light;
   }
@@ -2063,6 +2089,7 @@
   /* Night, and the only light is what the monster gives off. Violet-black rather than neutral, so
      the volt reads as light on something rather than paint on nothing. */
   [data-skin='kaiju'].dark {
+    --kaiju-page: 9 6 16;
     --surface: 9 6 16;
     --surface-raised: 20 13 33;
     --surface-sunken: 4 2 9;
@@ -2111,6 +2138,12 @@
     --kaiju-plate: 168 128 240;
     --kaiju-plate-deep: 64 36 120;
     --kaiju-hide: 14 8 26;
+    --kaiju-hide-lit: 64 36 120;
+    --kaiju-rim: 150 64 255;
+    --kaiju-scale-ink: 168 128 240;
+    --kaiju-eye: 214 120 255;
+    --kaiju-arc: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='56' viewBox='0 0 160 56'%3E%3Cpath d='M0 28 14 18 26 34 40 20 52 36 66 16 80 30 94 22 108 38 122 18 136 32 150 24 160 28' fill='none' stroke='%23f6ecff' stroke-width='1.4' stroke-linejoin='round' stroke-opacity='.85'/%3E%3Cpath d='M0 30 18 40 30 26 46 38 60 24 74 40 90 26 104 34 118 22 132 38 146 28 160 30' fill='none' stroke='%23d49aff' stroke-width='1' stroke-linejoin='round' stroke-opacity='.7'/%3E%3C/svg%3E");
+    --kaiju-bolt: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='144' viewBox='0 0 12 144'%3E%3Cpath d='M6 0 9 14 3 26 10 40 2 55 9 68 4 82 10 96 3 110 8 124 6 144' fill='none' stroke='%23f6ecff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
     --kaiju-halo: 1;
     --kaiju-word-top: 250 242 255;
     --kaiju-word-bottom: 190 120 255;
@@ -8308,16 +8341,20 @@ html.theme-wave::view-transition-new(theme-wave-crest) {
   background-size: auto 100%;
   background-repeat: repeat-x;
   background-position: center bottom;
-  opacity: 0.4;
+  opacity: 0.75;
 }
 
 [data-skin='kaiju'].dark body::after {
   opacity: 0.5;
 }
 
-/* The app shell's own fill hid the wash and the city; the body paints the same surface below. */
+/* The app shell's own fill hid the wash and the city; the body paints the page below. */
 [data-skin='kaiju'] .app-shell {
   background-color: transparent;
+}
+
+[data-skin='kaiju'] body {
+  background-color: rgb(var(--kaiju-page));
 }
 
 /* A task card's inline tint is a `background` shorthand, which also clears its fill; with the city
@@ -8531,8 +8568,7 @@ html.theme-wave::view-transition-new(theme-wave-crest) {
   pointer-events: none;
   /* A zig-zag bolt over a soft column of charge; the bolt is what makes it read as current. */
   background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='144' viewBox='0 0 12 144'%3E%3Cpath d='M6 0 9 14 3 26 10 40 2 55 9 68 4 82 10 96 3 110 8 124 6 144' fill='none' stroke='%23f6ecff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E")
-      center / 100% 100% no-repeat,
+    var(--kaiju-bolt) center / 100% 100% no-repeat,
     linear-gradient(
       to bottom,
       transparent,
@@ -8617,8 +8653,7 @@ html.theme-wave::view-transition-new(theme-wave-crest) {
 
 /* Electricity crawling along the beam: a jagged line that runs left with it and flickers. */
 .kaiju-breath__arc {
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='56' viewBox='0 0 160 56'%3E%3Cpath d='M0 28 14 18 26 34 40 20 52 36 66 16 80 30 94 22 108 38 122 18 136 32 150 24 160 28' fill='none' stroke='%23f6ecff' stroke-width='1.4' stroke-linejoin='round' stroke-opacity='.85'/%3E%3Cpath d='M0 30 18 40 30 26 46 38 60 24 74 40 90 26 104 34 118 22 132 38 146 28 160 30' fill='none' stroke='%23d49aff' stroke-width='1' stroke-linejoin='round' stroke-opacity='.7'/%3E%3C/svg%3E")
-    0 50% / 160px 100% repeat-x;
+  background: var(--kaiju-arc) 0 50% / 160px 100% repeat-x;
   mask-image: linear-gradient(to right, transparent, #000 4%, #000 92%, transparent);
   animation:
     kaiju-breath-fire 1.5s cubic-bezier(0.2, 0.7, 0.2, 1) forwards,
@@ -10043,7 +10078,7 @@ html:not([data-cursor='off'])[data-skin='eldritch'] .cursor-grab:active:not([dat
    Generated by `custom-cursor/kaiju/build-cursors.py`. Its eyes light over pressables; a press bites. */
 
 html:not([data-cursor='off'])[data-skin='kaiju'] {
-  cursor: url("data:image/png;base64,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") 6 4, auto;
+  cursor: url("data:image/png;base64,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") 6 4, auto;
 }
 
 html:not([data-cursor='off'])[data-skin='kaiju'].dark {
@@ -10065,7 +10100,7 @@ html:not([data-cursor='off'])[data-skin='kaiju'] input[type='radio']:not(:disabl
 html:not([data-cursor='off'])[data-skin='kaiju'] input[type='submit']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='kaiju'] input[type='button']:not(:disabled):not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='kaiju'] .cursor-pointer:not([data-native-cursor], [data-native-cursor] *) {
-  cursor: url("data:image/png;base64,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") 6 4, pointer;
+  cursor: url("data:image/png;base64,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") 6 4, pointer;
 }
 
 html:not([data-cursor='off'])[data-skin='kaiju'].dark a[href]:not([data-native-cursor], [data-native-cursor] *),
@@ -10089,7 +10124,7 @@ html:not([data-cursor='off'])[data-skin='kaiju'].dark .cursor-pointer:not([data-
 /* The bite. `:active` on the page itself, and again on the pressable list, which
    otherwise outranks it on the one surface a press matters most. */
 html:not([data-cursor='off'])[data-skin='kaiju'] :active {
-  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAFjklEQVR42u1Wa3BNVxhd+5xzTx7XzXUTN5FIJBIRIpFSUp2oCKJUlVD69JihGjPVl5nWszrqUVRbxVA1TTGq+vDITEv90ErMGKaoIBKkLS1pJBK5Uffk3nPO6g+X3kQQg5rO9Ptzfux9vrX2+tb+9gc0M0iCJO52CH8AIQRIRgKYAiAUQAWAjUKg6OrWxiSEEHfO4urpSIaQLPW6yC/zfuQvR2tYX0uT5HGSs0jG3BNlriYgaXdX0zWgxwSvijhPlK2b94nMXOYty2fdeZJkHck1JGeTnESyW+Mcd0ogtf4S6198bprpEGlm+1aZjAxKNx0izegS85h33rTV3P/DCX6/9SDPlFwi62mSzCcZ2zQJNs8Dfj9uLz3058Ct+ZsNW4tg+e2py9HSYYMQEtxuDZrbTa9OI8DmQoDFgQEDBklLV7wjBYfiEIAMAO7b9obf6R0kXeOGT6fDkmZuWreFSxeuYSvlQSaEZTLR2Yex9t7M6DyYM14dzVlTniFg5+BHXqg3PSTJDY1VaA4JqYFehOiYHE8YBnLHzEHb2Eh8uOoNVF+4eG2LpnkR2tKKIMWOaHsi9hTuUd+c/IEO4FmSOb6bNJNksWmax0i2u6VRrywSJBeTZHbGKK8zII1RQT25ad1W5q3cRDu6MCEsk21DejEluj/jQ3sz3tGHic4sOi3djILtRwySp0huIsmCr6tYfZok2flmJhVNLB48VXyu68PpfQyFIXJwoA2fb1uE40fLMO2192GzWeH1GpCkK/JKkgTNraFdQhx2FmyEagEWTdmrWxWnNHlJew0qOghJnKXJJksi+dfK9x3XPjlKW71mhajVyunV3cjJfhmJSXEYPX4IKitroKrKtQSmaSIoOAilJaWYM/1jzhpfYBzefVHOGtJegoo6AOtpsgTAp00pIfkbxtcNiwBMyHk6W1q1crlRWXeGigrkjp0NmzUU0dGR0LT6BqcxDAO2kBCszVsriotOyr16ZQhnPAADEfu312Qd22UkAUi+lQn9SWwAkDtmYo6ycOEC4w/XSbPyfBW2fLUTqV2SocjK9S0ZApJFhxZUhOQeIaisqMGcibu4fkGpJzpeNgGUNOUDcSNT+shMAzB/2XufYd7cRYarVpf7Z2ahvPwsKsprYFGVhr2GApQ9eLx3Ls6XBUKFHaMn9Tezx8sSFPQUQuy7mvumBBqRmApg9tmyC4EzZ8zH3sIDqHaVo4Ul4jpTCSHBq2twWOOQlTIZCTGpxsgpNjmiE74RQjzZGPy6EtygHO8CSG+TELYt74sl3iHDHzWrLlXAwzoIITUibUKRA3BJP43wthI6dbdJEZ0AAB1J/gTgOMmh/mZUbtqn/yFxBMAwkpsfSEsbRlDXvHWKjEBY5ECQxjUxZVmCy6Xht+pCZEUkie82nEf5CbNzmNOOYS9FAUAbfwzllo/FFRIqAA+AA/36ZeY4gp3wej34ixcQEtgakpBBmr5rSQQEqij5uQLLft0NxbSh7+AUT/aoCBVAGYBCfzNKzXwwPb7abWkdbfX2TO8ha3o9KHTUus9BN+p95aDPlCbCHe3wUJcsvjK3nzF2XoRqDccOAL19al7zQrMI+JWiGBbsGz58JD1mjWGRVZgwUOs+B49+GULIkBQJ7sseJCWkmiNet4uuAyEDWCSEGCSEONeUEW/31ZzhdpF9M0ZogN20qTEMsybQHhDLmJbdGRmYzkE9JxpVv3tIsobkyLsyOfmNbXEk99MkP1qcx/CWSbqEUDpbJNJqiWJcqx7G6RNVJFlCMvmOp6UbqKCSnEHy8tmyC3xq6ERdINSQEKrvyN+jk3SR7HBXwZua/UimkPyWJNd/ks/li9fTFyPuCXiD2aUhkedJHvbJ/tY9Br/1SP6vgN+kLLhvQdxH8P/jPxt/A1J1Wo3ZWqB6AAAAAElFTkSuQmCC") 6 4, auto;
+  cursor: url("data:image/png;base64,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") 6 4, auto;
 }
 
 html:not([data-cursor='off'])[data-skin='kaiju'].dark :active {
@@ -10111,7 +10146,7 @@ html:not([data-cursor='off'])[data-skin='kaiju'] input[type='radio']:not(:disabl
 html:not([data-cursor='off'])[data-skin='kaiju'] input[type='submit']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='kaiju'] input[type='button']:not(:disabled):active:not([data-native-cursor], [data-native-cursor] *),
 html:not([data-cursor='off'])[data-skin='kaiju'] .cursor-pointer:active:not([data-native-cursor], [data-native-cursor] *) {
-  cursor: url("data:image/png;base64,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") 6 4, pointer;
+  cursor: url("data:image/png;base64,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") 6 4, pointer;
 }
 
 html:not([data-cursor='off'])[data-skin='kaiju'].dark a[href]:active:not([data-native-cursor], [data-native-cursor] *),

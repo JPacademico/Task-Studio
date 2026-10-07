@@ -50,6 +50,24 @@ The skin uses it for display and section titles only; the wordmark is separate, 
 stay in a plain sans — see `--font-display` and `--font-sans` on
 `[data-skin='kaiju']` in `src/app/styles/index.css`.
 
+## Centred capitals
+
+The skin sets labels, buttons and titles in capitals, and both of its faces hold
+capitals above the middle of their line box, so a `+` icon beside `NOVO PROJETO`
+centres and the word rides high. Both are corrected with `@font-face` metric
+overrides in `src/app/styles/index.css`, which move the baseline without changing
+the line height:
+
+- **Studiozilla**: `ascent-override: 116.58%`, `descent-override: 40.02%`. Stock it
+  is 1.111 / 0.455 with a 0.766 cap height: caps sat 0.055em high.
+- **Kaiju Sans**: an alias of the system's Bahnschrift (`src: local('Bahnschrift')`,
+  weights 300 to 700 still vary), at `85.94%` / `14.06%` with a 20% line gap. Stock
+  it is 0.794 / 0.206 with a 0.719 cap height: caps sat 0.065em high.
+
+The rule for both: ascent minus descent equals the cap height, and ascent plus
+descent stays what the face already had. A browser without the descriptors (older
+Safari) renders the stock metrics, which is how it looked before.
+
 ## The wordmark
 
 The product name beside the mark is not set in Studiozilla. Mixed case at 16px in a

@@ -58,7 +58,7 @@ export const KaijuMark = ({ className }: GlyphProps) => {
           {stop(1, '--kaiju-volt-core')}
         </linearGradient>
         <linearGradient id={`${id}-hide`} x1="0" y1="0" x2="0" y2="1">
-          {stop(0, '--kaiju-plate-deep')}
+          {stop(0, '--kaiju-hide-lit')}
           {stop(0.7, '--kaiju-hide')}
         </linearGradient>
         <radialGradient id={`${id}-glow`}>
@@ -69,7 +69,7 @@ export const KaijuMark = ({ className }: GlyphProps) => {
         <pattern id={`${id}-scales`} width="5" height="3.4" patternUnits="userSpaceOnUse">
           <path
             d="M0 0a2.5 1.6 0 0 0 5 0M-2.5 1.7a2.5 1.6 0 0 0 5 0M2.5 1.7a2.5 1.6 0 0 0 5 0M0 3.4a2.5 1.6 0 0 0 5 0"
-            stroke="rgb(var(--kaiju-plate))"
+            stroke="rgb(var(--kaiju-scale-ink))"
             strokeOpacity="0.4"
             strokeWidth="0.45"
           />
@@ -89,7 +89,7 @@ export const KaijuMark = ({ className }: GlyphProps) => {
       <rect x="4" y="9" width="34" height="28" fill={`url(#${id}-scales)`} clipPath={`url(#${id}-clip)`} />
       <path
         d={T_BODY}
-        stroke="rgb(var(--kaiju-volt))"
+        stroke="rgb(var(--kaiju-rim))"
         strokeWidth="1.3"
         strokeLinejoin="round"
       />
@@ -98,7 +98,7 @@ export const KaijuMark = ({ className }: GlyphProps) => {
       {[false, true].map((isRight) => (
         <g key={String(isRight)} transform={isRight ? 'matrix(-1 0 0 1 40 0)' : undefined}>
           <circle cx="13.2" cy="14.4" r="4.4" fill={`url(#${id}-glow)`} />
-          <path d={EYE} fill="rgb(var(--kaiju-charge))" stroke="rgb(var(--kaiju-volt-core))" strokeWidth="0.4" />
+          <path d={EYE} fill="rgb(var(--kaiju-eye))" stroke="rgb(var(--kaiju-volt-core))" strokeWidth="0.4" />
           <rect x="12.75" y="13.6" width="1" height="2.5" rx="0.5" fill="rgb(var(--kaiju-hide))" />
           <circle cx="14.6" cy="14.4" r="0.55" fill="rgb(var(--kaiju-volt-core))" />
         </g>

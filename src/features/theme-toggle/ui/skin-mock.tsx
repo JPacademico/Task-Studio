@@ -335,7 +335,7 @@ export const SkinMock = ({
           style={{
             top: '58%',
             height: px(7),
-            background: `linear-gradient(to bottom, transparent, ${kaiju.beam}aa 35%, #f6eeff 50%, ${kaiju.beam}aa 65%, transparent)`,
+            background: `linear-gradient(to bottom, transparent, ${kaiju.beam}aa 35%, #fff6ea 50%, ${kaiju.beam}aa 65%, transparent)`,
             opacity: 0.7,
           }}
         />
