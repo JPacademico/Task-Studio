@@ -29,9 +29,7 @@ const leaf = (color: string, size: number, rotate: number): CSSProperties => ({
 });
 
 /** A dorsal plate, the same outline the real ridge clips its plates to. */
-const PLATE =
-  'polygon(50% 0%, 62% 18%, 56% 24%, 74% 42%, 66% 47%, 86% 70%, 76% 73%, 100% 100%, ' +
-  '0% 100%, 24% 73%, 14% 70%, 34% 47%, 26% 42%, 44% 24%, 38% 18%)';
+const PLATE = 'polygon(56% 0%, 63% 30%, 76% 62%, 100% 100%, 0% 100%, 22% 64%, 40% 30%)';
 
 /** Three star layers, matching the real skin's page wash. */
 const STARFIELD =
@@ -337,7 +335,7 @@ export const SkinMock = ({
           style={{
             top: '58%',
             height: px(7),
-            background: `linear-gradient(to bottom, transparent, ${kaiju.beam}aa 35%, #eef4ff 50%, ${kaiju.beam}aa 65%, transparent)`,
+            background: `linear-gradient(to bottom, transparent, ${kaiju.beam}aa 35%, #f6eeff 50%, ${kaiju.beam}aa 65%, transparent)`,
             opacity: 0.7,
           }}
         />

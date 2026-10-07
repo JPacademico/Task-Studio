@@ -77,6 +77,7 @@ export { EmberRise } from './volcano-decor';
 export { JadeMark, LanternGlyph, ScrollHandle } from './dragon-icons';
 // Something long crosses the page once a minute, on the dragon skin only.
 export { DragonFlight } from './dragon-decor';
+export { BrandName } from './brand-name';
 export { KaijuMark, KaijuRidge } from './kaiju-icons';
 // The kaiju skin's plates round a dialog, its breath across the page and its sparking letters.
 export { KaijuBreath, KaijuGlowLetters, KaijuSpikes } from './kaiju-decor';

@@ -18,8 +18,8 @@ const AMBIENCE = {
   RUNIC: { kind: 'runes', tones: ['#b45309', '#f59e0b'], count: 5 },
   ELDRITCH: { kind: 'eyes', tones: ['#2dd4bf', '#a855f7'], count: 4 },
   DRAGON: { kind: 'lanterns', tones: ['#e05833', '#f2c54f'], count: 7 },
-  // Sparks coming off the plates: atomic blue and the violet charge.
-  KAIJU: { kind: 'motes', tones: ['#5c96ff', '#a45cff'], count: 11 },
+  // Sparks coming off the plates: the volt and the paler charge.
+  KAIJU: { kind: 'motes', tones: ['#9640ff', '#d678ff'], count: 11 },
   // A mid sky blue for the tail and near-white for the head: the one pairing that reads on both
   // halves of the compare box.
   SPACE: { kind: 'meteors', tones: ['#38bdf8', '#f0f9ff'], count: 2 },

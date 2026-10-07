@@ -8,7 +8,7 @@ import { ThemeToggle } from '@/features/theme-toggle/ui/theme-toggle';
 import { wakeApi } from '@/shared/api/client';
 import { cn } from '@/shared/lib/cn';
 import { useIsTouchDevice } from '@/shared/lib/hooks';
-import { StudioMark } from '@/shared/ui';
+import { BrandName, StudioMark } from '@/shared/ui';
 import { AuthScene } from './auth-scene';
 
 interface AuthShellProps {
@@ -51,7 +51,7 @@ export const AuthShell = ({ title, subtitle, children, footer }: AuthShellProps)
           <span className="grid h-11 w-11 place-items-center text-brand">
             <StudioMark className="h-11 w-11" interactive />
           </span>
-          <span className="font-hand text-base font-bold tracking-normal">Task Studio</span>
+          <BrandName textClassName="font-hand text-base font-bold tracking-normal" />
         </span>
 
         {/* The headline only. The paragraph that used to sit under it was flavour text on a

@@ -6,7 +6,7 @@ import { BookText } from 'lucide-react';
 import { LanguageToggle } from '@/features/language-toggle/ui/language-toggle';
 import { ThemeToggle } from '@/features/theme-toggle/ui/theme-toggle';
 import { cn } from '@/shared/lib/cn';
-import { buttonClasses, ScrollProgress, StudioMark } from '@/shared/ui';
+import { BrandName, buttonClasses, ScrollProgress, StudioMark } from '@/shared/ui';
 import { useT } from '@/shared/i18n';
 import { COLUMN } from './columns';
 import { LavaLink } from './lava-link';
@@ -60,7 +60,7 @@ export const LandingNav = () => {
           </span>
           {/* The name in the skin's own handwriting. It was set in the interface typeface at
               14px bold — which is to say it was drawn exactly like every label. */}
-          <span className="font-hand text-base font-bold tracking-normal">Task Studio</span>
+          <BrandName className="h-[1.35rem]" textClassName="font-hand text-base font-bold tracking-normal" />
         </Link>
 
         {/* Hidden below `md`, and deliberately not replaced by a hamburger. The links are

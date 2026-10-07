@@ -8,6 +8,7 @@ import { BatSwarm } from './bat-swarm';
 import { DangerTape } from './danger-tape';
 import { KaijuSpikes } from './kaiju-decor';
 import { LanternDrift } from './lantern-drift';
+import { modalMotion } from './modal-motion';
 import { useEscapeKey } from '@/shared/lib/hooks';
 import { Button } from './button';
 import { translate } from '@/shared/i18n';
@@ -111,16 +112,7 @@ export const Modal = ({
               'safe-b sm:pb-0',
               className,
             )}
-            initial={{ opacity: 0, y: 16, scale: 0.985 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 12, scale: 0.985 }}
-            // A tween beats a spring here: it finishes in a fixed, short time
-            // instead of settling, so the dialog is interactive sooner.
-            transition={
-              reduceMotion
-                ? { duration: 0 }
-                : { duration: 0.18, ease: [0.22, 1, 0.36, 1] }
-            }
+            {...modalMotion(reduceMotion)}
           >
             {(title ?? description) && (
               <header

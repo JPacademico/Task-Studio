@@ -1,126 +1,78 @@
-import { useEffect, useLayoutEffect, useMemo, useState, type CSSProperties, type RefObject } from 'react';
-import { useReducedMotion } from 'framer-motion';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 
 import { useSkin } from '@/app/providers/theme-provider';
+import { modalMotion } from './modal-motion';
+import { useSurge } from './use-surge';
 
 // --- The ridge round a dialog -------------------------------------------------------------------
 
-interface Box {
+/** How many plates stand either side of the middle of a row; a side is `-1` when it has none. */
+interface Shape {
   top: number;
-  left: number;
-  width: number;
-  height: number;
+  side: number;
 }
 
-const sameBox = (a: Box | null, b: Box) =>
-  a !== null && a.top === b.top && a.left === b.left && a.width === b.width && a.height === b.height;
-
-/**
- * Where a dialog finally sits. Re-measured when it resizes or the window does: a centred dialog
- * whose content grows moves its top edge, and the plates stand on that edge.
- */
-const useSettledBox = (anchor: RefObject<HTMLElement | null>, enabled: boolean): Box | null => {
-  const [box, setBox] = useState<Box | null>(null);
-
-  useLayoutEffect(() => {
-    const element = anchor.current;
-    if (!enabled || !element) return;
-
-    let frame = 0;
-    let attempts = 0;
-    let previous: Box | null = null;
-
-    const read = (): Box => {
-      const rect = element.getBoundingClientRect();
-      return {
-        top: Math.round(rect.top),
-        left: Math.round(rect.left),
-        width: Math.round(rect.width),
-        height: Math.round(rect.height),
-      };
-    };
-
-    // The dialog animates in; wait for two equal frames (or a third of a second) before trusting it.
-    const settle = () => {
-      const next = read();
-      if (sameBox(previous, next) || ++attempts >= 20) {
-        setBox((current) => (sameBox(current, next) ? current : next));
-        return;
-      }
-      previous = next;
-      frame = requestAnimationFrame(settle);
-    };
-
-    const restart = () => {
-      cancelAnimationFrame(frame);
-      attempts = 0;
-      previous = null;
-      frame = requestAnimationFrame(settle);
-    };
-
-    restart();
-    const observer = new ResizeObserver(restart);
-    observer.observe(element);
-    window.addEventListener('resize', restart);
-    return () => {
-      cancelAnimationFrame(frame);
-      observer.disconnect();
-      window.removeEventListener('resize', restart);
-    };
-  }, [anchor, enabled]);
-
-  return enabled ? box : null;
-};
-
-interface Plate {
-  x: number;
-  y: number;
-  /** Height in px; the width follows from it. */
-  size: number;
-  /** Which way it points, in degrees: 0 up, −90 left, 90 right. */
-  turn: number;
-}
-
+/** Spacing along a row, in px. Matches `.kaiju-plate--top` and `--left` in `index.css`. */
+const TOP_STEP = 58;
+const SIDE_STEP = 84;
 /** Kept off the rounded corners, where a plate would stand on nothing. */
 const CORNER = 22;
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
-/** Biggest mid-run, smallest at the ends, the way a spine is. */
-const swell = (t: number, base: number, rise: number) => base * (1 - rise + rise * Math.sin(Math.PI * t));
-
 /**
- * The plates, in the order they light: up the left side, along the top, down the right — tail to
- * head. A side flush with the screen (a phone's bottom sheet) has nowhere to stand them.
+ * Sizes the ridge to the dialog's layout box and returns how many plates fit. Offsets ignore the
+ * dialog's own transform, so this is right on the first frame, mid-animation included.
  */
-const layout = (box: Box): Plate[] => {
-  const plates: Plate[] = [];
-  const right = box.left + box.width;
-  const hasSides = box.left > 8 && right < window.innerWidth - 8;
-  const sideCount = clamp(Math.round(box.height / 120), 2, 5);
-  const topCount = clamp(Math.round(box.width / 58), 5, 11);
-  const sideRun = box.height - 2 * CORNER;
-  const topRun = box.width - 2 * CORNER;
+const fit = (panel: HTMLElement, ridge: HTMLElement): Shape => {
+  const { offsetLeft: left, offsetTop: top, offsetWidth: width, offsetHeight: height } = panel;
+  ridge.style.setProperty('--x', `${left}px`);
+  ridge.style.setProperty('--y', `${top}px`);
+  ridge.style.setProperty('--w', `${width}px`);
+  ridge.style.setProperty('--h', `${height}px`);
+  // A dialog near the top of a short window gets shorter plates rather than clipped ones.
+  ridge.style.setProperty('--room', `${Math.max(14, top - 6)}px`);
 
-  if (hasSides) {
-    for (let index = 0; index < sideCount; index++) {
-      const t = (index + 0.5) / sideCount;
-      plates.push({ x: box.left + 1, y: box.top + box.height - CORNER - t * sideRun, size: swell(t, 30, 0.3), turn: -90 });
-    }
-  }
-  for (let index = 0; index < topCount; index++) {
-    const t = (index + 0.5) / topCount;
-    // A dialog near the top of a short window gets shorter plates rather than clipped ones.
-    const size = Math.min(swell(t, 46, 0.45), Math.max(14, box.top - 6));
-    plates.push({ x: box.left + CORNER + t * topRun, y: box.top + 1, size, turn: 0 });
-  }
-  if (hasSides) {
-    for (let index = 0; index < sideCount; index++) {
-      const t = (index + 0.5) / sideCount;
-      plates.push({ x: right - 1, y: box.top + CORNER + t * sideRun, size: swell(t, 30, 0.3), turn: 90 });
-    }
-  }
-  return plates;
+  // A side flush with the screen (a phone's bottom sheet) has nowhere to stand them.
+  const hasSides = left > 8 && left + width < window.innerWidth - 8;
+  return {
+    top: clamp(Math.floor((width / 2 - CORNER) / TOP_STEP), 1, 5),
+    side: hasSides ? clamp(Math.floor((height / 2 - CORNER) / SIDE_STEP), 0, 3) : -1,
+  };
+};
+
+interface Plate {
+  key: string;
+  edge: 'top' | 'left' | 'right';
+  /** Places from the middle of its side. */
+  k: number;
+  /** Height in px; the width follows from it. */
+  size: number;
+  /** Where it falls in the surge. */
+  order: number;
+}
+
+/** Biggest in the middle, smallest at the ends, the way a spine is. */
+const swell = (k: number, base: number, rise: number, reach: number) =>
+  base * (1 - rise * Math.min(1, (k / reach) ** 2));
+
+const range = (from: number, to: number): number[] => {
+  const step = from <= to ? 1 : -1;
+  return Array.from({ length: Math.abs(to - from) + 1 }, (_, index) => from + index * step);
+};
+
+/** The plates in the order they surge: up the left side, along the top, down the right. */
+const layout = ({ top, side }: Shape): Plate[] => {
+  const rows: Omit<Plate, 'order'>[] = [];
+  const add = (edge: Plate['edge'], ks: number[], base: number, rise: number, reach: number) => {
+    for (const k of ks) rows.push({ key: `${edge}${k}`, edge, k, size: swell(k, base, rise, reach) });
+  };
+
+  if (side >= 0) add('left', range(side, -side), 30, 0.3, 3.5);
+  add('top', range(-top, top), 46, 0.42, 5.5);
+  if (side >= 0) add('right', range(-side, side), 30, 0.3, 3.5);
+  return rows.map((row, order) => ({ ...row, order }));
 };
 
 interface KaijuSpikesProps {
@@ -129,36 +81,61 @@ interface KaijuSpikesProps {
 }
 
 /**
- * Dorsal plates round the outside of a dialog, on the Kaiju skin only. They rise and light one
- * after another, half a second apart — the charge before the breath.
+ * Dorsal plates round the outside of a dialog, on the Kaiju skin only. They arrive and leave with
+ * it, and every few seconds surge in turn, tail to head: each one grows and burns.
  */
 export const KaijuSpikes = ({ anchor }: KaijuSpikesProps) => {
   const skin = useSkin();
-  const box = useSettledBox(anchor, skin === 'KAIJU');
-  const plates = useMemo(() => (box ? layout(box) : []), [box]);
+  const reduceMotion = useReducedMotion();
+  const ridgeRef = useRef<HTMLDivElement>(null);
+  const [shape, setShape] = useState<Shape | null>(null);
+  const isKaiju = skin === 'KAIJU';
 
-  if (plates.length === 0) return null;
+  useLayoutEffect(() => {
+    const panel = anchor.current;
+    const ridge = ridgeRef.current;
+    if (!isKaiju || !panel || !ridge) return;
+
+    // Only a change in how many plates fit re-renders; moving and sizing the ridge is a style write.
+    const update = () => {
+      const next = fit(panel, ridge);
+      setShape((current) => (current?.top === next.top && current.side === next.side ? current : next));
+    };
+
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(panel);
+    window.addEventListener('resize', update);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', update);
+    };
+  }, [anchor, isKaiju]);
+
+  useSurge(ridgeRef, isKaiju && !reduceMotion && shape !== null, 500, 6_000, 10_000);
+
+  const plates = useMemo(() => (shape ? layout(shape) : []), [shape]);
+
+  if (!isKaiju) return null;
 
   return (
-    <div aria-hidden className="kaiju-ridge inset-0">
-      {plates.map((plate, index) => (
+    <motion.div ref={ridgeRef} aria-hidden className="kaiju-ridge" {...modalMotion(reduceMotion)}>
+      {plates.map((plate) => (
         <span
-          key={index}
-          className="kaiju-plate"
+          key={plate.key}
+          className={`kaiju-plate kaiju-plate--${plate.edge}`}
           style={
             {
-              left: plate.x,
-              top: plate.y,
-              '--i': index,
-              '--s': `${plate.size.toFixed(1)}px`,
-              '--r': `${plate.turn}deg`,
+              '--i': plate.order,
+              '--k': plate.k,
+              '--size': `${plate.size.toFixed(1)}px`,
             } as CSSProperties
           }
         >
           <i />
         </span>
       ))}
-    </div>
+    </motion.div>
   );
 };
 
@@ -186,7 +163,7 @@ const nextBreath = (): Breath => ({
   key: Date.now(),
 });
 
-/** Every thirty seconds on the Kaiju skin, a beam of atomic blue crosses the page, left to right. */
+/** Every thirty seconds on the Kaiju skin, a beam of violet lightning crosses the page, left to right. */
 export const KaijuBreath = () => {
   const skin = useSkin();
   const reduceMotion = useReducedMotion();

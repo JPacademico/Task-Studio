@@ -46,9 +46,36 @@ It needs `fonttools`, `skia-pathops` and `pillow`. What it changes:
   steer the wrong points; `gasp` asks for smoothing at every size instead.
 - `preview.png` is written beside it on every build, for checking by eye.
 
-The skin uses it for display and section titles only. Body text and task titles
+The skin uses it for display and section titles only; the wordmark is separate, below. Body text and task titles
 stay in a plain sans — see `--font-display` and `--font-sans` on
 `[data-skin='kaiju']` in `src/app/styles/index.css`.
+
+## The wordmark
+
+The product name beside the mark is not set in Studiozilla. Mixed case at 16px in a
+face with bitten feet read as melted, so the name is drawn as lettering instead:
+
+- [Oxanium](https://fonts.google.com/specimen/Oxanium) ExtraBold (`wght` 800) by
+  the Oxanium Project Authors, from `google/fonts`: chamfered, heavy, and still sharp at nav
+  size. `oxanium.ttf` is the variable font byte for byte; its licence is
+  `LICENCE-oxanium.txt`.
+- `build-wordmark.py` shapes `TASK STUDIO` with HarfBuzz (so the kerning is the
+  font's), leans it 9 degrees forward, and fuses a crest of three dorsal plates onto
+  each T's crossbar with `skia-pathops`. Re-run it after any change:
+
+```
+python custom-font/kaiju/build-wordmark.py
+```
+
+  It writes `src/shared/ui/kaiju-wordmark.ts` (one SVG path, no font to load) and
+  `wordmark-preview.png`. It needs `fonttools`, `skia-pathops`, `uharfbuzz` and
+  `pillow`.
+- `BrandName` (`src/shared/ui/brand-name.tsx`) draws the path on the Kaiju skin, a
+  gradient face over a one-step extrusion, and sets plain text on every other.
+
+The plate outline in `build-wordmark.py` is the one `PLATE` in
+`src/shared/ui/kaiju-icons.tsx` and `--kaiju-plate-shape` in `index.css` draw.
+Change one and change all three.
 
 ## Licence
 

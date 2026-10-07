@@ -14,7 +14,7 @@ import { cn } from '@/shared/lib/cn';
 import { useIsTouchDevice } from '@/shared/lib/hooks';
 import { useNavPreferences } from '@/shared/lib/nav-preferences.store';
 import { useEdgeReveal } from '@/shared/lib/use-edge-reveal';
-import { Avatar, Button, EdgeAffordance, LavaButton, NavPinButton, SkinLoader, StudioMark } from '@/shared/ui';
+import { Avatar, BrandName, Button, EdgeAffordance, LavaButton, NavPinButton, SkinLoader, StudioMark } from '@/shared/ui';
 
 interface TopNavigationProps {
   onOpenMobileMenu: () => void;
@@ -95,7 +95,7 @@ export const TopNavigation = ({ onOpenMobileMenu, onCreateProject }: TopNavigati
           <span className="grid h-8 w-8 shrink-0 place-items-center text-brand">
             <StudioMark className="h-8 w-8" interactive />
           </span>
-          <span className="hidden font-hand text-base font-bold tracking-normal sm:block">Task Studio</span>
+          <BrandName className="hidden sm:block" textClassName="font-hand text-base font-bold tracking-normal" />
         </Link>
 
         <span

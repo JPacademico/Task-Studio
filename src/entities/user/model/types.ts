@@ -21,7 +21,7 @@ export type ThemeSkin =
   | 'HALLOWEEN'
   /** Imperial China: lacquer red, jade and gold, scroll borders, a dragon. */
   | 'DRAGON'
-  /** A monster come ashore: scaled hide, dorsal plates that charge, an atomic beam. */
+  /** A monster come ashore: black scaled hide, dorsal plates that surge, a violet breath. */
   | 'KAIJU';
 
 /** The one place a skin's human name is written down. */

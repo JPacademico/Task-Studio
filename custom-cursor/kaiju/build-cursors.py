@@ -54,33 +54,33 @@ PLATES = [
 ]
 
 PALETTES = {
-    # Charcoal hide on the pale page, bone plates, and a pale rim for dark controls.
+    # Black-violet hide on the pale page, violet plates, and a pale rim for dark controls.
     'light': {
-        'hide': (40, 44, 52, 255),
-        'shade': (22, 24, 30, 255),
-        'plate': (206, 214, 226, 255),
-        'plate_edge': (120, 132, 150, 255),
+        'hide': (34, 18, 62, 255),
+        'shade': (16, 8, 32, 255),
+        'plate': (150, 104, 240, 255),
+        'plate_edge': (88, 48, 168, 255),
         'teeth': (246, 243, 232, 255),
-        'mouth': (122, 20, 36, 255),
+        'mouth': (140, 20, 84, 255),
         'eye': (232, 214, 150, 255),
-        'glow_core': (244, 250, 255, 255),
-        'glow': (120, 140, 255),
-        'glow_outer': (168, 92, 255),
-        'rim': (236, 240, 246, 255),
+        'glow_core': (248, 240, 255, 255),
+        'glow': (176, 96, 255),
+        'glow_outer': (214, 120, 255),
+        'rim': (240, 232, 255, 255),
     },
-    # A lighter hide on the night palette, ringed in atomic blue so it never sinks into the dark.
+    # A lighter hide on the night palette, ringed in violet so it never sinks into the dark.
     'dark': {
-        'hide': (64, 72, 86, 255),
-        'shade': (34, 38, 48, 255),
-        'plate': (196, 208, 236, 255),
-        'plate_edge': (98, 120, 196, 255),
+        'hide': (58, 40, 96, 255),
+        'shade': (30, 18, 56, 255),
+        'plate': (192, 154, 250, 255),
+        'plate_edge': (122, 72, 214, 255),
         'teeth': (246, 243, 232, 255),
-        'mouth': (150, 26, 46, 255),
+        'mouth': (150, 24, 92, 255),
         'eye': (232, 214, 150, 255),
-        'glow_core': (244, 250, 255, 255),
-        'glow': (120, 150, 255),
-        'glow_outer': (176, 98, 255),
-        'rim': (62, 92, 210, 255),
+        'glow_core': (250, 242, 255, 255),
+        'glow': (196, 116, 255),
+        'glow_outer': (150, 64, 255),
+        'rim': (150, 84, 255, 255),
     },
 }
 
@@ -228,7 +228,7 @@ for name, image in FRAMES.items():
 
 # A contact sheet of every frame at 4x, on both page tones, for checking by eye.
 sheet = Image.new('RGBA', (BOX * 4 * 4 + 50, BOX * 4 * 2 + 30), (128, 128, 128, 255))
-for row, (name, tone) in enumerate((('light', (232, 236, 242, 255)), ('dark', (10, 13, 18, 255)))):
+for row, (name, tone) in enumerate((('light', (232, 226, 245, 255)), ('dark', (9, 6, 16, 255)))):
     for col, frame in enumerate(('rest', 'hover', 'press', 'press-hover')):
         tile = Image.new('RGBA', (BOX, BOX), tone)
         tile.alpha_composite(FRAMES[f'{name}-{frame}'])

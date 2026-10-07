@@ -27,7 +27,7 @@ import {
 import { useCurrentUser } from '@/features/auth/model/session.store';
 import { cn } from '@/shared/lib/cn';
 import { withAlpha } from '@/shared/lib/colors';
-import { Avatar, LavaButton, Segmented, StudioMark } from '@/shared/ui';
+import { Avatar, BrandName, LavaButton, Segmented, StudioMark } from '@/shared/ui';
 import { useT, type TranslationKey } from '@/shared/i18n';
 import type { TourStage } from '../model/steps';
 
@@ -52,7 +52,7 @@ const MockTopBar = () => {
       <span className="grid h-8 w-8 place-items-center text-brand">
         <StudioMark className="h-8 w-8" />
       </span>
-      <span className="hidden font-hand text-base font-bold sm:block">Task Studio</span>
+      <BrandName className="hidden sm:block" textClassName="font-hand text-base font-bold" />
 
       <div className="ml-auto flex items-center gap-1.5">
         <Spot id="pin" className="grid h-9 w-9 place-items-center rounded-xl text-brand">

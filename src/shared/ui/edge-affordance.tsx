@@ -130,12 +130,11 @@ export const EdgeAffordance = ({ edge, isHidden, label }: EdgeAffordanceProps) =
             ROD[side],
             isScroll
               ? 'text-brand opacity-90 drop-shadow-[0_0_10px_rgb(var(--brand)/0.35)]'
-              : 'drop-shadow-[0_0_8px_rgb(var(--kaiju-atomic)/0.45)]',
-            // The ridge's light sweep stops with the menu on screen, like every loop here.
-            !isAnimating && '[&_.kaiju-cue-lit]:[animation:none]',
+              : 'drop-shadow-[0_0_8px_rgb(var(--kaiju-volt)/0.5)]',
           )}
         >
-          {isScroll ? <ScrollHandle edge={side} /> : <KaijuRidge edge={side} />}
+          {/* The ridge's surges stop with the menu on screen, like every loop here. */}
+          {isScroll ? <ScrollHandle edge={side} /> : <KaijuRidge edge={side} isActive={isAnimating} />}
         </span>
       </div>
     );
