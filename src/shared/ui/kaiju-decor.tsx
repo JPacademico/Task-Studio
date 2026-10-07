@@ -245,12 +245,17 @@ const isOnScreen = (element: Element): boolean => {
 
 /** One visible letter in the skin's face, as a range — or null when there is nothing to light. */
 const pickGlyph = (): Range | null => {
-  const candidates = [...document.querySelectorAll(LETTERING)].filter(
-    (element) => !element.closest('[aria-hidden="true"]') && isOnScreen(element),
-  );
-  if (candidates.length === 0) return null;
+  // Titles in random order, measuring only until one is on screen rather than every one each spark.
+  const candidates = [...document.querySelectorAll(LETTERING)];
+  let element: Element | null = null;
+  for (let end = candidates.length - 1; end >= 0 && !element; end--) {
+    const pick = Math.floor(Math.random() * (end + 1));
+    [candidates[pick], candidates[end]] = [candidates[end], candidates[pick]];
+    const candidate = candidates[end];
+    if (!candidate.closest('[aria-hidden="true"]') && isOnScreen(candidate)) element = candidate;
+  }
+  if (!element) return null;
 
-  const element = candidates[Math.floor(Math.random() * candidates.length)];
   const letters: [Text, number][] = [];
   const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {

@@ -126,7 +126,8 @@ const TaskCardBase = ({
          that reads as polish; on a board it is the whole point of the page arriving in a blur. */
       transition={{ type: 'spring', stiffness: 380, damping: 32 }}
       className={cn(
-        'ui-card gpu group relative flex flex-col gap-3 overflow-hidden rounded-2xl border border-edge',
+        // `ui-task-card` is a hook with no styles; kaiju uses it to put back the fill below.
+        'ui-card ui-task-card gpu group relative flex flex-col gap-3 overflow-hidden rounded-2xl border border-edge',
         'bg-surface-raised p-4 text-left transition-shadow duration-200',
         isDragging ? 'shadow-glow' : 'hover:shadow-panel',
         openTask && 'cursor-pointer',

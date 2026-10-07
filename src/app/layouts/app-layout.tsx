@@ -69,7 +69,8 @@ export const AppLayout = () => {
   return (
     /* Back to `relative` alone. `isolate` was here for exactly one thing — giving the Halloween
        blood a stacking context to sit behind everything in — and that decoration is gone. */
-    <div className="relative min-h-full bg-surface">
+    /* `app-shell` is a hook with no styles: kaiju clears this fill to show its wash and skyline. */
+    <div className="app-shell relative min-h-full bg-surface">
 
       <TopNavigation
         onOpenMobileMenu={() => setIsMobileMenuOpen(true)}

@@ -1995,7 +1995,8 @@
       sans-serif;
     --font-sans: 'Bahnschrift', 'DIN Alternate', 'Roboto Condensed', 'Segoe UI', system-ui,
       sans-serif;
-    --font-hand: var(--font-display);
+    /* Post-its and task notes are the reader's own words: the sans, not the cracked titles. */
+    --font-hand: var(--font-sans);
     --heading-transform: uppercase;
     --heading-tracking: 0.03em;
 
@@ -2005,10 +2006,11 @@
       0 12px 28px -18px rgb(44 14 110 / 0.55);
     --press-travel: 1px;
 
-    /* Scales: rows of shallow arcs, each row offset by half a scale. Arcs shallower than the row
-       pitch never cross, so no occlusion is needed. */
+    /* Scales: rows of shallow arcs, each row offset by half a scale. Panels add a sheen; rails
+       wear the scales alone. */
+    --kaiju-scales: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='18' viewBox='0 0 28 18'%3E%3Cg fill='none' stroke='%2342208a' stroke-opacity='.11'%3E%3Cpath d='M0 0a14 8 0 0 0 28 0M-14 9a14 8 0 0 0 28 0M14 9a14 8 0 0 0 28 0M0 18a14 8 0 0 0 28 0'/%3E%3C/g%3E%3C/svg%3E");
     --panel-texture:
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='18' viewBox='0 0 28 18'%3E%3Cg fill='none' stroke='%2342208a' stroke-opacity='.11'%3E%3Cpath d='M0 0a14 8 0 0 0 28 0M-14 9a14 8 0 0 0 28 0M14 9a14 8 0 0 0 28 0M0 18a14 8 0 0 0 28 0'/%3E%3C/g%3E%3C/svg%3E"),
+      var(--kaiju-scales),
       linear-gradient(180deg, rgb(var(--kaiju-volt) / 0.07), transparent 40%);
     --panel-texture-size: 28px 18px, auto;
 
@@ -2017,9 +2019,12 @@
       radial-gradient(90% 55% at 50% 118%, rgb(var(--kaiju-volt) / 0.2), transparent 62%),
       radial-gradient(60% 40% at 88% -6%, rgb(var(--kaiju-charge) / 0.12), transparent 60%);
 
-    /* The rails are lit from the top edge, once. */
-    --rail-wash-left: linear-gradient(180deg, rgb(var(--kaiju-volt) / 0.16), transparent 38%);
-    --rail-wash-right: linear-gradient(180deg, rgb(var(--kaiju-volt) / 0.16), transparent 38%);
+    /* The rails carry scales, not a wash. */
+    --rail-wash-left: none;
+    --rail-wash-right: none;
+
+    /* The city along the foot of the page; see `body::after`. */
+    --kaiju-skyline: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='960' height='120' viewBox='0 0 960 120'%3E%3Cpath d='M3 19h31v101h-31Z M43 57h20v63h-20Z M70 29h34v91h-34Z M86 17h2v12h-2Z M106 34h16v86h-16Z M132 30h15v90h-15Z M154 21h34v99h-34Z M170 13h2v8h-2Z M196 65h16v55h-16Z M203 54h2v11h-2Z M221 19h14v101h-14Z M242 56h32v64h-32Z M281 26h14v94h-14Z M287 8h2v18h-2Z M299 33h27v87h-27Z M330 20h24v100h-24Z M336 15h12v5h-12Z M341 6h2v9h-2Z M360 50h17v70h-17Z M377 55h14v65h-14Z M383 47h2v8h-2Z M398 23h26v97h-26Z M410 5h2v18h-2Z M427 47h22v73h-22Z M437 34h2v13h-2Z M449 20h27v100h-27Z M461 11h2v9h-2Z M476 39h15v81h-15Z M493 56h31v64h-31Z M507 46h2v10h-2Z M530 44h34v76h-34Z M540 36h14v8h-14Z M546 19h2v17h-2Z M568 55h14v65h-14Z M574 38h2v17h-2Z M592 62h32v58h-32Z M597 54h22v8h-22Z M624 47h33v73h-33Z M658 55h16v65h-16Z M677 30h14v90h-14Z M700 60h28v60h-28Z M737 44h18v76h-18Z M745 34h2v10h-2Z M759 16h21v104h-21Z M783 21h19v99h-19Z M810 25h20v95h-20Z M837 63h33v57h-33Z M852 55h2v8h-2Z M878 53h22v67h-22Z M906 42h22v78h-22Z M937 50h21v70h-21Z' fill='%23c6b6ea' fill-opacity='.6'/%3E%3Cpath d='M6 95h44v25h-44Z M14 84h28v11h-28Z M52 88h34v32h-34Z M56 80h26v8h-26Z M86 95h32v25h-32Z M118 73h58v47h-58Z M146 65h2v8h-2Z M180 89h49v31h-49Z M231 77h62v43h-62Z M295 120L295 95L314 95L319 104L326 99L332 110L340 102L345 107L357 105L357 120Z M360 70h37v50h-37Z M398 89h37v31h-37Z M439 63h38v57h-38Z M444 52h28v11h-28Z M457 40h2v12h-2Z M481 63h43v57h-43Z M490 54h25v9h-25Z M527 87h61v33h-61Z M534 81h47v6h-47Z M591 79h41v41h-41Z M636 76h32v44h-32Z M640 71h24v5h-24Z M671 90h27v30h-27Z M699 66h29v54h-29Z M728 99h48v21h-48Z M777 96h28v24h-28Z M785 88h12v8h-12Z M808 87h44v33h-44Z M820 80h20v7h-20Z M856 84h41v36h-41Z M862 79h29v5h-29Z M899 74h59v46h-59Z' fill='%23ab97da' fill-opacity='.75'/%3E%3Cpath d='M28 25h2v3h-2Z M21 33h2v3h-2Z M7 41h2v3h-2Z M21 41h2v3h-2Z M14 65h2v3h-2Z M14 89h2v3h-2Z M21 89h2v3h-2Z M47 95h2v3h-2Z M74 51h2v3h-2Z M74 67h2v3h-2Z M74 75h2v3h-2Z M88 83h2v3h-2Z M110 56h2v3h-2Z M117 88h2v3h-2Z M136 52h2v3h-2Z M136 60h2v3h-2Z M136 92h2v3h-2Z M136 100h2v3h-2Z M172 27h2v3h-2Z M172 51h2v3h-2Z M158 67h2v3h-2Z M165 75h2v3h-2Z M207 79h2v3h-2Z M200 87h2v3h-2Z M246 62h2v3h-2Z M267 110h2v3h-2Z M317 71h2v3h-2Z M317 79h2v3h-2Z M341 90h2v3h-2Z M334 98h2v3h-2Z M381 69h2v3h-2Z M381 93h2v3h-2Z M409 29h2v3h-2Z M409 45h2v3h-2Z M409 77h2v3h-2Z M416 77h2v3h-2Z M416 85h2v3h-2Z M402 101h2v3h-2Z M416 101h2v3h-2Z M431 85h2v3h-2Z M460 26h2v3h-2Z M453 34h2v3h-2Z M453 90h2v3h-2Z M467 90h2v3h-2Z M453 106h2v3h-2Z M511 70h2v3h-2Z M497 86h2v3h-2Z M511 86h2v3h-2Z M497 94h2v3h-2Z M504 94h2v3h-2Z M534 58h2v3h-2Z M541 90h2v3h-2Z M555 106h2v3h-2Z M572 101h2v3h-2Z M603 68h2v3h-2Z M610 92h2v3h-2Z M596 108h2v3h-2Z M603 108h2v3h-2Z M649 69h2v3h-2Z M662 61h2v3h-2Z M669 61h2v3h-2Z M669 93h2v3h-2Z M704 66h2v3h-2Z M741 50h2v3h-2Z M741 74h2v3h-2Z M794 35h2v3h-2Z M787 99h2v3h-2Z M794 99h2v3h-2Z M814 39h2v3h-2Z M821 103h2v3h-2Z M841 85h2v3h-2Z M855 93h2v3h-2Z M882 67h2v3h-2Z M882 99h2v3h-2Z M941 80h2v3h-2Z M948 80h2v3h-2Z M24 101h2v3h-2Z M24 109h2v3h-2Z M77 102h2v3h-2Z M104 101h2v3h-2Z M104 109h2v3h-2Z M111 109h2v3h-2Z M122 79h2v3h-2Z M157 87h2v3h-2Z M136 95h2v3h-2Z M164 111h2v3h-2Z M198 95h2v3h-2Z M205 95h2v3h-2Z M212 103h2v3h-2Z M270 107h2v3h-2Z M364 84h2v3h-2Z M385 92h2v3h-2Z M402 111h2v3h-2Z M464 69h2v3h-2Z M457 77h2v3h-2Z M471 101h2v3h-2Z M485 93h2v3h-2Z M506 93h2v3h-2Z M538 93h2v3h-2Z M531 109h2v3h-2Z M545 109h2v3h-2Z M573 109h2v3h-2Z M595 109h2v3h-2Z M647 98h2v3h-2Z M710 104h2v3h-2Z M753 105h2v3h-2Z M760 105h2v3h-2Z M788 102h2v3h-2Z M795 102h2v3h-2Z M840 109h2v3h-2Z M881 98h2v3h-2Z M874 106h2v3h-2Z M888 106h2v3h-2Z M924 88h2v3h-2Z M952 88h2v3h-2Z M903 104h2v3h-2Z' fill='%23ffffff' fill-opacity='.75'/%3E%3Cpath d='M85.5 16a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M169.5 12a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M202.5 53a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M286.5 7a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M340.5 5a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M382.5 46a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M409.5 4a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M436.5 33a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M460.5 10a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M506.5 45a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M545.5 18a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M573.5 37a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M744.5 33a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M851.5 54a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M145.5 64a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M456.5 39a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0' fill='%237a36f0'/%3E%3C/svg%3E");
 
     --btn-overlay: linear-gradient(180deg, rgb(255 255 255 / 0.18), transparent 60%);
     --btn-shadow: 0 2px 0 rgb(30 8 80 / 0.4);
@@ -2045,6 +2050,8 @@
     --kaiju-plate: 132 84 236;
     --kaiju-plate-deep: 74 38 150;
     --kaiju-hide: 26 12 52;
+    /* How hard glows bloom: a pale page turns a full-strength halo into a smudge. */
+    --kaiju-halo: 0.45;
     /* The wordmark: ink down to violet, over a pale extrusion. */
     --kaiju-word-top: 70 24 150;
     --kaiju-word-bottom: 112 40 240;
@@ -2078,8 +2085,9 @@
       0 16px 36px -20px rgb(0 0 0 / 0.9),
       0 0 0 1px rgb(var(--kaiju-volt) / 0.14);
 
+    --kaiju-scales: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='18' viewBox='0 0 28 18'%3E%3Cg fill='none' stroke='%23b890ff' stroke-opacity='.06'%3E%3Cpath d='M0 0a14 8 0 0 0 28 0M-14 9a14 8 0 0 0 28 0M14 9a14 8 0 0 0 28 0M0 18a14 8 0 0 0 28 0'/%3E%3C/g%3E%3C/svg%3E");
     --panel-texture:
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='18' viewBox='0 0 28 18'%3E%3Cg fill='none' stroke='%23b890ff' stroke-opacity='.06'%3E%3Cpath d='M0 0a14 8 0 0 0 28 0M-14 9a14 8 0 0 0 28 0M14 9a14 8 0 0 0 28 0M0 18a14 8 0 0 0 28 0'/%3E%3C/g%3E%3C/svg%3E"),
+      var(--kaiju-scales),
       linear-gradient(180deg, rgb(var(--kaiju-volt) / 0.08), transparent 42%);
 
     --page-wash:
@@ -2087,8 +2095,7 @@
       radial-gradient(60% 40% at 88% -6%, rgb(var(--kaiju-charge) / 0.18), transparent 60%),
       radial-gradient(70% 50% at 8% 0%, rgb(0 0 0 / 0.55), transparent 60%);
 
-    --rail-wash-left: linear-gradient(180deg, rgb(var(--kaiju-volt) / 0.24), transparent 42%);
-    --rail-wash-right: linear-gradient(180deg, rgb(var(--kaiju-volt) / 0.24), transparent 42%);
+    --kaiju-skyline: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='960' height='120' viewBox='0 0 960 120'%3E%3Cpath d='M3 19h31v101h-31Z M43 57h20v63h-20Z M70 29h34v91h-34Z M86 17h2v12h-2Z M106 34h16v86h-16Z M132 30h15v90h-15Z M154 21h34v99h-34Z M170 13h2v8h-2Z M196 65h16v55h-16Z M203 54h2v11h-2Z M221 19h14v101h-14Z M242 56h32v64h-32Z M281 26h14v94h-14Z M287 8h2v18h-2Z M299 33h27v87h-27Z M330 20h24v100h-24Z M336 15h12v5h-12Z M341 6h2v9h-2Z M360 50h17v70h-17Z M377 55h14v65h-14Z M383 47h2v8h-2Z M398 23h26v97h-26Z M410 5h2v18h-2Z M427 47h22v73h-22Z M437 34h2v13h-2Z M449 20h27v100h-27Z M461 11h2v9h-2Z M476 39h15v81h-15Z M493 56h31v64h-31Z M507 46h2v10h-2Z M530 44h34v76h-34Z M540 36h14v8h-14Z M546 19h2v17h-2Z M568 55h14v65h-14Z M574 38h2v17h-2Z M592 62h32v58h-32Z M597 54h22v8h-22Z M624 47h33v73h-33Z M658 55h16v65h-16Z M677 30h14v90h-14Z M700 60h28v60h-28Z M737 44h18v76h-18Z M745 34h2v10h-2Z M759 16h21v104h-21Z M783 21h19v99h-19Z M810 25h20v95h-20Z M837 63h33v57h-33Z M852 55h2v8h-2Z M878 53h22v67h-22Z M906 42h22v78h-22Z M937 50h21v70h-21Z' fill='%233a2270' fill-opacity='.5'/%3E%3Cpath d='M6 95h44v25h-44Z M14 84h28v11h-28Z M52 88h34v32h-34Z M56 80h26v8h-26Z M86 95h32v25h-32Z M118 73h58v47h-58Z M146 65h2v8h-2Z M180 89h49v31h-49Z M231 77h62v43h-62Z M295 120L295 95L314 95L319 104L326 99L332 110L340 102L345 107L357 105L357 120Z M360 70h37v50h-37Z M398 89h37v31h-37Z M439 63h38v57h-38Z M444 52h28v11h-28Z M457 40h2v12h-2Z M481 63h43v57h-43Z M490 54h25v9h-25Z M527 87h61v33h-61Z M534 81h47v6h-47Z M591 79h41v41h-41Z M636 76h32v44h-32Z M640 71h24v5h-24Z M671 90h27v30h-27Z M699 66h29v54h-29Z M728 99h48v21h-48Z M777 96h28v24h-28Z M785 88h12v8h-12Z M808 87h44v33h-44Z M820 80h20v7h-20Z M856 84h41v36h-41Z M862 79h29v5h-29Z M899 74h59v46h-59Z' fill='%231a0e33' fill-opacity='.9'/%3E%3Cpath d='M28 25h2v3h-2Z M21 33h2v3h-2Z M7 41h2v3h-2Z M21 41h2v3h-2Z M14 65h2v3h-2Z M14 89h2v3h-2Z M21 89h2v3h-2Z M47 95h2v3h-2Z M74 51h2v3h-2Z M74 67h2v3h-2Z M74 75h2v3h-2Z M88 83h2v3h-2Z M110 56h2v3h-2Z M117 88h2v3h-2Z M136 52h2v3h-2Z M136 60h2v3h-2Z M136 92h2v3h-2Z M136 100h2v3h-2Z M172 27h2v3h-2Z M172 51h2v3h-2Z M158 67h2v3h-2Z M165 75h2v3h-2Z M207 79h2v3h-2Z M200 87h2v3h-2Z M246 62h2v3h-2Z M267 110h2v3h-2Z M317 71h2v3h-2Z M317 79h2v3h-2Z M341 90h2v3h-2Z M334 98h2v3h-2Z M381 69h2v3h-2Z M381 93h2v3h-2Z M409 29h2v3h-2Z M409 45h2v3h-2Z M409 77h2v3h-2Z M416 77h2v3h-2Z M416 85h2v3h-2Z M402 101h2v3h-2Z M416 101h2v3h-2Z M431 85h2v3h-2Z M460 26h2v3h-2Z M453 34h2v3h-2Z M453 90h2v3h-2Z M467 90h2v3h-2Z M453 106h2v3h-2Z M511 70h2v3h-2Z M497 86h2v3h-2Z M511 86h2v3h-2Z M497 94h2v3h-2Z M504 94h2v3h-2Z M534 58h2v3h-2Z M541 90h2v3h-2Z M555 106h2v3h-2Z M572 101h2v3h-2Z M603 68h2v3h-2Z M610 92h2v3h-2Z M596 108h2v3h-2Z M603 108h2v3h-2Z M649 69h2v3h-2Z M662 61h2v3h-2Z M669 61h2v3h-2Z M669 93h2v3h-2Z M704 66h2v3h-2Z M741 50h2v3h-2Z M741 74h2v3h-2Z M794 35h2v3h-2Z M787 99h2v3h-2Z M794 99h2v3h-2Z M814 39h2v3h-2Z M821 103h2v3h-2Z M841 85h2v3h-2Z M855 93h2v3h-2Z M882 67h2v3h-2Z M882 99h2v3h-2Z M941 80h2v3h-2Z M948 80h2v3h-2Z M24 101h2v3h-2Z M24 109h2v3h-2Z M77 102h2v3h-2Z M104 101h2v3h-2Z M104 109h2v3h-2Z M111 109h2v3h-2Z M122 79h2v3h-2Z M157 87h2v3h-2Z M136 95h2v3h-2Z M164 111h2v3h-2Z M198 95h2v3h-2Z M205 95h2v3h-2Z M212 103h2v3h-2Z M270 107h2v3h-2Z M364 84h2v3h-2Z M385 92h2v3h-2Z M402 111h2v3h-2Z M464 69h2v3h-2Z M457 77h2v3h-2Z M471 101h2v3h-2Z M485 93h2v3h-2Z M506 93h2v3h-2Z M538 93h2v3h-2Z M531 109h2v3h-2Z M545 109h2v3h-2Z M573 109h2v3h-2Z M595 109h2v3h-2Z M647 98h2v3h-2Z M710 104h2v3h-2Z M753 105h2v3h-2Z M760 105h2v3h-2Z M788 102h2v3h-2Z M795 102h2v3h-2Z M840 109h2v3h-2Z M881 98h2v3h-2Z M874 106h2v3h-2Z M888 106h2v3h-2Z M924 88h2v3h-2Z M952 88h2v3h-2Z M903 104h2v3h-2Z' fill='%23c9a2ff' fill-opacity='.5'/%3E%3Cpath d='M85.5 16a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M169.5 12a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M202.5 53a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M286.5 7a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M340.5 5a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M382.5 46a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M409.5 4a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M436.5 33a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M460.5 10a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M506.5 45a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M545.5 18a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M573.5 37a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M744.5 33a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M851.5 54a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M145.5 64a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M456.5 39a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0' fill='%23b46cff'/%3E%3C/svg%3E");
 
     --btn-overlay: linear-gradient(180deg, rgb(255 255 255 / 0.16), transparent 60%);
     /* Filled controls carry some of the volt's light under them. */
@@ -2104,6 +2111,7 @@
     --kaiju-plate: 168 128 240;
     --kaiju-plate-deep: 64 36 120;
     --kaiju-hide: 14 8 26;
+    --kaiju-halo: 1;
     --kaiju-word-top: 250 242 255;
     --kaiju-word-bottom: 190 120 255;
     --kaiju-word-shadow: 84 40 170;
@@ -8240,6 +8248,13 @@ html.theme-wave::view-transition-new(theme-wave-crest) {
   font-synthesis: none;
 }
 
+/* Its lower case reads chunky at small sizes, so every title set in it is in capitals, not just
+   h1 and h2. Task titles stay in the sans (see `.ui-task-title` below). */
+[data-skin='kaiju'] :is(h3, h4, .ui-section-title, .ui-panel-title) {
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
 /* The page's own title burns a little in the dark. */
 [data-skin='kaiju'].dark :is(h1, .ui-modal-title) {
   text-shadow: 0 0 22px rgb(var(--kaiju-volt) / 0.55);
@@ -8263,11 +8278,76 @@ html.theme-wave::view-transition-new(theme-wave-crest) {
     0 0 54px -12px rgb(var(--kaiju-volt) / 0.6);
 }
 
-/* --- The rails: no scales. `.ui-textured` sizes its background for the scale tile, which
-   tiled the rail's wash into a pattern; the wash takes its natural size. --- */
+/* --- The rails: the scales alone, no wash and no sheen. Beats the rails' own
+   `[background-image:var(--rail-wash-*)]` utility. --- */
 [data-skin='kaiju'] .nav-rail--left,
 [data-skin='kaiju'] .nav-rail--right {
-  background-size: auto;
+  background-image: var(--kaiju-scales);
+  background-size: 28px 18px;
+}
+
+/* Menu names in the skin's face, in capitals like its titles; the hint under each stays sans. */
+[data-skin='kaiju'] .ui-nav-label {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-synthesis: none;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* --- The city it came ashore in: a static skyline along the foot of the page, behind
+   everything. One fixed pseudo-element and one tile. --- */
+[data-skin='kaiju'] body::after {
+  content: '';
+  position: fixed;
+  inset: auto 0 0;
+  height: 92px;
+  z-index: -1;
+  pointer-events: none;
+  background-image: var(--kaiju-skyline);
+  background-size: auto 100%;
+  background-repeat: repeat-x;
+  background-position: center bottom;
+  opacity: 0.4;
+}
+
+[data-skin='kaiju'].dark body::after {
+  opacity: 0.5;
+}
+
+/* The app shell's own fill hid the wash and the city; the body paints the same surface below. */
+[data-skin='kaiju'] .app-shell {
+  background-color: transparent;
+}
+
+/* A task card's inline tint is a `background` shorthand, which also clears its fill; with the city
+   behind the page, a see-through card is a card with buildings under its title. */
+[data-skin='kaiju'] .ui-task-card {
+  background-color: rgb(var(--surface-raised)) !important;
+}
+
+/* The type label: condensed caps, and the four types in the skin's own inks. Plain tasks go
+   neutral rather than the stock sky blue. */
+[data-skin='kaiju'] .type-tag {
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+[data-skin='kaiju'] .type-tag.text-violet-500 {
+  color: rgb(var(--brand));
+}
+
+[data-skin='kaiju'] .type-tag.text-amber-500 {
+  color: rgb(var(--warning));
+}
+
+[data-skin='kaiju'] .type-tag.text-emerald-500 {
+  color: rgb(var(--positive));
+}
+
+[data-skin='kaiju'] .type-tag.text-sky-500 {
+  color: rgb(var(--content-muted));
 }
 
 [data-skin='kaiju'] .nav-rail {
@@ -8329,7 +8409,7 @@ html.theme-wave::view-transition-new(theme-wave-crest) {
   content: '';
   position: absolute;
   inset: -45% -70% -8%;
-  background: radial-gradient(closest-side, rgb(var(--kaiju-volt) / 0.6), transparent);
+  background: radial-gradient(closest-side, rgb(var(--kaiju-volt) / calc(0.6 * var(--kaiju-halo))), transparent);
   opacity: 0.18;
 }
 
@@ -8473,6 +8553,12 @@ html.theme-wave::view-transition-new(theme-wave-crest) {
   animation-delay: 2.5s;
 }
 
+/* No current through a rail that is off screen: an endless loop nobody can see still costs a
+   frame every frame. Opening it starts the bolt from the top. */
+[data-skin='kaiju'] .nav-rail:not([data-open]) .nav-rail__edge::after {
+  animation: none;
+}
+
 /* Quick: the whole fall takes a tenth of the cycle; the rest is the rail waiting to recharge. */
 @keyframes kaiju-rail-current {
   0% {
@@ -8569,15 +8655,15 @@ html.theme-wave::view-transition-new(theme-wave-crest) {
    Highlight pseudo-elements take colour and text-shadow and no animation, hence two steps. */
 ::highlight(kaiju-glow-dim) {
   color: rgb(var(--kaiju-charge));
-  text-shadow: 0 0 6px rgb(var(--kaiju-volt) / 0.8);
+  text-shadow: 0 0 6px rgb(var(--kaiju-volt) / calc(0.8 * var(--kaiju-halo)));
 }
 
 ::highlight(kaiju-glow) {
   color: rgb(var(--kaiju-spark));
   text-shadow:
-    0 0 4px rgb(var(--kaiju-charge)),
-    0 0 12px rgb(var(--kaiju-volt) / 0.95),
-    0 0 24px rgb(var(--kaiju-volt) / 0.65);
+    0 0 4px rgb(var(--kaiju-charge) / var(--kaiju-halo)),
+    0 0 12px rgb(var(--kaiju-volt) / calc(0.95 * var(--kaiju-halo))),
+    0 0 24px rgb(var(--kaiju-volt) / calc(0.65 * var(--kaiju-halo)));
 }
 
 /* --- The loader: three plates charging in turn, the last one hottest. --- */

@@ -307,6 +307,8 @@ export const ProjectRail = ({ onCreateProject }: ProjectRailProps) => {
           close();
         }}
         initial={false}
+        // A hook with no styles: a skin can stop a rail's own loops while it is off screen.
+        data-open={isRevealed || undefined}
         animate={{ x: isRevealed ? 0 : 'calc(100% + 12px)' }}
         transition={{ type: 'spring', stiffness: 460, damping: 40, mass: 0.7 }}
         className={cn(

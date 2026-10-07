@@ -2430,7 +2430,7 @@ const en = {
     'Broken light from a surface somewhere above you, corners water has had a long time to round off, colour that drains toward blue with depth — and bubbles going up past all of it.',
   'skin.KAIJU.tagline': 'Something has come ashore',
   'skin.KAIJU.body':
-    'Scaled hide on every panel, dorsal plates that charge one by one around a dialog, violet current down the rails, lettering that sparks — and every thirty seconds, the breath.',
+    'Black scaled hide, dorsal plates that surge round every dialog and along the screen edge, violet current down the rails, a city at the foot of the page, lettering that sparks — and every thirty seconds, the breath.',
   'skin.HALLOWEEN.tagline': 'Something moved in the corner',
   'skin.HALLOWEEN.body':
     'Candlelit dark with a carved lantern for a mark. Webs gather on the doors you have not opened, and opening anything startles whatever was sleeping in it.',
@@ -5106,7 +5106,7 @@ const ptBR: Record<TranslationKey, string> = {
     'Luz quebrada vinda de uma superfície lá em cima, cantos que a água teve muito tempo para arredondar, cores que escorrem para o azul conforme a profundidade — e bolhas subindo por tudo.',
   'skin.KAIJU.tagline': 'Algo chegou à costa',
   'skin.KAIJU.body':
-    'Couro de escamas em cada painel, placas dorsais que carregam uma a uma em volta de cada diálogo, corrente violeta descendo as barras, letras que faíscam — e, a cada trinta segundos, o sopro atômico.',
+    'Couro negro de escamas, placas dorsais que pulsam em volta de cada diálogo e na borda da tela, corrente violeta descendo as barras, uma cidade ao pé da página, letras que faíscam — e, a cada trinta segundos, o sopro atômico.',
   'skin.HALLOWEEN.tagline': 'Algo se mexeu no canto',
   'skin.HALLOWEEN.body':
     'Escuridão à luz de vela, com uma lanterna esculpida como marca. Teias se formam nas portas que você não abriu, e abrir qualquer coisa assusta o que dormia lá dentro.',

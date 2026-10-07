@@ -19,9 +19,26 @@ const stop = (offset: number, colour: string, opacity = 1) => (
   <stop offset={offset} style={{ stopColor: `rgb(var(${colour}))`, stopOpacity: opacity }} />
 );
 
+/** The mark's body: a T with a short tail curling off the foot of its stem, in one outline. */
+const T_BODY =
+  'M6.5 9H33.5Q36 9 36 11.5V16.5Q36 19 33.5 19H24.5V27.5C27.6 29.4 30.6 30 33.2 29.2L37.4 26.6' +
+  'L35.2 31.8C32 35.6 27 36.6 22 36H18Q15.5 36 15.5 33.5V19H6.5Q4 19 4 16.5V11.5Q4 9 6.5 9Z';
+
+/** The crest on the crossbar, then two small spikes down the tail: where each stands, and how tall. */
+const FINS = [
+  { x: 13, y: 10, turn: 0, h: 7.5 },
+  { x: 20, y: 10, turn: 0, h: 10.5 },
+  { x: 27, y: 10, turn: 0, h: 7.5 },
+  { x: 28.6, y: 29.8, turn: 12, h: 4.6 },
+  { x: 32.2, y: 29.6, turn: 24, h: 3.8 },
+];
+
+/** One eye, slanted down towards the middle; the right one is this mirrored. */
+const EYE = 'M9.8 12.4L16.6 14.3Q15.6 16.6 13 16.3Q10.4 15.9 9.8 12.4Z';
+
 /**
- * The Kaiju skin's product mark: a black badge with three plates breaking out of its top edge, and
- * a T whose stem is a bolt of lightning.
+ * The Kaiju skin's product mark: a T that is the monster — scaled hide, two violet eyes in the
+ * crossbar, a crest of plates on top and a tail curling off its foot.
  */
 export const KaijuMark = ({ className }: GlyphProps) => {
   const id = useId();
@@ -42,44 +59,50 @@ export const KaijuMark = ({ className }: GlyphProps) => {
         </linearGradient>
         <linearGradient id={`${id}-hide`} x1="0" y1="0" x2="0" y2="1">
           {stop(0, '--kaiju-plate-deep')}
-          {stop(0.55, '--kaiju-hide')}
+          {stop(0.7, '--kaiju-hide')}
         </linearGradient>
-        <linearGradient id={`${id}-rim`} x1="0" y1="0" x2="0" y2="1">
-          {stop(0, '--kaiju-volt')}
-          {stop(1, '--kaiju-plate-deep')}
-        </linearGradient>
-        <linearGradient id={`${id}-bar`} x1="0" y1="0" x2="1" y2="0">
-          {stop(0, '--kaiju-charge')}
-          {stop(0.5, '--kaiju-volt-core')}
-          {stop(1, '--kaiju-charge')}
-        </linearGradient>
+        <radialGradient id={`${id}-glow`}>
+          {stop(0, '--kaiju-volt', 0.9)}
+          {stop(1, '--kaiju-volt', 0)}
+        </radialGradient>
+        {/* Rows of arcs, each offset half a scale: the panels' hide, at the mark's size. */}
+        <pattern id={`${id}-scales`} width="5" height="3.4" patternUnits="userSpaceOnUse">
+          <path
+            d="M0 0a2.5 1.6 0 0 0 5 0M-2.5 1.7a2.5 1.6 0 0 0 5 0M2.5 1.7a2.5 1.6 0 0 0 5 0M0 3.4a2.5 1.6 0 0 0 5 0"
+            stroke="rgb(var(--kaiju-plate))"
+            strokeOpacity="0.4"
+            strokeWidth="0.45"
+          />
+        </pattern>
+        <clipPath id={`${id}-clip`}>
+          <path d={T_BODY} />
+        </clipPath>
       </defs>
 
-      {[
-        { x: 11.5, h: 10 },
-        { x: 20, h: 15 },
-        { x: 28.5, h: 10 },
-      ].map((plate) => (
-        <g key={plate.x} transform={`translate(${plate.x} 17)`}>
-          <path d={platePath(plate.h)} fill={`url(#${id}-fin)`} />
+      {FINS.map((fin) => (
+        <g key={fin.x} transform={`translate(${fin.x} ${fin.y}) rotate(${fin.turn})`}>
+          <path d={platePath(fin.h)} fill={`url(#${id}-fin)`} />
         </g>
       ))}
 
+      <path d={T_BODY} fill={`url(#${id}-hide)`} />
+      <rect x="4" y="9" width="34" height="28" fill={`url(#${id}-scales)`} clipPath={`url(#${id}-clip)`} />
       <path
-        d="M10 15H30L36 21V32L30 38H10L4 32V21Z"
-        fill={`url(#${id}-hide)`}
-        stroke={`url(#${id}-rim)`}
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-      <path d="M10 21H30V25.5H10Z" fill={`url(#${id}-bar)`} />
-      <path
-        d="M17.2 25.5H22.8L21.3 29.6H24.4L16.8 36.4L18.4 31.4H15.4Z"
-        fill="rgb(var(--kaiju-volt-core))"
+        d={T_BODY}
         stroke="rgb(var(--kaiju-volt))"
-        strokeWidth="0.6"
+        strokeWidth="1.3"
         strokeLinejoin="round"
       />
+
+      {/* The eyes: a glow behind, the iris, a slit pupil, a glint. */}
+      {[false, true].map((isRight) => (
+        <g key={String(isRight)} transform={isRight ? 'matrix(-1 0 0 1 40 0)' : undefined}>
+          <circle cx="13.2" cy="14.4" r="4.4" fill={`url(#${id}-glow)`} />
+          <path d={EYE} fill="rgb(var(--kaiju-charge))" stroke="rgb(var(--kaiju-volt-core))" strokeWidth="0.4" />
+          <rect x="12.75" y="13.6" width="1" height="2.5" rx="0.5" fill="rgb(var(--kaiju-hide))" />
+          <circle cx="14.6" cy="14.4" r="0.55" fill="rgb(var(--kaiju-volt-core))" />
+        </g>
+      ))}
     </svg>
   );
 };
