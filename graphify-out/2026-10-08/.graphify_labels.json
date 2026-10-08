@@ -18,7 +18,7 @@
   "16": "groups-board.tsx",
   "17": "DnD Board Columns",
   "18": "feature-carousel.tsx",
-  "19": "build-wordmark.py",
+  "19": "halloween-icons.tsx",
   "20": "edge-affordance.tsx",
   "21": "dependencies",
   "22": "build-studio-runic.py",
@@ -257,9 +257,9 @@
   "255": "@tanstack/react-query",
   "256": "join-page.tsx",
   "257": "avatar.tsx",
-  "258": "landing-nav.tsx",
+  "258": "favicon.svg (browser tab icon)",
   "259": "nav-glyph.tsx",
-  "260": "brand-name.tsx",
+  "260": "nib-preview.tsx",
   "261": "runic-text.tsx",
-  "262": "clsx"
+  "262": "three"
 }

@@ -1,16 +1,16 @@
-# Graph Report - Task-Studio-UI  (2026-10-08)
+# Graph Report - Task-Studio-UI  (2026-10-06)
 
 ## Corpus Check
-- 416 files · ~375,770 words
+- 411 files · ~371,977 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2914 nodes · 4227 edges · 263 communities (183 shown, 80 thin omitted)
+- 2888 nodes · 4186 edges · 263 communities (183 shown, 80 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 100 edges (avg confidence: 0.7)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `2de40847`
+- Built from commit: `7c708793`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -34,7 +34,7 @@
 - groups-board.tsx
 - DnD Board Columns
 - feature-carousel.tsx
-- build-wordmark.py
+- halloween-icons.tsx
 - edge-affordance.tsx
 - dependencies
 - build-studio-runic.py
@@ -254,11 +254,11 @@
 - socket.io-client
 - @tanstack/react-query
 - avatar.tsx
-- landing-nav.tsx
+- favicon.svg (browser tab icon)
 - nav-glyph.tsx
-- brand-name.tsx
+- nib-preview.tsx
 - runic-text.tsx
-- clsx
+- three
 
 ## God Nodes (most connected - your core abstractions)
 1. `compilerOptions` - 20 edges
@@ -267,21 +267,21 @@
 4. `compilerOptions` - 13 edges
 5. `build()` - 12 edges
 6. `useProjectBoardCache()` - 12 edges
-7. `GlyphProps` - 12 edges
-8. `StudioLetter()` - 12 edges
-9. `draw_weapon()` - 11 edges
-10. `Task` - 11 edges
+7. `StudioLetter()` - 12 edges
+8. `draw_weapon()` - 11 edges
+9. `Task` - 11 edges
+10. `toDate()` - 11 edges
 
 ## Surprising Connections (you probably didn't know these)
+- `StudioLetter()` --shares_data_with--> `Handwritten 't' glyph stroke paths`  [INFERRED]
+  src/shared/ui/studio-letter.tsx → public/favicon.svg
 - `drawIcon()` --conceptually_related_to--> `Apple Touch Icon (Task Studio Brand Mark)`  [INFERRED]
   scripts/generate-icons.mjs → public/apple-touch-icon.png
 - `drawIcon()` --shares_data_with--> `Icon-192 Brand Mark`  [INFERRED]
   scripts/generate-icons.mjs → public/icons/icon-192.png
-- `StudioLetter()` --shares_data_with--> `Handwritten 't' glyph stroke paths`  [INFERRED]
+- `StudioLetter()` --shares_data_with--> `favicon.svg (browser tab icon)`  [INFERRED]
   src/shared/ui/studio-letter.tsx → public/favicon.svg
 - `Task Studio README` --references--> `@dnd-kit/core`  [EXTRACTED]
-  README.md → package.json
-- `Task Studio README` --references--> `framer-motion`  [EXTRACTED]
   README.md → package.json
 
 ## Import Cycles
@@ -308,7 +308,7 @@ Nodes (63): taskApi, blockingAssigneeCount(), canCompleteTask(), completionBlock
 
 ### Community 2 - "ui/index.ts"
 Cohesion: 0.04
-Nodes (54): ExpandableStage(), ExpandableStageProps, ExpandToggle(), ExpandToggleProps, GoogleCalendarMark(), HazardDrift(), MOTES, HoverHint() (+46 more)
+Nodes (56): ExpandableStage(), ExpandableStageProps, ExpandToggle(), ExpandToggleProps, GoogleCalendarMark(), HazardDrift(), MOTES, HoverHint() (+48 more)
 
 ### Community 3 - "text-board.tsx"
 Cohesion: 0.06
@@ -331,8 +331,8 @@ Cohesion: 0.06
 Nodes (40): BOARD_EXPORT_MIME, classifyImportFile(), DOCUMENT_ACCEPT, DOCUMENT_MIME_TYPES, EXTENSION_MIME, IMPORT_ACCEPT, IMPORT_ARCHIVE_MIME, IMPORT_DOCUMENT_MIME (+32 more)
 
 ### Community 8 - "studio-icons.tsx"
-Cohesion: 0.10
-Nodes (36): favicon.svg (browser tab icon), Gold paper linearGradient definition, Rotated Post-it note shape with peeled corner, Handwritten 't' glyph stroke paths, AutumnMark(), EldritchMark(), GlyphProps, HazardMark() (+28 more)
+Cohesion: 0.11
+Nodes (31): AutumnMark(), EldritchMark(), GlyphProps, HazardMark(), NewspaperMark(), RunicMark(), SpaceMark(), AutumnLeafPaper() (+23 more)
 
 ### Community 9 - "integration/model/queries.ts"
 Cohesion: 0.06
@@ -371,20 +371,20 @@ Cohesion: 0.10
 Nodes (24): DEFAULTS, LAYOUTS_FOR, LayoutSurface, read(), Stored, TaskLayout, useTaskLayout(), write() (+16 more)
 
 ### Community 18 - "feature-carousel.tsx"
-Cohesion: 0.12
-Nodes (23): COLUMNS, DemoBoard(), LANES, RESIDENTS, DemoChat(), MESSAGES, DemoFrame(), DemoFrameProps (+15 more)
+Cohesion: 0.11
+Nodes (24): COLUMNS, DemoBoard(), LANES, RESIDENTS, DemoChat(), MESSAGES, DemoFrame(), DemoFrameProps (+16 more)
 
-### Community 19 - "build-wordmark.py"
-Cohesion: 0.24
-Nodes (9): build(), crowned(), load(), preview(), TTFont, Builds the Kaiju skin's wordmark: Oxanium ExtraBold set as outlines, leaned…, A rough raster of the outline, for checking by eye: lilac face over a deep-…, The glyph with its crest of plates fused on: a fresh outline drawn through… (+1 more)
+### Community 19 - "halloween-icons.tsx"
+Cohesion: 0.29
+Nodes (5): BatSwarm(), BatSwarmProps, Box, BatGlyph(), HalloweenMark()
 
 ### Community 20 - "edge-affordance.tsx"
-Cohesion: 0.10
-Nodes (23): CENTRE, EdgeAffordance(), EdgeAffordanceProps, GRADIENT, IRIS_GRADIENT, NavPinButton(), NavPinButtonProps, RAIL (+15 more)
+Cohesion: 0.11
+Nodes (19): CENTRE, EdgeAffordance(), EdgeAffordanceProps, GRADIENT, IRIS_GRADIENT, NavPinButton(), NavPinButtonProps, RAIL (+11 more)
 
 ### Community 21 - "dependencies"
 Cohesion: 0.15
-Nodes (13): axios, dependencies, axios, @shadergradient/react, sonner, tailwind-merge, three, zod (+5 more)
+Nodes (13): axios, clsx, dependencies, axios, clsx, @shadergradient/react, sonner, tailwind-merge (+5 more)
 
 ### Community 22 - "build-studio-runic.py"
 Cohesion: 0.06
@@ -499,8 +499,8 @@ Cohesion: 0.19
 Nodes (12): ActiveLiveCall, LiveCallState, useLiveCallStore, historyIndex(), LiveCallGuard(), pathnameOf(), RouterNavigator, staysInProject() (+4 more)
 
 ### Community 50 - "skin-catalog.ts"
-Cohesion: 0.18
-Nodes (11): SETTINGS_SKIN_LIMIT, SKIN_BY_VALUE, SKIN_CATALOG, SkinDefinition, SkinPreview, CursorToggle(), leaf(), notch() (+3 more)
+Cohesion: 0.20
+Nodes (10): SETTINGS_SKIN_LIMIT, SKIN_BY_VALUE, SKIN_CATALOG, SkinDefinition, SkinPreview, CursorToggle(), leaf(), notch() (+2 more)
 
 ### Community 51 - "runic/build-cursors.py"
 Cohesion: 0.17
@@ -511,8 +511,8 @@ Cohesion: 0.27
 Nodes (12): clampToViewport(), FloatingShortcut, PILL, read(), ShortcutIcon, ShortcutsState, useFloatingShortcuts, write() (+4 more)
 
 ### Community 53 - "hero-field.tsx"
-Cohesion: 0.16
-Nodes (16): HeroField, buildField(), CardSpec, clearHeroStill(), createSheetTexture(), Field(), fieldMemory, HeroField() (+8 more)
+Cohesion: 0.18
+Nodes (15): buildField(), CardSpec, clearHeroStill(), createSheetTexture(), Field(), fieldMemory, HeroField(), hexToHsl() (+7 more)
 
 ### Community 54 - "halloween/build-cursors.py"
 Cohesion: 0.21
@@ -543,8 +543,8 @@ Cohesion: 0.19
 Nodes (8): deepLink(), NotificationBell(), NotificationOptIn(), DesktopNotice, hasDeclinedNotifications(), isSupported(), NotificationAccess, requestNotificationAccess()
 
 ### Community 61 - "landing-page.tsx"
-Cohesion: 0.20
-Nodes (7): FOOTER_NOTES, COLUMN, COLUMN_NARROW, COLUMN_WIDE, FeatureCarousel(), PiticoMark(), Reveal()
+Cohesion: 0.18
+Nodes (10): FOOTER_NOTES, HeroField, COLUMN, COLUMN_NARROW, COLUMN_WIDE, LandingNav(), scrollToSection(), scrollToTop() (+2 more)
 
 ### Community 62 - "eldritch-decor.tsx"
 Cohesion: 0.16
@@ -643,8 +643,8 @@ Cohesion: 0.25
 Nodes (4): NoteCardProps, NoteChecklist(), NoteChecklistProps, TaskDetailModalProps
 
 ### Community 87 - "pricing-table.tsx"
-Cohesion: 0.70
-Nodes (4): featuresOf(), preferredCurrency(), PricingTable(), useFocusedPlan()
+Cohesion: 0.33
+Nodes (7): GAPS, LavaLink(), LavaLinkProps, featuresOf(), preferredCurrency(), PricingTable(), useFocusedPlan()
 
 ### Community 88 - "import-tracker.tsx"
 Cohesion: 0.33
@@ -843,8 +843,8 @@ Cohesion: 0.40
 Nodes (3): chains, sequences, writeSequence
 
 ### Community 146 - "button.tsx"
-Cohesion: 0.09
-Nodes (18): Button, buttonClasses(), ButtonProps, GAPS, Size, SIZES, Variant, VARIANTS (+10 more)
+Cohesion: 0.08
+Nodes (22): Button, buttonClasses(), ButtonProps, GAPS, Size, SIZES, Variant, VARIANTS (+14 more)
 
 ### Community 147 - "lava-goo SVG metaball filter"
 Cohesion: 0.50
@@ -907,8 +907,8 @@ Cohesion: 0.67
 Nodes (3): nextStreak(), ShootingStar(), Streak
 
 ### Community 238 - "kaiju-decor.tsx"
-Cohesion: 0.09
-Nodes (26): BatSwarm(), BatSwarmProps, Box, BANDS, DangerTape(), DangerTapeProps, BatGlyph(), HalloweenMark() (+18 more)
+Cohesion: 0.18
+Nodes (16): Box, Breath, clamp(), FLICKER, isOnScreen(), KaijuBreath(), KaijuGlowLetters(), KaijuSpikes() (+8 more)
 
 ### Community 239 - "volcano — Frijole"
 Cohesion: 0.29
@@ -927,35 +927,35 @@ Cohesion: 0.50
 Nodes (3): tokensApi, ApiToken, CreatedApiToken
 
 ### Community 244 - "dragon-icons.tsx"
-Cohesion: 0.14
-Nodes (17): DragonFlight(), Flight, nextFlight(), amplitude(), bodyOrder, DragonGlyph(), GlyphProps, JadeMark() (+9 more)
+Cohesion: 0.19
+Nodes (13): DragonFlight(), Flight, nextFlight(), amplitude(), bodyOrder, DragonGlyph(), GlyphProps, JadeMark() (+5 more)
 
 ### Community 245 - "kaiju — Studiozilla"
-Cohesion: 0.25
-Nodes (7): Centred capitals, kaiju — Studiozilla, Licence, Studiozilla — the recut, The wordmark, Where it came from, Why this face
+Cohesion: 0.33
+Nodes (5): kaiju — Studiozilla, Licence, Studiozilla — the recut, Where it came from, Why this face
 
 ### Community 257 - "avatar.tsx"
 Cohesion: 0.33
 Nodes (5): Avatar(), AvatarProps, AvatarStack(), AvatarStackProps, SIZES
 
-### Community 258 - "landing-nav.tsx"
-Cohesion: 0.36
-Nodes (6): LandingNav(), scrollToSection(), scrollToTop(), GAPS, LavaLink(), LavaLinkProps
+### Community 258 - "favicon.svg (browser tab icon)"
+Cohesion: 0.50
+Nodes (5): favicon.svg (browser tab icon), Gold paper linearGradient definition, Rotated Post-it note shape with peeled corner, Handwritten 't' glyph stroke paths, StudioMark()
 
 ### Community 259 - "nav-glyph.tsx"
 Cohesion: 0.67
 Nodes (3): NavGlyphKey, NavGlyph(), NavGlyphProps
 
-### Community 260 - "brand-name.tsx"
-Cohesion: 0.50
-Nodes (3): BrandName(), BrandNameProps, KAIJU_WORDMARK
+### Community 260 - "nib-preview.tsx"
+Cohesion: 0.67
+Nodes (3): NibCursor(), NibPreview(), ringDiameter()
 
 ### Community 261 - "runic-text.tsx"
 Cohesion: 0.67
 Nodes (3): RunicText(), RunicTextProps, seedOf()
 
 ## Knowledge Gaps
-- **804 isolated node(s):** `name`, `private`, `version`, `type`, `description` (+799 more)
+- **799 isolated node(s):** `name`, `private`, `version`, `type`, `description` (+794 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **80 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -963,16 +963,16 @@ Nodes (3): RunicText(), RunicTextProps, seedOf()
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `wakeApi()` connect `client.ts` to `auth-shell.tsx`?**
-  _High betweenness centrality (0.019) - this node is a cross-community bridge._
+  _High betweenness centrality (0.016) - this node is a cross-community bridge._
 - **Why does `LandingPage()` connect `client.ts` to `landing-page.tsx`?**
-  _High betweenness centrality (0.018) - this node is a cross-community bridge._
+  _High betweenness centrality (0.015) - this node is a cross-community bridge._
 - **Why does `installApiWarmOnIntent()` connect `client.ts` to `providers/index.tsx`?**
-  _High betweenness centrality (0.014) - this node is a cross-community bridge._
+  _High betweenness centrality (0.012) - this node is a cross-community bridge._
 - **What connects `name`, `private`, `version` to the rest of the system?**
-  _804 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _799 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `project-board-queries.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.05116279069767442 - nodes in this community are weakly interconnected._
 - **Should `task/model/queries.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.054340396445659606 - nodes in this community are weakly interconnected._
 - **Should `ui/index.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.04390451832907076 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.04303599374021909 - nodes in this community are weakly interconnected._

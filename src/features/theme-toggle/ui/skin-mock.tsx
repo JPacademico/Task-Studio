@@ -31,6 +31,14 @@ const leaf = (color: string, size: number, rotate: number): CSSProperties => ({
 /** A dorsal plate, the same outline the real ridge clips its plates to. */
 const PLATE = 'polygon(56% 0%, 63% 30%, 76% 62%, 100% 100%, 0% 100%, 22% 64%, 40% 30%)';
 
+/** Where each plate on the kaiju mock stands on the card's outline, how tall, and which way it points. */
+const RIDGE = [
+  ...[0.18, 0.34, 0.5, 0.66, 0.82].map((t, i) => ({ left: `${t * 100}%`, top: '0%', size: [3.5, 4.5, 5.5, 4.5, 3.5][i], turn: 0 })),
+  ...[0.3, 0.5, 0.7].map((t) => ({ left: `${t * 100}%`, top: '100%', size: 3.5, turn: 180 })),
+  ...[0.35, 0.65].map((t) => ({ left: '0%', top: `${t * 100}%`, size: 3.5, turn: -90 })),
+  ...[0.35, 0.65].map((t) => ({ left: '100%', top: `${t * 100}%`, size: 3.5, turn: 90 })),
+];
+
 /** Three star layers, matching the real skin's page wash. */
 const STARFIELD =
   'radial-gradient(1.2px 1.2px at 18% 24%, rgb(255 255 255 / 0.85), transparent 100%),' +
@@ -96,7 +104,8 @@ export const SkinMock = ({
   return (
     <div
       aria-hidden
-      className={cn('pointer-events-none relative flex flex-col overflow-hidden', className)}
+      // `isolate`: the mock's own layers stack inside it, never over a mock laid on top of it.
+      className={cn('pointer-events-none relative isolate flex flex-col overflow-hidden', className)}
       style={{
         height: px(96),
         padding: px(8),
@@ -276,6 +285,31 @@ export const SkinMock = ({
             )}
           </div>
         ))}
+        {/* Kaiju: small plates standing all round the outside of the second card, as round a dialog. */}
+        {kaiju && (
+          <span
+            className="absolute inset-y-0 right-0"
+            style={{ left: `calc(50% + ${px(3)}px)` }}
+          >
+            {RIDGE.map((plate, index) => (
+              <span
+                key={index}
+                className="absolute"
+                style={{
+                  left: plate.left,
+                  top: plate.top,
+                  width: px(plate.size * 0.64),
+                  height: px(plate.size),
+                  clipPath: PLATE,
+                  background: `linear-gradient(to top, ${kaiju.plate}, ${kaiju.beam})`,
+                  transformOrigin: '50% 100%',
+                  transform: `translate(-50%, -100%) rotate(${plate.turn}deg)`,
+                }}
+              />
+            ))}
+          </span>
+        )}
+
       </div>
 
       {/* Runic: the lit groove where a menu meets the page — the same three
@@ -328,34 +362,18 @@ export const SkinMock = ({
         />
       )}
 
-      {/* Kaiju: the breath across the page, caught mid-beam behind the cards. */}
+      {/* Kaiju: the breath across the page. Fired now and then in the gallery; a thumbnail has no
+          time to wait for it, so it is caught mid-beam there. */}
       {kaiju && (
         <span
-          className="absolute inset-x-0"
+          className={cn('absolute inset-x-0', !stillParticles && 'kaiju-mock-beam')}
           style={{
             top: '58%',
             height: px(7),
             background: `linear-gradient(to bottom, transparent, ${kaiju.beam}aa 35%, #fff6ea 50%, ${kaiju.beam}aa 65%, transparent)`,
-            opacity: 0.7,
+            opacity: stillParticles ? 0.7 : undefined,
           }}
         />
-      )}
-
-      {/* Kaiju: a ridge of plates standing off the top of the second card, lit. */}
-      {kaiju && (
-        <span className="absolute flex items-end" style={{ right: px(14), top: px(23), gap: px(2) }}>
-          {[6, 9, 12, 9, 6].map((height, index) => (
-            <span
-              key={index}
-              style={{
-                width: px(height * 0.64),
-                height: px(height),
-                clipPath: PLATE,
-                background: `linear-gradient(to top, ${kaiju.plate}, ${kaiju.beam})`,
-              }}
-            />
-          ))}
-        </span>
       )}
 
       {/* Autumn: the ones still in the air. Last in the mock so they paint over the cards,

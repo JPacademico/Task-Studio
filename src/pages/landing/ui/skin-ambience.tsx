@@ -18,8 +18,9 @@ const AMBIENCE = {
   RUNIC: { kind: 'runes', tones: ['#b45309', '#f59e0b'], count: 5 },
   ELDRITCH: { kind: 'eyes', tones: ['#2dd4bf', '#a855f7'], count: 4 },
   DRAGON: { kind: 'lanterns', tones: ['#e05833', '#f2c54f'], count: 7 },
-  // Sparks coming off the plates: the volt and the paler charge.
-  KAIJU: { kind: 'motes', tones: ['#9640ff', '#d678ff'], count: 11 },
+  // Not weather but a place: the city along the foot of the band, and the breath across it now and
+  // then. Drawn from the skin's own tokens, so it follows the palette; the tones are unused.
+  KAIJU: { kind: 'city', tones: ['#9640ff', '#f6ecff'], count: 1 },
   // A mid sky blue for the tail and near-white for the head: the one pairing that reads on both
   // halves of the compare box.
   SPACE: { kind: 'meteors', tones: ['#38bdf8', '#f0f9ff'], count: 2 },
@@ -169,7 +170,26 @@ export const SkinAmbience = ({ skin, density = 1, span = 1, className }: SkinAmb
     [spec, count, isPlaced],
   );
 
-  if (!spec || reduceMotion) return null;
+  if (!spec) return null;
+
+  // The city stands still, so it stays under reduced motion; only the beam is motion.
+  if (spec.kind === 'city') {
+    return (
+      <div
+        aria-hidden
+        className={cn('pointer-events-none absolute inset-0 overflow-hidden', className)}
+      >
+        <span className="sa-kaiju-city" />
+        {!reduceMotion && (
+          <span className="sa-kaiju-beam">
+            <i />
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  if (reduceMotion) return null;
 
   const [toneA, toneB] = spec.tones;
 

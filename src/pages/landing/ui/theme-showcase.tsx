@@ -366,8 +366,9 @@ const SkinCompare = ({
           />
         </div>
 
-        {/* What the skin does to the *room*, over both halves of the wipe. */}
-        <SkinAmbience skin={skin} density={0.65} />
+        {/* What the skin does to the *room*, over both halves of the wipe. Kaiju's mock fires its
+            own beam in each half's palette instead. */}
+        {skin !== 'KAIJU' && <SkinAmbience skin={skin} density={0.65} />}
 
         {/* The seam itself, and the two labels that say which side is which. */}
         <div

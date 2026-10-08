@@ -8686,6 +8686,83 @@ html.theme-wave::view-transition-new(theme-wave-crest) {
   }
 }
 
+/* --- The breath on a loop, for the landing page: across, a beat held, gone, then quiet for the
+   rest of the cycle. Unscoped: the gallery's mock shows the skin while another one is worn. --- */
+@keyframes kaiju-laser {
+  0% {
+    transform: scaleX(0);
+    opacity: 1;
+  }
+  4% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+  9% {
+    transform: scaleX(1) scaleY(1.15);
+    opacity: 0.95;
+  }
+  16%,
+  100% {
+    transform: scaleX(1) scaleY(0.1);
+    opacity: 0;
+  }
+}
+
+.kaiju-mock-beam {
+  transform-origin: 0 50%;
+  animation: kaiju-laser 7s cubic-bezier(0.2, 0.7, 0.2, 1) 1.2s infinite both;
+}
+
+/* The landing page's closing band, with the skin worn: its city along the foot, its breath across. */
+.sa-kaiju-city {
+  position: absolute;
+  inset: auto 0 0;
+  height: 92px;
+  background: var(--kaiju-skyline) center bottom / auto 100% repeat-x;
+  opacity: 0.75;
+}
+
+.dark .sa-kaiju-city {
+  opacity: 0.5;
+}
+
+.sa-kaiju-beam {
+  position: absolute;
+  left: 0;
+  right: 0;
+  /* In the band's top padding, clear of the mark and the heading under it. */
+  top: 12%;
+  height: 3rem;
+  transform: translateY(-50%) rotate(-1.5deg);
+}
+
+.sa-kaiju-beam::before,
+.sa-kaiju-beam > i {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 50%;
+  mask-image: linear-gradient(to right, transparent, #000 3%, #000 93%, transparent);
+  animation: kaiju-laser 9s cubic-bezier(0.2, 0.7, 0.2, 1) 2.5s infinite both;
+}
+
+.sa-kaiju-beam::before {
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgb(var(--kaiju-volt) / 0.2) 22%,
+    rgb(var(--kaiju-volt) / 0.8) 40%,
+    rgb(var(--kaiju-volt-core)) 47% 53%,
+    rgb(var(--kaiju-volt) / 0.8) 60%,
+    rgb(var(--kaiju-volt) / 0.2) 78%,
+    transparent
+  );
+}
+
+.sa-kaiju-beam > i {
+  background: var(--kaiju-arc) 0 50% / 160px 100% repeat-x;
+}
+
 /* --- Lettering that catches the charge. `KaijuGlowLetters` picks one glyph at a time. ---
    Highlight pseudo-elements take colour and text-shadow and no animation, hence two steps. */
 ::highlight(kaiju-glow-dim) {
@@ -8846,6 +8923,12 @@ svg[data-surge] .kaiju-cue-core {
 
   .loader-kaiju > i {
     opacity: 0.8;
+  }
+
+  /* The gallery mock keeps its beam, caught mid-crossing. */
+  .kaiju-mock-beam {
+    animation: none;
+    opacity: 0.7;
   }
 
   [data-skin='kaiju'] .nav-rail--left .nav-rail__edge::after,
