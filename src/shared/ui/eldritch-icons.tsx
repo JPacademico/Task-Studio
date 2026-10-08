@@ -1,72 +1,53 @@
 import { cn } from '@/shared/lib/cn';
 import { type GlyphProps } from './glyph-kit';
-import { StudioLetter } from './studio-letter';
+import { MARK_BRACKET, StudioMonogram } from './studio-monogram';
 
 /**
- * This skin's product mark. Its navigation set is gone. There used to be a full set of eldritch
- * navigation glyphs here, exported as `ELDRITCH_GLYPHS` and swapped in by `NavGlyph`.
- */
-/**
- * The product mark: the note, and what got into it. The sheet is the same square of paper every
- * other skin introduces the product with — the signature does not change from world to world.
+ * The product mark: the note, and what got into it. The design team's sheet with grown corners,
+ * an eye opened in the T's crossbar, and something come up over the bottom edge.
  */
 export const EldritchMark = ({ className }: GlyphProps) => (
   <svg viewBox="0 0 40 40" fill="none" aria-hidden className={cn('h-10 w-10', className)}>
-    {/* The sheet behind, so the mark reads as a pad and not one page. */}
-    <path
-      d="M11 9h21v17l-6 6H11V9Z"
-      fill="currentColor"
-      fillOpacity="0.18"
-      stroke="currentColor"
-      strokeOpacity="0.3"
-      strokeWidth="1.3"
-      strokeLinejoin="round"
-      transform="rotate(4 20 20)"
-    />
+    <path d={MARK_BRACKET} fill="currentColor" fillOpacity="0.75" />
 
-    {/* The page. Grown corners, matching every box in the skin. */}
+    {/* Grown corners, matching every box in the skin. The curl keeps its two lobes. */}
     <path
-      d="M5 8.5C5 6.6 6.4 5 8.2 5H31v18.5L23.5 32H7.6C6.2 32 5 30.7 5 29.2V8.5Z"
+      d="M7.6 4H30.4Q34 4 34 7.6V23C34 25.4 32.75 27.85 30.5 28.76C29.58 29.16 28.6 29.15 27.5 29.15C26.6 30.6 25.4 31.6 23.6 32.4C21.2 33.5 18.2 34 14.4 34H7.6Q4 34 4 30.4V7.6Q4 4 7.6 4Z"
       fill="currentColor"
-      fillOpacity="0.9"
+      fillOpacity="0.92"
       stroke="currentColor"
-      strokeWidth="1.5"
+      strokeWidth="1.2"
       strokeLinejoin="round"
     />
-
     {/* The corner, lifting on its own. */}
     <path
-      d="M23.5 32v-6a2.5 2.5 0 0 1 2.5-2.5h5"
-      fill="none"
+      d="M30.5 28.76C29.58 29.16 28.6 29.15 27.5 29.15C26.6 30.6 25.4 31.6 23.6 32.4"
       stroke="rgb(var(--eldritch-ichor))"
-      strokeWidth="1.5"
+      strokeWidth="1.2"
+      strokeLinecap="round"
       strokeLinejoin="round"
       opacity="0.9"
     />
 
-    {/* The letter, written on the page. */}
-    <StudioLetter transform="translate(5.8 9.9) scale(0.745)" strokeOpacity={0.9} />
+    <StudioMonogram />
 
-    {/* And the eye, which has moved aside to let it through. It used to sit in the middle of
-        the sheet with a line of writing above and below — the eye *was* the third line. */}
+    {/* The eye, open in the crossbar. Its slit is the only part the size of a pupil. */}
     <ellipse
-      cx="24.6"
-      cy="15.4"
-      rx="5.2"
-      ry="3.2"
+      cx="11.7"
+      cy="13.95"
+      rx="2.55"
+      ry="1.45"
       fill="rgb(var(--surface-raised))"
-      fillOpacity="0.92"
       stroke="rgb(var(--eldritch-glow))"
-      strokeWidth="1.3"
+      strokeWidth="0.6"
     />
-    <circle cx="24.6" cy="15.4" r="1.8" fill="currentColor" />
-    <circle cx="23.8" cy="14.6" r="0.6" fill="rgb(var(--surface-raised))" opacity="0.9" />
+    <ellipse cx="11.7" cy="13.95" rx="0.55" ry="1.25" fill="currentColor" />
 
     {/* And what came up over the bottom edge to keep it there. */}
-    <g stroke="rgb(var(--eldritch-ichor))" strokeWidth="1.7" strokeLinecap="round" fill="none">
-      <path d="M8 32c0 3-2.4 3.6-3.6 2.4s-.4-3 1.2-2.6" />
-      <path d="M14.5 32c.4 3.4-1.6 5-3.4 4.2" />
-      <path d="M20.5 31.6c1 2.8 3.4 3.6 4.8 2.6" />
+    <g stroke="rgb(var(--eldritch-ichor))" strokeWidth="1.5" strokeLinecap="round" fill="none">
+      <path d="M7.4 33.6c0 2.8-2.2 3.4-3.3 2.3s-.4-2.8 1.1-2.4" />
+      <path d="M12.6 33.8c.4 3-1.4 4.4-3 3.7" />
+      <path d="M17.6 33.6c.9 2.5 3 3.2 4.3 2.3" />
     </g>
   </svg>
 );

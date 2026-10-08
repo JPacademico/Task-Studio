@@ -1,32 +1,16 @@
 import { cn } from '@/shared/lib/cn';
 import { type GlyphProps } from './glyph-kit';
-import { LETTER_ON_SHEET, StudioLetter } from './studio-letter';
+import { MARK_BRACKET, MARK_SHEET, StudioMonogram } from './studio-monogram';
 
 /**
- * This skin's product mark. Its navigation set is gone. There used to be a full set of autumn
- * navigation glyphs here, exported as `AUTUMN_GLYPHS` and swapped in by `NavGlyph`.
- */
-/**
- * The product mark: the same Post-it every other skin uses, in October. An earlier pass made this a
- * maple leaf with a pin through it, which was a better drawing and a worse mark.
+ * The product mark: the design team's sheet, in October — pinned to the board with turned wood,
+ * and two leaves that landed on it. An earlier pass made this a maple leaf, a worse mark.
  */
 export const AutumnMark = ({ className }: GlyphProps) => (
   <svg viewBox="0 0 40 40" fill="none" aria-hidden className={cn('h-10 w-10', className)}>
-    {/* The sheet behind, so the mark reads as a pad and not a single square. */}
-    <rect
-      x="7"
-      y="8"
-      width="26"
-      height="26"
-      rx="3"
-      fill="currentColor"
-      fillOpacity="0.22"
-      transform="rotate(6 20 20)"
-    />
-
-    {/* The paper. */}
+    <path d={MARK_BRACKET} fill="currentColor" fillOpacity="0.8" />
     <path
-      d="M6 6.5h27v19.1c-3.7 1-8 4.3-8.9 8.4H6V6.5Z"
+      d={MARK_SHEET}
       fill="currentColor"
       stroke="rgb(var(--autumn-bark))"
       strokeOpacity="0.45"
@@ -34,42 +18,29 @@ export const AutumnMark = ({ className }: GlyphProps) => (
       strokeLinejoin="round"
     />
 
-    {/* Peeled corner — rolled under, matching the drawn sheet. */}
-    <path
-      d="M33 25.6c-3.7 1-8 4.3-8.9 8.4 6.3-1 9.6-4 8.9-8.4Z"
-      fill="rgb(var(--surface-raised))"
-      fillOpacity="0.72"
-      stroke="rgb(var(--autumn-bark))"
-      strokeOpacity="0.4"
-      strokeWidth="1.2"
-      strokeLinejoin="round"
-    />
+    <StudioMonogram />
 
-    {/* The letter. */}
-    <StudioLetter transform={LETTER_ON_SHEET} strokeOpacity={0.9} />
-
-    {/* Two leaves that landed on it. Small, and both inside the sheet: the mark is drawn at
-        28px in the rail and anything hanging off the edge at that size is a smudge. */}
+    {/* Both leaves clear of the letters and inside the sheet: off the edge, they smudge at 28px. */}
     <g stroke="rgb(var(--autumn-bark))" strokeOpacity="0.55" strokeWidth="0.9">
-      <g transform="rotate(-32 27.5 25.5)">
-        <ellipse cx="27.5" cy="25.5" rx="5.2" ry="2.8" fill="rgb(var(--autumn-ember))" />
-        <path d="M22.3 25.5h10.4" />
+      <g transform="rotate(-24 24.6 30.6)">
+        <ellipse cx="24.6" cy="30.6" rx="3.9" ry="2" fill="rgb(var(--autumn-ember))" />
+        <path d="M20.7 30.6h7.8" />
       </g>
-      <g transform="rotate(46 15 27.5)">
-        <ellipse cx="15" cy="27.5" rx="4.2" ry="2.3" fill="rgb(var(--autumn-gold))" />
-        <path d="M10.8 27.5h8.4" />
+      <g transform="rotate(38 8.8 29.8)">
+        <ellipse cx="8.8" cy="29.8" rx="3.2" ry="1.7" fill="rgb(var(--autumn-gold))" />
+        <path d="M5.6 29.8h6.4" />
       </g>
     </g>
 
-    {/* The pin head, pushed through the top-left corner. Turned wood. */}
+    {/* The pin head, pushed through the top-left corner. */}
     <circle
-      cx="9.5"
-      cy="9"
-      r="3.4"
+      cx="7.4"
+      cy="7.4"
+      r="2.5"
       fill="rgb(var(--autumn-bark))"
       stroke="rgb(var(--surface-raised))"
       strokeOpacity="0.75"
-      strokeWidth="1.4"
+      strokeWidth="1.1"
     />
   </svg>
 );

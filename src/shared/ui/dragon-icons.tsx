@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 
 import { cn } from '@/shared/lib/cn';
+import { MARK_BRACKET, StudioMonogram, monogramAt } from './studio-monogram';
 
 interface GlyphProps {
   className?: string;
@@ -12,14 +13,13 @@ interface GlyphProps {
  */
 
 /**
- * The product mark, cut from jade. The obvious imperial jade object is the *bi* — the flat ring —
- * and it is the wrong one here, because the mark has a job.
+ * The product mark, cut from jade and set in a gold mount: the design team's square as a plaque,
+ * the bracket as the mount's edge behind it, and `TS` incised into the stone.
  */
 export const JadeMark = ({ className }: GlyphProps) => (
   <svg viewBox="0 0 40 40" fill="none" aria-hidden className={cn('h-10 w-10', className)}>
     <defs>
-      {/* The stone, lit from the upper left. Jade is translucent, so the gradient runs from a
-          bright, almost white- green at the lit corner to a deep saturated green in the shadow. */}
+      {/* Translucent stone, lit from the upper left: near-white green at the lit corner. */}
       <linearGradient id="ts-jade-stone" x1="0" y1="0" x2="1" y2="1">
         <stop offset="0%" stopColor="rgb(var(--dragon-jade-lit))" />
         <stop offset="48%" stopColor="rgb(var(--dragon-jade))" />
@@ -27,44 +27,32 @@ export const JadeMark = ({ className }: GlyphProps) => (
       </linearGradient>
     </defs>
 
-    {/* The plaque. There was: two short `currentColor` strokes arching out of the drilled eye,
-        the silk the pendant hangs from. */}
-    <rect x="7" y="5.6" width="26" height="29" rx="4.2" fill="url(#ts-jade-stone)" />
+    <path d={MARK_BRACKET} fill="rgb(var(--dragon-trim))" />
+    <rect x="4" y="4" width="30" height="30" rx="3.6" fill="url(#ts-jade-stone)" />
 
-    {/* The bevel: an inset rule the whole way round, which is what makes the
-        edge read as a cut face rather than as a border drawn on a rectangle. */}
+    {/* The bevel: an inset rule that makes the edge read as a cut face, not a border. */}
     <rect
-      x="9.6"
-      y="8.2"
-      width="20.8"
-      height="23.8"
-      rx="2.6"
+      x="6.4"
+      y="6.4"
+      width="25.2"
+      height="25.2"
+      rx="2"
       stroke="rgb(var(--dragon-jade-lit))"
       strokeOpacity="0.55"
-      strokeWidth="1"
+      strokeWidth="0.9"
     />
 
-    {/* The drilled eye — the hole a cord would pass through, which is the whole
-        of what says this is a pendant. See the note on the plaque. */}
-    <circle cx="20" cy="9.6" r="1.5" fill="rgb(var(--dragon-jade-deep))" />
-    <circle cx="20" cy="9.6" r="1.5" stroke="currentColor" strokeOpacity="0.5" strokeWidth="0.7" />
+    {/* The drilled eye a cord would pass through: the whole of what says pendant. */}
+    <circle cx="19" cy="9.2" r="1.25" fill="rgb(var(--dragon-jade-deep))" />
+    <circle cx="19" cy="9.2" r="1.25" stroke="currentColor" strokeOpacity="0.5" strokeWidth="0.6" />
 
-    {/* The letter, incised. Two strokes of the same path: a dark one offset down-right for the
-        shadowed wall of the groove, and a light one at rest for the lit wall. */}
-    <g strokeLinecap="round" fill="none">
-      <path
-        d="M20.6 14.6v10.1c0 1.6.9 2.4 2.5 2.4M16.4 18.4h7.6"
-        stroke="rgb(var(--dragon-jade-deep))"
-        strokeWidth="2.6"
-        transform="translate(0.55 0.55)"
-      />
-      <path
-        d="M20.6 14.6v10.1c0 1.6.9 2.4 2.5 2.4M16.4 18.4h7.6"
-        stroke="rgb(var(--dragon-jade-lit))"
-        strokeOpacity="0.92"
-        strokeWidth="2.2"
-      />
-    </g>
+    {/* Incised: the lit lower wall of the groove, then the groove itself. */}
+    <StudioMonogram
+      transform={`translate(0.4 0.4) ${monogramAt(19, 20.4, 0.88)}`}
+      fill="rgb(var(--dragon-jade-lit))"
+      fillOpacity={0.8}
+    />
+    <StudioMonogram transform={monogramAt(19, 20.4, 0.88)} fill="rgb(var(--dragon-jade-deep))" />
   </svg>
 );
 

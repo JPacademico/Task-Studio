@@ -1,68 +1,44 @@
 import { cn } from '@/shared/lib/cn';
 import { type GlyphProps } from './glyph-kit';
-import { LETTER_ON_SHEET, StudioLetter } from './studio-letter';
+import { MARK_BRACKET, MONOGRAM_CORE, StudioMonogram } from './studio-monogram';
 
 /**
- * This skin's product mark. Its navigation set is gone. There used to be a full set of volcano
- * navigation glyphs here, exported as `VOLCANO_GLYPHS` and swapped in by `NavGlyph`.
- */
-/**
- * The product mark: the same Post-it, as a flake of crust. The studio mark's geometry, in cooling
- * rock: the peel becomes a broken corner with the melt showing in the break — paper curls.
+ * The product mark, as a flake of crust: every side off true, the corner broken where paper would
+ * curl, `TS` split open with the core showing, and the bracket behind it running molten.
  */
 export const VolcanoMark = ({ className }: GlyphProps) => (
   <svg viewBox="0 0 40 40" fill="none" aria-hidden className={cn('h-10 w-10', className)}>
-    {/* The plate behind, so the mark reads as a stack and not one flake. */}
-    <path d="M9 9.6 34.4 8.4l.6 25.2-25.4 1Z" fill="currentColor" fillOpacity="0.2" />
+    {/* The melt along the seam behind the plate — the skin's one claim, on its own mark. */}
+    <path d={MARK_BRACKET} fill="rgb(var(--lava-flow))" fillOpacity="0.9" />
+    <path d={MARK_BRACKET} fill="rgb(var(--lava-core))" className="ember-pulse ember-pulse--late" />
 
-    {/* The face. Not a rectangle — every side is off true, the way a plate of
-        crust is when it has broken free rather than been cut. */}
     <path
-      d="M6 6.4 32.6 5.6l.8 20-7.6 8.4-19.2.6Z"
+      d="M4.4 4.6 33.8 3.8 34.2 25.4 25.6 34.2 4 33.6Z"
       fill="currentColor"
       stroke="rgb(var(--lava-crust))"
       strokeOpacity="0.55"
-      strokeWidth="1.4"
+      strokeWidth="1.3"
       strokeLinejoin="round"
     />
-
-    {/* The broken corner, with the melt in the break. */}
+    {/* The break, with the melt in it. */}
     <path
-      d="m25.8 34 .4-8.2 7.2-.2L25.8 34Z"
-      fill="rgb(var(--surface-raised))"
-      fillOpacity="0.5"
+      d="M34.2 25.4 25.6 34.2"
       stroke="rgb(var(--lava-flow))"
-      strokeOpacity="0.8"
-      strokeWidth="1.4"
-      strokeLinejoin="round"
-    />
-
-    {/* The letter, as a fissure with the core showing through it. Same two passes as the cracks
-        it replaces — the split, then the melt down inside it carrying `ember-pulse`. */}
-    <StudioLetter transform={LETTER_ON_SHEET} strokeWidth={4} strokeOpacity={0.85} />
-    <StudioLetter
-      transform={LETTER_ON_SHEET}
-      stroke="rgb(var(--lava-core))"
-      strokeWidth={1.8}
-      className="ember-pulse"
-    />
-
-    {/* The melt at the bottom seam — the skin's one claim, on its own mark. */}
-    <path
-      d="M6.6 32.8 25.4 32.2"
-      stroke="rgb(var(--lava-flow))"
-      strokeWidth="2"
-      strokeLinecap="round"
       strokeOpacity="0.9"
+      strokeWidth="1.4"
+      strokeLinecap="round"
     />
+
+    <StudioMonogram fillOpacity={0.88} />
+    <path d={MONOGRAM_CORE} fill="rgb(var(--lava-core))" className="ember-pulse" />
 
     {/* The spatter, welded onto the top-left corner where the pin would be. */}
     <path
-      d="M6.4 6.2 13 5.8l-1.4 4.4-3.2 1.6-2.6-2.2Z"
+      d="M4.4 4.6 10 4.2 8.8 8 6.2 9.2 4.2 7.4Z"
       fill="rgb(var(--lava-flow))"
       stroke="rgb(var(--lava-core))"
       strokeOpacity="0.7"
-      strokeWidth="1.1"
+      strokeWidth="1"
       strokeLinejoin="round"
     />
   </svg>

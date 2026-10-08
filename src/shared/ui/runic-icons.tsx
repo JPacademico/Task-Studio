@@ -1,58 +1,36 @@
 import { cn } from '@/shared/lib/cn';
 import { type GlyphProps } from './glyph-kit';
-import { LETTER_ON_SHEET, StudioLetter } from './studio-letter';
+import { MARK_BRACKET, MONOGRAM_CORE, StudioMonogram } from './studio-monogram';
 
 /**
- * This skin's product mark. Its navigation set is gone. There used to be a full set of runic
- * navigation glyphs here, exported as `RUNIC_GLYPHS` and swapped in by `NavGlyph`.
- */
-/**
- * The product mark: the same Post-it, cut into a slab. The pad, the peeled corner and the pin are
- * the product's signature across every skin.
+ * The product mark, cut into a slab: the corner broken off where paper would curl, `TS` carved in
+ * with the rune light down in the cut, and a nail through the top-left corner.
  */
 export const RunicMark = ({ className }: GlyphProps) => (
   <svg viewBox="0 0 40 40" fill="none" aria-hidden className={cn('h-10 w-10', className)}>
-    {/* The slab behind, so the mark reads as a stack and not one stone. */}
-    <rect x="8" y="9" width="26" height="26" fill="currentColor" fillOpacity="0.2" />
+    <path d={MARK_BRACKET} fill="currentColor" fillOpacity="0.8" />
 
-    {/* The face. */}
+    {/* The face, with the corner snapped off along a jagged break. */}
     <path
-      d="M6 6h27v20.4L25.2 34H6Z"
+      d="M4 4H34V25.6L31.6 27L30.8 30.2L27.8 31L26.2 34H4Z"
       fill="currentColor"
       stroke="rgb(var(--rune-stone))"
       strokeOpacity="0.5"
-      strokeWidth="1.4"
+      strokeWidth="1.3"
       strokeLinejoin="round"
     />
 
-    {/* The broken corner. */}
-    <path
-      d="M25.2 34v-7.6H33L25.2 34Z"
-      fill="rgb(var(--surface-raised))"
-      fillOpacity="0.5"
-      stroke="rgb(var(--rune-stone))"
-      strokeOpacity="0.45"
-      strokeWidth="1.4"
-      strokeLinejoin="round"
-    />
+    <StudioMonogram fillOpacity={0.88} />
+    <path d={MONOGRAM_CORE} fill="rgb(var(--rune-glow))" className="rune-pulse" />
 
-    {/* The letter, cut into the stone — and the light down in the cut. */}
-    <StudioLetter transform={LETTER_ON_SHEET} strokeWidth={3.9} strokeOpacity={0.85} />
-    <StudioLetter
-      transform={LETTER_ON_SHEET}
-      stroke="rgb(var(--rune-glow))"
-      strokeWidth={1.9}
-      className="rune-pulse"
-    />
-
-    {/* The nail, driven through the top-left corner. */}
+    {/* The nail. */}
     <path
-      d="M6.6 6.2h6.4l-2.6 6.2h-1.2Z"
+      d="M4.8 5H10.6L8.3 10.4H7.1Z"
       fill="rgb(var(--rune-stone))"
       fillOpacity="0.9"
       stroke="rgb(var(--surface-raised))"
       strokeOpacity="0.6"
-      strokeWidth="1.2"
+      strokeWidth="1"
       strokeLinejoin="round"
     />
   </svg>

@@ -4,7 +4,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { useSkin } from '@/app/providers/theme-provider';
 import type { ThemeSkin } from '@/entities/user/model/types';
 import { cn } from '@/shared/lib/cn';
-import { LETTER_ON_SHEET, StudioLetter } from './studio-letter';
+import { MARK_BRACKET, MARK_SHEET, StudioMonogram } from './studio-monogram';
 import { AutumnMark } from './autumn-icons';
 import { JadeMark } from './dragon-icons';
 import { KaijuMark } from './kaiju-icons';
@@ -541,15 +541,51 @@ export const PostItGlyph = ({ className }: { className?: string }) => {
 
 interface StudioMarkProps {
   className?: string;
-  /** Lifts and straightens on hover — used where the mark is also a link. */
+  /** Lifts and tilts on hover — used where the mark is also a link. */
   interactive?: boolean;
 }
 
+/** The mark exactly as the design team drew it, in the skin's brand colour and ink. */
+export const DrawnMark = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 40 40" fill="none" aria-hidden className={cn('h-10 w-10', className)}>
+    <path d={MARK_BRACKET} fill="currentColor" />
+    <path d={MARK_SHEET} fill="currentColor" />
+    <StudioMonogram />
+  </svg>
+);
+
+/** The T, then the S, in 2-unit squares: each row is `[y, x, width]`. */
+const PIXEL_LETTERS: [number, number, number][] = [
+  [11, 5, 10], [13, 5, 10], [15, 7, 6], [17, 7, 6], [19, 7, 6], [21, 7, 6], [23, 7, 6],
+  [11, 19, 10], [13, 17, 6], [15, 17, 12], [17, 19, 12], [19, 25, 6], [21, 17, 14], [23, 19, 10],
+];
+
+/** The arcade's mark: the same sheet, bracket and letters built out of squares. */
+export const PixelMark = ({ className }: { className?: string }) => (
+  <svg
+    viewBox="0 0 40 40"
+    fill="none"
+    aria-hidden
+    shapeRendering="crispEdges"
+    className={cn('h-10 w-10', className)}
+  >
+    <path d="M35 5H37V37H5V35H35Z" fill="currentColor" />
+    {/* The curl, as a staircase. */}
+    <path d="M3 3H33V25H31V27H29V29H25V31H19V33H3Z" fill="currentColor" />
+    <g fill="rgb(var(--brand-contrast))">
+      {PIXEL_LETTERS.map(([y, x, width]) => (
+        <rect key={`${x}-${y}`} x={x} y={y} width={width} height="2" />
+      ))}
+    </g>
+  </svg>
+);
+
 /**
- * Which skins introduce the product as something other than a square of paper. A note among stars,
- * a note taped and stamped, a masthead on page one.
+ * Which skins draw the mark in their own material. The sheet, the bracket and `TS` stay; the
+ * corner, the texture and what has landed on it change.
  */
 const MARKS: Partial<Record<ThemeSkin, ComponentType<{ className?: string }>>> = {
+  PIXEL: PixelMark,
   SPACE: SpaceMark,
   HAZARD: HazardMark,
   NEWSPAPER: NewspaperMark,
@@ -563,101 +599,30 @@ const MARKS: Partial<Record<ThemeSkin, ComponentType<{ className?: string }>>> =
   KAIJU: KaijuMark,
 };
 
-/**
- * The product mark: a Post-it with the product's initial on it. The drawing is the design team's:
- * one sheet, the bottom-right corner rolled under, and a handwritten `t`.
- */
+/** Steps the hover in thirds on the arcade skin: a sprite never sits between frames. */
+const stepped = (progress: number) => Math.ceil(progress * 3) / 3;
+
+/** The product mark, in the active skin's version. */
 export const StudioMark = ({ className, interactive = false }: StudioMarkProps) => {
   const reduceMotion = useReducedMotion();
   const skin = useSkin();
   const isPixel = skin === 'PIXEL';
+  const Drawn = MARKS[skin] ?? DrawnMark;
 
-  const Drawn = MARKS[skin];
-
-  if (Drawn) {
-    return (
-      <motion.span
-        className={cn('block', className)}
-        initial={false}
-        whileHover={interactive && !reduceMotion ? { scale: 1.06, rotate: -4 } : undefined}
-        transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-      >
-        <Drawn className="h-full w-full" />
-      </motion.span>
-    );
-  }
-
-  // The arcade's mark is the same object built out of squares, and it never
-  // sits off the grid — a tilted sprite is a sprite drawn wrong.
-  if (isPixel) {
-    return (
-      <motion.svg
-        viewBox="0 0 40 40"
-        fill="none"
-        aria-hidden
-        shapeRendering="crispEdges"
-        className={cn('h-10 w-10', className)}
-        initial={false}
-        whileHover={interactive && !reduceMotion ? { scale: 1.08 } : undefined}
-        transition={{ duration: 0.12, ease: (progress: number) => Math.ceil(progress * 3) / 3 }}
-      >
-        {/* The pad behind. */}
-        <rect x="10" y="10" width="26" height="26" fill="currentColor" fillOpacity="0.25" />
-
-        {/* The paper. */}
-        <rect x="4" y="4" width="28" height="28" fill="currentColor" />
-        {/* Staircase peel. */}
-        <rect x="24" y="28" width="8" height="4" fill="rgb(var(--surface))" />
-        <rect x="28" y="24" width="4" height="4" fill="rgb(var(--surface))" />
-        <rect x="24" y="24" width="4" height="4" fill="currentColor" fillOpacity="0.5" />
-
-        {/* The letter, in squares. `StudioLetter` is a curve, and a curve is the one thing this
-            skin cannot have — a sprite is not a smooth shape with the anti-aliasing turned off. */}
-        <g fill="rgb(var(--surface-raised))" fillOpacity="0.95">
-          <rect x="15" y="9" width="4" height="15" />
-          <rect x="10" y="13" width="13" height="3" />
-          <rect x="19" y="21" width="5" height="3" />
-        </g>
-      </motion.svg>
-    );
-  }
+  // A tilted sprite is a sprite drawn wrong, so the arcade's only grows.
+  const hover = isPixel ? { scale: 1.08 } : { scale: 1.06, rotate: -3 };
 
   return (
-    <motion.svg
-      viewBox="0 0 40 40"
-      fill="none"
-      aria-hidden
-      className={cn('h-10 w-10', className)}
+    <motion.span
+      className={cn('block', className)}
       initial={false}
-      whileHover={interactive && !reduceMotion ? { rotate: 0, scale: 1.06 } : undefined}
-      animate={{ rotate: -3 }}
-      transition={{ type: 'spring', stiffness: 320, damping: 20 }}
-      style={{ transformOrigin: '50% 50%' }}
+      whileHover={interactive && !reduceMotion ? hover : undefined}
+      transition={
+        isPixel ? { duration: 0.12, ease: stepped } : { type: 'spring', stiffness: 260, damping: 20 }
+      }
     >
-      {/* The paper, with the bottom-right corner rolled under. It was a triangle — the corner
-          cut off on a straight diagonal. */}
-      <path
-        d="M6 6.5h27v19.1c-3.7 1-8 4.3-8.9 8.4H6V6.5Z"
-        fill="currentColor"
-        stroke="currentColor"
-        strokeOpacity="0.35"
-        strokeWidth="1.2"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M33 25.6c-3.7 1-8 4.3-8.9 8.4 6.3-1 9.6-4 8.9-8.4Z"
-        fill="rgb(var(--surface-raised))"
-        fillOpacity="0.72"
-        stroke="currentColor"
-        strokeOpacity="0.3"
-        strokeWidth="1.2"
-        strokeLinejoin="round"
-      />
-
-      {/* The letter, which is now what the mark says. Two ruled lines and a pin head used to
-          sit here. */}
-      <StudioLetter transform={LETTER_ON_SHEET} strokeOpacity={0.92} />
-    </motion.svg>
+      <Drawn className="h-full w-full" />
+    </motion.span>
   );
 };
 

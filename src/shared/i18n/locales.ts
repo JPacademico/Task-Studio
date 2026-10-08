@@ -359,7 +359,7 @@ const en = {
     'A finished project is already off the board — reopen it first if you want to archive it instead.',
 
   'project.deleteExplain':
-    'Everything in it — tasks, notes, documents and the conversation — goes with it. It lands in your recycle bin, where it can be restored for 30 days before it is destroyed.',
+    'Everything in it — tasks, notes, documents and the conversation — goes with it. It lands in your recycle bin, where it can be restored for 7 days before it is destroyed.',
   'project.deleteProject': 'Delete project',
   'project.deleteConfirmBody': 'Type {name} to confirm.',
   'project.deleteConfirmLabel': 'Project name',
@@ -1796,7 +1796,7 @@ const en = {
   'bin.projects': 'Projects',
   'bin.noDeletedProjects': 'No deleted projects',
   'bin.deletedProjectsBody':
-    'A deleted project waits here for 30 days with everything still inside it. After that it is destroyed, and so are its files.',
+    'A deleted project waits here for 7 days with everything still inside it. After that it is destroyed, and so are its files.',
   'bin.expiresOn': 'Destroyed {date}',
   'bin.expiresToday': 'Destroyed today',
   'bin.expiresInDays': 'Destroyed in {days} day(s)',
@@ -3101,7 +3101,7 @@ const ptBR: Record<TranslationKey, string> = {
     'Um projeto concluído já sai do quadro — reabra antes se quiser arquivá-lo.',
 
   'project.deleteExplain':
-    'Tudo que está nele — tarefas, notas, documentos e a conversa — vai junto. Ele fica na sua lixeira, onde pode ser restaurado por 30 dias antes de ser destruído.',
+    'Tudo que está nele — tarefas, notas, documentos e a conversa — vai junto. Ele fica na sua lixeira, onde pode ser restaurado por 7 dias antes de ser destruído.',
   'project.deleteProject': 'Excluir projeto',
   'project.deleteConfirmBody': 'Digite {name} para confirmar.',
   'project.deleteConfirmLabel': 'Nome do projeto',
@@ -4487,7 +4487,7 @@ const ptBR: Record<TranslationKey, string> = {
   'bin.projects': 'Projetos',
   'bin.noDeletedProjects': 'Nenhum projeto excluído',
   'bin.deletedProjectsBody':
-    'Um projeto excluído espera aqui por 30 dias com tudo ainda dentro dele. Depois disso ele é destruído, e os arquivos também.',
+    'Um projeto excluído espera aqui por 7 dias com tudo ainda dentro dele. Depois disso ele é destruído, e os arquivos também.',
   'bin.expiresOn': 'Destruído em {date}',
   'bin.expiresToday': 'Destruído hoje',
   'bin.expiresInDays': 'Destruído em {days} dia(s)',

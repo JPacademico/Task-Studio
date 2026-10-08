@@ -1,27 +1,26 @@
 import { cn } from '@/shared/lib/cn';
 import { type GlyphProps } from './glyph-kit';
-import { LETTER_ON_SHEET, StudioLetter } from './studio-letter';
+import { MARK_BRACKET, MONOGRAM_CORE, StudioMonogram } from './studio-monogram';
 
 /**
- * This skin's product mark. Its navigation set is gone. There used to be a full set of underwater
- * navigation glyphs here, exported as `UNDERWATER_GLYPHS` and swapped in by `NavGlyph`.
- */
-/**
- * The product mark: the same Post-it, gone soft. The pad, the peeled corner and the pin are the
- * product's signature across every skin.
+ * The product mark, gone soft: every side of the sheet bows outward, a caustic crawls over the
+ * letters, and the pin has become a bubble on its way up.
  */
 export const UnderwaterMark = ({ className }: GlyphProps) => (
   <svg viewBox="0 0 40 40" fill="none" aria-hidden className={cn('h-10 w-10', className)}>
-    {/* The sheet behind, so the mark reads as a stack. */}
     <path
-      d="M9 11c0-1.6 1.4-2.6 3-2.6h20c1.6 0 2.6 1 2.6 2.6v20c0 1.6-1 2.6-2.6 2.6H12c-1.6 0-3-1-3-2.6Z"
+      d={MARK_BRACKET}
       fill="currentColor"
-      fillOpacity="0.2"
+      fillOpacity="0.7"
+      stroke="currentColor"
+      strokeOpacity="0.7"
+      strokeWidth="0.4"
+      strokeLinejoin="round"
     />
 
-    {/* The face. Every side bows outward — nothing submerged stays flat. */}
+    {/* Bowed sides and soft corners; the curl was already the softest thing in the mark. */}
     <path
-      d="M6 9.4C6 7.6 7.6 6 9.4 6h20.2c1.8 0 3.4 1.6 3.4 3.4 0 6.4.6 10.6 0 16.6C31.6 30 28 34 24.6 34H9.4C7.6 34 6 32.4 6 30.6Z"
+      d="M7.2 4.4C14 3.6 24.6 3.6 30.8 4.4Q34.2 4.8 34.1 8.2C33.8 13 34.2 18.4 34 23C34 25.4 32.75 27.85 30.5 28.76C29.58 29.16 28.6 29.15 27.5 29.15C26.6 30.6 25.4 31.6 23.6 32.4C21.2 33.5 18.2 34 14.4 34L7.8 34.2Q4.3 34.3 4.2 30.8C3.9 23.4 4.5 14.6 4.3 7.8Q4.3 4.7 7.2 4.4Z"
       fill="currentColor"
       stroke="rgb(var(--tide-deep))"
       strokeOpacity="0.35"
@@ -29,37 +28,20 @@ export const UnderwaterMark = ({ className }: GlyphProps) => (
       strokeLinejoin="round"
     />
 
-    {/* The corner lifting in the current. */}
-    <path
-      d="M24.6 34c.4-3.6.6-6 2.6-7 1.8-.9 3.6-1 5.8-.4-2.6 3.6-5.4 6-8.4 7.4Z"
-      fill="rgb(var(--surface-raised))"
-      fillOpacity="0.55"
-      stroke="rgb(var(--tide-deep))"
-      strokeOpacity="0.3"
-      strokeWidth="1.2"
-      strokeLinejoin="round"
-    />
+    <StudioMonogram fillOpacity={0.88} />
+    <path d={MONOGRAM_CORE} fill="rgb(var(--tide-glow))" className="tide-caustic" />
 
-    {/* The letter, and the caustic crawling over it. Two passes like the two run lines before
-        it: the ink, then the same shape again in the skin's glow carrying `tide-caustic`. */}
-    <StudioLetter transform={LETTER_ON_SHEET} strokeWidth={3.9} strokeOpacity={0.85} />
-    <StudioLetter
-      transform={LETTER_ON_SHEET}
-      stroke="rgb(var(--tide-glow))"
-      strokeWidth={1.8}
-      className="tide-caustic"
-    />
-
-    {/* The pin, become a bubble on its way out from under the top edge. */}
+    {/* The bubbles, out from under the top edge. */}
     <circle
-      cx="10.6"
-      cy="8.4"
-      r="3.4"
+      cx="7.6"
+      cy="7.6"
+      r="2.4"
       fill="rgb(var(--surface-raised))"
       fillOpacity="0.35"
       stroke="rgb(var(--tide-glow))"
-      strokeWidth="1.3"
+      strokeWidth="1.1"
     />
-    <circle cx="9.4" cy="7.2" r="1" fill="rgb(var(--surface-raised))" fillOpacity="0.9" />
+    <circle cx="6.8" cy="6.8" r="0.7" fill="rgb(var(--surface-raised))" fillOpacity="0.9" />
+    <circle cx="11.6" cy="3.2" r="1.1" stroke="rgb(var(--tide-glow))" strokeWidth="0.8" />
   </svg>
 );

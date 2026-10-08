@@ -1,55 +1,29 @@
 import { cn } from '@/shared/lib/cn';
 import { type GlyphProps } from './glyph-kit';
+import { MARK_BRACKET, MARK_SHEET, MONOGRAM_CORE, StudioMonogram } from './studio-monogram';
 
 /**
- * The Halloween skin's product mark, plus the two decorations the skin owns. The mark follows the
- * rule every other skin's does: the *object* stays — the pad, the peeled corner, the pin.
+ * The Halloween skin's product mark: the design team's sheet as a lantern. `TS` is carved out of
+ * it, with the wall showing through the cuts and a candle burning down inside them.
  */
 export const HalloweenMark = ({ className }: GlyphProps) => (
   <svg viewBox="0 0 40 40" fill="none" aria-hidden className={cn('h-10 w-10', className)}>
-    {/* The sheet behind, so the mark reads as a pad rather than one square. */}
-    <rect
-      x="7"
-      y="8"
-      width="26"
-      height="26"
-      rx="3"
-      fill="currentColor"
-      fillOpacity="0.22"
-      transform="rotate(6 20 20)"
-    />
-
-    {/* The paper. */}
+    <path d={MARK_BRACKET} fill="currentColor" fillOpacity="0.8" />
     <path
-      d="M6 6.5h27v19.1c-3.7 1-8 4.3-8.9 8.4H6V6.5Z"
+      d={MARK_SHEET}
       fill="currentColor"
       stroke="rgb(var(--content) / 0.35)"
       strokeWidth="1.1"
       strokeLinejoin="round"
     />
 
-    {/* Peeled corner, rolled under. */}
-    <path
-      d="M33 25.6c-3.7 1-8 4.3-8.9 8.4 6.3-1 9.6-4 8.9-8.4Z"
-      fill="rgb(var(--surface-raised))"
-      fillOpacity="0.75"
-      stroke="rgb(var(--content) / 0.3)"
-      strokeWidth="1"
-      strokeLinejoin="round"
-    />
-
-    {/* The carved face, cut *out* of the sheet rather than drawn on it. Filled with the page's
-        own surface so the shapes read as holes with the wall showing through. */}
-    <path d="M12.2 14.4l4.3 2.6-4.3 2.6v-5.2Z" fill="rgb(var(--surface))" />
-    <path d="M26.6 14.4v5.2l-4.3-2.6 4.3-2.6Z" fill="rgb(var(--surface))" />
-    <path
-      d="M12.6 23.2h13.4c-.7 2.6-3.3 4.3-6.7 4.3s-6-1.7-6.7-4.3Zm3.1 1.3.9 1.5.9-1.5h-1.8Zm5.6 0 .9 1.5.9-1.5h-1.8Z"
-      fill="rgb(var(--surface))"
-    />
+    {/* Holes, not ink: the page's own surface, then the flame inside. */}
+    <StudioMonogram fill="rgb(var(--surface))" />
+    <path d={MONOGRAM_CORE} fill="#ffc861" fillOpacity="0.85" />
 
     {/* The pin, as on every other mark. */}
-    <circle cx="19.5" cy="5.6" r="3" fill="rgb(var(--danger))" />
-    <circle cx="18.6" cy="4.8" r="0.9" fill="#fff" fillOpacity="0.55" />
+    <circle cx="19" cy="5.4" r="2.6" fill="rgb(var(--danger))" />
+    <circle cx="18.2" cy="4.7" r="0.8" fill="#fff" fillOpacity="0.55" />
   </svg>
 );
 

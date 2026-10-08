@@ -1,67 +1,40 @@
 import { cn } from '@/shared/lib/cn';
 import { type GlyphProps } from './glyph-kit';
-import { StudioLetter } from './studio-letter';
+import { MARK_BRACKET, StudioMonogram } from './studio-monogram';
 
 /**
- * This skin's product mark. Its navigation set is gone. There used to be a full set of space
- * navigation glyphs here, exported as `SPACE_GLYPHS` and swapped in by `NavGlyph`.
- */
-/**
- * The product mark, in orbit: the same square of paper the rest of the app introduces itself with,
- * drawn as the deep field draws paper.
+ * The product mark, in orbit: the design team's sheet drawn as the deep field draws paper — a lit
+ * slate with a clipped bevel where the drawn skins curl a corner.
  */
 export const SpaceMark = ({ className }: GlyphProps) => (
   <svg viewBox="0 0 40 40" fill="none" aria-hidden className={cn('h-10 w-10', className)}>
-    {/* The slate behind, so the mark reads as a stack and not a single panel. */}
+    <path d={MARK_BRACKET} fill="currentColor" fillOpacity="0.7" />
+
+    {/* Same silhouette as `SlatePaper`: nothing out here is made of paper that curls. */}
     <path
-      d="M12 9.5h20v14.5L26 30H12V9.5Z"
+      d="M4 4H34V25L25 34H4Z"
       fill="currentColor"
-      fillOpacity="0.2"
+      fillOpacity="0.94"
       stroke="currentColor"
-      strokeOpacity="0.28"
+      strokeOpacity="0.5"
       strokeWidth="1.2"
       strokeLinejoin="round"
     />
 
-    {/* The note. Same silhouette as `SlatePaper` — a clipped bevel where the drawn skins curl a
-        corner, because nothing out here is made of paper that curls. */}
-    <path
-      d="M6 6h21v15.5L20.5 28H6V6Z"
-      fill="currentColor"
-      fillOpacity="0.92"
-      stroke="currentColor"
-      strokeOpacity="0.5"
-      strokeWidth="1.4"
-      strokeLinejoin="round"
-    />
+    {/* The lit rim along the top, and the beam along the bevel. */}
+    <path d="M6.4 6.6H31.6" stroke="rgb(var(--space-plasma))" strokeWidth="1.6" />
+    <path d="M34 25 25 34" stroke="rgb(var(--space-flare))" strokeOpacity="0.85" strokeWidth="1.4" />
 
-    {/* The lit rim along the top, and the beam along the clipped corner. */}
-    <path d="M8.2 8.6h16.6" stroke="rgb(var(--space-plasma))" strokeWidth="2" />
-    <path
-      d="M20.5 28v-6.5H27"
-      fill="none"
-      stroke="rgb(var(--space-flare))"
-      strokeOpacity="0.85"
-      strokeWidth="1.6"
-      strokeLinejoin="round"
-    />
+    <StudioMonogram fillOpacity={0.95} />
 
-    {/* The letter, etched into the panel. Its own placement rather than `LETTER_ON_SHEET`: this
-        note is 21×22 where the drawn skins' sheet is 27×27.5. */}
-    <StudioLetter transform="translate(8.4 9.6) scale(0.64)" strokeOpacity={0.9} />
-
-    {/* The field it hangs in — and one star flaring hard enough to have points. */}
+    {/* The field it hangs in, and one star flaring hard enough to have points. */}
     <g fill="rgb(var(--space-flare))">
-      <circle cx="34.5" cy="7" r="1.2" />
-      <circle cx="4.5" cy="31" r="1" opacity="0.85" />
-      <circle cx="36" cy="21" r="0.9" opacity="0.7" />
+      <circle cx="38" cy="2.6" r="1.1" />
+      <circle cx="31.6" cy="32" r="0.9" opacity="0.85" />
     </g>
-    <g fill="rgb(var(--space-plasma))">
-      <circle cx="31" cy="33" r="1.1" opacity="0.9" />
-      <circle cx="3" cy="3" r="0.8" opacity="0.75" />
-    </g>
+    <circle cx="2.4" cy="38" r="0.9" fill="rgb(var(--space-plasma))" opacity="0.9" />
     <path
-      d="M32.5 12.5 33.4 15.1 36 16 33.4 16.9 32.5 19.5 31.6 16.9 29 16 31.6 15.1Z"
+      d="M38 9.4 38.7 11.3 40 12 38.7 12.7 38 14.6 37.3 12.7 36 12 37.3 11.3Z"
       fill="rgb(var(--space-plasma))"
       opacity="0.95"
     />

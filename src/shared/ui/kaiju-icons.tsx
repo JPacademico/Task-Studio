@@ -2,6 +2,7 @@ import { useId, useRef, type CSSProperties } from 'react';
 
 import { cn } from '@/shared/lib/cn';
 import { type GlyphProps } from './glyph-kit';
+import { MONOGRAM, monogramAt } from './studio-monogram';
 import { useSurge } from './use-surge';
 
 /** One dorsal plate's outline, as fractions of its box: a swept spike with concave sides. */
@@ -19,26 +20,30 @@ const stop = (offset: number, colour: string, opacity = 1) => (
   <stop offset={offset} style={{ stopColor: `rgb(var(${colour}))`, stopOpacity: opacity }} />
 );
 
-/** The mark's body: a T with a short tail curling off the foot of its stem, in one outline. */
-const T_BODY =
-  'M6.5 9H33.5Q36 9 36 11.5V16.5Q36 19 33.5 19H24.5V27.5C27.6 29.4 30.6 30 33.2 29.2L37.4 26.6' +
-  'L35.2 31.8C32 35.6 27 36.6 22 36H18Q15.5 36 15.5 33.5V19H6.5Q4 19 4 16.5V11.5Q4 9 6.5 9Z';
+/** Where the monster stands: `TS` grown to fill the box, leaving the top for the crest. */
+const BODY = monogramAt(20, 23.4, 1.55);
 
-/** The crest on the crossbar, then two small spikes down the tail: where each stands, and how tall. */
+/** The crest along both letters: where each plate stands, its lean, and how tall. */
 const FINS = [
-  { x: 13, y: 10, turn: 0, h: 7.5 },
-  { x: 20, y: 10, turn: 0, h: 10.5 },
-  { x: 27, y: 10, turn: 0, h: 7.5 },
-  { x: 28.6, y: 29.8, turn: 12, h: 4.6 },
-  { x: 32.2, y: 29.6, turn: 24, h: 3.8 },
+  { x: 7.6, y: 12.6, turn: -8, h: 6.5 },
+  { x: 13.4, y: 12.6, turn: -4, h: 9 },
+  { x: 19.8, y: 12.6, turn: 0, h: 10.5 },
+  { x: 26, y: 12.8, turn: 4, h: 9 },
+  { x: 31.6, y: 13.4, turn: 10, h: 6.5 },
 ];
 
 /** One eye, slanted down towards the middle; the right one is this mirrored. */
 const EYE = 'M9.8 12.4L16.6 14.3Q15.6 16.6 13 16.3Q10.4 15.9 9.8 12.4Z';
 
+/** One eye in each letter: the T's crossbar and the S's upper bowl, at one height. */
+const EYES = [
+  'translate(8.9 15.9) scale(0.75) translate(-13.2 -14.4)',
+  'translate(31.2 15.9) scale(-0.75 0.75) translate(-13.2 -14.4)',
+];
+
 /**
- * The Kaiju skin's product mark: a T that is the monster — scaled hide, two violet eyes in the
- * crossbar, a crest of plates on top and a tail curling off its foot.
+ * The Kaiju skin's product mark: `TS` is the monster. Scaled hide, a crest of plates along the top
+ * of both letters, and a violet eye in each.
  */
 export const KaijuMark = ({ className }: GlyphProps) => {
   const id = useId();
@@ -65,17 +70,17 @@ export const KaijuMark = ({ className }: GlyphProps) => {
           {stop(0, '--kaiju-volt', 0.9)}
           {stop(1, '--kaiju-volt', 0)}
         </radialGradient>
-        {/* Rows of arcs, each offset half a scale: the panels' hide, at the mark's size. */}
-        <pattern id={`${id}-scales`} width="5" height="3.4" patternUnits="userSpaceOnUse">
+        {/* Rows of arcs, each offset half a scale; sized in letter units, before the 1.55 grow. */}
+        <pattern id={`${id}-scales`} width="3.2" height="2.2" patternUnits="userSpaceOnUse">
           <path
-            d="M0 0a2.5 1.6 0 0 0 5 0M-2.5 1.7a2.5 1.6 0 0 0 5 0M2.5 1.7a2.5 1.6 0 0 0 5 0M0 3.4a2.5 1.6 0 0 0 5 0"
+            d="M0 0a1.6 1 0 0 0 3.2 0M-1.6 1.1a1.6 1 0 0 0 3.2 0M1.6 1.1a1.6 1 0 0 0 3.2 0M0 2.2a1.6 1 0 0 0 3.2 0"
             stroke="rgb(var(--kaiju-scale-ink))"
             strokeOpacity="0.4"
-            strokeWidth="0.45"
+            strokeWidth="0.3"
           />
         </pattern>
         <clipPath id={`${id}-clip`}>
-          <path d={T_BODY} />
+          <path d={MONOGRAM} />
         </clipPath>
       </defs>
 
@@ -85,18 +90,15 @@ export const KaijuMark = ({ className }: GlyphProps) => {
         </g>
       ))}
 
-      <path d={T_BODY} fill={`url(#${id}-hide)`} />
-      <rect x="4" y="9" width="34" height="28" fill={`url(#${id}-scales)`} clipPath={`url(#${id}-clip)`} />
-      <path
-        d={T_BODY}
-        stroke="rgb(var(--kaiju-rim))"
-        strokeWidth="1.3"
-        strokeLinejoin="round"
-      />
+      <g transform={BODY}>
+        <path d={MONOGRAM} fill={`url(#${id}-hide)`} />
+        <rect x="8" y="11" width="22" height="16" fill={`url(#${id}-scales)`} clipPath={`url(#${id}-clip)`} />
+        <path d={MONOGRAM} stroke="rgb(var(--kaiju-rim))" strokeWidth="0.85" strokeLinejoin="round" />
+      </g>
 
       {/* The eyes: a glow behind, the iris, a slit pupil, a glint. */}
-      {[false, true].map((isRight) => (
-        <g key={String(isRight)} transform={isRight ? 'matrix(-1 0 0 1 40 0)' : undefined}>
+      {EYES.map((transform) => (
+        <g key={transform} transform={transform}>
           <circle cx="13.2" cy="14.4" r="4.4" fill={`url(#${id}-glow)`} />
           <path d={EYE} fill="rgb(var(--kaiju-eye))" stroke="rgb(var(--kaiju-volt-core))" strokeWidth="0.4" />
           <rect x="12.75" y="13.6" width="1" height="2.5" rx="0.5" fill="rgb(var(--kaiju-hide))" />
