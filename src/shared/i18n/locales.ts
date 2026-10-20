@@ -659,7 +659,7 @@ const en = {
   'landing.pages.hint': 'Or drop in a PDF and it stays exactly as it is.',
 
   'landing.demo.undoTab': 'Changelog',
-  'landing.demo.undoTitle': 'Every change, and a way back from it',
+  'landing.demo.undoTitle': 'Recent changes, and a way back from them',
   'landing.undo.task': 'Ship the billing page',
   'landing.undo.log': 'Changelog',
   'landing.undo.deleted': 'Ana moved a task to the bin',
@@ -2239,6 +2239,8 @@ const en = {
   'live.noCamera': 'No camera available.',
   'live.askToSpeak': 'A moderator has to let you speak in this room.',
   'live.askToPresent': 'A moderator has to let you share a screen in this room.',
+  'live.shareSoundSystemWide':
+    "Sharing without sound: on this computer the browser can only capture every app's audio, this call included. To share sound, share a browser tab.",
   'live.muteByModerator': 'A moderator muted you.',
   'live.displaced': 'You joined this room somewhere else.',
   'project.tabAssistant': 'Assistant',
@@ -2248,9 +2250,9 @@ const en = {
   'task.afterProjectEnd': 'This project finishes on {date}. Pick an earlier deadline.',
 
   'activity.title': 'Changelog',
-  'activity.subtitle': 'Everything that has happened in this project, newest first.',
-  'activity.entryCount': '{count} entries',
-  'activity.loadMore': 'Load older entries',
+  'activity.subtitle': 'The latest {max} changes in this project, newest first.',
+  'activity.entryCount': '{count} of {max}',
+  'activity.capNote': 'Only the latest {max} are kept: the next change deletes the oldest.',
   'activity.empty': 'Nothing has happened yet',
   'activity.emptyHint':
     'Tasks, pages, meetings and roster changes all leave a line here. The first one arrives as soon as somebody does something.',
@@ -3397,7 +3399,7 @@ const ptBR: Record<TranslationKey, string> = {
   'landing.pages.hint': 'Ou solte um PDF e ele fica exatamente como está.',
 
   'landing.demo.undoTab': 'Histórico',
-  'landing.demo.undoTitle': 'Toda mudança, e um caminho de volta',
+  'landing.demo.undoTitle': 'Mudanças recentes, e um caminho de volta',
   'landing.undo.task': 'Publicar a página de cobrança',
   'landing.undo.log': 'Histórico',
   'landing.undo.deleted': 'Ana mandou uma tarefa para a lixeira',
@@ -4922,6 +4924,8 @@ const ptBR: Record<TranslationKey, string> = {
   'live.noCamera': 'Nenhuma câmera disponível.',
   'live.askToSpeak': 'Um moderador precisa liberar sua fala nesta sala.',
   'live.askToPresent': 'Um moderador precisa liberar o compartilhamento nesta sala.',
+  'live.shareSoundSystemWide':
+    'Compartilhando sem som: neste computador o navegador só consegue capturar o áudio de todos os apps, incluindo esta chamada. Para compartilhar o som, compartilhe uma aba do navegador.',
   'live.muteByModerator': 'Um moderador desligou seu microfone.',
   'live.displaced': 'Você entrou nesta sala em outro lugar.',
   'project.tabAssistant': 'Assistente',
@@ -4930,9 +4934,9 @@ const ptBR: Record<TranslationKey, string> = {
   'task.afterProjectEnd': 'Este projeto termina em {date}. Escolha um prazo anterior.',
 
   'activity.title': 'Histórico',
-  'activity.subtitle': 'Tudo o que aconteceu neste projeto, do mais recente ao mais antigo.',
-  'activity.entryCount': '{count} registros',
-  'activity.loadMore': 'Carregar registros antigos',
+  'activity.subtitle': 'As últimas {max} mudanças neste projeto, da mais recente à mais antiga.',
+  'activity.entryCount': '{count} de {max}',
+  'activity.capNote': 'Só as últimas {max} ficam guardadas: a próxima mudança apaga a mais antiga.',
   'activity.empty': 'Nada aconteceu ainda',
   'activity.emptyHint':
     'Tarefas, páginas, reuniões e mudanças na equipe deixam uma linha aqui. A primeira aparece assim que alguém fizer algo.',

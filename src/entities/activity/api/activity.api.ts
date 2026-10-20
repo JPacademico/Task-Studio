@@ -2,11 +2,9 @@ import { api } from '@/shared/api/client';
 import type { ActivityPage, RevertResult } from '../model/types';
 
 export const activityApi = {
-  /** One page of a project's changelog, newest first. */
-  async list(projectId: string, page = 1, limit = 30): Promise<ActivityPage> {
-    const { data } = await api.get<ActivityPage>(`/projects/${projectId}/activity`, {
-      params: { page, limit },
-    });
+  /** A project's changelog, newest first and whole: the API keeps only the latest `limit` lines. */
+  async list(projectId: string): Promise<ActivityPage> {
+    const { data } = await api.get<ActivityPage>(`/projects/${projectId}/activity`);
     return data;
   },
 

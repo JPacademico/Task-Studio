@@ -13,7 +13,7 @@ import type {
 import { emitWithAck, getSocket } from '@/shared/api/socket';
 import { translate } from '@/shared/i18n';
 import { SpeakingDetector } from '../lib/audio-levels';
-import { DISPLAY_MEDIA_OPTIONS, ScreenAudioMix } from '../lib/screen-share';
+import { DISPLAY_MEDIA_OPTIONS, ScreenAudioMix, isSoundContained } from '../lib/screen-share';
 
 /**
  * Where a call is, from the button being pressed to the first voice. `devices` is a state rather
@@ -1294,11 +1294,19 @@ export const useLiveCall = ({
     }
 
     const track = display.getVideoTracks()[0];
-    if (!track) {
+    // The picker can outlive the call, the permission or a share begun meanwhile. A capture kept
+    // then would run unseen, and be sent on the next join.
+    if (!track || leftRef.current || !allowedRef.current.canPresent || screenTrack.current) {
       display.getTracks().forEach((each) => each.stop());
       return;
     }
-    const sound = display.getAudioTracks()[0] ?? null;
+    let sound: MediaStreamTrack | null = display.getAudioTracks()[0] ?? null;
+    // Whole-system sound carries other apps and the call itself, so it is never sent.
+    if (sound && !isSoundContained(track, sound)) {
+      sound.stop();
+      sound = null;
+      toast.warning(translate('live.shareSoundSystemWide'));
+    }
 
     screenTrack.current = track;
     screenAudio.current = sound;

@@ -57,6 +57,7 @@ export interface ActivityEntry {
   revertedBy: UserSummary | null;
 }
 
+/** The whole changelog. `limit` is how many lines the API keeps; past it, the oldest go. */
 export interface ActivityPage {
   items: ActivityEntry[];
   total: number;

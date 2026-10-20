@@ -1,4 +1,5 @@
-"""Builds the Eldritch skin's cursor: a tentacle, tip first, that lashes when pressed."""
+"""Builds the Eldritch skin's cursor: a barbed arrowhead with an eye that glows over pressables
+and shuts on a press."""
 import base64
 import io
 import math
@@ -12,174 +13,200 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # The delivered cursor, in CSS pixels, and the supersampling factor everything is drawn at.
 BOX = 32
 S = 8
-# The working canvas, in screen pixels. The tentacle turns about its tip at the centre.
+# The working canvas, in screen pixels. The arrow is drawn tip-up at the centre, then turned.
 WORK = 72
 CENTRE = (WORK / 2, WORK / 2)
 
-# Angles in degrees, 90 = tip straight up, 135 = up and to the left like the system arrow.
-REST_DEGREES = 135
-HOVER_DEGREES = 116
-# The lash: on a press the base stays rooted in its rift and the tip strikes, forward past the
-# hotspot and hooked, in drawing units (up is forward). The body is not turned at all.
-LASH = (-1.0, -2.4)
-LASH_CURL = 7.0
-# Clear pixels between the widest frame and the edge of the box.
+# Turned about its tip so the left edge stands vertical, like the system arrow. Every frame shares
+# it: the glow and the blink are the only changes, so the hotspot never moves.
+TILT_DEGREES = 27.0
+# Clear pixels between the frame and the edge of the box.
 MARGIN = 1
-# The rim that keeps the tentacle legible over a control of its own tone, in screen pixels.
+# The rim that keeps the arrow legible over a control of its own tone, in screen pixels.
 RIM = 1.0
 
-# --- The tentacle, drawn pointing up with its tip at the origin, in screen pixels. ---
-LENGTH = 24.0
-TIP_HALF = 0.32
-BASE_HALF = 3.1
-SAMPLES = 72
+# --- The arrowhead, pointing up with its tip at the origin, in screen pixels. ---
+SCALE = 1.08
+BARB = (10.2 * SCALE, 20.0 * SCALE)
+NOTCH_Y = 14.4 * SCALE
+# The eye, after the turn: the middle of the head rather than its axis, which runs close to the
+# vertical edge. Then its half-width and half-height.
+EYE_SEAT = (6.1 * SCALE, 10.3 * SCALE)
+EYE_HALF = (3.8 * SCALE, 2.3 * SCALE)
+IRIS_R = 1.95 * SCALE
+PUPIL_HALF = (0.62 * SCALE, 1.72 * SCALE)
 
 PALETTES = {
-    # Deep-water teal on the parchment, violet suckers, a parchment rim for dark controls.
+    # Deep-water teal on the parchment, a violet iris, a parchment rim for dark controls.
     'light': {
         'body': (24, 78, 70, 255),
         'shade': (13, 48, 43, 255),
-        'belly': (94, 150, 134, 255),
-        'sucker': (214, 200, 236, 255),
-        'sucker_ring': (122, 78, 186, 255),
-        'trail': (24, 78, 70, 110),
-        'void': (20, 16, 26, 255),
-        'void_ring': (122, 78, 186, 255),
+        'ridge': (94, 150, 134, 255),
+        'sclera': (236, 230, 210, 255),
+        'lid_line': (9, 30, 27, 255),
+        'lid': (60, 118, 104, 255),
+        'iris': (122, 78, 186, 255),
+        'iris_ring': (64, 34, 112, 255),
+        'pupil': (20, 16, 26, 255),
+        'glow': (64, 224, 182, 255),
+        'aura': (122, 78, 186, 200),
+        'glow_core': (226, 255, 244, 255),
         'rim': (238, 232, 214, 255),
     },
     # Bioluminescent on the night edition, with an abyss rim for light controls.
     'dark': {
         'body': (44, 146, 122, 255),
         'shade': (22, 92, 78, 255),
-        'belly': (126, 226, 194, 255),
-        'sucker': (196, 170, 250, 255),
-        'sucker_ring': (126, 84, 220, 255),
-        'trail': (86, 210, 174, 120),
-        'void': (0, 0, 0, 255),
-        'void_ring': (158, 108, 246, 255),
+        'ridge': (126, 226, 194, 255),
+        'sclera': (222, 238, 230, 255),
+        'lid_line': (4, 22, 19, 255),
+        'lid': (86, 190, 160, 255),
+        'iris': (158, 108, 246, 255),
+        'iris_ring': (82, 44, 150, 255),
+        'pupil': (0, 0, 0, 255),
+        'glow': (110, 255, 210, 255),
+        'aura': (158, 108, 246, 190),
+        'glow_core': (236, 255, 248, 255),
         'rim': (2, 12, 10, 255),
     },
 }
 
 
-# How far down the body a lash reaches, as a fraction tip to base. Everything past it is the rest
-# pose exactly, so the root and the rift hold still on a press.
-LASH_REACH = 0.5
-
-
-def spine(curl: float, lash: tuple[float, float] | None = None, lash_curl: float = 0.0):
-    """Points, unit tangents and half-widths along the body, tip (t=0) to base (t=1)."""
-    points, _, halves = curve(curl, (0.0, 0.0))
-    if lash is None:
-        return curve(curl, (0.0, 0.0))
-
-    # The struck body, eased into the resting one over the first half: the tip moves, the root does not.
-    struck, _, _ = curve(lash_curl, lash)
-    blended = []
-    for index, ((rx, ry), (sx, sy)) in enumerate(zip(points, struck)):
-        weight = max(0.0, 1 - (index / SAMPLES) / LASH_REACH) ** 2
-        blended.append((rx + (sx - rx) * weight, ry + (sy - ry) * weight))
-
-    tangents = []
-    for index in range(len(blended)):
-        (ax, ay), (bx, by) = blended[max(0, index - 1)], blended[min(len(blended) - 1, index + 1)]
-        norm = math.hypot(bx - ax, by - ay) or 1.0
-        tangents.append(((bx - ax) / norm, (by - ay) / norm))
-    return blended, tangents, halves
-
-
-def curve(curl: float, tip: tuple[float, float]):
-    """The cubic itself, with its tip moved to `tip`."""
-    # The tip hooks by `curl`, the middle sways the other way, the base settles.
-    p0, p1 = tip, (curl + tip[0] * 0.5, 6.0 + tip[1] * 0.5)
-    p2, p3 = (-5.2, 13.5), (3.0, LENGTH)
-    points, tangents, halves = [], [], []
-    for index in range(SAMPLES + 1):
-        t = index / SAMPLES
+def bezier(p0, p1, p2, p3, steps=40):
+    out = []
+    for index in range(1, steps + 1):
+        t = index / steps
         u = 1 - t
-        x = u**3 * p0[0] + 3 * u * u * t * p1[0] + 3 * u * t * t * p2[0] + t**3 * p3[0]
-        y = u**3 * p0[1] + 3 * u * u * t * p1[1] + 3 * u * t * t * p2[1] + t**3 * p3[1]
-        dx = 3 * u * u * (p1[0] - p0[0]) + 6 * u * t * (p2[0] - p1[0]) + 3 * t * t * (p3[0] - p2[0])
-        dy = 3 * u * u * (p1[1] - p0[1]) + 6 * u * t * (p2[1] - p1[1]) + 3 * t * t * (p3[1] - p2[1])
-        norm = math.hypot(dx, dy) or 1.0
-        points.append((x, y))
-        tangents.append((dx / norm, dy / norm))
-        halves.append(TIP_HALF + (BASE_HALF - TIP_HALF) * t**0.85)
-    return points, tangents, halves
+        out.append((
+            u**3 * p0[0] + 3 * u * u * t * p1[0] + 3 * u * t * t * p2[0] + t**3 * p3[0],
+            u**3 * p0[1] + 3 * u * u * t * p1[1] + 3 * u * t * t * p2[1] + t**3 * p3[1],
+        ))
+    return out
 
 
-def to_canvas(x: float, y: float) -> tuple[float, float]:
-    return ((CENTRE[0] + x) * S, (CENTRE[1] + y) * S)
+def right_half():
+    """Tip, a bowed right flank, the barb hooking back like a claw, the hollow back to the notch."""
+    bx, by = BARB
+    k = SCALE
+    flank_edge = bezier((0, 0), (2.5 * k, 6.4 * k), (6.9 * k, 13.2 * k), (bx, by))
+    # Past the barb the point hooks a hair further out and down before the hollow begins.
+    hook = (bx + 0.6 * k, by + 1.0 * k)
+    back = bezier(hook, (6.2 * k, 17.6 * k), (2.6 * k, 15.0 * k), (0, NOTCH_Y))
+    return [(0.0, 0.0)] + flank_edge + [hook] + back
 
 
-def side(points, tangents, halves, sign: float, inner: float = 0.0, outer: float = 1.0):
-    """One edge of a band along the body, `inner`..`outer` of the half-width on side `sign`."""
-    near, far = [], []
-    for (x, y), (tx, ty), half in zip(points, tangents, halves):
-        nx, ny = -ty * sign, tx * sign
-        near.append(to_canvas(x + nx * half * inner, y + ny * half * inner))
-        far.append(to_canvas(x + nx * half * outer, y + ny * half * outer))
-    return near, far
+def outline():
+    right = right_half()
+    return right + [(-x, y) for x, y in reversed(right[1:-1])]
 
 
-def draw_tentacle(
-    canvas: Image.Image, palette: dict, curl: float, pressed: bool, rest_curl: float
-) -> None:
-    pen = ImageDraw.Draw(canvas)
-    points, tangents, halves = spine(curl, LASH, LASH_CURL) if pressed else spine(curl)
-
-    if pressed:
-        # Where the tip was a moment ago, as two faint wakes: the strike, drawn into the still frame.
-        ghost, ghost_tangents, _ = spine(rest_curl)
-        reach = SAMPLES * 2 // 5
-        for offset, width in ((0.0, 0.7), (1.6, 0.45)):
-            arc = [
-                to_canvas(x + ty * offset, y - tx * offset)
-                for (x, y), (tx, ty) in list(zip(ghost, ghost_tangents))[:reach]
-            ]
-            pen.line(arc, fill=palette['trail'], width=max(1, round(width * S)), joint='curve')
-
-    left = [to_canvas(x - ty * h, y + tx * h) for (x, y), (tx, ty), h in zip(points, tangents, halves)]
-    right = [to_canvas(x + ty * h, y - tx * h) for (x, y), (tx, ty), h in zip(points, tangents, halves)]
-    pen.polygon(left + right[::-1], fill=palette['body'])
-
-    # Shadow down the outer flank, belly down the inner one: the round of the body.
-    near, far = side(points, tangents, halves, -1, 0.35, 1.0)
-    pen.polygon(near + far[::-1], fill=palette['shade'])
-    near, far = side(points, tangents, halves, 1, 0.05, 0.8)
-    pen.polygon(near + far[::-1], fill=palette['belly'])
-
-    # Suckers along the belly, shrinking toward the tip.
-    t = 0.2
-    while t < 0.93:
-        index = round(t * SAMPLES)
-        (x, y), (tx, ty), half = points[index], tangents[index], halves[index]
-        cx, cy = to_canvas(x + ty * half * 0.42, y - tx * half * 0.42)
-        r = max(0.42, half * 0.34) * S
-        pen.ellipse([cx - r, cy - r, cx + r, cy + r], fill=palette['sucker_ring'])
-        inner = r * 0.62
-        pen.ellipse([cx - inner, cy - inner, cx + inner, cy + inner], fill=palette['sucker'])
-        t += 0.1 + 0.07 * t
-
-    # The rift it reaches out of: an oval of nothing across the base, ringed in the watcher's violet.
-    (x, y), (tx, ty), half = points[-1], tangents[-1], halves[-1]
-    for scale, colour in ((1.0, palette['void_ring']), (0.72, palette['void'])):
-        across, along = half * 1.55 * scale, half * 0.72 * scale
-        oval = [
-            to_canvas(
-                x + -ty * across * math.cos(angle) + tx * along * math.sin(angle),
-                y + tx * across * math.cos(angle) + ty * along * math.sin(angle),
-            )
-            for angle in (index * math.tau / 40 for index in range(40))
-        ]
-        pen.polygon(oval, fill=colour)
+def spine_edge(inner: float):
+    """The line `inner` of the way out from the axis to the right flank, tip to notch depth."""
+    bx, by = BARB
+    flank_edge = bezier((0, 0), (2.5 * SCALE, 6.4 * SCALE), (6.9 * SCALE, 13.2 * SCALE), (bx, by))
+    return [(x * inner, y) for x, y in flank_edge if y <= NOTCH_Y + 2 * SCALE]
 
 
-def pose(degrees: float, palette: dict, curl: float, pressed: bool = False) -> Image.Image:
+def to_canvas(points):
+    return [((CENTRE[0] + x) * S, (CENTRE[1] + y) * S) for x, y in points]
+
+
+def draw_arrow(palette: dict) -> Image.Image:
     canvas = Image.new('RGBA', (WORK * S, WORK * S), (0, 0, 0, 0))
-    draw_tentacle(canvas, palette, curl, pressed, rest_curl=curl)
-    # Drawn pointing up (90 degrees); the turn is the difference, about the tip.
-    turned = canvas.rotate(degrees - 90, center=(CENTRE[0] * S, CENTRE[1] * S), resample=Image.BICUBIC)
+    pen = ImageDraw.Draw(canvas)
+    pen.polygon(to_canvas(outline()), fill=palette['body'])
+    # The far flank in shadow, a lit seam down the near one: the arrowhead has a spine. The shadow is
+    # the right half, with everything left of the spine line cut away again.
+    shade = Image.new('RGBA', canvas.size, (0, 0, 0, 0))
+    ImageDraw.Draw(shade).polygon(to_canvas(right_half()), fill=palette['shade'])
+    edge = spine_edge(0.42)
+    cut = [(-1.0, 0.0)] + edge + [(edge[-1][0], 40.0), (-1.0, 40.0)]
+    ImageDraw.Draw(shade).polygon(to_canvas(cut), fill=(0, 0, 0, 0))
+    canvas.alpha_composite(shade)
+    ridge = [(0.0, 1.2 * SCALE), (0.0, 7.0 * SCALE)]
+    pen.line(to_canvas(ridge), fill=palette['ridge'], width=round(0.7 * S))
+    return canvas
+
+
+def almond(cx: float, cy: float, half_w: float, half_h: float, steps=48):
+    """The eye's outline: two arcs meeting in points at either corner."""
+    top = [(cx - half_w + 2 * half_w * i / steps, cy - half_h * math.sin(math.pi * i / steps)) for i in range(steps + 1)]
+    bottom = [(cx + half_w - 2 * half_w * i / steps, cy + half_h * math.sin(math.pi * i / steps)) for i in range(1, steps)]
+    return top + bottom
+
+
+def ellipse_box(cx, cy, rx, ry):
+    return [((CENTRE[0] + cx - rx) * S, (CENTRE[1] + cy - ry) * S), ((CENTRE[0] + cx + rx) * S, (CENTRE[1] + cy + ry) * S)]
+
+
+def draw_eye(canvas: Image.Image, palette: dict, centre, state: str) -> None:
+    """`open`, `glow` (over a pressable) or `shut` (pressed). Drawn upright whatever the tilt."""
+    cx, cy = centre
+    shape = to_canvas(almond(cx, cy, *EYE_HALF))
+    # The watcher's violet, soaked into the flesh round the eye.
+    glow(canvas, palette, lambda pen: pen.polygon(shape, fill=palette['aura']), 0.9)
+    mask = Image.new('L', canvas.size, 0)
+    ImageDraw.Draw(mask).polygon(shape, fill=255)
+
+    layer = Image.new('RGBA', canvas.size, (0, 0, 0, 0))
+    pen = ImageDraw.Draw(layer)
+
+    if state.startswith('shut'):
+        # The lid down, its seam sagging, three lashes under it.
+        pen.polygon(shape, fill=palette['lid'])
+        pen.line(to_canvas(seam(cx, cy, 1.0)), fill=palette['lid_line'], width=round(0.75 * S), joint='curve')
+        for x in (-1.6 * SCALE, 0.0, 1.6 * SCALE):
+            y = seam_y(cy, x)
+            pen.line(to_canvas([(cx + x, y), (cx + x * 1.15, y + 0.95 * SCALE)]), fill=palette['lid_line'], width=round(0.45 * S))
+    else:
+        pen.polygon(shape, fill=palette['sclera'])
+        pen.ellipse(ellipse_box(cx, cy, IRIS_R, IRIS_R), fill=palette['iris_ring'])
+        pen.ellipse(ellipse_box(cx, cy, IRIS_R * 0.8, IRIS_R * 0.8), fill=palette['iris'])
+        pen.ellipse(ellipse_box(cx, cy, *PUPIL_HALF), fill=palette['pupil'])
+
+    clipped = Image.new('RGBA', canvas.size, (0, 0, 0, 0))
+    clipped.paste(layer, (0, 0), mask)
+    canvas.alpha_composite(clipped)
+    # The waterline: a dark rim round the almond so the eye reads at 8px across.
+    ImageDraw.Draw(canvas).line(shape + shape[:1], fill=palette['lid_line'], width=round(0.55 * S), joint='curve')
+
+    if state == 'glow':
+        # The pupil lit from inside: a halo over the iris that spills just past the lids.
+        glow(canvas, palette, lambda pen: pen.ellipse(ellipse_box(cx, cy, IRIS_R * 1.35, IRIS_R * 1.15), fill=palette['glow']), 1.0)
+        glow(canvas, palette, lambda pen: pen.ellipse(ellipse_box(cx, cy, PUPIL_HALF[0] * 1.8, PUPIL_HALF[1] * 1.1), fill=palette['glow']), 0.45)
+        ImageDraw.Draw(canvas).ellipse(ellipse_box(cx, cy, *PUPIL_HALF), fill=palette['glow_core'])
+    elif state == 'shut-glow':
+        # Shut over a pressable: the light it was holding leaks out along the seam.
+        line = to_canvas(seam(cx, cy, 0.85))
+        glow(canvas, palette, lambda pen: pen.line(line, fill=palette['glow'], width=round(1.3 * S), joint='curve'), 0.6)
+        ImageDraw.Draw(canvas).line(line, fill=palette['glow_core'], width=round(0.45 * S), joint='curve')
+    elif state == 'open':
+        glint = ellipse_box(cx - 0.75 * SCALE, cy - 0.75 * SCALE, 0.42 * SCALE, 0.42 * SCALE)
+        ImageDraw.Draw(canvas).ellipse(glint, fill=(255, 255, 255, 230))
+
+
+def seam_y(cy: float, x: float) -> float:
+    """The shut lids' seam: just below centre, sagging most in the middle."""
+    return cy + 0.35 * SCALE + 0.9 * SCALE * (1 - (x / EYE_HALF[0]) ** 2)
+
+
+def seam(cx: float, cy: float, reach: float):
+    return [(cx + x, seam_y(cy, x)) for x in np.linspace(-EYE_HALF[0] * reach, EYE_HALF[0] * reach, 30)]
+
+
+def glow(canvas: Image.Image, palette: dict, paint, blur: float) -> None:
+    """Whatever `paint` draws, blurred into light and laid over the canvas."""
+    light = Image.new('RGBA', canvas.size, (0, 0, 0, 0))
+    paint(ImageDraw.Draw(light))
+    canvas.alpha_composite(light.filter(ImageFilter.GaussianBlur(blur * S)))
+
+
+def pose(palette: dict, state: str) -> Image.Image:
+    arrow = draw_arrow(palette)
+    # Turned about the tip; then the eye, upright, wherever its seat on the axis landed.
+    turned = arrow.rotate(TILT_DEGREES, center=(CENTRE[0] * S, CENTRE[1] * S), resample=Image.BICUBIC)
+    draw_eye(turned, palette, EYE_SEAT, state)
+
 
     alpha = turned.getchannel('A')
     size = int(RIM * S) * 2 + 1
@@ -210,12 +237,11 @@ def reduce(image: Image.Image) -> Image.Image:
 
 POSES = {}
 for name, palette in PALETTES.items():
-    # Resting with a slight hook; over a pressable it rises and beckons; a press lashes.
-    POSES[f'{name}-rest'] = reduce(pose(REST_DEGREES, palette, curl=2.2))
-    POSES[f'{name}-hover'] = reduce(pose(HOVER_DEGREES, palette, curl=4.2))
-    # Same turn as the pose it lashes from, so the root and its rift do not move.
-    POSES[f'{name}-press'] = reduce(pose(REST_DEGREES, palette, curl=2.2, pressed=True))
-    POSES[f'{name}-press-hover'] = reduce(pose(HOVER_DEGREES, palette, curl=4.2, pressed=True))
+    POSES[f'{name}-rest'] = reduce(pose(palette, 'open'))
+    POSES[f'{name}-hover'] = reduce(pose(palette, 'glow'))
+    # The blink: shut for as long as the button is held, open again on release.
+    POSES[f'{name}-press'] = reduce(pose(palette, 'shut'))
+    POSES[f'{name}-press-hover'] = reduce(pose(palette, 'shut-glow'))
 
 
 def fit() -> tuple[int, int]:
@@ -232,8 +258,7 @@ CUT = fit()
 FRAMES = {
     name: image.crop((CUT[0], CUT[1], CUT[0] + BOX, CUT[1] + BOX)) for name, image in POSES.items()
 }
-# The tip at rest. A press strikes just past it and the root stays put, so a click lands where it
-# pointed.
+# The tip. Nothing about the arrow moves between frames, so a click lands where it pointed.
 HOTSPOT = (round(CENTRE[0] - CUT[0]), round(CENTRE[1] - CUT[1]))
 
 built = f'{HERE}/built'
@@ -295,8 +320,8 @@ def rule(selectors: str, frame: str, fallback: str) -> str:
 
 
 css = f'''
-/* --- Skin: ELDRITCH - the pointer is a tentacle. ---
-   Generated by `custom-cursor/eldritch/build-cursors.py`. It rises over pressables; a press lashes. */
+/* --- Skin: ELDRITCH - the pointer is a barbed arrowhead with an eye in it. ---
+   Generated by `custom-cursor/eldritch/build-cursors.py`. The pupil lights over pressables; a press shuts it. */
 
 {rule(GATE, 'light-rest', 'auto')}
 
@@ -306,7 +331,7 @@ css = f'''
 
 {rule(inside(GATE_DARK, PRESSABLE), 'dark-hover', 'pointer')}
 
-/* The lash. `:active` on the page itself, and again on the pressable list, which
+/* The blink. `:active` on the page itself, and again on the pressable list, which
    otherwise outranks it on the one surface a press matters most. */
 {rule(f'{GATE} :active', 'light-press', 'auto')}
 
@@ -316,7 +341,7 @@ css = f'''
 
 {rule(inside(GATE_DARK, PRESSABLE, ':active'), 'dark-press-hover', 'pointer')}
 
-/* The three the tentacle must not swallow. */
+/* The three the eye must not swallow. */
 {inside(GATE, TEXT)} {{
   cursor: text;
 }}

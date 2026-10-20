@@ -1,16 +1,16 @@
-# Graph Report - Task-Studio-UI  (2026-10-08)
+# Graph Report - Task-Studio-UI  (2026-10-19)
 
 ## Corpus Check
-- 416 files · ~375,770 words
+- 416 files · ~374,835 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2914 nodes · 4227 edges · 263 communities (183 shown, 80 thin omitted)
-- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 100 edges (avg confidence: 0.7)
+- 2925 nodes · 4276 edges · 262 communities (182 shown, 80 thin omitted)
+- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 101 edges (avg confidence: 0.69)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `2de40847`
+- Built from commit: `b0782e1d`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -128,7 +128,7 @@
 - runes.ts
 - theme-colors.ts
 - use-intent-prefetch.ts
-- file-attachment.tsx
+- StudioMark
 - vercel.json
 - Studio Runic Typeface
 - md5.ts
@@ -255,7 +255,6 @@
 - @tanstack/react-query
 - avatar.tsx
 - landing-nav.tsx
-- nav-glyph.tsx
 - brand-name.tsx
 - runic-text.tsx
 - clsx
@@ -268,17 +267,17 @@
 5. `build()` - 12 edges
 6. `useProjectBoardCache()` - 12 edges
 7. `GlyphProps` - 12 edges
-8. `StudioLetter()` - 12 edges
-9. `draw_weapon()` - 11 edges
-10. `Task` - 11 edges
+8. `MARK_BRACKET` - 12 edges
+9. `StudioMonogram()` - 12 edges
+10. `draw_weapon()` - 11 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `drawIcon()` --conceptually_related_to--> `Apple Touch Icon (Task Studio Brand Mark)`  [INFERRED]
   scripts/generate-icons.mjs → public/apple-touch-icon.png
 - `drawIcon()` --shares_data_with--> `Icon-192 Brand Mark`  [INFERRED]
   scripts/generate-icons.mjs → public/icons/icon-192.png
-- `StudioLetter()` --shares_data_with--> `Handwritten 't' glyph stroke paths`  [INFERRED]
-  src/shared/ui/studio-letter.tsx → public/favicon.svg
+- `Rotated Post-it note shape with peeled corner` --conceptually_related_to--> `StudioMark()`  [INFERRED]
+  public/favicon.svg → src/shared/ui/studio-icons.tsx
 - `Task Studio README` --references--> `@dnd-kit/core`  [EXTRACTED]
   README.md → package.json
 - `Task Studio README` --references--> `framer-motion`  [EXTRACTED]
@@ -296,7 +295,7 @@
 - **Performance-first Interaction Design Pattern** — readme_useedgereveal, readme_drag_and_drop_design, readme_60fps_rules [INFERRED 0.85]
 - **PWA/iOS Delivery Flow** — readme_pwa_workbox, readme_ios_safari_specifics, readme_npm_scripts, readme_vercel_deployment [INFERRED 0.75]
 
-## Communities (263 total, 80 thin omitted)
+## Communities (262 total, 80 thin omitted)
 
 ### Community 0 - "project-board-queries.ts"
 Cohesion: 0.05
@@ -308,7 +307,7 @@ Nodes (63): taskApi, blockingAssigneeCount(), canCompleteTask(), completionBlock
 
 ### Community 2 - "ui/index.ts"
 Cohesion: 0.04
-Nodes (54): ExpandableStage(), ExpandableStageProps, ExpandToggle(), ExpandToggleProps, GoogleCalendarMark(), HazardDrift(), MOTES, HoverHint() (+46 more)
+Nodes (61): ExpandableStage(), ExpandableStageProps, ExpandToggle(), ExpandToggleProps, extensionOf(), FileAttachmentField(), FileAttachmentFieldProps, FileAttachmentRow() (+53 more)
 
 ### Community 3 - "text-board.tsx"
 Cohesion: 0.06
@@ -332,7 +331,7 @@ Nodes (40): BOARD_EXPORT_MIME, classifyImportFile(), DOCUMENT_ACCEPT, DOCUMENT_M
 
 ### Community 8 - "studio-icons.tsx"
 Cohesion: 0.10
-Nodes (36): favicon.svg (browser tab icon), Gold paper linearGradient definition, Rotated Post-it note shape with peeled corner, Handwritten 't' glyph stroke paths, AutumnMark(), EldritchMark(), GlyphProps, HazardMark() (+28 more)
+Nodes (37): AutumnMark(), JadeMark(), EldritchMark(), GlyphProps, HalloweenMark(), HazardMark(), NewspaperMark(), RunicMark() (+29 more)
 
 ### Community 9 - "integration/model/queries.ts"
 Cohesion: 0.06
@@ -359,8 +358,8 @@ Cohesion: 0.07
 Nodes (32): Build args instead of runtime env vars, Caddy (API droplet reverse proxy), Dockerfile, json-file logging with rotation, nginx (production-parity server), npm run preview (dev preview, not production-parity), 8080:80 port mapping, Not binding port 80 directly, put behind TLS terminator (+24 more)
 
 ### Community 15 - "generate-icons.mjs"
-Cohesion: 0.08
-Nodes (29): Apple Touch Icon (Task Studio Brand Mark), Icon-192 Brand Mark, Icon-512 Post-it Note Brand Mark, Maskable 512 Icon (Post-it Mark, Full-Bleed Tile), Why Maskable Icons Keep Their Background Tile, BAR, BRAND, BRAND_DEEP (+21 more)
+Cohesion: 0.12
+Nodes (20): Apple Touch Icon (Task Studio Brand Mark), Icon-192 Brand Mark, Icon-512 Post-it Note Brand Mark, Maskable 512 Icon (Post-it Mark, Full-Bleed Tile), Why Maskable Icons Keep Their Background Tile, BRANDING_DIR, chunk(), crc32() (+12 more)
 
 ### Community 16 - "groups-board.tsx"
 Cohesion: 0.09
@@ -379,8 +378,8 @@ Cohesion: 0.24
 Nodes (9): build(), crowned(), load(), preview(), TTFont, Builds the Kaiju skin's wordmark: Oxanium ExtraBold set as outlines, leaned…, A rough raster of the outline, for checking by eye: lilac face over a deep-…, The glyph with its crest of plates fused on: a fresh outline drawn through… (+1 more)
 
 ### Community 20 - "edge-affordance.tsx"
-Cohesion: 0.10
-Nodes (23): CENTRE, EdgeAffordance(), EdgeAffordanceProps, GRADIENT, IRIS_GRADIENT, NavPinButton(), NavPinButtonProps, RAIL (+15 more)
+Cohesion: 0.08
+Nodes (26): CENTRE, EdgeAffordance(), EdgeAffordanceProps, GRADIENT, IRIS_GRADIENT, NavPinButton(), NavPinButtonProps, RAIL (+18 more)
 
 ### Community 21 - "dependencies"
 Cohesion: 0.15
@@ -575,8 +574,8 @@ Cohesion: 0.25
 Nodes (9): readStored(), readStoredCursor(), readStoredSkin(), resolveIsDark(), SKIN_ATTRIBUTE, SkinContext, ThemeContext, ThemeContextValue (+1 more)
 
 ### Community 69 - "activity/model/queries.ts"
-Cohesion: 0.29
-Nodes (5): activityApi, ActivityEntry, ActivityPage, ActivityType, RevertResult
+Cohesion: 0.30
+Nodes (8): activityApi, refreshAfterRevert(), useProjectActivityRealtime(), useRevertActivity(), ActivityEntry, ActivityPage, ActivityType, RevertResult
 
 ### Community 70 - "cli-commands.tsx"
 Cohesion: 0.25
@@ -742,9 +741,9 @@ Nodes (6): readPalette(), ThemePalette, ThemeToken, TOKENS, tripletToHex(), useT
 Cohesion: 0.38
 Nodes (5): forget(), IntentHandlers, isSpeculationWelcome(), lastPrefetchedAt, useIntentPrefetch()
 
-### Community 113 - "file-attachment.tsx"
-Cohesion: 0.38
-Nodes (6): extensionOf(), FileAttachmentField(), FileAttachmentFieldProps, FileAttachmentRow(), FileAttachmentRowProps, formatFileSize()
+### Community 113 - "StudioMark"
+Cohesion: 0.40
+Nodes (6): favicon.svg (browser tab icon), Gold paper linearGradient definition, Rotated Post-it note shape with peeled corner, Handwritten 't' glyph stroke paths, stepped(), StudioMark()
 
 ### Community 114 - "vercel.json"
 Cohesion: 0.29
@@ -843,8 +842,8 @@ Cohesion: 0.40
 Nodes (3): chains, sequences, writeSequence
 
 ### Community 146 - "button.tsx"
-Cohesion: 0.09
-Nodes (18): Button, buttonClasses(), ButtonProps, GAPS, Size, SIZES, Variant, VARIANTS (+10 more)
+Cohesion: 0.08
+Nodes (20): Button, buttonClasses(), ButtonProps, GAPS, Size, SIZES, Variant, VARIANTS (+12 more)
 
 ### Community 147 - "lava-goo SVG metaball filter"
 Cohesion: 0.50
@@ -879,8 +878,8 @@ Cohesion: 0.67
 Nodes (3): nextSighting(), NightEyes(), Sighting
 
 ### Community 163 - "eldritch/build-cursors.py"
-Cohesion: 0.16
-Nodes (17): curve(), draw_tentacle(), fit(), pose(), premultiplied(), Image, Builds the Eldritch skin's cursor: a tentacle, tip first, that lashes when…, One edge of a band along the body, `inner`..`outer` of the half-width on side… (+9 more)
+Cohesion: 0.12
+Nodes (27): almond(), bezier(), draw_arrow(), draw_eye(), ellipse_box(), fit(), glow(), outline() (+19 more)
 
 ### Community 164 - "build-studio-basalt.py"
 Cohesion: 0.42
@@ -907,8 +906,8 @@ Cohesion: 0.67
 Nodes (3): nextStreak(), ShootingStar(), Streak
 
 ### Community 238 - "kaiju-decor.tsx"
-Cohesion: 0.09
-Nodes (26): BatSwarm(), BatSwarmProps, Box, BANDS, DangerTape(), DangerTapeProps, BatGlyph(), HalloweenMark() (+18 more)
+Cohesion: 0.10
+Nodes (25): BatSwarm(), BatSwarmProps, Box, BANDS, DangerTape(), DangerTapeProps, BatGlyph(), Breath (+17 more)
 
 ### Community 239 - "volcano — Frijole"
 Cohesion: 0.29
@@ -927,8 +926,8 @@ Cohesion: 0.50
 Nodes (3): tokensApi, ApiToken, CreatedApiToken
 
 ### Community 244 - "dragon-icons.tsx"
-Cohesion: 0.14
-Nodes (17): DragonFlight(), Flight, nextFlight(), amplitude(), bodyOrder, DragonGlyph(), GlyphProps, JadeMark() (+9 more)
+Cohesion: 0.15
+Nodes (16): DragonFlight(), Flight, nextFlight(), amplitude(), bodyOrder, DragonGlyph(), GlyphProps, LanternGlyph() (+8 more)
 
 ### Community 245 - "kaiju — Studiozilla"
 Cohesion: 0.25
@@ -942,10 +941,6 @@ Nodes (5): Avatar(), AvatarProps, AvatarStack(), AvatarStackProps, SIZES
 Cohesion: 0.36
 Nodes (6): LandingNav(), scrollToSection(), scrollToTop(), GAPS, LavaLink(), LavaLinkProps
 
-### Community 259 - "nav-glyph.tsx"
-Cohesion: 0.67
-Nodes (3): NavGlyphKey, NavGlyph(), NavGlyphProps
-
 ### Community 260 - "brand-name.tsx"
 Cohesion: 0.50
 Nodes (3): BrandName(), BrandNameProps, KAIJU_WORDMARK
@@ -955,7 +950,7 @@ Cohesion: 0.67
 Nodes (3): RunicText(), RunicTextProps, seedOf()
 
 ## Knowledge Gaps
-- **804 isolated node(s):** `name`, `private`, `version`, `type`, `description` (+799 more)
+- **800 isolated node(s):** `name`, `private`, `version`, `type`, `description` (+795 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **80 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -963,16 +958,16 @@ Nodes (3): RunicText(), RunicTextProps, seedOf()
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `wakeApi()` connect `client.ts` to `auth-shell.tsx`?**
-  _High betweenness centrality (0.019) - this node is a cross-community bridge._
-- **Why does `LandingPage()` connect `client.ts` to `landing-page.tsx`?**
   _High betweenness centrality (0.018) - this node is a cross-community bridge._
+- **Why does `LandingPage()` connect `client.ts` to `landing-page.tsx`?**
+  _High betweenness centrality (0.017) - this node is a cross-community bridge._
 - **Why does `installApiWarmOnIntent()` connect `client.ts` to `providers/index.tsx`?**
-  _High betweenness centrality (0.014) - this node is a cross-community bridge._
+  _High betweenness centrality (0.012) - this node is a cross-community bridge._
 - **What connects `name`, `private`, `version` to the rest of the system?**
-  _804 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _800 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `project-board-queries.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.05116279069767442 - nodes in this community are weakly interconnected._
 - **Should `task/model/queries.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.054340396445659606 - nodes in this community are weakly interconnected._
 - **Should `ui/index.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.04390451832907076 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.04105263157894737 - nodes in this community are weakly interconnected._

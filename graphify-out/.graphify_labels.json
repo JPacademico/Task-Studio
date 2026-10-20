@@ -112,7 +112,7 @@
   "110": "runes.ts",
   "111": "theme-colors.ts",
   "112": "use-intent-prefetch.ts",
-  "113": "file-attachment.tsx",
+  "113": "StudioMark",
   "114": "vercel.json",
   "115": "Studio Runic Typeface",
   "116": "md5.ts",
@@ -258,7 +258,6 @@
   "256": "join-page.tsx",
   "257": "avatar.tsx",
   "258": "landing-nav.tsx",
-  "259": "nav-glyph.tsx",
   "260": "brand-name.tsx",
   "261": "runic-text.tsx",
   "262": "clsx"

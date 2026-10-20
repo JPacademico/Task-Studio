@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import {
   Building2,
   CalendarDays,
@@ -120,24 +120,15 @@ export const ProjectChangelog = ({ projectId }: ProjectChangelogProps) => {
    */
   const [armed, setArmed] = useState<string | null>(null);
 
-  const {
-    data,
-    isLoading,
-    isError,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    refetch,
-  } = useProjectActivity(projectId);
+  const { data, isLoading, isError, refetch } = useProjectActivity(projectId);
 
   // New lines arrive by socket rather than by polling — see the hook. The reader's own id goes with
   // it so that a line *they* just wrote comes back carrying its undo button.
   useProjectActivityRealtime(projectId, currentUser?.id);
 
-  // Flattened once, then cut into days. The pages are an implementation detail of the fetch: a day
-  // can straddle two of them.
+  // Cut into days, newest first, as the API sends them.
   const days = useMemo(() => {
-    const entries = data?.pages.flatMap((page) => page.items) ?? [];
+    const entries = data?.items ?? [];
     const grouped: { key: string; label: string; entries: ActivityEntry[] }[] = [];
 
     for (const entry of entries) {
@@ -151,7 +142,9 @@ export const ProjectChangelog = ({ projectId }: ProjectChangelogProps) => {
     return grouped;
   }, [data]);
 
-  const total = data?.pages[0]?.total ?? 0;
+  const total = data?.items.length ?? 0;
+  const limit = data?.limit ?? 0;
+  const isFull = limit > 0 && total >= limit;
 
   if (isLoading) {
     return (
@@ -192,9 +185,11 @@ export const ProjectChangelog = ({ projectId }: ProjectChangelogProps) => {
     <section className="space-y-4">
       <header className="flex flex-wrap items-baseline gap-x-2">
         <h2 className="text-sm font-semibold tracking-tight">{t('activity.title')}</h2>
-        <p className="text-2xs text-content-faint">{t('activity.subtitle')}</p>
+        <p className="text-2xs text-content-faint">
+          {t('activity.subtitle', { max: String(limit) })}
+        </p>
         <span className="ml-auto text-2xs tabular-nums text-content-faint">
-          {t('activity.entryCount', { count: String(total) })}
+          {t('activity.entryCount', { count: String(total), max: String(limit) })}
         </span>
       </header>
 
@@ -215,36 +210,30 @@ export const ProjectChangelog = ({ projectId }: ProjectChangelogProps) => {
               />
 
               {day.entries.map((entry) => (
-                <Fragment key={entry.id}>
-                  <ChangelogRow
-                    entry={entry}
-                    isArmed={armed === entry.id}
-                    isReverting={revert.isPending && revert.variables === entry.id}
-                    onArm={() => setArmed(entry.id)}
-                    onDisarm={() => setArmed(null)}
-                    onRevert={() => {
-                      setArmed(null);
-                      revert.mutate(entry.id);
-                    }}
-                  />
-                </Fragment>
+                <ChangelogRow
+                  key={entry.id}
+                  entry={entry}
+                  isArmed={armed === entry.id}
+                  isReverting={revert.isPending && revert.variables === entry.id}
+                  onArm={() => setArmed(entry.id)}
+                  onDisarm={() => setArmed(null)}
+                  onRevert={() => {
+                    setArmed(null);
+                    revert.mutate(entry.id);
+                  }}
+                />
               ))}
             </ol>
           </li>
         ))}
       </ol>
 
-      {hasNextPage && (
-        <div className="flex justify-center pt-1">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => void fetchNextPage()}
-            isLoading={isFetchingNextPage}
-          >
-            {t('activity.loadMore')}
-          </Button>
-        </div>
+      {/* Said once the log is full, which is when the next change starts deleting. */}
+      {isFull && (
+        <p className="flex items-center justify-center gap-1.5 pt-1 text-3xs text-content-faint">
+          <History className="h-3 w-3" aria-hidden />
+          {t('activity.capNote', { max: String(limit) })}
+        </p>
       )}
     </section>
   );
@@ -344,9 +333,10 @@ const ChangelogRow = ({
         <span
           className={cn(
             'shrink-0 self-center transition-opacity',
+            // Revealed on hover where there is one; a touch screen has none, so it always shows.
             isArmed
               ? 'opacity-100'
-              : 'opacity-0 focus-within:opacity-100 group-hover:opacity-100',
+              : 'opacity-0 focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100',
           )}
         >
           {isArmed ? (

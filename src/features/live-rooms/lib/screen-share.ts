@@ -89,4 +89,20 @@ export const DISPLAY_MEDIA_OPTIONS = {
   },
   selfBrowserSurface: 'exclude',
   systemAudio: 'include',
+  // A window brings its own app's sound only. Chrome's default is the whole system's.
+  windowAudio: 'window',
 } as DisplayMediaStreamOptions;
+
+/** Chrome's label for one app's sound. Whole-system sound is "System Audio". */
+const WINDOW_ONLY_SOUND = 'Application Audio';
+
+/**
+ * Whether a share's sound is only what is shown. Where the OS can't isolate a window or keep the
+ * call out (Windows 10, older macOS), Chrome sends every app's sound — the call's own included.
+ */
+export const isSoundContained = (picture: MediaStreamTrack, sound: MediaStreamTrack): boolean => {
+  const { displaySurface } = picture.getSettings();
+  if (displaySurface === 'browser') return true;
+  if (displaySurface === 'window') return sound.label === WINDOW_ONLY_SOUND;
+  return (sound.getSettings() as { restrictOwnAudio?: boolean }).restrictOwnAudio === true;
+};
