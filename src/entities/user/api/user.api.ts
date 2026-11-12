@@ -41,10 +41,11 @@ export const userApi = {
     return data;
   },
 
-  async search(query: string): Promise<UserSummary[]> {
+  /** Verified accounts by name or email. Colleagues show their full email; others are masked. */
+  async search(query: string, limit?: number): Promise<UserSummary[]> {
     if (query.trim().length < 2) return [];
     const { data } = await api.get<UserSummary[]>('/users/search', {
-      params: { q: query.trim() },
+      params: { q: query.trim(), ...(limit ? { limit } : {}) },
     });
     return data;
   },

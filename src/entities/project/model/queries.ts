@@ -8,10 +8,12 @@ import type { ListTasksParams } from '@/entities/task/model/types';
 import { queryKeys } from '@/shared/api/query-keys';
 import { useIntentPrefetch, type IntentHandlers } from '@/shared/lib/use-intent-prefetch';
 import { projectApi, type ListProjectsParams } from '../api/project.api';
+import { PROJECT_ROLE_PRESETS } from './permissions';
 import type {
   OverviewDelta,
   Project,
   ProjectListItem,
+  ProjectPermission,
   ProjectRole,
   RosterMember,
   UserOverview,
@@ -165,6 +167,8 @@ export const useDeleteProject = () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.meetings.all });
       // Binning frees a project slot, and the plan meters count what exists.
       void queryClient.invalidateQueries({ queryKey: queryKeys.billing.summary });
+      // A filed project leaves its organization's board too.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.organizations.all });
       toast.success(translate('toast.projectBinned'));
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -402,13 +406,31 @@ export const useInviteMember = (projectId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: { userId?: string; email?: string; role?: ProjectRole }) =>
-      projectApi.invite(projectId, payload),
+    mutationFn: (payload: {
+      userId?: string;
+      email?: string;
+      role?: ProjectRole;
+      permissions?: ProjectPermission[];
+    }) => projectApi.invite(projectId, payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.invitations(projectId) });
       toast.success(translate('toast.inviteSent'));
     },
     onError: (error) => toast.error(errorMessage(error, translate('toast.inviteFailed'))),
+  });
+};
+
+/** Withdraw an invitation nobody has answered yet. */
+export const useRevokeProjectInvitation = (projectId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (invitationId: string) => projectApi.revokeInvitation(projectId, invitationId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.invitations(projectId) });
+      toast.success(translate('roster.inviteRevoked'));
+    },
+    onError: (error) => toast.error(errorMessage(error)),
   });
 };
 
@@ -477,35 +499,41 @@ export const useUpdateMemberRole = (projectId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ memberId, role }: { memberId: string; role: ProjectRole }) =>
-      projectApi.updateMemberRole(projectId, memberId, role),
+    mutationFn: ({
+      memberId,
+      ...payload
+    }: {
+      memberId: string;
+      role?: ProjectRole;
+      permissions?: ProjectPermission[];
+    }) => projectApi.updateMember(projectId, memberId, payload),
 
-    onMutate: async ({ memberId, role }) => {
+    onMutate: async ({ memberId, role, permissions }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.projects.members(projectId) });
 
       const snapshot = queryClient.getQueriesData({ queryKey: queryKeys.projects.all });
 
-      queryClient.setQueryData<RosterMember[]>(
-        queryKeys.projects.members(projectId),
-        (members) =>
-          Array.isArray(members)
-            ? members.map((member) =>
-                member.id === memberId ? { ...member, role } : member,
-              )
-            : members,
+      // A role change without a list lands on the role's preset; the response settles the rest.
+      const patch = (member: RosterMember): RosterMember => {
+        if (member.id !== memberId) return member;
+        const nextRole = role ?? member.role;
+        return {
+          ...member,
+          role: nextRole,
+          permissions:
+            permissions ??
+            (role && nextRole !== 'OWNER' ? [...PROJECT_ROLE_PRESETS[nextRole]] : member.permissions),
+        };
+      };
+
+      queryClient.setQueryData<RosterMember[]>(queryKeys.projects.members(projectId), (members) =>
+        Array.isArray(members) ? members.map(patch) : members,
       );
 
       // The project detail carries its own copy of the roster, and the header reads `myRole` from
       // it.
       queryClient.setQueryData<Project>(queryKeys.projects.detail(projectId), (project) =>
-        project
-          ? {
-              ...project,
-              roster: project.roster.map((member) =>
-                member.id === memberId ? { ...member, role } : member,
-              ),
-            }
-          : project,
+        project ? { ...project, roster: project.roster.map(patch) } : project,
       );
 
       return { snapshot };

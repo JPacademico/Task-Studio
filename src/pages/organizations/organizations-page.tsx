@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Building2, Lock, Plus, Settings2, Users } from 'lucide-react';
 
+import { canInOrganization } from '@/entities/organization/model/permissions';
 import { useOrganizations } from '@/entities/organization/model/queries';
 import type { Organization } from '@/entities/organization/model/types';
 import { OrganizationDialog } from '@/features/organization-management/ui/organization-dialog';
@@ -106,7 +107,7 @@ const OrganizationCard = ({ organization, onEdit, t }: OrganizationCardProps) =>
       </div>
 
       <div className="flex shrink-0 items-center gap-1">
-        {organization.canManage && (
+        {canInOrganization(organization, 'EDIT_ORGANIZATION') && (
           <Button
             size="icon"
             variant="ghost"

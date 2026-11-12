@@ -1,55 +1,47 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Crown, Flag, Mail, Shield, UserMinus, UserPlus } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Flag, Mail, UserMinus, UserPlus, X } from 'lucide-react';
 
+import { projectPermissionsOf } from '@/entities/project/model/permissions';
 import {
   useInviteMember,
   usePendingInvitations,
   useRemoveMember,
+  useRevokeProjectInvitation,
   useUpdateMemberRole,
   useRoster,
 } from '@/entities/project/model/queries';
-import type { ProjectRole } from '@/entities/project/model/types';
-import { userApi } from '@/entities/user/api/user.api';
+import type {
+  ProjectPermission,
+  ProjectRole,
+  RosterMember,
+} from '@/entities/project/model/types';
 import { useCurrentUser } from '@/features/auth/model/session.store';
-import { TEXT_LIMITS } from '@/shared/config/constants';
-import { cn } from '@/shared/lib/cn';
-import { clampText } from '@/shared/lib/text';
-import { formatRelative } from '@/shared/lib/dates';
 import {
-  Avatar,
-  Badge,
-  Button,
-  EmptyState,
-  Input,
-  Modal,
-  Section,
-  Select,
-  Skeleton,
-  Spinner,
-} from '@/shared/ui';
+  PersonSearch,
+  targetKey,
+  targetPayload,
+  type InviteTarget,
+} from '@/features/invite-picker/ui/person-search';
+import {
+  isCustomAccess,
+  PROJECT_ACCESS,
+  type GrantableRole,
+} from '@/features/member-access/model/catalogs';
+import { AccessChip } from '@/features/member-access/ui/access-chip';
+import { AccessPicker, type AccessValue } from '@/features/member-access/ui/access-picker';
+import { MemberAccessDialog } from '@/features/member-access/ui/member-access-dialog';
+import { cn } from '@/shared/lib/cn';
+import { formatRelative } from '@/shared/lib/dates';
+import { Avatar, Button, Modal, Section, Skeleton, Spinner } from '@/shared/ui';
 import { ReportUserDialog } from './report-user-dialog';
-import { useT } from '@/shared/i18n';
+import { useT, type Translate } from '@/shared/i18n';
 
 interface RosterPanelProps {
   projectId: string;
-  /** Owner or admin: may invite, remove and change roles. */
-  canManage: boolean;
-  /**
-   * Whether the reader is the project's owner. Only the owner may change an *admin's* role —
-   * otherwise any admin could demote every other one and be the last one standing.
-   */
-  isOwner?: boolean;
+  /** The reader's own role and permissions, from the project detail. */
+  myRole: ProjectRole;
+  myPermissions?: ProjectPermission[];
 }
-
-/** The two roles that can be handed out. OWNER moves by transfer, not here. */
-const ASSIGNABLE_ROLES: ProjectRole[] = ['ADMIN', 'MEMBER'];
-
-const ROLE_ICON: Record<ProjectRole, ReactNode> = {
-  OWNER: <Crown className="h-3 w-3 text-warning" />,
-  ADMIN: <Shield className="h-3 w-3 text-brand" />,
-  MEMBER: <></>,
-};
 
 /**
  * The roster while it is still arriving. Laid out as the rows it is standing in for — avatar, two
@@ -70,17 +62,31 @@ const RosterSkeleton = () => (
   </ul>
 );
 
+/** The permissions spelled out, for a chip's tooltip. */
+const describe = (t: Translate, permissions: readonly ProjectPermission[]): string =>
+  permissions.map((permission) => t(PROJECT_ACCESS.label[permission])).join(', ');
+
 /**
- * Roster management: who is on the project, plus invitations. Invites target
- * registered, verified accounts only — that is a domain rule, not a UI choice.
+ * Who is on the project, and inviting more. Invites target registered, verified accounts only, and
+ * every control here is gated by the reader's own permissions — the same ones the API enforces.
  */
-export const RosterPanel = ({ projectId, canManage, isOwner = false }: RosterPanelProps) => {
+export const RosterPanel = ({ projectId, myRole, myPermissions }: RosterPanelProps) => {
   const t = useT();
   const currentUser = useCurrentUser();
+
+  const mine = useMemo(() => projectPermissionsOf(myRole, myPermissions), [myRole, myPermissions]);
+  const isOwner = myRole === 'OWNER';
+  const canInvite = mine.includes('INVITE_MEMBERS');
+  const canManageAccess = mine.includes('MANAGE_ADMINS');
+  const canRemove = mine.includes('REMOVE_MEMBERS');
+
   const [isInviteOpen, setIsInviteOpen] = useState(false);
-  const [search, setSearch] = useState('');
-  const [debounced, setDebounced] = useState('');
-  const [role, setRole] = useState<ProjectRole>('MEMBER');
+  const [access, setAccess] = useState<AccessValue<ProjectPermission>>({
+    role: 'MEMBER',
+    permissions: [],
+  });
+  const [inFlight, setInFlight] = useState<string | null>(null);
+  const [editing, setEditing] = useState<RosterMember | null>(null);
 
   const { data: members = [], isPending: isRosterPending } = useRoster(projectId);
 
@@ -88,25 +94,41 @@ export const RosterPanel = ({ projectId, canManage, isOwner = false }: RosterPan
   // rather than fetched per row.
   const [reporting, setReporting] = useState<{ id: string; displayName: string } | null>(null);
   const [reported, setReported] = useState<Set<string>>(() => new Set());
-  const { data: pending = [] } = usePendingInvitations(canManage ? projectId : undefined);
+  const { data: pending = [] } = usePendingInvitations(canInvite ? projectId : undefined);
   const invite = useInviteMember(projectId);
+  const revoke = useRevokeProjectInvitation(projectId);
   const removeMember = useRemoveMember(projectId);
-  const updateRole = useUpdateMemberRole(projectId);
-
-  // Debounce so typing an email does not fire a query per keystroke.
-  useEffect(() => {
-    const timeout = setTimeout(() => setDebounced(search.trim()), 320);
-    return () => clearTimeout(timeout);
-  }, [search]);
-
-  const { data: candidates = [], isFetching } = useQuery({
-    queryKey: ['users', 'search', debounced],
-    queryFn: () => userApi.search(debounced),
-    enabled: isInviteOpen && debounced.length >= 2,
-  });
+  const updateAccess = useUpdateMemberRole(projectId);
 
   const memberIds = useMemo(() => new Set(members.map((member) => member.id)), [members]);
-  const invitable = candidates.filter((candidate) => !memberIds.has(candidate.id));
+  const pendingIds = useMemo(
+    () => new Set(pending.map((invitation) => invitation.recipient.id)),
+    [pending],
+  );
+
+  /** Only the owner reaches another admin, and nobody reaches the owner or themselves. */
+  const isReachable = (member: RosterMember) =>
+    member.role !== 'OWNER' &&
+    member.id !== currentUser?.id &&
+    (isOwner || member.role !== 'ADMIN');
+
+  const openInvite = () => {
+    setAccess({ role: 'MEMBER', permissions: [] });
+    setIsInviteOpen(true);
+  };
+
+  const sendInvite = (target: InviteTarget) => {
+    setInFlight(targetKey(target));
+    invite.mutate(
+      {
+        ...targetPayload(target),
+        role: canManageAccess ? access.role : 'MEMBER',
+        ...(canManageAccess ? { permissions: access.permissions } : {}),
+      },
+      // Stays open for the next person; the row turns into "invited" once the list refetches.
+      { onSettled: () => setInFlight(null) },
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -118,8 +140,8 @@ export const RosterPanel = ({ projectId, canManage, isOwner = false }: RosterPan
             : t('roster.memberCount', { count: members.length })
         }
         action={
-          canManage && (
-            <Button size="sm" variant="secondary" onClick={() => setIsInviteOpen(true)}>
+          canInvite && (
+            <Button size="sm" variant="secondary" onClick={openInvite}>
               <UserPlus className="h-3.5 w-3.5" />
               {t('roster.invite')}
             </Button>
@@ -135,12 +157,14 @@ export const RosterPanel = ({ projectId, canManage, isOwner = false }: RosterPan
               // optimistic (see `useRemoveMember`).
               const isRemoving =
                 removeMember.isPending && removeMember.variables === member.id;
+              const held = projectPermissionsOf(member.role, member.permissions);
+              const reachable = isReachable(member);
 
               return (
                 <li
                   key={member.id}
                   className={cn(
-                    'flex items-center gap-3 px-4 py-3 transition-opacity duration-150',
+                    'flex flex-wrap items-center gap-3 px-4 py-3 transition-opacity duration-150',
                     isRemoving && 'pointer-events-none opacity-50',
                   )}
                 >
@@ -149,7 +173,6 @@ export const RosterPanel = ({ projectId, canManage, isOwner = false }: RosterPan
                   <div className="min-w-0 flex-1">
                     <p className="flex items-center gap-1.5 truncate text-sm font-medium">
                       {member.displayName}
-                      {ROLE_ICON[member.role]}
                       {member.id === currentUser?.id && (
                         <span className="text-3xs text-content-faint">{t('roster.you')}</span>
                       )}
@@ -157,25 +180,14 @@ export const RosterPanel = ({ projectId, canManage, isOwner = false }: RosterPan
                     <p className="truncate text-2xs text-content-faint">{member.email}</p>
                   </div>
 
-                  {/* The role is editable in place for an owner or admin. */}
-                  {canManage &&
-                  member.role !== 'OWNER' &&
-                  member.id !== currentUser?.id &&
-                  (isOwner || member.role !== 'ADMIN') ? (
-                    <Select
-                      value={member.role}
-                      onChange={(role) => updateRole.mutate({ memberId: member.id, role })}
-                      options={ASSIGNABLE_ROLES.map((option) => ({
-                        value: option,
-                        label: t(option === 'ADMIN' ? 'roster.roleAdmin' : 'roster.roleMember'),
-                        hint: t(
-                          option === 'ADMIN' ? 'roster.roleAdminHint' : 'roster.roleMemberHint',
-                        ),
-                      }))}
-                    />
-                  ) : (
-                    <Badge>{member.role.toLowerCase()}</Badge>
-                  )}
+                  <AccessChip
+                    role={member.role}
+                    count={held.length}
+                    total={PROJECT_ACCESS.all.length}
+                    isCustom={isCustomAccess(PROJECT_ACCESS, member.role, member.permissions)}
+                    detail={held.length > 0 ? describe(t, held) : undefined}
+                    onEdit={canManageAccess && reachable ? () => setEditing(member) : undefined}
+                  />
 
                   {/* Reporting is offered to *everybody* about everybody else, which is the
                       point of having it. */}
@@ -203,11 +215,12 @@ export const RosterPanel = ({ projectId, canManage, isOwner = false }: RosterPan
                       </Button>
                     ))}
 
-                  {canManage && member.role !== 'OWNER' && member.id !== currentUser?.id && (
+                  {canRemove && reachable && (
                     <Button
                       size="icon"
                       variant="ghost"
                       aria-label={t('roster.remove', { name: member.displayName })}
+                      title={t('roster.remove', { name: member.displayName })}
                       onClick={() => removeMember.mutate(member.id)}
                       disabled={isRemoving}
                       className="text-content-faint hover:text-danger"
@@ -226,21 +239,41 @@ export const RosterPanel = ({ projectId, canManage, isOwner = false }: RosterPan
         )}
       </Section>
 
-      {canManage && pending.length > 0 && (
+      {canInvite && pending.length > 0 && (
         <Section title={t('roster.pending')}>
           <ul className="divide-y divide-edge overflow-hidden rounded-2xl border border-dashed border-edge">
-            {pending.map((invitation) => (
-              <li key={invitation.id} className="flex items-center gap-3 px-4 py-3">
-                <Mail className="h-4 w-4 shrink-0 text-content-faint" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm">{invitation.recipient.displayName}</p>
-                  <p className="text-2xs text-content-faint">
-                    {t('roster.invitedRelative')} {formatRelative(invitation.createdAt)}
-                  </p>
-                </div>
-                <Badge>{invitation.role.toLowerCase()}</Badge>
-              </li>
-            ))}
+            {pending.map((invitation) => {
+              const granted = projectPermissionsOf(invitation.role, invitation.permissions);
+
+              return (
+                <li key={invitation.id} className="flex items-center gap-3 px-4 py-3">
+                  <Mail className="h-4 w-4 shrink-0 text-content-faint" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm">{invitation.recipient.displayName}</p>
+                    <p className="text-2xs text-content-faint">
+                      {t('roster.invitedRelative')} {formatRelative(invitation.createdAt)}
+                    </p>
+                  </div>
+                  <AccessChip
+                    role={invitation.role}
+                    count={granted.length}
+                    total={PROJECT_ACCESS.all.length}
+                    detail={granted.length > 0 ? describe(t, granted) : undefined}
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    aria-label={t('roster.revokeInvite')}
+                    title={t('roster.revokeInvite')}
+                    onClick={() => revoke.mutate(invitation.id)}
+                    disabled={revoke.isPending && revoke.variables === invitation.id}
+                    className="text-content-faint hover:text-danger"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </li>
+              );
+            })}
           </ul>
         </Section>
       )}
@@ -250,95 +283,61 @@ export const RosterPanel = ({ projectId, canManage, isOwner = false }: RosterPan
         onClose={() => setIsInviteOpen(false)}
         title={t('roster.inviteTitle')}
         description={t('roster.inviteSubtitle')}
+        flat
+        footer={
+          <Button variant="ghost" onClick={() => setIsInviteOpen(false)}>
+            {t('common.close')}
+          </Button>
+        }
       >
-        <div className="space-y-4">
-          <Input
-            label={t('roster.search')}
-            name="search"
-            value={search}
-            onChange={(event) => setSearch(clampText(event.target.value, TEXT_LIMITS.search))}
-            placeholder={t('roster.searchPlaceholder')}
-            maxLength={TEXT_LIMITS.search}
-            autoFocus
+        <div className="space-y-5">
+          {/* Chosen first, so every "Invite" below sends it. Anything beyond a plain membership
+              needs "manage admins"; without it the dialog says so instead of a locked form. */}
+          {canManageAccess ? (
+            <AccessPicker
+              catalog={PROJECT_ACCESS}
+              value={access}
+              onChange={setAccess}
+              grantable={mine}
+              collapsible
+            />
+          ) : (
+            <p className="rounded-xl border border-edge bg-surface-sunken/50 px-3 py-2.5 text-2xs leading-relaxed text-content-muted">
+              {t('access.memberOnly')}
+            </p>
+          )}
+
+          <PersonSearch
+            isOpen={isInviteOpen}
+            onInvite={sendInvite}
+            excludeIds={memberIds}
+            pendingIds={pendingIds}
+            pendingTarget={inFlight}
           />
-
-          <div className="space-y-1.5">
-            <p className="text-xs font-medium text-content-muted">{t('roster.role')}</p>
-            <div className="flex gap-1.5">
-              {(['MEMBER', 'ADMIN'] as ProjectRole[]).map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => setRole(option)}
-                  className={cn(
-                    'rounded-lg border px-3 py-1.5 text-xs transition-colors',
-                    role === option
-                      ? 'border-brand bg-brand/12 text-brand'
-                      : 'border-edge text-content-muted hover:text-content',
-                  )}
-                >
-                  {option.toLowerCase()}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {debounced.length >= 2 && (
-            <div className="space-y-2">
-              {isFetching && <p className="text-xs text-content-faint">{t('roster.searching')}</p>}
-
-              {!isFetching && invitable.length === 0 && (
-                <EmptyState
-                  className="px-4 py-6"
-                  title={t('roster.noMatch')}
-                  description={t('roster.noMatchBody')}
-                />
-              )}
-
-              {invitable.map((candidate) => (
-                <div
-                  key={candidate.id}
-                  className="flex items-center gap-3 rounded-xl border border-edge px-3 py-2.5"
-                >
-                  <Avatar name={candidate.displayName} src={candidate.avatarUrl} size="xs" />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-medium">{candidate.displayName}</p>
-                    <p className="truncate text-2xs text-content-faint">{candidate.email}</p>
-                  </div>
-                  <Button
-                    size="sm"
-                    isLoading={invite.isPending}
-                    onClick={() =>
-                      invite.mutate(
-                        { userId: candidate.id, role },
-                        { onSuccess: () => setIsInviteOpen(false) },
-                      )
-                    }
-                  >
-                    {t('roster.invite')}
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {search.includes('@') && invitable.length === 0 && (
-            <Button
-              variant="secondary"
-              className="w-full"
-              isLoading={invite.isPending}
-              onClick={() =>
-                invite.mutate(
-                  { email: search.trim().toLowerCase(), role },
-                  { onSuccess: () => setIsInviteOpen(false) },
-                )
-              }
-            >
-              Invite {search.trim()}
-            </Button>
-          )}
         </div>
       </Modal>
+
+      {editing && (
+        <MemberAccessDialog
+          isOpen
+          onClose={() => setEditing(null)}
+          catalog={PROJECT_ACCESS}
+          member={{
+            displayName: editing.displayName,
+            role: editing.role as GrantableRole,
+            permissions:
+              editing.permissions ?? [...PROJECT_ACCESS.presets[editing.role as GrantableRole]],
+          }}
+          grantable={mine}
+          isSaving={updateAccess.isPending}
+          onSave={(next) =>
+            updateAccess.mutate(
+              { memberId: editing.id, role: next.role, permissions: next.permissions },
+              { onSuccess: () => setEditing(null) },
+            )
+          }
+        />
+      )}
 
       {/* One dialog for the whole list, opened with whoever the row named. A dialog per row
           would mount twenty of them to use at most one. */}

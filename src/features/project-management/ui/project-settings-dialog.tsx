@@ -66,6 +66,10 @@ interface ProjectSettingsDialogProps {
    * owners and admins only, which left a member with no way out of a project at all.
    */
   canEdit?: boolean;
+  /** "Delete the project": an owner always, anybody else only when granted it. */
+  canDelete?: boolean;
+  /** "Invite people", which is what the invite link is. */
+  canInvite?: boolean;
 }
 
 /**
@@ -78,6 +82,8 @@ export const ProjectSettingsDialog = ({
   project,
   isOwner = false,
   canEdit = false,
+  canDelete: mayDelete = isOwner,
+  canInvite = canEdit,
 }: ProjectSettingsDialogProps) => {
   const t = useT();
   const navigate = useNavigate();
@@ -426,7 +432,7 @@ export const ProjectSettingsDialog = ({
         )}
 
         {/* --- Invite link: owners and admins, the same people who can invite. --- */}
-        {canEdit && <InviteLinkSection projectId={project.id} isOpen={isOpen} />}
+        {canInvite && <InviteLinkSection projectId={project.id} isOpen={isOpen} />}
 
         {/* --- Where this project is filed ---
             Above the rule, because unfiling destroys nothing — see `handleUnfile`. */}
@@ -468,7 +474,7 @@ export const ProjectSettingsDialog = ({
         )}
 
         {/* --- Out of the way, and back again --- */}
-        {isOwner && !isFinished && (
+        {canEdit && !isFinished && (
           <section className="space-y-2.5 rounded-xl border border-edge bg-surface-sunken/50 p-3.5">
             <header className="flex items-center gap-2">
               <Archive className="h-3.5 w-3.5 shrink-0 text-content-faint" />
@@ -564,8 +570,8 @@ export const ProjectSettingsDialog = ({
           )}
         </section>
 
-        {/* --- The dangerous half --- */}
-        {isOwner && (
+        {/* --- The dangerous half: finishing is the owner's, deleting whoever was granted it --- */}
+        {(isOwner || mayDelete) && (
         <section className="space-y-2.5 rounded-xl border border-danger/30 bg-danger/[0.04] p-3.5">
           <header className="flex items-center gap-2">
             <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-danger" />
@@ -576,7 +582,7 @@ export const ProjectSettingsDialog = ({
 
           {/* Finishing, above deleting. A project that is over is the common case and deleting
               it is the rare one, so the reversible-shaped action comes first. */}
-          {isFinished ? (
+          {!isOwner ? null : isFinished ? (
             <div className="space-y-2.5 border-b border-danger/20 pb-3">
               <p className="text-2xs leading-relaxed text-content-muted">
                 {t('project.reopenExplain')}
@@ -656,10 +662,10 @@ export const ProjectSettingsDialog = ({
             </div>
           )}
 
-          {!isConfirmingDelete ? (
+          {!mayDelete ? null : !isConfirmingDelete ? (
             <>
               <p className="text-2xs leading-relaxed text-content-muted">
-                {t('project.deleteExplain')}
+                {t(isOwner ? 'project.deleteExplain' : 'project.deleteExplainOthers')}
               </p>
               <Button
                 type="button"

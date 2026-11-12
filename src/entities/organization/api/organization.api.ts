@@ -9,6 +9,7 @@ import type {
   OrganizationInviteDraft,
   OrganizationMember,
   OrganizationPendingInvitation,
+  OrgPermission,
   OrgRole,
   UpdateOrganizationPayload,
 } from '../model/types';
@@ -74,7 +75,7 @@ export const organizationApi = {
   async updateMember(
     organizationId: string,
     memberId: string,
-    payload: { role?: OrgRole; jobTitle?: string },
+    payload: { role?: OrgRole; permissions?: OrgPermission[]; jobTitle?: string },
   ): Promise<OrganizationMember> {
     const { data } = await api.patch<OrganizationMember>(
       `/organizations/${organizationId}/members/${memberId}`,

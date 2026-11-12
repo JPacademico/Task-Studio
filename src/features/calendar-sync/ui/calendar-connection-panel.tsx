@@ -25,6 +25,10 @@ const OUTCOME: Record<string, { key: TranslationKey; tone: 'success' | 'error' |
   cancelled: { key: 'calendar.cancelled', tone: 'info' },
   failed: { key: 'calendar.connectFailed', tone: 'error' },
   noRefreshToken: { key: 'calendar.noRefreshToken', tone: 'error' },
+  // The deployment's Google project, not the user, is what is wrong here.
+  apiDisabled: { key: 'calendar.apiDisabled', tone: 'error' },
+  // The calendar box was left unticked on Google's consent screen.
+  scopeMissing: { key: 'calendar.scopeMissing', tone: 'error' },
 };
 
 /**

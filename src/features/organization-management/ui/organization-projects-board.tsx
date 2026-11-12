@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Archive,
@@ -7,6 +7,7 @@ import {
   Lock,
   Plus,
   Search,
+  Trash2,
   TriangleAlert,
   X,
 } from 'lucide-react';
@@ -21,7 +22,8 @@ import type {
   OrganizationProject,
   OrganizationProjectMetrics,
 } from '@/entities/organization/model/types';
-import { useProjectIntentPrefetch } from '@/entities/project/model/queries';
+import { canInOrganization } from '@/entities/organization/model/permissions';
+import { useDeleteProject, useProjectIntentPrefetch } from '@/entities/project/model/queries';
 import { CreateProjectDialog } from '@/features/project-management/ui/create-project-dialog';
 import { TEXT_LIMITS } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/cn';
@@ -67,7 +69,10 @@ interface ProjectCardProps {
   organizationId: string;
   project: OrganizationProject;
   metrics: OrganizationProjectMetrics | undefined;
+  /** May unfile it: "add and remove projects". */
   canManage: boolean;
+  /** May bin it: "delete projects". */
+  canDelete: boolean;
   t: Translate;
 }
 
@@ -80,9 +85,18 @@ const OrganizationProjectCard = ({
   project,
   metrics,
   canManage,
+  canDelete,
   t,
 }: ProjectCardProps) => {
   const detach = useDetachProject(organizationId);
+  const remove = useDeleteProject();
+  // Two clicks: the first arms it and says what the second will do. Disarms itself.
+  const [isArmed, setIsArmed] = useState(false);
+  useEffect(() => {
+    if (!isArmed) return;
+    const timeout = setTimeout(() => setIsArmed(false), 4000);
+    return () => clearTimeout(timeout);
+  }, [isArmed]);
   const intent = useProjectIntentPrefetch(project.id);
 
   const overdue = metrics?.overdue ?? 0;
@@ -201,6 +215,30 @@ const OrganizationProjectCard = ({
         </div>
       )}
 
+      {canDelete && (
+        <button
+          type="button"
+          aria-label={t(isArmed ? 'org.deleteProjectConfirm' : 'org.deleteProject', {
+            name: project.name,
+          })}
+          title={t(isArmed ? 'org.deleteProjectConfirm' : 'org.deleteProject', {
+            name: project.name,
+          })}
+          onClick={() => (isArmed ? remove.mutate(project.id) : setIsArmed(true))}
+          onBlur={() => setIsArmed(false)}
+          disabled={remove.isPending}
+          className={cn(
+            'absolute top-1.5 rounded-lg p-1.5 transition-all focus-visible:opacity-100',
+            canManage ? 'right-8' : 'right-1.5',
+            isArmed
+              ? 'bg-danger text-white opacity-100'
+              : 'text-content-faint hover:text-danger sm:opacity-0 sm:group-hover/card:opacity-100',
+          )}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      )}
+
       {canManage && (
         <button
           type="button"
@@ -243,6 +281,8 @@ export const OrganizationProjectsBoard = ({
   const [search, setSearch] = useState('');
   const [isFiling, setIsFiling] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const canFile = canInOrganization(organization, 'MANAGE_PROJECTS');
+  const canDelete = canInOrganization(organization, 'DELETE_PROJECTS');
 
   const attach = useAttachProject(organization.id);
   // Only asked for while the picker is actually open — see the query.
@@ -302,7 +342,7 @@ export const OrganizationProjectsBoard = ({
 
         {/* Filing is an admin's, and only over projects they own — see the API's
             `OrganizationsService`. */}
-        {organization.canManage && (
+        {canFile && (
           <div className="ml-auto flex flex-wrap items-center gap-1.5">
             {/* Two different acts, and the order says which is the common one. "New project"
                 makes one that belongs here from the first second — no picker. */}
@@ -351,10 +391,10 @@ export const OrganizationProjectsBoard = ({
           icon={<FolderPlus className="h-6 w-6" />}
           title={t('org.boardEmpty')}
           description={t(
-            organization.canManage ? 'org.boardEmptyAdmin' : 'org.boardEmptyBody',
+            canFile ? 'org.boardEmptyAdmin' : 'org.boardEmptyBody',
           )}
           action={
-            organization.canManage ? (
+            canFile ? (
               <Button size="sm" variant="secondary" onClick={() => setIsCreating(true)}>
                 <Plus className="h-3.5 w-3.5" strokeWidth={2.8} />
                 {t('org.newProject')}
@@ -366,7 +406,7 @@ export const OrganizationProjectsBoard = ({
 
       {/* Locked to this company: the picker is not drawn, because standing on
           the page is the answer it would have asked for. */}
-      {organization.canManage && (
+      {canFile && (
         <CreateProjectDialog
           isOpen={isCreating}
           onClose={() => setIsCreating(false)}
@@ -408,7 +448,8 @@ export const OrganizationProjectsBoard = ({
                         organizationId={organization.id}
                         project={project}
                         metrics={metricsById.get(project.id)}
-                        canManage={organization.canManage}
+                        canManage={canFile}
+                        canDelete={canDelete}
                         t={t}
                       />
                     ))}

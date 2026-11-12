@@ -48,7 +48,7 @@
   "46": "create-project-dialog.tsx",
   "47": "skin-ambience.tsx",
   "48": "fullscreen.ts",
-  "49": "live-stage.tsx",
+  "49": "live-call-guard.tsx",
   "50": "skin-catalog.ts",
   "51": "runic/build-cursors.py",
   "52": "shortcuts.store.ts",
@@ -258,6 +258,7 @@
   "256": "join-page.tsx",
   "257": "avatar.tsx",
   "258": "landing-nav.tsx",
+  "259": "live-stage.tsx",
   "260": "brand-name.tsx",
   "261": "runic-text.tsx",
   "262": "clsx"

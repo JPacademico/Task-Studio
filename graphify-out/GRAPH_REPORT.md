@@ -1,16 +1,16 @@
-# Graph Report - Task-Studio-UI  (2026-10-19)
+# Graph Report - Task-Studio-UI  (2026-11-09)
 
 ## Corpus Check
-- 416 files · ~374,835 words
+- 416 files · ~375,070 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2925 nodes · 4276 edges · 262 communities (182 shown, 80 thin omitted)
+- 2926 nodes · 4279 edges · 263 communities (183 shown, 80 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 101 edges (avg confidence: 0.69)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `b0782e1d`
+- Built from commit: `3ad175a5`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -64,7 +64,7 @@
 - create-project-dialog.tsx
 - skin-ambience.tsx
 - fullscreen.ts
-- live-stage.tsx
+- live-call-guard.tsx
 - skin-catalog.ts
 - runic/build-cursors.py
 - shortcuts.store.ts
@@ -255,6 +255,7 @@
 - @tanstack/react-query
 - avatar.tsx
 - landing-nav.tsx
+- live-stage.tsx
 - brand-name.tsx
 - runic-text.tsx
 - clsx
@@ -295,7 +296,7 @@
 - **Performance-first Interaction Design Pattern** — readme_useedgereveal, readme_drag_and_drop_design, readme_60fps_rules [INFERRED 0.85]
 - **PWA/iOS Delivery Flow** — readme_pwa_workbox, readme_ios_safari_specifics, readme_npm_scripts, readme_vercel_deployment [INFERRED 0.75]
 
-## Communities (262 total, 80 thin omitted)
+## Communities (263 total, 80 thin omitted)
 
 ### Community 0 - "project-board-queries.ts"
 Cohesion: 0.05
@@ -447,7 +448,7 @@ Nodes (22): AdminPage, CliAuthorizePage, DashboardPage, DocsPage, InvitationsPag
 
 ### Community 37 - "use-live-call.ts"
 Cohesion: 0.14
-Nodes (15): DISPLAY_MEDIA_OPTIONS, ScreenAudioMix, applyPlan(), AUDIO_CONSTRAINTS, Connection, FALLBACK_ICE, labelOf(), LiveCallStatus (+7 more)
+Nodes (16): DISPLAY_MEDIA_OPTIONS, isSoundContained(), ScreenAudioMix, applyPlan(), AUDIO_CONSTRAINTS, Connection, FALLBACK_ICE, labelOf() (+8 more)
 
 ### Community 38 - "task-comment/model/queries.ts"
 Cohesion: 0.14
@@ -493,9 +494,9 @@ Nodes (10): AMBIENCE, AmbientSkin, buildField(), hasAmbience(), noise(), Particl
 Cohesion: 0.22
 Nodes (14): canFullscreen(), doc(), enterFullscreen(), exitFullscreen(), FULLSCREEN_EVENTS, fullscreenElement(), WebkitDocument, WebkitElement (+6 more)
 
-### Community 49 - "live-stage.tsx"
-Cohesion: 0.19
-Nodes (12): ActiveLiveCall, LiveCallState, useLiveCallStore, historyIndex(), LiveCallGuard(), pathnameOf(), RouterNavigator, staysInProject() (+4 more)
+### Community 49 - "live-call-guard.tsx"
+Cohesion: 0.31
+Nodes (8): ActiveLiveCall, LiveCallState, useLiveCallStore, historyIndex(), LiveCallGuard(), pathnameOf(), RouterNavigator, staysInProject()
 
 ### Community 50 - "skin-catalog.ts"
 Cohesion: 0.18
@@ -940,6 +941,10 @@ Nodes (5): Avatar(), AvatarProps, AvatarStack(), AvatarStackProps, SIZES
 ### Community 258 - "landing-nav.tsx"
 Cohesion: 0.36
 Nodes (6): LandingNav(), scrollToSection(), scrollToTop(), GAPS, LavaLink(), LavaLinkProps
+
+### Community 259 - "live-stage.tsx"
+Cohesion: 0.40
+Nodes (4): ControlButtonProps, gridFor(), LiveStage(), LiveStageProps
 
 ### Community 260 - "brand-name.tsx"
 Cohesion: 0.50

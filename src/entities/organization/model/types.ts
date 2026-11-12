@@ -6,6 +6,15 @@ import type { UserSummary } from '@/entities/user/model/types';
  */
 export type OrgRole = 'OWNER' | 'ADMIN' | 'MEMBER';
 
+/** What a staff membership may do beyond its role. The owner holds all of them. */
+export type OrgPermission =
+  | 'INVITE_MEMBERS'
+  | 'MANAGE_ADMINS'
+  | 'REMOVE_MEMBERS'
+  | 'EDIT_ORGANIZATION'
+  | 'MANAGE_PROJECTS'
+  | 'DELETE_PROJECTS';
+
 /** One project, as a card on the company's board. */
 export interface OrganizationProject {
   id: string;
@@ -46,8 +55,10 @@ export interface Organization {
    */
   myRole: OrgRole | null;
   isOwner: boolean;
-  /** Admin or owner: may file projects, invite people and edit the company. */
+  /** Admin or owner. Gates teams and company meetings; people and settings go by permission. */
   canManage: boolean;
+  /** The reader's effective permissions; read through `canInOrganization`. */
+  myPermissions?: OrgPermission[];
 
   /** The real headcount. A staff list is the company saying how big it is. */
   memberCount: number;
@@ -69,6 +80,8 @@ export interface OrganizationRef {
 /** One person on the staff list. */
 export interface OrganizationMember extends UserSummary {
   role: OrgRole;
+  /** Effective permissions. Absent from an API older than them. */
+  permissions?: OrgPermission[];
   /** Free text — "Head of Delivery", "Contractor". Never interpreted. */
   jobTitle: string | null;
   joinedAt: string;
@@ -78,6 +91,8 @@ export interface OrganizationMember extends UserSummary {
 export interface OrganizationPendingInvitation {
   id: string;
   role: OrgRole;
+  permissions?: OrgPermission[];
+  jobTitle?: string | null;
   message: string | null;
   createdAt: string;
   recipient: UserSummary;
@@ -108,6 +123,8 @@ export interface OrganizationInviteDraft {
   userId?: string;
   email?: string;
   role?: OrgRole;
+  /** Omitted: the role's preset. */
+  permissions?: OrgPermission[];
   jobTitle?: string;
   message?: string;
 }

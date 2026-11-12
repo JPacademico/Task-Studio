@@ -317,6 +317,8 @@ export const useLiveCall = ({
   const screenTrack = useRef<MediaStreamTrack | null>(null);
   /** The shared screen's sound, when the presenter chose to share it. */
   const screenAudio = useRef<MediaStreamTrack | null>(null);
+  /** Whole-system sound with the call in it (Windows 10): always sent through the ducking mix. */
+  const soundIsLoose = useRef(false);
   /** Voice and screen sound together. See `ScreenAudioMix`. */
   const screenMix = useRef<ScreenAudioMix | null>(null);
   const selfRef = useRef<LiveSeat | null>(null);
@@ -383,6 +385,8 @@ export const useLiveCall = ({
     const microphone = localRef.current?.getAudioTracks()[0] ?? null;
     const voice = microphone?.enabled ? microphone : null;
     const sound = screenAudio.current;
+    // Loose sound never goes out raw: the mix is what keeps the other voices from echoing.
+    if (sound && soundIsLoose.current) return screenMix.current?.track ?? voice;
     if (voice && sound) return screenMix.current?.track ?? voice;
     return voice ?? sound;
   }, []);
@@ -487,21 +491,27 @@ export const useLiveCall = ({
     const microphone = localRef.current?.getAudioTracks()[0] ?? null;
     const isVoiceLive = microphone?.enabled === true;
     const sound = screenAudio.current;
+    const isLoose = soundIsLoose.current;
 
-    if (sound && microphone && isVoiceLive && !screenMix.current) {
+    if (sound && ((microphone && isVoiceLive) || isLoose) && !screenMix.current) {
       try {
-        screenMix.current = new ScreenAudioMix(sound, microphone);
+        screenMix.current = new ScreenAudioMix(sound, microphone, 48_000, isLoose);
       } catch {
         // Firefox refuses a 48kHz mix of a mic at another rate: retry at the device's own rate,
         // and failing that the voice is sent alone.
         try {
-          screenMix.current = new ScreenAudioMix(sound, microphone, null);
+          screenMix.current = new ScreenAudioMix(sound, microphone, null, isLoose);
         } catch {
           screenMix.current = null;
         }
       }
+      // Everybody already talking is a reason to duck from the first moment.
+      for (const peer of peersRef.current) {
+        if (peer.stream) screenMix.current?.addReference(peer.participantId, peer.stream);
+      }
     }
-    screenMix.current?.setRunning(Boolean(sound && isVoiceLive));
+    screenMix.current?.setVoiceLive(isVoiceLive);
+    screenMix.current?.setRunning(Boolean(sound && (isVoiceLive || isLoose)));
 
     const screen = screenTrack.current;
     if (screen) {
@@ -532,6 +542,7 @@ export const useLiveCall = ({
     if (keepSeat) return;
 
     detector.current?.remove(participantId);
+    screenMix.current?.removeReference(participantId);
     setQuality((current) => {
       if (!current[participantId]) return current;
       const next = { ...current };
@@ -675,6 +686,7 @@ export const useLiveCall = ({
 
         patchPeer(peer.participantId, { stream });
         detector.current?.add(peer.participantId, stream);
+        screenMix.current?.addReference(peer.participantId, stream);
         // The peer may already have been sharing when this connection formed,
         // in which case the hint applies from the first frame.
         applyPlayoutHint(peer.participantId);
@@ -1113,6 +1125,7 @@ export const useLiveCall = ({
     cameraTrack.current = null;
     screenTrack.current = null;
     screenAudio.current = null;
+    soundIsLoose.current = false;
     screenMix.current = null;
     setScreenPreview(null);
     setSharingAudio(false);
@@ -1255,6 +1268,7 @@ export const useLiveCall = ({
     if (!sound) return;
 
     screenAudio.current = null;
+    soundIsLoose.current = false;
     setSharingAudio(false);
     // The senders move off the mix before it is closed, so nobody is sent a
     // track that has just been stopped.
@@ -1300,13 +1314,11 @@ export const useLiveCall = ({
       display.getTracks().forEach((each) => each.stop());
       return;
     }
-    let sound: MediaStreamTrack | null = display.getAudioTracks()[0] ?? null;
-    // Whole-system sound carries other apps and the call itself, so it is never sent.
-    if (sound && !isSoundContained(track, sound)) {
-      sound.stop();
-      sound = null;
-      toast.warning(translate('live.shareSoundSystemWide'));
-    }
+    const sound: MediaStreamTrack | null = display.getAudioTracks()[0] ?? null;
+    // Whole-system sound carries the call itself (Windows 10 cannot leave it out). It is sent, but
+    // ducked while anyone else talks, so their voices do not echo back to them.
+    soundIsLoose.current = Boolean(sound && !isSoundContained(track, sound));
+    if (soundIsLoose.current) toast(translate('live.shareSoundSystemWide'));
 
     screenTrack.current = track;
     screenAudio.current = sound;

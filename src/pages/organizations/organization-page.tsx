@@ -15,6 +15,7 @@ import {
   useOrganizationDashboard,
   useOrganizationMembers,
 } from '@/entities/organization/model/queries';
+import { canInOrganization } from '@/entities/organization/model/permissions';
 import { MeetingsPanel } from '@/features/meetings/ui/meetings-panel';
 import { OrganizationBanner } from '@/features/organization-management/ui/organization-banner';
 import { OrganizationDashboard } from '@/features/organization-management/ui/organization-dashboard';
@@ -162,7 +163,7 @@ const OrganizationPage = () => {
               ))}
             </div>
 
-            {organization.canManage && (
+            {canInOrganization(organization, 'EDIT_ORGANIZATION') && (
               <Button
                 variant="ghost"
                 size="icon"
@@ -230,7 +231,7 @@ const OrganizationPage = () => {
           <StaffOnly message={t('org.meetingsStaffOnly')} />
         ))}
 
-      {organization.canManage && (
+      {canInOrganization(organization, 'EDIT_ORGANIZATION') && (
         <OrganizationDialog
           isOpen={isSettingsOpen}
           onClose={() => setIsSettingsOpen(false)}

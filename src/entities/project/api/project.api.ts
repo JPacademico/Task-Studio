@@ -7,6 +7,7 @@ import type {
   ProjectDashboard,
   ProjectInvitation,
   ProjectListItem,
+  ProjectPermission,
   ProjectRole,
   RosterMember,
   UserOverview,
@@ -163,7 +164,14 @@ export const projectApi = {
 
   async invite(
     projectId: string,
-    payload: { userId?: string; email?: string; role?: ProjectRole; message?: string },
+    payload: {
+      userId?: string;
+      email?: string;
+      role?: ProjectRole;
+      /** Omitted: the role's preset. */
+      permissions?: ProjectPermission[];
+      message?: string;
+    },
   ): Promise<ProjectInvitation> {
     const { data } = await api.post<ProjectInvitation>(
       `/projects/${projectId}/invitations`,
@@ -181,12 +189,13 @@ export const projectApi = {
     await api.delete(`/projects/${projectId}/invitations/${invitationId}`);
   },
 
-  async updateMemberRole(
+  /** A role change without `permissions` resets them to the new role's preset. */
+  async updateMember(
     projectId: string,
     memberId: string,
-    role: ProjectRole,
+    payload: { role?: ProjectRole; permissions?: ProjectPermission[] },
   ): Promise<void> {
-    await api.patch(`/projects/${projectId}/members/${memberId}`, { role });
+    await api.patch(`/projects/${projectId}/members/${memberId}`, payload);
   },
 
   async removeMember(projectId: string, memberId: string): Promise<void> {

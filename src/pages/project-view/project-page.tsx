@@ -51,6 +51,7 @@ import {
 import { useProjectThreadUnread } from '@/entities/task-comment/model/queries';
 import { useLiveCallStore } from '@/features/live-rooms/model/live-call.store';
 import { LivePanel } from '@/features/live-rooms/ui/live-panel';
+import { canInProject } from '@/entities/project/model/permissions';
 import { MeetingsPanel } from '@/features/meetings/ui/meetings-panel';
 import { ProjectSettingsDialog } from '@/features/project-management/ui/project-settings-dialog';
 import {
@@ -221,11 +222,14 @@ const ProjectPage = () => {
   // Deleting is still the owner's alone; editing is not. The settings dialog used to open for the
   // owner only, which was stricter than the API has ever been.
   const isOwner = project?.myRole === 'OWNER';
+  // The governance half goes by permission rather than role: see the access picker.
+  const canIntegrate = canInProject(project, 'MANAGE_INTEGRATIONS');
+  const canInvite = canInProject(project, 'INVITE_MEMBERS');
   /** Concluded: readable everywhere, writable nowhere. See `project.completedAt`. */
   const isFinished = Boolean(project?.completedAt);
 
   // Warm the roster tab while the user is reading the board.
-  usePrefetchProjectCollaboration(projectId, canManage);
+  usePrefetchProjectCollaboration(projectId, canInvite);
 
   // The calendar, read here rather than inside its own tab. Two surfaces want it — the meetings tab
   // and the text board.
@@ -340,14 +344,14 @@ const ProjectPage = () => {
                 <RepositoryLink
                   projectId={projectId}
                   repository={project.repository}
-                  canManage={canManage}
+                  canManage={canIntegrate}
                 />
                 {/* The design, beside the code. Two halves of the same question — where does
                     this project's work actually live. */}
                 <FigmaLink
                   projectId={projectId}
                   figma={project.figma}
-                  canManage={canManage}
+                  canManage={canIntegrate}
                   isAvailable={Boolean(figmaAvailability.data?.available)}
                 />
               </div>
@@ -464,7 +468,7 @@ const ProjectPage = () => {
           options={TABS
             /* The connections tab is not merely disabled for members, it is absent. Every
                destination this posts to treats its URL as the credential. */
-            .filter((entry) => entry.value !== 'connections' || canManage)
+            .filter((entry) => entry.value !== 'connections' || canIntegrate)
             .map((entry) => ({
               ...entry,
               label: t(entry.label),
@@ -568,7 +572,11 @@ const ProjectPage = () => {
 
       {tab === 'dashboard' && <ProjectDashboard projectId={projectId} />}
       {tab === 'roster' && (
-        <RosterPanel projectId={projectId} canManage={canManage} isOwner={isOwner} />
+        <RosterPanel
+          projectId={projectId}
+          myRole={project.myRole}
+          myPermissions={project.myPermissions}
+        />
       )}
       {tab === 'teams' && (
         <TeamsPanel
@@ -620,7 +628,7 @@ const ProjectPage = () => {
           projectId={projectId}
           repository={project.repository}
           figma={project.figma}
-          canManage={canManage}
+          canManage={canIntegrate}
         />
       )}
       {tab === 'changelog' && <ProjectChangelog projectId={projectId} />}
@@ -644,7 +652,9 @@ const ProjectPage = () => {
         onClose={() => setIsSettingsOpen(false)}
         project={project}
         isOwner={isOwner}
-        canEdit={canManage}
+        canEdit={canInProject(project, 'EDIT_PROJECT')}
+        canDelete={canInProject(project, 'DELETE_PROJECT')}
+        canInvite={canInvite}
       />
 
       <TaskDetailModal

@@ -554,6 +554,19 @@ export const DrawnMark = ({ className }: { className?: string }) => (
   </svg>
 );
 
+/** The app icon's own gold and ink — `GOLD` and `INK` in `scripts/generate-icons.mjs`. */
+const LOGO_GOLD = '#d8c052';
+const LOGO_INK = '#0f0f12';
+
+/** The Studio skin's mark: the favicon's gold sheet and ink letters, the same in light and dark. */
+export const GoldMark = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 40 40" fill="none" aria-hidden className={cn('h-10 w-10', className)}>
+    <path d={MARK_BRACKET} fill={LOGO_GOLD} />
+    <path d={MARK_SHEET} fill={LOGO_GOLD} />
+    <StudioMonogram fill={LOGO_INK} />
+  </svg>
+);
+
 /** The T, then the S, in 2-unit squares: each row is `[y, x, width]`. */
 const PIXEL_LETTERS: [number, number, number][] = [
   [11, 5, 10], [13, 5, 10], [15, 7, 6], [17, 7, 6], [19, 7, 6], [21, 7, 6], [23, 7, 6],
@@ -585,6 +598,7 @@ export const PixelMark = ({ className }: { className?: string }) => (
  * corner, the texture and what has landed on it change.
  */
 const MARKS: Partial<Record<ThemeSkin, ComponentType<{ className?: string }>>> = {
+  STUDIO: GoldMark,
   PIXEL: PixelMark,
   SPACE: SpaceMark,
   HAZARD: HazardMark,

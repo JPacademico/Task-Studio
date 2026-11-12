@@ -3,8 +3,19 @@ import type { UserSummary } from '@/entities/user/model/types';
 
 export type ProjectRole = 'OWNER' | 'ADMIN' | 'MEMBER';
 
+/** What a membership may do beyond its role. The owner holds all of them. */
+export type ProjectPermission =
+  | 'INVITE_MEMBERS'
+  | 'MANAGE_ADMINS'
+  | 'REMOVE_MEMBERS'
+  | 'EDIT_PROJECT'
+  | 'DELETE_PROJECT'
+  | 'MANAGE_INTEGRATIONS';
+
 export interface RosterMember extends UserSummary {
   role: ProjectRole;
+  /** Effective permissions. Absent from an API older than them. */
+  permissions?: ProjectPermission[];
   joinedAt: string;
 }
 
@@ -48,6 +59,8 @@ export interface Project {
    */
   figma: ProjectFigma | null;
   myRole: ProjectRole;
+  /** The reader's effective permissions; read through `canInProject`, which covers their absence. */
+  myPermissions?: ProjectPermission[];
   isPinned: boolean;
   roster: RosterMember[];
 }
@@ -136,6 +149,7 @@ export interface ProjectInvitation {
 export interface PendingInvitation {
   id: string;
   role: ProjectRole;
+  permissions?: ProjectPermission[];
   createdAt: string;
   recipient: UserSummary;
 }

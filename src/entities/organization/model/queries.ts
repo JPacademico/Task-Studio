@@ -6,10 +6,12 @@ import { queryKeys } from '@/shared/api/query-keys';
 import { translate } from '@/shared/i18n';
 import { organizationApi } from '../api/organization.api';
 import type { Project, ProjectListItem } from '@/entities/project/model/types';
+import { ORGANIZATION_ROLE_PRESETS } from './permissions';
 import type {
   Organization,
   OrganizationInviteDraft,
   OrganizationMember,
+  OrgPermission,
   OrgRole,
   UpdateOrganizationPayload,
 } from './types';
@@ -348,11 +350,12 @@ export const useUpdateOrganizationMember = (organizationId: string) => {
     }: {
       memberId: string;
       role?: OrgRole;
+      permissions?: OrgPermission[];
       jobTitle?: string;
     }) => organizationApi.updateMember(organizationId, memberId, payload),
 
-    onMutate: async ({ memberId, role }) => {
-      if (!role) return { previous: undefined };
+    onMutate: async ({ memberId, role, permissions }) => {
+      if (!role && !permissions) return { previous: undefined };
 
       // An in-flight refetch that resolves after this would overwrite the row
       // with the role the server has not been told about yet.
@@ -360,15 +363,27 @@ export const useUpdateOrganizationMember = (organizationId: string) => {
       const previous = queryClient.getQueryData<OrganizationMember[]>(membersKey);
 
       queryClient.setQueryData<OrganizationMember[]>(membersKey, (members) =>
-        members?.map((member) => (member.id === memberId ? { ...member, role } : member)),
+        members?.map((member) => {
+          if (member.id !== memberId) return member;
+          const nextRole = role ?? member.role;
+          return {
+            ...member,
+            role: nextRole,
+            permissions:
+              permissions ??
+              (role && nextRole !== 'OWNER'
+                ? [...ORGANIZATION_ROLE_PRESETS[nextRole]]
+                : member.permissions),
+          };
+        }),
       );
 
       return { previous };
     },
 
-    onSuccess: (_result, { role }) => {
+    onSuccess: (_result, { role, permissions }) => {
       refresh();
-      if (!role) toast.success(translate('org.memberUpdated'));
+      if (!role || permissions) toast.success(translate('org.memberUpdated'));
     },
 
     onError: (error, _variables, context) => {

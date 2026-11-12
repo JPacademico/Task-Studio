@@ -236,17 +236,20 @@ const en = {
   'roster.pending': 'Pending invitations',
   'roster.invitedRelative': 'invited',
   'roster.inviteTitle': 'Invite to the roster',
-  'roster.inviteSubtitle': 'Search registered users by name, or paste an exact email address.',
+  'roster.inviteSubtitle': 'Search people by name or email, choose what they can do, then invite.',
   'roster.search': 'Search',
   'roster.searchPlaceholder': 'Name or email',
   'roster.role': 'Role',
   'roster.roleAdmin': 'Admin',
-  'roster.roleAdminHint': 'Can invite people, post meetings and manage tasks',
+  'roster.roleAdminHint':
+    'Runs the work: tasks, columns, boards and meetings. The permissions below add the rest.',
   'roster.roleMember': 'Member',
-  'roster.roleMemberHint': 'Can see the project and work on what they are assigned',
+  'roster.roleMemberHint': 'Works on the project and on what they are assigned.',
   'roster.searching': 'Searching…',
   'roster.noMatch': 'No match',
   'roster.noMatchBody': 'Only verified Task Studio accounts can be invited.',
+  'roster.revokeInvite': 'Withdraw this invitation',
+  'roster.inviteRevoked': 'Invitation withdrawn.',
 
   // ---- Create project ----------------------------------------------------
   'project.newTitle': 'New project',
@@ -360,6 +363,8 @@ const en = {
 
   'project.deleteExplain':
     'Everything in it — tasks, notes, documents and the conversation — goes with it. It lands in your recycle bin, where it can be restored for 7 days before it is destroyed.',
+  'project.deleteExplainOthers':
+    'Everything in it goes with it. It lands in the owner\'s recycle bin, where they can restore it for 7 days before it is destroyed.',
   'project.deleteProject': 'Delete project',
   'project.deleteConfirmBody': 'Type {name} to confirm.',
   'project.deleteConfirmLabel': 'Project name',
@@ -487,6 +492,10 @@ const en = {
   'calendar.connectFailed': 'Could not connect that calendar.',
   'calendar.noRefreshToken':
     'Google did not grant offline access, so background syncing is not possible. Try connecting again and accept every step.',
+  'calendar.apiDisabled':
+    'Google Calendar is switched off for this deployment: the Google Calendar API is not enabled in its Google Cloud project. Whoever runs Task Studio has to enable it.',
+  'calendar.scopeMissing':
+    'Google did not grant calendar access. Connect again and tick the "Make secondary Google calendars" permission on Google\'s screen.',
   'calendar.unavailable':
     'Calendar syncing is not configured on this deployment. Whoever runs it needs to set the Google credentials and an encryption key.',
 
@@ -1336,6 +1345,13 @@ const en = {
   'invite.page': '{from}–{to} of {total}',
   'invite.previousPage': 'Previous people',
   'invite.nextPage': 'More people',
+  'invite.findPerson': 'Find people',
+  'invite.findPersonPlaceholder': 'Name or email',
+  'invite.findPersonHint':
+    'Type at least 2 letters. Anyone matches by name or full email; people you already work with also match by part of their email.',
+  'invite.alreadyInvited': 'Invited',
+  'invite.byEmail': 'Invite by email',
+  'invite.noPersonMatch': 'Nobody by that name. Only verified Task Studio accounts can be invited.',
 
   // ---- Whiteboard --------------------------------------------------------
   'board.inkCleared': 'Ink cleared. Post-its are untouched.',
@@ -1686,7 +1702,7 @@ const en = {
   'org.role': 'Role',
   'org.roleOwner': 'Owner',
   'org.roleAdmin': 'Admin',
-  'org.roleAdminHint': 'Can file projects, invite people and edit the organization',
+  'org.roleAdminHint': 'Runs teams and company meetings. The permissions below add the rest.',
   'org.roleMember': 'Member',
   'org.roleMemberHint': 'Can see the organization and everything it has filed',
   'org.roleGuest': 'Guest',
@@ -1723,6 +1739,49 @@ const en = {
   'org.noPendingInvitesBody': 'Invitations you send appear here until they are answered.',
   'org.invitedRelative': 'invited {when}',
   'org.revokeInvite': 'Withdraw this invitation',
+  'org.inviteTitle': 'Invite to the organization',
+  'org.inviteSubtitle': 'Search people by name or email, choose what they can do, then invite.',
+  'org.deleteProject': 'Delete {name}',
+  'org.deleteProjectConfirm': 'Click again to move {name} to its owner\'s recycle bin',
+  'access.role': 'Role',
+  'access.roleOwner': 'Owner',
+  'access.roleAdmin': 'Admin',
+  'access.roleMember': 'Member',
+  'access.permissions': 'Permissions',
+  'access.count': '{count} of {total}',
+  'access.custom': 'custom',
+  'access.cannotGrant': 'You can\'t grant this one: you don\'t have it yourself.',
+  'access.memberOnly':
+    'They will join as a member. Making someone an admin, or giving extra permissions, needs the "Add and manage admins" permission.',
+  'access.editTitle': 'Access for {name}',
+  'access.editSubtitle': 'Pick a role, then fine-tune what they can do. Changes apply right away.',
+  'access.editFor': 'Change access ({role})',
+  'access.save': 'Save access',
+  'access.project.invite': 'Invite people',
+  'access.project.inviteHint': 'Send invitations, share the invite link and withdraw pending ones',
+  'access.project.admins': 'Add and manage admins',
+  'access.project.adminsHint': 'Invite or promote admins and change what others can do',
+  'access.project.remove': 'Remove people',
+  'access.project.removeHint': 'Take members off the project. Only the owner can remove an admin',
+  'access.project.edit': 'Edit project settings',
+  'access.project.editHint':
+    'Name, description, colour, dates, archiving and the completed-task bin',
+  'access.project.delete': 'Delete the project',
+  'access.project.deleteHint': 'Move it to the owner\'s recycle bin, restorable for 7 days',
+  'access.project.integrations': 'Manage integrations',
+  'access.project.integrationsHint': 'GitHub, Figma, webhooks and Trello/Jira sync',
+  'access.org.invite': 'Invite people',
+  'access.org.inviteHint': 'Send invitations, set job titles and withdraw pending ones',
+  'access.org.admins': 'Add and manage admins',
+  'access.org.adminsHint': 'Invite or promote admins and change what others can do',
+  'access.org.remove': 'Remove people',
+  'access.org.removeHint': 'Take people off the staff list. Only the owner can remove an admin',
+  'access.org.edit': 'Edit the organization',
+  'access.org.editHint': 'Name, description, colour and banner',
+  'access.org.projects': 'Add and remove projects',
+  'access.org.projectsHint': 'File projects here, start new ones inside it and unfile them',
+  'access.org.delete': 'Delete projects',
+  'access.org.deleteHint': 'Move the organization\'s projects to their owners\' recycle bins',
 
   // Create dialog
   'org.linkProjects': 'Bring projects with it',
@@ -2240,7 +2299,7 @@ const en = {
   'live.askToSpeak': 'A moderator has to let you speak in this room.',
   'live.askToPresent': 'A moderator has to let you share a screen in this room.',
   'live.shareSoundSystemWide':
-    "Sharing without sound: on this computer the browser can only capture every app's audio, this call included. To share sound, share a browser tab.",
+    'Sharing your computer\'s sound. This browser can\'t leave the call itself out of it, so the shared sound dips while others talk, to avoid echo. For the cleanest sound, share a browser tab.',
   'live.muteByModerator': 'A moderator muted you.',
   'live.displaced': 'You joined this room somewhere else.',
   'project.tabAssistant': 'Assistant',
@@ -2985,17 +3044,20 @@ const ptBR: Record<TranslationKey, string> = {
   'roster.invitedRelative': 'convidado',
   'roster.inviteTitle': 'Convidar para a equipe',
   'roster.inviteSubtitle':
-    'Busque usuários cadastrados pelo nome, ou cole um endereço de e-mail exato.',
+    'Busque pessoas pelo nome ou e-mail, escolha o que elas podem fazer e convide.',
   'roster.search': 'Buscar',
   'roster.searchPlaceholder': 'Nome ou e-mail',
   'roster.role': 'Função',
   'roster.roleAdmin': 'Administrador',
-  'roster.roleAdminHint': 'Pode convidar pessoas, marcar reuniões e gerenciar tarefas',
+  'roster.roleAdminHint':
+    'Cuida do trabalho: tarefas, colunas, quadros e reuniões. As permissões abaixo completam o resto.',
   'roster.roleMember': 'Membro',
-  'roster.roleMemberHint': 'Vê o projeto e trabalha no que for atribuído a ele',
+  'roster.roleMemberHint': 'Trabalha no projeto e no que for atribuído a ele.',
   'roster.searching': 'Buscando…',
   'roster.noMatch': 'Nenhum resultado',
   'roster.noMatchBody': 'Somente contas verificadas do Task Studio podem ser convidadas.',
+  'roster.revokeInvite': 'Cancelar este convite',
+  'roster.inviteRevoked': 'Convite cancelado.',
 
   'project.newTitle': 'Novo projeto',
   'project.pin': 'Fixar projeto',
@@ -3104,6 +3166,8 @@ const ptBR: Record<TranslationKey, string> = {
 
   'project.deleteExplain':
     'Tudo que está nele — tarefas, notas, documentos e a conversa — vai junto. Ele fica na sua lixeira, onde pode ser restaurado por 7 dias antes de ser destruído.',
+  'project.deleteExplainOthers':
+    'Tudo o que há nele vai junto. Ele vai para a lixeira do dono, que pode restaurá-lo por 7 dias antes de ser destruído.',
   'project.deleteProject': 'Excluir projeto',
   'project.deleteConfirmBody': 'Digite {name} para confirmar.',
   'project.deleteConfirmLabel': 'Nome do projeto',
@@ -3228,6 +3292,10 @@ const ptBR: Record<TranslationKey, string> = {
   'calendar.connectFailed': 'Não foi possível conectar essa agenda.',
   'calendar.noRefreshToken':
     'O Google não concedeu acesso offline, então a sincronização em segundo plano não é possível. Tente conectar de novo e aceite todas as etapas.',
+  'calendar.apiDisabled':
+    'O Google Agenda está desligado nesta instalação: a API do Google Calendar não está ativada no projeto do Google Cloud. Quem administra o Task Studio precisa ativá-la.',
+  'calendar.scopeMissing':
+    'O Google não concedeu acesso à agenda. Conecte de novo e marque a permissão de criar agendas secundárias na tela do Google.',
   'calendar.unavailable':
     'A sincronização de agenda não está configurada nesta instalação. Quem a administra precisa definir as credenciais do Google e uma chave de criptografia.',
 
@@ -4058,6 +4126,14 @@ const ptBR: Record<TranslationKey, string> = {
   'invite.page': '{from}–{to} de {total}',
   'invite.previousPage': 'Pessoas anteriores',
   'invite.nextPage': 'Mais pessoas',
+  'invite.findPerson': 'Encontrar pessoas',
+  'invite.findPersonPlaceholder': 'Nome ou e-mail',
+  'invite.findPersonHint':
+    'Digite ao menos 2 letras. Qualquer pessoa aparece pelo nome ou pelo e-mail completo; quem já trabalha com você também aparece por parte do e-mail.',
+  'invite.alreadyInvited': 'Convidado',
+  'invite.byEmail': 'Convidar por e-mail',
+  'invite.noPersonMatch':
+    'Ninguém com esse nome. Só contas verificadas do Task Studio podem ser convidadas.',
 
   'board.inkCleared': 'Traços apagados. Os recados não foram tocados.',
   'board.adminsOnlyClear': 'Somente administradores do projeto podem limpar a tela.',
@@ -4384,7 +4460,8 @@ const ptBR: Record<TranslationKey, string> = {
   'org.role': 'Papel',
   'org.roleOwner': 'Dono',
   'org.roleAdmin': 'Administrador',
-  'org.roleAdminHint': 'Pode guardar projetos, convidar pessoas e editar a organização',
+  'org.roleAdminHint':
+    'Cuida das equipes e das reuniões da empresa. As permissões abaixo completam o resto.',
   'org.roleMember': 'Membro',
   'org.roleMemberHint': 'Pode ver a organização e tudo o que ela guarda',
   'org.roleGuest': 'Convidado',
@@ -4420,6 +4497,52 @@ const ptBR: Record<TranslationKey, string> = {
   'org.noPendingInvitesBody': 'Convites enviados aparecem aqui até serem respondidos.',
   'org.invitedRelative': 'convidado {when}',
   'org.revokeInvite': 'Cancelar este convite',
+  'org.inviteTitle': 'Convidar para a organização',
+  'org.inviteSubtitle':
+    'Busque pessoas pelo nome ou e-mail, escolha o que elas podem fazer e convide.',
+  'org.deleteProject': 'Excluir {name}',
+  'org.deleteProjectConfirm': 'Clique de novo para mover {name} para a lixeira do dono',
+  'access.role': 'Função',
+  'access.roleOwner': 'Dono',
+  'access.roleAdmin': 'Admin',
+  'access.roleMember': 'Membro',
+  'access.permissions': 'Permissões',
+  'access.count': '{count} de {total}',
+  'access.custom': 'personalizado',
+  'access.cannotGrant': 'Você não pode conceder esta: você mesmo não a tem.',
+  'access.memberOnly':
+    'A pessoa entra como membro. Tornar alguém admin, ou dar permissões extras, exige a permissão "Adicionar e gerenciar admins".',
+  'access.editTitle': 'Acesso de {name}',
+  'access.editSubtitle':
+    'Escolha uma função e ajuste o que a pessoa pode fazer. As mudanças valem na hora.',
+  'access.editFor': 'Alterar acesso ({role})',
+  'access.save': 'Salvar acesso',
+  'access.project.invite': 'Convidar pessoas',
+  'access.project.inviteHint':
+    'Enviar convites, compartilhar o link de convite e cancelar convites pendentes',
+  'access.project.admins': 'Adicionar e gerenciar admins',
+  'access.project.adminsHint': 'Convidar ou promover admins e mudar o que os outros podem fazer',
+  'access.project.remove': 'Remover pessoas',
+  'access.project.removeHint': 'Tirar membros do projeto. Só o dono pode remover um admin',
+  'access.project.edit': 'Editar configurações do projeto',
+  'access.project.editHint':
+    'Nome, descrição, cor, datas, arquivamento e a lixeira de tarefas concluídas',
+  'access.project.delete': 'Excluir o projeto',
+  'access.project.deleteHint': 'Mover para a lixeira do dono, recuperável por 7 dias',
+  'access.project.integrations': 'Gerenciar integrações',
+  'access.project.integrationsHint': 'GitHub, Figma, webhooks e sincronização com Trello/Jira',
+  'access.org.invite': 'Convidar pessoas',
+  'access.org.inviteHint': 'Enviar convites, definir cargos e cancelar convites pendentes',
+  'access.org.admins': 'Adicionar e gerenciar admins',
+  'access.org.adminsHint': 'Convidar ou promover admins e mudar o que os outros podem fazer',
+  'access.org.remove': 'Remover pessoas',
+  'access.org.removeHint': 'Tirar pessoas da equipe. Só o dono pode remover um admin',
+  'access.org.edit': 'Editar a organização',
+  'access.org.editHint': 'Nome, descrição, cor e banner',
+  'access.org.projects': 'Adicionar e remover projetos',
+  'access.org.projectsHint': 'Guardar projetos aqui, criar novos dentro dela e retirá-los',
+  'access.org.delete': 'Excluir projetos',
+  'access.org.deleteHint': 'Mover os projetos da organização para a lixeira de seus donos',
 
   'org.linkProjects': 'Trazer projetos junto',
   'org.linkProjectsHint':
@@ -4925,7 +5048,7 @@ const ptBR: Record<TranslationKey, string> = {
   'live.askToSpeak': 'Um moderador precisa liberar sua fala nesta sala.',
   'live.askToPresent': 'Um moderador precisa liberar o compartilhamento nesta sala.',
   'live.shareSoundSystemWide':
-    'Compartilhando sem som: neste computador o navegador só consegue capturar o áudio de todos os apps, incluindo esta chamada. Para compartilhar o som, compartilhe uma aba do navegador.',
+    'Compartilhando o som do computador. Este navegador não consegue deixar a própria chamada de fora, então o som compartilhado abaixa enquanto outras pessoas falam, para evitar eco. Para um som mais limpo, compartilhe uma aba do navegador.',
   'live.muteByModerator': 'Um moderador desligou seu microfone.',
   'live.displaced': 'Você entrou nesta sala em outro lugar.',
   'project.tabAssistant': 'Assistente',

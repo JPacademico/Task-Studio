@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ImagePlus, Loader2, Trash2 } from 'lucide-react';
 import { toast } from '@/shared/lib/toast';
 
+import { canInOrganization } from '@/entities/organization/model/permissions';
 import { useUpdateOrganization } from '@/entities/organization/model/queries';
 import type { Organization } from '@/entities/organization/model/types';
 import { uploadImage } from '@/entities/user/api/user.api';
@@ -169,9 +170,9 @@ export const OrganizationBanner = ({ organization }: OrganizationBannerProps) =>
           className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent"
         />
 
-        {/* Owner or admin only. `canManage` is the same flag the API enforces — an ordinary
-            member opening this page sees the banner and no controls. */}
-        {organization.canManage && (
+        {/* "Edit the organization" only, the permission the API enforces — anybody else
+            sees the banner and no controls. */}
+        {canInOrganization(organization, 'EDIT_ORGANIZATION') && (
           <div
             className={cn(
               'absolute bottom-2.5 right-2.5 flex items-center gap-1.5',

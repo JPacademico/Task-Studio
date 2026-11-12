@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Mail, Pencil, UserPlus, X } from 'lucide-react';
 
+import { organizationPermissionsOf } from '@/entities/organization/model/permissions';
 import {
   useInviteToOrganization,
   useOrganizationInvitations,
@@ -12,44 +13,59 @@ import {
 import type {
   Organization,
   OrganizationMember,
-  OrgRole,
+  OrgPermission,
 } from '@/entities/organization/model/types';
 import { useCurrentUser } from '@/features/auth/model/session.store';
+import {
+  PersonSearch,
+  targetKey,
+  targetPayload,
+  type InviteTarget,
+} from '@/features/invite-picker/ui/person-search';
+import {
+  isCustomAccess,
+  ORGANIZATION_ACCESS,
+  type GrantableRole,
+} from '@/features/member-access/model/catalogs';
+import { AccessChip } from '@/features/member-access/ui/access-chip';
+import { AccessPicker, type AccessValue } from '@/features/member-access/ui/access-picker';
+import { MemberAccessDialog } from '@/features/member-access/ui/member-access-dialog';
 import { TEXT_LIMITS } from '@/shared/config/constants';
-import { cn } from '@/shared/lib/cn';
 import { clampText } from '@/shared/lib/text';
 import { formatRelative } from '@/shared/lib/dates';
 import {
   Avatar,
-  Badge,
   Button,
   EmptyState,
   Input,
+  Modal,
   Section,
-  Select,
   Skeleton,
 } from '@/shared/ui';
 import { useT, type Translate } from '@/shared/i18n';
 
-/** The two roles that can be handed out. OWNER is transferred, not granted. */
-const ASSIGNABLE_ROLES: OrgRole[] = ['ADMIN', 'MEMBER'];
+/** The permissions spelled out, for a chip's tooltip. */
+const describe = (t: Translate, permissions: readonly OrgPermission[]): string =>
+  permissions.map((permission) => t(ORGANIZATION_ACCESS.label[permission])).join(', ');
 
 interface MemberRowProps {
   organizationId: string;
   member: OrganizationMember;
-  /** Owner: may change roles. Admin: may edit titles and remove people. */
+  /** The reader's effective permissions. */
+  mine: OrgPermission[];
   isOwner: boolean;
-  canManage: boolean;
   isSelf: boolean;
+  onEditAccess: (member: OrganizationMember) => void;
   t: Translate;
 }
 
 const MemberRow = ({
   organizationId,
   member,
+  mine,
   isOwner,
-  canManage,
   isSelf,
+  onEditAccess,
   t,
 }: MemberRowProps) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -58,9 +74,11 @@ const MemberRow = ({
   const update = useUpdateOrganizationMember(organizationId);
   const remove = useRemoveOrganizationMember(organizationId);
 
-  // The owner's row is read-only in both directions: their role cannot be changed and they cannot
-  // be removed.
+  // The owner's row is read-only in both directions, and only the owner reaches another admin.
   const isCompanyOwner = member.role === 'OWNER';
+  const reachable = !isCompanyOwner && !isSelf && (isOwner || member.role !== 'ADMIN');
+  const held = organizationPermissionsOf(member.role, member.permissions);
+  const canEditTitle = mine.includes('INVITE_MEMBERS');
 
   const saveTitle = () => {
     setIsEditing(false);
@@ -108,31 +126,16 @@ const MemberRow = ({
         )}
       </div>
 
-      {/* Admins can change roles now, not only the owner. The one thing they cannot do is
-          change *another admin's* role. */}
-      {canManage && !isCompanyOwner && (isOwner || member.role !== 'ADMIN') ? (
-        <Select
-          value={member.role}
-          onChange={(role) => update.mutate({ memberId: member.id, role })}
-          options={ASSIGNABLE_ROLES.map((role) => ({
-            value: role,
-            label: t(role === 'ADMIN' ? 'org.roleAdmin' : 'org.roleMember'),
-            hint: t(role === 'ADMIN' ? 'org.roleAdminHint' : 'org.roleMemberHint'),
-          }))}
-        />
-      ) : (
-        <Badge className={cn(isCompanyOwner && 'border-brand/40 text-brand')}>
-          {t(
-            isCompanyOwner
-              ? 'org.roleOwner'
-              : member.role === 'ADMIN'
-                ? 'org.roleAdmin'
-                : 'org.roleMember',
-          )}
-        </Badge>
-      )}
+      <AccessChip
+        role={member.role}
+        count={held.length}
+        total={ORGANIZATION_ACCESS.all.length}
+        isCustom={isCustomAccess(ORGANIZATION_ACCESS, member.role, member.permissions)}
+        detail={held.length > 0 ? describe(t, held) : undefined}
+        onEdit={mine.includes('MANAGE_ADMINS') && reachable ? () => onEditAccess(member) : undefined}
+      />
 
-      {canManage && !isEditing && (
+      {canEditTitle && !isEditing && (
         <Button
           size="icon"
           variant="ghost"
@@ -144,8 +147,8 @@ const MemberRow = ({
         </Button>
       )}
 
-      {/* Removing somebody, or leaving. Never the owner — see above. */}
-      {!isCompanyOwner && (canManage || isSelf) && (
+      {/* Removing somebody, or leaving. Never the owner. */}
+      {((mine.includes('REMOVE_MEMBERS') && reachable) || (isSelf && !isCompanyOwner)) && (
         <Button
           size="icon"
           variant="ghost"
@@ -161,81 +164,100 @@ const MemberRow = ({
   );
 };
 
-interface InviteFormProps {
+interface InviteDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
   organizationId: string;
+  mine: OrgPermission[];
+  memberIds: ReadonlySet<string>;
+  pendingIds: ReadonlySet<string>;
   t: Translate;
 }
 
-/** Inviting one person, by address. */
-const InviteForm = ({ organizationId, t }: InviteFormProps) => {
-  const [email, setEmail] = useState('');
+/** Inviting by name or email, as the project roster does, with a job title and the access. */
+const InviteDialog = ({
+  isOpen,
+  onClose,
+  organizationId,
+  mine,
+  memberIds,
+  pendingIds,
+  t,
+}: InviteDialogProps) => {
+  const canManageAccess = mine.includes('MANAGE_ADMINS');
+  const [access, setAccess] = useState<AccessValue<OrgPermission>>({
+    role: 'MEMBER',
+    permissions: [],
+  });
   const [jobTitle, setJobTitle] = useState('');
-  const [role, setRole] = useState<OrgRole>('MEMBER');
+  const [inFlight, setInFlight] = useState<string | null>(null);
 
   const invite = useInviteToOrganization(organizationId);
 
-  const canSubmit = /.+@.+\..+/.test(email.trim());
-
-  const submit = () => {
-    if (!canSubmit) return;
+  const send = (target: InviteTarget) => {
+    setInFlight(targetKey(target));
     invite.mutate(
-      { email: email.trim(), role, jobTitle: jobTitle.trim() || undefined },
       {
-        onSuccess: () => {
-          setEmail('');
-          setJobTitle('');
-        },
+        ...targetPayload(target),
+        role: canManageAccess ? access.role : 'MEMBER',
+        ...(canManageAccess ? { permissions: access.permissions } : {}),
+        jobTitle: jobTitle.trim() || undefined,
+      },
+      {
+        // Stays open for the next person; the title is per person, so it is cleared.
+        onSuccess: () => setJobTitle(''),
+        onSettled: () => setInFlight(null),
       },
     );
   };
 
   return (
-    <form
-      className="flex flex-wrap items-end gap-2 rounded-2xl border border-edge bg-surface-raised p-3"
-      onSubmit={(event) => {
-        event.preventDefault();
-        submit();
-      }}
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={t('org.inviteTitle')}
+      description={t('org.inviteSubtitle')}
+      flat
+      footer={
+        <Button variant="ghost" onClick={onClose}>
+          {t('common.close')}
+        </Button>
+      }
     >
-      <Input
-        label={t('org.inviteEmail')}
-        name="email"
-        type="email"
-        value={email}
-        onChange={(event) => setEmail(event.target.value)}
-        placeholder={t('org.inviteEmailPlaceholder')}
-        wrapperClassName="min-w-[14rem] flex-1"
-        className="h-9 py-0 text-xs"
-      />
+      <div className="space-y-5">
+        {/* Chosen first, so every "Invite" below sends it. */}
+        {canManageAccess ? (
+          <AccessPicker
+            catalog={ORGANIZATION_ACCESS}
+            value={access}
+            onChange={setAccess}
+            grantable={mine}
+            collapsible
+          />
+        ) : (
+          <p className="rounded-xl border border-edge bg-surface-sunken/50 px-3 py-2.5 text-2xs leading-relaxed text-content-muted">
+            {t('access.memberOnly')}
+          </p>
+        )}
 
-      <Input
-        label={t('org.jobTitle')}
-        name="jobTitle"
-        value={jobTitle}
-        onChange={(event) => setJobTitle(event.target.value)}
-        placeholder={t('org.jobTitlePlaceholder')}
-        maxLength={TEXT_LIMITS.jobTitle}
-        wrapperClassName="min-w-[10rem] flex-1"
-        className="h-9 py-0 text-xs"
-      />
+        <Input
+          label={t('org.jobTitle')}
+          name="jobTitle"
+          value={jobTitle}
+          onChange={(event) => setJobTitle(clampText(event.target.value, TEXT_LIMITS.jobTitle))}
+          placeholder={t('org.jobTitlePlaceholder')}
+          maxLength={TEXT_LIMITS.jobTitle}
+        />
 
-      <div className="space-y-1.5">
-        <p className="text-xs font-medium text-content-muted">{t('org.role')}</p>
-        <Select
-          value={role}
-          onChange={setRole}
-          options={ASSIGNABLE_ROLES.map((option) => ({
-            value: option,
-            label: t(option === 'ADMIN' ? 'org.roleAdmin' : 'org.roleMember'),
-          }))}
+        <PersonSearch
+          isOpen={isOpen}
+          onInvite={send}
+          excludeIds={memberIds}
+          pendingIds={pendingIds}
+          pendingTarget={inFlight}
         />
       </div>
-
-      <Button type="submit" disabled={!canSubmit} isLoading={invite.isPending}>
-        <UserPlus className="h-3.5 w-3.5" />
-        {t('org.invite')}
-      </Button>
-    </form>
+    </Modal>
   );
 };
 
@@ -253,21 +275,40 @@ export const OrganizationMembersPanel = ({
   const t = useT();
   const currentUser = useCurrentUser();
 
-  const { data: members = [], isPending } = useOrganizationMembers(organization.id);
-  // Admin-only on the API, so it is not asked for by anybody else.
-  const { data: invitations = [] } = useOrganizationInvitations(
-    organization.id,
-    organization.canManage,
+  const mine = useMemo(
+    () => organizationPermissionsOf(organization.myRole, organization.myPermissions),
+    [organization.myRole, organization.myPermissions],
   );
+  const canInvite = mine.includes('INVITE_MEMBERS');
+
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [editing, setEditing] = useState<OrganizationMember | null>(null);
+
+  const { data: members = [], isPending } = useOrganizationMembers(organization.id);
+  // Needs "invite people" on the API, so it is not asked for by anybody else.
+  const { data: invitations = [] } = useOrganizationInvitations(organization.id, canInvite);
   const revoke = useRevokeOrganizationInvitation(organization.id);
+  const updateAccess = useUpdateOrganizationMember(organization.id);
+
+  const memberIds = useMemo(() => new Set(members.map((member) => member.id)), [members]);
+  const pendingIds = useMemo(
+    () => new Set(invitations.map((invitation) => invitation.recipient.id)),
+    [invitations],
+  );
 
   return (
     <div className="space-y-5">
-      {organization.canManage && <InviteForm organizationId={organization.id} t={t} />}
-
       <Section
         title={t('org.staff')}
         description={t('org.headcount', { count: organization.memberCount })}
+        action={
+          canInvite && (
+            <Button size="sm" variant="secondary" onClick={() => setIsInviteOpen(true)}>
+              <UserPlus className="h-3.5 w-3.5" />
+              {t('org.invitePeople')}
+            </Button>
+          )
+        }
       >
         {isPending ? (
           <div className="space-y-2">
@@ -282,9 +323,10 @@ export const OrganizationMembersPanel = ({
                 key={member.id}
                 organizationId={organization.id}
                 member={member}
+                mine={mine}
                 isOwner={organization.isOwner}
-                canManage={organization.canManage}
                 isSelf={member.id === currentUser?.id}
+                onEditAccess={setEditing}
                 t={t}
               />
             ))}
@@ -292,7 +334,7 @@ export const OrganizationMembersPanel = ({
         )}
       </Section>
 
-      {organization.canManage && (
+      {canInvite && (
         <Section title={t('org.pendingInvites')}>
           {invitations.length === 0 ? (
             <EmptyState
@@ -303,43 +345,87 @@ export const OrganizationMembersPanel = ({
             />
           ) : (
             <ul className="divide-y divide-edge overflow-hidden rounded-2xl border border-edge bg-surface-raised">
-              {invitations.map((invitation) => (
-                <li key={invitation.id} className="flex items-center gap-3 px-4 py-3">
-                  <Avatar
-                    name={invitation.recipient.displayName}
-                    src={invitation.recipient.avatarUrl}
-                    size="sm"
-                  />
-                  <div className="min-w-0 flex-1 leading-tight">
-                    <p className="truncate text-sm font-medium">
-                      {invitation.recipient.displayName}
-                    </p>
-                    <p className="truncate text-2xs text-content-faint">
-                      {t('org.invitedRelative', {
-                        when: formatRelative(invitation.createdAt),
-                      })}
-                    </p>
-                  </div>
+              {invitations.map((invitation) => {
+                const granted = organizationPermissionsOf(invitation.role, invitation.permissions);
 
-                  <Badge>
-                    {t(invitation.role === 'ADMIN' ? 'org.roleAdmin' : 'org.roleMember')}
-                  </Badge>
+                return (
+                  <li key={invitation.id} className="flex items-center gap-3 px-4 py-3">
+                    <Avatar
+                      name={invitation.recipient.displayName}
+                      src={invitation.recipient.avatarUrl}
+                      size="sm"
+                    />
+                    <div className="min-w-0 flex-1 leading-tight">
+                      <p className="truncate text-sm font-medium">
+                        {invitation.recipient.displayName}
+                      </p>
+                      <p className="truncate text-2xs text-content-faint">
+                        {[
+                          invitation.jobTitle,
+                          t('org.invitedRelative', { when: formatRelative(invitation.createdAt) }),
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </p>
+                    </div>
 
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    aria-label={t('org.revokeInvite')}
-                    title={t('org.revokeInvite')}
-                    onClick={() => revoke.mutate(invitation.id)}
-                    className="hover:text-danger"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </Button>
-                </li>
-              ))}
+                    <AccessChip
+                      role={invitation.role}
+                      count={granted.length}
+                      total={ORGANIZATION_ACCESS.all.length}
+                      detail={granted.length > 0 ? describe(t, granted) : undefined}
+                    />
+
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      aria-label={t('org.revokeInvite')}
+                      title={t('org.revokeInvite')}
+                      onClick={() => revoke.mutate(invitation.id)}
+                      className="hover:text-danger"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </Section>
+      )}
+
+      <InviteDialog
+        isOpen={isInviteOpen}
+        onClose={() => setIsInviteOpen(false)}
+        organizationId={organization.id}
+        mine={mine}
+        memberIds={memberIds}
+        pendingIds={pendingIds}
+        t={t}
+      />
+
+      {editing && (
+        <MemberAccessDialog
+          isOpen
+          onClose={() => setEditing(null)}
+          catalog={ORGANIZATION_ACCESS}
+          member={{
+            displayName: editing.displayName,
+            role: editing.role as GrantableRole,
+            permissions:
+              editing.permissions ?? [
+                ...ORGANIZATION_ACCESS.presets[editing.role as GrantableRole],
+              ],
+          }}
+          grantable={mine}
+          isSaving={updateAccess.isPending}
+          onSave={(next) =>
+            updateAccess.mutate(
+              { memberId: editing.id, role: next.role, permissions: next.permissions },
+              { onSuccess: () => setEditing(null) },
+            )
+          }
+        />
       )}
     </div>
   );

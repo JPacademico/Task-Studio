@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Github, PenLine, Upload } from 'lucide-react';
 
+import { canInOrganization } from '@/entities/organization/model/permissions';
 import { useOrganizationMembers, useOrganizations } from '@/entities/organization/model/queries';
 import { useCreateProject } from '@/entities/project/model/queries';
 import { InvitePicker } from '@/features/invite-picker/ui/invite-picker';
@@ -65,12 +66,12 @@ export const CreateProjectDialog = ({
   // already decided — a locked picker has nothing to choose between.
   const { data: organizations = [] } = useOrganizations(isOpen && !organizationId);
 
-  /**
-   * The companies this person may actually file into. `canManage` is the API's own rule reflected
-   * back: owner or admin.
-   */
+  /** The companies this person may file into: "add and remove projects", as the API checks. */
   const filable = useMemo(
-    () => organizations.filter((organization) => organization.canManage),
+    () =>
+      organizations.filter((organization) =>
+        canInOrganization(organization, 'MANAGE_PROJECTS'),
+      ),
     [organizations],
   );
 

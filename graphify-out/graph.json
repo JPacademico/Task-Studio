@@ -16388,6 +16388,18 @@
       "norm_label": "display_media_options"
     },
     {
+      "label": "isSoundContained()",
+      "file_type": "code",
+      "source_file": "src/features/live-rooms/lib/screen-share.ts",
+      "source_location": "L103",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_features_live_rooms_lib_screen_share_issoundcontained",
+      "community": 37,
+      "community_name": "use-live-call.ts",
+      "norm_label": "issoundcontained()"
+    },
+    {
       "label": "live-call.store.ts",
       "file_type": "code",
       "source_file": "src/features/live-rooms/model/live-call.store.ts",
@@ -16395,7 +16407,7 @@
       "_origin": "ast",
       "id": "src_features_live_rooms_model_live_call_store",
       "community": 49,
-      "community_name": "live-stage.tsx",
+      "community_name": "live-call-guard.tsx",
       "norm_label": "live-call.store.ts"
     },
     {
@@ -16408,7 +16420,7 @@
       "_origin": "ast",
       "id": "src_features_live_rooms_model_live_call_store_activelivecall",
       "community": 49,
-      "community_name": "live-stage.tsx",
+      "community_name": "live-call-guard.tsx",
       "norm_label": "activelivecall"
     },
     {
@@ -16421,7 +16433,7 @@
       "_origin": "ast",
       "id": "src_features_live_rooms_model_live_call_store_livecallstate",
       "community": 49,
-      "community_name": "live-stage.tsx",
+      "community_name": "live-call-guard.tsx",
       "norm_label": "livecallstate"
     },
     {
@@ -16432,7 +16444,7 @@
       "_origin": "ast",
       "id": "src_features_live_rooms_model_live_call_store_uselivecallstore",
       "community": 49,
-      "community_name": "live-stage.tsx",
+      "community_name": "live-call-guard.tsx",
       "norm_label": "uselivecallstore"
     },
     {
@@ -16624,7 +16636,7 @@
       "_origin": "ast",
       "id": "src_features_live_rooms_ui_live_call_guard",
       "community": 49,
-      "community_name": "live-stage.tsx",
+      "community_name": "live-call-guard.tsx",
       "norm_label": "live-call-guard.tsx"
     },
     {
@@ -16636,7 +16648,7 @@
       "_origin": "ast",
       "id": "src_features_live_rooms_ui_live_call_guard_staysinproject",
       "community": 49,
-      "community_name": "live-stage.tsx",
+      "community_name": "live-call-guard.tsx",
       "norm_label": "staysinproject()"
     },
     {
@@ -16648,7 +16660,7 @@
       "_origin": "ast",
       "id": "src_features_live_rooms_ui_live_call_guard_pathnameof",
       "community": 49,
-      "community_name": "live-stage.tsx",
+      "community_name": "live-call-guard.tsx",
       "norm_label": "pathnameof()"
     },
     {
@@ -16660,7 +16672,7 @@
       "_origin": "ast",
       "id": "src_features_live_rooms_ui_live_call_guard_historyindex",
       "community": 49,
-      "community_name": "live-stage.tsx",
+      "community_name": "live-call-guard.tsx",
       "norm_label": "historyindex()"
     },
     {
@@ -16673,7 +16685,7 @@
       "_origin": "ast",
       "id": "src_features_live_rooms_ui_live_call_guard_routernavigator",
       "community": 49,
-      "community_name": "live-stage.tsx",
+      "community_name": "live-call-guard.tsx",
       "norm_label": "routernavigator"
     },
     {
@@ -16685,7 +16697,7 @@
       "_origin": "ast",
       "id": "src_features_live_rooms_ui_live_call_guard_livecallguard",
       "community": 49,
-      "community_name": "live-stage.tsx",
+      "community_name": "live-call-guard.tsx",
       "norm_label": "livecallguard()"
     },
     {
@@ -16804,7 +16816,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_features_live_rooms_ui_live_stage",
-      "community": 49,
+      "community": 259,
       "community_name": "live-stage.tsx",
       "norm_label": "live-stage.tsx"
     },
@@ -16817,7 +16829,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "src_features_live_rooms_ui_live_stage_livestageprops",
-      "community": 49,
+      "community": 259,
       "community_name": "live-stage.tsx",
       "norm_label": "livestageprops"
     },
@@ -16829,7 +16841,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_features_live_rooms_ui_live_stage_gridfor",
-      "community": 49,
+      "community": 259,
       "community_name": "live-stage.tsx",
       "norm_label": "gridfor()"
     },
@@ -16841,7 +16853,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_features_live_rooms_ui_live_stage_livestage",
-      "community": 49,
+      "community": 259,
       "community_name": "live-stage.tsx",
       "norm_label": "livestage()"
     },
@@ -16854,7 +16866,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "src_features_live_rooms_ui_live_stage_controlbuttonprops",
-      "community": 49,
+      "community": 259,
       "community_name": "live-stage.tsx",
       "norm_label": "controlbuttonprops"
     },
@@ -16866,7 +16878,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_features_live_rooms_ui_live_stage_controlbutton",
-      "community": 49,
+      "community": 259,
       "community_name": "live-stage.tsx",
       "norm_label": "controlbutton()"
     },
@@ -25622,7 +25634,7 @@
       "label": "TranslationKey",
       "file_type": "code",
       "source_file": "src/shared/i18n/locales.ts",
-      "source_location": "L2760",
+      "source_location": "L2762",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
@@ -25635,7 +25647,7 @@
       "label": "ptBR",
       "file_type": "code",
       "source_file": "src/shared/i18n/locales.ts",
-      "source_location": "L2766",
+      "source_location": "L2768",
       "_origin": "ast",
       "id": "src_shared_i18n_locales_ptbr",
       "community": 44,
@@ -25646,7 +25658,7 @@
       "label": "DICTIONARIES",
       "file_type": "code",
       "source_file": "src/shared/i18n/locales.ts",
-      "source_location": "L5434",
+      "source_location": "L5438",
       "_origin": "ast",
       "id": "src_shared_i18n_locales_dictionaries",
       "community": 44,
@@ -60083,6 +60095,17 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/features/live-rooms/lib/screen-share.ts",
+      "source_location": "L103",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_features_live_rooms_lib_screen_share",
+      "target": "src_features_live_rooms_lib_screen_share_issoundcontained",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/features/live-rooms/lib/screen-share.ts",
       "source_location": "L16",
       "weight": 1.0,
       "_origin": "ast",
@@ -60158,6 +60181,30 @@
       "source": "src_features_live_rooms_model_use_live_call",
       "target": "src_features_live_rooms_lib_screen_share_display_media_options",
       "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/features/live-rooms/model/use-live-call.ts",
+      "source_location": "L16",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_features_live_rooms_model_use_live_call",
+      "target": "src_features_live_rooms_lib_screen_share_issoundcontained",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/features/live-rooms/model/use-live-call.ts",
+      "source_location": "L1305",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_features_live_rooms_model_use_live_call_uselivecall",
+      "target": "src_features_live_rooms_lib_screen_share_issoundcontained"
     },
     {
       "relation": "contains",
@@ -71594,7 +71641,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/shared/i18n/locales.ts",
-      "source_location": "L5434",
+      "source_location": "L5438",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_shared_i18n_locales",
@@ -71649,7 +71696,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/shared/i18n/locales.ts",
-      "source_location": "L2766",
+      "source_location": "L2768",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_shared_i18n_locales",
@@ -71660,7 +71707,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/shared/i18n/locales.ts",
-      "source_location": "L2760",
+      "source_location": "L2762",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_shared_i18n_locales",
@@ -84006,5 +84053,5 @@
       "source_file": "README.md"
     }
   ],
-  "built_at_commit": "b0782e1d25b31a860aca5ce40f7e1875f9da2382"
+  "built_at_commit": "3ad175a558ea3670f1065b33ef6c99269a59eeef"
 }
