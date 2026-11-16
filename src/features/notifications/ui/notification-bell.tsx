@@ -65,6 +65,25 @@ export const NotificationBell = () => {
 
   useEffect(() => () => window.clearTimeout(sweepTimer.current), []);
 
+  // A click anywhere outside the bell and its pane closes it, as does Escape. A fixed backdrop
+  // could not do this: the nav's backdrop-filter traps `fixed` children inside the bar.
+  const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!isOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setIsOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [isOpen]);
+
   /** "Mark all as read" also clears: everything on screen swipes left, then leaves the caches. */
   const sweepAll = () => {
     if (isSweeping || notifications.length === 0) return;
@@ -84,7 +103,7 @@ export const NotificationBell = () => {
   };
 
   return (
-    <div className="relative">
+    <div ref={rootRef} className="relative">
       <button
         type="button"
         onClick={() => setIsOpen((open) => !open)}
@@ -116,7 +135,6 @@ export const NotificationBell = () => {
       <AnimatePresence>
         {isOpen && (
           <>
-            <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
             <motion.div
               initial={{ opacity: 0, y: -8, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
