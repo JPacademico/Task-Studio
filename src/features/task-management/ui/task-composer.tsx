@@ -89,6 +89,21 @@ const EMPTY_ROSTER: RosterMember[] = [];
  * Create/edit form for a task. The task *type* is never chosen by hand: it is derived from the
  * scheduled window and the number of assignees.
  */
+/** One step of the note checklist on the form. `id` marks a note that already exists. */
+interface ChecklistRow {
+  id?: string;
+  content: string;
+  isCompleted?: boolean;
+}
+
+/** Whether the edited list differs from the task's notes, in order, wording or membership. */
+const notesChanged = (
+  before: { id: string; content: string }[],
+  after: ChecklistRow[],
+): boolean =>
+  before.length !== after.length ||
+  after.some((row, at) => row.id !== before[at].id || row.content !== before[at].content.trim());
+
 export const TaskComposer = ({
   isOpen,
   onClose,
@@ -123,12 +138,10 @@ export const TaskComposer = ({
   const [startAt, setStartAt] = useState('');
   const [dueAt, setDueAt] = useState('');
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
-  /**
-   * Teams whose people should be assigned, offered only when creating. Not seeded when editing: a
-   * team is expanded into individuals at the moment it is picked.
-   */
+  /** Teams whose people join the assignees on save. Never seeded: a team is expanded when sent. */
   const [teamIds, setTeamIds] = useState<string[]>([]);
-  const [checklist, setChecklist] = useState<string[]>([]);
+  /** The note checklist. Rows with an `id` already exist on the task being edited. */
+  const [checklist, setChecklist] = useState<ChecklistRow[]>([]);
   const [checklistDraft, setChecklistDraft] = useState('');
   /**
    * Which grouping-board column to file this under, or `''` for none. The empty string rather than
@@ -163,7 +176,13 @@ export const TaskComposer = ({
     setDueAt(toDateTimeInput(task?.dueAt ?? null));
     setAssigneeIds(task?.assignees.map((assignee) => assignee.id) ?? []);
     setTeamIds([]);
-    setChecklist([]);
+    setChecklist(
+      task?.notes.map((note) => ({
+        id: note.id,
+        content: note.content,
+        isCompleted: note.isCompleted,
+      })) ?? [],
+    );
     setChecklistDraft('');
     // The lock wins on a fresh task, and is ignored on an edit. Editing is opened from a card, not
     // from a column.
@@ -272,10 +291,13 @@ export const TaskComposer = ({
     // The step somebody typed and did not press Enter on. `addStep` is wired to Enter and to the
     // "+" button.
     const pendingStep = checklistDraft.trim();
-    const steps =
-      pendingStep && checklist.length < MAX_TASK_NOTES
-        ? [...checklist, pendingStep]
-        : checklist;
+    // Emptied rows count as removed.
+    const steps = [
+      ...checklist,
+      ...(pendingStep && checklist.length < MAX_TASK_NOTES ? [{ content: pendingStep }] : []),
+    ]
+      .map((row) => ({ ...row, content: row.content.trim() }))
+      .filter((row) => row.content.length > 0);
 
     const shared = {
       title: title.trim(),
@@ -318,6 +340,11 @@ export const TaskComposer = ({
           // The tag, on three states as well. `null` when the picker was cleared — which is the
           // only way to take a task off a column from here.
           ...(groups.length > 0 ? { groupId: groupId || null } : {}),
+          ...(!isPersonal && teamIds.length > 0 ? { teamIds } : {}),
+          // Sent only when changed, so a save never races somebody ticking a step meanwhile.
+          ...(notesChanged(task.notes, steps)
+            ? { notes: steps.map(({ id, content }) => (id ? { id, content } : { content })) }
+            : {}),
         },
       });
     } else {
@@ -326,7 +353,7 @@ export const TaskComposer = ({
         ...shared,
         // Merged with the individual picks above by the API; empty is omitted.
         ...(!isPersonal && teamIds.length > 0 ? { teamIds } : {}),
-        checklist: steps.length > 0 ? steps : undefined,
+        checklist: steps.length > 0 ? steps.map((row) => row.content) : undefined,
         ...(groupId ? { groupId } : {}),
         attachmentKey: attachment?.key || undefined,
         attachmentThumbKey: attachment?.thumbKey ?? undefined,
@@ -368,7 +395,9 @@ export const TaskComposer = ({
     const step = checklistDraft.trim();
     if (!step) return;
 
-    setChecklist((items) => (items.length >= MAX_TASK_NOTES ? items : [...items, step]));
+    setChecklist((items) =>
+      items.length >= MAX_TASK_NOTES ? items : [...items, { content: step }],
+    );
     setChecklistDraft('');
   };
 
@@ -386,10 +415,10 @@ export const TaskComposer = ({
       // Merged into what is already there, not dropped on top of it. Somebody who typed two steps
       // and then pressed the sparkle wants a third suggested, not their own two replaced.
       setChecklist((current) => {
-        const seen = new Set(current.map((item) => item.toLowerCase()));
-        const additions = proposed.filter(
-          (item) => item.length > 0 && !seen.has(item.toLowerCase()),
-        );
+        const seen = new Set(current.map((item) => item.content.toLowerCase()));
+        const additions = proposed
+          .filter((item) => item.length > 0 && !seen.has(item.toLowerCase()))
+          .map((content) => ({ content }));
 
         return [...current, ...additions].slice(0, MAX_TASK_NOTES);
       });
@@ -528,7 +557,7 @@ export const TaskComposer = ({
                     : [...current, userId],
                 )
               }
-              teamScope={!task && projectId ? { projectId } : null}
+              teamScope={projectId ? { projectId } : null}
               selectedTeams={teamIds}
               onToggleTeam={(teamId) =>
                 setTeamIds((current) =>
@@ -669,8 +698,7 @@ export const TaskComposer = ({
           </button>
         )}
 
-        {!task && (
-          <div className="space-y-2">
+        <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-xs font-medium text-content-muted">
                 {t('task.subChecklist')}{' '}
@@ -763,13 +791,30 @@ export const TaskComposer = ({
                   const index = checklistPage.offset + pageIndex;
                   return (
                     <li
-                      key={`${item}-${index}`}
-                      className="flex items-center justify-between gap-2 rounded-lg bg-surface-sunken px-3 py-2 text-xs"
+                      key={item.id ?? `new-${index}`}
+                      className="flex items-center justify-between gap-2 rounded-lg bg-surface-sunken px-2 py-1 text-xs"
                     >
-                      <span className="min-w-0 flex-1 break-words">{item}</span>
+                      {/* Editable in place: a typo in a step is fixed here, not by remaking the task. */}
+                      <input
+                        value={item.content}
+                        onChange={(event) => {
+                          const content = clampText(event.target.value, TEXT_LIMITS.checklistItem);
+                          setChecklist((items) =>
+                            items.map((row, at) => (at === index ? { ...row, content } : row)),
+                          );
+                        }}
+                        onPaste={(event) => clampOnPaste(event, TEXT_LIMITS.checklistItem)}
+                        maxLength={TEXT_LIMITS.checklistItem}
+                        aria-label={t('task.editStep', { n: String(index + 1) })}
+                        className={cn(
+                          'min-w-0 flex-1 rounded-md bg-transparent px-1 py-1 outline-none',
+                          'focus:bg-surface focus:ring-1 focus:ring-brand/40',
+                          item.isCompleted && 'text-content-faint line-through',
+                        )}
+                      />
                       <button
                         type="button"
-                        aria-label={t('task.removeStep', { step: item })}
+                        aria-label={t('task.removeStep', { step: item.content })}
                         onClick={() =>
                           setChecklist((items) => items.filter((_, at) => at !== index))
                         }
@@ -789,7 +834,6 @@ export const TaskComposer = ({
               onChange={checklistPage.setPage}
             />
           </div>
-        )}
 
         <div className="space-y-2">
           <p className="text-xs font-medium text-content-muted">{t('task.imageAttachment')}</p>

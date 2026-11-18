@@ -150,10 +150,7 @@ export interface CreateTaskPayload {
   startAt?: string;
   dueAt?: string;
   assigneeIds?: string[];
-  /**
-   * Project teams to assign wholesale, merged into `assigneeIds` by the API. Create only. Editing a
-   * task edits the people on it — a team was a way of naming them once.
-   */
+  /** Project teams to assign wholesale, merged into `assigneeIds` by the API. */
   teamIds?: string[];
   /**
    * Starting steps for the note checklist, as plain lines. Still `checklist` on the wire: the
@@ -184,6 +181,13 @@ export interface UpdateTaskPayload {
   startAt?: string | null;
   dueAt?: string | null;
   assigneeIds?: string[];
+  /** Teams whose people join the assignees. Adds, never removes. */
+  teamIds?: string[];
+  /**
+   * The note checklist as it should end up: rows with an `id` are kept (and reworded), rows
+   * without one are added, and notes left out are removed. Omit to leave the notes alone.
+   */
+  notes?: { id?: string; content: string }[];
   attachmentKey?: string | null;
   attachmentThumbKey?: string | null;
   /**
